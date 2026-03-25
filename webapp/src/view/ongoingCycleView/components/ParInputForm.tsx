@@ -13,26 +13,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { useState, useEffect, useRef } from "react";
 import { Box, Button, Grid, Typography } from "@mui/material";
 import { useFormik } from "formik";
 import * as yup from "yup";
-import { parUiText, SnackMessage, uiMessages } from "@config/constant";
-import { useAppDispatch, useAppSelector } from "@slices/store";
+
+import { useEffect, useRef, useState } from "react";
+
+import CommentPaper from "@component/common/CommentPaper";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import CustomRichTextField from "@component/common/CustomRichText";
+import { SnackMessage, parUiText, uiMessages } from "@config/constant";
+import {
+  ParEmployeeStatus,
+  ParRating,
+} from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import { selectEmployeeInfo, selectUserEmail } from "@slices/authSlice/auth";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import {
   fetchCurrentParCycleOfEmployee,
   updateParRatingOfEmployee,
   updateSelectedParEmployeeComment,
 } from "@slices/employeeSlice/employee";
-import { selectEmployeeInfo, selectUserEmail } from "@slices/authSlice/auth";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import CustomRichTextField from "@component/common/CustomRichText";
-import CommentPaper from "@component/common/CommentPaper";
-import { ParRating, ParEmployeeStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
-import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 
 export const ParInputForm = ({
   employeeRatings,
@@ -112,7 +116,7 @@ export const ParInputForm = ({
         parCycleId: currentCycle.parCycleId,
         parRatingId: employeeRatings?.parRatingId,
         values: formattedValues,
-      })
+      }),
     );
 
     if (updateParRatingOfEmployee.fulfilled.match(resultAction)) {
@@ -182,7 +186,12 @@ export const ParInputForm = ({
         clearTimeout(delayAutoSave);
       }
     };
-  }, [values.parEmployeeComment, employeeRatings?.parEmployeeComment, isValid, isConfirmationDialogOpen]);
+  }, [
+    values.parEmployeeComment,
+    employeeRatings?.parEmployeeComment,
+    isValid,
+    isConfirmationDialogOpen,
+  ]);
 
   return (
     <Box
@@ -210,7 +219,7 @@ export const ParInputForm = ({
                   : parUiText.EmptyEmployeeQuestionText}
               </Typography>
             </Grid>
-            <Grid size={{ xs: 12, sm: 12 } }>
+            <Grid size={{ xs: 12, sm: 12 }}>
               {isDeadlinePassed ? (
                 <CommentPaper comment={values.parEmployeeComment} />
               ) : (
@@ -225,7 +234,9 @@ export const ParInputForm = ({
                   onBlur={handleBlur}
                   error={Boolean(touched.parEmployeeComment && errors.parEmployeeComment)}
                   helperText={
-                    touched.parEmployeeComment && errors.parEmployeeComment ? errors.parEmployeeComment.toString() : ""
+                    touched.parEmployeeComment && errors.parEmployeeComment
+                      ? errors.parEmployeeComment.toString()
+                      : ""
                   }
                   placeholder="Enter your comment here"
                   setFieldTouched={setFieldTouched}
@@ -235,7 +246,9 @@ export const ParInputForm = ({
           </Grid>
         </Box>
         <Box display="flex" justifyContent="space-between">
-          <Box mt={-1}>{isDraftSaved && <Typography color={"GrayText"}>Draft Saved</Typography>}</Box>
+          <Box mt={-1}>
+            {isDraftSaved && <Typography color={"GrayText"}>Draft Saved</Typography>}
+          </Box>
           <Box display={"flex"} gap={1}>
             <Button
               variant="outlined"

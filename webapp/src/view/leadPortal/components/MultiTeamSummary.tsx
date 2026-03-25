@@ -4,9 +4,18 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
-import React, { useState } from "react";
-import { Box, Button, Card, Divider, Grid, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import DateRangeIcon from "@mui/icons-material/DateRange";
+import {
+  Box,
+  Button,
+  Card,
+  Divider,
+  Grid,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import {
   DataGrid,
   GridColDef,
@@ -17,25 +26,23 @@ import {
   GridToolbarFilterButton,
   GridToolbarQuickFilter,
 } from "@mui/x-data-grid";
-import DateRangeIcon from "@mui/icons-material/DateRange";
+import dayjs from "dayjs";
+
+import React, { useState } from "react";
 
 import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
 import { CustomModal } from "@component/common/CustomModal";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
-import { RequestState } from "@utils/types";
-import { AllTeamsSummary, Team } from "@slices/teamSlice/team";
-
-import { calculateAllTeamsSummary } from "@utils/utils";
+import { LoadingEffect } from "@component/ui/Loading";
 import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
-
-import { useAppDispatch, useAppSelector } from "@slices/store";
 import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
 import { sendAllThreeSixtyReminder } from "@slices/reminderSlice/reminder";
-
-import dayjs from "dayjs";
-import { LoadingEffect } from "@component/ui/Loading";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { AllTeamsSummary, Team } from "@slices/teamSlice/team";
 import { selectTeamStatus } from "@slices/teamSlice/team";
+import { RequestState } from "@utils/types";
+import { calculateAllTeamsSummary } from "@utils/utils";
 
 interface MultiTeamSummaryProps {
   filteredSummary: AllTeamsSummary;
@@ -122,7 +129,12 @@ export const MultiTeamSummary = ({
       </Stack>
       <Card variant="outlined" sx={{ padding: 2 }}>
         <Grid container>
-          <Grid size={{ xs: 12, sm: 12 }} display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
+          <Grid
+            size={{ xs: 12, sm: 12 }}
+            display={"flex"}
+            alignItems={"center"}
+            justifyContent={"space-between"}
+          >
             <Typography variant="h5">Completion Status</Typography>
           </Grid>
         </Grid>
@@ -201,8 +213,8 @@ export const MultiTeamSummary = ({
                 Object.values(row).some((value) =>
                   String(value)
                     .toLowerCase()
-                    .includes(model.quickFilterValues?.[0]?.toLowerCase() || "")
-                )
+                    .includes(model.quickFilterValues?.[0]?.toLowerCase() || ""),
+                ),
               );
               const newFilteredSummary = calculateAllTeamsSummary(filteredRows);
               setFilteredSummary(newFilteredSummary);

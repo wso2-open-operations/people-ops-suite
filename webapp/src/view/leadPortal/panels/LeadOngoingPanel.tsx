@@ -13,41 +13,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import { Box, Chip, IconButton, Stack, Tooltip, useTheme } from "@mui/material";
+import { GridRenderCellParams, GridRowParams } from "@mui/x-data-grid";
+import { useLocation, useNavigate } from "react-router-dom";
 
-import {
-  IconButton,
-  Box,
-  Stack,
-  Tooltip,
-  Chip,
-  useTheme,
-} from "@mui/material";
+import { useEffect, useRef, useState } from "react";
+
+import NoDataView from "@component/common/NoDataView";
+import { LoadingEffect } from "@component/ui/Loading";
+import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
 import { selectUserEmail } from "@slices/authSlice/auth";
 import {
   fetchCurrentParCycleOfEmployee,
   selectEmployeeStatus,
 } from "@slices/employeeSlice/employee";
-import { useAppSelector, useAppDispatch } from "@slices/store";
-import { useEffect, useRef, useState } from "react";
-import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import { TeamSummary } from "../components/TeamSummary";
-import { MultiTeamSummary } from "../components/MultiTeamSummary";
+import { ParCycle } from "@slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
+  Team,
   fetchTeams,
   selectAllTeams,
   selectAllTeamsSummary,
   selectTeamStatus,
-  Team,
 } from "@slices/teamSlice/team";
 import { RequestState } from "@utils/types";
-import { LoadingEffect } from "@component/ui/Loading";
-import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { Review } from "../components/Review";
-import { useNavigate, useLocation } from "react-router-dom";
-import { GridRenderCellParams, GridRowParams } from "@mui/x-data-grid";
+
 import { tokens } from "../../../theme";
-import NoDataView from "@component/common/NoDataView";
-import { ParCycle } from "@slices/parCycleSlice/parCycle";
+import { MultiTeamSummary } from "../components/MultiTeamSummary";
+import { Review } from "../components/Review";
+import { TeamSummary } from "../components/TeamSummary";
 
 const LeadOngoingPanel = () => {
   const location = useLocation();
@@ -73,9 +68,7 @@ const LeadOngoingPanel = () => {
   const openReviewEmployeeView = (employeeEmail: string) => {
     setSelectedEmployeeEmail(employeeEmail);
     setReviewEmployeeView(true);
-    navigate(
-      `/lead-portal?teamId=${selectedTeamId}&employeeEmail=${employeeEmail}`
-    );
+    navigate(`/lead-portal?teamId=${selectedTeamId}&employeeEmail=${employeeEmail}`);
   };
 
   const closeReviewEmployeeView = () => {
@@ -85,12 +78,10 @@ const LeadOngoingPanel = () => {
   };
 
   // Stores the selected employee email for the team member
-  const [selectedEmployeeEmail, setSelectedEmployeeEmail] =
-    useState<string>("");
+  const [selectedEmployeeEmail, setSelectedEmployeeEmail] = useState<string>("");
 
   const isLoading =
-    parCycleLoadingStatus === RequestState.LOADING ||
-    teamsLoadingStatus === RequestState.LOADING;
+    parCycleLoadingStatus === RequestState.LOADING || teamsLoadingStatus === RequestState.LOADING;
 
   const isDataFetched =
     parCycleLoadingStatus === RequestState.SUCCEEDED &&
@@ -201,9 +192,7 @@ const LeadOngoingPanel = () => {
 
   const fetchData = async () => {
     if (userEmail) {
-      const fetchParCycleResult = await dispatch(
-        fetchCurrentParCycleOfEmployee(userEmail)
-      );
+      const fetchParCycleResult = await dispatch(fetchCurrentParCycleOfEmployee(userEmail));
 
       if (fetchCurrentParCycleOfEmployee.fulfilled.match(fetchParCycleResult)) {
         const currentCycle = fetchParCycleResult.payload.currentCycle;
@@ -216,7 +205,7 @@ const LeadOngoingPanel = () => {
               parCycleId: currentCycle.parCycleId,
               email: userEmail,
               signal: apiController.current.signal,
-            })
+            }),
           );
         }
       }
@@ -263,9 +252,7 @@ const LeadOngoingPanel = () => {
       setIsLeadMultiTeamViewOn(true);
 
       if (teamId && teams.some((team: Team) => team.parTeamId === teamId)) {
-        employeeEmail
-          ? setEmployeeReviewView(employeeEmail, teamId)
-          : setTeamView(teamId);
+        employeeEmail ? setEmployeeReviewView(employeeEmail, teamId) : setTeamView(teamId);
       } else {
         resetView();
       }
@@ -275,9 +262,7 @@ const LeadOngoingPanel = () => {
       setSelectedTeamId(singleTeamId);
 
       if (teamId === singleTeamId) {
-        employeeEmail
-          ? setEmployeeReviewView(employeeEmail, teamId)
-          : setTeamView(teamId);
+        employeeEmail ? setEmployeeReviewView(employeeEmail, teamId) : setTeamView(teamId);
       } else if (teamId) {
         // navigate("/lead-portal", { replace: true });
         if (location.pathname + location.search !== "/lead-portal") {
@@ -321,30 +306,26 @@ const LeadOngoingPanel = () => {
               />
             )}
 
-            {!showTeamsTable &&
-              !reviewEmployeeView &&
-              selectedTeamId !== null && (
-                <TeamSummary
-                  cycle={currentCycle}
-                  teamId={selectedTeamId}
-                  closeTeamSummary={() => {
-                    setShowTeamsTable(true);
-                    setSelectedTeamId(null);
-                    navigate("/lead-portal");
-                  }}
-                  openReviewEmployeeView={openReviewEmployeeView}
-                  isLeadMultiTeamViewOn={isLeadMultiTeamViewOn}
-                />
-              )}
+            {!showTeamsTable && !reviewEmployeeView && selectedTeamId !== null && (
+              <TeamSummary
+                cycle={currentCycle}
+                teamId={selectedTeamId}
+                closeTeamSummary={() => {
+                  setShowTeamsTable(true);
+                  setSelectedTeamId(null);
+                  navigate("/lead-portal");
+                }}
+                openReviewEmployeeView={openReviewEmployeeView}
+                isLeadMultiTeamViewOn={isLeadMultiTeamViewOn}
+              />
+            )}
 
-            {!showTeamsTable &&
-              reviewEmployeeView &&
-              currentCycle?.parCycleId && (
-                <Review
-                  selectedEmployeeEmail={selectedEmployeeEmail}
-                  closeReviewEmployeeView={closeReviewEmployeeView}
-                />
-              )}
+            {!showTeamsTable && reviewEmployeeView && currentCycle?.parCycleId && (
+              <Review
+                selectedEmployeeEmail={selectedEmployeeEmail}
+                closeReviewEmployeeView={closeReviewEmployeeView}
+              />
+            )}
           </>
         )}
 

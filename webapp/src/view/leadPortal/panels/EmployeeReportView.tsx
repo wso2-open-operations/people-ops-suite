@@ -13,57 +13,54 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DateRangeIcon from "@mui/icons-material/DateRange";
+import RateReviewIcon from "@mui/icons-material/RateReview";
+import SearchIcon from "@mui/icons-material/Search";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
+  Avatar,
   Box,
   Card,
-  Grid,
-  Avatar,
   Divider,
-  Tooltip,
-  TextField,
+  Grid,
   IconButton,
-  Typography,
   InputAdornment,
+  TextField,
+  Tooltip,
+  Typography,
 } from "@mui/material";
-import {
-  DataGrid,
-  GridRowSelectionModel,
-  GridRenderCellParams,
-} from "@mui/x-data-grid";
-import {
-  uiMessages,
-  shortDateFormat,
-  tooltipVisibilityDelay,
-} from "@config/constant";
-import {
-  selectReportData,
-  selectReportStatus,
-  fetchDirectAndIndirectReports,
-} from "@slices/reportSlice/report";
-import React from "react";
+import { DataGrid, GridRenderCellParams, GridRowSelectionModel } from "@mui/x-data-grid";
 import dayjs from "dayjs";
-import { Review } from "../components/Review";
+
+import React from "react";
 import { useEffect, useRef, useState } from "react";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import SearchIcon from "@mui/icons-material/Search";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import RateReviewIcon from "@mui/icons-material/RateReview";
-import ParStatusChip from "@component/common/ParStatusChip";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { useAppSelector, useAppDispatch } from "@slices/store";
-import { ShowSnackBarMessage } from "@slices/commonSlice/common";
-import { fetchCurrentParCycleOfEmployee, selectEmployeeStatus } from "@slices/employeeSlice/employee";
-import { RequestState } from "@utils/types";
-import DateRangeIcon from "@mui/icons-material/DateRange";
+
 import { CustomModal } from "@component/common/CustomModal";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
 import NoDataView from "@component/common/NoDataView";
+import ParStatusChip from "@component/common/ParStatusChip";
 import { LoadingEffect } from "@component/ui/Loading";
+import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
 import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import { ParRatingShort } from "@root/src/slices/teamSlice/team";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
+import {
+  fetchCurrentParCycleOfEmployee,
+  selectEmployeeStatus,
+} from "@slices/employeeSlice/employee";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import {
+  fetchDirectAndIndirectReports,
+  selectReportData,
+  selectReportStatus,
+} from "@slices/reportSlice/report";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { RequestState } from "@utils/types";
+
+import { Review } from "../components/Review";
 
 const EmployeeReportView = () => {
   const userEmail = useAppSelector(selectUserEmail);
@@ -79,26 +76,20 @@ const EmployeeReportView = () => {
     ids: new Set(),
   });
 
-
   const [isParCycleDatesOpen, setIsParCycleDatesOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedEmployeeEmail, setSelectedEmployeeEmail] =
-    useState<string>("");
+  const [selectedEmployeeEmail, setSelectedEmployeeEmail] = useState<string>("");
   const [reviewEmployeeView, setReviewEmployeeView] = useState(false);
   const parCycleLoadingStatus = useAppSelector(selectEmployeeStatus);
 
-  const handleSelectionModelChange = (
-    newSelectionModel: GridRowSelectionModel
-  ) => {
+  const handleSelectionModelChange = (newSelectionModel: GridRowSelectionModel) => {
     setSelectionModel(newSelectionModel);
   };
 
   const fetchData = async () => {
     if (userEmail) {
-      const fetchParCycleResult = await dispatch(
-        fetchCurrentParCycleOfEmployee(userEmail)
-      );
+      const fetchParCycleResult = await dispatch(fetchCurrentParCycleOfEmployee(userEmail));
 
       if (fetchCurrentParCycleOfEmployee.fulfilled.match(fetchParCycleResult)) {
         const currentCycle = fetchParCycleResult.payload.currentCycle;
@@ -109,7 +100,7 @@ const EmployeeReportView = () => {
             fetchDirectAndIndirectReports({
               parCycleId: currentCycle.parCycleId,
               leadEmail: userEmail,
-            })
+            }),
           );
         }
       }
@@ -303,9 +294,7 @@ const EmployeeReportView = () => {
       const searchTerm = searchQuery.toLowerCase();
       return row.parEmployeeEmail?.toLowerCase().includes(searchTerm);
     });
-    return searchFiltered.filter(
-      (row) => row.reportingType?.toLowerCase() === "indirect"
-    );
+    return searchFiltered.filter((row) => row.reportingType?.toLowerCase() === "indirect");
   };
 
   const openCycleDeadlines = () => {
@@ -354,7 +343,10 @@ const EmployeeReportView = () => {
       {parCycleLoadingStatus === RequestState.SUCCEEDED && currentCycle?.parCycleId && (
         <>
           {reviewEmployeeView && currentCycle?.parCycleId ? (
-            <Review selectedEmployeeEmail={selectedEmployeeEmail} closeReviewEmployeeView={closeReviewEmployeeView} />
+            <Review
+              selectedEmployeeEmail={selectedEmployeeEmail}
+              closeReviewEmployeeView={closeReviewEmployeeView}
+            />
           ) : (
             <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
               <Grid
@@ -437,35 +429,33 @@ const EmployeeReportView = () => {
                 }}
               >
                 <Box sx={{ width: "100%", minHeight: 400 }}>
-                <DataGrid
-                  sx={{
-                    border: "none",
-                    "& .MuiDataGrid-row:hover": {
-                      backgroundColor: "inherit",
-                    },
-                  }}
-                  getRowId={(row) => row.parEmployeeEmail}
-                  columns={columns}
-                  rowHeight={50}
-                  checkboxSelection={false}
-
-                  // FIX: Modernized v6+ prop names
-                  disableRowSelectionOnClick
-                  pageSizeOptions={[10, 20, 25]}
-                  rowSelectionModel={selectionModel}
-                  onRowSelectionModelChange={handleSelectionModelChange}
-
-                  loading={reportStatus === RequestState.LOADING}
-                  initialState={{
-                    pagination: {
-                      paginationModel: {
-                        pageSize: 10,
-                        page: 0,
+                  <DataGrid
+                    sx={{
+                      border: "none",
+                      "& .MuiDataGrid-row:hover": {
+                        backgroundColor: "inherit",
                       },
-                    },
-                  }}
-                  rows={getFilteredRows() as unknown as ParRatingShort[]}
-                />
+                    }}
+                    getRowId={(row) => row.parEmployeeEmail}
+                    columns={columns}
+                    rowHeight={50}
+                    checkboxSelection={false}
+                    // FIX: Modernized v6+ prop names
+                    disableRowSelectionOnClick
+                    pageSizeOptions={[10, 20, 25]}
+                    rowSelectionModel={selectionModel}
+                    onRowSelectionModelChange={handleSelectionModelChange}
+                    loading={reportStatus === RequestState.LOADING}
+                    initialState={{
+                      pagination: {
+                        paginationModel: {
+                          pageSize: 10,
+                          page: 0,
+                        },
+                      },
+                    }}
+                    rows={getFilteredRows() as unknown as ParRatingShort[]}
+                  />
                 </Box>
               </Card>
             </Box>

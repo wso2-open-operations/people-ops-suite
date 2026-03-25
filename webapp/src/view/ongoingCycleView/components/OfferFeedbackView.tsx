@@ -13,29 +13,38 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import PlaylistAddIcon from "@mui/icons-material/PlaylistAdd";
+import {
+  Autocomplete,
+  Avatar,
+  Box,
+  IconButton,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 
+import { useEffect, useMemo, useState } from "react";
+
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import { tooltipVisibilityDelay } from "@config/constant";
+import { selectUserEmail } from "@slices/authSlice/auth";
 import {
   Employee,
-  selectEmployeeMap,
   fetchParticipants,
+  selectEmployeeMap,
   selectParticipants,
   selectParticipantsStatus,
 } from "@slices/metaSlice/meta";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
-  postReviewers,
   fetchRequests,
-  selectThreeSixtyReviewStatus,
+  postReviewers,
   selectThreeSixtyReviewRequests,
+  selectThreeSixtyReviewStatus,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 import { RequestState } from "@utils/types";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import { useEffect, useMemo, useState } from "react";
-import { tooltipVisibilityDelay } from "@config/constant";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import PlaylistAddIcon from "@mui/icons-material/PlaylistAdd";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { Autocomplete, Avatar, Box, IconButton, TextField, Tooltip, Typography } from "@mui/material";
 
 interface OfferFeedbackViewProps {
   onClose: (emailToOfferFeedback: string) => void;
@@ -80,7 +89,7 @@ const OfferFeedbackView = ({ onClose }: OfferFeedbackViewProps) => {
           employeeId: selectedEmployee.workEmail,
           parCycleId: currentCycle.parCycleId,
           reviewerEmails: userEmail ? [userEmail] : [],
-        })
+        }),
       );
       if (postReviewers.fulfilled.match(resultAction)) {
         dispatch(fetchRequests({ employeeId: userEmail, parCycleId: currentCycle.parCycleId }));
@@ -96,7 +105,7 @@ const OfferFeedbackView = ({ onClose }: OfferFeedbackViewProps) => {
         employee.workEmail !== userEmail &&
         !reviewRequests.some((request) => request.employeeEmail === employee.workEmail) &&
         (employee.employeeName.toLowerCase().includes(inputValue.toLowerCase()) ||
-          employee.workEmail.toLowerCase().includes(inputValue.toLowerCase()))
+          employee.workEmail.toLowerCase().includes(inputValue.toLowerCase())),
     );
 
     return filtered.slice(0, 10);
@@ -107,7 +116,10 @@ const OfferFeedbackView = ({ onClose }: OfferFeedbackViewProps) => {
       <Autocomplete
         options={filteredEmployees}
         getOptionLabel={(option) => `${option.employeeName} (${option.workEmail})`}
-        loading={employeeArrayStatus === RequestState.LOADING || reviewerRequestStatus === RequestState.LOADING}
+        loading={
+          employeeArrayStatus === RequestState.LOADING ||
+          reviewerRequestStatus === RequestState.LOADING
+        }
         value={selectedEmployee}
         inputValue={inputValue}
         onInputChange={(_, newInputValue) => {

@@ -13,9 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { Typography, Grid, IconButton, Fade, Paper } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
+import { Fade, Grid, IconButton, Paper, Typography } from "@mui/material";
+
 import { EmployeeProfileCard } from "./components/EmployeeProfileCard";
 
 const Profile = () => {
@@ -46,13 +46,10 @@ const Profile = () => {
                 justifyContent: "left",
               }}
             >
-              <IconButton color="primary" component="label" onClick={() => { }}>
+              <IconButton color="primary" component="label" onClick={() => {}}>
                 <PersonIcon fontSize="large" />
               </IconButton>
-              <Typography
-                variant="h4"
-                sx={{ marginTop: "12px", marginLeft: "10px" }}
-              >
+              <Typography variant="h4" sx={{ marginTop: "12px", marginLeft: "10px" }}>
                 Profile
               </Typography>
             </Grid>

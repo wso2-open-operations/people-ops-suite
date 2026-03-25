@@ -14,40 +14,47 @@
 // specific language governing permissions and limitations
 // under the License.
 import {
-  Box,
-  List,
-  Card,
-  Chip,
-  alpha,
-  Paper,
-  Stack,
-  Avatar,
-  Divider,
-  ListItem,
-  useTheme,
-  Typography,
-  IconButton,
-  CardContent,
-  ListItemText,
-} from "@mui/material";
-import React from "react";
-import {
-  Share as ShareIcon,
-  Person as PersonIcon,
-  Timeline as TimelineIcon,
+  ArrowForward as ArrowForwardIcon,
   CalendarToday as CalendarIcon,
   CheckCircle as CheckCircleIcon,
-  ArrowForward as ArrowForwardIcon,
+  Person as PersonIcon,
+  Share as ShareIcon,
+  Timeline as TimelineIcon,
 } from "@mui/icons-material";
-import { tokens } from "@src/theme";
-import { useAppSelector } from "@slices/store";
-import { uiMessages } from "@config/constant";
 import CloseIcon from "@mui/icons-material/Close";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { LoadingEffect } from "@component/ui/Loading";
+import {
+  Avatar,
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Divider,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  Stack,
+  Typography,
+  alpha,
+  useTheme,
+} from "@mui/material";
+
+import React from "react";
+
 import NoDataView from "@component/common/NoDataView";
+import { LoadingEffect } from "@component/ui/Loading";
+import { uiMessages } from "@config/constant";
+import {
+  ParLeadStatus,
+  ParRatingSummary,
+  selectEmployeeHistoryRatingStatus,
+  selectSummarizedParHistory,
+} from "@slices/employeeHistorySlice/employeeHistory";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { useAppSelector } from "@slices/store";
+import { tokens } from "@src/theme";
 import { ParCycleStatus, RequestState } from "@utils/types";
-import { ParLeadStatus, ParRatingSummary, selectEmployeeHistoryRatingStatus, selectSummarizedParHistory } from "@slices/employeeHistorySlice/employeeHistory";
 
 interface SummarizedParHistoryViewProps {
   empName: string;
@@ -153,10 +160,22 @@ const SummarizedParHistoryView: React.FC<SummarizedParHistoryViewProps> = ({
           </Stack>
         </CardContent>
       </Card>
-      {historyDataLoadingState === RequestState.LOADING && <LoadingEffect message={uiMessages.loading.pageLoading} />}
-      {historyDataLoadingState === RequestState.FAILED && <NoDataView text={uiMessages.error.noHistory} />}
+      {historyDataLoadingState === RequestState.LOADING && (
+        <LoadingEffect message={uiMessages.loading.pageLoading} />
+      )}
+      {historyDataLoadingState === RequestState.FAILED && (
+        <NoDataView text={uiMessages.error.noHistory} />
+      )}
       {historyDataLoadingState === RequestState.SUCCEEDED && (
-        <List sx={{ width: "100%", bgcolor: "background.paper", overflowY: "auto", maxHeight: "60vh", p: 1 }}>
+        <List
+          sx={{
+            width: "100%",
+            bgcolor: "background.paper",
+            overflowY: "auto",
+            maxHeight: "60vh",
+            p: 1,
+          }}
+        >
           {[...historyData]
             .sort((a, b) => b.parCycleId - a.parCycleId)
             .map((cycle, index) => {
@@ -220,7 +239,9 @@ const SummarizedParHistoryView: React.FC<SummarizedParHistoryViewProps> = ({
                                   }}
                                 >
                                   {formatDate(cycle.parCycleStartDate)}
-                                  <ArrowForwardIcon sx={{ fontSize: 14, mx: 0.5, color: "text.secondary" }} />
+                                  <ArrowForwardIcon
+                                    sx={{ fontSize: 14, mx: 0.5, color: "text.secondary" }}
+                                  />
                                   {formatDate(cycle.parCycleEndDate)}
                                 </Typography>
                               </Box>
@@ -275,8 +296,10 @@ const SummarizedParHistoryView: React.FC<SummarizedParHistoryViewProps> = ({
                                       <Avatar
                                         src={
                                           cycle.parSharedBy
-                                            ? employeeMap[cycle.parSharedBy]?.employeeThumbnail ?? ""
-                                            : employeeMap[cycle.parLeadEmail]?.employeeThumbnail ?? ""
+                                            ? (employeeMap[cycle.parSharedBy]?.employeeThumbnail ??
+                                              "")
+                                            : (employeeMap[cycle.parLeadEmail]?.employeeThumbnail ??
+                                              "")
                                         }
                                         alt={cycle.parSharedBy ?? cycle.parLeadEmail}
                                         sx={{
@@ -316,10 +339,12 @@ const SummarizedParHistoryView: React.FC<SummarizedParHistoryViewProps> = ({
                                         }}
                                       >
                                         {cycle.parSharedBy
-                                          ? employeeMap[cycle.parSharedBy]?.employeeName ?? cycle.parSharedBy
+                                          ? (employeeMap[cycle.parSharedBy]?.employeeName ??
+                                            cycle.parSharedBy)
                                           : cycle.parLeadEmail
-                                          ? employeeMap[cycle.parLeadEmail]?.employeeName ?? cycle.parLeadEmail
-                                          : "Not Available"}
+                                            ? (employeeMap[cycle.parLeadEmail]?.employeeName ??
+                                              cycle.parLeadEmail)
+                                            : "Not Available"}
                                       </Typography>
                                     </Box>
                                   </>

@@ -13,8 +13,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { SyntheticEvent, useEffect, useState } from "react";
+import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import GradingIcon from "@mui/icons-material/Grading";
+import GroupIcon from "@mui/icons-material/Group";
+import GroupWorkIcon from "@mui/icons-material/GroupWork";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Avatar,
   Box,
@@ -37,50 +41,38 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import GroupWorkIcon from "@mui/icons-material/GroupWork";
-import GradingIcon from "@mui/icons-material/Grading";
-import ParStatusChip from "@component/common/ParStatusChip";
-import AddIcon from "@mui/icons-material/Add";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import GroupIcon from "@mui/icons-material/Group";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-
-import { CustomModal } from "@component/common/CustomModal";
-import { ReviewRequestModal } from "@component/common/ReviewRequestModal";
-import { LeadReviewPanel } from "../panels/LeadReviewPanel";
-import { F2fPanel } from "@component/common/F2fPanel";
-import { UpdateStatusPanel } from "@component/common/UpdateStatusPanel";
-import EmployeeHistoryCard from "@component/common/EmployeeHistoryCard";
-import { LoadingEffect } from "@component/ui/Loading";
-import {
-  base64Regex,
-  defaultTabWidth,
-  tooltipVisibilityDelay,
-  uiMessages,
-} from "@config/constant";
-import {
-  fetchReviewers,
-  selectThreeSixtyReviewers,
-  selectThreeSixtyReviews,
-  selectThreeSixtyReviewStatus,
-} from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import {
-  RequestState,
-} from "@utils/types";
-import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
-import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { selectUserEmail, selectUserInfo } from "@slices/authSlice/auth";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { ReviewViewModal } from "@component/common/ReviewViewModal";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import {
-  selectEmployeeRatings,
-  selectEmployeeRatingStatus,
-} from "@slices/employeeSlice/employee";
+
+import { SyntheticEvent, useEffect, useState } from "react";
 import React from "react";
+
+import { CustomModal } from "@component/common/CustomModal";
+import EmployeeHistoryCard from "@component/common/EmployeeHistoryCard";
+import { F2fPanel } from "@component/common/F2fPanel";
+import ParStatusChip from "@component/common/ParStatusChip";
+import { ReviewRequestModal } from "@component/common/ReviewRequestModal";
+import { ReviewViewModal } from "@component/common/ReviewViewModal";
+import { UpdateStatusPanel } from "@component/common/UpdateStatusPanel";
+import { LoadingEffect } from "@component/ui/Loading";
+import { base64Regex, defaultTabWidth, tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { selectUserEmail, selectUserInfo } from "@slices/authSlice/auth";
+import { selectEmployeeRatingStatus, selectEmployeeRatings } from "@slices/employeeSlice/employee";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import {
+  fetchReviewers,
+  selectThreeSixtyReviewStatus,
+  selectThreeSixtyReviewers,
+  selectThreeSixtyReviews,
+} from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import { RequestState } from "@utils/types";
+
+import { LeadReviewPanel } from "../panels/LeadReviewPanel";
+
 dayjs.extend(utc);
 
 interface ReviewProps {
@@ -107,8 +99,7 @@ export const Review = ({
   const employeeMap = useAppSelector(selectEmployeeMap);
   const employeeRating = useAppSelector(selectEmployeeRatings);
   const employeeParRatingStatus = useAppSelector(selectEmployeeRatingStatus);
-  const [isThreeSixtyDeadlinePassed, setIsThreeSixtyDeadlinePassed] =
-    useState(false);
+  const [isThreeSixtyDeadlinePassed, setIsThreeSixtyDeadlinePassed] = useState(false);
   const [reviewRequestModal, setReviewRequestModal] = useState(false);
   const [reviewViewModal, setReviewViewModal] = useState(false);
   const [reviewObject, setReviewObject] = useState({
@@ -133,7 +124,7 @@ export const Review = ({
   const openReviewViewModal = (providerEmail: string) => {
     // get the review comment and rating for the provider email, from the reviews
     const { reviewComment, reviewRating } = reviews.filter(
-      (review) => review.reviewerEmail === providerEmail
+      (review) => review.reviewerEmail === providerEmail,
     )[0];
     if (reviewComment && reviewRating) {
       setReviewObject({
@@ -148,8 +139,7 @@ export const Review = ({
   };
 
   useEffect(() => {
-    const deadlineLocal = dayjs
-      (cycle.parThreeSixtyRatingDeadline).endOf("day");
+    const deadlineLocal = dayjs(cycle.parThreeSixtyRatingDeadline).endOf("day");
     setIsThreeSixtyDeadlinePassed(dayjs().isAfter(deadlineLocal));
   }, [cycle.parThreeSixtyRatingDeadline]);
 
@@ -161,7 +151,7 @@ export const Review = ({
           fetchReviewers({
             employeeId: selectedEmployeeEmail,
             parCycleId: cycle.parCycleId,
-          })
+          }),
         );
       }
     }
@@ -185,50 +175,56 @@ export const Review = ({
               </Typography>
             )}
             {employeeParRatingStatus === RequestState.SUCCEEDED && (
-              <Link display={"inline"} underline="hover" color="inherit" variant="h6" onClick={closeReviewEmployeeView}>
-              <Tooltip
-                arrow
-                title={[
-                  employeeRating.parBusinessUnit,
-                  employeeRating.parDepartment,
-                  employeeRating.parTeam,
-                  employeeRating.parSubTeam,
-                ]
-                  .filter(Boolean)
-                  .map((item) => item?.toUpperCase())
-                  .join(" / ")}
-                enterDelay={tooltipVisibilityDelay}
-                enterNextDelay={tooltipVisibilityDelay}
+              <Link
+                display={"inline"}
+                underline="hover"
+                color="inherit"
+                variant="h6"
+                onClick={closeReviewEmployeeView}
               >
-                <Box
-                  sx={{
-                    display: "inline-block",
-                    maxWidth: "60rem",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    verticalAlign: "middle",
-                    marginBottom: 0.25,
-                  }}
-                >
-                  {[
+                <Tooltip
+                  arrow
+                  title={[
                     employeeRating.parBusinessUnit,
                     employeeRating.parDepartment,
                     employeeRating.parTeam,
                     employeeRating.parSubTeam,
                   ]
                     .filter(Boolean)
-                    .map((item, index, array) => (
-                      <React.Fragment key={index}>
-                        {item?.toUpperCase()}
-                        {index < array.length - 1 && " / "}
-                      </React.Fragment>
-                    ))}
-                </Box>
-              </Tooltip>
-              <Typography display={"inline"} variant="h5">
-                {" / "}
-              </Typography>
+                    .map((item) => item?.toUpperCase())
+                    .join(" / ")}
+                  enterDelay={tooltipVisibilityDelay}
+                  enterNextDelay={tooltipVisibilityDelay}
+                >
+                  <Box
+                    sx={{
+                      display: "inline-block",
+                      maxWidth: "60rem",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      verticalAlign: "middle",
+                      marginBottom: 0.25,
+                    }}
+                  >
+                    {[
+                      employeeRating.parBusinessUnit,
+                      employeeRating.parDepartment,
+                      employeeRating.parTeam,
+                      employeeRating.parSubTeam,
+                    ]
+                      .filter(Boolean)
+                      .map((item, index, array) => (
+                        <React.Fragment key={index}>
+                          {item?.toUpperCase()}
+                          {index < array.length - 1 && " / "}
+                        </React.Fragment>
+                      ))}
+                  </Box>
+                </Tooltip>
+                <Typography display={"inline"} variant="h5">
+                  {" / "}
+                </Typography>
               </Link>
             )}
 
@@ -246,13 +242,8 @@ export const Review = ({
                       height: 22,
                     }}
                   />
-                  <Typography
-                    display={"inline"}
-                    color="text.primary"
-                    variant="h5"
-                  >
-                    {employeeMap[selectedEmployeeEmail]?.employeeName ??
-                      selectedEmployeeEmail}
+                  <Typography display={"inline"} color="text.primary" variant="h5">
+                    {employeeMap[selectedEmployeeEmail]?.employeeName ?? selectedEmployeeEmail}
                   </Typography>
                 </Box>
               }
@@ -303,12 +294,7 @@ export const Review = ({
             />
           ) : null}
           {!isAdminAuditViewOn && !isAdminHistoryViewOn && (
-            <Tab
-              icon={<GroupIcon />}
-              iconPosition="start"
-              label="F2F"
-              sx={{ width: "7rem" }}
-            />
+            <Tab icon={<GroupIcon />} iconPosition="start" label="F2F" sx={{ width: "7rem" }} />
           )}
           {isAdminAuditViewOn && (
             <Tab
@@ -332,17 +318,11 @@ export const Review = ({
         )}
       </Box>
 
-      <CustomModal
-        open={isEmpHistoryModalOpen}
-        onClose={() => setIsEmpHistoryModalOpen(false)}
-      >
+      <CustomModal open={isEmpHistoryModalOpen} onClose={() => setIsEmpHistoryModalOpen(false)}>
         {
           <EmployeeHistoryCard
             onClose={() => setIsEmpHistoryModalOpen(false)}
-            empName={
-              employeeMap[selectedEmployeeEmail]?.employeeName ??
-              selectedEmployeeEmail
-            }
+            empName={employeeMap[selectedEmployeeEmail]?.employeeName ?? selectedEmployeeEmail}
             empEmail={selectedEmployeeEmail}
             empThumbnail={employeeMap[selectedEmployeeEmail]?.employeeThumbnail}
           />
@@ -359,28 +339,19 @@ export const Review = ({
             />
           </Box>
         </TabPanel>
-        <TabPanel
-          value={value}
-          index={isAdminAuditViewOn || isAdminHistoryViewOn ? -1 : 1}
-        >
+        <TabPanel value={value} index={isAdminAuditViewOn || isAdminHistoryViewOn ? -1 : 1}>
           <Box sx={{ position: "relative" }} height={"55vh"} overflow={"auto"}>
             <TableContainer sx={{ height: "calc(100vh - 360px)" }}>
               <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell
-                      sx={{ width: "40%", fontWeight: "bold", color: "grey" }}
-                    >
+                    <TableCell sx={{ width: "40%", fontWeight: "bold", color: "grey" }}>
                       Name
                     </TableCell>
-                    <TableCell
-                      sx={{ width: "20%", fontWeight: "bold", color: "grey" }}
-                    >
+                    <TableCell sx={{ width: "20%", fontWeight: "bold", color: "grey" }}>
                       Status
                     </TableCell>
-                    <TableCell
-                      sx={{ width: "30%", fontWeight: "bold", color: "grey" }}
-                    >
+                    <TableCell sx={{ width: "30%", fontWeight: "bold", color: "grey" }}>
                       Requested by
                     </TableCell>
                     <TableCell sx={{ width: "10%" }}></TableCell>
@@ -389,14 +360,8 @@ export const Review = ({
                 <TableBody>
                   {reviewSliceState === RequestState.LOADING && (
                     <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        align="center"
-                        style={{ border: "none" }}
-                      >
-                        <LoadingEffect
-                          message={uiMessages.loading.pageLoading}
-                        />
+                      <TableCell colSpan={4} align="center" style={{ border: "none" }}>
+                        <LoadingEffect message={uiMessages.loading.pageLoading} />
                       </TableCell>
                     </TableRow>
                   )}
@@ -404,14 +369,8 @@ export const Review = ({
                   {reviewSliceState === RequestState.SUCCEEDED &&
                     (reviewers?.length === 0 ? (
                       <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          align="center"
-                          style={{ border: "none" }}
-                        >
-                          <Typography color={"GrayText"}>
-                            No requests available
-                          </Typography>
+                        <TableCell colSpan={4} align="center" style={{ border: "none" }}>
+                          <Typography color={"GrayText"}>No requests available</Typography>
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -420,13 +379,10 @@ export const Review = ({
                           <TableCell sx={{ py: 1 }}>
                             <Box display="flex" alignItems="center">
                               <Avatar
-                                src={
-                                  employeeMap[reviewer.reviewerEmail]
-                                    ?.employeeThumbnail
-                                }
+                                src={employeeMap[reviewer.reviewerEmail]?.employeeThumbnail}
                                 alt={
-                                  employeeMap[reviewer.reviewerEmail]
-                                    ?.employeeName || reviewer.reviewerEmail
+                                  employeeMap[reviewer.reviewerEmail]?.employeeName ||
+                                  reviewer.reviewerEmail
                                 }
                                 sx={{
                                   marginRight: 2,
@@ -437,25 +393,16 @@ export const Review = ({
 
                               <Box>
                                 <Typography variant="h5">
-                                  {
-                                    employeeMap[reviewer.reviewerEmail]
-                                      ?.employeeName
-                                  }
+                                  {employeeMap[reviewer.reviewerEmail]?.employeeName}
                                 </Typography>
-                                <Typography
-                                  display={"block"}
-                                  color="GrayText"
-                                  mt={-0.5}
-                                >
+                                <Typography display={"block"} color="GrayText" mt={-0.5}>
                                   {reviewer.reviewerEmail}
                                 </Typography>
                               </Box>
                             </Box>
                           </TableCell>
                           <TableCell sx={{ py: 1 }}>
-                            <ParStatusChip
-                              content={reviewer?.reviewStatus || ""}
-                            />
+                            <ParStatusChip content={reviewer?.reviewStatus || ""} />
                           </TableCell>
                           <TableCell sx={{ py: 1 }}>
                             {reviewer?.isLeadRequested && (
@@ -483,10 +430,8 @@ export const Review = ({
                             )}
                           </TableCell>
                           <TableCell sx={{ py: 1 }}>
-                            {(reviewer.reviewStatus ===
-                              ParThreeSixtyReviewStatus.COMPLETED ||
-                              reviewer.reviewStatus ===
-                                ParThreeSixtyReviewStatus.REJECTED) && (
+                            {(reviewer.reviewStatus === ParThreeSixtyReviewStatus.COMPLETED ||
+                              reviewer.reviewStatus === ParThreeSixtyReviewStatus.REJECTED) && (
                               <Tooltip
                                 arrow
                                 title="View Feedback"
@@ -494,9 +439,7 @@ export const Review = ({
                                 enterNextDelay={tooltipVisibilityDelay}
                               >
                                 <IconButton
-                                  onClick={() =>
-                                    openReviewViewModal(reviewer.reviewerEmail)
-                                  }
+                                  onClick={() => openReviewViewModal(reviewer.reviewerEmail)}
                                   sx={{
                                     color: "primary.main",
                                     "&:hover": {
@@ -545,10 +488,7 @@ export const Review = ({
               </Tooltip>
             </Box>
           </Box>
-          <CustomModal
-            open={reviewRequestModal}
-            onClose={closeReviewRequestModal}
-          >
+          <CustomModal open={reviewRequestModal} onClose={closeReviewRequestModal}>
             {cycle.parCycleId && selectedEmployeeEmail && (
               <ReviewRequestModal
                 onClose={closeReviewRequestModal}
@@ -557,11 +497,7 @@ export const Review = ({
               />
             )}
           </CustomModal>
-          <CustomModal
-            open={reviewViewModal}
-            onClose={closeReviewViewModal}
-            width="70vw"
-          >
+          <CustomModal open={reviewViewModal} onClose={closeReviewViewModal} width="70vw">
             {cycle?.parCycleId && (
               <ReviewViewModal
                 onClose={closeReviewViewModal}
@@ -573,10 +509,7 @@ export const Review = ({
           </CustomModal>
         </TabPanel>
 
-        <TabPanel
-          value={value}
-          index={isAdminAuditViewOn || isAdminHistoryViewOn ? -1 : 2}
-        >
+        <TabPanel value={value} index={isAdminAuditViewOn || isAdminHistoryViewOn ? -1 : 2}>
           <F2fPanel employeeId={selectedEmployeeEmail} parCycle={cycle} />
         </TabPanel>
 
@@ -605,9 +538,7 @@ const TabPanel = (props: TabPanelProps) => {
       aria-labelledby={`simple-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: "10px 10px 0px 10px" }}>{children}</Box>
-      )}
+      {value === index && <Box sx={{ p: "10px 10px 0px 10px" }}>{children}</Box>}
     </div>
   );
 };

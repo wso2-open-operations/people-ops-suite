@@ -13,28 +13,40 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import SyncIcon from "@mui/icons-material/Sync";
+import {
+  Autocomplete,
+  Avatar,
+  Box,
+  IconButton,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 
+import { useEffect, useMemo, useState } from "react";
+
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import { LoadingEffect } from "@component/ui/Loading";
+import { SnackMessage, tooltipVisibilityDelay } from "@config/constant";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import {
+  selectEmployeeRatingStatus,
+  updateParTeamIdOfEmployee,
+} from "@slices/employeeSlice/employee";
 import {
   Employee,
-  selectEmployeeMap,
   fetchEntityEmployees,
-  selectSubordinatesArray,
+  selectEmployeeMap,
   selectSubordinates,
+  selectSubordinatesArray,
 } from "@slices/metaSlice/meta";
-import { RequestState } from "@utils/types";
-import SyncIcon from "@mui/icons-material/Sync";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import { useEffect, useMemo, useState } from "react";
 import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { selectEmployeeRatingStatus, updateParTeamIdOfEmployee } from "@slices/employeeSlice/employee";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { SnackMessage, tooltipVisibilityDelay } from "@config/constant";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { Autocomplete, Avatar, Box, IconButton, TextField, Tooltip, Typography } from "@mui/material";
-import { LoadingEffect } from "@component/ui/Loading";
+import { RequestState } from "@utils/types";
 
-type Props = { 
+type Props = {
   leadonly?: boolean;
   onSyncSuccess?: () => void;
 };
@@ -53,8 +65,8 @@ const EmployeeSyncModal: React.FC<Props> = ({ leadonly, onSyncSuccess }) => {
 
   useEffect(() => {
     if (leadonly) {
-    if (userEmail) {
-      dispatch(fetchEntityEmployees({ leadEmail: userEmail }));
+      if (userEmail) {
+        dispatch(fetchEntityEmployees({ leadEmail: userEmail }));
       }
     } else {
       dispatch(fetchEntityEmployees({}));
@@ -81,14 +93,14 @@ const EmployeeSyncModal: React.FC<Props> = ({ leadonly, onSyncSuccess }) => {
         updateParTeamIdOfEmployee({
           employeeId: selectedEmployee.workEmail,
           parCycleId: currentCycle.parCycleId,
-        })
+        }),
       );
       if (updateParTeamIdOfEmployee.fulfilled.match(resultAction)) {
         dispatch(
           enqueueSnackbarMessage({
             message: SnackMessage.success.employeeSync,
             type: "success",
-          })
+          }),
         );
         onSyncSuccess?.();
       }
@@ -101,7 +113,7 @@ const EmployeeSyncModal: React.FC<Props> = ({ leadonly, onSyncSuccess }) => {
       (employee) =>
         employee.workEmail !== userEmail &&
         (employee.employeeName.toLowerCase().includes(inputValue.toLowerCase()) ||
-          employee.workEmail.toLowerCase().includes(inputValue.toLowerCase()))
+          employee.workEmail.toLowerCase().includes(inputValue.toLowerCase())),
     );
 
     return filtered.slice(0, 200);
@@ -120,7 +132,12 @@ const EmployeeSyncModal: React.FC<Props> = ({ leadonly, onSyncSuccess }) => {
         }}
         onChange={(_, newValue) => handleEmployeeSelection(newValue)}
         renderInput={(params) => (
-          <TextField {...params} label="Sync Employee Information" placeholder="Search by name or email" fullWidth />
+          <TextField
+            {...params}
+            label="Sync Employee Information"
+            placeholder="Search by name or email"
+            fullWidth
+          />
         )}
         ListboxProps={{
           style: { maxHeight: "400px" },

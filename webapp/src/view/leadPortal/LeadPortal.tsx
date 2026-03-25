@@ -4,26 +4,29 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+import DataUsageIcon from "@mui/icons-material/DataUsage";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import GroupsIcon from "@mui/icons-material/Groups";
+import HistoryToggleOffIcon from "@mui/icons-material/HistoryToggleOff";
+import LinkIcon from "@mui/icons-material/Link";
+import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
+import { Box, Fade, IconButton, Paper, Stack, Tab, Tabs, Typography } from "@mui/material";
+import { useSearchParams } from "react-router-dom";
 
 import React from "react";
-import { useAppSelector } from "@slices/store";
-import LinkIcon from "@mui/icons-material/Link";
 import { SyntheticEvent, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { defaultTabWidth } from "@config/constant";
-import GroupsIcon from "@mui/icons-material/Groups";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import ReportChainView from "./panels/ReportChainView";
-import LeadOngoingPanel from "./panels/LeadOngoingPanel";
-import DataUsageIcon from "@mui/icons-material/DataUsage";
-import EmployeeReportView from "./panels/EmployeeReportView";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
-import { resetSelectedEmployeeParState } from "@slices/employeeSlice/employee";
-import HistoryToggleOffIcon from "@mui/icons-material/HistoryToggleOff";
+
 import EmployeeHistoryView from "@component/common/EmployeeHistoryView";
 import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
-import { Box, Fade, Paper, Tab, Tabs, Typography, IconButton, Stack } from "@mui/material";
+import { defaultTabWidth } from "@config/constant";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { resetSelectedEmployeeParState } from "@slices/employeeSlice/employee";
+import { useAppSelector } from "@slices/store";
+
+import EmployeeReportView from "./panels/EmployeeReportView";
+import LeadOngoingPanel from "./panels/LeadOngoingPanel";
+import ReportChainView from "./panels/ReportChainView";
+
 const LeadPortal = () => {
   const userEmail = useAppSelector(selectUserEmail);
   const [searchParams, setSearchParams] = useSearchParams();

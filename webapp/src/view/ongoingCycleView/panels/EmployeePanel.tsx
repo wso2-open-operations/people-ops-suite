@@ -4,14 +4,15 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
 import { Alert, Box } from "@mui/material";
-import { useAppSelector } from "@slices/store";
+
 import { LoadingEffect } from "@component/ui/Loading";
 import { uiMessages } from "@config/constant";
-import { RequestState } from "@utils/types";
 import { selectEmployeeStatus } from "@slices/employeeSlice/employee";
 import { selectCurrentCycle, selectParCycleState } from "@slices/parCycleSlice/parCycle";
+import { useAppSelector } from "@slices/store";
+import { RequestState } from "@utils/types";
+
 import { ParStatusView } from "../components/ParStatusView";
 
 const EmployeePanel = () => {
@@ -39,9 +40,7 @@ const EmployeePanel = () => {
               <>
                 {parCycleLoadingState === RequestState.SUCCEEDED && (
                   <Box sx={{ minHeight: "calc(480px)" }}>
-                    <Alert severity="info">
-                      {uiMessages.alert.employeeParNoOngoingCycle}
-                    </Alert>
+                    <Alert severity="info">{uiMessages.alert.employeeParNoOngoingCycle}</Alert>
                   </Box>
                 )}
               </>

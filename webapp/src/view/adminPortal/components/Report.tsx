@@ -13,20 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { RequestState } from "@utils/types";
-import { Box, IconButton, Link, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { ChangeEvent, useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import {
-  fetchReportData,
-  ParReportEntry,
-  selectReportData,
-  selectReportStatus,
-} from "@slices/reportSlice/report";
-import { LoadingEffect } from "@component/ui/Loading";
-import { uiMessages } from "@config/constant";
+import { Box, IconButton, Link, Typography } from "@mui/material";
 import {
   DataGrid,
   GridColDef,
@@ -34,9 +22,22 @@ import {
   GridToolbar,
   GridToolbarExportContainer,
 } from "@mui/x-data-grid";
+
+import { ChangeEvent, useEffect, useState } from "react";
+
 import ParStatusChip from "@component/common/ParStatusChip";
-import { getSpecialRatingEnum, getSpecialRatingLabel } from "@utils/utils";
+import { LoadingEffect } from "@component/ui/Loading";
+import { uiMessages } from "@config/constant";
 import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import {
+  ParReportEntry,
+  fetchReportData,
+  selectReportData,
+  selectReportStatus,
+} from "@slices/reportSlice/report";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { RequestState } from "@utils/types";
+import { getSpecialRatingEnum, getSpecialRatingLabel } from "@utils/utils";
 
 interface ReportProps {
   parCycle: Partial<ParCycle>;
@@ -44,11 +45,7 @@ interface ReportProps {
   isAdminHistoryViewOn?: boolean;
 }
 
-export const Report = ({
-  parCycle,
-  closeReportView,
-  isAdminHistoryViewOn,
-}: ReportProps) => {
+export const Report = ({ parCycle, closeReportView, isAdminHistoryViewOn }: ReportProps) => {
   const dispatch = useAppDispatch();
   const reportDataStatus = useAppSelector(selectReportStatus);
   const reportData = useAppSelector(selectReportData);
@@ -70,7 +67,7 @@ export const Report = ({
     { field: "parDepartment", headerName: "Department", flex: 1 },
     { field: "parTeam", headerName: "Team", flex: 1 },
     { field: "parSubTeam", headerName: "Sub Team", flex: 1 },
-    { field: "parLeadEmail", headerName: "Lead Email", flex: 1, },
+    { field: "parLeadEmail", headerName: "Lead Email", flex: 1 },
     {
       field: "parRating",
       headerName: "Rating",
@@ -84,9 +81,7 @@ export const Report = ({
       headerName: "Top 5%/20% Rating",
       flex: 0.5,
       renderCell: (params: GridRenderCellParams<ParReportEntry>) => (
-        <ParStatusChip
-          content={getSpecialRatingEnum(params.row?.parSpecialRating) ?? ""}
-        />
+        <ParStatusChip content={getSpecialRatingEnum(params.row?.parSpecialRating) ?? ""} />
       ),
     },
     {
@@ -137,12 +132,7 @@ export const Report = ({
             {` History / `}
           </Typography>
         )}
-        <Link
-          underline="hover"
-          color="inherit"
-          variant="h5"
-          onClick={closeReportView}
-        >
+        <Link underline="hover" color="inherit" variant="h5" onClick={closeReportView}>
           {parCycle.parCycleName}
         </Link>
         <Typography display={"inline"} variant="h5">

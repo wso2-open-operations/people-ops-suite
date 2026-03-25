@@ -13,39 +13,49 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Chip,
-  Tooltip,
-  useTheme,
-  Accordion,
-  Typography,
   IconButton,
-  AccordionSummary,
-  AccordionDetails,
+  Tooltip,
+  Typography,
+  useTheme,
 } from "@mui/material";
+
 import React from "react";
-import { tokens } from "../../../theme";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { LoadingEffect } from "@component/ui/Loading";
-import NoDataView from "@component/common/NoDataView";
+
 import CommentPaper from "@component/common/CommentPaper";
+import NoDataView from "@component/common/NoDataView";
+import { LoadingEffect } from "@component/ui/Loading";
 import { base64Regex, uiMessages } from "@config/constant";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { useAppDispatch, useAppSelector } from "@slices/store";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import {
+  selectEmployeeHistoryReviewStatus,
+  selectEmployeeHistoryReviews,
+} from "@slices/employeeHistorySlice/employeeHistory";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import {
+  ParThreeSixtyReviewStatus,
+  ThreeSixtyReview,
+} from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 import { RequestState } from "@utils/types";
-import { ParThreeSixtyReviewStatus, ThreeSixtyReview } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { selectEmployeeHistoryReviews, selectEmployeeHistoryReviewStatus } from "@slices/employeeHistorySlice/employeeHistory";
+
+import { tokens } from "../../../theme";
 
 interface ThreeSixtyHistoryFeedbackSectionProps {
   isAdminsSelfProfile: boolean;
   current?: boolean;
 }
 
-const ThreeSixtyHistoryFeedbackSection: React.FC<ThreeSixtyHistoryFeedbackSectionProps> = ({ isAdminsSelfProfile }) => {
+const ThreeSixtyHistoryFeedbackSection: React.FC<ThreeSixtyHistoryFeedbackSectionProps> = ({
+  isAdminsSelfProfile,
+}) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const colors = tokens(theme.palette.mode);
@@ -70,7 +80,7 @@ const ThreeSixtyHistoryFeedbackSection: React.FC<ThreeSixtyHistoryFeedbackSectio
           enqueueSnackbarMessage({
             message: "Review copied to clipboard",
             type: "info",
-          })
+          }),
         );
       })
       .catch((err) => {
@@ -78,14 +88,14 @@ const ThreeSixtyHistoryFeedbackSection: React.FC<ThreeSixtyHistoryFeedbackSectio
           enqueueSnackbarMessage({
             message: "Unable to copy review to clipboard",
             type: "error",
-          })
+          }),
         );
       });
   };
 
   const renderReviews = () => {
     const completedReviews = threeSixtyReviews.filter(
-      (review) => review.reviewStatus === ParThreeSixtyReviewStatus.COMPLETED
+      (review) => review.reviewStatus === ParThreeSixtyReviewStatus.COMPLETED,
     );
 
     if (completedReviews.length === 0) {
@@ -116,7 +126,9 @@ const ThreeSixtyHistoryFeedbackSection: React.FC<ThreeSixtyHistoryFeedbackSectio
               aria-controls={`panel${index}-content`}
               id={`panel${index}-header`}
             >
-              <Box sx={{ display: "flex", alignItems: "center", width: "100%", position: "relative" }}>
+              <Box
+                sx={{ display: "flex", alignItems: "center", width: "100%", position: "relative" }}
+              >
                 <Typography variant="body1" sx={{ fontWeight: "medium", mr: "auto" }}>
                   {employeeMap[review.reviewerEmail]?.employeeName}{" "}
                   <span style={{ color: "GrayText" }}>({review.reviewerEmail})</span>
@@ -170,11 +182,23 @@ const ThreeSixtyHistoryFeedbackSection: React.FC<ThreeSixtyHistoryFeedbackSectio
         <Typography variant="h6">360° Feedback</Typography>
       </AccordionSummary>
       <AccordionDetails>
-        {threeSixtyReviewStatus === RequestState.LOADING && <LoadingEffect message={uiMessages.loading.pageLoading} />}
+        {threeSixtyReviewStatus === RequestState.LOADING && (
+          <LoadingEffect message={uiMessages.loading.pageLoading} />
+        )}
         {threeSixtyReviewStatus === RequestState.SUCCEEDED && !isAdminsSelfProfile ? (
-          <>{threeSixtyReviews.length > 0 ? renderReviews() : <NoDataView text="No 360° feedback received" />}</>
+          <>
+            {threeSixtyReviews.length > 0 ? (
+              renderReviews()
+            ) : (
+              <NoDataView text="No 360° feedback received" />
+            )}
+          </>
         ) : (
-          <>{threeSixtyReviewStatus === RequestState.SUCCEEDED && <NoDataView text="Self profile restricted" />}</>
+          <>
+            {threeSixtyReviewStatus === RequestState.SUCCEEDED && (
+              <NoDataView text="Self profile restricted" />
+            )}
+          </>
         )}
       </AccordionDetails>
     </Accordion>

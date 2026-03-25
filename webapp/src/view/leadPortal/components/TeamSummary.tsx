@@ -13,8 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { useEffect, useState } from "react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DateRangeIcon from "@mui/icons-material/DateRange";
+import RateReviewIcon from "@mui/icons-material/RateReview";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Avatar,
   Box,
@@ -29,47 +32,35 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import {
-  DataGrid,
-  GridRenderCellParams,
-  GridRowId,
-  GridRowSelectionModel,
-} from "@mui/x-data-grid";
-
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DateRangeIcon from "@mui/icons-material/DateRange";
-import RateReviewIcon from "@mui/icons-material/RateReview";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-
-import ParStatusChip from "@component/common/ParStatusChip";
-import {
-  fetchTeamReport,
-  ParRatingShort,
-  selectTeamReport,
-  selectTeamReportStatus,
-  TeamReport,
-} from "@slices/teamSlice/team";
-import { useAppDispatch, useAppSelector } from "@slices/store";
+import { DataGrid, GridRenderCellParams, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 import dayjs from "dayjs";
-import { RequestState } from "@utils/types";
+
+import { useEffect, useState } from "react";
+
 import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { LoadingEffect } from "@component/ui/Loading";
-import {
-  SnackMessage,
-  tooltipVisibilityDelay,
-  uiMessages,
-} from "@config/constant";
-import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
-import { bulkUpdateParRatingOfEmployee } from "@slices/employeeSlice/employee";
-import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { sendAllThreeSixtyReminder } from "@slices/reminderSlice/reminder";
 import { CustomModal } from "@component/common/CustomModal";
-import EmployeeSyncModal from "./EmployeeSyncModal";
+import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
+import ParStatusChip from "@component/common/ParStatusChip";
+import { LoadingEffect } from "@component/ui/Loading";
+import { SnackMessage, tooltipVisibilityDelay, uiMessages } from "@config/constant";
 import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
+import { bulkUpdateParRatingOfEmployee } from "@slices/employeeSlice/employee";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { sendAllThreeSixtyReminder } from "@slices/reminderSlice/reminder";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import {
+  ParRatingShort,
+  TeamReport,
+  fetchTeamReport,
+  selectTeamReport,
+  selectTeamReportStatus,
+} from "@slices/teamSlice/team";
+import { RequestState } from "@utils/types";
+
+import EmployeeSyncModal from "./EmployeeSyncModal";
 
 interface DashboardProps {
   cycle: Partial<ParCycle>;
@@ -130,15 +121,10 @@ export const TeamSummary = ({
   const closeCycleDeadlines = () => setIsParCycleDatesOpen(false);
 
   const openParShareDialog = () => {
-    const ratingMap = getSelectedRatings(
-      getSelectedIds(),
-      teamReport?.details ?? []
-    );
+    const ratingMap = getSelectedRatings(getSelectedIds(), teamReport?.details ?? []);
 
     if (!validateRatings(ratingMap)) {
-      dispatch(
-        ShowSnackBarMessage(SnackMessage.error.invalidBulkShare, "error")
-      );
+      dispatch(ShowSnackBarMessage(SnackMessage.error.invalidBulkShare, "error"));
       return;
     }
     setIsParShareDialogOpen(true);
@@ -162,15 +148,15 @@ export const TeamSummary = ({
   const filteredMembers =
     teamReport !== null
       ? teamReport.details
-        ?.map((member: ParRatingShort) => ({
-          ...member,
-          id: member.parRatingId,
-        }))
-        .filter((member: ParRatingShort) =>
-          `${member.parEmployeeName.toLowerCase()}${member.parEmployeeEmail.toLowerCase()}`.includes(
-            searchTerm.toLowerCase()
+          ?.map((member: ParRatingShort) => ({
+            ...member,
+            id: member.parRatingId,
+          }))
+          .filter((member: ParRatingShort) =>
+            `${member.parEmployeeName.toLowerCase()}${member.parEmployeeEmail.toLowerCase()}`.includes(
+              searchTerm.toLowerCase(),
+            ),
           )
-        )
       : [];
 
   const columns = [
@@ -309,8 +295,7 @@ export const TeamSummary = ({
           }}
           onClick={() => handleMembersTableClick(params.row)}
         >
-          {params.row.parLeadStatus === ParLeadStatus.SHARED ||
-            isAdminHistoryViewOn ? (
+          {params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? (
             <Tooltip
               arrow
               title="View"
@@ -334,20 +319,13 @@ export const TeamSummary = ({
     },
   ];
 
-  const handleSelectionModelChange = (
-    newSelectionModel: GridRowSelectionModel
-  ) => {
+  const handleSelectionModelChange = (newSelectionModel: GridRowSelectionModel) => {
     setSelectionModel(newSelectionModel);
   };
 
-  const getSelectedRatings = (
-    selectedIdsArray: GridRowId[],
-    details: ParRatingShort[]
-  ) => {
+  const getSelectedRatings = (selectedIdsArray: GridRowId[], details: ParRatingShort[]) => {
     return selectedIdsArray.reduce((acc: ParRatingShort[], rowId) => {
-      const employeeParRating = details?.find(
-        (member) => member.parRatingId === rowId
-      );
+      const employeeParRating = details?.find((member) => member.parRatingId === rowId);
       if (employeeParRating) {
         acc.push(employeeParRating);
       }
@@ -356,22 +334,15 @@ export const TeamSummary = ({
   };
 
   const validateRatings = (ratingMap: ParRatingShort[]) => {
-    return ratingMap.every(
-      (rating) => rating?.parLeadStatus === ParLeadStatus.DRAFT
-    );
+    return ratingMap.every((rating) => rating?.parLeadStatus === ParLeadStatus.DRAFT);
   };
 
   const updateSelectedRatings = async () => {
     try {
-      const ratingMap = getSelectedRatings(
-        getSelectedIds(),
-        teamReport?.details ?? []
-      );
+      const ratingMap = getSelectedRatings(getSelectedIds(), teamReport?.details ?? []);
 
       if (!validateRatings(ratingMap)) {
-        dispatch(
-          ShowSnackBarMessage(SnackMessage.error.invalidBulkShare, "error")
-        );
+        dispatch(ShowSnackBarMessage(SnackMessage.error.invalidBulkShare, "error"));
         return;
       }
 
@@ -398,16 +369,13 @@ export const TeamSummary = ({
       });
 
       if (formattedObjects.length > 0) {
-        const resultAction = await dispatch(
-          bulkUpdateParRatingOfEmployee(formattedObjects)
-        );
+        const resultAction = await dispatch(bulkUpdateParRatingOfEmployee(formattedObjects));
 
-        const { passedCount, failedCount, reasonMessage } =
-          resultAction.payload as {
-            passedCount: number;
-            failedCount: number;
-            reasonMessage: string;
-          };
+        const { passedCount, failedCount, reasonMessage } = resultAction.payload as {
+          passedCount: number;
+          failedCount: number;
+          reasonMessage: string;
+        };
         if (passedCount !== 0 && cycle?.parCycleId) {
           dispatch(fetchTeamReport({ parCycleId: cycle.parCycleId, teamId }));
         }
@@ -416,23 +384,18 @@ export const TeamSummary = ({
           dispatch(
             ShowSnackBarMessage(
               `Failed to share ${failedCount} ratings. ${reasonMessage}`,
-              "error"
-            )
+              "error",
+            ),
           );
         } else if (failedCount !== 0) {
           dispatch(
             ShowSnackBarMessage(
               `Failed to update ${failedCount} ratings. ${reasonMessage}`,
-              "warning"
-            )
+              "warning",
+            ),
           );
         } else {
-          dispatch(
-            ShowSnackBarMessage(
-              `Successfully updated ${passedCount} ratings`,
-              "success"
-            )
-          );
+          dispatch(ShowSnackBarMessage(`Successfully updated ${passedCount} ratings`, "success"));
         }
       }
     } catch (error) {
@@ -447,9 +410,7 @@ export const TeamSummary = ({
 
   const copySelectedEmailsToClipboard = () => {
     const emails = getSelectedIds().map((rowId) => {
-      const employeeParRating = teamReport?.details.find(
-        (member) => member.parRatingId === rowId
-      );
+      const employeeParRating = teamReport?.details.find((member) => member.parRatingId === rowId);
       if (employeeParRating?.parEmployeeEmail) {
         return employeeParRating?.parEmployeeEmail;
       }
@@ -503,36 +464,29 @@ export const TeamSummary = ({
             }}
           >
             <Box>
-              {(isAdminAuditViewOn ||
-                isAdminHistoryViewOn ||
-                isLeadMultiTeamViewOn) && (
-                  <Box sx={{ display: "inline" }}>
-                    <IconButton
-                      aria-label="back"
-                      color="primary"
-                      onClick={closeTeamSummary}
-                      sx={{ mb: 1, mr: 1 }}
-                    >
-                      <ArrowBackIcon />
-                    </IconButton>
-                    {isAdminHistoryViewOn && (
-                      <Typography display={"inline"} variant="h5">
-                        {` History / ${cycle.parCycleName} / `}
-                      </Typography>
-                    )}
-                    <Link
-                      underline="hover"
-                      color="inherit"
-                      variant="h5"
-                      onClick={closeTeamSummary}
-                    >
-                      {"All Teams"}
-                    </Link>
+              {(isAdminAuditViewOn || isAdminHistoryViewOn || isLeadMultiTeamViewOn) && (
+                <Box sx={{ display: "inline" }}>
+                  <IconButton
+                    aria-label="back"
+                    color="primary"
+                    onClick={closeTeamSummary}
+                    sx={{ mb: 1, mr: 1 }}
+                  >
+                    <ArrowBackIcon />
+                  </IconButton>
+                  {isAdminHistoryViewOn && (
                     <Typography display={"inline"} variant="h5">
-                      {" / "}
+                      {` History / ${cycle.parCycleName} / `}
                     </Typography>
-                  </Box>
-                )}
+                  )}
+                  <Link underline="hover" color="inherit" variant="h5" onClick={closeTeamSummary}>
+                    {"All Teams"}
+                  </Link>
+                  <Typography display={"inline"} variant="h5">
+                    {" / "}
+                  </Typography>
+                </Box>
+              )}
 
               <Typography display={"inline"} variant="h5">
                 {teamReport.parBusinessUnit}
@@ -711,7 +665,15 @@ export const TeamSummary = ({
               </Box>
             </Grid>
 
-            <Box sx={{ flex: 1, overflowY: "auto", overflowX: "hidden", width: "100%", minHeight: 400 }}>
+            <Box
+              sx={{
+                flex: 1,
+                overflowY: "auto",
+                overflowX: "hidden",
+                width: "100%",
+                minHeight: 400,
+              }}
+            >
               <DataGrid
                 sx={{
                   border: "none",
@@ -720,7 +682,7 @@ export const TeamSummary = ({
                   },
                 }}
                 rows={filteredMembers.sort((a, b) =>
-                  a.parEmployeeName.localeCompare(b.parEmployeeName)
+                  a.parEmployeeName.localeCompare(b.parEmployeeName),
                 )}
                 columns={columns}
                 rowHeight={50}
@@ -760,11 +722,7 @@ export const TeamSummary = ({
             ariaLabelledby="alert-360-reminder-title"
             ariaDescribedby="alert-360-reminder-description"
           />
-          <CustomModal
-            open={isParCycleDatesOpen}
-            onClose={closeCycleDeadlines}
-            width="80vw"
-          >
+          <CustomModal open={isParCycleDatesOpen} onClose={closeCycleDeadlines} width="80vw">
             <Typography id="dashboard-modal-title" variant="h5" pb={2}>
               Cycle Dates
             </Typography>
@@ -773,10 +731,7 @@ export const TeamSummary = ({
               <CycleDatesStepper cycle={cycle} activeStep={activeStep} />
             </Box>
           </CustomModal>
-          <CustomModal
-            open={feedbackRequestModalOpen}
-            onClose={handleCloseFeedbackRequestModal}
-          >
+          <CustomModal open={feedbackRequestModalOpen} onClose={handleCloseFeedbackRequestModal}>
             <EmployeeSyncModal leadonly onSyncSuccess={handleEmployeeSyncSuccess} />
           </CustomModal>
         </Box>

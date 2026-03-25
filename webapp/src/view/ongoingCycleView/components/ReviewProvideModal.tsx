@@ -13,49 +13,46 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { LoadingEffect } from "@component/ui/Loading";
-import {
-  autoSaveCountdownDuration,
-  SnackMessage,
-  uiMessages,
-  parUiText,
-} from "@config/constant";
 import LoadingButton from "@mui/lab/LoadingButton";
 import {
-  Typography,
-  TextField,
-  MenuItem,
-  Button,
-  Grid,
-  Box,
-  Divider,
-  Avatar,
   Alert,
+  Avatar,
+  Box,
+  Button,
+  Divider,
+  Grid,
+  MenuItem,
+  TextField,
+  Typography,
 } from "@mui/material";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import { useFormik } from "formik";
+import * as yup from "yup";
+
+import { useEffect, useState } from "react";
+
+import CommentPaper from "@component/common/CommentPaper";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import CustomRichTextField from "@component/common/CustomRichText";
+import { LoadingEffect } from "@component/ui/Loading";
+import { SnackMessage, autoSaveCountdownDuration, parUiText, uiMessages } from "@config/constant";
+import { parRatingNotAssigned } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { RequestState } from "@root/src/utils/types";
 import { selectUserEmail } from "@slices/authSlice/auth";
 import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { ParCycle } from "@slices/parCycleSlice/parCycle";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
-  fetchSelectedReview,
   ParThreeSixtyReviewStatus,
+  fetchSelectedReview,
   postReviews,
   selectSelectedThreeSixtyReview,
   selectSelectedThreeSixtyReviewStatus,
   updateSelectedReview,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { ParCycle,  } from "@slices/parCycleSlice/parCycle";
-import { useFormik } from "formik";
-import { useEffect, useState } from "react";
-import * as yup from "yup";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import CustomRichTextField from "@component/common/CustomRichText";
-import CommentPaper from "@component/common/CommentPaper";
-import { RequestState } from "@root/src/utils/types";
-import { parRatingNotAssigned } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+
 dayjs.extend(utc);
 
 interface ReviewProvideModalProps {
@@ -75,36 +72,27 @@ export const ReviewProvideModal = ({
   threeSixtyReviewQuestion,
   threeSixtyReviewRatings,
   isRejectSelected,
-  isOfferedFeedback
+  isOfferedFeedback,
 }: ReviewProvideModalProps) => {
   const dispatch = useAppDispatch();
   const userEmail = useAppSelector(selectUserEmail);
   const employeeMap = useAppSelector(selectEmployeeMap);
-  const threeSixtyReviewContent = useAppSelector(
-    selectSelectedThreeSixtyReview
-  );
-  const threeSixtyReviewStatus = useAppSelector(
-    selectSelectedThreeSixtyReviewStatus
-  );
+  const threeSixtyReviewContent = useAppSelector(selectSelectedThreeSixtyReview);
+  const threeSixtyReviewStatus = useAppSelector(selectSelectedThreeSixtyReviewStatus);
 
-  const [autoSaveTimeout, setAutoSaveTimeout] = useState<
-    ReturnType<typeof setTimeout> | undefined
-  >(undefined);
-  const [autoSaveCountdown, setAutoSaveCountdown] = useState(
-    autoSaveCountdownDuration
+  const [autoSaveTimeout, setAutoSaveTimeout] = useState<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
   );
+  const [autoSaveCountdown, setAutoSaveCountdown] = useState(autoSaveCountdownDuration);
 
   const [isDeadlinePassed, setIsDeadlinePassed] = useState(false);
 
   const [isDraft, setIsDraft] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
-  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] =
-    useState(false);
+  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] = useState(false);
 
-  const [isRejectionSelected, setIsRejectionSelected] = useState(
-    !!isRejectSelected
-  );
+  const [isRejectionSelected, setIsRejectionSelected] = useState(!!isRejectSelected);
 
   const openConfirmationDialog = () => setIsConfirmationDialogOpen(true);
   const closeConfirmationDialog = () => {
@@ -113,9 +101,7 @@ export const ReviewProvideModal = ({
   };
 
   const validationSchema = yup.object().shape({
-    reviewRating: isRejectionSelected
-      ? yup.string()
-      : yup.string().required("Required"),
+    reviewRating: isRejectionSelected ? yup.string() : yup.string().required("Required"),
     reviewComment: yup
       .string()
       .trim()
@@ -124,11 +110,7 @@ export const ReviewProvideModal = ({
           ?.replace(/<[^>]*>/g, "")
           .replace(/&nbsp;/g, " ")
           .trim();
-        return (
-          textContent !== "" &&
-          textContent !== null &&
-          textContent !== undefined
-        );
+        return textContent !== "" && textContent !== null && textContent !== undefined;
       })
       .required("Required"),
   });
@@ -159,7 +141,7 @@ export const ReviewProvideModal = ({
 
   const updateThreeSixtyReview = async (
     status: ParThreeSixtyReviewStatus,
-    onSuccess: () => void
+    onSuccess: () => void,
   ) => {
     setSubmitting(true);
 
@@ -183,7 +165,7 @@ export const ReviewProvideModal = ({
         employeeId: employeeEmail,
         parCycleId: parCycle.parCycleId!,
         values: formattedValues,
-      })
+      }),
     );
 
     if (postReviews.fulfilled.match(resultAction)) {
@@ -201,14 +183,9 @@ export const ReviewProvideModal = ({
           updateSelectedReview({
             reviewComment: values.reviewComment,
             reviewRating: values.reviewRating,
-          })
+          }),
         );
-        dispatch(
-          ShowSnackBarMessage(
-            SnackMessage.success.draftSaveThreeSixtyReview,
-            "success"
-          )
-        );
+        dispatch(ShowSnackBarMessage(SnackMessage.success.draftSaveThreeSixtyReview, "success"));
         setIsDraft(false);
       }
     });
@@ -222,7 +199,7 @@ export const ReviewProvideModal = ({
         updateSelectedReview({
           reviewComment: values.reviewComment,
           reviewRating: values.reviewRating,
-        })
+        }),
       );
     });
 
@@ -242,15 +219,10 @@ export const ReviewProvideModal = ({
         closeConfirmationDialog();
         setSubmitting(false);
 
-        dispatch(
-          ShowSnackBarMessage(
-            SnackMessage.success.postThreeSixtyReview,
-            "success"
-          )
-        );
+        dispatch(ShowSnackBarMessage(SnackMessage.success.postThreeSixtyReview, "success"));
 
         onClose();
-      }
+      },
     );
   };
 
@@ -259,12 +231,10 @@ export const ReviewProvideModal = ({
       fetchSelectedReview({
         employeeId: employeeEmail,
         parCycleId: parCycle.parCycleId!,
-      })
+      }),
     );
 
-    const deadlineLocal = dayjs
-      (parCycle.parThreeSixtyRatingDeadline)
-      .endOf("day");
+    const deadlineLocal = dayjs(parCycle.parThreeSixtyRatingDeadline).endOf("day");
     setIsDeadlinePassed(dayjs().isAfter(deadlineLocal));
   }, [dispatch, employeeEmail, parCycle]);
 
@@ -393,11 +363,7 @@ export const ReviewProvideModal = ({
         </Box>
         <Box mt={2}>
           {!isRejectionSelected && !isOfferedFeedback && (
-            <Button
-              color="error"
-              variant="outlined"
-              onClick={() => setIsRejectionSelected(true)}
-            >
+            <Button color="error" variant="outlined" onClick={() => setIsRejectionSelected(true)}>
               DECLINE
             </Button>
           )}
@@ -405,8 +371,7 @@ export const ReviewProvideModal = ({
       </Box>
 
       {!isDeadlinePassed &&
-        threeSixtyReviewContent.reviewStatus ===
-          ParThreeSixtyReviewStatus.PENDING && (
+        threeSixtyReviewContent.reviewStatus === ParThreeSixtyReviewStatus.PENDING && (
           <Alert severity="info">
             {`Please share your 360° feedback before the deadline: ${dayjs
               .utc(parCycle.parThreeSixtyRatingDeadline)
@@ -414,8 +379,7 @@ export const ReviewProvideModal = ({
           </Alert>
         )}
       {!isDeadlinePassed &&
-        threeSixtyReviewContent.reviewStatus ===
-          ParThreeSixtyReviewStatus.DRAFT && (
+        threeSixtyReviewContent.reviewStatus === ParThreeSixtyReviewStatus.DRAFT && (
           <Alert severity="warning">
             {`Your 360° feedback is saved as a draft. Please share on or before the deadline: ${dayjs
               .utc(parCycle.parThreeSixtyRatingDeadline)
@@ -442,7 +406,7 @@ export const ReviewProvideModal = ({
           <Grid container spacing={1} pt={3} id="modal-description">
             {!isRejectionSelected && (
               <>
-                <Grid size={{ md: 12}} pb={3}>
+                <Grid size={{ md: 12 }} pb={3}>
                   <Box display="flex" justifyContent="space-between">
                     <Box display="flex" alignItems="center">
                       <Typography variant="h5" pt={1} mr={2}>
@@ -451,7 +415,7 @@ export const ReviewProvideModal = ({
                     </Box>
                   </Box>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 1 }} >
+                <Grid size={{ xs: 12, sm: 1 }}>
                   <Typography pt={1} mr={2}>
                     Rating:
                   </Typography>
@@ -483,7 +447,7 @@ export const ReviewProvideModal = ({
                 <Grid size={{ md: 3, sm: 0 }} />
               </>
             )}
-            <Grid size={{ xs: 12 }} >
+            <Grid size={{ xs: 12 }}>
               <Typography pb={1}>
                 {isRejectionSelected ? "Reason :" : threeSixtyReviewQuestion}
               </Typography>
@@ -500,9 +464,7 @@ export const ReviewProvideModal = ({
                       }
                     }}
                     onBlur={handleBlur}
-                    error={Boolean(
-                      touched.reviewComment && errors.reviewComment
-                    )}
+                    error={Boolean(touched.reviewComment && errors.reviewComment)}
                     helperText={
                       touched.reviewComment && errors.reviewComment
                         ? errors.reviewComment.toString()
@@ -522,19 +484,9 @@ export const ReviewProvideModal = ({
                 )}
               </Box>
             </Grid>
-            <Grid
-              size={{ sm: 12 }}
-              display="flex"
-              justifyContent="flex-end"
-              gap={2}
-              mt={2}
-            >
+            <Grid size={{ sm: 12 }} display="flex" justifyContent="flex-end" gap={2} mt={2}>
               {isRejectionSelected && (
-                <Button
-                  color="error"
-                  variant="outlined"
-                  onClick={onClose}
-                >
+                <Button color="error" variant="outlined" onClick={onClose}>
                   Cancel
                 </Button>
               )}
@@ -548,11 +500,9 @@ export const ReviewProvideModal = ({
                   disabled={
                     isDeadlinePassed ||
                     !(
-                      (values.reviewComment !==
-                        threeSixtyReviewContent.reviewComment &&
+                      (values.reviewComment !== threeSixtyReviewContent.reviewComment &&
                         !errors?.reviewComment) ||
-                      (values.reviewRating !==
-                        threeSixtyReviewContent.reviewRating &&
+                      (values.reviewRating !== threeSixtyReviewContent.reviewRating &&
                         values.reviewRating !== "")
                     )
                   }

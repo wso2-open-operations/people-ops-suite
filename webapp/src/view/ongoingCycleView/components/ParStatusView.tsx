@@ -13,19 +13,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { useEffect, useState } from "react";
-import { Alert, Box, Button } from "@mui/material";
-import { EmployeePar } from "@component/common/EmployeePar";
-import { ParInputForm } from "./ParInputForm";
-import { useAppSelector } from "@slices/store";
-import { selectEmployeeRatings } from "@slices/employeeSlice/employee";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
-import { uiMessages } from "@config/constant";
+import { Alert, Box, Button } from "@mui/material";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+
+import { useEffect, useState } from "react";
+
+import { EmployeePar } from "@component/common/EmployeePar";
+import { uiMessages } from "@config/constant";
+import {
+  ParEmployeeStatus,
+  ParLeadStatus,
+} from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
-import { ParEmployeeStatus, ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { selectEmployeeRatings } from "@slices/employeeSlice/employee";
+import { useAppSelector } from "@slices/store";
+
+import { ParInputForm } from "./ParInputForm";
+
 dayjs.extend(utc);
 
 interface ParStatusViewProps {
@@ -86,8 +92,7 @@ export const ParStatusView = ({ currentCycle }: ParStatusViewProps) => {
         </Box>
       )}
 
-      {(isParInputViewOpen ||
-        employeeRatings?.parEmployeeStatus === ParEmployeeStatus.DRAFT) &&
+      {(isParInputViewOpen || employeeRatings?.parEmployeeStatus === ParEmployeeStatus.DRAFT) &&
         currentCycle.parCycleConfigurations?.employeeParQuestion && (
           <>
             {employeeRatings?.parEmployeeStatus === ParEmployeeStatus.DRAFT && (
@@ -125,15 +130,13 @@ export const ParStatusView = ({ currentCycle }: ParStatusViewProps) => {
             {uiMessages.alert.employeeParShared}
           </Alert>
         )}
-      {employeeRatings?.parEmployeeStatus ===
-        ParEmployeeStatus.SHARED_BLOCKED &&
+      {employeeRatings?.parEmployeeStatus === ParEmployeeStatus.SHARED_BLOCKED &&
         employeeRatings?.parLeadStatus !== ParLeadStatus.SHARED && (
           <Alert severity="info" sx={{ mb: 2 }}>
             {uiMessages.alert.employeeParSharedLocked}
           </Alert>
         )}
-      {employeeRatings?.parEmployeeStatus ===
-        ParEmployeeStatus.SHARED_BLOCKED &&
+      {employeeRatings?.parEmployeeStatus === ParEmployeeStatus.SHARED_BLOCKED &&
         employeeRatings?.parLeadStatus === ParLeadStatus.SHARED && (
           <Alert severity="success" sx={{ mb: 2 }}>
             {uiMessages.alert.leadReviewSharedForEmployee}
@@ -141,12 +144,8 @@ export const ParStatusView = ({ currentCycle }: ParStatusViewProps) => {
         )}
 
       {(employeeRatings?.parEmployeeStatus === ParEmployeeStatus.SHARED ||
-        employeeRatings?.parEmployeeStatus ===
-          ParEmployeeStatus.SHARED_BLOCKED) && (
-        <EmployeePar
-          selectedCycle={currentCycle}
-          isDeadlinePassed={isDeadlinePassed}
-        />
+        employeeRatings?.parEmployeeStatus === ParEmployeeStatus.SHARED_BLOCKED) && (
+        <EmployeePar selectedCycle={currentCycle} isDeadlinePassed={isDeadlinePassed} />
       )}
     </>
   );

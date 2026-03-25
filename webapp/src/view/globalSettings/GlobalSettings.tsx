@@ -1,41 +1,40 @@
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
+  Autocomplete,
   Box,
+  Button,
+  Chip,
+  Divider,
   Fade,
   Grid,
-  Paper,
-  Typography,
   IconButton,
-  Button,
-  Divider,
+  Paper,
   TextField,
-  Autocomplete,
-  Chip,
+  Typography,
 } from "@mui/material";
-
-import SettingsIcon from "@mui/icons-material/Settings";
+import { useFormik } from "formik";
+import * as yup from "yup";
 
 import { useEffect, useState } from "react";
+
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import { LoadingEffect } from "@component/ui/Loading";
+import { uiMessages } from "@config/constant";
 import {
   fetchConfigurations,
-  selectGlobalConfig,
   selectConfigStatus,
+  selectGlobalConfig,
   updateConfigurations,
 } from "@slices/metaSlice/meta";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { useFormik } from "formik";
-import * as yup from "yup";
-import { LoadingEffect } from "@component/ui/Loading";
-import { uiMessages } from "@config/constant";
 import { ParConfigurations, RequestState } from "@utils/types";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
 
 const GlobalSettingsView = () => {
   const globalConfigStatus = useAppSelector(selectConfigStatus);
   const dispatch = useAppDispatch();
   const globalConfig = useAppSelector(selectGlobalConfig);
 
-  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] =
-    useState(false);
+  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] = useState(false);
   const openConfirmationDialog = () => setIsConfirmationDialogOpen(true);
   const closeConfirmationDialog = () => {
     setSubmitting(false);
@@ -86,12 +85,8 @@ const GlobalSettingsView = () => {
   const handleConfirmationProceed = async () => {
     closeConfirmationDialog();
 
-    const {
-      employeeParQuestion,
-      threeSixtyReviewQuestion,
-      parRatings,
-      threeSixtyReviewRatings,
-    } = values;
+    const { employeeParQuestion, threeSixtyReviewQuestion, parRatings, threeSixtyReviewRatings } =
+      values;
 
     const formattedValues = {
       employeeParQuestion: employeeParQuestion.trim(),
@@ -120,8 +115,7 @@ const GlobalSettingsView = () => {
   useEffect(() => {
     const hasChanged = Object.entries(values).some(
       ([key, value]) =>
-        key in globalConfig &&
-        globalConfig[key as keyof ParConfigurations] !== value
+        key in globalConfig && globalConfig[key as keyof ParConfigurations] !== value,
     );
     setHasFormValuesChanged(hasChanged);
   }, [values, globalConfig, globalConfigStatus]);
@@ -155,7 +149,7 @@ const GlobalSettingsView = () => {
             minWidth: "1200px",
           }}
         >
-          <Grid >
+          <Grid>
             <Grid
               size={{
                 xs: 12,
@@ -173,21 +167,14 @@ const GlobalSettingsView = () => {
                   justifyContent: "left",
                 }}
               >
-                <IconButton
-                  color="primary"
-                  component="label"
-                  onClick={() => {}}
-                >
+                <IconButton color="primary" component="label" onClick={() => {}}>
                   <SettingsIcon fontSize="large" />
                 </IconButton>
-                <Typography
-                  variant="h4"
-                  sx={{ marginTop: "12px", marginLeft: "10px" }}
-                >
+                <Typography variant="h4" sx={{ marginTop: "12px", marginLeft: "10px" }}>
                   Settings
                 </Typography>
               </Grid>
-              <Grid ></Grid>
+              <Grid></Grid>
             </Grid>
             <Box alignItems="center">
               <Grid size={{ xs: 12, sm: 12 }} paddingY={3} mx={4}>
@@ -198,10 +185,7 @@ const GlobalSettingsView = () => {
               </Grid>
 
               {globalConfigStatus === RequestState.LOADING && (
-                <LoadingEffect
-                  message={uiMessages.loading.pageLoading}
-                  isCircularLoading={true}
-                />
+                <LoadingEffect message={uiMessages.loading.pageLoading} isCircularLoading={true} />
               )}
 
               {globalConfigStatus === RequestState.SUCCEEDED && (
@@ -218,9 +202,7 @@ const GlobalSettingsView = () => {
                       >
                         <Grid container spacing={1}>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <Typography paddingTop={1}>
-                              Employee PAR question:
-                            </Typography>
+                            <Typography paddingTop={1}>Employee PAR question:</Typography>
                           </Grid>
                           <Grid size={{ xs: 12, sm: 8 }}>
                             <TextField
@@ -234,21 +216,15 @@ const GlobalSettingsView = () => {
                               onChange={handleChange}
                               onBlur={handleBlur}
                               error={
-                                touched.employeeParQuestion &&
-                                Boolean(errors.employeeParQuestion)
+                                touched.employeeParQuestion && Boolean(errors.employeeParQuestion)
                               }
-                              helperText={
-                                touched.employeeParQuestion &&
-                                errors.employeeParQuestion
-                              }
+                              helperText={touched.employeeParQuestion && errors.employeeParQuestion}
                             />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 1 }} />
 
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <Typography paddingTop={1}>
-                              360° feedback question:
-                            </Typography>
+                            <Typography paddingTop={1}>360° feedback question:</Typography>
                           </Grid>
                           <Grid size={{ xs: 12, sm: 8 }}>
                             <TextField
@@ -266,8 +242,7 @@ const GlobalSettingsView = () => {
                                 Boolean(errors.threeSixtyReviewQuestion)
                               }
                               helperText={
-                                touched.threeSixtyReviewQuestion &&
-                                errors.threeSixtyReviewQuestion
+                                touched.threeSixtyReviewQuestion && errors.threeSixtyReviewQuestion
                               }
                             />
                           </Grid>
@@ -303,13 +278,8 @@ const GlobalSettingsView = () => {
                                   size="small"
                                   sx={{ minWidth: 300 }}
                                   onBlur={handleBlur}
-                                  error={
-                                    touched.parRatings &&
-                                    Boolean(errors.parRatings)
-                                  }
-                                  helperText={
-                                    touched.parRatings && errors.parRatings
-                                  }
+                                  error={touched.parRatings && Boolean(errors.parRatings)}
+                                  helperText={touched.parRatings && errors.parRatings}
                                 />
                               )}
                             />
@@ -317,9 +287,7 @@ const GlobalSettingsView = () => {
                           <Grid size={{ xs: 12, sm: 3 }} />
 
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <Typography paddingTop={1}>
-                              360° feedback ratings:
-                            </Typography>
+                            <Typography paddingTop={1}>360° feedback ratings:</Typography>
                           </Grid>
                           <Grid size={{ xs: 12, sm: 6 }}>
                             <Autocomplete
@@ -329,10 +297,7 @@ const GlobalSettingsView = () => {
                               value={values.threeSixtyReviewRatings}
                               freeSolo
                               onChange={(event, newValue) => {
-                                setFieldValue(
-                                  "threeSixtyReviewRatings",
-                                  newValue
-                                );
+                                setFieldValue("threeSixtyReviewRatings", newValue);
                               }}
                               renderTags={(value, getTagProps) =>
                                 value.map((option, index) => (

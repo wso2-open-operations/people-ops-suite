@@ -13,28 +13,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { useState } from "react";
 import {
+  Autocomplete,
   Box,
   Button,
-  Typography,
-  TextField,
-  Divider,
   Chip,
-  Autocomplete,
+  Divider,
   Grid,
+  TextField,
+  Typography,
 } from "@mui/material";
-import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 import { useFormik } from "formik";
 import * as yup from "yup";
-import dayjs from "dayjs";
-import { selectGlobalConfig } from "@slices/metaSlice/meta";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { createParCycle } from "@slices/parCycleSlice/parCycle";
-import { uiMessages } from "@config/constant";
+
+import { useState } from "react";
+
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import { uiMessages } from "@config/constant";
+import { selectGlobalConfig } from "@slices/metaSlice/meta";
+import { createParCycle } from "@slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+
 import FormDatePicker from "./FormDatePicker";
 
 interface FormProps {
@@ -44,34 +46,32 @@ interface FormProps {
 interface FormRowProps {
   label: string;
   children: React.ReactNode;
-  halfWidth?: boolean; 
+  halfWidth?: boolean;
 }
 
 const FormRow = ({ label, children, halfWidth = false }: FormRowProps) => (
   <Grid size={{ xs: 12, lg: halfWidth ? 6 : 12 }}>
-    <Box 
-      sx={{ 
-        display: "flex", 
-        flexDirection: { xs: "column", lg: "row" }, 
-        alignItems: "flex-start" 
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", lg: "row" },
+        alignItems: "flex-start",
       }}
     >
-      <Typography 
-        variant="body2" 
+      <Typography
+        variant="body2"
         sx={{
-          width: { xs: "100%", lg: "240px" }, 
-          flexShrink: 0, 
+          width: { xs: "100%", lg: "240px" },
+          flexShrink: 0,
           mb: { xs: 1, md: 0 },
           mt: { md: 1 },
-          fontWeight: 500, 
-          color: (theme) => theme.palette.customText?.primary?.p2?.active || "text.secondary" 
+          fontWeight: 500,
+          color: (theme) => theme.palette.customText?.primary?.p2?.active || "text.secondary",
         }}
       >
         {label}
       </Typography>
-      <Box sx={{ flexGrow: 1, width: "100%" }}>
-        {children}
-      </Box>
+      <Box sx={{ flexGrow: 1, width: "100%" }}>{children}</Box>
     </Box>
   </Grid>
 );
@@ -80,16 +80,52 @@ const FormRow = ({ label, children, halfWidth = false }: FormRowProps) => (
 const validationSchema = yup.object().shape({
   parCycleName: yup.string().trim().required("Required"),
   parCycleStartDate: yup.date().typeError("Invalid date").required("Required"),
-  parCycleEndDate: yup.date().typeError("Invalid Date").min(yup.ref("parCycleStartDate"), "Must be later than the cycle start date").required("Required"),
-  parEvaluationEndDate: yup.date().typeError("Invalid date").min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date").required("Required"),
-  parEmployeeDeadline: yup.date().typeError("Invalid date").min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date").max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR evaluation closing date").required("Required"),
-  parThreeSixtyRatingDeadline: yup.date().typeError("Invalid date").min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date").max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR evaluation closing date").required("Required"),
-  parLeadDeadline: yup.date().typeError("Invalid date").min(yup.ref("parEmployeeDeadline"), "Must be later than employee PAR deadline date").max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR evaluation closing date").required("Required"),
-  parSpecialRatingDeadline: yup.date().typeError("Invalid date").min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date").max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR evaluation closing date").required("Required"),
+  parCycleEndDate: yup
+    .date()
+    .typeError("Invalid Date")
+    .min(yup.ref("parCycleStartDate"), "Must be later than the cycle start date")
+    .required("Required"),
+  parEvaluationEndDate: yup
+    .date()
+    .typeError("Invalid date")
+    .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
+    .required("Required"),
+  parEmployeeDeadline: yup
+    .date()
+    .typeError("Invalid date")
+    .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
+    .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR evaluation closing date")
+    .required("Required"),
+  parThreeSixtyRatingDeadline: yup
+    .date()
+    .typeError("Invalid date")
+    .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
+    .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR evaluation closing date")
+    .required("Required"),
+  parLeadDeadline: yup
+    .date()
+    .typeError("Invalid date")
+    .min(yup.ref("parEmployeeDeadline"), "Must be later than employee PAR deadline date")
+    .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR evaluation closing date")
+    .required("Required"),
+  parSpecialRatingDeadline: yup
+    .date()
+    .typeError("Invalid date")
+    .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
+    .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR evaluation closing date")
+    .required("Required"),
   employeeParQuestion: yup.string().trim().required("Required"),
   threeSixtyReviewQuestion: yup.string().trim().required("Required"),
-  parRatings: yup.array().of(yup.string()).min(1, "At least one rating is required").required("At least one rating is required"),
-  threeSixtyReviewRatings: yup.array().of(yup.string()).min(1, "At least one rating is required").required("At least one rating is required"),
+  parRatings: yup
+    .array()
+    .of(yup.string())
+    .min(1, "At least one rating is required")
+    .required("At least one rating is required"),
+  threeSixtyReviewRatings: yup
+    .array()
+    .of(yup.string())
+    .min(1, "At least one rating is required")
+    .required("At least one rating is required"),
 });
 
 export const ParCreationForm = ({ handleFormClose }: FormProps) => {
@@ -103,7 +139,17 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
     setSubmitting(false);
   };
 
-  const { values, errors, touched, handleChange, handleBlur, handleSubmit, isSubmitting, setSubmitting, setFieldValue } = useFormik({
+  const {
+    values,
+    errors,
+    touched,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+    isSubmitting,
+    setSubmitting,
+    setFieldValue,
+  } = useFormik({
     initialValues: {
       parCycleName: "",
       parCycleStartDate: "",
@@ -158,7 +204,6 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
 
       <Box component="form" onSubmit={handleSubmit} sx={{ flexGrow: 1, overflow: "auto", pr: 1 }}>
         <Grid container spacing={3}>
-          
           <FormRow label="Name:">
             <TextField
               aria-label="par cycle name"
@@ -244,7 +289,9 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                 maxDate={values.parEvaluationEndDate}
                 disabled={!Boolean(values.parEvaluationEndDate)}
                 error={touched.parThreeSixtyRatingDeadline && errors.parThreeSixtyRatingDeadline}
-                helperText={touched.parThreeSixtyRatingDeadline && errors.parThreeSixtyRatingDeadline}
+                helperText={
+                  touched.parThreeSixtyRatingDeadline && errors.parThreeSixtyRatingDeadline
+                }
               />
             </FormRow>
 
@@ -329,7 +376,9 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               freeSolo
               onChange={(event, newValue) => setFieldValue("parRatings", newValue)}
               renderTags={(value, getTagProps) =>
-                value.map((option, index) => <Chip variant="outlined" label={option} {...getTagProps({ index })} />)
+                value.map((option, index) => (
+                  <Chip variant="outlined" label={option} {...getTagProps({ index })} />
+                ))
               }
               renderInput={(params) => (
                 <TextField
@@ -352,7 +401,9 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               freeSolo
               onChange={(event, newValue) => setFieldValue("threeSixtyReviewRatings", newValue)}
               renderTags={(value, getTagProps) =>
-                value.map((option, index) => <Chip variant="outlined" label={option} {...getTagProps({ index })} />)
+                value.map((option, index) => (
+                  <Chip variant="outlined" label={option} {...getTagProps({ index })} />
+                ))
               }
               renderInput={(params) => (
                 <TextField

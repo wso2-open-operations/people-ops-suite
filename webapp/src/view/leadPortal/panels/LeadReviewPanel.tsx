@@ -13,72 +13,77 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import LaunchIcon from "@mui/icons-material/Launch";
+import LinkIcon from "@mui/icons-material/Link";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
-  Box,
-  Link,
-  Card,
-  Grid,
-  Chip,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
+  Box,
   Button,
-  Tooltip,
+  Card,
+  CardHeader,
   Checkbox,
+  Chip,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Link,
   MenuItem,
   TextField,
-  Accordion,
-  IconButton,
-  CardHeader,
+  Tooltip,
   Typography,
-  InputAdornment,
-  FormControlLabel,
-  AccordionSummary,
-  AccordionDetails,
 } from "@mui/material";
+import CardContent from "@mui/material/CardContent";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import { useFormik } from "formik";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import autoTable, { RowInput } from "jspdf-autotable";
+import { set } from "lodash";
+import * as yup from "yup";
+
+import { useEffect, useRef, useState } from "react";
+
+import CommentPaper from "@component/common/CommentPaper";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import CustomRichTextField from "@component/common/CustomRichText";
+import NoDataView from "@component/common/NoDataView";
+import { LoadingEffect } from "@component/ui/Loading";
+import { evidenceEnabledRating, top5p20pEnabledRating } from "@config/config";
+import { SnackMessage, base64Regex, uiMessages } from "@config/constant";
 import {
-  selectEmployeeRatings,
+  ParEmployeeStatus,
+  ParLeadStatus,
+  ParSpecialRating,
+  parRatingNotAssigned,
+} from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import { RequestState } from "@root/src/utils/types";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { ShowSnackBarMessage, enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import {
   fetchParRatingOfEmployee,
-  updateParRatingOfEmployee,
   selectEmployeeRatingStatus,
+  selectEmployeeRatings,
+  updateParRatingOfEmployee,
   updateSelectedParLeadComment,
 } from "@slices/employeeSlice/employee";
-import "jspdf-autotable";
-import jsPDF from "jspdf";
-import dayjs from "dayjs";
-import * as yup from "yup";
-import { useFormik } from "formik";
-import utc from "dayjs/plugin/utc";
-import autoTable, { RowInput } from "jspdf-autotable";
-import LinkIcon from "@mui/icons-material/Link";
-import EditIcon from "@mui/icons-material/Edit";
-import { useEffect, useRef, useState } from "react";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import CardContent from "@mui/material/CardContent";
-import LaunchIcon from "@mui/icons-material/Launch";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { LoadingEffect } from "@component/ui/Loading";
-import NoDataView from "@component/common/NoDataView";
-import CommentPaper from "@component/common/CommentPaper";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import CustomRichTextField from "@component/common/CustomRichText";
-import ThreeSixtyFeedbackSection from "../components/FeedbackComponent";
-import { base64Regex, SnackMessage, uiMessages } from "@config/constant";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { top5p20pEnabledRating, evidenceEnabledRating } from "@config/config";
 import {
   fetchReviews,
   selectThreeSixtyReviews,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import {
-  enqueueSnackbarMessage,
-  ShowSnackBarMessage,
-} from "@slices/commonSlice/common";
-import { set } from "lodash";
-import { ParSpecialRating, ParLeadStatus, ParEmployeeStatus, parRatingNotAssigned } from "@root/src/slices/employeeHistorySlice/employeeHistory";
-import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
-import { RequestState } from "@root/src/utils/types";
+
+import ThreeSixtyFeedbackSection from "../components/FeedbackComponent";
+
 dayjs.extend(utc);
 
 interface LeadReviewPanelProps {
@@ -109,15 +114,13 @@ export const LeadReviewPanel = ({
   const [isCheckboxChecked, setIsCheckboxChecked] = useState(false);
   const threeSixtyReviews = useAppSelector(selectThreeSixtyReviews);
   const [parShareDialogOpen, setIsParShareDialogOpen] = useState(false);
-  const [employeeParShareDialogOpen, setIsEmployeeParShareDialogOpen] =
-    useState(false);
+  const [employeeParShareDialogOpen, setIsEmployeeParShareDialogOpen] = useState(false);
   const [isAdminsSelfProfile, setIsAdminsSelfProfile] = useState(false);
   const employeeParRatingStatus = useAppSelector(selectEmployeeRatingStatus);
-  const [isEditLeadReviewDialogOpen, setIsEditLeadReviewDialogOpen] =
-    useState(false);
-  const [autoSaveTimeout, setAutoSaveTimeout] = useState<
-    ReturnType<typeof setTimeout> | undefined
-  >(undefined);
+  const [isEditLeadReviewDialogOpen, setIsEditLeadReviewDialogOpen] = useState(false);
+  const [autoSaveTimeout, setAutoSaveTimeout] = useState<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
 
   // Employee part only submit
   const openEmployeeParShareDialog = () => {
@@ -140,11 +143,7 @@ export const LeadReviewPanel = ({
               ?.replace(/<[^>]*>/g, "")
               .replace(/&nbsp;/g, " ")
               .trim();
-            return (
-              textContent !== "" &&
-              textContent !== null &&
-              textContent !== undefined
-            );
+            return textContent !== "" && textContent !== null && textContent !== undefined;
           })
           .notRequired()
       : yup
@@ -155,11 +154,7 @@ export const LeadReviewPanel = ({
               ?.replace(/<[^>]*>/g, "")
               .replace(/&nbsp;/g, " ")
               .trim();
-            return (
-              textContent !== "" &&
-              textContent !== null &&
-              textContent !== undefined
-            );
+            return textContent !== "" && textContent !== null && textContent !== undefined;
           })
           .required("Required"),
     parRating: yup.string().trim().required("Required"),
@@ -183,11 +178,7 @@ export const LeadReviewPanel = ({
           ?.replace(/<[^>]*>/g, "")
           .replace(/&nbsp;/g, " ")
           .trim();
-        return (
-          textContent !== "" &&
-          textContent !== null &&
-          textContent !== undefined
-        );
+        return textContent !== "" && textContent !== null && textContent !== undefined;
       })
       .required("Required"),
     parPerformanceNoticeAck: yup
@@ -237,10 +228,7 @@ export const LeadReviewPanel = ({
   const valuesRef = useRef(values);
   valuesRef.current = values;
 
-  const updateParRating = async (
-    status: ParLeadStatus,
-    onSuccess: () => void
-  ) => {
+  const updateParRating = async (status: ParLeadStatus, onSuccess: () => void) => {
     setSubmitting(true);
 
     const parLeadComment = btoa(encodeURIComponent(values.parLeadComment));
@@ -266,13 +254,9 @@ export const LeadReviewPanel = ({
 
     if (isAdminAuditViewOn) {
       if (values.parAdminComment?.trim()) {
-        formValues.parAdminComment = btoa(
-          encodeURIComponent(values.parAdminComment)
-        );
+        formValues.parAdminComment = btoa(encodeURIComponent(values.parAdminComment));
       }
-      formValues.parEmployeeComment = btoa(
-        encodeURIComponent(values.parEmployeeComment)
-      );
+      formValues.parEmployeeComment = btoa(encodeURIComponent(values.parEmployeeComment));
       formValues.parEmployeeStatus = ParEmployeeStatus.SHARED;
     }
 
@@ -286,7 +270,7 @@ export const LeadReviewPanel = ({
         parCycleId: cycle.parCycleId,
         parRatingId: employeeParRating.parRatingId,
         values: formValues,
-      })
+      }),
     );
 
     if (updateParRatingOfEmployee.fulfilled.match(resultAction)) {
@@ -316,20 +300,10 @@ export const LeadReviewPanel = ({
       color: "default",
     };
 
-    return (
-      <Chip
-        size="small"
-        label={config.label}
-        color={config.color}
-        sx={{ ml: 1 }}
-      />
-    );
+    return <Chip size="small" label={config.label} color={config.color} sx={{ ml: 1 }} />;
   };
 
-  const updateEmployeeParRating = async (
-    status: ParLeadStatus,
-    onSuccess: () => void
-  ) => {
+  const updateEmployeeParRating = async (status: ParLeadStatus, onSuccess: () => void) => {
     setSubmitting(true);
 
     const parLeadComment = btoa(encodeURIComponent(values.parLeadComment));
@@ -342,13 +316,9 @@ export const LeadReviewPanel = ({
 
     if (isAdminAuditViewOn) {
       if (values.parAdminComment?.trim()) {
-        formValues.parAdminComment = btoa(
-          encodeURIComponent(values.parAdminComment)
-        );
+        formValues.parAdminComment = btoa(encodeURIComponent(values.parAdminComment));
       }
-      formValues.parEmployeeComment = btoa(
-        encodeURIComponent(values.parEmployeeComment)
-      );
+      formValues.parEmployeeComment = btoa(encodeURIComponent(values.parEmployeeComment));
       formValues.parEmployeeStatus = ParEmployeeStatus.SHARED;
     }
 
@@ -362,7 +332,7 @@ export const LeadReviewPanel = ({
         parCycleId: cycle.parCycleId,
         parRatingId: employeeParRating.parRatingId,
         values: formValues,
-      })
+      }),
     );
 
     if (updateParRatingOfEmployee.fulfilled.match(resultAction)) {
@@ -375,7 +345,7 @@ export const LeadReviewPanel = ({
   const updateParRatingAutoSave = async (
     status: ParLeadStatus,
     leadComment: string,
-    onSuccess: () => void
+    onSuccess: () => void,
   ) => {
     setSubmitting(true);
 
@@ -398,28 +368,20 @@ export const LeadReviewPanel = ({
 
     formValues.parSpecialRating = currentValues.parSpecialRating;
 
-    if (
-      currentValues.parRating !== parRatingNotAssigned &&
-      currentValues.parRating !== ""
-    ) {
+    if (currentValues.parRating !== parRatingNotAssigned && currentValues.parRating !== "") {
       formValues.parRating = currentValues.parRating;
     }
 
     if (isAdminAuditViewOn) {
       if (currentValues.parAdminComment?.trim()) {
-        formValues.parAdminComment = btoa(
-          encodeURIComponent(currentValues.parAdminComment)
-        );
+        formValues.parAdminComment = btoa(encodeURIComponent(currentValues.parAdminComment));
       }
-      formValues.parEmployeeComment = btoa(
-        encodeURIComponent(currentValues.parEmployeeComment)
-      );
+      formValues.parEmployeeComment = btoa(encodeURIComponent(currentValues.parEmployeeComment));
       formValues.parEmployeeStatus = ParEmployeeStatus.SHARED;
     }
 
     if (currentValues.parPerformanceNoticeAck !== "") {
-      formValues.parPerformanceNoticeAck =
-        currentValues.parPerformanceNoticeAck;
+      formValues.parPerformanceNoticeAck = currentValues.parPerformanceNoticeAck;
     }
 
     const resultAction = await dispatch(
@@ -428,7 +390,7 @@ export const LeadReviewPanel = ({
         parCycleId: cycle.parCycleId,
         parRatingId: employeeParRating.parRatingId,
         values: formValues,
-      })
+      }),
     );
 
     if (updateParRatingOfEmployee.fulfilled.match(resultAction)) {
@@ -445,18 +407,14 @@ export const LeadReviewPanel = ({
     }
     updateParRating(ParLeadStatus.DRAFT, async () => {
       if (employeeId && cycle.parCycleId) {
-        await dispatch(
-          fetchParRatingOfEmployee({ employeeId, parCycleId: cycle.parCycleId })
-        );
+        await dispatch(fetchParRatingOfEmployee({ employeeId, parCycleId: cycle.parCycleId }));
       }
-      dispatch(
-        ShowSnackBarMessage(SnackMessage.success.leadParDraftSaved, "success")
-      );
+      dispatch(ShowSnackBarMessage(SnackMessage.success.leadParDraftSaved, "success"));
     });
   };
 
   const handleInputChange = (
-    value: string | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    value: string | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const newValue = typeof value === "string" ? value : value.target.value;
     setFieldValue("parLeadComment", newValue);
@@ -501,9 +459,7 @@ export const LeadReviewPanel = ({
     });
   };
 
-  const handleRatingChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleRatingChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { value } = event.target;
     handleChange(event);
 
@@ -533,13 +489,9 @@ export const LeadReviewPanel = ({
     updateParRating(ParLeadStatus.SHARED, async () => {
       closeParShareDialog();
       setSubmitting(false);
-      dispatch(
-        ShowSnackBarMessage(SnackMessage.success.shareLeadReview, "success")
-      );
+      dispatch(ShowSnackBarMessage(SnackMessage.success.shareLeadReview, "success"));
       if (cycle?.parCycleId) {
-        await dispatch(
-          fetchParRatingOfEmployee({ employeeId, parCycleId: cycle.parCycleId })
-        );
+        await dispatch(fetchParRatingOfEmployee({ employeeId, parCycleId: cycle.parCycleId }));
       }
     });
   };
@@ -550,13 +502,9 @@ export const LeadReviewPanel = ({
     updateEmployeeParRating(ParLeadStatus.SHARED, async () => {
       setIsEmployeeParShareDialogOpen(false);
       setSubmitting(false);
-      dispatch(
-        ShowSnackBarMessage(SnackMessage.success.shareLeadReview, "success")
-      );
+      dispatch(ShowSnackBarMessage(SnackMessage.success.shareLeadReview, "success"));
       if (cycle?.parCycleId) {
-        await dispatch(
-          fetchParRatingOfEmployee({ employeeId, parCycleId: cycle.parCycleId })
-        );
+        await dispatch(fetchParRatingOfEmployee({ employeeId, parCycleId: cycle.parCycleId }));
       }
     });
   };
@@ -571,8 +519,7 @@ export const LeadReviewPanel = ({
     setValues({
       parLeadComment: employeeParRating?.parLeadComment || "",
       parRating: employeeParRating?.parRating || "",
-      parSpecialRating:
-        employeeParRating?.parSpecialRating || ParSpecialRating.NONE,
+      parSpecialRating: employeeParRating?.parSpecialRating || ParSpecialRating.NONE,
       parAdminComment: employeeParRating?.parAdminComment || "",
       parEmployeeComment: employeeParRating?.parEmployeeComment || "",
       parPerformanceNoticeAck: employeeParRating?.parPerformanceNoticeAck || "",
@@ -581,8 +528,7 @@ export const LeadReviewPanel = ({
   };
 
   const openEditLeadReviewDialog = () => setIsEditLeadReviewDialogOpen(true);
-  const closeEditSharedLeadReviewDialog = () =>
-    setIsEditLeadReviewDialogOpen(false);
+  const closeEditSharedLeadReviewDialog = () => setIsEditLeadReviewDialogOpen(false);
 
   // Handle 360 reviews expand section
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -592,9 +538,7 @@ export const LeadReviewPanel = ({
     }
   };
 
-  const handleInformedCheckboxChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleInformedCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const checked = event.target.checked;
     setFieldValue("isEvidenceDiscussionConfirmed", checked);
     if (!checked) {
@@ -620,12 +564,10 @@ export const LeadReviewPanel = ({
             ? ""
             : employeeParRating.parRating
           : "",
-        parSpecialRating:
-          employeeParRating?.parSpecialRating || ParSpecialRating.NONE,
+        parSpecialRating: employeeParRating?.parSpecialRating || ParSpecialRating.NONE,
         parAdminComment: employeeParRating?.parAdminComment || "",
         parEmployeeComment: employeeParRating?.parEmployeeComment || "",
-        parPerformanceNoticeAck:
-          employeeParRating?.parPerformanceNoticeAck || "",
+        parPerformanceNoticeAck: employeeParRating?.parPerformanceNoticeAck || "",
         isEvidenceDiscussionConfirmed: false,
       });
 
@@ -643,7 +585,7 @@ export const LeadReviewPanel = ({
       employeeParRating?.parLeadStatus === ParLeadStatus.SHARED ||
         isAdminHistoryViewOn ||
         isAdminAuditViewOn ||
-        isDeadlinePassed
+        isDeadlinePassed,
     );
 
     return () => {
@@ -657,9 +599,7 @@ export const LeadReviewPanel = ({
   useEffect(() => {
     resetForm();
     if (cycle?.parCycleId) {
-      dispatch(
-        fetchParRatingOfEmployee({ employeeId, parCycleId: cycle.parCycleId })
-      );
+      dispatch(fetchParRatingOfEmployee({ employeeId, parCycleId: cycle.parCycleId }));
       if (isAdminAuditViewOn && userEmail === employeeId) {
         setIsAdminsSelfProfile(true);
       } else {
@@ -669,13 +609,9 @@ export const LeadReviewPanel = ({
 
     //change the deadline logic based on the user
     if (isAdminAuditViewOn || isAdminHistoryViewOn) {
-      setIsDeadlinePassed(
-        dayjs().isAfter(dayjs(cycle.parCycleEndDate).endOf("day"))
-      );
+      setIsDeadlinePassed(dayjs().isAfter(dayjs(cycle.parCycleEndDate).endOf("day")));
     } else {
-      setIsDeadlinePassed(
-        dayjs().isAfter(dayjs(cycle.parLeadDeadline).endOf("day"))
-      );
+      setIsDeadlinePassed(dayjs().isAfter(dayjs(cycle.parLeadDeadline).endOf("day")));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employeeId, cycle.parCycleId]);
@@ -712,7 +648,7 @@ export const LeadReviewPanel = ({
 
   const getLeadFeedbackMessage = (
     status: ParLeadStatus.PENDING | ParLeadStatus.DRAFT,
-    isDeadlinePassed: boolean
+    isDeadlinePassed: boolean,
   ): string => {
     const messages: MessagesType = {
       [ParLeadStatus.PENDING]: {
@@ -733,7 +669,7 @@ export const LeadReviewPanel = ({
       enqueueSnackbarMessage({
         message: "Generating the PDF",
         type: "info",
-      })
+      }),
     );
 
     const doc = new jsPDF({
@@ -745,9 +681,7 @@ export const LeadReviewPanel = ({
     const formatCommentForPDF = (html: string): string => {
       if (!html) return "-";
 
-      const decoded = base64Regex.test(html)
-        ? decodeURIComponent(atob(html))
-        : html;
+      const decoded = base64Regex.test(html) ? decodeURIComponent(atob(html)) : html;
       const tempDiv = document.createElement("div");
       tempDiv.innerHTML = decoded;
 
@@ -760,10 +694,7 @@ export const LeadReviewPanel = ({
         if (element.tagName === "UL") {
           const items = element.querySelectorAll("li");
           items.forEach((li) => {
-            result += `${indent}• ${processElement(
-              li as HTMLElement,
-              depth + 1
-            )}\n`;
+            result += `${indent}• ${processElement(li as HTMLElement, depth + 1)}\n`;
           });
           return result;
         }
@@ -771,10 +702,7 @@ export const LeadReviewPanel = ({
         if (element.tagName === "OL") {
           const items = element.querySelectorAll("li");
           items.forEach((li, index) => {
-            result += `${indent}${index + 1}. ${processElement(
-              li as HTMLElement,
-              depth + 1
-            )}\n`;
+            result += `${indent}${index + 1}. ${processElement(li as HTMLElement, depth + 1)}\n`;
           });
           return result;
         }
@@ -869,19 +797,17 @@ export const LeadReviewPanel = ({
       ]);
     }
 
-    const reviewRows = threeSixtyReviews.map(
-      ({ reviewerEmail, reviewRating, reviewComment }) => [
-        reviewerEmail ?? "-",
-        reviewRating ?? "-",
-        {
-          content: reviewComment ? formatCommentForPDF(reviewComment) : "-",
-          styles: {
-            textColor: [50, 50, 50] as [number, number, number],
-            cellPadding: { top: 6, right: 4, bottom: 6, left: 4 },
-          },
+    const reviewRows = threeSixtyReviews.map(({ reviewerEmail, reviewRating, reviewComment }) => [
+      reviewerEmail ?? "-",
+      reviewRating ?? "-",
+      {
+        content: reviewComment ? formatCommentForPDF(reviewComment) : "-",
+        styles: {
+          textColor: [50, 50, 50] as [number, number, number],
+          cellPadding: { top: 6, right: 4, bottom: 6, left: 4 },
         },
-      ]
-    );
+      },
+    ]);
 
     const finalTableRows = [...allTableRows, ...reviewRows];
 
@@ -902,8 +828,8 @@ export const LeadReviewPanel = ({
                 : "Not Assigned"
             }\n - PAR Shared By: ${
               employeeParRating.parRatingSharedBy
-                ? employeeMap[employeeParRating.parRatingSharedBy]
-                    ?.employeeName || employeeParRating.parRatingSharedBy
+                ? employeeMap[employeeParRating.parRatingSharedBy]?.employeeName ||
+                  employeeParRating.parRatingSharedBy
                 : "Not Provided"
             }`,
             colSpan: 3,
@@ -940,34 +866,22 @@ export const LeadReviewPanel = ({
   return (
     <Grid container height={"100%"} spacing={1}>
       <Grid size={{ xs: 12 }}>
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          gap={2}
-        >
+        <Box display="flex" alignItems="center" justifyContent="space-between" gap={2}>
           <Box flex="1">
             {isReadOnly &&
               !isAdminHistoryViewOn &&
               (employeeParRating?.parLeadStatus === ParLeadStatus.SHARED ? (
-                <Alert severity="success">
-                  {uiMessages.alert.leadReviewShared}
-                </Alert>
+                <Alert severity="success">{uiMessages.alert.leadReviewShared}</Alert>
               ) : (
-                <Alert severity="info">
-                  {uiMessages.alert.leadReviewIsNotShared}
-                </Alert>
+                <Alert severity="info">{uiMessages.alert.leadReviewIsNotShared}</Alert>
               ))}
 
-            {isDeadlinePassed &&
-              employeeParRating.parLeadStatus != ParLeadStatus.SHARED && (
-                <Alert severity="error">
-                  {"Lead's feedback deadline is passed"}{" "}
-                  {`on: ${dayjs
-                    .utc(cycle.parLeadDeadline)
-                    .format("D MMM 'YY")}`}
-                </Alert>
-              )}
+            {isDeadlinePassed && employeeParRating.parLeadStatus != ParLeadStatus.SHARED && (
+              <Alert severity="error">
+                {"Lead's feedback deadline is passed"}{" "}
+                {`on: ${dayjs.utc(cycle.parLeadDeadline).format("D MMM 'YY")}`}
+              </Alert>
+            )}
             {!isReadOnly &&
               !isAdminAuditViewOn &&
               (employeeParRating.parLeadStatus === ParLeadStatus.DRAFT ? (
@@ -1053,8 +967,7 @@ export const LeadReviewPanel = ({
                   title={
                     <Typography variant="h6">
                       Lead's Feedback
-                      {isAdminAuditViewOn &&
-                        renderStatusChip(employeeParRating?.parLeadStatus)}
+                      {isAdminAuditViewOn && renderStatusChip(employeeParRating?.parLeadStatus)}
                     </Typography>
                   }
                 />
@@ -1072,11 +985,10 @@ export const LeadReviewPanel = ({
                               disabled={isSubmitting}
                               error={Boolean(
                                 (touched.parLeadComment || submitCount > 0) &&
-                                  errors.parLeadComment
+                                errors.parLeadComment,
                               )}
                               helperText={
-                                (touched.parLeadComment || submitCount > 0) &&
-                                errors.parLeadComment
+                                (touched.parLeadComment || submitCount > 0) && errors.parLeadComment
                                   ? errors.parLeadComment.toString()
                                   : ""
                               }
@@ -1113,8 +1025,7 @@ export const LeadReviewPanel = ({
                           </Box>
                         ) : (
                           <>
-                            {employeeParRating?.parLeadStatus ===
-                            ParLeadStatus.SHARED ? (
+                            {employeeParRating?.parLeadStatus === ParLeadStatus.SHARED ? (
                               <CommentPaper
                                 comment={employeeParRating?.parLeadComment}
                                 refKey={leadCommentRef}
@@ -1122,9 +1033,8 @@ export const LeadReviewPanel = ({
                             ) : (
                               <NoDataView
                                 text={getLeadFeedbackMessage(
-                                  employeeParRating.parLeadStatus ??
-                                    ParLeadStatus.PENDING,
-                                  isDeadlinePassed
+                                  employeeParRating.parLeadStatus ?? ParLeadStatus.PENDING,
+                                  isDeadlinePassed,
                                 )}
                               />
                             )}
@@ -1133,12 +1043,7 @@ export const LeadReviewPanel = ({
                       </Grid>
 
                       {/* Rating Section */}
-                      <Grid
-                        container
-                        size={{ xs: 12 }}
-                        spacing={2}
-                        alignItems="center"
-                      >
+                      <Grid container size={{ xs: 12 }} spacing={2} alignItems="center">
                         <Grid size={{ xs: 12, sm: 4 }}>
                           <Typography variant="body2">Rating:</Typography>
                         </Grid>
@@ -1154,28 +1059,19 @@ export const LeadReviewPanel = ({
                               disabled={isSubmitting}
                               onChange={handleRatingChange}
                               onBlur={handleBlur}
-                              error={
-                                touched.parRating && Boolean(errors.parRating)
-                              }
+                              error={touched.parRating && Boolean(errors.parRating)}
                               helperText={touched.parRating && errors.parRating}
                               variant="outlined"
                               InputProps={{ readOnly: isReadOnly }}
                             >
-                              {cycle?.parCycleConfigurations?.parRatings.map(
-                                (rating) => (
-                                  <MenuItem key={rating} value={rating}>
-                                    {rating}
-                                  </MenuItem>
-                                )
-                              )}
+                              {cycle?.parCycleConfigurations?.parRatings.map((rating) => (
+                                <MenuItem key={rating} value={rating}>
+                                  {rating}
+                                </MenuItem>
+                              ))}
                             </TextField>
-                          ) : employeeParRating?.parRating !==
-                            parRatingNotAssigned ? (
-                            <Chip
-                              size="small"
-                              label={employeeParRating.parRating}
-                              sx={{ mt: 1 }}
-                            />
+                          ) : employeeParRating?.parRating !== parRatingNotAssigned ? (
+                            <Chip size="small" label={employeeParRating.parRating} sx={{ mt: 1 }} />
                           ) : (
                             <Typography color="text.secondary">N/A</Typography>
                           )}
@@ -1184,16 +1080,9 @@ export const LeadReviewPanel = ({
 
                       {/* PAR Shared By Section */}
                       {isReadOnly && employeeParRating.parRatingSharedBy && (
-                        <Grid
-                          container
-                          size={{ xs: 12 }}
-                          spacing={2}
-                          alignItems="center"
-                        >
+                        <Grid container size={{ xs: 12 }} spacing={2} alignItems="center">
                           <Grid size={{ xs: 12, sm: 4 }}>
-                            <Typography variant="body2">
-                              PAR shared by:
-                            </Typography>
+                            <Typography variant="body2">PAR shared by:</Typography>
                           </Grid>
                           <Grid size={{ xs: 12, sm: 8 }}>
                             <Chip
@@ -1208,22 +1097,17 @@ export const LeadReviewPanel = ({
                       {/* Discussion Evidence Link */}
                       {isReadOnly &&
                         employeeParRating.parPerformanceNoticeAck &&
-                        employeeParRating.parRating ===
-                          evidenceEnabledRating && (
+                        employeeParRating.parRating === evidenceEnabledRating && (
                           <Grid size={{ xs: 12 }}>
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{ mb: 0.5 }}
-                            >
-                              Performance gaps were discussed, and the employee
-                              has been informed of the "{evidenceEnabledRating}"
-                              rating, and at least two discussions were held.
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                              Performance gaps were discussed, and the employee has been informed of
+                              the "{evidenceEnabledRating}" rating, and at least two discussions
+                              were held.
                             </Typography>
                             {employeeParRating.parPerformanceNoticeAck && (
                               <Box display="flex" flexDirection="column" gap={0.5}>
                                 {employeeParRating.parPerformanceNoticeAck
-                                  .split(/\r?\n/) 
+                                  .split(/\r?\n/)
                                   .filter((line) => line.trim() !== "")
                                   .map((line, index) => (
                                     <Link
@@ -1251,90 +1135,74 @@ export const LeadReviewPanel = ({
                         )}
 
                       {/* Checkbox for Top 5%/20% Rating */}
-                      {!isReadOnly &&
-                        values.parRating === top5p20pEnabledRating && (
-                          <Grid size={{ xs: 12 }} >
+                      {!isReadOnly && values.parRating === top5p20pEnabledRating && (
+                        <Grid size={{ xs: 12 }}>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={isCheckboxChecked}
+                                onChange={handleCheckboxChange}
+                                name="enableRating"
+                                disabled={isSubmitting}
+                              />
+                            }
+                            label="The Top 5% / 20% rating decision was discussed and finalized with the functional lead"
+                          />
+                        </Grid>
+                      )}
+
+                      {/* Checkbox for Proof Provider Rating */}
+                      {!isReadOnly && values.parRating === evidenceEnabledRating && (
+                        <>
+                          <Grid size={{ xs: 12 }}>
                             <FormControlLabel
                               control={
                                 <Checkbox
-                                  checked={isCheckboxChecked}
-                                  onChange={handleCheckboxChange}
-                                  name="enableRating"
+                                  checked={values.isEvidenceDiscussionConfirmed}
+                                  onChange={handleInformedCheckboxChange}
+                                  name="isEvidenceDiscussionConfirmed"
                                   disabled={isSubmitting}
                                 />
                               }
-                              label="The Top 5% / 20% rating decision was discussed and finalized with the functional lead"
+                              label={`Performance gaps were discussed, and the employee has been informed of the "${evidenceEnabledRating}" rating,
+                          and at least two discussions were held.`}
                             />
                           </Grid>
-                        )}
-
-                      {/* Checkbox for Proof Provider Rating */}
-                      {!isReadOnly &&
-                        values.parRating === evidenceEnabledRating && (
-                          <>
-                            <Grid size={{ xs: 12 }} >
-                              <FormControlLabel
-                                control={
-                                  <Checkbox
-                                    checked={
-                                      values.isEvidenceDiscussionConfirmed
-                                    }
-                                    onChange={handleInformedCheckboxChange}
-                                    name="isEvidenceDiscussionConfirmed"
-                                    disabled={isSubmitting}
-                                  />
-                                }
-                                label={`Performance gaps were discussed, and the employee has been informed of the "${evidenceEnabledRating}" rating,
-                          and at least two discussions were held.`}
-                              />
-                            </Grid>
-                            <Grid size={{ xs: 12 }}>
-                              <TextField
-                                fullWidth
-                                multiline
-                                label="Discussion Evidence"
-                                disabled={
-                                  !values.isEvidenceDiscussionConfirmed ||
-                                  isSubmitting
-                                }
-                                InputProps={{
-                                  startAdornment: (
-                                    <InputAdornment position="start">
-                                      <LinkIcon />
-                                    </InputAdornment>
-                                  ),
-                                }}
-                                placeholder="Attach the link to the relevant discussion evidence document"
-                                variant="standard"
-                                name="parPerformanceNoticeAck"
-                                value={values.parPerformanceNoticeAck}
-                                onChange={handleChange}
-                                onBlur={handleBlur}
-                                error={Boolean(
-                                  touched.parPerformanceNoticeAck &&
-                                    errors.parPerformanceNoticeAck
-                                )}
-                                helperText={
-                                  touched.parPerformanceNoticeAck &&
-                                  errors.parPerformanceNoticeAck
-                                }
-                              />
-                            </Grid>
-                          </>
-                        )}
+                          <Grid size={{ xs: 12 }}>
+                            <TextField
+                              fullWidth
+                              multiline
+                              label="Discussion Evidence"
+                              disabled={!values.isEvidenceDiscussionConfirmed || isSubmitting}
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <LinkIcon />
+                                  </InputAdornment>
+                                ),
+                              }}
+                              placeholder="Attach the link to the relevant discussion evidence document"
+                              variant="standard"
+                              name="parPerformanceNoticeAck"
+                              value={values.parPerformanceNoticeAck}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              error={Boolean(
+                                touched.parPerformanceNoticeAck && errors.parPerformanceNoticeAck,
+                              )}
+                              helperText={
+                                touched.parPerformanceNoticeAck && errors.parPerformanceNoticeAck
+                              }
+                            />
+                          </Grid>
+                        </>
+                      )}
 
                       {/* Special Rating Section */}
                       {values.parRating === top5p20pEnabledRating && (
-                        <Grid
-                          container
-                          size={{ xs: 12 }}
-                          spacing={2}
-                          alignItems="center"
-                        >
+                        <Grid container size={{ xs: 12 }} spacing={2} alignItems="center">
                           <Grid size={{ xs: 12, sm: 4 }}>
-                            <Typography variant="body2">
-                              Top 5%/20% Rating:
-                            </Typography>
+                            <Typography variant="body2">Top 5%/20% Rating:</Typography>
                           </Grid>
                           <Grid size={{ xs: 12, sm: 8 }}>
                             {!isReadOnly ? (
@@ -1348,32 +1216,19 @@ export const LeadReviewPanel = ({
                                 value={values.parSpecialRating}
                                 onChange={handleChange}
                                 onBlur={handleBlur}
-                                error={
-                                  touched.parSpecialRating &&
-                                  Boolean(errors.parSpecialRating)
-                                }
-                                helperText={
-                                  touched.parSpecialRating &&
-                                  errors.parSpecialRating
-                                }
+                                error={touched.parSpecialRating && Boolean(errors.parSpecialRating)}
+                                helperText={touched.parSpecialRating && errors.parSpecialRating}
                                 variant="outlined"
                               >
-                                <MenuItem value={ParSpecialRating.NONE}>
-                                  N/A
-                                </MenuItem>
-                                <MenuItem
-                                  value={ParSpecialRating.TOP_FIVE_PERCENT}
-                                >
+                                <MenuItem value={ParSpecialRating.NONE}>N/A</MenuItem>
+                                <MenuItem value={ParSpecialRating.TOP_FIVE_PERCENT}>
                                   Top 5%
                                 </MenuItem>
-                                <MenuItem
-                                  value={ParSpecialRating.TOP_TWENTY_PERCENT}
-                                >
+                                <MenuItem value={ParSpecialRating.TOP_TWENTY_PERCENT}>
                                   Top 20%
                                 </MenuItem>
                               </TextField>
-                            ) : employeeParRating?.parSpecialRating !==
-                              ParSpecialRating.NONE ? (
+                            ) : employeeParRating?.parSpecialRating !== ParSpecialRating.NONE ? (
                               <Chip
                                 size="small"
                                 label={
@@ -1381,15 +1236,13 @@ export const LeadReviewPanel = ({
                                   ParSpecialRating.TOP_FIVE_PERCENT
                                     ? "Top 5%"
                                     : employeeParRating.parSpecialRating ===
-                                      ParSpecialRating.TOP_TWENTY_PERCENT
-                                    ? "Top 20%"
-                                    : "N/A"
+                                        ParSpecialRating.TOP_TWENTY_PERCENT
+                                      ? "Top 20%"
+                                      : "N/A"
                                 }
                               />
                             ) : (
-                              <Typography color="text.secondary">
-                                N/A
-                              </Typography>
+                              <Typography color="text.secondary">N/A</Typography>
                             )}
                           </Grid>
                         </Grid>
@@ -1398,16 +1251,11 @@ export const LeadReviewPanel = ({
                       {/* Warning Message */}
                       {!isAdminAuditViewOn &&
                         !isAdminHistoryViewOn &&
-                        [
-                          ParEmployeeStatus.DRAFT,
-                          ParEmployeeStatus.PENDING,
-                        ].includes(employeeParRating.parEmployeeStatus) && (
-                          <Grid size={{ xs: 12 }} >
-                            <Typography
-                              color="warning.main"
-                              textAlign="right"
-                              sx={{ mb: 1 }}
-                            >
+                        [ParEmployeeStatus.DRAFT, ParEmployeeStatus.PENDING].includes(
+                          employeeParRating.parEmployeeStatus,
+                        ) && (
+                          <Grid size={{ xs: 12 }}>
+                            <Typography color="warning.main" textAlign="right" sx={{ mb: 1 }}>
                               {uiMessages.warning.leadShareDisable}
                             </Typography>
                           </Grid>
@@ -1418,22 +1266,18 @@ export const LeadReviewPanel = ({
                         <Grid size={{ xs: 12 }} sx={{ mt: 2 }}>
                           <Box display="flex" justifyContent="flex-end" gap={2}>
                             {!isAdminAuditViewOn &&
-                              employeeParRating.parLeadStatus !==
-                                ParLeadStatus.SHARED && (
+                              employeeParRating.parLeadStatus !== ParLeadStatus.SHARED && (
                                 <Button
                                   disabled={
                                     isSubmitting ||
                                     isReadOnly ||
                                     (isDeadlinePassed && !isAdminAuditViewOn) ||
                                     !(
-                                      (values.parLeadComment !==
-                                        employeeParRating.parLeadComment &&
+                                      (values.parLeadComment !== employeeParRating.parLeadComment &&
                                         !errors?.parLeadComment) ||
-                                      (values.parRating !==
-                                        employeeParRating.parRating &&
+                                      (values.parRating !== employeeParRating.parRating &&
                                         values.parRating !== "") ||
-                                      values.parSpecialRating !==
-                                        employeeParRating.parSpecialRating
+                                      values.parSpecialRating !== employeeParRating.parSpecialRating
                                     )
                                   }
                                   variant="outlined"
@@ -1458,9 +1302,7 @@ export const LeadReviewPanel = ({
                                       !values.parPerformanceNoticeAck))
                                 }
                               >
-                                {!isAdminAuditViewOn
-                                  ? "Share"
-                                  : "Save and Share"}
+                                {!isAdminAuditViewOn ? "Share" : "Save and Share"}
                               </Button>
                             )}
                           </Box>
@@ -1532,8 +1374,7 @@ export const LeadReviewPanel = ({
                   title={
                     <Box display="flex" alignItems="center">
                       <Typography variant="h6">Employee PAR</Typography>
-                      {isAdminAuditViewOn &&
-                        renderStatusChip(employeeParRating?.parEmployeeStatus)}
+                      {isAdminAuditViewOn && renderStatusChip(employeeParRating?.parEmployeeStatus)}
                     </Box>
                   }
                 />
@@ -1566,8 +1407,7 @@ export const LeadReviewPanel = ({
                             isSubmitting ||
                             isReadOnly ||
                             (isDeadlinePassed && !isAdminAuditViewOn) ||
-                            (employeeParRating.parEmployeeStatus ===
-                              ParEmployeeStatus.PENDING &&
+                            (employeeParRating.parEmployeeStatus === ParEmployeeStatus.PENDING &&
                               !isAdminAuditViewOn) ||
                             (values.parRating === evidenceEnabledRating &&
                               (!values.isEvidenceDiscussionConfirmed ||
@@ -1584,7 +1424,7 @@ export const LeadReviewPanel = ({
             </Grid>
             {/* Admin Comment Section */}
             {(isAdminAuditViewOn || isAdminHistoryViewOn) && (
-              <Grid size={{ xs: 12 }} >
+              <Grid size={{ xs: 12 }}>
                 <Accordion>
                   <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography variant="subtitle1">Admin Comment</Typography>
@@ -1600,9 +1440,7 @@ export const LeadReviewPanel = ({
                           }
                         }}
                         onBlur={handleBlur}
-                        error={Boolean(
-                          values.parAdminComment && errors.parAdminComment
-                        )}
+                        error={Boolean(values.parAdminComment && errors.parAdminComment)}
                         helperText={
                           touched.parAdminComment && errors.parAdminComment
                             ? errors.parAdminComment.toString()
@@ -1624,10 +1462,8 @@ export const LeadReviewPanel = ({
               </Grid>
             )}
             {/* 360 Feedback Section */}
-            <Grid size={{ xs: 12 }} >
-              <ThreeSixtyFeedbackSection
-                isAdminsSelfProfile={isAdminsSelfProfile}
-              />
+            <Grid size={{ xs: 12 }}>
+              <ThreeSixtyFeedbackSection isAdminsSelfProfile={isAdminsSelfProfile} />
             </Grid>
           </Grid>
         </Grid>

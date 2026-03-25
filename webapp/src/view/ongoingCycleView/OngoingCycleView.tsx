@@ -4,41 +4,32 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
-import {
-  Box,
-  Fade,
-  Grid,
-  Paper,
-  Tab,
-  Tabs,
-  Typography,
-  IconButton,
-} from "@mui/material";
-
 import DataUsageIcon from "@mui/icons-material/DataUsage";
 import GroupIcon from "@mui/icons-material/Group";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import PersonIcon from "@mui/icons-material/Person";
+import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
+import { Box, Fade, Grid, IconButton, Paper, Tab, Tabs, Typography } from "@mui/material";
+import { useSearchParams } from "react-router-dom";
 
 import { SyntheticEvent, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import EmployeePanel from "./panels/EmployeePanel";
-import { useAppDispatch, useAppSelector } from "@slices/store";
+
+import { F2fPanel } from "@component/common/F2fPanel";
+import NoDataView from "@component/common/NoDataView";
+import { ProvideFeedbackTab } from "@component/common/ProvideFeedbackTab";
+import { RequestFeedbackTab } from "@component/common/RequestFeedbackTab";
+import { LoadingEffect } from "@component/ui/Loading";
+import { defaultTabWidth, uiMessages } from "@config/constant";
 import { selectEmployeeInfo, selectUserEmail } from "@slices/authSlice/auth";
 import {
   fetchCurrentParCycleOfEmployee,
   selectCurrentParCycleOfEmployee,
   selectEmployeeStatus,
 } from "@slices/employeeSlice/employee";
-import { F2fPanel } from "@component/common/F2fPanel";
-import { defaultTabWidth, uiMessages } from "@config/constant";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 import { RequestState } from "@utils/types";
-import { LoadingEffect } from "@component/ui/Loading";
-import { ProvideFeedbackTab } from "@component/common/ProvideFeedbackTab";
-import { RequestFeedbackTab } from "@component/common/RequestFeedbackTab";
-import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
-import NoDataView from "@component/common/NoDataView";
+
+import EmployeePanel from "./panels/EmployeePanel";
 
 const OngoingCycleView = () => {
   const userEmail = useAppSelector(selectUserEmail);
@@ -89,13 +80,12 @@ const OngoingCycleView = () => {
             component: (
               <>
                 {userEmail && currentCycle?.parCycleId && (
-                  <F2fPanel employeeId={userEmail} parCycle={currentCycle} isEmployeeView={true}/>
+                  <F2fPanel employeeId={userEmail} parCycle={currentCycle} isEmployeeView={true} />
                 )}
               </>
             ),
             disabled:
-              employeeStatus === RequestState.SUCCEEDED &&
-              Boolean(!currentCycle?.parCycleId),
+              employeeStatus === RequestState.SUCCEEDED && Boolean(!currentCycle?.parCycleId),
             icon: <GroupIcon />,
             label: "F2F",
             value: ParCycleViewTabs.F2F,
@@ -116,19 +106,12 @@ const OngoingCycleView = () => {
   useEffect(() => {
     const currentTab = searchParams.get("tab");
 
-    if (
-      currentTab &&
-      Object.values(ParCycleViewTabs).includes(currentTab as ParCycleViewTabs)
-    ) {
-      setValue(
-        Object.values(ParCycleViewTabs).indexOf(currentTab as ParCycleViewTabs)
-      );
+    if (currentTab && Object.values(ParCycleViewTabs).includes(currentTab as ParCycleViewTabs)) {
+      setValue(Object.values(ParCycleViewTabs).indexOf(currentTab as ParCycleViewTabs));
     } else {
       searchParams.set(
         "tab",
-        employeeInfo?.leadEmail !== null
-          ? ParCycleViewTabs.EMPLOYEE
-          : ParCycleViewTabs.REQUESTS
+        employeeInfo?.leadEmail !== null ? ParCycleViewTabs.EMPLOYEE : ParCycleViewTabs.REQUESTS,
       );
       setSearchParams(searchParams);
     }
@@ -169,23 +152,14 @@ const OngoingCycleView = () => {
                     justifyContent: "left",
                   }}
                 >
-                  <IconButton
-                    color="primary"
-                    component="label"
-                    onClick={() => {}}
-                  >
+                  <IconButton color="primary" component="label" onClick={() => {}}>
                     <DataUsageIcon fontSize="large" />
                   </IconButton>
-                  <Typography
-                    variant="h4"
-                    sx={{ marginTop: "12px", marginLeft: "10px" }}
-                  >
-                    {currentCycle?.parCycleId
-                      ? currentCycle?.parCycleName
-                      : "Employee Portal"}
+                  <Typography variant="h4" sx={{ marginTop: "12px", marginLeft: "10px" }}>
+                    {currentCycle?.parCycleId ? currentCycle?.parCycleName : "Employee Portal"}
                   </Typography>
                 </Grid>
-                <Grid ></Grid>
+                <Grid></Grid>
               </>
             </Grid>
             <Box
@@ -227,23 +201,21 @@ const OngoingCycleView = () => {
             {employeeStatus === RequestState.LOADING && (
               <LoadingEffect message={uiMessages.loading.pageLoading} />
             )}
-            {employeeStatus === RequestState.SUCCEEDED &&
-              currentCycle?.parCycleId && (
-                <>
-                  {tabsAndPanelsData.map((item, index) => (
-                    <TabPanel key={index} value={value} index={index}>
-                      {item.component}
-                    </TabPanel>
-                  ))}
-                </>
-              )}
+            {employeeStatus === RequestState.SUCCEEDED && currentCycle?.parCycleId && (
+              <>
+                {tabsAndPanelsData.map((item, index) => (
+                  <TabPanel key={index} value={value} index={index}>
+                    {item.component}
+                  </TabPanel>
+                ))}
+              </>
+            )}
 
-            {employeeStatus === RequestState.SUCCEEDED &&
-              !currentCycle?.parCycleId && (
-                <Box sx={{ height: "70vh" }}>
-                  <NoDataView text={uiMessages.error.noParCycleFound} />
-                </Box>
-              )}
+            {employeeStatus === RequestState.SUCCEEDED && !currentCycle?.parCycleId && (
+              <Box sx={{ height: "70vh" }}>
+                <NoDataView text={uiMessages.error.noParCycleFound} />
+              </Box>
+            )}
           </Box>
         </Paper>
       </Grid>
@@ -270,9 +242,7 @@ const TabPanel = (props: TabPanelProps) => {
       aria-labelledby={`simple-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 1 }}>{children}</Box>
-      )}
+      {value === index && <Box sx={{ p: 1 }}>{children}</Box>}
     </div>
   );
 };

@@ -13,14 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Avatar, Box, Chip, Grid, Typography, useTheme } from "@mui/material";
+import dayjs from "dayjs";
 
-import { Typography, Avatar, Box, useTheme, Chip, Grid } from "@mui/material";
-import { useAppSelector } from "@slices/store";
-import { selectEmployeeInfo } from "@slices/authSlice/auth";
-import { tokens } from "../../../theme";
 import { employeeThumbnailResolutionParam } from "@config/constant";
 import { shortDateFormat } from "@config/constant";
-import dayjs from "dayjs";
+import { selectEmployeeInfo } from "@slices/authSlice/auth";
+import { useAppSelector } from "@slices/store";
+
+import { tokens } from "../../../theme";
 
 export const EmployeeProfileCard = () => {
   const theme = useTheme();
@@ -31,7 +32,7 @@ export const EmployeeProfileCard = () => {
     if (thumbnailURL?.includes(employeeThumbnailResolutionParam.Low)) {
       return thumbnailURL.replace(
         employeeThumbnailResolutionParam.Low,
-        employeeThumbnailResolutionParam.High
+        employeeThumbnailResolutionParam.High,
       );
     }
     return thumbnailURL;
@@ -42,7 +43,8 @@ export const EmployeeProfileCard = () => {
       {employeeData && (
         <Box>
           <Grid container>
-            <Grid size={{ md: 6, xs: 12 }}
+            <Grid
+              size={{ md: 6, xs: 12 }}
               sx={{
                 display: "flex",
                 flexDirection: "column",
@@ -60,26 +62,21 @@ export const EmployeeProfileCard = () => {
                   boxShadow: `0 0 10px ${colors.primary[400]}`,
                 }}
                 alt="Employee Thumbnail"
-                src={getModifiedEmployeeThumbnail(
-                  employeeData.employeeThumbnail
-                )}
+                src={getModifiedEmployeeThumbnail(employeeData.employeeThumbnail)}
               />
               <Typography variant="h2">{employeeData.employeeName}</Typography>
               <Typography variant="body1" sx={{ mb: 2 }}>
                 {employeeData.workEmail}
               </Typography>
             </Grid>
-            <Grid size={{ md: 6, xs: 12 }} >
+            <Grid size={{ md: 6, xs: 12 }}>
               <Grid
                 container
                 alignItems="center"
                 spacing={{ md: 5 }}
                 sx={{ pt: { md: 10, sm: 15 } }}
               >
-                <Grid
-                  size={{ md: 3, xs: 4 }}
-                  sx={{ textAlign: "end", fontWeight: "600" }}
-                >
+                <Grid size={{ md: 3, xs: 4 }} sx={{ textAlign: "end", fontWeight: "600" }}>
                   Joined
                 </Grid>
                 <Grid size={{ md: 9, xs: 8 }}>
@@ -87,16 +84,8 @@ export const EmployeeProfileCard = () => {
                 </Grid>
               </Grid>
 
-              <Grid
-                container
-                alignItems="center"
-                spacing={{ md: 5 }}
-                sx={{ pt: { md: 5, xs: 3 } }}
-              >
-                <Grid
-                  size={{ md: 3, xs: 4 }}
-                  sx={{ textAlign: "end", fontWeight: "600" }}
-                >
+              <Grid container alignItems="center" spacing={{ md: 5 }} sx={{ pt: { md: 5, xs: 3 } }}>
+                <Grid size={{ md: 3, xs: 4 }} sx={{ textAlign: "end", fontWeight: "600" }}>
                   Job Role
                 </Grid>
                 <Grid size={{ md: 9, xs: 8 }}>
@@ -104,16 +93,8 @@ export const EmployeeProfileCard = () => {
                 </Grid>
               </Grid>
 
-              <Grid
-                container
-                alignItems="center"
-                spacing={{ md: 5 }}
-                sx={{ pt: { md: 5, xs: 3 } }}
-              >
-                <Grid
-                  size={{ md: 3, xs: 4 }}
-                  sx={{ textAlign: "end", fontWeight: "600" }}
-                >
+              <Grid container alignItems="center" spacing={{ md: 5 }} sx={{ pt: { md: 5, xs: 3 } }}>
+                <Grid size={{ md: 3, xs: 4 }} sx={{ textAlign: "end", fontWeight: "600" }}>
                   Business Unit
                 </Grid>
                 <Grid size={{ md: 9, xs: 8 }}>
@@ -121,35 +102,17 @@ export const EmployeeProfileCard = () => {
                 </Grid>
               </Grid>
 
-              <Grid
-                container
-                alignItems="center"
-                spacing={{ md: 5 }}
-                sx={{ pt: { md: 5, xs: 3 } }}
-              >
-                <Grid
-                  size={{ md: 3, xs: 4 }}
-                  sx={{ textAlign: "end", fontWeight: "600" }}
-                >
+              <Grid container alignItems="center" spacing={{ md: 5 }} sx={{ pt: { md: 5, xs: 3 } }}>
+                <Grid size={{ md: 3, xs: 4 }} sx={{ textAlign: "end", fontWeight: "600" }}>
                   Department
                 </Grid>
                 <Grid size={{ md: 9, xs: 8 }}>
-                  <Chip
-                    label={employeeData.department}
-                  />
+                  <Chip label={employeeData.department} />
                 </Grid>
               </Grid>
 
-              <Grid
-                container
-                alignItems="center"
-                spacing={{ md: 5 }}
-                sx={{ pt: { md: 5, xs: 3 } }}
-              >
-                <Grid
-                  size={{ md: 3, xs: 4 }}
-                  sx={{ textAlign: "end", fontWeight: "600" }}
-                >
+              <Grid container alignItems="center" spacing={{ md: 5 }} sx={{ pt: { md: 5, xs: 3 } }}>
+                <Grid size={{ md: 3, xs: 4 }} sx={{ textAlign: "end", fontWeight: "600" }}>
                   Team
                 </Grid>
                 <Grid size={{ md: 9, xs: 8 }}>
@@ -157,16 +120,8 @@ export const EmployeeProfileCard = () => {
                 </Grid>
               </Grid>
 
-              <Grid
-                container
-                alignItems="center"
-                spacing={{ md: 5 }}
-                sx={{ pt: { md: 5, xs: 3 } }}
-              >
-                <Grid
-                  size={{ md: 3, xs: 4 }}
-                  sx={{ textAlign: "end", fontWeight: "600" }}
-                >
+              <Grid container alignItems="center" spacing={{ md: 5 }} sx={{ pt: { md: 5, xs: 3 } }}>
+                <Grid size={{ md: 3, xs: 4 }} sx={{ textAlign: "end", fontWeight: "600" }}>
                   Location
                 </Grid>
                 <Grid size={{ md: 9, xs: 8 }}>

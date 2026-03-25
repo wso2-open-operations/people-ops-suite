@@ -13,34 +13,33 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import HistoryIcon from "@mui/icons-material/History";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import {
+  Alert,
   Box,
-  Typography,
+  Button,
+  Fade,
+  Grid,
+  IconButton,
+  Paper,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  Grid,
-  IconButton,
-  Fade,
-  Paper,
-  Alert,
   Tooltip,
-  Button,
-  TableContainer,
+  Typography,
 } from "@mui/material";
+import dayjs from "dayjs";
+import { useLocation } from "react-router-dom";
 
 import { useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "@slices/store";
+
+import { EmployeePar } from "@component/common/EmployeePar";
 import { LoadingEffect } from "@component/ui/Loading";
 import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { RequestState } from "@utils/types";
-import { ParCycle } from "@slices/parCycleSlice/parCycle";
-import HistoryIcon from "@mui/icons-material/History";
-import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-
 import { selectUserEmail } from "@slices/authSlice/auth";
 import {
   fetchParRatingOfEmployee,
@@ -48,9 +47,9 @@ import {
   selectEmployeeStatus,
   selectPreviousParCycleOfEmployee,
 } from "@slices/employeeSlice/employee";
-import { EmployeePar } from "@component/common/EmployeePar";
-import dayjs from "dayjs";
-import { useLocation } from "react-router-dom";
+import { ParCycle } from "@slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { RequestState } from "@utils/types";
 
 const ParHistory = () => {
   const location = useLocation();
@@ -59,11 +58,10 @@ const ParHistory = () => {
   const previousCycles = useAppSelector(selectPreviousParCycleOfEmployee);
   const cycleLoadingState = useAppSelector(selectEmployeeStatus);
 
-  const [isEmployeePreviousParOpen, setIsEmployeePreviousParOpen] =
-    useState(false);
-  const [selectedParCycle, setSelectedParCycle] = useState<
-    Partial<ParCycle> | undefined
-  >(undefined);
+  const [isEmployeePreviousParOpen, setIsEmployeePreviousParOpen] = useState(false);
+  const [selectedParCycle, setSelectedParCycle] = useState<Partial<ParCycle> | undefined>(
+    undefined,
+  );
 
   const closeParRatingView = () => setIsEmployeePreviousParOpen(false);
 
@@ -73,7 +71,7 @@ const ParHistory = () => {
         fetchParRatingOfEmployee({
           parCycleId: cycle.parCycleId,
           employeeId: userEmail,
-        })
+        }),
       );
       if (fetchParRatingOfEmployee.fulfilled.match(resultAction)) {
         setIsEmployeePreviousParOpen(true);
@@ -123,10 +121,7 @@ const ParHistory = () => {
               <IconButton color="primary" component="label" onClick={() => {}}>
                 <HistoryIcon fontSize="large" />
               </IconButton>
-              <Typography
-                variant="h4"
-                sx={{ marginTop: "12px", marginLeft: "10px" }}
-              >
+              <Typography variant="h4" sx={{ marginTop: "12px", marginLeft: "10px" }}>
                 PAR History
               </Typography>
             </Grid>
@@ -141,17 +136,11 @@ const ParHistory = () => {
                 <Table stickyHeader>
                   <TableHead>
                     <TableRow>
-                      <TableCell
-                        sx={{ width: "50%", fontWeight: "bold", color: "grey" }}
-                      >
+                      <TableCell sx={{ width: "50%", fontWeight: "bold", color: "grey" }}>
                         Cycle Name
                       </TableCell>
-                      <TableCell sx={{ fontWeight: "bold", color: "grey" }}>
-                        Start Date
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: "bold", color: "grey" }}>
-                        End Date
-                      </TableCell>
+                      <TableCell sx={{ fontWeight: "bold", color: "grey" }}>Start Date</TableCell>
+                      <TableCell sx={{ fontWeight: "bold", color: "grey" }}>End Date</TableCell>
                       <TableCell sx={{ width: "10%" }}></TableCell>
                     </TableRow>
                   </TableHead>
@@ -159,9 +148,7 @@ const ParHistory = () => {
                     {cycleLoadingState === RequestState.LOADING && (
                       <TableRow>
                         <TableCell colSpan={3} style={{ border: "none" }}>
-                          <LoadingEffect
-                            message={uiMessages.loading.pageLoading}
-                          />
+                          <LoadingEffect message={uiMessages.loading.pageLoading} />
                         </TableCell>
                       </TableRow>
                     )}
@@ -177,14 +164,10 @@ const ParHistory = () => {
                             >
                               <TableCell>{cycle.parCycleName}</TableCell>
                               <TableCell>
-                                {dayjs(cycle.parCycleStartDate).format(
-                                  "D MMM 'YY"
-                                )}
+                                {dayjs(cycle.parCycleStartDate).format("D MMM 'YY")}
                               </TableCell>
                               <TableCell>
-                                {dayjs(cycle.parCycleEndDate).format(
-                                  "D MMM 'YY"
-                                )}
+                                {dayjs(cycle.parCycleEndDate).format("D MMM 'YY")}
                               </TableCell>
                               <TableCell>
                                 <Tooltip
@@ -213,14 +196,8 @@ const ParHistory = () => {
                           ))}
                         {previousCycles.length === 0 && (
                           <TableRow>
-                            <TableCell
-                              colSpan={3}
-                              align="center"
-                              style={{ border: "none" }}
-                            >
-                              <Typography color={"GrayText"}>
-                                No data available
-                              </Typography>
+                            <TableCell colSpan={3} align="center" style={{ border: "none" }}>
+                              <Typography color={"GrayText"}>No data available</Typography>
                             </TableCell>
                           </TableRow>
                         )}

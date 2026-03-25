@@ -13,50 +13,59 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import {
-  Box,
-  Card,
-  Grid,
-  Link,
-  Avatar,
-  Switch,
-  Tooltip,
-  Divider,
-  TextField,
-  IconButton,
-  Typography,
-  Breadcrumbs,
-  InputAdornment,
-  FormControlLabel,
-} from "@mui/material";
-import React from "react";
-import dayjs from "dayjs";
-import { Review } from "../components/Review";
-import { useEffect, useRef, useState } from "react";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import SearchIcon from "@mui/icons-material/Search";
-import Groups3Icon from "@mui/icons-material/Groups3";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { LoadingEffect } from "@component/ui/Loading";
-import NoDataView from "@component/common/NoDataView";
-import DateRangeIcon from "@mui/icons-material/DateRange";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import RateReviewIcon from "@mui/icons-material/RateReview";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import ParStatusChip from "@component/common/ParStatusChip";
-import { CustomModal } from "@component/common/CustomModal";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { useAppSelector, useAppDispatch } from "@slices/store";
+import DateRangeIcon from "@mui/icons-material/DateRange";
+import Groups3Icon from "@mui/icons-material/Groups3";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
-import { ShowSnackBarMessage } from "@slices/commonSlice/common";
+import RateReviewIcon from "@mui/icons-material/RateReview";
+import SearchIcon from "@mui/icons-material/Search";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import {
+  Avatar,
+  Box,
+  Breadcrumbs,
+  Card,
+  Divider,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Link,
+  Switch,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { DataGrid, GridRenderCellParams, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
+import dayjs from "dayjs";
+
+import React from "react";
+import { useEffect, useRef, useState } from "react";
+
+import { CustomModal } from "@component/common/CustomModal";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
-import { RequestState } from "@utils/types";
-import { uiMessages, shortDateFormat, tooltipVisibilityDelay } from "@config/constant";
-import { fetchCurrentParCycleOfEmployee, selectEmployeeStatus } from "@slices/employeeSlice/employee";
-import { DataGrid, GridRowId, GridRowSelectionModel, GridRenderCellParams } from "@mui/x-data-grid";
-import { selectReportStatus, fetchDirectEmployeePars, selectDirectEmployeePars } from "@slices/reportSlice/report";
+import NoDataView from "@component/common/NoDataView";
+import ParStatusChip from "@component/common/ParStatusChip";
+import { LoadingEffect } from "@component/ui/Loading";
+import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
 import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
+import {
+  fetchCurrentParCycleOfEmployee,
+  selectEmployeeStatus,
+} from "@slices/employeeSlice/employee";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import {
+  fetchDirectEmployeePars,
+  selectDirectEmployeePars,
+  selectReportStatus,
+} from "@slices/reportSlice/report";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { RequestState } from "@utils/types";
+
+import { Review } from "../components/Review";
 
 const ReportChainView = () => {
   const userEmail = useAppSelector(selectUserEmail);
@@ -69,7 +78,7 @@ const ReportChainView = () => {
 
   // FIX 1: Explicitly type as an array of GridRowIds
   const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({
-    type: 'include',
+    type: "include",
     ids: new Set(),
   });
   const [isParCycleDatesOpen, setIsParCycleDatesOpen] = useState(false);
@@ -92,7 +101,8 @@ const ReportChainView = () => {
     return reports.filter(
       (row) =>
         row.parEmployeeEmail?.toLowerCase().includes(searchTerm) &&
-        (!showLeadsOnly || row.isEmployeeALead?.toLowerCase() === showLeadsOnly.toString().toLowerCase())
+        (!showLeadsOnly ||
+          row.isEmployeeALead?.toLowerCase() === showLeadsOnly.toString().toLowerCase()),
     );
   };
 
@@ -111,7 +121,7 @@ const ReportChainView = () => {
       fetchDirectEmployeePars({
         parCycleId: currentCycle.parCycleId,
         leadEmail: leadEmail,
-      })
+      }),
     );
   };
 
@@ -149,7 +159,7 @@ const ReportChainView = () => {
         fetchDirectEmployeePars({
           parCycleId: currentCycle.parCycleId,
           leadEmail: employeeEmail,
-        })
+        }),
       );
       setShowLeadsOnly(false);
       setSearchQuery("");
@@ -165,7 +175,10 @@ const ReportChainView = () => {
         <Box display="flex" alignItems="center" position="relative">
           <Avatar
             src={employeeMap[params.row?.parEmployeeEmail]?.employeeThumbnail}
-            alt={employeeMap[params.row?.parEmployeeEmail]?.employeeName || params.row?.parEmployeeEmail}
+            alt={
+              employeeMap[params.row?.parEmployeeEmail]?.employeeName ||
+              params.row?.parEmployeeEmail
+            }
             sx={{ marginRight: 2, height: "2.2rem", width: "2.2rem" }}
           />
           <Box
@@ -197,7 +210,11 @@ const ReportChainView = () => {
               <Typography color={"GrayText"} variant="h6" mr={1}>
                 {params.row?.parEmployeeEmail}
               </Typography>
-              <Tooltip title="Copy Email" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
+              <Tooltip
+                title="Copy Email"
+                enterDelay={tooltipVisibilityDelay}
+                enterNextDelay={tooltipVisibilityDelay}
+              >
                 <IconButton
                   size="small"
                   aria-label="Copy Email"
@@ -286,11 +303,21 @@ const ReportChainView = () => {
             onClick={() => handleMembersTableClick(params.row)}
           >
             {params.row.parLeadStatus === ParLeadStatus.SHARED ? (
-              <Tooltip arrow title="View" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
+              <Tooltip
+                arrow
+                title="View"
+                enterDelay={tooltipVisibilityDelay}
+                enterNextDelay={tooltipVisibilityDelay}
+              >
                 <VisibilityIcon />
               </Tooltip>
             ) : (
-              <Tooltip arrow title="Review" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
+              <Tooltip
+                arrow
+                title="Review"
+                enterDelay={tooltipVisibilityDelay}
+                enterNextDelay={tooltipVisibilityDelay}
+              >
                 <RateReviewIcon />
               </Tooltip>
             )}
@@ -304,7 +331,9 @@ const ReportChainView = () => {
                   color: "white",
                 },
               }}
-              onClick={() => loadSubordinates(params.row.parEmployeeEmail, params.row.parEmployeeName)}
+              onClick={() =>
+                loadSubordinates(params.row.parEmployeeEmail, params.row.parEmployeeName)
+              }
             >
               <Tooltip
                 arrow
@@ -390,10 +419,16 @@ const ReportChainView = () => {
       {parCycleLoadingStatus === RequestState.SUCCEEDED && currentCycle?.parCycleId && (
         <>
           {reviewEmployeeView && currentCycle?.parCycleId ? (
-            <Review selectedEmployeeEmail={selectedEmployeeEmail} closeReviewEmployeeView={closeReviewEmployeeView} />
+            <Review
+              selectedEmployeeEmail={selectedEmployeeEmail}
+              closeReviewEmployeeView={closeReviewEmployeeView}
+            />
           ) : (
             <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-              <ReportChainBreadcrumbs navigationHistory={navigationHistory} onNavigate={handleBreadcrumbNavigation} />
+              <ReportChainBreadcrumbs
+                navigationHistory={navigationHistory}
+                onNavigate={handleBreadcrumbNavigation}
+              />
               <Grid
                 container
                 spacing={2}
@@ -461,7 +496,13 @@ const ReportChainView = () => {
                     </Tooltip>
                     <FormControlLabel
                       value="end"
-                      control={<Switch color="primary" checked={showLeadsOnly} onChange={handleLeadsOnlyFilter} />}
+                      control={
+                        <Switch
+                          color="primary"
+                          checked={showLeadsOnly}
+                          onChange={handleLeadsOnlyFilter}
+                        />
+                      }
                       label="Show Leads Only"
                       labelPlacement="end"
                     />
@@ -530,7 +571,10 @@ interface ReportChainBreadcrumbsProps {
   onNavigate: (index: number) => void;
 }
 
-const ReportChainBreadcrumbs: React.FC<ReportChainBreadcrumbsProps> = ({ navigationHistory, onNavigate }) => {
+const ReportChainBreadcrumbs: React.FC<ReportChainBreadcrumbsProps> = ({
+  navigationHistory,
+  onNavigate,
+}) => {
   return (
     <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} className="mb-4">
       {navigationHistory.map((item, index) => {
@@ -540,7 +584,13 @@ const ReportChainBreadcrumbs: React.FC<ReportChainBreadcrumbsProps> = ({ navigat
             {item.name}
           </Typography>
         ) : (
-          <Link key={item.email} component="button" onClick={() => onNavigate(index)} underline="hover" color="primary">
+          <Link
+            key={item.email}
+            component="button"
+            onClick={() => onNavigate(index)}
+            underline="hover"
+            color="primary"
+          >
             {item.name}
           </Link>
         );
