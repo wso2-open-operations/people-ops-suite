@@ -13,15 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import React from "react";
+import LoadingButton from "@mui/lab/LoadingButton";
+import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
-import LoadingButton from "@mui/lab/LoadingButton";
+import DialogTitle from "@mui/material/DialogTitle";
+
+import React from "react";
 
 interface ConfirmationDialogProps {
   open: boolean;
@@ -65,24 +65,14 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
         {title}
       </DialogTitle>
       <DialogContent>
-        <DialogContentText id="confirmation-dialog-description">
-          {message}
-        </DialogContentText>
+        <DialogContentText id="confirmation-dialog-description">{message}</DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button
-          onClick={onClose}
-          color={isWarning ? "error" : "primary"}
-          variant="outlined"
-        >
+        <Button onClick={onClose} color={isWarning ? "error" : "primary"} variant="outlined">
           {cancelText}
         </Button>
         {!showLoading ? (
-          <Button
-            color={isWarning ? "error" : "primary"}
-            variant="contained"
-            onClick={onConfirm}
-          >
+          <Button color={isWarning ? "error" : "primary"} variant="contained" onClick={onConfirm}>
             {okText}
           </Button>
         ) : (

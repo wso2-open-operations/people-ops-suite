@@ -1,35 +1,34 @@
 // Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
-
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
 // in compliance with the License.
 // You may obtain a copy of the License at
-
 // http://www.apache.org/licenses/LICENSE-2.0
-
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import {
   Box,
-  Grid,
   Button,
   Dialog,
-  Tooltip,
-  TextField,
-  Typography,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
+  DialogTitle,
+  Grid,
+  TextField,
+  Tooltip,
+  Typography,
 } from "@mui/material";
-import { GroupedTeams } from "@utils/types";
-import { EmailAutocomplete } from "./EmailAutoComplete";
+
 import React, { FC, FormEvent, useEffect, useState } from "react";
+
 import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { GroupedTeams } from "@utils/types";
+
+import { EmailAutocomplete } from "./EmailAutoComplete";
 
 interface EditQuotaDialogProps {
   open: boolean;
@@ -75,7 +74,10 @@ const EditQuotaDialog: FC<EditQuotaDialogProps> = ({ open, onClose, onSave, grou
     onClose();
   };
 
-  const handleInputChange = (type: "5Slots" | "20Slots", e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    type: "5Slots" | "20Slots",
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const inputValue = e.target.value;
     const value = inputValue === "" ? 0 : parseInt(inputValue, 10);
     const validatedValue = isNaN(value) ? 0 : Math.max(value, 0);
@@ -157,7 +159,9 @@ const EditQuotaDialog: FC<EditQuotaDialogProps> = ({ open, onClose, onSave, grou
                       ...commonTextFieldProps.inputProps,
                       max: group.default5Slots,
                     }}
-                    onChange={(e) => handleInputChange("5Slots", e as React.ChangeEvent<HTMLInputElement>)}
+                    onChange={(e) =>
+                      handleInputChange("5Slots", e as React.ChangeEvent<HTMLInputElement>)
+                    }
                     value={group.allocated5Slots ?? ""}
                   />
                 </Tooltip>
@@ -180,7 +184,9 @@ const EditQuotaDialog: FC<EditQuotaDialogProps> = ({ open, onClose, onSave, grou
                       ...commonTextFieldProps.inputProps,
                       max: group.default20Slots,
                     }}
-                    onChange={(e) => handleInputChange("20Slots", e as React.ChangeEvent<HTMLInputElement>)}
+                    onChange={(e) =>
+                      handleInputChange("20Slots", e as React.ChangeEvent<HTMLInputElement>)
+                    }
                     value={group.allocated20Slots ?? ""}
                   />
                 </Tooltip>

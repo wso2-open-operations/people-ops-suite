@@ -13,9 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Modal, Paper } from "@mui/material";
 
 import React from "react";
-import { Modal, Paper } from "@mui/material";
 
 interface CustomModalProps {
   open: boolean;

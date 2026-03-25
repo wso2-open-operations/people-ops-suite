@@ -13,47 +13,49 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import CloseIcon from "@mui/icons-material/Close";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
-  Box,
-  Grid,
-  Chip,
-  Avatar,
-  Divider,
-  useTheme,
-  TextField,
   Accordion,
-  Typography,
-  IconButton,
   AccordionDetails,
   AccordionSummary,
+  Avatar,
+  Box,
+  Chip,
+  Divider,
+  Grid,
+  IconButton,
+  TextField,
+  Typography,
+  useTheme,
 } from "@mui/material";
+
+import { useEffect, useState } from "react";
+
+import EmployeeChip from "@component/common/EmployeeChip";
+import ErrorComponent from "@component/ui/ErrorComponent";
+import { LoadingEffect } from "@component/ui/Loading";
+import { uiMessages } from "@config/constant";
+import ThreeSixtyHistoryFeedbackSection from "@root/src/view/leadPortal/components/HistoryFeedbackComponent";
 import {
+  ParSpecialRating,
+  fetchHistoryParRatingOfEmployee,
   fetchHistoryReviews,
+  fetchParticipatedParCyclesOfEmployee,
   resetEmpRatingHistorySate,
   resetEmpReviewHistorySate,
   selectEmployeeHistoryRating,
-  fetchHistoryParRatingOfEmployee,
-  selectEmployeeHistoryReviewStatus,
   selectEmployeeHistoryRatingStatus,
-  fetchParticipatedParCyclesOfEmployee,
+  selectEmployeeHistoryReviewStatus,
   selectParticipatedParCyclesOfEmployee,
   selectParticipatedParCyclesOfEmployeeState,
-  ParSpecialRating,
 } from "@slices/employeeHistorySlice/employeeHistory";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { RequestState } from "@utils/types";
+
 import { tokens } from "../../theme";
 import CommentPaper from "./CommentPaper";
-import { useEffect, useState } from "react";
-import { uiMessages } from "@config/constant";
-import CloseIcon from "@mui/icons-material/Close";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { LoadingEffect } from "@component/ui/Loading";
-import ErrorComponent from "@component/ui/ErrorComponent";
-import EmployeeChip from "@component/common/EmployeeChip";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { RequestState } from "@utils/types";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import ThreeSixtyHistoryFeedbackSection from "@root/src/view/leadPortal/components/HistoryFeedbackComponent";
 
 interface EmployeeHistoryCardProps {
   onClose: () => void;
@@ -62,7 +64,12 @@ interface EmployeeHistoryCardProps {
   empThumbnail: string;
 }
 
-const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: EmployeeHistoryCardProps) => {
+const EmployeeHistoryCard = ({
+  onClose,
+  empName,
+  empEmail,
+  empThumbnail,
+}: EmployeeHistoryCardProps) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const colors = tokens(theme.palette.mode);
@@ -74,12 +81,9 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
   const allCycles = useAppSelector(selectParticipatedParCyclesOfEmployee);
   const cycleLoadingState = useAppSelector(selectParticipatedParCyclesOfEmployeeState);
 
-  useEffect(
-    () => {
-      dispatch(fetchParticipatedParCyclesOfEmployee({ email: empEmail }));
-    },
-    []
-  );
+  useEffect(() => {
+    dispatch(fetchParticipatedParCyclesOfEmployee({ email: empEmail }));
+  }, []);
 
   const handleRowClick = (cycleId: number) => {
     if (cycleId >= 0) {
@@ -88,7 +92,7 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
         fetchHistoryParRatingOfEmployee({
           employeeId: empEmail,
           parCycleId: cycleId,
-        })
+        }),
       );
       dispatch(fetchHistoryReviews({ employeeId: empEmail, parCycleId: cycleId }));
     }
@@ -135,7 +139,9 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
         ratingsStatus === RequestState.FAILED ||
         (reviewsStatus === RequestState.FAILED && <ErrorComponent />)}
 
-      {cycleLoadingState === RequestState.LOADING && <LoadingEffect message={uiMessages.loading.pageLoading} />}
+      {cycleLoadingState === RequestState.LOADING && (
+        <LoadingEffect message={uiMessages.loading.pageLoading} />
+      )}
 
       {cycleLoadingState === RequestState.SUCCEEDED && (
         <Box
@@ -217,22 +223,34 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
                     }}
                   />
                 </Grid>
-                {ratings.parSpecialRating === ParSpecialRating.NONE && ratings.parRating === ParSpecialRating.NONE ? (
+                {ratings.parSpecialRating === ParSpecialRating.NONE &&
+                ratings.parRating === ParSpecialRating.NONE ? (
                   <></>
                 ) : (
                   <Grid size={{ xs: 12 }}>
                     <Box mt={2} display="flex" flexDirection="column" gap={1}>
                       <Box display="flex" gap={1} flexWrap="wrap">
                         {ratings.parSpecialRating !== ParSpecialRating.NONE && (
-                          <EmployeeChip isSpecial={true} isFromLead={false} text={ratings.parSpecialRating!} />
+                          <EmployeeChip
+                            isSpecial={true}
+                            isFromLead={false}
+                            text={ratings.parSpecialRating!}
+                          />
                         )}
                         {ratings.parRating !== ParSpecialRating.NONE && (
-                          <EmployeeChip isSpecial={false} isFromLead={true} text={ratings.parRating!} />
+                          <EmployeeChip
+                            isSpecial={false}
+                            isFromLead={true}
+                            text={ratings.parRating!}
+                          />
                         )}
                       </Box>
                       {ratings.parRatingSharedBy && (
                         <Box mt={1}>
-                          <Chip size="small" label={` PAR shared by: ${ratings.parRatingSharedBy} `} />
+                          <Chip
+                            size="small"
+                            label={` PAR shared by: ${ratings.parRatingSharedBy} `}
+                          />
                         </Box>
                       )}
                     </Box>
@@ -254,7 +272,7 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
                   <Box>
                     <Typography variant="body1">
                       {ratings.parLeadEmail
-                        ? employeeMap[ratings.parLeadEmail]?.employeeName ?? "Not Available"
+                        ? (employeeMap[ratings.parLeadEmail]?.employeeName ?? "Not Available")
                         : "Not Available"}
                     </Typography>
                     <Typography variant="subtitle2" color="textSecondary">
@@ -281,11 +299,19 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
               <Divider sx={{ mt: 1 }} />
 
               <Accordion
-                defaultExpanded={checkString(ratings.parEmployeeComment) && checkString(ratings.parLeadComment)}
+                defaultExpanded={
+                  checkString(ratings.parEmployeeComment) && checkString(ratings.parLeadComment)
+                }
                 sx={{ mt: 1 }}
-                disabled={!checkString(ratings.parEmployeeComment) && !checkString(ratings.parLeadComment)}
+                disabled={
+                  !checkString(ratings.parEmployeeComment) && !checkString(ratings.parLeadComment)
+                }
               >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel2-content" id="panel2-header">
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  aria-controls="panel2-content"
+                  id="panel2-header"
+                >
                   Employee PAR
                 </AccordionSummary>
                 <AccordionDetails>
@@ -295,11 +321,19 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
               </Accordion>
 
               <Accordion
-                defaultExpanded={checkString(ratings.parEmployeeComment) && checkString(ratings.parLeadComment)}
+                defaultExpanded={
+                  checkString(ratings.parEmployeeComment) && checkString(ratings.parLeadComment)
+                }
                 sx={{ mt: 1 }}
-                disabled={!checkString(ratings.parEmployeeComment) && !checkString(ratings.parLeadComment)}
+                disabled={
+                  !checkString(ratings.parEmployeeComment) && !checkString(ratings.parLeadComment)
+                }
               >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel2-content" id="panel2-header">
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  aria-controls="panel2-content"
+                  id="panel2-header"
+                >
                   Lead’s Feedback
                 </AccordionSummary>
                 <AccordionDetails>
@@ -311,11 +345,19 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
 
               {ratings.parAdminComment && (
                 <Accordion
-                  defaultExpanded={checkString(ratings.parEmployeeComment) && checkString(ratings.parLeadComment)}
+                  defaultExpanded={
+                    checkString(ratings.parEmployeeComment) && checkString(ratings.parLeadComment)
+                  }
                   sx={{ mt: 1 }}
-                  disabled={!checkString(ratings.parEmployeeComment) && !checkString(ratings.parLeadComment)}
+                  disabled={
+                    !checkString(ratings.parEmployeeComment) && !checkString(ratings.parLeadComment)
+                  }
                 >
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel2-content" id="panel2-header">
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel2-content"
+                    id="panel2-header"
+                  >
                     Admin Comment
                   </AccordionSummary>
                   <AccordionDetails>

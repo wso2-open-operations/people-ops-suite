@@ -1,33 +1,31 @@
 // Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
-
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
 // in compliance with the License.
 // You may obtain a copy of the License at
-
 // http://www.apache.org/licenses/LICENSE-2.0
-
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { RequestState } from "@utils/types";
 import { Avatar, Chip } from "@mui/material";
-import { useAppSelector } from "@slices/store";
-import TextField from "@mui/material/TextField";
-import { selectUserEmail } from "@slices/authSlice/auth";
 import Autocomplete from "@mui/material/Autocomplete";
 import CircularProgress from "@mui/material/CircularProgress";
-import React, { useCallback, useState, SyntheticEvent } from "react";
-import { selectThreeSixtyReviewers } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import TextField from "@mui/material/TextField";
+
+import React, { SyntheticEvent, useCallback, useState } from "react";
+
+import { selectUserEmail } from "@slices/authSlice/auth";
 import {
   selectEmployeeArray,
   selectEmployeeMap,
   selectEmployeeMapStatus,
 } from "@slices/metaSlice/meta";
+import { useAppSelector } from "@slices/store";
+import { selectThreeSixtyReviewers } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import { RequestState } from "@utils/types";
 
 interface EmailAutocompleteProps {
   value: string[];
@@ -75,30 +73,21 @@ export const EmailAutocomplete = ({
         setInputValue("");
       }
     },
-    [onChange]
+    [onChange],
   );
 
-  const handleInputChange = useCallback(
-    (_event: SyntheticEvent<Element, Event>, value: string) => {
-      setInputValue(value);
-    },
-    []
-  );
+  const handleInputChange = useCallback((_event: SyntheticEvent<Element, Event>, value: string) => {
+    setInputValue(value);
+  }, []);
 
   const handlePaste = useCallback(
     (event: React.ClipboardEvent) => {
       const pastedText = event.clipboardData.getData("text");
 
       // Get valid employee emails from the dropdown
-      const validEmployeeEmails = employeeArray.map(
-        (employee) => employee.workEmail
-      );
+      const validEmployeeEmails = employeeArray.map((employee) => employee.workEmail);
 
-      if (
-        pastedText.includes(",") ||
-        pastedText.includes(";") ||
-        pastedText.includes("\n")
-      ) {
+      if (pastedText.includes(",") || pastedText.includes(";") || pastedText.includes("\n")) {
         event.preventDefault();
 
         // Split by separators: comma, semicolon, newline, space
@@ -113,7 +102,7 @@ export const EmailAutocomplete = ({
                 ownEmail,
                 ...reviewers.map((reviewer) => reviewer.reviewerEmail),
                 ...emailsToSkip,
-              ].includes(email)
+              ].includes(email),
           );
 
         // Removing duplicates
@@ -122,7 +111,7 @@ export const EmailAutocomplete = ({
         setInputValue("");
       }
     },
-    [value, onChange, ownEmail, reviewers, emailsToSkip, employeeArray]
+    [value, onChange, ownEmail, reviewers, emailsToSkip, employeeArray],
   );
 
   const handleKeyDown = useCallback(
@@ -134,9 +123,7 @@ export const EmailAutocomplete = ({
       }
 
       // Get valid employee emails from the dropdown
-      const validEmployeeEmails = employeeArray.map(
-        (employee) => employee.workEmail
-      );
+      const validEmployeeEmails = employeeArray.map((employee) => employee.workEmail);
 
       // Handle comma or semicolon to add email
       if ((event.key === "," || event.key === ";") && inputValue.trim()) {
@@ -158,16 +145,7 @@ export const EmailAutocomplete = ({
         }
       }
     },
-    [
-      inputValue,
-      value,
-      onChange,
-      ownEmail,
-      reviewers,
-      emailsToSkip,
-      emailRegex,
-      employeeArray,
-    ]
+    [inputValue, value, onChange, ownEmail, reviewers, emailsToSkip, emailRegex, employeeArray],
   );
 
   return (
@@ -176,9 +154,7 @@ export const EmailAutocomplete = ({
       open={open}
       onOpen={handleOpen}
       onClose={handleClose}
-      isOptionEqualToValue={(option: string, optionValue) =>
-        option === optionValue
-      }
+      isOptionEqualToValue={(option: string, optionValue) => option === optionValue}
       getOptionLabel={(option) => option}
       options={employeeArray
         .map((employee) => employee.workEmail)
@@ -188,7 +164,7 @@ export const EmailAutocomplete = ({
               ownEmail,
               ...reviewers.map((reviewer) => reviewer.reviewerEmail),
               ...emailsToSkip,
-            ].includes(email)
+            ].includes(email),
         )}
       loading={emailLoadingState === RequestState.LOADING}
       multiple
@@ -241,10 +217,7 @@ export const EmailAutocomplete = ({
           {...params}
           label="Search by email or paste comma-separated emails"
           error={error}
-          helperText={
-            helperText ??
-            "No emails found, Please refresh the window and try again."
-          }
+          helperText={helperText ?? "No emails found, Please refresh the window and try again."}
           onPaste={handlePaste}
           onKeyDown={handleKeyDown}
           InputProps={{

@@ -13,21 +13,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import { Stack, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import DOMPurify from "dompurify";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { useTheme } from "@mui/material/styles";
-import { Stack, Typography } from "@mui/material";
+
 import React, { ChangeEvent, useState } from "react";
+
 import { SANITIZE_CONFIG } from "@config/constant";
 
 interface CustomRichTextFieldProps {
   value: string;
   name: string;
-  onChange: (
-    value: string | ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => void;
+  onChange: (value: string | ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   error?: boolean;
   placeholder?: string;
   helperText?: string | false;
@@ -65,10 +64,7 @@ const CustomRichTextField: React.FC<CustomRichTextFieldProps> = ({
   };
 
   // Sanitize the current value for initial render
-  const sanitizedContent = DOMPurify.sanitize(
-    decodeHTMLEntities(value),
-    SANITIZE_CONFIG
-  );
+  const sanitizedContent = DOMPurify.sanitize(decodeHTMLEntities(value), SANITIZE_CONFIG);
 
   const modules = {
     toolbar: [

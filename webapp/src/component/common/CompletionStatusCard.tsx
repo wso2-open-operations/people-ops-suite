@@ -13,10 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import { Typography } from "@mui/material";
 import Box from "@mui/material/Box";
 import LinearProgress from "@mui/material/LinearProgress";
-import { Typography } from "@mui/material";
 
 interface CardProps {
   name: string;
@@ -25,15 +24,10 @@ interface CardProps {
   hideLeftCount?: boolean;
 }
 
-export const CompletionStatusCard = ({
-  name,
-  completed,
-  total,
-  hideLeftCount,
-}: CardProps) => {
+export const CompletionStatusCard = ({ name, completed, total, hideLeftCount }: CardProps) => {
   return (
-    <Box pt={1.5}>
-      <Typography py={1}>
+    <Box>
+      <Typography pb={"5px"}>
         {name}
         {!hideLeftCount && <> {` : ${total - completed}`} Pending</>}
       </Typography>

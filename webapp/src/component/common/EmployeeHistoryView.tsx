@@ -13,21 +13,43 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
-  Box,
-  Grid,
-  Chip,
-  Avatar,
-  Divider,
-  TextField,
   Accordion,
-  Typography,
-  Autocomplete,
   AccordionDetails,
   AccordionSummary,
+  Autocomplete,
+  Avatar,
+  Box,
+  Chip,
+  Divider,
+  Grid,
   Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
+
+import { useEffect, useMemo, useState } from "react";
+
+import EmployeeChip from "@component/common/EmployeeChip";
+import ErrorComponent from "@component/ui/ErrorComponent";
+import { LoadingEffect } from "@component/ui/Loading";
+import { uiMessages } from "@config/constant";
+import ThreeSixtyFeedbackSection from "@root/src/view/leadPortal/components/FeedbackComponent";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import {
+  ParSpecialRating,
+  fetchHistoryParRatingOfEmployee,
+  fetchHistoryReviews,
+  fetchParticipatedParCyclesOfEmployee,
+  resetEmpRatingHistorySate,
+  resetEmpReviewHistorySate,
+  selectEmployeeHistoryRating,
+  selectEmployeeHistoryRatingStatus,
+  selectEmployeeHistoryReviewStatus,
+  selectParticipatedParCyclesOfEmployee,
+  selectParticipatedParCyclesOfEmployeeState,
+} from "@slices/employeeHistorySlice/employeeHistory";
 import {
   Employee,
   fetchEntityEmployees,
@@ -36,32 +58,12 @@ import {
   selectSubordinates,
   selectSubordinatesArray,
 } from "@slices/metaSlice/meta";
-import {
-  fetchHistoryReviews,
-  resetEmpRatingHistorySate,
-  resetEmpReviewHistorySate,
-  selectEmployeeHistoryRating,
-  fetchHistoryParRatingOfEmployee,
-  selectEmployeeHistoryReviewStatus,
-  selectEmployeeHistoryRatingStatus,
-  fetchParticipatedParCyclesOfEmployee,
-  selectParticipatedParCyclesOfEmployee,
-  selectParticipatedParCyclesOfEmployeeState,
-  ParSpecialRating,
-} from "@slices/employeeHistorySlice/employeeHistory";
-import NoDataView from "./NoDataView";
-import CommentPaper from "./CommentPaper";
-import { uiMessages } from "@config/constant";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import { useEffect, useMemo, useState } from "react";
-import { LoadingEffect } from "@component/ui/Loading";
-import ErrorComponent from "@component/ui/ErrorComponent";
-import EmployeeChip from "@component/common/EmployeeChip";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 import { fetchReviews } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 import { RequestState } from "@utils/types";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import ThreeSixtyFeedbackSection from "@root/src/view/leadPortal/components/FeedbackComponent";
+
+import CommentPaper from "./CommentPaper";
+import NoDataView from "./NoDataView";
 
 const DEFAULT_CYCLE_ID = -1;
 
@@ -80,9 +82,11 @@ const EmployeeHistoryView = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const cycleLoadingState = useAppSelector(selectParticipatedParCyclesOfEmployeeState);
   const selectedEmployeeEmail = selectedEmployee?.workEmail;
-  const empThumbnail = selectedEmployeeEmail ? employeeMap[selectedEmployeeEmail]?.employeeThumbnail : undefined;
+  const empThumbnail = selectedEmployeeEmail
+    ? employeeMap[selectedEmployeeEmail]?.employeeThumbnail
+    : undefined;
   const empName = selectedEmployeeEmail
-    ? employeeMap[selectedEmployeeEmail]?.employeeName ?? selectedEmployeeEmail
+    ? (employeeMap[selectedEmployeeEmail]?.employeeName ?? selectedEmployeeEmail)
     : "Select a subordinate";
 
   useEffect(
@@ -92,7 +96,7 @@ const EmployeeHistoryView = () => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
 
   // Fetch participants when cycle is selected
@@ -109,13 +113,13 @@ const EmployeeHistoryView = () => {
         fetchHistoryParRatingOfEmployee({
           employeeId: selectedEmployeeEmail,
           parCycleId: cycleID,
-        })
+        }),
       );
       dispatch(
         fetchHistoryReviews({
           employeeId: selectedEmployeeEmail,
           parCycleId: cycleID,
-        })
+        }),
       );
       dispatch(fetchReviews({ employeeId: selectedEmployeeEmail, parCycleId: cycleID }));
     }
@@ -154,14 +158,17 @@ const EmployeeHistoryView = () => {
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
 
   const filteredEmployees = useMemo(() => {
     const searchTerm = inputValue.toLowerCase();
 
     // If inputValue matches the selected value exactly, show full list again
-    if (selectedEmployee && inputValue === `${selectedEmployee.employeeName} (${selectedEmployee.workEmail})`) {
+    if (
+      selectedEmployee &&
+      inputValue === `${selectedEmployee.employeeName} (${selectedEmployee.workEmail})`
+    ) {
       return employeeArray.filter((emp) => emp.workEmail !== userEmail);
     }
 
@@ -169,7 +176,7 @@ const EmployeeHistoryView = () => {
       (employee) =>
         employee.workEmail !== userEmail &&
         (employee.employeeName.toLowerCase().includes(searchTerm) ||
-          employee.workEmail.toLowerCase().includes(searchTerm))
+          employee.workEmail.toLowerCase().includes(searchTerm)),
     );
   }, [employeeArray, userEmail, inputValue, selectedEmployee]);
 
@@ -191,7 +198,9 @@ const EmployeeHistoryView = () => {
     ratingsStatus === RequestState.SUCCEEDED &&
     reviewsStatus === RequestState.SUCCEEDED;
 
-  const hasRatings = ratings.parSpecialRating !== ParSpecialRating.NONE || ratings.parRating !== ParSpecialRating.NONE;
+  const hasRatings =
+    ratings.parSpecialRating !== ParSpecialRating.NONE ||
+    ratings.parRating !== ParSpecialRating.NONE;
 
   return (
     <Box
@@ -240,7 +249,9 @@ const EmployeeHistoryView = () => {
               setInputValue(`${newValue.employeeName} (${newValue.workEmail})`);
             }
           }}
-          renderInput={(params) => <TextField {...params} placeholder="Select an employee" fullWidth />}
+          renderInput={(params) => (
+            <TextField {...params} placeholder="Select an employee" fullWidth />
+          )}
           ListboxProps={{ style: { maxHeight: "400px" } }}
           renderOption={(props, option) => (
             <Box component="li" {...props}>
@@ -273,7 +284,12 @@ const EmployeeHistoryView = () => {
         <>
           <Grid container spacing={2} sx={{ mt: 3, mb: 2 }}>
             <Grid size={{ xs: "auto" }}>
-              <Avatar variant="rounded" src={empThumbnail} alt="Employee Thumbnail" sx={{ width: 100, height: 100 }} />
+              <Avatar
+                variant="rounded"
+                src={empThumbnail}
+                alt="Employee Thumbnail"
+                sx={{ width: 100, height: 100 }}
+              />
             </Grid>
 
             {hasRatings && (
@@ -281,7 +297,11 @@ const EmployeeHistoryView = () => {
                 <Box display="flex" flexDirection="column" gap={1}>
                   <Box display="flex" gap={1} flexWrap="wrap">
                     {ratings.parSpecialRating !== ParSpecialRating.NONE && (
-                      <EmployeeChip isSpecial={true} isFromLead={false} text={ratings.parSpecialRating!} />
+                      <EmployeeChip
+                        isSpecial={true}
+                        isFromLead={false}
+                        text={ratings.parSpecialRating!}
+                      />
                     )}
                     {ratings.parRating !== ParSpecialRating.NONE && (
                       <EmployeeChip isSpecial={false} isFromLead={true} text={ratings.parRating!} />
@@ -296,7 +316,11 @@ const EmployeeHistoryView = () => {
               </Grid>
             )}
 
-            <EmployeeInfoGridItem title={empName} subtitle1="Employee" subtitle2={selectedEmployeeEmail} />
+            <EmployeeInfoGridItem
+              title={empName}
+              subtitle1="Employee"
+              subtitle2={selectedEmployeeEmail}
+            />
 
             <EmployeeInfoGridItem
               title={formatString(employeeMap[ratings.parLeadEmail ?? ""]?.employeeName)}
