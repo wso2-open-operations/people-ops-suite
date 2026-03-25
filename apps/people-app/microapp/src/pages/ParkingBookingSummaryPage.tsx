@@ -148,7 +148,8 @@ function ParkingBookingSummaryPage() {
     return () => {
       cancelled = true;
     };
-  }, [hasPaymentContext, handleRequest, handleRequestWithNewToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPaymentContext]);
 
   const createReservation = () => {
     if (!paymentContext || !vehicleId)
