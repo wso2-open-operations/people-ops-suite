@@ -617,7 +617,7 @@ function CreateVisit() {
                 }
               }}
               inputValue={inputValue}
-              onInputChange={(event, newInputValue, reason) => {
+              onInputChange={(_event, newInputValue, reason) => {
                 setInputValue(newInputValue);
                 if (reason === "input") {
                   formik.setFieldValue("whoTheyMeetThumbnail", null);
@@ -925,7 +925,7 @@ function CreateVisit() {
               );
             }}
             inputValue={ccInputValue}
-            onInputChange={(event, newInputValue, reason) => {
+            onInputChange={(_event, newInputValue, reason) => {
               setCcInputValue(newInputValue);
               if (reason === "reset") return;
               const trimmed = newInputValue.trim();
