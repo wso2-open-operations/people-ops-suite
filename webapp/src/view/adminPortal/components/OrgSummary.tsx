@@ -1086,7 +1086,7 @@ export const OrgSummary = ({
                                         empEmail={selectedEmployee.workEmail}
                                         empThumbnail={
                                           employeeMap[selectedEmployee.workEmail]
-                                            .employeeThumbnail ?? ""
+                                            ?.employeeThumbnail ?? ""
                                         }
                                         handleClose={() => setIsEmpHistoryModalOpen(false)}
                                       />

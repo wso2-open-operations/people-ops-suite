@@ -35,7 +35,7 @@
     "react": "^19.1.2",
     "react-dom": "^19.1.2",
     "react-idle-timer": "^5.7.2",
-    "react-quill": "^2.0.0",
+    "react-quill-new": "^3.8.3",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.3",
     "redux": "^5.0.1",

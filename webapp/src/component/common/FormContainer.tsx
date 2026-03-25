@@ -33,7 +33,6 @@ export const FormContainer: React.FC<Props> = ({ children }) => {
       marginRight="auto"
       padding="10px"
       borderRadius="0.5rem"
-      border={`1px solid ${theme.palette.divider}`}
       sx={{
         backgroundColor: theme.palette.background.paper,
         overflowX: "hidden",

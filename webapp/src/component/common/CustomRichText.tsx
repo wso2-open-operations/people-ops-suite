@@ -16,8 +16,8 @@
 import { Stack, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import DOMPurify from "dompurify";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 
 import React, { ChangeEvent, useState } from "react";
 
@@ -79,7 +79,7 @@ const CustomRichTextField: React.FC<CustomRichTextFieldProps> = ({
     },
   };
 
-  const formats = ["bold", "italic", "underline", "list", "bullet", "indent"];
+  const formats = ["bold", "italic", "underline", "list", "indent"];
 
   const handleTextChange = (newValue: string) => {
     const decoded = decodeHTMLEntities(newValue);

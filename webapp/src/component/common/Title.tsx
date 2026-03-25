@@ -32,9 +32,6 @@ export default function Title({ firstWord, secondWord, borderEnabled = true, ico
       sx={{
         width: "100%",
         pb: borderEnabled ? 1 : 0,
-        borderBottom: borderEnabled
-          ? `1px solid ${theme.palette.customBorder.territory.active}`
-          : "none",
       }}
     >
       <Stack
