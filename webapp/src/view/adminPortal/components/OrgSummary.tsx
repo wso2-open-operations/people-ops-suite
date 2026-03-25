@@ -13,8 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { useEffect, useRef, useState } from "react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import DateRangeIcon from "@mui/icons-material/DateRange";
+import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import RateReviewIcon from "@mui/icons-material/RateReview";
+import SettingsIcon from "@mui/icons-material/Settings";
+import UpdateIcon from "@mui/icons-material/Update";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Avatar,
   Box,
@@ -31,24 +38,25 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import { DataGrid, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
-import { useLocation } from "react-router-dom";
-import { alpha } from "@mui/material/styles";
-import { useDebounce } from "use-debounce";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import DateRangeIcon from "@mui/icons-material/DateRange";
-import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import SettingsIcon from "@mui/icons-material/Settings";
-import RateReviewIcon from "@mui/icons-material/RateReview";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import UpdateIcon from "@mui/icons-material/Update";
-import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import dayjs from "dayjs";
+import { useLocation } from "react-router-dom";
+import { useDebounce } from "use-debounce";
 
-import { fetchTeams, selectAllTeams, selectAllTeamsSummary, selectTeamStatus, Team } from "@slices/teamSlice/team";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { closeParCycle, fetchOpenParCycle, selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { useEffect, useRef, useState } from "react";
+
+import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import { CustomModal } from "@component/common/CustomModal";
+import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
+import NoDataView from "@component/common/NoDataView";
+import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
+import { LoadingEffect } from "@component/ui/Loading";
+import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { fetchParRatingSummary } from "@slices/employeeHistorySlice/employeeHistory";
+import { ParLeadStatus } from "@slices/employeeHistorySlice/employeeHistory";
 import {
   Employee,
   fetchConfigurations,
@@ -57,37 +65,38 @@ import {
   selectParticipants,
   selectParticipantsStatus,
 } from "@slices/metaSlice/meta";
-import { fetchParRatingSummary } from "@slices/employeeHistorySlice/employeeHistory";
 import {
+  closeParCycle,
+  fetchOpenParCycle,
+  selectCurrentCycle,
+} from "@slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import {
+  Team,
+  fetchTeams,
+  selectAllTeams,
+  selectAllTeamsSummary,
+  selectTeamStatus,
+} from "@slices/teamSlice/team";
+import {
+  RejectedReview,
   fetchRejectedReviews,
   postReviews,
-  RejectedReview,
   selectRejectedReviews,
   selectThreeSixtyReviewStatus,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { selectUserEmail } from "@slices/authSlice/auth";
-
-import { BulkReminderModal } from "@view/adminPortal/components/BulkReminderModal";
-import { ParCycleSettingsForm } from "./ParCycleSettingsForm";
-import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
-import { CustomModal } from "@component/common/CustomModal";
-import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
-import { LoadingEffect } from "@component/ui/Loading";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { TeamSummary } from "@view/leadPortal/components/TeamSummary";
-import { Review } from "@view/leadPortal/components/Review";
-import { Report } from "@view/adminPortal/components/Report";
-import { Completion } from "@view/adminPortal/components/Completion";
-import NoDataView from "@component/common/NoDataView";
-import SummarizedParHistoryView from "./SummarizedParHistoryView";
-import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
-import EmployeeSyncModal from "@view/leadPortal/components/EmployeeSyncModal";
-
-import { calculateAllTeamsSummary } from "@utils/utils";
-import { RequestState } from "@utils/types";
-import { ParLeadStatus } from "@slices/employeeHistorySlice/employeeHistory";
 import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { tooltipVisibilityDelay, uiMessages, shortDateFormat } from "@config/constant";
+import { RequestState } from "@utils/types";
+import { calculateAllTeamsSummary } from "@utils/utils";
+import { BulkReminderModal } from "@view/adminPortal/components/BulkReminderModal";
+import { Completion } from "@view/adminPortal/components/Completion";
+import { Report } from "@view/adminPortal/components/Report";
+import EmployeeSyncModal from "@view/leadPortal/components/EmployeeSyncModal";
+import { Review } from "@view/leadPortal/components/Review";
+import { TeamSummary } from "@view/leadPortal/components/TeamSummary";
+
+import { ParCycleSettingsForm } from "./ParCycleSettingsForm";
+import SummarizedParHistoryView from "./SummarizedParHistoryView";
 
 interface DashboardProps {
   closeOrgSummaryView?: () => void;
@@ -102,7 +111,12 @@ interface FormattedTeam extends Team {
   f2fCompletion: string;
 }
 
-export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHistoryViewOn }: DashboardProps) => {
+export const OrgSummary = ({
+  closeOrgSummaryView,
+  isAdminAuditViewOn,
+  isAdminHistoryViewOn,
+}: DashboardProps) => {
+  const theme = useTheme();
   const location = useLocation();
   const dispatch = useAppDispatch();
   const openReportView = () => setReportView(true);
@@ -243,7 +257,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
 
   useEffect(() => {
     const filteredTeams = formattedTeams.filter((team) =>
-      Object.values(team).some((value) => String(value).toLowerCase().includes(debouncedSearchText.toLowerCase()))
+      Object.values(team).some((value) =>
+        String(value).toLowerCase().includes(debouncedSearchText.toLowerCase()),
+      ),
     );
     const newFilteredSummary = calculateAllTeamsSummary(filteredTeams);
     setFilteredSummary(newFilteredSummary);
@@ -262,7 +278,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
           fetchTeams({
             parCycleId: currentCycle.parCycleId,
             signal: apiController.current.signal,
-          })
+          }),
         );
       }
     }
@@ -311,13 +327,39 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
           employeeId: selectedReview.employeeEmail,
           parCycleId: currentCycle.parCycleId,
           values: values,
-        })
+        }),
       );
 
       if (postReviews.fulfilled.match(resultAction)) {
         fetchReviews();
       }
     }
+  };
+
+  const captionFontSize = theme.typography.caption.fontSize ?? "0.75rem";
+
+  const dataGridSx = {
+    border: "none",
+    overflowX: "hidden",
+    fontSize: captionFontSize,
+    "& .MuiDataGrid-columnHeaderTitle": {
+      fontSize: captionFontSize,
+      fontWeight: 600,
+    },
+    "& .MuiDataGrid-columnHeader": {
+      px: 1,
+      py: 0,
+    },
+    "& .MuiDataGrid-cell": {
+      px: 1,
+      py: "3px",
+    },
+    "& .MuiDataGrid-virtualScroller": {
+      overflowX: "hidden",
+    },
+    "& .MuiDataGrid-row:hover": {
+      cursor: "pointer",
+    },
   };
 
   const columns = [
@@ -338,13 +380,17 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       field: "leadReviewCompletion",
       headerName: "Lead's Feedback",
       flex: 0.08,
-      renderCell: (params: GridRenderCellParams<FormattedTeam>) => <Chip size="small" label={params.row.leadReviewCompletion} />,
+      renderCell: (params: GridRenderCellParams<FormattedTeam>) => (
+        <Chip size="small" label={params.row.leadReviewCompletion} />
+      ),
     },
     {
       field: "f2fCompletion",
       headerName: "F2F",
       flex: 0.08,
-      renderCell: (params: GridRenderCellParams<FormattedTeam>) => <Chip size="small" label={params.row.f2fCompletion} />,
+      renderCell: (params: GridRenderCellParams<FormattedTeam>) => (
+        <Chip size="small" label={params.row.f2fCompletion} />
+      ),
     },
     { field: "numberOf5pSlots", headerName: "5% Slots", flex: 0.09 },
     { field: "numberOf20pSlots", headerName: "20% Slots", flex: 0.09 },
@@ -355,21 +401,25 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       flex: 0.1,
       disableExport: true,
       renderCell: (params: GridRenderCellParams<FormattedTeam>) => (
-        <Tooltip arrow title="Open Team" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
-          <Button
-            variant="outlined"
-            endIcon={
-              <Box sx={{ m: 0, p: 0, ml: -1 }}>
-                <KeyboardArrowRightIcon />
-              </Box>
-            }
-            sx={{
-              m: 0,
-              p: 0,
-              borderRadius: 5,
-            }}
+        <Tooltip
+          arrow
+          title="Open Team"
+          enterDelay={tooltipVisibilityDelay}
+          enterNextDelay={tooltipVisibilityDelay}
+        >
+          <IconButton
+            size="small"
             onClick={() => handleTeamsTableClick(params.row.id)}
-          ></Button>
+            sx={{
+              color: theme.palette.primary.main,
+              "&:hover": {
+                bgcolor: theme.palette.primary.main,
+                color: theme.palette.common.white,
+              },
+            }}
+          >
+            <KeyboardArrowRightIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
       ),
     },
@@ -385,9 +435,11 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
           <Avatar
             src={employeeMap[params.row?.workEmail]?.employeeThumbnail}
             alt={"Employee Thumbnail"}
-            sx={{ marginRight: 2, height: "2.2rem", width: "2.2rem" }}
+            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem" }}
           />
-          <Typography variant="h5">{params.row?.employeeName}</Typography>
+          <Typography variant="body2" fontWeight={500}>
+            {params.row?.employeeName}
+          </Typography>
         </Box>
       ),
     },
@@ -396,7 +448,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       headerName: "Employee Email",
       flex: 2,
       renderCell: (params: GridRenderCellParams) => (
-        <Typography color={"GrayText"} variant="h6">
+        <Typography variant="caption" color={theme.palette.text.secondary}>
           {params.row?.workEmail}
         </Typography>
       ),
@@ -410,31 +462,41 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
         <>
           <IconButton
             sx={{
-              color: "primary.main",
+              color: theme.palette.primary.main,
               "&:hover": {
-                bgcolor: "primary.main",
-                color: "white",
+                bgcolor: theme.palette.primary.main,
+                color: theme.palette.common.white,
               },
               mr: 2,
             }}
             onClick={() => handleEmployeeSelect(params.row, false)}
           >
             {params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? (
-              <Tooltip arrow title="View" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
+              <Tooltip
+                arrow
+                title="View"
+                enterDelay={tooltipVisibilityDelay}
+                enterNextDelay={tooltipVisibilityDelay}
+              >
                 <VisibilityIcon />
               </Tooltip>
             ) : (
-              <Tooltip arrow title="Review" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
+              <Tooltip
+                arrow
+                title="Review"
+                enterDelay={tooltipVisibilityDelay}
+                enterNextDelay={tooltipVisibilityDelay}
+              >
                 <RateReviewIcon />
               </Tooltip>
             )}
           </IconButton>
           <IconButton
             sx={{
-              color: "primary.main",
+              color: theme.palette.primary.main,
               "&:hover": {
-                bgcolor: "primary.main",
-                color: "white",
+                bgcolor: theme.palette.primary.main,
+                color: theme.palette.common.white,
               },
             }}
             onClick={() => {
@@ -465,7 +527,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
           <Avatar
             src={employeeMap[params.row?.employeeEmail]?.employeeThumbnail}
             alt={"Employee Thumbnail"}
-            sx={{ marginRight: 2, height: "2.2rem", width: "2.2rem" }}
+            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem" }}
           />
           <Box
             sx={{
@@ -479,7 +541,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
               },
             }}
           >
-            <Typography variant="h5">
+            <Typography variant="body2" fontWeight={500}>
               {employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail}
             </Typography>
             <Box
@@ -495,7 +557,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                 transition: "opacity 0.3s",
               }}
             >
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="caption" color={theme.palette.text.secondary}>
                 {params.row?.employeeEmail}
               </Typography>
             </Box>
@@ -511,7 +573,11 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
         <Box display="flex" alignItems="center" position="relative">
           <Chip
             size="small"
-            label={params.row.isOfferedFeedback === "TRUE" ? "Was offered a review by" : " Requested a review from"}
+            label={
+              params.row.isOfferedFeedback === "TRUE"
+                ? "Was offered a review by"
+                : " Requested a review from"
+            }
             sx={{
               height: 24,
               width: "180px",
@@ -521,13 +587,13 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
               backgroundColor:
                 params.row.isOfferedFeedback === "TRUE"
                   ? (theme) =>
-                    theme.palette.mode === "light"
-                      ? alpha(theme.palette.info.main, 0.1)
-                      : alpha(theme.palette.info.main, 0.8)
+                      theme.palette.mode === "light"
+                        ? alpha(theme.palette.info.main, 0.1)
+                        : alpha(theme.palette.info.main, 0.8)
                   : (theme) =>
-                    theme.palette.mode === "light"
-                      ? alpha(theme.palette.warning.main, 0.1)
-                      : alpha(theme.palette.warning.main, 0.8),
+                      theme.palette.mode === "light"
+                        ? alpha(theme.palette.warning.main, 0.1)
+                        : alpha(theme.palette.warning.main, 0.8),
 
               "& .MuiChip-label": {
                 px: 1.5,
@@ -547,7 +613,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
           <Avatar
             src={employeeMap[params.row?.reviewerEmail]?.employeeThumbnail}
             alt={"Reviewer Thumbnail"}
-            sx={{ marginRight: 2, height: "2.2rem", width: "2.2rem" }}
+            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem" }}
           />
           <Box
             sx={{
@@ -561,7 +627,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
               },
             }}
           >
-            <Typography variant="h5">
+            <Typography variant="body2" fontWeight={500}>
               {employeeMap[params.row?.reviewerEmail]?.employeeName ?? params.row?.reviewerEmail}
             </Typography>
             <Box
@@ -577,7 +643,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                 transition: "opacity 0.3s",
               }}
             >
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="caption" color={theme.palette.text.secondary}>
                 {params.row?.reviewerEmail}
               </Typography>
             </Box>
@@ -593,10 +659,10 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       renderCell: (params: GridRenderCellParams) => (
         <IconButton
           sx={{
-            color: "primary.main",
+            color: theme.palette.primary.main,
             "&:hover": {
-              bgcolor: "primary.main",
-              color: "white",
+              bgcolor: theme.palette.primary.main,
+              color: theme.palette.common.white,
             },
           }}
           onClick={() => handleClickRestoreReview(params.row)}
@@ -618,328 +684,269 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
     <Stack sx={{ height: "100%" }}>
       {!isParCycleSettingsOpen && (
         <Box height={"100%"}>
-          {selectedTeamId === null && !reviewEmployeeView && !reportView && !isParCompletionViewOpen && (
-            <Box flexDirection={"column"} height={"100%"}>
-              <Grid container mb={"5px"} mt={"5px"} spacing={2}>
-                {/* Title Section */}
-                <Grid size={{ xs: 12, md: 4 }} alignContent={"center"}>
-                  {isAdminHistoryViewOn && (
-                    <Box sx={{ display: "inline" }}>
-                      <IconButton aria-label="back" color="primary" onClick={closeOrgSummaryView} sx={{ mb: 1, mr: 1 }}>
-                        <ArrowBackIcon />
-                      </IconButton>
-                      <Link underline="hover" color="inherit" variant="h5" onClick={closeOrgSummaryView}>
-                        {"History"}
-                      </Link>
-                      <Typography display={"inline"} variant="h5">
-                        {" / "}
-                      </Typography>
-                    </Box>
-                  )}
-                  <Typography display={"inline"} variant="h5">
-                    {currentCycle.parCycleName}{" "}
-                  </Typography>
-                  <Typography display={"inline"}>
-                    ({dayjs(currentCycle.parCycleStartDate).format(shortDateFormat)} -{" "}
-                    {dayjs(currentCycle.parCycleEndDate).format(shortDateFormat)})
-                  </Typography>
-                </Grid>
-
-                {/* Actions Section (Buttons & Icons) */}
-                <Grid
-                  size={{ xs: 12, md: 8 }}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: { xs: "flex-start", md: "flex-end" },
-                    flexWrap: "wrap",
-                    gap: 1,
-                  }}
-                >
-                  <Button variant="contained" sx={{ whiteSpace: "nowrap" }} onClick={openReportView}>
-                    View Reports
-                  </Button>
-                  {!isAdminHistoryViewOn && (
-                    <>
-                      <Button sx={{ whiteSpace: "nowrap" }} onClick={handleEmployeeSyncModal} variant="contained">
-                        Sync an Employee
-                      </Button>
-                      <Button sx={{ whiteSpace: "nowrap" }} onClick={openBulkReminderModal} variant="contained">
-                        Bulk Reminders
-                      </Button>
-                      <Button sx={{ whiteSpace: "nowrap" }} color="error" variant="contained" onClick={handleParClosingDialogOpen}>
-                        Close Cycle
-                      </Button>
-
-                      {/* Group the icons in a flex box so they wrap to a new row together */}
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        <Tooltip
-                          arrow
-                          title="Open Cycle Dates"
-                          enterDelay={tooltipVisibilityDelay}
-                          enterNextDelay={tooltipVisibilityDelay}
+          {selectedTeamId === null &&
+            !reviewEmployeeView &&
+            !reportView &&
+            !isParCompletionViewOpen && (
+              <Box flexDirection={"column"} height={"100%"}>
+                <Grid container mb={"5px"} mt={"5px"} spacing={2}>
+                  {/* Title Section */}
+                  <Grid size={{ xs: 12, md: 4 }} alignContent={"center"}>
+                    {isAdminHistoryViewOn && (
+                      <Box sx={{ display: "inline" }}>
+                        <IconButton
+                          aria-label="back"
+                          color="primary"
+                          onClick={closeOrgSummaryView}
+                          sx={{ mb: 1, mr: 1 }}
                         >
-                          <IconButton
-                            aria-label="cycle dates"
-                            onClick={openCycleDeadlines}
-                            sx={{
-                              color: "primary.main",
-                              "&:hover": {
-                                bgcolor: "primary.main",
-                                color: "white",
-                              },
-                              ml: 1,
-                            }}
-                          >
-                            <DateRangeIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip
-                          arrow
-                          title="PAR Cycle Settings"
-                          enterDelay={tooltipVisibilityDelay}
-                          enterNextDelay={tooltipVisibilityDelay}
+                          <ArrowBackIcon />
+                        </IconButton>
+                        <Link
+                          underline="hover"
+                          color="inherit"
+                          variant="h5"
+                          onClick={closeOrgSummaryView}
                         >
-                          <IconButton
-                            aria-label="cycle settings"
-                            onClick={openParCycleSettings}
-                            sx={{
-                              color: "primary.main",
-                              "&:hover": {
-                                bgcolor: "primary.main",
-                                color: "white",
-                              },
-                              mr: 1,
-                            }}
-                          >
-                            <SettingsIcon />
-                          </IconButton>
-                        </Tooltip>
+                          {"History"}
+                        </Link>
+                        <Typography display={"inline"} variant="h5">
+                          {" / "}
+                        </Typography>
                       </Box>
-                    </>
-                  )}
-                </Grid>
-              </Grid>
-              <>
-                <Card variant="outlined" sx={{ padding: 2 }}>
-                  <Grid container>
-                    <Grid size={{ xs: 12, sm: 12 }} display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
-                      <Typography variant="h5">Completion Status</Typography>
-                      <Box>
-                        <Tooltip
-                          arrow
-                          title="PAR Completion Overview"
-                          enterDelay={tooltipVisibilityDelay}
-                          enterNextDelay={tooltipVisibilityDelay}
-                        >
-                          <IconButton
-                            aria-label="PAR completion overview"
-                            onClick={openParCompletionView}
-                            sx={{
-                              color: "primary.main",
-                              "&:hover": {
-                                bgcolor: "primary.main",
-                                color: "white",
-                              },
-                            }}
-                          >
-                            <OpenInNewIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </Grid>
+                    )}
+                    <Typography display={"inline"} variant="h5">
+                      {currentCycle.parCycleName}{" "}
+                    </Typography>
+                    <Typography display={"inline"}>
+                      ({dayjs(currentCycle.parCycleStartDate).format(shortDateFormat)} -{" "}
+                      {dayjs(currentCycle.parCycleEndDate).format(shortDateFormat)})
+                    </Typography>
                   </Grid>
-                  <Grid container spacing={10}>
-                    <Grid size={{ xs: 12, sm: 4 }} >
-                      <CompletionStatusCard
-                        name="Employee PAR"
-                        completed={filteredSummary.totalEmployeeParComplete}
-                        total={filteredSummary.totalEmployees}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }} >
-                      <CompletionStatusCard
-                        name="Lead's PAR"
-                        completed={filteredSummary.totalLeadReviewComplete}
-                        total={filteredSummary.totalEmployees}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <CompletionStatusCard
-                        name="F2F"
-                        completed={filteredSummary.totalF2fComplete}
-                        total={filteredSummary.totalEmployees}
-                      />
-                    </Grid>
-                  </Grid>
-                </Card>
-                <Card
-                  variant="outlined"
-                  sx={{
-                    height: "auto",
-                    p: 1,
-                    width: "100%",
-                    flex: 1,
-                    mt: 1,
-                  }}
-                >
-                  <Tabs
-                    value={selectedTab}
-                    onChange={handleTabChange}
-                    aria-label="admin tabs"
-                    sx={{ borderColor: "divider" }}
+
+                  {/* Actions Section (Buttons & Icons) */}
+                  <Grid
+                    size={{ xs: 12, md: 8 }}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: { xs: "flex-start", md: "flex-end" },
+                      flexWrap: "wrap",
+                      gap: 1,
+                    }}
                   >
-                    <Tab label="Team View" />
-                    <Tab label="Employee View" />
-                    <Tab label="Rejected Reviews" />
-                    <Tab label="Quota Allocations" />
-                  </Tabs>
-
-                  {selectedTab === 0 && (
-                    <>
-                      {teamState === RequestState.LOADING && (
-                        <Card
-                          variant="outlined"
-                          sx={{
-                            textAlign: "center",
-                            height: "30vh",
-                            overflow: "auto",
-                            mt: 2,
-                          }}
+                    <Button
+                      variant="contained"
+                      sx={{ whiteSpace: "nowrap" }}
+                      onClick={openReportView}
+                    >
+                      View Reports
+                    </Button>
+                    {!isAdminHistoryViewOn && (
+                      <>
+                        <Button
+                          sx={{ whiteSpace: "nowrap" }}
+                          onClick={handleEmployeeSyncModal}
+                          variant="contained"
                         >
-                          <LoadingEffect message={uiMessages.loading.pageLoading} />
-                        </Card>
-                      )}
-
-                      {teamState === RequestState.FAILED && (
-                        <Card
-                          variant="outlined"
-                          sx={{
-                            textAlign: "center",
-                            height: "calc(100vh - 23rem)",
-                            overflow: "auto",
-                            mt: 2,
-                          }}
+                          Sync an Employee
+                        </Button>
+                        <Button
+                          sx={{ whiteSpace: "nowrap" }}
+                          onClick={openBulkReminderModal}
+                          variant="contained"
                         >
-                          <NoDataView text={"Error occurred while fetching teams"} />
-                        </Card>
-                      )}
+                          Bulk Reminders
+                        </Button>
+                        <Button
+                          sx={{ whiteSpace: "nowrap" }}
+                          color="error"
+                          variant="contained"
+                          onClick={handleParClosingDialogOpen}
+                        >
+                          Close Cycle
+                        </Button>
 
-                      {teamState === RequestState.SUCCEEDED && (
-                        <>
-                          {teams.length > 0 ? (
-                            <DataGrid
+                        {/* Group the icons in a flex box so they wrap to a new row together */}
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                          <Tooltip
+                            arrow
+                            title="Open Cycle Dates"
+                            enterDelay={tooltipVisibilityDelay}
+                            enterNextDelay={tooltipVisibilityDelay}
+                          >
+                            <IconButton
+                              aria-label="cycle dates"
+                              onClick={openCycleDeadlines}
                               sx={{
-                                border: "none",
-                                "& .MuiDataGrid-row:hover": {
-                                  cursor: "pointer",
+                                color: "primary.main",
+                                "&:hover": {
+                                  bgcolor: "primary.main",
+                                  color: "white",
                                 },
-                              }}
-                              rows={formattedTeams}
-                              columns={columns}
-                              autoHeight
-                              disableRowSelectionOnClick
-                              pageSizeOptions={[10, 20, 25]}
-                              rowHeight={60}
-                              onRowClick={(params) => handleTeamsTableClick(params.row.id)}
-                              slots={{
-                                toolbar: GridToolbar,
-                              }}
-                              slotProps={{
-                                toolbar: {
-                                  showQuickFilter: true,
-                                  quickFilterProps: { debounceMs: 500 },
-                                },
-                                baseTextField: {
-                                  placeholder: "Search Team",
-                                },
-                              }}
-                              onFilterModelChange={(model) => {
-                                setSearchText(model.quickFilterValues?.[0]?.toString() || "");
-                              }}
-                              initialState={{
-                                pagination: {
-                                  paginationModel: { pageSize: 10, page: 0 },
-                                },
-                                filter: {
-                                  filterModel: {
-                                    items: [
-                                      {
-                                        id: "searchText",
-                                        value: searchText,
-                                        field: "searchText",
-                                        operator: "contains",
-                                      },
-                                    ],
-                                  },
-                                },
-                              }}
-                            />
-                          ) : (
-                            <Card
-                              variant="outlined"
-                              sx={{
-                                textAlign: "center",
-                                height: "calc(100vh - 23rem)",
-                                overflow: "auto",
-                                mt: 2,
+                                ml: 1,
                               }}
                             >
-                              <NoDataView text={uiMessages.error.noTeamsFound} />
-                            </Card>
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
+                              <DateRangeIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip
+                            arrow
+                            title="PAR Cycle Settings"
+                            enterDelay={tooltipVisibilityDelay}
+                            enterNextDelay={tooltipVisibilityDelay}
+                          >
+                            <IconButton
+                              aria-label="cycle settings"
+                              onClick={openParCycleSettings}
+                              sx={{
+                                color: "primary.main",
+                                "&:hover": {
+                                  bgcolor: "primary.main",
+                                  color: "white",
+                                },
+                                mr: 1,
+                              }}
+                            >
+                              <SettingsIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </>
+                    )}
+                  </Grid>
+                </Grid>
+                <>
+                  <Card variant="outlined" sx={{ padding: 1 }}>
+                    <Grid container>
+                      <Grid
+                        size={{ xs: 12, sm: 12 }}
+                        display={"flex"}
+                        alignItems={"center"}
+                        justifyContent={"space-between"}
+                      >
+                        <Typography sx={{ color: theme.palette.brandColors.lightOrange }}>
+                          Completion Status
+                        </Typography>
+                        <Box>
+                          <Tooltip
+                            arrow
+                            title="PAR Completion Overview"
+                            enterDelay={tooltipVisibilityDelay}
+                            enterNextDelay={tooltipVisibilityDelay}
+                          >
+                            <IconButton
+                              aria-label="PAR completion overview"
+                              onClick={openParCompletionView}
+                              sx={{
+                                p: 0,
+                                mr: "8px",
+                                color: "primary.main",
+                                "&:hover": {
+                                  bgcolor: "primary.main",
+                                  color: "white",
+                                },
+                              }}
+                            >
+                              <OpenInNewIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                    <Grid container spacing={10}>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <CompletionStatusCard
+                          name="Employee PAR"
+                          completed={filteredSummary.totalEmployeeParComplete}
+                          total={filteredSummary.totalEmployees}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <CompletionStatusCard
+                          name="Lead's PAR"
+                          completed={filteredSummary.totalLeadReviewComplete}
+                          total={filteredSummary.totalEmployees}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <CompletionStatusCard
+                          name="F2F"
+                          completed={filteredSummary.totalF2fComplete}
+                          total={filteredSummary.totalEmployees}
+                        />
+                      </Grid>
+                    </Grid>
+                  </Card>
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      height: "auto",
+                      px: 0,
+                      pt: "3px",
+                      pb: "3px",
+                      width: "100%",
+                      flex: 1,
+                      mt: "10px",
+                      overflowX: "hidden",
+                    }}
+                  >
+                    <Tabs
+                      value={selectedTab}
+                      onChange={handleTabChange}
+                      aria-label="admin tabs"
+                      variant="scrollable"
+                      scrollButtons="auto"
+                      allowScrollButtonsMobile
+                      sx={{ borderColor: "divider", px: 1 }}
+                    >
+                      <Tab label="Team View" />
+                      <Tab label="Employee View" />
+                      <Tab label="Rejected Reviews" />
+                      <Tab label="Quota Allocations" />
+                    </Tabs>
 
-                  {selectedTab === 1 && (
-                    <>
-                      {employeeArrayStatus === RequestState.LOADING && (
-                        <Card
-                          variant="outlined"
-                          sx={{
-                            textAlign: "center",
-                            height: "30vh",
-                            overflow: "auto",
-                            mt: 2,
-                          }}
-                        >
-                          <LoadingEffect message={uiMessages.loading.pageLoading} />
-                        </Card>
-                      )}
+                    {selectedTab === 0 && (
+                      <>
+                        {teamState === RequestState.LOADING && (
+                          <Card
+                            variant="outlined"
+                            sx={{
+                              textAlign: "center",
+                              height: "100",
+                              overflow: "auto",
+                            }}
+                          >
+                            <LoadingEffect message={uiMessages.loading.pageLoading} />
+                          </Card>
+                        )}
 
-                      {employeeArrayStatus === RequestState.FAILED && (
-                        <Card
-                          variant="outlined"
-                          sx={{
-                            textAlign: "center",
-                            height: "calc(100vh - 23rem)",
-                            overflow: "auto",
-                            mt: 2,
-                          }}
-                        >
-                          <NoDataView text={"Error occurred while fetching employees"} />
-                        </Card>
-                      )}
+                        {teamState === RequestState.FAILED && (
+                          <Card
+                            variant="outlined"
+                            sx={{
+                              textAlign: "center",
+                              height: "calc(100vh - 23rem)",
+                              overflow: "auto",
+                              mt: 2,
+                            }}
+                          >
+                            <NoDataView text={"Error occurred while fetching teams"} />
+                          </Card>
+                        )}
 
-                      {employeeArrayStatus === RequestState.SUCCEEDED && (
-                        <>
-                          {employeeArray.length > 0 ? (
-                            <>
+                        {teamState === RequestState.SUCCEEDED && (
+                          <>
+                            {teams.length > 0 ? (
                               <DataGrid
-                                sx={{
-                                  border: "none",
-                                  "& .MuiDataGrid-row:hover": {
-                                    backgroundColor: "inherit",
-                                  },
-                                }}
-                                rows={employeeArray}
-                                getRowId={(row) => row.workEmail}
-                                columns={employeeColumns}
-                                rowHeight={50}
+                                sx={dataGridSx}
+                                rows={formattedTeams}
+                                columns={columns}
                                 autoHeight
+                                disableRowSelectionOnClick
                                 pageSizeOptions={[10, 20, 25]}
+                                rowHeight={36}
+                                onRowClick={(params) => handleTeamsTableClick(params.row.id)}
                                 slots={{
                                   toolbar: GridToolbar,
                                 }}
@@ -949,11 +956,11 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                     quickFilterProps: { debounceMs: 500 },
                                   },
                                   baseTextField: {
-                                    placeholder: "Search Employee",
+                                    placeholder: "Search Team",
                                   },
                                 }}
                                 onFilterModelChange={(model) => {
-                                  setEmployeeSearchText(model.quickFilterValues?.[0]?.toString() || "");
+                                  setSearchText(model.quickFilterValues?.[0]?.toString() || "");
                                 }}
                                 initialState={{
                                   pagination: {
@@ -963,124 +970,8 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                     filterModel: {
                                       items: [
                                         {
-                                          id: "employeeSearchText",
-                                          value: employeeSearchText,
-                                          field: "employeeSearchText",
-                                          operator: "contains",
-                                        },
-                                      ],
-                                    },
-                                  },
-                                }}
-                              />
-                              {selectedEmployee && (
-                                <CustomModal
-                                  open={isEmpHistoryModalOpen}
-                                  onClose={() => setIsEmpHistoryModalOpen(false)}
-                                >
-                                  {
-                                    <SummarizedParHistoryView
-                                      empName={selectedEmployee.employeeName}
-                                      empEmail={selectedEmployee.workEmail}
-                                      empThumbnail={employeeMap[selectedEmployee.workEmail].employeeThumbnail ?? ""}
-                                      handleClose={() => setIsEmpHistoryModalOpen(false)}
-                                    />
-                                  }
-                                </CustomModal>
-                              )}
-                            </>
-                          ) : (
-                            <Card
-                              variant="outlined"
-                              sx={{
-                                textAlign: "center",
-                                height: "calc(100vh - 23rem)",
-                                overflow: "auto",
-                                mt: 2,
-                              }}
-                            >
-                              <NoDataView text={"No employees found"} />
-                            </Card>
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
-
-                  {selectedTab === 2 && (
-                    <>
-                      {reviewStatus === RequestState.LOADING && (
-                        <Card
-                          variant="outlined"
-                          sx={{
-                            textAlign: "center",
-                            height: "30vh",
-                            overflow: "auto",
-                            mt: 2,
-                          }}
-                        >
-                          <LoadingEffect message={uiMessages.loading.pageLoading} />
-                        </Card>
-                      )}
-
-                      {reviewStatus === RequestState.FAILED && (
-                        <Card
-                          variant="outlined"
-                          sx={{
-                            textAlign: "center",
-                            height: "calc(100vh - 23rem)",
-                            overflow: "auto",
-                            mt: 2,
-                          }}
-                        >
-                          <NoDataView text={"Error occurred while fetching reviews"} />
-                        </Card>
-                      )}
-
-                      {reviewStatus === RequestState.SUCCEEDED && (
-                        <>
-                          {rejectedReviews.length > 0 ? (
-                            <>
-                              <DataGrid
-                                sx={{
-                                  border: "none",
-                                  "& .MuiDataGrid-row:hover": {
-                                    backgroundColor: "inherit",
-                                  },
-                                }}
-                                rows={rejectedReviews}
-                                getRowId={(row) => {
-                                  return row.employeeEmail + row.reviewerEmail;
-                                }}
-                                columns={reviewColumns}
-                                rowHeight={50}
-                                autoHeight
-                                pageSizeOptions={[10, 20, 25]}
-                                slots={{
-                                  toolbar: GridToolbar,
-                                }}
-                                slotProps={{
-                                  toolbar: {
-                                    showQuickFilter: true,
-                                    quickFilterProps: { debounceMs: 500 },
-                                  },
-                                  baseTextField: {
-                                    placeholder: "Search Reviews",
-                                  },
-                                }}
-                                onFilterModelChange={(model) => {
-                                  setReviewSearchText(model.quickFilterValues?.[0]?.toString() || "");
-                                }}
-                                initialState={{
-                                  pagination: {
-                                    paginationModel: { pageSize: 10, page: 0 },
-                                  },
-                                  filter: {
-                                    filterModel: {
-                                      items: [
-                                        {
-                                          id: "reviewSearchText",
-                                          value: reviewSearchText,
+                                          id: "searchText",
+                                          value: searchText,
                                           field: "searchText",
                                           operator: "contains",
                                         },
@@ -1089,67 +980,278 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                   },
                                 }}
                               />
-                              <ConfirmationDialog
-                                open={openConfirmationDialog}
-                                onClose={handleConfirmationDialogClose}
-                                title="Restore Review"
-                                message={`Are you sure you need to restore the declined review request?`}
-                                okText="Yes"
-                                onConfirm={handleConfirmReviewRestore}
-                                ariaLabelledby="alert-par-closing-dialog-title"
-                                ariaDescribedby="alert-par-closing-dialog-description"
-                                isWarning={true}
-                              />
-                            </>
-                          ) : (
-                            <Card
-                              variant="outlined"
-                              sx={{
-                                textAlign: "center",
-                                height: "calc(100vh - 23rem)",
-                                overflow: "auto",
-                                mt: 2,
-                              }}
-                            >
-                              <NoDataView text={"No reviews found"} />
-                            </Card>
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
-                  {selectedTab === 3 && <SpecialRatingAllocationView isAdminView={true} />}
-                </Card>
-              </>
+                            ) : (
+                              <Card
+                                variant="outlined"
+                                sx={{
+                                  textAlign: "center",
+                                  height: "calc(100vh - 23rem)",
+                                  overflow: "auto",
+                                  mt: 2,
+                                }}
+                              >
+                                <NoDataView text={uiMessages.error.noTeamsFound} />
+                              </Card>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
 
-              <CustomModal open={bulkReminderModal} onClose={closeBulkReminderModal}>
-                {<BulkReminderModal onClose={closeBulkReminderModal} isAdmin={true} />}
-              </CustomModal>
-              <CustomModal open={isParCycleDatesOpen} onClose={closeCycleDeadlines} width="80vw">
-                <Typography id="dashboard-modal-title" variant="h5" pb={2}>
-                  Cycle Dates
-                </Typography>
-                <Divider sx={{ bgcolor: "primary.main" }} />
-                <Box pt={9} pb={5}>
-                  <CycleDatesStepper cycle={currentCycle} activeStep={activeStep} />
-                </Box>
-              </CustomModal>
-              <CustomModal open={employeeSyncModal} onClose={handleEmployeeSyncModal}>
-                <EmployeeSyncModal />
-              </CustomModal>
-              <ConfirmationDialog
-                open={parClosingDialog}
-                onClose={handleParClosingDialogClose}
-                title={uiMessages.dialog.closeParCycle.title}
-                message={uiMessages.dialog.closeParCycle.message}
-                okText={uiMessages.dialog.closeParCycle.okText}
-                onConfirm={handleParClosingProceed}
-                ariaLabelledby="alert-par-closing-dialog-title"
-                ariaDescribedby="alert-par-closing-dialog-description"
-                isWarning={true}
-              />
-            </Box>
-          )}
+                    {selectedTab === 1 && (
+                      <>
+                        {employeeArrayStatus === RequestState.LOADING && (
+                          <Card
+                            variant="outlined"
+                            sx={{
+                              textAlign: "center",
+                              height: "30vh",
+                              overflow: "auto",
+                              mt: 2,
+                            }}
+                          >
+                            <LoadingEffect message={uiMessages.loading.pageLoading} />
+                          </Card>
+                        )}
+
+                        {employeeArrayStatus === RequestState.FAILED && (
+                          <Card
+                            variant="outlined"
+                            sx={{
+                              textAlign: "center",
+                              height: "calc(100vh - 23rem)",
+                              overflow: "auto",
+                              mt: 2,
+                            }}
+                          >
+                            <NoDataView text={"Error occurred while fetching employees"} />
+                          </Card>
+                        )}
+
+                        {employeeArrayStatus === RequestState.SUCCEEDED && (
+                          <>
+                            {employeeArray.length > 0 ? (
+                              <>
+                                <DataGrid
+                                  sx={dataGridSx}
+                                  rows={employeeArray}
+                                  getRowId={(row) => row.workEmail}
+                                  columns={employeeColumns}
+                                  rowHeight={36}
+                                  autoHeight
+                                  pageSizeOptions={[10, 20, 25]}
+                                  slots={{
+                                    toolbar: GridToolbar,
+                                  }}
+                                  slotProps={{
+                                    toolbar: {
+                                      showQuickFilter: true,
+                                      quickFilterProps: { debounceMs: 500 },
+                                    },
+                                    baseTextField: {
+                                      placeholder: "Search Employee",
+                                    },
+                                  }}
+                                  onFilterModelChange={(model) => {
+                                    setEmployeeSearchText(
+                                      model.quickFilterValues?.[0]?.toString() || "",
+                                    );
+                                  }}
+                                  initialState={{
+                                    pagination: {
+                                      paginationModel: { pageSize: 10, page: 0 },
+                                    },
+                                    filter: {
+                                      filterModel: {
+                                        items: [
+                                          {
+                                            id: "employeeSearchText",
+                                            value: employeeSearchText,
+                                            field: "employeeSearchText",
+                                            operator: "contains",
+                                          },
+                                        ],
+                                      },
+                                    },
+                                  }}
+                                />
+                                {selectedEmployee && (
+                                  <CustomModal
+                                    open={isEmpHistoryModalOpen}
+                                    onClose={() => setIsEmpHistoryModalOpen(false)}
+                                  >
+                                    {
+                                      <SummarizedParHistoryView
+                                        empName={selectedEmployee.employeeName}
+                                        empEmail={selectedEmployee.workEmail}
+                                        empThumbnail={
+                                          employeeMap[selectedEmployee.workEmail]
+                                            .employeeThumbnail ?? ""
+                                        }
+                                        handleClose={() => setIsEmpHistoryModalOpen(false)}
+                                      />
+                                    }
+                                  </CustomModal>
+                                )}
+                              </>
+                            ) : (
+                              <Card
+                                variant="outlined"
+                                sx={{
+                                  textAlign: "center",
+                                  height: "calc(100vh - 23rem)",
+                                  overflow: "auto",
+                                  mt: 2,
+                                }}
+                              >
+                                <NoDataView text={"No employees found"} />
+                              </Card>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    {selectedTab === 2 && (
+                      <>
+                        {reviewStatus === RequestState.LOADING && (
+                          <Card
+                            variant="outlined"
+                            sx={{
+                              textAlign: "center",
+                              height: "30vh",
+                              overflow: "auto",
+                              mt: 2,
+                            }}
+                          >
+                            <LoadingEffect message={uiMessages.loading.pageLoading} />
+                          </Card>
+                        )}
+
+                        {reviewStatus === RequestState.FAILED && (
+                          <Card
+                            variant="outlined"
+                            sx={{
+                              textAlign: "center",
+                              height: "calc(100vh - 23rem)",
+                              overflow: "auto",
+                              mt: 2,
+                            }}
+                          >
+                            <NoDataView text={"Error occurred while fetching reviews"} />
+                          </Card>
+                        )}
+
+                        {reviewStatus === RequestState.SUCCEEDED && (
+                          <>
+                            {rejectedReviews.length > 0 ? (
+                              <>
+                                <DataGrid
+                                  sx={dataGridSx}
+                                  rows={rejectedReviews}
+                                  getRowId={(row) => {
+                                    return row.employeeEmail + row.reviewerEmail;
+                                  }}
+                                  columns={reviewColumns}
+                                  rowHeight={36}
+                                  autoHeight
+                                  pageSizeOptions={[10, 20, 25]}
+                                  slots={{
+                                    toolbar: GridToolbar,
+                                  }}
+                                  slotProps={{
+                                    toolbar: {
+                                      showQuickFilter: true,
+                                      quickFilterProps: { debounceMs: 500 },
+                                    },
+                                    baseTextField: {
+                                      placeholder: "Search Reviews",
+                                    },
+                                  }}
+                                  onFilterModelChange={(model) => {
+                                    setReviewSearchText(
+                                      model.quickFilterValues?.[0]?.toString() || "",
+                                    );
+                                  }}
+                                  initialState={{
+                                    pagination: {
+                                      paginationModel: { pageSize: 10, page: 0 },
+                                    },
+                                    filter: {
+                                      filterModel: {
+                                        items: [
+                                          {
+                                            id: "reviewSearchText",
+                                            value: reviewSearchText,
+                                            field: "searchText",
+                                            operator: "contains",
+                                          },
+                                        ],
+                                      },
+                                    },
+                                  }}
+                                />
+                                <ConfirmationDialog
+                                  open={openConfirmationDialog}
+                                  onClose={handleConfirmationDialogClose}
+                                  title="Restore Review"
+                                  message={`Are you sure you need to restore the declined review request?`}
+                                  okText="Yes"
+                                  onConfirm={handleConfirmReviewRestore}
+                                  ariaLabelledby="alert-par-closing-dialog-title"
+                                  ariaDescribedby="alert-par-closing-dialog-description"
+                                  isWarning={true}
+                                />
+                              </>
+                            ) : (
+                              <Card
+                                variant="outlined"
+                                sx={{
+                                  textAlign: "center",
+                                  height: "calc(100vh - 23rem)",
+                                  overflow: "auto",
+                                  mt: 2,
+                                }}
+                              >
+                                <NoDataView text={"No reviews found"} />
+                              </Card>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                    {selectedTab === 3 && <SpecialRatingAllocationView isAdminView={true} />}
+                  </Card>
+                </>
+
+                <CustomModal open={bulkReminderModal} onClose={closeBulkReminderModal}>
+                  {<BulkReminderModal onClose={closeBulkReminderModal} isAdmin={true} />}
+                </CustomModal>
+                <CustomModal open={isParCycleDatesOpen} onClose={closeCycleDeadlines} width="80vw">
+                  <Typography id="dashboard-modal-title" variant="h5" pb={2}>
+                    Cycle Dates
+                  </Typography>
+                  <Divider sx={{ bgcolor: "primary.main" }} />
+                  <Box pt={9} pb={5}>
+                    <CycleDatesStepper cycle={currentCycle} activeStep={activeStep} />
+                  </Box>
+                </CustomModal>
+                <CustomModal open={employeeSyncModal} onClose={handleEmployeeSyncModal}>
+                  <EmployeeSyncModal />
+                </CustomModal>
+                <ConfirmationDialog
+                  open={parClosingDialog}
+                  onClose={handleParClosingDialogClose}
+                  title={uiMessages.dialog.closeParCycle.title}
+                  message={uiMessages.dialog.closeParCycle.message}
+                  okText={uiMessages.dialog.closeParCycle.okText}
+                  onConfirm={handleParClosingProceed}
+                  ariaLabelledby="alert-par-closing-dialog-title"
+                  ariaDescribedby="alert-par-closing-dialog-description"
+                  isWarning={true}
+                />
+              </Box>
+            )}
 
           {selectedTeamId !== null && !reviewEmployeeView && (
             <TeamSummary
@@ -1187,7 +1289,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
           )}
         </Box>
       )}
-      {isParCycleSettingsOpen && <ParCycleSettingsForm closeParCycleSettings={closeParCycleSettings} />}
+      {isParCycleSettingsOpen && (
+        <ParCycleSettingsForm closeParCycleSettings={closeParCycleSettings} />
+      )}
     </Stack>
   );
 };
