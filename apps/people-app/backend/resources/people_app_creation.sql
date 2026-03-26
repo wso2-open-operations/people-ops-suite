@@ -1,5 +1,9 @@
 DROP TABLE IF EXISTS resignation;
 DROP TABLE IF EXISTS vehicle;
+DROP TABLE IF EXISTS employee_additional_managers_audit;
+DROP TABLE IF EXISTS employee_audit;
+DROP TABLE IF EXISTS personal_info_emergency_contacts_audit;
+DROP TABLE IF EXISTS personal_info_audit;
 DROP TABLE IF EXISTS employee_additional_managers;
 DROP TABLE IF EXISTS employee;
 DROP TABLE IF EXISTS house;
@@ -749,6 +753,7 @@ BEGIN
       'agreement_end_date', NEW.agreement_end_date,
       'employment_type_id', NEW.employment_type_id,
       'designation_id', NEW.designation_id,
+      'company_id', NEW.company_id,
       'office_id', NEW.office_id,
       'team_id', NEW.team_id,
       'sub_team_id', NEW.sub_team_id,
@@ -800,6 +805,7 @@ BEGIN
       'agreement_end_date', NEW.agreement_end_date,
       'employment_type_id', NEW.employment_type_id,
       'designation_id', NEW.designation_id,
+      'company_id', NEW.company_id,
       'office_id', NEW.office_id,
       'team_id', NEW.team_id,
       'sub_team_id', NEW.sub_team_id,

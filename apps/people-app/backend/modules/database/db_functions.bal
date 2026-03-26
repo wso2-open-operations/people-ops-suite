@@ -438,10 +438,6 @@ isolated function syncEmergencyContacts(string employeeId, EmergencyContact[] de
         where desiredMobiles.indexOf(current) is ()
         select current;
 
-    EmergencyContact[] toAdd = from EmergencyContact contact in desiredContacts
-        where currentMobiles.indexOf(contact.mobile) is ()
-        select contact;
-
     sql:ParameterizedQuery[] deleteQueries = from string mobile in toRemove
         select deleteEmergencyContactQuery(employeeId, mobile, actor);
 
@@ -449,11 +445,11 @@ isolated function syncEmergencyContacts(string employeeId, EmergencyContact[] de
         _ = check databaseClient->batchExecute(deleteQueries);
     }
 
-    sql:ParameterizedQuery[] insertQueries = from EmergencyContact contact in toAdd
+    sql:ParameterizedQuery[] upsertQueries = from EmergencyContact contact in desiredContacts
         select addPersonalInfoEmergencyContactQuery(employeeId, contact, actor);
 
-    if insertQueries.length() > 0 {
-        _ = check databaseClient->batchExecute(insertQueries);
+    if upsertQueries.length() > 0 {
+        _ = check databaseClient->batchExecute(upsertQueries);
     }
 }
 
