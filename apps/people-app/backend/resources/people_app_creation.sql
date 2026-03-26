@@ -381,22 +381,6 @@ CREATE TABLE `employee_additional_managers` (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Additional Managers Audit table
-CREATE TABLE `employee_additional_managers_audit` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `employee_pk_id` int DEFAULT NULL,
-  `action_type` enum('INSERT', 'UPDATE', 'DELETE') NOT NULL,
-  `action_by` varchar(254) NOT NULL,
-  `db_user` varchar(254) NULL,
-  `action_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  `data` json NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_eam_audit_employee_pk_id` (`employee_pk_id`),
-  KEY `idx_eam_audit_action_on` (`action_on`),
-  CONSTRAINT `fk_employee_additional_managers_audit_employee_pk_id`
-    FOREIGN KEY (`employee_pk_id`) REFERENCES `employee` (`id`)
-    ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 -- Emergency_contacts table
 CREATE TABLE `personal_info_emergency_contacts` (
@@ -483,6 +467,22 @@ CREATE TABLE `parking_reservation` (
   UNIQUE KEY `uk_parking_reservation_tx_hash` (`transaction_hash`)
 );
 
+-- Personal Info Audit table
+CREATE TABLE `personal_info_audit` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `personal_info_pk_id` int DEFAULT NULL,
+  `action_type` enum('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+  `action_by` varchar(254) NOT NULL,
+  `db_user` varchar(254) NULL,
+  `action_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `data` json NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_pi_audit_pi_pk` (`personal_info_pk_id`),
+  KEY `idx_pi_audit_action_on` (`action_on`),
+  CONSTRAINT `fk_pi_audit_personal_info` FOREIGN KEY (`personal_info_pk_id`) REFERENCES `personal_info` (`id`) ON DELETE
+  SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
 -- Emergency Contacts Audit table
 CREATE TABLE `personal_info_emergency_contacts_audit` (
   `id` bigint NOT NULL AUTO_INCREMENT,
@@ -500,22 +500,6 @@ CREATE TABLE `personal_info_emergency_contacts_audit` (
     ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
--- Personal Info Audit table
-CREATE TABLE `personal_info_audit` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `personal_info_pk_id` int DEFAULT NULL,
-  `action_type` enum('INSERT', 'UPDATE', 'DELETE') NOT NULL,
-  `action_by` varchar(254) NOT NULL,
-  `db_user` varchar(254) NULL,
-  `action_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  `data` json NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_pi_audit_pi_pk` (`personal_info_pk_id`),
-  KEY `idx_pi_audit_action_on` (`action_on`),
-  CONSTRAINT `fk_pi_audit_personal_info` FOREIGN KEY (`personal_info_pk_id`) REFERENCES `personal_info` (`id`) ON DELETE
-  SET NULL ON UPDATE CASCADE
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
-
 -- Employee Audit table
 CREATE TABLE `employee_audit` (
   `id` bigint NOT NULL AUTO_INCREMENT,
@@ -530,6 +514,23 @@ CREATE TABLE `employee_audit` (
   KEY `idx_emp_audit_action_on` (`action_on`),
   CONSTRAINT `fk_emp_audit_employee` FOREIGN KEY (`employee_pk_id`) REFERENCES `employee` (`id`) ON DELETE
   SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+-- Additional Managers Audit table
+CREATE TABLE `employee_additional_managers_audit` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `employee_pk_id` int DEFAULT NULL,
+  `action_type` enum('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+  `action_by` varchar(254) NOT NULL,
+  `db_user` varchar(254) NULL,
+  `action_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `data` json NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_eam_audit_employee_pk_id` (`employee_pk_id`),
+  KEY `idx_eam_audit_action_on` (`action_on`),
+  CONSTRAINT `fk_employee_additional_managers_audit_employee_pk_id`
+    FOREIGN KEY (`employee_pk_id`) REFERENCES `employee` (`id`)
+    ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 -- Personal Info INSERT Trigger
@@ -554,6 +555,7 @@ BEGIN
       'nic_or_passport', NEW.nic_or_passport,
       'first_name', NEW.first_name,
       'last_name', NEW.last_name,
+      'full_name', NEW.full_name,
       'title', NEW.title,
       'dob', NEW.dob,
       'gender', NEW.gender,
@@ -598,6 +600,7 @@ BEGIN
       'nic_or_passport', NEW.nic_or_passport,
       'first_name', NEW.first_name,
       'last_name', NEW.last_name,
+      'full_name', NEW.full_name,
       'title', NEW.title,
       'dob', NEW.dob,
       'gender', NEW.gender,
@@ -734,7 +737,6 @@ BEGIN
       'first_name', NEW.first_name,
       'last_name', NEW.last_name,
       'epf', NEW.epf,
-      'employment_location', NEW.employment_location,
       'work_location', NEW.work_location,
       'work_email', NEW.work_email,
       'start_date', NEW.start_date,
@@ -752,6 +754,7 @@ BEGIN
       'sub_team_id', NEW.sub_team_id,
       'business_unit_id', NEW.business_unit_id,
       'unit_id', NEW.unit_id,
+      'house_id', NEW.house_id,
       'personal_info_id', NEW.personal_info_id,
       'created_by', NEW.created_by,
       'created_on', NEW.created_on,
@@ -785,7 +788,6 @@ BEGIN
       'first_name', NEW.first_name,
       'last_name', NEW.last_name,
       'epf', NEW.epf,
-      'employment_location', NEW.employment_location,
       'work_location', NEW.work_location,
       'work_email', NEW.work_email,
       'start_date', NEW.start_date,
@@ -803,6 +805,7 @@ BEGIN
       'sub_team_id', NEW.sub_team_id,
       'business_unit_id', NEW.business_unit_id,
       'unit_id', NEW.unit_id,
+      'house_id', NEW.house_id,
       'personal_info_id', NEW.personal_info_id,
       'created_by', NEW.created_by,
       'created_on', NEW.created_on,
