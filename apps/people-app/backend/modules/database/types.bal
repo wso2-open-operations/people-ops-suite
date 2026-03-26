@@ -579,6 +579,13 @@ public type EmergencyContact record {|
     # Mobile number of the emergency contact
     string mobile;
 |};
+public type AdditionalManagerEmailRow record {|
+    string additional_manager_email;
+|};
+
+public type EmergencyContactMobileRow record {|
+    string mobile;
+|};
 
 # Create personal info payload.
 public type CreatePersonalInfoPayload record {|

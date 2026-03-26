@@ -760,7 +760,6 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${createdBy}
         );`;
 
-
 # Fetch company prefix and employment type required for generating the next employee ID.
 #
 # + companyId - Company ID of the new employee
@@ -793,7 +792,7 @@ isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, Employ
     }
 
     return sql:queryConcat(
-        `SELECT
+            `SELECT
             COALESCE(
                 MAX(CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
                 0
@@ -1007,23 +1006,6 @@ isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmplo
     return finalQuery;
 }
 
-# Delete emergency contacts by personal info id.
-#
-# + employeeId - Employee ID
-# + actor - User performing the delete operation
-# + return - sql:ParameterizedQuery - Delete query for emergency contacts
-isolated function deleteEmergencyContactsByEmployeeIdQuery(string employeeId, string actor) 
-    returns sql:ParameterizedQuery =>
-    `UPDATE personal_info_emergency_contacts piec
-      INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
-      SET 
-        piec.is_active = 0,
-        piec.updated_by = ${actor},
-        piec.updated_on = CURRENT_TIMESTAMP(6)
-      WHERE 
-        e.employee_id = ${employeeId}
-        AND piec.is_active = 1;`;
-
 # Add emergency contact query.
 #
 # + employeeId - Employee ID
@@ -1062,6 +1044,35 @@ isolated function addPersonalInfoEmergencyContactQuery(string employeeId, Emerge
         relationship = ${contact.relationship},
         updated_by = ${actor},
         updated_on = CURRENT_TIMESTAMP(6);`;
+
+# Fetch active emergency contact mobile numbers for an employee.
+#
+# + employeeId - Employee ID string
+# + return - Query to get active emergency contact mobiles
+isolated function getEmergencyContactMobilesQuery(string employeeId)
+    returns sql:ParameterizedQuery =>
+    `SELECT piec.mobile
+     FROM personal_info_emergency_contacts piec
+     INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+     WHERE e.employee_id = ${employeeId}
+       AND piec.is_active = 1;`;
+
+# Delete emergency contact query.
+#
+# + employeeId - Employee ID string
+# + mobile - Mobile number of the contact to deactivate
+# + actor - User performing the operation
+# + return - Query to soft-delete one emergency contact
+isolated function deleteEmergencyContactQuery(string employeeId, string mobile, string actor)
+    returns sql:ParameterizedQuery =>
+    `UPDATE personal_info_emergency_contacts piec
+      INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+      SET piec.is_active = 0,
+          piec.updated_by = ${actor},
+          piec.updated_on = CURRENT_TIMESTAMP(6)
+      WHERE e.employee_id = ${employeeId}
+        AND piec.mobile = ${mobile}
+        AND piec.is_active = 1;`;
 
 # Update employee job information query.
 #
@@ -1192,20 +1203,6 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
     return finalQuery;
 }
 
-# Delete additional managers by employee database ID.
-#
-# + employeePkId - Employee ID
-# + actor - User performing the delete operation
-# + return - sql:ParameterizedQuery - Delete query for all additional managers
-isolated function deleteAdditionalManagersByEmployeeIdQuery(int employeePkId, string actor) returns sql:ParameterizedQuery =>
-    `UPDATE employee_additional_managers
-      SET is_active = 0,
-          updated_by = ${actor},
-          updated_on = CURRENT_TIMESTAMP(6)
-      WHERE 
-        employee_pk_id = ${employeePkId}
-        AND is_active = 1;`;
-
 # Add an additional manager for an employee.
 #
 # + id - Employee ID
@@ -1234,6 +1231,35 @@ isolated function addEmployeeAdditionalManagerQuery(int id, string email, string
         is_active = 1,
         updated_by = ${actor},
         updated_on = CURRENT_TIMESTAMP(6);`;
+
+# Fetch active additional manager emails for an employee.
+#
+# + employeeId - Employee ID string
+# + return - Query to get active additional manager emails
+isolated function getAdditionalManagerEmailsQuery(string employeeId)
+    returns sql:ParameterizedQuery =>
+    `SELECT eam.additional_manager_email
+     FROM employee_additional_managers eam
+     INNER JOIN employee e ON e.id = eam.employee_pk_id
+     WHERE e.employee_id = ${employeeId}
+       AND eam.is_active = 1;`;
+
+# Delete an additional manager for an employee.
+#
+# + employeeId - Employee ID string
+# + email - Additional manager email to deactivate
+# + actor - User performing the operation
+# + return - Query to soft-delete one additional manager
+isolated function deleteAdditionalManagerQuery(string employeeId, string email, string actor)
+    returns sql:ParameterizedQuery =>
+    `UPDATE employee_additional_managers eam
+      INNER JOIN employee e ON e.id = eam.employee_pk_id
+      SET eam.is_active = 0,
+          eam.updated_by = ${actor},
+          eam.updated_on = CURRENT_TIMESTAMP(6)
+      WHERE e.employee_id = ${employeeId}
+        AND LOWER(eam.additional_manager_email) = LOWER(${email})
+        AND eam.is_active = 1;`;
 
 # Build query to fetch vehicles.
 #

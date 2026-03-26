@@ -314,8 +314,8 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
     retry transaction {
         int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
         lastInsertedId = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
-        check addEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
-        check addAdditionalManagers(lastInsertedId, payload.additionalManagerEmails, createdBy);
+        check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
+        check syncAdditionalManagers(employeeId, payload.additionalManagerEmails, createdBy);
         check commit;
     }
     return lastInsertedId;
@@ -372,40 +372,89 @@ isolated function getGeneratedEmployeeId(int lastInsertedEmployeeId) returns str
     return check databaseClient->queryRow(getEmployeeIdQuery(lastInsertedEmployeeId));
 }
 
-# Add emergency contacts for the employee.
+# Sync additional managers for an employee based on the desired set of manager emails.
 #
-# + employeeId - Employee ID
-# + contacts - Emergency contacts to be added
-# + createdBy - Creator of the emergency contact records
-# + return - Nil if the operation was successful or error
-isolated function addEmergencyContacts(string employeeId, EmergencyContact[] contacts, string createdBy)
+# + employeeId - Employee ID string
+# + desiredEmails - The full desired set of additional manager emails
+# + actor - User performing the operation
+# + return - Nil or error
+isolated function syncAdditionalManagers(string employeeId, Email[] desiredEmails, string actor)
     returns error? {
-    sql:ParameterizedQuery[] emergencyInsertQueries =
-        from EmergencyContact contact in contacts
-    select addPersonalInfoEmergencyContactQuery(employeeId, contact, createdBy);
 
-    if emergencyInsertQueries.length() > 0 {
-        _ = check databaseClient->batchExecute(emergencyInsertQueries);
+    stream<AdditionalManagerEmailRow, error?> currentStream =
+        databaseClient->query(getAdditionalManagerEmailsQuery(employeeId));
+
+    string[] currentEmails = check from AdditionalManagerEmailRow row in currentStream
+        select row.additional_manager_email.toLowerAscii();
+
+    string[] desiredLower = from Email e in desiredEmails
+        select (<string>e).trim().toLowerAscii();
+
+    string[] toRemove = from string current in currentEmails
+        where desiredLower.indexOf(current) is ()
+        select current;
+
+    Email[] toAdd = from Email e in desiredEmails
+        where currentEmails.indexOf((<string>e).trim().toLowerAscii()) is ()
+        select e;
+
+    sql:ParameterizedQuery[] deleteQueries = from string email in toRemove
+        select deleteAdditionalManagerQuery(employeeId, email, actor);
+
+    if deleteQueries.length() > 0 {
+        _ = check databaseClient->batchExecute(deleteQueries);
     }
-    return;
+
+    if toAdd.length() > 0 {
+        int employeePkId = check databaseClient->queryRow(
+            `SELECT id FROM employee WHERE employee_id = ${employeeId}`
+        );
+        sql:ParameterizedQuery[] insertQueries = from Email email in toAdd
+            select addEmployeeAdditionalManagerQuery(employeePkId, (<string>email).trim(), actor);
+
+        _ = check databaseClient->batchExecute(insertQueries);
+    }
 }
 
-# Add additional managers for the employee.
+# Sync emergency contacts for an employee based on the desired set of contacts.
 #
-# + employeeId - Employee ID
-# + additionalManagerEmails - List of additional manager email addresses to be added
-# + createdBy - Creator of the additional manager records
-# + return - Nil if the operation was successful or error
-isolated function addAdditionalManagers(int employeeId, Email[] additionalManagerEmails, string createdBy)
+# + employeeId - Employee ID string
+# + desiredContacts - The full desired set of emergency contacts
+# + actor - User performing the operation
+# + return - Nil or error
+isolated function syncEmergencyContacts(string employeeId, EmergencyContact[] desiredContacts, string actor)
     returns error? {
-    sql:ParameterizedQuery[] managerInsertQueries =
-        from Email managerEmail in additionalManagerEmails
-    select addEmployeeAdditionalManagerQuery(employeeId, managerEmail, createdBy);
 
-    if managerInsertQueries.length() > 0 {
-        _ = check databaseClient->batchExecute(managerInsertQueries);
+    stream<EmergencyContactMobileRow, error?> currentStream =
+        databaseClient->query(getEmergencyContactMobilesQuery(employeeId));
+
+    string[] currentMobiles = check from EmergencyContactMobileRow row in currentStream
+        select row.mobile;
+
+    string[] desiredMobiles = from EmergencyContact c in desiredContacts
+        select c.mobile;
+
+    string[] toRemove = from string current in currentMobiles
+        where desiredMobiles.indexOf(current) is ()
+        select current;
+
+    EmergencyContact[] toAdd = from EmergencyContact contact in desiredContacts
+        where currentMobiles.indexOf(contact.mobile) is ()
+        select contact;
+
+    sql:ParameterizedQuery[] deleteQueries = from string mobile in toRemove
+        select deleteEmergencyContactQuery(employeeId, mobile, actor);
+
+    if deleteQueries.length() > 0 {
+        _ = check databaseClient->batchExecute(deleteQueries);
     }
-    return;
+
+    sql:ParameterizedQuery[] insertQueries = from EmergencyContact contact in toAdd
+        select addPersonalInfoEmergencyContactQuery(employeeId, contact, actor);
+
+    if insertQueries.length() > 0 {
+        _ = check databaseClient->batchExecute(insertQueries);
+    }
 }
 
 # Update employee personal information.
@@ -419,27 +468,18 @@ public isolated function updateEmployeePersonalInfo(string employeeId, UpdateEmp
     returns error? {
 
     transaction {
-        sql:ExecutionResult executionResult = check databaseClient->execute(updateEmployeePersonalInfoQuery(employeeId,
-                payload, updatedBy));
-
-        check checkAffectedCount(executionResult.affectedRowCount);
+        sql:ExecutionResult executionResult = check databaseClient->execute(
+            updateEmployeePersonalInfoQuery(employeeId, payload, updatedBy));
 
         EmergencyContact[]? contactsOpt = payload.emergencyContacts;
         if contactsOpt is EmergencyContact[] {
-
-            _ = check databaseClient->execute(deleteEmergencyContactsByEmployeeIdQuery(employeeId, updatedBy));
-
-            sql:ParameterizedQuery[] insertQueries =
-                from EmergencyContact contact in contactsOpt
-            select addPersonalInfoEmergencyContactQuery(employeeId, contact, updatedBy);
-
-            if insertQueries.length() > 0 {
-                _ = check databaseClient->batchExecute(insertQueries);
-            }
+            check syncEmergencyContacts(employeeId, contactsOpt, updatedBy);
+        } else {
+            check checkAffectedCount(executionResult.affectedRowCount);
         }
+
         check commit;
     }
-    return;
 }
 
 # Update employee job information.
@@ -459,26 +499,10 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
 
         Email[]? additionalManagerEmails = payload.additionalManagerEmails;
         if additionalManagerEmails is Email[] {
-
-            int|error pkIdResult = databaseClient->queryRow(
-                `SELECT id FROM employee WHERE employee_id = ${employeeId}`
-            );
-
-            int employeePkId = check pkIdResult.ensureType(int);
-            _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(employeePkId, updatedBy));
-
-            sql:ParameterizedQuery[] insertQueries =
-                from Email email in additionalManagerEmails
-            select addEmployeeAdditionalManagerQuery(employeePkId, email, updatedBy);
-
-            if insertQueries.length() > 0 {
-                _ = check databaseClient->batchExecute(insertQueries);
-            }
+            check syncAdditionalManagers(employeeId, additionalManagerEmails, updatedBy);
         }
-
         check commit;
     }
-    return;
 }
 
 # Fetch vehicles.
