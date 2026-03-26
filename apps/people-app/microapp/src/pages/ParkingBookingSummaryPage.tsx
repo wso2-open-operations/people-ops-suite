@@ -282,12 +282,12 @@ function ParkingBookingSummaryPage() {
 
       // Wallet will use launchData to set the "send" form and navigate to confirm.
       requestOpenMicroApp("com.wso2.superapp.microapp.wallet", {
-        initialRoute: "#/send",
+        initialRoute: "/send",
         wallet_address: carParkConfig.publicWalletAddress,
         coin_amount: reservation.coinsAmount,
         source_app_id: "com.wso2.superapp.microapp.people",
         return_app_id: "com.wso2.superapp.microapp.people",
-        return_route: "#/services/parking/summary",
+        return_route: "/services/parking/summary",
       });
 
       const paymentResult = await waitForWalletPaymentResult();

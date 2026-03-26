@@ -91,14 +91,14 @@ function MyParkingBookingsPage() {
 
   return (
     <PageTransitionWrapper type="secondary">
-      <div className="h-screen bg-white overflow-hidden relative">
+      <div className="h-screen bg-white relative flex flex-col">
         <header className="pt-6 px-5">
           <h2 className="text-center text-[20px] font-extrabold text-[#1F2A44]">
             My Bookings
           </h2>
         </header>
 
-        <section className="px-4 mt-5 pb-28">
+        <section className="px-4 mt-5 pb-28 overflow-y-auto flex-1 min-h-0">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-red-800 text-sm font-medium">
               {error}
