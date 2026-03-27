@@ -298,7 +298,7 @@ const SwappableLead: React.FC<SwappableLeadProps> = ({
 );
 
 export interface SwapLeadsProps {
-  head?: Head;
+  head: Head;
   functionalLead?: Head;
   onSwapHead: (employee: EmployeeBasicInfo, reason: string) => void;
   onSwapFunctionalLead: (employee: EmployeeBasicInfo, reason: string) => void;
