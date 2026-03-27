@@ -93,16 +93,16 @@ public type EpfValidationResponse record {|
 
 # Context record returned by the employee ID generation query.
 public type EmployeeIdContext record {|
-   # Company prefix
-   string companyPrefix;
-   # Employment type
-   EmploymentTypeName employmentType;
+    # Company prefix
+    string companyPrefix;
+    # Employment type
+    EmploymentTypeName employmentType;
 |};
 
 # Result record for the last numeric suffix query used in employee ID generation.
 public type EmployeeIdSequence record {|
-   # Last numeric ID used for the given prefix and employment type sequence
-   decimal lastNumericId;
+    # Last numeric ID used for the given prefix and employment type sequence
+    decimal lastNumericId;
 |};
 
 # TODO: Add structured types for org structure fields and company details
@@ -512,7 +512,7 @@ public type AllowedLocation record {|
 # Company with parsed allowed locations.
 public type CompanyResponse record {|
     # Company ID
-    int id; 
+    int id;
     # Company name
     string name;
     # Company prefix
@@ -579,12 +579,23 @@ public type EmergencyContact record {|
     # Mobile number of the emergency contact
     string mobile;
 |};
-public type AdditionalManagerEmailRow record {|
-    string additional_manager_email;
+
+# Emergency contact row mapping.
+public type EmergencyContactRow record {|
+    # Name of the emergency contact
+    string name;
+    # Telephone number of the emergency contact
+    string? telephone;
+    # Relationship with the employee
+    string relationship;
+    # Mobile number of the emergency contact
+    string mobile;
 |};
 
-public type EmergencyContactMobileRow record {|
-    string mobile;
+# Additional manager email row mapping.
+public type AdditionalManagerEmailRow record {|
+    # Additional manager email
+    string additional_manager_email;
 |};
 
 # Create personal info payload.

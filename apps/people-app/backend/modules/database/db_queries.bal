@@ -1045,13 +1045,16 @@ isolated function addPersonalInfoEmergencyContactQuery(string employeeId, Emerge
         updated_by = ${actor},
         updated_on = CURRENT_TIMESTAMP(6);`;
 
-# Fetch active emergency contact mobile numbers for an employee.
+# Fetch active emergency contact full rows for an employee.
 #
 # + employeeId - Employee ID string
-# + return - Query to get active emergency contact mobiles
-isolated function getEmergencyContactMobilesQuery(string employeeId)
+# + return - Query to get active emergency contact rows
+isolated function getEmergencyContactRowsQuery(string employeeId)
     returns sql:ParameterizedQuery =>
-    `SELECT piec.mobile
+    `SELECT piec.name,
+            piec.telephone,
+            piec.relationship,
+            piec.mobile
      FROM personal_info_emergency_contacts piec
      INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
      WHERE e.employee_id = ${employeeId}

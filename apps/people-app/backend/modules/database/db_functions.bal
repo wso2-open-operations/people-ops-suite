@@ -372,50 +372,6 @@ isolated function getGeneratedEmployeeId(int lastInsertedEmployeeId) returns str
     return check databaseClient->queryRow(getEmployeeIdQuery(lastInsertedEmployeeId));
 }
 
-# Sync additional managers for an employee based on the desired set of manager emails.
-#
-# + employeeId - Employee ID string
-# + desiredEmails - The full desired set of additional manager emails
-# + actor - User performing the operation
-# + return - Nil or error
-isolated function syncAdditionalManagers(string employeeId, Email[] desiredEmails, string actor)
-    returns error? {
-
-    stream<AdditionalManagerEmailRow, error?> currentStream =
-        databaseClient->query(getAdditionalManagerEmailsQuery(employeeId));
-
-    string[] currentEmails = check from AdditionalManagerEmailRow row in currentStream
-        select row.additional_manager_email.toLowerAscii();
-
-    string[] desiredLower = from Email e in desiredEmails
-        select (<string>e).trim().toLowerAscii();
-
-    string[] toRemove = from string current in currentEmails
-        where desiredLower.indexOf(current) is ()
-        select current;
-
-    Email[] toAdd = from Email e in desiredEmails
-        where currentEmails.indexOf((<string>e).trim().toLowerAscii()) is ()
-        select e;
-
-    sql:ParameterizedQuery[] deleteQueries = from string email in toRemove
-        select deleteAdditionalManagerQuery(employeeId, email, actor);
-
-    if deleteQueries.length() > 0 {
-        _ = check databaseClient->batchExecute(deleteQueries);
-    }
-
-    if toAdd.length() > 0 {
-        int employeePkId = check databaseClient->queryRow(
-            `SELECT id FROM employee WHERE employee_id = ${employeeId}`
-        );
-        sql:ParameterizedQuery[] insertQueries = from Email email in toAdd
-            select addEmployeeAdditionalManagerQuery(employeePkId, (<string>email).trim(), actor);
-
-        _ = check databaseClient->batchExecute(insertQueries);
-    }
-}
-
 # Sync emergency contacts for an employee based on the desired set of contacts.
 #
 # + employeeId - Employee ID string
@@ -425,18 +381,33 @@ isolated function syncAdditionalManagers(string employeeId, Email[] desiredEmail
 isolated function syncEmergencyContacts(string employeeId, EmergencyContact[] desiredContacts, string actor)
     returns error? {
 
-    stream<EmergencyContactMobileRow, error?> currentStream =
-        databaseClient->query(getEmergencyContactMobilesQuery(employeeId));
+    stream<EmergencyContactRow, error?> currentStream =
+        databaseClient->query(getEmergencyContactRowsQuery(employeeId));
 
-    string[] currentMobiles = check from EmergencyContactMobileRow row in currentStream
-        select row.mobile;
+    EmergencyContactRow[] currentRows = check from EmergencyContactRow contactRow in currentStream
+        select contactRow;
 
-    string[] desiredMobiles = from EmergencyContact c in desiredContacts
-        select c.mobile;
+    map<EmergencyContactRow> currentByMobile = map from EmergencyContactRow contactRow in currentRows
+        select [contactRow.mobile, contactRow];
 
-    string[] toRemove = from string current in currentMobiles
-        where desiredMobiles.indexOf(current) is ()
-        select current;
+    string[] desiredMobiles = from EmergencyContact contact in desiredContacts
+        select contact.mobile;
+
+    string[] toRemove = from string mobile in currentByMobile.keys()
+        where desiredMobiles.indexOf(mobile) is ()
+        select mobile;
+
+    EmergencyContact[] toAdd = from EmergencyContact contact in desiredContacts
+        where !currentByMobile.hasKey(contact.mobile)
+        select contact;
+
+    EmergencyContact[] toUpdate = from EmergencyContact contact in desiredContacts
+        let EmergencyContactRow? existing = currentByMobile[contact.mobile]
+        where existing != () &&
+            (existing.name != contact.name ||
+                (existing.telephone ?: "") != (contact.telephone ?: "") ||
+                existing.relationship != contact.relationship)
+        select contact;
 
     sql:ParameterizedQuery[] deleteQueries = from string mobile in toRemove
         select deleteEmergencyContactQuery(employeeId, mobile, actor);
@@ -445,18 +416,25 @@ isolated function syncEmergencyContacts(string employeeId, EmergencyContact[] de
         _ = check databaseClient->batchExecute(deleteQueries);
     }
 
-    sql:ParameterizedQuery[] upsertQueries = from EmergencyContact contact in desiredContacts
+    sql:ParameterizedQuery[] insertQueries = from EmergencyContact contact in toAdd
         select addPersonalInfoEmergencyContactQuery(employeeId, contact, actor);
 
-    if upsertQueries.length() > 0 {
-        _ = check databaseClient->batchExecute(upsertQueries);
+    if insertQueries.length() > 0 {
+        _ = check databaseClient->batchExecute(insertQueries);
+    }
+
+    sql:ParameterizedQuery[] updateQueries = from EmergencyContact contact in toUpdate
+        select addPersonalInfoEmergencyContactQuery(employeeId, contact, actor);
+
+    if updateQueries.length() > 0 {
+        _ = check databaseClient->batchExecute(updateQueries);
     }
 }
 
 # Update employee personal information.
 #
-# + employeeId - Employee ID
-# + payload - Personal info update payload
+# + employeeId - Employee ID  
+# + payload - Personal info update payload  
 # + updatedBy - Updater of the personal info record
 # + return - Nil if the update was successful or error
 public isolated function updateEmployeePersonalInfo(string employeeId, UpdateEmployeePersonalInfoPayload payload,
@@ -475,6 +453,55 @@ public isolated function updateEmployeePersonalInfo(string employeeId, UpdateEmp
         }
 
         check commit;
+    }
+}
+
+# Sync additional managers for an employee based on the desired set of manager emails.
+#
+# + employeeId - Employee ID string
+# + desiredEmails - The full desired set of additional manager emails
+# + actor - User performing the operation
+# + return - Nil or error
+isolated function syncAdditionalManagers(string employeeId, Email[] desiredEmails, string actor)
+    returns error? {
+
+    stream<AdditionalManagerEmailRow, error?> currentStream =
+        databaseClient->query(getAdditionalManagerEmailsQuery(employeeId));
+
+    string[] currentEmails = check from AdditionalManagerEmailRow emailRow in currentStream
+        select emailRow.additional_manager_email.toLowerAscii();
+
+    string[] desiredLower = from Email email in desiredEmails
+        select email.trim().toLowerAscii();
+
+    map<string> currentEmailMap = map from string email in currentEmails
+        select [email, email];
+    map<string> desiredEmailMap = map from string email in desiredLower
+        select [email, email];
+
+    string[] toRemove = from string current in currentEmails
+        where !desiredEmailMap.hasKey(current)
+        select current;
+
+    Email[] toAdd = from Email email in desiredEmails
+        where !currentEmailMap.hasKey(email.trim().toLowerAscii())
+        select email;
+
+    sql:ParameterizedQuery[] deleteQueries = from string email in toRemove
+        select deleteAdditionalManagerQuery(employeeId, email, actor);
+
+    if deleteQueries.length() > 0 {
+        _ = check databaseClient->batchExecute(deleteQueries);
+    }
+
+    if toAdd.length() > 0 {
+        int employeePkId = check databaseClient->queryRow(
+            `SELECT id FROM employee WHERE employee_id = ${employeeId}`
+        );
+        sql:ParameterizedQuery[] insertQueries = from Email email in toAdd
+            select addEmployeeAdditionalManagerQuery(employeePkId, email.trim(), actor);
+
+        _ = check databaseClient->batchExecute(insertQueries);
     }
 }
 
