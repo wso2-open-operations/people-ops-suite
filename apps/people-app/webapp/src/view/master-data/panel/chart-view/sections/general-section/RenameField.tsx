@@ -19,14 +19,15 @@ import { Controller, useForm } from "react-hook-form";
 
 import { useState } from "react";
 
-import { UnitType, UnitTypeLabel } from "@utils/utils";
+import { NodeType } from "@root/src/utils/types";
+import { UnitTypeLabel } from "@utils/utils";
 
 interface RenameFormValues {
   entityName: string;
 }
 
 interface RenameFieldProps {
-  entityType: UnitType;
+  entityType: NodeType;
   currentName: string;
   onRenameSuccess: (entityName: string) => void;
 }
@@ -75,7 +76,7 @@ export const RenameField: React.FC<RenameFieldProps> = ({
         sx={{
           color: theme.palette.customText.primary.p3.active,
           fontWeight: 500,
-          textTransform: "capitalize"
+          textTransform: "capitalize",
         }}
       >
         {UnitTypeLabel[entityType]} Name
