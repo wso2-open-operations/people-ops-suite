@@ -49,7 +49,7 @@ import { type MatchSearch, itemToMatchSearch } from "./utils/utils.ts";
 
 type OnEdit = {
   open: boolean;
-  data: BusinessUnitState | TeamState | SubTeamState | UnitState | null;
+  uniqueId: string | null;
   type: NodeType | null;
 };
 
@@ -71,7 +71,7 @@ export default function SplitView() {
   const theme = useTheme();
   const [editModal, setEditModal] = useState<OnEdit>({
     open: false,
-    data: null,
+    uniqueId: null,
     type: null,
   });
 
@@ -140,14 +140,16 @@ export default function SplitView() {
 
   const selectedBusinessUnit =
     orgItems.businessUnits.find((bu) => bu.id === selectedBusinessUnitId) ?? null;
+
   const selectedTeam = selectedTeams?.find((team) => team.id === selectedTeamId) ?? null;
+
   const selectedSubTeam =
     selectedSubTeams?.find((subTeam) => subTeam.id === selectedSubTeamId) ?? null;
 
   const handleClose = () => {
     setEditModal({
       open: false,
-      data: null,
+      uniqueId: null,
       type: null,
     });
   };
@@ -162,10 +164,9 @@ export default function SplitView() {
   };
 
   const onEdit = (data: OrgStructureState, nodeType: NodeType) => {
-    console.log("on edit : ", data.name);
     setEditModal({
       open: true,
-      data: data,
+      uniqueId: data.uniqueId,
       type: nodeType,
     });
   };
@@ -377,6 +378,8 @@ export default function SplitView() {
   };
 
   const isDisabled = Boolean(searchTerm || teamSearchTerm || subTeamSearchTerm || unitSearchTerm);
+
+  console.log("filteredBusinessUnits : ", filteredBusinessUnits);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -908,11 +911,11 @@ export default function SplitView() {
         </Box>
       </Box>
 
-      {editModal.open && editModal.data && editModal.type && (
+      {editModal.open && editModal.uniqueId && editModal.type && (
         <EditModal
           open={editModal.open}
-          data={editModal.data}
-          type={editModal.type}
+          uniqueId={editModal.uniqueId}
+          nodeType={editModal.type}
           onClose={handleClose}
         />
       )}
