@@ -65,6 +65,7 @@ CREATE TABLE `companies_allowed_locations` (
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_cal_company_location` (`company_id`, `allowed_location`),
+  KEY `idx_cal_company_id` (`company_id`),
   KEY `idx_cal_location` (`allowed_location`),
   CONSTRAINT `fk_cal_company`
     FOREIGN KEY (`company_id`) REFERENCES `company` (`id`)
