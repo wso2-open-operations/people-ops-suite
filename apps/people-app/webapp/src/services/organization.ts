@@ -270,7 +270,7 @@ export const organizationApi = createApi({
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    updateBusinessUnit: builder.mutation<void, { id: string; payload: Partial<PayloadType> }>({
+    updateBusinessUnit: builder.mutation<void, { id: number; payload: Partial<PayloadType> }>({
       queryFn: async ({ id, payload }, { getState }, _extraoptions, baseQuery) => {
         const state = getState() as RootState;
         const userEmail = state.user.userInfo?.workEmail;
@@ -288,7 +288,7 @@ export const organizationApi = createApi({
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    updateTeam: builder.mutation<void, { id: string; payload: Partial<PayloadType> }>({
+    updateTeam: builder.mutation<void, { id: number; payload: Partial<PayloadType> }>({
       queryFn: async ({ id, payload }, { getState }, _extraoptions, baseQuery) => {
         const state = getState() as RootState;
         const userEmail = state.user.userInfo?.workEmail;
@@ -306,7 +306,7 @@ export const organizationApi = createApi({
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    updateSubTeam: builder.mutation<void, { id: string; payload: Partial<PayloadType> }>({
+    updateSubTeam: builder.mutation<void, { id: number; payload: Partial<PayloadType> }>({
       queryFn: async ({ id, payload }, { getState }, _extraoptions, baseQuery) => {
         const state = getState() as RootState;
         const userEmail = state.user.userInfo?.workEmail;
@@ -324,7 +324,7 @@ export const organizationApi = createApi({
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    updateUnit: builder.mutation<void, { id: string; payload: Partial<PayloadType> }>({
+    updateUnit: builder.mutation<void, { id: number; payload: Partial<PayloadType> }>({
       queryFn: async ({ id, payload }, { getState }, _extraoptions, baseQuery) => {
         const state = getState() as RootState;
         const userEmail = state.user.userInfo?.workEmail;
@@ -344,7 +344,7 @@ export const organizationApi = createApi({
 
     updateBusinessUnitTeam: builder.mutation<
       void,
-      { buId: string; teamId: string; payload: Partial<PayloadType> }
+      { buId: number; teamId: number; payload: Partial<PayloadType> }
     >({
       queryFn: async ({ buId, teamId, payload }, { getState }, _extraoptions, baseQuery) => {
         const state = getState() as RootState;
@@ -365,7 +365,7 @@ export const organizationApi = createApi({
 
     updateTeamSubTeam: builder.mutation<
       void,
-      { teamId: string; subTeamId: string; payload: Partial<PayloadType> }
+      { teamId: number; subTeamId: number; payload: Partial<PayloadType> }
     >({
       queryFn: async ({ teamId, subTeamId, payload }, { getState }, _extraoptions, baseQuery) => {
         const state = getState() as RootState;
@@ -386,7 +386,7 @@ export const organizationApi = createApi({
 
     updateSubTeamUnit: builder.mutation<
       void,
-      { subTeamId: string; unitId: string; payload: Partial<PayloadType> }
+      { subTeamId: number; unitId: number; payload: Partial<PayloadType> }
     >({
       queryFn: async ({ subTeamId, unitId, payload }, { getState }, _extraoptions, baseQuery) => {
         const state = getState() as RootState;
@@ -405,7 +405,7 @@ export const organizationApi = createApi({
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    deleteBusinessUnit: builder.mutation<void, { id: string }>({
+    deleteBusinessUnit: builder.mutation<void, { id: number }>({
       queryFn: async ({ id }, { getState }, _extraoptions, baseQuery) => {
         const state = getState() as RootState;
         const userEmail = state.user.userInfo?.workEmail;
@@ -420,7 +420,7 @@ export const organizationApi = createApi({
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    deleteBusinessUnitTeam: builder.mutation<void, { buId: string; teamId: string }>({
+    deleteBusinessUnitTeam: builder.mutation<void, { buId: number; teamId: number }>({
       queryFn: async ({ buId, teamId }, _api, _extraoptions, baseQuery) => {
         const data = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}/team/${teamId}`,
@@ -431,7 +431,7 @@ export const organizationApi = createApi({
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    deleteTeamSubTeam: builder.mutation<void, { teamId: string; subTeamId: string }>({
+    deleteTeamSubTeam: builder.mutation<void, { teamId: number; subTeamId: number }>({
       queryFn: async ({ teamId, subTeamId }, _api, _extraoptions, baseQuery) => {
         const data = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/team/${teamId}/sub-team/${subTeamId}`,
@@ -442,7 +442,7 @@ export const organizationApi = createApi({
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    deleteSubTeamUnit: builder.mutation<void, { subTeamId: string; unitId: string }>({
+    deleteSubTeamUnit: builder.mutation<void, { subTeamId: number; unitId: number }>({
       queryFn: async ({ subTeamId, unitId }, _api, _extraoptions, baseQuery) => {
         const data = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/sub-team/${subTeamId}/unit/${unitId}`,
