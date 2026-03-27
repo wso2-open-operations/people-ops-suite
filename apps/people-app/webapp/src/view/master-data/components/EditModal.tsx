@@ -18,8 +18,9 @@ import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography } from 
 import { useTheme } from "@mui/material/styles";
 
 import ErrorHandler from "@component/common/ErrorHandler";
-import BackdropProgress from "@component/ui/BackdropProgress";
-import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
+import { OrgStructureState } from "@root/src/slices/organizationSlice/organizationStructure";
+import { RootState, useAppSelector } from "@root/src/slices/store";
+import { NodeType } from "@root/src/utils/types";
 
 import { useOrgEntityActions } from "../panel/chart-view/hooks/useOrgEntityActions";
 import { DeleteCurrent } from "../panel/chart-view/sections/danger-section/DeleteCurrent";
@@ -29,28 +30,40 @@ import { SectionHeader } from "./edit-modal/SectionHeader";
 
 interface EditModalProps {
   open: boolean;
+  uniqueId: string;
+  nodeType: NodeType;
   onClose: () => void;
-  data: Company | BusinessUnit | Team | SubTeam | Unit;
-  type: string;
-  parentId: string;
 }
 
-export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, parentId }) => {
+export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, nodeType }) => {
   const theme = useTheme();
+  const orgInfo = useAppSelector(
+    (state: RootState) => state.organizationStructure.organizationInfo,
+  );
 
-  const {
-    entityTypeName,
-    handleLeadSwap,
-    handleHeadSwap,
-    handleDeleteCurrent,
-    handleRenameCurrent,
-    isLoading,
-    isError,
-  } = useOrgEntityActions({ data, parentId, onClose });
+  const data: OrgStructureState | null = (() => {
+    if (!orgInfo) return null;
 
-  if (isError || !entityTypeName) {
+    switch (nodeType) {
+      case NodeType.BusinessUnit:
+        return orgInfo.businessUnits.find((item) => item.uniqueId === uniqueId) ?? null;
+      case NodeType.Team:
+        return orgInfo.teams.find((item) => item.uniqueId === uniqueId) ?? null;
+      case NodeType.SubTeam:
+        return orgInfo.subTeams.find((item) => item.uniqueId === uniqueId) ?? null;
+      case NodeType.Unit:
+        return orgInfo.units.find((item) => item.uniqueId === uniqueId) ?? null;
+      default:
+        return null;
+    }
+  })();
+
+  if (!data) {
     return <ErrorHandler message={"Something went wrong. Please try again..."} />;
   }
+
+  const { handleLeadSwap, handleHeadSwap, handleDeleteCurrent, handleRenameCurrent } =
+    useOrgEntityActions({ data, onClose });
 
   return (
     <Dialog
@@ -71,14 +84,14 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
         },
       }}
     >
-      <BackdropProgress
-        open={isLoading}
-        sx={{
-          position: "absolute",
-          zIndex: (theme) => theme.zIndex.modal + 1,
-          borderRadius: "8px",
-        }}
-      />
+      {/* <BackdropProgress */}
+      {/*   open={isLoading} */}
+      {/*   sx={{ */}
+      {/*     position: "absolute", */}
+      {/*     zIndex: (theme) => theme.zIndex.modal + 1, */}
+      {/*     borderRadius: "8px", */}
+      {/*   }} */}
+      {/* /> */}
 
       <DialogTitle
         sx={{
@@ -97,7 +110,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
             fontWeight: 600,
           }}
         >
-          Edit {entityTypeName}
+          Edit {data.type}
         </Typography>
 
         <IconButton
@@ -136,14 +149,14 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
           <SectionHeader title="General" />
 
           <RenameField
-            entityType={entityTypeName}
+            entityType={data.type}
             currentName={data.name}
             onRenameSuccess={handleRenameCurrent}
           />
         </Box>
 
         {/* Leads Section */}
-        {(data.head || data.functionalLead) && (
+        {(data.head || ("functionalLead" in data && data.functionalLead)) && (
           <Box
             sx={{
               display: "flex",
@@ -155,7 +168,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
 
             <SwapLeads
               head={data.head}
-              functionalLead={data.functionalLead}
+              functionalLead={"functionalLead" in data ? data.functionalLead : undefined}
               onSwapHead={handleHeadSwap}
               onSwapFunctionalLead={handleLeadSwap}
             />
