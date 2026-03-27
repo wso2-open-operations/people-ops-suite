@@ -17,7 +17,6 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 
 import { AppConfig } from "@config/config.ts";
 
-import { RootState } from "../slices/store.ts";
 import { baseQueryWithRetry } from "./BaseQuery.ts";
 
 export interface Head {
