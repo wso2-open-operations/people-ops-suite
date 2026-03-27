@@ -69,6 +69,7 @@ import {
   calculateAge,
   calculateServiceLength,
   formatServiceLength,
+  formatDateUS,
 } from "@root/src/utils/utils";
 import {
   FieldArray,
@@ -848,7 +849,7 @@ export default function Me({
                     Start Date
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.startDate || "-"}
+                    {formatDateUS(employee.startDate, "-")}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
@@ -864,17 +865,22 @@ export default function Me({
                     Probation End Date
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.probationEndDate || "N/A"}
+                    {formatDateUS(employee.probationEndDate, "N/A")}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Agreement End Date
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.agreementEndDate || "N/A"}
-                  </Typography>
-                </Grid>
+                {employee.agreementEndDate ? (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography
+                      color="text.secondary"
+                      sx={{ fontWeight: 500 }}
+                    >
+                      Agreement End Date
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {formatDateUS(employee.agreementEndDate, "-")}
+                    </Typography>
+                  </Grid>
+                ) : null}
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                 <Grid item xs={12} sm={6} md={3}>
@@ -1004,7 +1010,7 @@ export default function Me({
                       <ReadOnly label="NIC" value={values.nicOrPassport} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <ReadOnly label="Date of Birth" value={values.dob} />
+                        <ReadOnly label="Date of Birth" value={formatDateUS(values.dob)} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Age" value={age} />

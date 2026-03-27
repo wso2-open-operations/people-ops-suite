@@ -23,6 +23,7 @@ import {
   isMatch,
   isValid,
   parse,
+  format,
 } from "date-fns";
 
 export const isIncludedRole = (a: string[], b: string[]): boolean => {
@@ -109,6 +110,16 @@ export const formatServiceLength = (length: ServiceLength | null): string => {
 
   if (years > 0) return `${years} ${years === 1 ? "year" : "years"}`;
   return `${months} ${months === 1 ? "month" : "months"}`;
+};
+
+export const formatDateUS = (
+  isoDate?: string | null,
+  fallback?: string | null,
+): string | null => {
+  if (!isoDate) return fallback ?? null;
+  const d = parseStrictYyyyMmDd(isoDate);
+  if (!d) return fallback ?? null;
+  return format(d, "MM/dd/yyyy");
 };
 
 export const toSentenceCase = (value: string): string => {
