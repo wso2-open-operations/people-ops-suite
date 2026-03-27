@@ -31,7 +31,6 @@ import { useEffect, useState } from "react";
 import ErrorHandler from "@component/common/ErrorHandler.tsx";
 import PreLoader from "@component/common/PreLoader.tsx";
 import { useGetOrgStructureQuery } from "@services/organization";
-import type { OrgStructure } from "@services/organization";
 import { State } from "@slices/authSlice/auth.ts";
 import {
   BusinessUnitState,
@@ -46,21 +45,21 @@ import { EditModal } from "@view/master-data/components/EditModal";
 import OrgStructureCard from "@view/master-data/panel/chart-view/components/OrgStructureCard";
 
 import AddPage from "./AddPage.tsx";
-import { useFindMappingId, useFindParentMappingId } from "./hooks/useFindParent";
 import { type MatchSearch, itemToMatchSearch } from "./utils/utils.ts";
 
 type OnEdit = {
   open: boolean;
-  data: OrgStructure | null;
+  data: BusinessUnitState | TeamState | SubTeamState | UnitState | null;
   type: NodeType | null;
-  parentId: string | null;
 };
+
+type AddOption = (BusinessUnitState | TeamState | SubTeamState | UnitState) & { canAdd?: boolean };
 
 type OnAdd = {
   open: boolean;
-  data: BusinessUnitState[] | TeamState[] | SubTeamState[] | UnitState[] | null;
+  data: AddOption[] | null;
   type: NodeType | null;
-  parentId: string | null;
+  selectedNode: BusinessUnitState | TeamState | SubTeamState | UnitState | null;
 };
 
 export default function SplitView() {
@@ -74,14 +73,13 @@ export default function SplitView() {
     open: false,
     data: null,
     type: null,
-    parentId: null,
   });
 
   const [addModal, setAddModal] = useState<OnAdd>({
     open: false,
     data: null,
     type: null,
-    parentId: null,
+    selectedNode: null,
   });
 
   const [searchTerm, setSearchTerm] = useState<string | null>();
@@ -92,10 +90,10 @@ export default function SplitView() {
   const [searchMatches, setSearchMatches] = useState<MatchSearch[]>([]);
   const [activeMatchIndex, setActiveMatchIndex] = useState<number>(-1);
 
-  const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<string | null>(null);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
-  const [selectedSubTeamId, setSelectedSubTeamId] = useState<string | null>(null);
-  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<number | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [selectedSubTeamId, setSelectedSubTeamId] = useState<number | null>(null);
+  const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
   const currentMatch = activeMatchIndex >= 0 ? searchMatches[activeMatchIndex] : null;
 
   const goToPreviousMatch = () => {
@@ -117,10 +115,10 @@ export default function SplitView() {
       return;
     }
 
-    setSelectedBusinessUnitId(currentMatch.buId);
-    setSelectedTeamId(currentMatch.teamId);
-    setSelectedSubTeamId(currentMatch.subTeamId);
-    setSelectedUnitId(currentMatch.unitId);
+    setSelectedBusinessUnitId(currentMatch.buId as number | null);
+    setSelectedTeamId(currentMatch.teamId as number | null);
+    setSelectedSubTeamId(currentMatch.subTeamId as number | null);
+    setSelectedUnitId(currentMatch.unitId as number | null);
   }, [currentMatch]);
 
   if (orgItemState.state === State.Loading) {
@@ -140,12 +138,17 @@ export default function SplitView() {
   const selectedUnits =
     selectedSubTeams?.find((subTeam) => subTeam.id === selectedSubTeamId)?.units ?? null;
 
+  const selectedBusinessUnit =
+    orgItems.businessUnits.find((bu) => bu.id === selectedBusinessUnitId) ?? null;
+  const selectedTeam = selectedTeams?.find((team) => team.id === selectedTeamId) ?? null;
+  const selectedSubTeam =
+    selectedSubTeams?.find((subTeam) => subTeam.id === selectedSubTeamId) ?? null;
+
   const handleClose = () => {
     setEditModal({
       open: false,
       data: null,
       type: null,
-      parentId: null,
     });
   };
 
@@ -154,33 +157,31 @@ export default function SplitView() {
       open: false,
       data: null,
       type: null,
-      parentId: null,
+      selectedNode: null,
     });
   };
 
   const onEdit = (data: OrgStructureState, nodeType: NodeType) => {
-    const parentId = useFindParentMappingId(orgItems, data.parentId, nodeType);
-
+    console.log("on edit : ", data.name);
     setEditModal({
       open: true,
       data: data,
       type: nodeType,
-      parentId: parentId,
     });
   };
 
   const onAdd = (
-    data: BusinessUnitState[] | TeamState[] | SubTeamState[] | UnitState[] | null,
+    data: AddOption[] | null,
     nodeType: NodeType,
-    parentId: string,
+    selectedNode: BusinessUnitState | TeamState | SubTeamState | UnitState | null,
   ) => {
-    const parentMappingId = useFindMappingId(orgItems, parentId, nodeType);
+    if (!data) return;
 
     setAddModal({
       open: true,
       data: data,
       type: nodeType,
-      parentId: parentMappingId,
+      selectedNode: selectedNode,
     });
   };
 
@@ -252,22 +253,98 @@ export default function SplitView() {
 
   // Add handlers
   const handleBusinessUnitAdd = () => {
-    onAdd(orgItems.businessUnits, NodeType.BusinessUnit, orgItems.company.id);
+    onAdd(orgItems.businessUnits, NodeType.BusinessUnit, null);
   };
 
   const handleTeamAdd = () => {
-    if (!selectedBusinessUnitId) return;
-    onAdd(orgItems.teams, NodeType.Team, selectedBusinessUnitId);
+    if (!selectedBusinessUnit) return;
+
+    const isOnSelectedBusinessUnit = (t: TeamState) => t.businessUnitId === selectedBusinessUnit.id;
+
+    const teamsOnSelectedBusinessUnit = orgItems.teams.filter(isOnSelectedBusinessUnit);
+
+    const idsAlreadyOnSelectedBusinessUnit = new Set(teamsOnSelectedBusinessUnit.map((t) => t.id));
+
+    const firstOffBusinessUnitRowById = new Map<number, TeamState>();
+    for (const t of orgItems.teams) {
+      if (isOnSelectedBusinessUnit(t)) continue;
+      if (!firstOffBusinessUnitRowById.has(t.id)) firstOffBusinessUnitRowById.set(t.id, t);
+    }
+
+    const linkableOffBusinessUnit = [...firstOffBusinessUnitRowById.values()].filter(
+      (t) => !idsAlreadyOnSelectedBusinessUnit.has(t.id),
+    );
+
+    const teamOptionsForModal: AddOption[] = [
+      ...teamsOnSelectedBusinessUnit,
+      ...linkableOffBusinessUnit,
+    ].map((t) => ({
+      ...t,
+      canAdd: !isOnSelectedBusinessUnit(t),
+    }));
+
+    onAdd(teamOptionsForModal, NodeType.Team, selectedBusinessUnit);
   };
 
   const handleSubTeamAdd = () => {
-    if (!selectedTeamId) return;
-    onAdd(orgItems.subTeams, NodeType.SubTeam, selectedTeamId);
+    if (!selectedTeam) return;
+    const isOnSelectedTeam = (s: SubTeamState) =>
+      s.businessUnitId === selectedTeam.businessUnitId &&
+      s.businessUnitTeamId === selectedTeam.businessUnitTeamId;
+
+    const subTeamsOnSelectedTeam = orgItems.subTeams.filter(isOnSelectedTeam);
+
+    const idsAlreadyOnSelectedTeam = new Set(subTeamsOnSelectedTeam.map((s) => s.id));
+    const firstOffTeamRowById = new Map<number, SubTeamState>();
+    for (const s of orgItems.subTeams) {
+      if (isOnSelectedTeam(s)) continue;
+      if (!firstOffTeamRowById.has(s.id)) firstOffTeamRowById.set(s.id, s);
+    }
+
+    const linkableOffTeam = [...firstOffTeamRowById.values()].filter(
+      (s) => !idsAlreadyOnSelectedTeam.has(s.id),
+    );
+
+    const subTeamOptionsForModal: AddOption[] = [...subTeamsOnSelectedTeam, ...linkableOffTeam].map(
+      (s) => ({
+        ...s,
+        canAdd: !isOnSelectedTeam(s),
+      }),
+    );
+
+    onAdd(subTeamOptionsForModal, NodeType.SubTeam, selectedTeam);
   };
 
   const handleUnitAdd = () => {
-    if (!selectedSubTeamId) return;
-    onAdd(orgItems.units, NodeType.Unit, selectedSubTeamId);
+    if (!selectedSubTeam) return;
+
+    const isOnSelectedSubTeam = (u: UnitState) =>
+      u.businessUnitId === selectedSubTeam.businessUnitId &&
+      u.businessUnitTeamId === selectedSubTeam.businessUnitTeamId &&
+      u.businessUnitTeamSubTeamId === selectedSubTeam.businessUnitTeamSubTeamId;
+
+    const unitsOnSelectedSubTeam = orgItems.units.filter(isOnSelectedSubTeam);
+
+    const idsAlreadyOnSelectedSubTeam = new Set(unitsOnSelectedSubTeam.map((u) => u.id));
+
+    const firstOffSubTeamRowById = new Map<number, UnitState>();
+    for (const u of orgItems.units) {
+      if (isOnSelectedSubTeam(u)) continue;
+      if (!firstOffSubTeamRowById.has(u.id)) firstOffSubTeamRowById.set(u.id, u);
+    }
+
+    const linkableOffSubTeam = [...firstOffSubTeamRowById.values()].filter(
+      (u) => !idsAlreadyOnSelectedSubTeam.has(u.id),
+    );
+
+    const unitOptionsForModal: AddOption[] = [...unitsOnSelectedSubTeam, ...linkableOffSubTeam].map(
+      (u) => ({
+        ...u,
+        canAdd: !isOnSelectedSubTeam(u),
+      }),
+    );
+
+    onAdd(unitOptionsForModal, NodeType.Unit, selectedSubTeam);
   };
 
   // Global search handlers
@@ -487,10 +564,9 @@ export default function SplitView() {
                   key={bu.id}
                   name={bu.name}
                   headCount={bu.headCount}
-                  hasChildren={Boolean(bu.head || bu.functionalLead)}
+                  hasChildren={Boolean(bu.head)}
                   togglePeopleSectionVisibility={true}
                   teamHead={bu.head}
-                  functionLead={bu.functionalLead}
                   onEdit={() => onEdit(bu, NodeType.BusinessUnit)}
                   onClick={() => handleBusinessUnitClick(bu)}
                   isPeopleSectionVertical={true}
@@ -832,23 +908,24 @@ export default function SplitView() {
         </Box>
       </Box>
 
-      {editModal.open && editModal.data && editModal.type && editModal.parentId !== null && (
+      {editModal.open && editModal.data && editModal.type && (
         <EditModal
           open={editModal.open}
           data={editModal.data}
           type={editModal.type}
-          parentId={editModal.parentId}
           onClose={handleClose}
         />
       )}
 
-      <AddPage
-        open={addModal.open}
-        orgInfo={addModal.data}
-        onClose={handleAddModalClose}
-        nodeType={addModal.type}
-        parentId={addModal.parentId}
-      />
+      {addModal.open && addModal.data && addModal.type && (
+        <AddPage
+          open={addModal.open}
+          orgInfo={addModal.data}
+          onClose={handleAddModalClose}
+          nodeType={addModal.type}
+          selectedNode={addModal.selectedNode}
+        />
+      )}
     </Box>
   );
 }
