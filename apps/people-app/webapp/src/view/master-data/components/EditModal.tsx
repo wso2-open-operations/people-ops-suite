@@ -18,7 +18,12 @@ import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography } from 
 import { useTheme } from "@mui/material/styles";
 
 import ErrorHandler from "@component/common/ErrorHandler";
-import { OrgStructureState } from "@root/src/slices/organizationSlice/organizationStructure";
+import {
+  BusinessUnitState,
+  SubTeamState,
+  TeamState,
+  UnitState,
+} from "@root/src/slices/organizationSlice/organizationStructure";
 import { RootState, useAppSelector } from "@root/src/slices/store";
 import { NodeType } from "@root/src/utils/types";
 
@@ -41,7 +46,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
     (state: RootState) => state.organizationStructure.organizationInfo,
   );
 
-  const data: OrgStructureState | null = (() => {
+  const data: BusinessUnitState | TeamState | SubTeamState | UnitState | null = (() => {
     if (!orgInfo) return null;
 
     switch (nodeType) {
@@ -156,7 +161,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
         </Box>
 
         {/* Leads Section */}
-        {(data.head || ("functionalLead" in data && data.functionalLead)) && (
+        {data.head && (
           <Box
             sx={{
               display: "flex",
