@@ -19,14 +19,14 @@ import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organizati
 
 import { getEntityTypeName } from "../utils";
 import { useOrgMutation } from "./useOrgMutations";
+import { SubTeamState, TeamState, UnitState } from "@root/src/slices/organizationSlice/organizationStructure";
 
 interface UseOrgEntityActionsParams {
   data: Company | BusinessUnit | Team | SubTeam | Unit;
-  parentId: string;
   onClose?: () => void;
 }
 
-export function useOrgEntityActions({ data, parentId, onClose }: UseOrgEntityActionsParams) {
+export function useOrgEntityActions({ data, onClose }: UseOrgEntityActionsParams) {
   const {
     updateBusinessUnit,
     updateTeam,
@@ -49,41 +49,35 @@ export function useOrgEntityActions({ data, parentId, onClose }: UseOrgEntityAct
 
   const handleLeadSwap = async (selectedEmployee: EmployeeBasicInfo) => {
     const payload = { functionalLeadEmail: selectedEmployee.workEmail };
-    const entityId = data.id;
 
     switch (entityTypeName) {
       case UnitType.Team:
-        if (parentId) await updateBusinessUnitTeam({ buId: parentId, teamId: entityId, payload });
+        await updateBusinessUnitTeam({ buId: (data as TeamState).businessUnitId, teamId: (data as TeamState).id, payload });
         break;
       case UnitType.SubTeam:
-        if (parentId) {
-          await updateTeamSubTeam({ teamId: parentId, subTeamId: entityId, payload });
-        }
+        await updateTeamSubTeam({ businessUnitTeamId: (data as SubTeamState).businessUnitTeamId, subTeamId: (data as SubTeamState).id, payload });
         break;
       case UnitType.Unit:
-        if (parentId) {
-          await updateSubTeamUnit({ subTeamId: parentId, unitId: entityId, payload });
-        }
+        await updateSubTeamUnit({ businessUnitTeamSubTeamId: (data as UnitState).businessUnitTeamSubTeamId, unitId: (data as UnitState).id, payload });
         break;
     }
   };
 
   const handleHeadSwap = async (selectedEmployee: EmployeeBasicInfo, _reason: string) => {
     const payload = { headEmail: selectedEmployee.workEmail };
-    const entityId = data.id;
 
     switch (entityTypeName) {
       case UnitType.BusinessUnit:
-        await updateBusinessUnit({ id: entityId, payload });
+        await updateBusinessUnit({ buId: data.id, payload });
         break;
       case UnitType.Team:
-        await updateTeam({ id: entityId, payload });
+        await updateTeam({ teamId: data.id, payload });
         break;
       case UnitType.SubTeam:
-        await updateSubTeam({ id: entityId, payload });
+        await updateSubTeam({ subTeamId: data.id, payload });
         break;
       case UnitType.Unit:
-        await updateUnit({ id: entityId, payload });
+        await updateUnit({ unitId: data.id, payload });
         break;
     }
   };
@@ -92,16 +86,16 @@ export function useOrgEntityActions({ data, parentId, onClose }: UseOrgEntityAct
     try {
       switch (entityTypeName) {
         case UnitType.BusinessUnit:
-          await deleteBusinessUnit({ id: data.id }).unwrap();
+          await deleteBusinessUnit({ buId: data.id }).unwrap();
           break;
         case UnitType.Team:
-          await deleteBusinessUnitTeam({ buId: parentId, teamId: data.id }).unwrap();
+          await deleteBusinessUnitTeam({ buId: data.id, teamId: data.id }).unwrap();
           break;
         case UnitType.SubTeam:
-          await deleteTeamSubTeam({ teamId: parentId, subTeamId: data.id }).unwrap();
+          await deleteTeamSubTeam({ businessUnitTeamId: data.id, subTeamId: data.id }).unwrap();
           break;
         case UnitType.Unit:
-          await deleteSubTeamUnit({ subTeamId: parentId, unitId: data.id }).unwrap();
+          await deleteSubTeamUnit({ businessUnitTeamSubTeamId: data.id, unitId: data.id }).unwrap();
           break;
       }
       if (onClose) onClose();
@@ -113,18 +107,21 @@ export function useOrgEntityActions({ data, parentId, onClose }: UseOrgEntityAct
   const handleRenameCurrent = async (entityName: string) => {
     const payload = { name: entityName };
 
+    console.log("Payload : ", payload);
+    console.log("data : ", data);
+
     switch (entityTypeName) {
       case UnitType.BusinessUnit:
-        await updateBusinessUnit({ id: data.id, payload });
+        await updateBusinessUnit({ buId: data.id, payload });
         break;
       case UnitType.Team:
-        await updateTeam({ id: data.id, payload });
+        await updateTeam({ teamId: data.id, payload });
         break;
       case UnitType.SubTeam:
-        await updateSubTeam({ id: data.id, payload });
+        await updateSubTeam({ subTeamId: data.id, payload });
         break;
       case UnitType.Unit:
-        await updateUnit({ id: data.id, payload });
+        await updateUnit({ unitId: data.id, payload });
         break;
     }
   };
