@@ -414,6 +414,7 @@ CREATE TABLE `companies_allowed_locations` (
   `company_id` INT NOT NULL,
   `allowed_location` VARCHAR(255) NOT NULL,
   `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `probation_period` tinyint unsigned DEFAULT NULL,
   `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,
