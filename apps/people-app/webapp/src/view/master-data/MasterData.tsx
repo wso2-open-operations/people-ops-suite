@@ -16,7 +16,6 @@
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 
 import TabsPage from "@layout/pages/TabsPage";
-import OrgStructure from "@view/master-data/panel/chart-view/OrgStructure.tsx";
 import SplitView from "@view/master-data/panel/split-view-t/SplitView.tsx";
 
 export default function MasterData() {
@@ -29,12 +28,6 @@ export default function MasterData() {
           tabPath: "org-structure-split-view-remake",
           icon: <AccountTreeOutlinedIcon />,
           page: <SplitView />,
-        },
-        {
-          tabTitle: "Org Structure Chart",
-          tabPath: "org-structure-chart",
-          icon: <AccountTreeOutlinedIcon />,
-          page: <OrgStructure />,
         },
       ]}
     />
