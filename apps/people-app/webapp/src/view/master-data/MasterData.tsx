@@ -24,7 +24,7 @@ export default function MasterData() {
       title="Master Data"
       tabsPage={[
         {
-          tabTitle: "Org Structure Remake",
+          tabTitle: "Org Structure Split View",
           tabPath: "org-structure-split-view",
           icon: <AccountTreeOutlinedIcon />,
           page: <SplitView />,
