@@ -56,8 +56,6 @@ public type EmployeeFilter record {|
     string[]? employmentType = ();
     # Employee is a lead or not
     boolean? lead = ();
-    # Employee is active or not
-    boolean isActive = true;
 |};
 
 # GraphQL Employee filter record.
@@ -76,8 +74,6 @@ type GraphQLEmployeeFilter record {|
     string[]? employmentType = ();
     # Employee is a lead or not
     boolean? lead = ();
-    # Employee is active or not
-    boolean isActive = true;
 |};
 
 # GraphQL single employee response.
@@ -110,6 +106,8 @@ public type Employee record {|
     string workEmail;
     # Start date of the employee
     string? startDate;
+    # Continuous service start date of the employee
+    string? continuousServiceDate = ();
     # Thumbnail image of the employee
     string? employeeThumbnail;
     # Location of the employee
@@ -166,6 +164,8 @@ public type EmployeeResponse record {
     string? workEmail;
     # Start date of the employee
     string? startDate;
+    # Continuous service start date of the employee
+    string? continuousServiceDate = ();
     # Thumbnail image of the employee
     string? employeeThumbnail;
     # Location of the employee

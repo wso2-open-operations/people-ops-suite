@@ -41,6 +41,7 @@ public isolated function getEmployee(string? email)
                 lastName
                 workEmail
                 startDate
+                continuousServiceDate
                 employeeThumbnail
                 location
                 jobRole
@@ -78,8 +79,7 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
         employeeStatus: filters.status,
         managerEmail: filters.leadEmail,
         employmentType: filters.employmentType,
-        lead: filters.lead,
-        isActive: true
+        lead: filters.lead
     };
 
     string document = string `
@@ -90,6 +90,7 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
                 lastName
                 workEmail
                 startDate
+                continuousServiceDate
                 employeeThumbnail
                 location
                 jobRole

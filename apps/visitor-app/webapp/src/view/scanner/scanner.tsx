@@ -15,8 +15,10 @@
 // under the License.
 
 import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
+import DialpadIcon from "@mui/icons-material/Dialpad";
 import CommonPage from "@layout/pages/CommonPage";
-import ScanVisit from "@view/scanner/panel/scanVisit";
+import QrScanner from "@view/scanner/panel/qrScanner";
+import PinEntry from "@view/scanner/panel/pinEntry";
 
 export default function Scanner() {
   return (
@@ -25,10 +27,16 @@ export default function Scanner() {
       icon={<QrCodeScannerIcon />}
       commonPageTabs={[
         {
-          tabTitle: "Scanner",
-          tabPath: "scanner",
+          tabTitle: "Scan QR Code",
+          tabPath: "scan-qr",
           icon: <QrCodeScannerIcon />,
-          page: <ScanVisit />,
+          page: <QrScanner />,
+        },
+        {
+          tabTitle: "Enter PIN",
+          tabPath: "enter-pin",
+          icon: <DialpadIcon />,
+          page: <PinEntry />,
         },
       ]}
     />

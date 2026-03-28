@@ -19,11 +19,10 @@ import { LeaveType } from "@root/src/types/types";
 import LeaveHistory from "./LeaveHistory";
 
 export default function SabbaticalLeaveHistory() {
-  const currentYear = new Date().getFullYear();
   return (
     <LeaveHistory
       leaveType={[LeaveType.SABBATICAL]}
-      title={{ firstWord: "Sabbatical", secondWord: `Leave History (${currentYear})` }}
+      title={{ firstWord: "Sabbatical", secondWord: `Leave History` }}
     />
   );
 }

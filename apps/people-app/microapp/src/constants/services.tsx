@@ -19,6 +19,21 @@ import { VehicleServiceIcon } from "@/components/shared/Icons";
 
 export const services: ServiceInfo[] = [
   {
+    name: "Book Parking Slot",
+    description: "Reserve a secure parking spot for your vehicle.",
+    route: "/services/parking",
+    icon: (
+      <div className="w-full h-full grid place-items-center text-primary">
+        <div
+          className="w-[1.65rem] h-[1.65rem] rounded-full border-2 grid place-items-center"
+          style={{ borderColor: "#ff7300" }}
+        >
+          <span className="font-extrabold text-[18px]">P</span>
+        </div>
+      </div>
+    ),
+  },
+  {
     name: "Manage Personal Vehicles",
     description: "Register and manage your personal vehicles.",
     route: "/services/vehicles",

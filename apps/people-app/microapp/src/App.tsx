@@ -23,7 +23,14 @@ import {
   HashRouter,
 } from "react-router-dom";
 
-import { Home, VehicleManagement } from "@/pages";
+import {
+  Home,
+  VehicleManagement,
+  ParkingSlotSelection,
+  ParkingBookingSummary,
+  ParkingBookingConfirmation,
+  MyParkingBookings,
+} from "@/pages";
 import type { PageProps, User } from "@/types";
 import { useEffect, useState } from "react";
 import { getToken } from "./components/microapp-bridge";
@@ -37,6 +44,19 @@ function AnimatedRoutes({ user }: PageProps) {
       <Routes location={location} key={location.pathname}>
         <Route path="" element={<Home user={user} />} />
         <Route path="/services/vehicles" element={<VehicleManagement />} />
+        <Route path="/services/parking" element={<ParkingSlotSelection />} />
+        <Route
+          path="/services/parking/summary"
+          element={<ParkingBookingSummary />}
+        />
+        <Route
+          path="/services/parking/confirmation"
+          element={<ParkingBookingConfirmation />}
+        />
+        <Route
+          path="/services/parking/bookings"
+          element={<MyParkingBookings />}
+        />
 
         {/* Catch-all route: Redirect unknown routes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

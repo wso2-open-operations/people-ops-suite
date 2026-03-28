@@ -22,7 +22,7 @@ export const useFeedback = () => {
     const startTime = new Date(now);
     startTime.setHours(...FEEDBACK_TIME.START);
     const endTime = new Date(now);
-    endTime.setHours(...FEEDBACK_TIME.START);
+    endTime.setHours(...FEEDBACK_TIME.END);
 
     return now >= startTime && now <= endTime;
   };

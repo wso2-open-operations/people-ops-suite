@@ -13,27 +13,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { HttpStatusCode } from "axios";
 
-import { State } from "@/types/types";
-import { EmergencyContact } from "@/types/types";
+import { EmergencyContact, State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { SnackMessage } from "@config/constant";
+import {
+  DEFAULT_LIMIT_VALUE,
+  DEFAULT_OFFSET_VALUE,
+  SnackMessage,
+} from "@config/constant";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
+import { HttpStatusCode, isCancel } from "axios";
 
-interface Employee {
+export interface Employee {
   employeeId: string;
   firstName: string;
   lastName: string;
   workEmail: string;
   employeeThumbnail: string | null;
-  secondaryJobTitle: string;
+  secondaryJobTitle: string | null;
   epf: string;
-  employmentLocation: string;
   workLocation: string;
-  workPhoneNumber: string | null;
   startDate: string;
   managerEmail: string;
   additionalManagerEmails: string | null;
@@ -42,11 +43,30 @@ interface Employee {
   agreementEndDate: string | null;
   employmentType: string;
   designation: string;
-  office: string;
+  company: string;
+  office: string | null;
   businessUnit: string;
   team: string;
-  subTeam: string;
+  subTeam: string | null;
   unit: string | null;
+  subordinateCount: number;
+  employmentTypeId: number;
+  careerFunctionId: number;
+  designationId: number;
+  companyId: number;
+  officeId: number | null;
+  businessUnitId: number;
+  teamId: number;
+  subTeamId: number;
+  unitId: number | null;
+  house: string | null;
+  houseId: number | null;
+}
+
+export enum EmployeeStatus {
+  Active = "Active",
+  Left = "Left",
+  MarkedLeaver = "Marked leaver",
 }
 
 export interface EmployeeBasicInfo {
@@ -57,15 +77,19 @@ export interface EmployeeBasicInfo {
   employeeThumbnail?: string;
 }
 
+export interface Manager {
+  employeeId: string;
+  workEmail: string;
+}
+
 export type CreatePersonalInfoPayload = {
   nicOrPassport: string;
-  fullName: string;
-  nameWithInitials?: string;
   firstName?: string;
   lastName?: string;
+  fullName?: string;
   title?: string;
+  gender?: string;
   dob?: string;
-  age?: number;
   personalEmail?: string;
   personalPhone?: string;
   residentNumber?: string;
@@ -79,71 +103,169 @@ export type CreatePersonalInfoPayload = {
   emergencyContacts?: EmergencyContact[];
 };
 
+export type FilteredEmployeesResponse = {
+  employees: Employee[];
+  totalCount: number;
+};
+
+export type Filters = {
+  businessUnitId?: number;
+  teamId?: number;
+  subTeamId?: number;
+  unitId?: number;
+  careerFunctionId?: number;
+  designationId?: number;
+  companyId?: number;
+  officeId?: number;
+  employmentTypeId?: number;
+  managerEmail?: string;
+  gender?: string;
+  employeeStatus?: EmployeeStatus;
+  directReports?: boolean;
+};
+
+export type Pagination = {
+  limit?: number;
+  offset?: number;
+};
+
+export type Sort = {
+  sortField: string;
+  sortOrder: "ASC" | "DESC";
+};
+
+export type EmployeeSearchPayload = {
+  searchString?: string;
+  filters: Filters;
+  pagination: Pagination;
+  sort: Sort;
+  leadOnly?: boolean;
+};
+
 export type CreateEmployeePayload = {
   firstName: string;
   lastName: string;
   epf?: string;
-  secondaryJobTitle: string;
-  employmentLocation: string;
+  secondaryJobTitle?: string;
   workLocation: string;
   workEmail: string;
-  workPhoneNumber?: string;
   startDate: string;
   managerEmail: string;
   additionalManagerEmails?: string[];
-  employeeStatus: string;
   employeeThumbnail?: string;
   subordinateCount?: number;
   probationEndDate?: string;
   agreementEndDate?: string;
   employmentTypeId?: number;
+  employeeId?: string;
   designationId: number;
-  officeId: number;
+  companyId: number;
+  officeId?: number;
   teamId: number;
-  subTeamId?: number;
+  subTeamId: number;
   businessUnitId: number;
   unitId?: number;
+  houseId?: number;
   continuousServiceRecord?: string | null;
   personalInfo: CreatePersonalInfoPayload;
 };
 
+export type UpdateEmployeeJobInfoPayload = {
+  epf?: string | null;
+  workLocation?: string;
+  workEmail?: string;
+  startDate?: string;
+  secondaryJobTitle?: string;
+  managerEmail?: string;
+  additionalManagerEmails?: string[];
+  employeeThumbnail?: string | null;
+  probationEndDate?: string | null;
+  agreementEndDate?: string | null;
+  employmentTypeId?: number | null;
+  designationId?: number | null;
+  companyId?: number | null;
+  officeId?: number | null;
+  teamId?: number | null;
+  subTeamId?: number | null;
+  businessUnitId?: number | null;
+  unitId?: number | null;
+  houseId?: number | null;
+  continuousServiceRecord?: string | null;
+};
+
 export interface ContinuousServiceRecordInfo {
-  id: number;
   employeeId: string;
   firstName: string | null;
   lastName: string | null;
-  employmentLocation: string;
   workLocation: string;
   startDate: string;
   managerEmail: string;
   additionalManagerEmails?: string | null;
   designation: string;
-  secondaryJobTitle?: string;
-  office: string;
+  secondaryJobTitle?: string | null;
+  company: string;
+  office?: string | null;
   businessUnit: string;
   team: string;
-  subTeam: string;
+  subTeam: string | null;
   unit?: string | null;
 }
 
 interface EmployeesState {
   state: State;
   employeeBasicInfoState: State;
+  managers: Manager[];
+  managersState: State;
+  employeeFilter: EmployeeSearchPayload;
+  filteredEmployeesResponseState: State;
+  filterAppliedOnce: boolean;
   stateMessage: string | null;
   errorMessage: string | null;
   employee: Employee | null;
   employeesBasicInfo: EmployeeBasicInfo[];
+  filteredEmployeesResponse: FilteredEmployeesResponse;
   continuousServiceRecord: ContinuousServiceRecordInfo[];
+  updateJobInfoState: State;
+  updateJobInfoMessage: string | null;
+  totalActiveEmployeeCount: number | null;
+  qrCodeUrl: string | null;
+  qrCodeState: State;
 }
 
 const initialState: EmployeesState = {
   state: State.idle,
   employeeBasicInfoState: State.idle,
+  managers: [],
+  managersState: State.idle,
+  employeeFilter: {
+    filters: {
+      employeeStatus: EmployeeStatus.Active,
+    },
+    pagination: {
+      limit: DEFAULT_LIMIT_VALUE,
+      offset: DEFAULT_OFFSET_VALUE,
+    },
+    sort: {
+      sortField: "employeeId",
+      sortOrder: "ASC",
+    },
+  },
+  filteredEmployeesResponseState: State.idle,
+  filterAppliedOnce: false,
   stateMessage: null,
   errorMessage: null,
   employee: null,
   employeesBasicInfo: [],
+  filteredEmployeesResponse: {
+    employees: [],
+    totalCount: 0,
+  },
   continuousServiceRecord: [],
+  updateJobInfoState: State.idle,
+  updateJobInfoMessage: null,
+  totalActiveEmployeeCount: null,
+  qrCodeUrl: null,
+  qrCodeState: State.idle,
 };
 
 export const fetchEmployee = createAsyncThunk(
@@ -155,6 +277,7 @@ export const fetchEmployee = createAsyncThunk(
       );
       return response.data as Employee;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.fetchEmployee
@@ -182,6 +305,7 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
       );
       return resp.data as EmployeeBasicInfo[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching employees' basic information"
@@ -193,6 +317,68 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
           type: "error",
         }),
       );
+
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const fetchManagers = createAsyncThunk<Manager[]>(
+  "employees/fetchManagers",
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.managers}`,
+      );
+      return resp.data as Manager[];
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? "Error fetching manager emails"
+          : error.response?.data?.message ||
+            "An unknown error occurred while fetching manager emails.";
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const fetchFilteredEmployees = createAsyncThunk<
+  FilteredEmployeesResponse,
+  EmployeeSearchPayload
+>(
+  "employees/fetchFilteredEmployees",
+  async (
+    filterAttributes: EmployeeSearchPayload,
+    { dispatch, rejectWithValue },
+  ) => {
+    try {
+      const response = await APIService.getInstance().post(
+        AppConfig.serviceUrls.searchEmployees,
+        filterAttributes,
+      );
+      return response.data as FilteredEmployeesResponse;
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? SnackMessage.error.fetchEmployees
+          : error.response?.data?.message ||
+            "An unknown error occurred while fetching employees.";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+
       return rejectWithValue(errorMessage);
     }
   },
@@ -215,6 +401,7 @@ export const createEmployee = createAsyncThunk(
       );
       return employeeId;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.addEmployee
@@ -225,6 +412,66 @@ export const createEmployee = createAsyncThunk(
           type: "error",
         }),
       );
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const updateEmployeeJobInfo = createAsyncThunk(
+  "employees/updateEmployeeJobInfo",
+  async (
+    params: { employeeId: string; payload: UpdateEmployeeJobInfoPayload },
+    { dispatch, rejectWithValue },
+  ) => {
+    try {
+      await APIService.getInstance().patch(
+        AppConfig.serviceUrls.jobInfo(params.employeeId),
+        params.payload,
+      );
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "Job information updated successfully!",
+          type: "success",
+        }),
+      );
+
+      return;
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? "Failed to update employee job information"
+          : error.response?.data?.message ||
+            "An unknown error occurred while updating job information.";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const downloadEmployeeReportByStatus = createAsyncThunk(
+  "employee/downloadEmployeeReportByStatus",
+  async (status: EmployeeStatus | undefined, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().post(
+        AppConfig.serviceUrls.reportsEmployees(status),
+        {},
+        { responseType: "text" },
+      );
+      return response.data as string;
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.data?.message ?? "Failed to download report";
+      dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
   },
@@ -241,6 +488,7 @@ export const fetchContinuousServiceRecord = createAsyncThunk(
       );
       return response.data as ContinuousServiceRecordInfo[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const status = error.response?.status;
       const errorMessage =
         status === HttpStatusCode.InternalServerError
@@ -260,10 +508,64 @@ export const fetchContinuousServiceRecord = createAsyncThunk(
   },
 );
 
+export const validateEpf = createAsyncThunk(
+  "employees/validateEpf",
+  async (epf: string, { dispatch, rejectWithValue }) => {
+    try {
+      const resp = await APIService.getInstance().post(
+        AppConfig.serviceUrls.validateEpf,
+        { epf },
+      );
+      return (resp?.data?.epfExists ?? false) as boolean;
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const status = error.response?.status;
+      const errorMessage =
+        status === HttpStatusCode.InternalServerError
+          ? "Error validating EPF"
+          : error.response?.data?.message || "Failed to validate EPF";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const fetchEmployeeQrCode = createAsyncThunk(
+  "employee/fetchEmployeeQrCode",
+  async (employeeId: string, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().get(
+        AppConfig.serviceUrls.employeeQrCode(employeeId),
+        { responseType: "blob" },
+      );
+      return URL.createObjectURL(response.data as Blob);
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.data?.message ?? "Failed to generate QR code";
+      dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 const EmployeeSlice = createSlice({
   name: "employee",
   initialState,
   reducers: {
+    setEmployeeFilter(state, action: PayloadAction<EmployeeSearchPayload>) {
+      state.employeeFilter = action.payload;
+    },
+    setFilterAppliedOnce(state, action: PayloadAction<boolean>) {
+      state.filterAppliedOnce = action.payload;
+    },
     resetSubmitState(state) {
       state.state = State.idle;
     },
@@ -274,17 +576,32 @@ const EmployeeSlice = createSlice({
       state.employee = null;
       state.employeesBasicInfo = [];
       state.continuousServiceRecord = [];
+      state.updateJobInfoState = State.idle;
+      state.updateJobInfoMessage = null;
     },
     resetCreateEmployeeState(state) {
       state.state = State.idle;
       state.stateMessage = null;
       state.errorMessage = null;
     },
+    resetUpdateEmployeeJobInfoState(state) {
+      state.updateJobInfoState = State.idle;
+      state.updateJobInfoMessage = null;
+    },
     resetContinuousService(state) {
       state.continuousServiceRecord = [];
       state.state = State.idle;
       state.stateMessage = null;
       state.errorMessage = null;
+    },
+    clearFilteredEmployees(state) {
+      state.filteredEmployeesResponse = { employees: [], totalCount: 0 };
+      state.filteredEmployeesResponseState = State.idle;
+    },
+    resetQrCode(state) {
+      if (state.qrCodeUrl) URL.revokeObjectURL(state.qrCodeUrl);
+      state.qrCodeUrl = null;
+      state.qrCodeState = State.idle;
     },
   },
   extraReducers: (builder) => {
@@ -321,19 +638,77 @@ const EmployeeSlice = createSlice({
         state.errorMessage = action.payload as string;
         state.stateMessage = null;
       })
+      .addCase(fetchFilteredEmployees.pending, (state, action) => {
+        state.filteredEmployeesResponseState = State.loading;
+        state.stateMessage = "Fetching filtered employees...";
+        state.errorMessage = null;
+      })
+      .addCase(fetchFilteredEmployees.fulfilled, (state, action) => {
+        state.filteredEmployeesResponse = action.payload;
+        state.filteredEmployeesResponseState = State.success;
+        state.stateMessage = "Filtered employees fetched successfully";
+        state.errorMessage = null;
+        const { searchString, filters } = action.meta.arg;
+        const isTotalActiveQuery =
+          !searchString &&
+          filters.employeeStatus === EmployeeStatus.Active &&
+          Object.entries(filters).every(([key, value]) => {
+            return key === "employeeStatus" || value === undefined;
+          });
+        if (isTotalActiveQuery) {
+          state.totalActiveEmployeeCount = action.payload.totalCount;
+        }
+      })
+      .addCase(fetchFilteredEmployees.rejected, (state, action) => {
+        state.filteredEmployeesResponseState = State.failed;
+        state.errorMessage = action.payload as string;
+        state.stateMessage = null;
+      })
       .addCase(createEmployee.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Creating employee...";
         state.errorMessage = null;
       })
-      .addCase(createEmployee.fulfilled, (state, action: PayloadAction<number>) => {
-        state.state = State.success;
-        state.stateMessage = "Employee created successfully!";
-        state.errorMessage = null;
-      })
+      .addCase(
+        createEmployee.fulfilled,
+        (state, action: PayloadAction<number>) => {
+          state.state = State.success;
+          state.stateMessage = "Employee created successfully!";
+          state.errorMessage = null;
+        },
+      )
       .addCase(createEmployee.rejected, (state, action) => {
         state.state = State.failed;
         state.stateMessage = "Failed to create employee.";
+        state.errorMessage = action.payload as string;
+      })
+      .addCase(updateEmployeeJobInfo.pending, (state) => {
+        state.updateJobInfoState = State.loading;
+        state.updateJobInfoMessage = "Updating job information...";
+        state.errorMessage = null;
+      })
+      .addCase(updateEmployeeJobInfo.fulfilled, (state) => {
+        state.updateJobInfoState = State.success;
+        state.updateJobInfoMessage = "Job information updated successfully!";
+        state.errorMessage = null;
+      })
+      .addCase(updateEmployeeJobInfo.rejected, (state, action) => {
+        state.updateJobInfoState = State.failed;
+        state.updateJobInfoMessage = "Failed to update job information!";
+        state.errorMessage = action.payload as string;
+      })
+      .addCase(fetchManagers.pending, (state) => {
+        state.managersState = State.loading;
+        state.errorMessage = null;
+      })
+      .addCase(fetchManagers.fulfilled, (state, action) => {
+        state.managersState = State.success;
+        state.managers = action.payload;
+        state.errorMessage = null;
+      })
+      .addCase(fetchManagers.rejected, (state, action) => {
+        state.managersState = State.failed;
+        state.managers = [];
         state.errorMessage = action.payload as string;
       })
       .addCase(fetchContinuousServiceRecord.pending, (state) => {
@@ -352,10 +727,33 @@ const EmployeeSlice = createSlice({
         state.stateMessage = "Failed to fetch continuous service record!";
         state.errorMessage = action.payload as string;
         state.continuousServiceRecord = [];
+      })
+      .addCase(fetchEmployeeQrCode.pending, (state) => {
+        if (state.qrCodeUrl) URL.revokeObjectURL(state.qrCodeUrl);
+        state.qrCodeUrl = null;
+        state.qrCodeState = State.loading;
+      })
+      .addCase(fetchEmployeeQrCode.fulfilled, (state, action) => {
+        state.qrCodeState = State.success;
+        state.qrCodeUrl = action.payload as string;
+      })
+      .addCase(fetchEmployeeQrCode.rejected, (state) => {
+        if (state.qrCodeUrl) URL.revokeObjectURL(state.qrCodeUrl);
+        state.qrCodeState = State.failed;
+        state.qrCodeUrl = null;
       });
   },
 });
 
-export const { resetSubmitState, resetEmployee, resetCreateEmployeeState, resetContinuousService } =
-  EmployeeSlice.actions;
+export const {
+  setEmployeeFilter,
+  setFilterAppliedOnce,
+  resetSubmitState,
+  resetEmployee,
+  resetCreateEmployeeState,
+  resetUpdateEmployeeJobInfoState,
+  resetContinuousService,
+  clearFilteredEmployees,
+  resetQrCode,
+} = EmployeeSlice.actions;
 export default EmployeeSlice.reducer;

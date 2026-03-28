@@ -31,6 +31,8 @@ Config.toml
 !*.secret
 .devcontainer.json
 .env
-react-app-env.d.ts
 node_modules
 
+apps/leave-app/.claude/settings.local.json
+apps/leave-app/skills.md
+apps/leave-app/backend/Dependencies.toml

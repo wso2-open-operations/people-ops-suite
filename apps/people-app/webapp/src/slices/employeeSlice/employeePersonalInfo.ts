@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { HttpStatusCode } from "axios";
+import { HttpStatusCode, isCancel } from "axios";
 
 import { State } from "@/types/types";
 import { EmergencyContact } from "@/types/types";
@@ -24,14 +24,14 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
 
 export interface EmployeePersonalInfo {
-  id: number | null;
-  nicOrPassport: string | null;
+  id: number;
+  nicOrPassport: string;
+  firstName: string;
+  lastName: string;
   fullName: string;
-  nameWithInitials: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  title: string | null;
-  dob: string | null;
+  title: string;
+  dob: string;
+  gender: string;
   personalEmail: string | null;
   personalPhone: string | null;
   residentNumber: string | null;
@@ -41,21 +41,29 @@ export interface EmployeePersonalInfo {
   stateOrProvince: string | null;
   postalCode: string | null;
   country: string | null;
-  nationality: string | null;
+  nationality: string;
   emergencyContacts: EmergencyContact[] | null;
 }
 
 export interface EmployeePersonalInfoUpdate {
-  personalEmail: string | null;
-  personalPhone: string | null;
-  residentNumber: string | null;
-  addressLine1: string | null;
-  addressLine2: string | null;
-  city: string | null;
-  stateOrProvince: string | null;
-  postalCode: string | null;
-  country: string | null;
-  emergencyContacts: EmergencyContact[] | null;
+  nicOrPassport?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  fullName?: string | null;
+  title?: string | null;
+  dob?: string | null;
+  gender?: string | null;
+  personalEmail?: string | null;
+  personalPhone?: string | null;
+  residentNumber?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  stateOrProvince?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  nationality?: string | null;
+  emergencyContacts?: EmergencyContact[] | null;
 }
 
 interface EmployeePersonalInfoState {
@@ -81,6 +89,7 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
       );
       return response.data as EmployeePersonalInfo;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.fetchEmployee
@@ -99,14 +108,15 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
   },
 );
 
-export const updateEmployeePersonalInfo = createAsyncThunk(
+export const updateEmployeePersonalInfo = createAsyncThunk<
+  void,
+  { employeeId: string; data: EmployeePersonalInfoUpdate },
+  { rejectValue: string }
+>(
   "employees/updateEmployeePersonalInfo",
-  async (
-    { employeeId, data }: { employeeId: string; data: EmployeePersonalInfoUpdate },
-    { dispatch, rejectWithValue },
-  ) => {
+  async ({ employeeId, data }, { dispatch, rejectWithValue }) => {
     try {
-      const response = await APIService.getInstance().put(
+      await APIService.getInstance().patch(
         AppConfig.serviceUrls.employeePersonalInfo(employeeId),
         data,
       );
@@ -117,12 +127,13 @@ export const updateEmployeePersonalInfo = createAsyncThunk(
           type: "success",
         }),
       );
-      return response.data;
+      return;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
-        error.response?.status === HttpStatusCode.InternalServerError
+        error?.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.updateEmployeePersonalInfo
-          : error.response?.data?.message ||
+          : error?.response?.data?.message ||
             "An unknown error occurred while updating employee personal information.";
 
       dispatch(
@@ -131,7 +142,6 @@ export const updateEmployeePersonalInfo = createAsyncThunk(
           type: "error",
         }),
       );
-
       return rejectWithValue(errorMessage);
     }
   },
@@ -176,9 +186,6 @@ const EmployeePersonalInfoSlice = createSlice({
       .addCase(updateEmployeePersonalInfo.fulfilled, (state, action) => {
         state.state = State.success;
         state.stateMessage = "Successfully updated employee personal information!";
-        if (action.payload) {
-          state.personalInfo = action.payload;
-        }
         state.errorMessage = null;
       })
       .addCase(updateEmployeePersonalInfo.rejected, (state, action) => {

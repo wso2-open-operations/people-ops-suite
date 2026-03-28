@@ -52,7 +52,7 @@ const AppHandler = () => {
   useEffect(() => {
     if (auth.status === "loading") {
       setAppState("loading");
-    } else if (auth.status === "success") {
+    } else if (auth.status === "success" && auth.roles.length > 0) {
       setAppState("success");
       dispatch(fetchEmployees());
     } else if (auth.status === "failed") {
@@ -60,7 +60,7 @@ const AppHandler = () => {
     } else if (auth.mode === "maintenance") {
       setAppState("maintenance");
     }
-  }, [auth.status, auth.mode, dispatch]);
+  }, [auth.status, auth.mode, auth.roles, dispatch]);
 
   const renderApp = () => {
     switch (appState) {

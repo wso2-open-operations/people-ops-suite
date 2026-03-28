@@ -55,7 +55,11 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@root/src/slices/store";
-import { fetchVisits, visitStatusUpdate } from "@slices/visitSlice/visit";
+import {
+  fetchVisits,
+  UpdateVisitPayload,
+  visitStatusUpdate,
+} from "@slices/visitSlice/visit";
 import {
   State,
   VisitStatus,
@@ -71,22 +75,6 @@ import Scan from "@view/admin/scan";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const AVAILABLE_FLOORS_AND_ROOMS = [
-  { floor: "1st Floor", rooms: ["Cafeteria"] },
-  { floor: "6th Floor", rooms: ["The Launchpad"] },
-  { floor: "7th Floor", rooms: ["CloudScape", "DigIntel", "TerminalX"] },
-  { floor: "8th Floor", rooms: ["Octave", "Melody"] },
-  { floor: "9th Floor", rooms: ["Grove", "Orchard"] },
-  { floor: "9th and 10th", rooms: ["The Circuit"] },
-  { floor: "10th Floor", rooms: ["Elevate Zone", "Chamber"] },
-  { floor: "11th Floor", rooms: ["Tinker Room"] },
-  { floor: "12th Floor", rooms: ["Emerald", "Synergy"] },
-  { floor: "13th Floor", rooms: ["Quarter Crunch", "Deal Den"] },
-  { floor: "14th Floor", rooms: ["Cove", "Skyline", "Pinnacle", "Vertex"] },
-  { floor: "15th Floor", rooms: ["Common Area"] },
-  { floor: "Rooftop", rooms: ["Basketball Court"] },
-];
-
 const toLocalDateTime = (utcString: string) => {
   return dayjs
     .utc(utcString)
@@ -95,10 +83,8 @@ const toLocalDateTime = (utcString: string) => {
 };
 
 const approvalValidationSchema = Yup.object({
-  passNumber: Yup.string().required("Pass number is required"),
-  selectedFloorsAndRooms: Yup.array()
-    .min(1, "At least one floor and room must be selected")
-    .required("Floor and room selection is required"),
+  passNumber: Yup.string(),
+  selectedFloorsAndRooms: Yup.array(),
 });
 
 const ActiveVisits = () => {
@@ -120,8 +106,7 @@ const ActiveVisits = () => {
   >([]);
   const dialogContext = useConfirmationModalContext();
 
-  // Check for uuid parameter in URL
-  const uuidParam = searchParams.get("uuid");
+  const visitVerificationCodeParam = searchParams.get("visitVerificationCode");
   const [isScanModalOpen, setIsScanModalOpen] = useState<boolean>(false);
 
   const visitsList = visits?.visits ?? [];
@@ -137,19 +122,19 @@ const ActiveVisits = () => {
     );
   }, [dispatch, page, pageSize, isScanModalOpen]);
 
-  // Handle UUID parameter for opening scan modal
+  // Handle visitVerificationCode parameter for opening scan modal
   useEffect(() => {
-    if (uuidParam) {
+    if (visitVerificationCodeParam) {
       setIsScanModalOpen(true);
     } else {
       setIsScanModalOpen(false);
     }
-  }, [uuidParam]);
+  }, [visitVerificationCodeParam]);
 
   const handleCloseScanModal = () => {
-    // Remove uuid parameter from URL
+    // Remove visitVerificationCode parameter from URL
     const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.delete("uuid");
+    newSearchParams.delete("visitVerificationCode");
     setSearchParams(newSearchParams);
     setIsScanModalOpen(false);
   };
@@ -160,13 +145,15 @@ const ActiveVisits = () => {
     accessibleLocations: { floor: string; rooms: string[] }[],
   ) => {
     try {
-      const payload = {
+      const payload: UpdateVisitPayload = {
         visitId: +visitId,
-        passNumber: passNumber.trim(),
         status: VisitAction.approve,
-        accessibleLocations,
         rejectionReason: null,
       };
+
+      if (accessibleLocations.length > 0)
+        payload.accessibleLocations = accessibleLocations;
+      if (passNumber.trim() !== "") payload.passNumber = passNumber.trim();
 
       await dispatch(visitStatusUpdate(payload));
       setCurrentVisitId(null);
@@ -285,8 +272,15 @@ const ActiveVisits = () => {
       headerName: "Contact Number",
       minWidth: 150,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
-    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
+    {
+      field: "email",
+      headerName: "Visitor Email",
+      minWidth: 200,
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
     {
       field: "passNumber",
       headerName: "Pass Number",
@@ -431,7 +425,7 @@ const ActiveVisits = () => {
         }
       />
 
-      {/* Scan Modal - Shows when uuid parameter is present */}
+      {/* Scan Modal - Shows when visitVerificationCode parameter is present */}
       {isScanModalOpen && (
         <Modal
           open
@@ -523,7 +517,7 @@ const ActiveVisits = () => {
                 <Field
                   as={TextField}
                   name="passNumber"
-                  label="Pass Number"
+                  label="Pass Number (Optional)"
                   fullWidth
                   variant="outlined"
                   placeholder="Enter pass number"
@@ -535,7 +529,6 @@ const ActiveVisits = () => {
                   sx={{ mb: 2 }}
                 />
                 <FloorRoomSelector
-                  availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
                   selectedFloorsAndRooms={values.selectedFloorsAndRooms}
                   onChange={(value) =>
                     setFieldValue("selectedFloorsAndRooms", value)

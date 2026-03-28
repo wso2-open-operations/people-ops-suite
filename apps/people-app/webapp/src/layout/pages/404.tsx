@@ -37,6 +37,7 @@ export default function NotFoundPage() {
         alignItems: "center",
         flexDirection: "column",
         minHeight: "100vh",
+        bgcolor: "background.default",
       }}
     >
       <Typography variant="h1" style={{ color: "gray" }}>

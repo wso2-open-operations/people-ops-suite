@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import LoadingButton from "@mui/lab/LoadingButton";
 import { Box, Card, CardContent, Container, Divider, Stack, useTheme } from "@mui/material";
 import Grid from "@mui/material/Grid";
@@ -24,7 +23,8 @@ import { APP_DESC } from "@root/src/config/constant";
 import { useAppAuthContext } from "@root/src/context/AuthContext";
 import BackgroundImage from "@src/assets/images/app-login-background.png";
 import ProductLogos from "@src/assets/images/app-login-logos.png";
-import logo from "@src/assets/images/wso2-logo-black.png";
+
+const logo = "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png";
 
 const LoginScreen = () => {
   const { appSignIn, appSignOut } = useAppAuthContext();
@@ -93,6 +93,7 @@ const LoginScreen = () => {
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                   <LoadingButton
+                    fullWidth
                     variant="contained"
                     color="primary"
                     sx={{ fontWeight: "bold" }}
@@ -102,7 +103,7 @@ const LoginScreen = () => {
                       appSignIn();
                     }}
                   >
-                    LOG IN
+                    LOG INs
                   </LoadingButton>
                 </Grid>
                 <Grid size={{ xs: 12 }} mt={6}>

@@ -349,6 +349,60 @@ public isolated function getLeaveEntitiesFromDbRecords(database:Leave[] dbLeaves
 public isolated function getStartDateOfYear(time:Utc? date = (), int? year = ()) returns string =>
     string `${year ?: time:utcToCivil(date ?: time:utcNow()).year}-01-01T00:00:00Z`;
 
+# Get leave period bounds based on employee location and leave type.
+# France Congés Payés follows a June 1 - May 31 reference period.
+# All other leave types follow the standard calendar year (Jan 1 - Dec 31).
+#
+# + location - Employee location/country
+# + leaveType - Type of leave
+# + year - The reference year
+# + return - Tuple of [startDate, endDate] in ISO 8601 format
+public isolated function getLeavePeriodBounds(string? location, string leaveType, int year)
+    returns [string, string] {
+
+    // France Congés Payés: reference year runs June 1 of previous year to May 31 of current year
+    if location is FR && leaveType is database:CONGES_PAYES_LEAVE {
+        return [
+            string `${year - 1}-06-01T00:00:00Z`,
+            string `${year}-05-31T00:00:00Z`
+        ];
+    }
+
+    // All other leave types: standard calendar year
+    return [
+        string `${year}-01-01T00:00:00Z`,
+        string `${year}-12-31T00:00:00Z`
+    ];
+}
+
+# Get the primary leave period start date for a location.
+# For France, uses the Congés Payés period (June 1 prev year).
+# For all others, uses the calendar year start.
+#
+# + location - Employee location
+# + year - Reference year
+# + return - Period start date string
+public isolated function getLeavePeriodStart(string? location, int year) returns string {
+    if location is FR {
+        return string `${year - 1}-06-01T00:00:00Z`;
+    }
+    return string `${year}-01-01T00:00:00Z`;
+}
+
+# Get the primary leave period end date for a location.
+# For France, uses the Congés Payés period end (May 31 current year).
+# For all others, uses the calendar year end.
+#
+# + location - Employee location
+# + year - Reference year
+# + return - Period end date string
+public isolated function getLeavePeriodEnd(string? location, int year) returns string {
+    if location is FR {
+        return string `${year}-05-31T00:00:00Z`;
+    }
+    return string `${year}-12-31T00:00:00Z`;
+}
+
 # Get timestamp from a string in ISO 8601 format. This date will be timezone independent.
 #
 # + date - String date in ISO 8601 format

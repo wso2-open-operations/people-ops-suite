@@ -23,6 +23,12 @@ declare global {
       ASGARDEO_BASE_URL: string;
       IS_MICROAPP: boolean;
       BACKEND_BASE_URL: string;
+      // Wallet micro app (used for parking payments).
+      WALLET_MICROAPP_WEBVIEW_URI?: string;
+      WALLET_MICROAPP_APP_NAME?: string;
+      WALLET_MICROAPP_CLIENT_ID?: string;
+      WALLET_MICROAPP_APP_ID?: string;
+      WALLET_MICROAPP_DISPLAY_MODE?: string;
     };
   }
 }
@@ -41,4 +47,20 @@ export const serviceUrls = {
   registerVehicle: (email: string) => `${baseUrl}/employees/${email}/vehicles`,
   deleteVehicle: (email: string, id: string) =>
     `${baseUrl}/employees/${email}/vehicles/${id}`,
+  fetchCarParkConfigs: () => `${baseUrl}/parkings/configs`,
+  fetchParkingFloors: () => `${baseUrl}/parkings/floors`,
+  fetchParkingSlots: (floorId: number, dateYYYYMMDD: string) =>
+    `${baseUrl}/parkings/floors/${floorId}/slots?date=${dateYYYYMMDD}`,
+  createParkingReservation: () => `${baseUrl}/parkings/reservations`,
+  fetchParkingReservations: (fromDate?: string, toDate?: string) => {
+    const params = new URLSearchParams();
+    if (fromDate) params.set("fromDate", fromDate);
+    if (toDate) params.set("toDate", toDate);
+    const query = params.toString();
+    return `${baseUrl}/parkings/reservations${query ? `?${query}` : ""}`;
+  },
+  fetchParkingReservationById: (id: number) =>
+    `${baseUrl}/parkings/reservations/${id}`,
+  confirmParkingReservation: () =>
+    `${baseUrl}/parkings/reservations/confirm`,
 };

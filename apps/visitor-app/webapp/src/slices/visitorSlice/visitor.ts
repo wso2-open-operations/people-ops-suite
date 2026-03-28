@@ -51,19 +51,19 @@ export interface Visitor extends AddVisitorPayload {
 export interface AddVisitorPayload {
   firstName?: string;
   lastName?: string;
-  emailHash: string;
+  idHash: string;
   contactNumber?: string;
-  email: string;
+  email?: string;
 }
 
 export const fetchVisitor = createAsyncThunk(
   "visitor/fetchVisitor",
-  async (hashedEmail: string, { dispatch, rejectWithValue }) => {
+  async (hashedEmailOrContact: string, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<Visitor>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.visitors + `/${hashedEmail}`, {
+        .get(AppConfig.serviceUrls.visitors + `/${hashedEmailOrContact}`, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {

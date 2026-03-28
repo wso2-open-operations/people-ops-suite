@@ -1,5 +1,6 @@
 [people.authorization.authorizedRoles]
 EMPLOYEE_ROLE = ""
+ADMIN_ROLE = ""
 
 [people.database.dbConfig]
     host = ""
@@ -15,3 +16,30 @@ EMPLOYEE_ROLE = ""
     connectTimeout = 
     [people.database.dbConfig.options.ssl]
     mode = "PREFERRED"
+
+[people.wso2_coin]
+    masterWalletAddress = ""
+    reservationWindowStartHour = 
+    reservationWindowEndHour = 
+    transactionEndpoint = ""
+
+[people.wso2_coin.clientAuthConfig]
+    tokenUrl = ""
+    clientId = ""
+    clientSecret = ""
+
+[people.wso2_coin.parkingSheetConfig]
+    tokenUrl = ""
+    refreshToken = ""
+    clientId = ""
+    clientSecret = ""
+    sheetId = ""
+    sheetName = ""
+
+[people.qr]
+    qrGenerationServiceEndpoint = ""
+
+[people.qr.qrClientAuthConfig]
+    tokenUrl = ""
+    clientId = ""
+    clientSecret = ""

@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 public final string inviteTemplate = string `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -32,7 +33,9 @@ public final string inviteTemplate = string `
         font-family: "Roboto", Arial, Verdana, Helvetica, sans-serif;
         font-style: normal;
         font-weight: 400;
-        src: local("Roboto"), local("Roboto"),
+        src:
+          local("Roboto"),
+          local("Roboto"),
           url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap")
             format("Roboto");
       }
@@ -187,6 +190,14 @@ public final string inviteTemplate = string `
 
       .wso2_center {
         text-align: center !important;
+      }
+
+      .logo-dark {
+        display: none;
+      }
+
+      .logo-light {
+        display: block;
       }
 
       @media only screen and (max-width: 650px) {
@@ -489,6 +500,14 @@ public final string inviteTemplate = string `
           height: 40px !important;
           text-align: left !important;
         }
+
+        .logo-dark {
+          display: block !important;
+        }
+
+        .logo-light {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -496,7 +515,7 @@ public final string inviteTemplate = string `
   <body
     class="wso2_body bgtest"
     style="
-      font-family: 'Roboto', Helvetica, sans-serif;
+      font-family: &quot;Roboto&quot;, Helvetica, sans-serif;
       -webkit-text-size-adjust: 100%;
       -ms-text-size-adjust: 100%;
       height: 100% !important;
@@ -565,7 +584,7 @@ public final string inviteTemplate = string `
                       mso-table-rspace: 0pt;
                       margin: 0;
                       height: 275px;
-                      background: url('https://wso2.cachefly.net/wso2/sites/all/2022-optimized/bg-hr-mailer-new.png');
+                      background: url(&quot;https://wso2.cachefly.net/wso2/sites/all/2022-optimized/bg-hr-mailer-new.png&quot;);
                       background-size: auto;
                       background-repeat: no-repeat;
                       background-position: top;
@@ -606,7 +625,8 @@ public final string inviteTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #505050;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 20px;
                                       font-weight: bold;
@@ -626,9 +646,9 @@ public final string inviteTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
-                                          width: 100px;
+                                          width: 150px;
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
@@ -685,7 +705,8 @@ public final string inviteTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #ffffff;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 16px;
                                       line-height: 5px;
@@ -715,7 +736,8 @@ public final string inviteTemplate = string `
                                               mso-table-lspace: 0pt;
                                               mso-table-rspace: 0pt;
                                               color: #ffffff;
-                                              font-family: 'Roboto', Helvetica,
+                                              font-family:
+                                                &quot;Roboto&quot;, Helvetica,
                                                 sans-serif;
                                               font-size: 16px;
                                               line-height: 5px;
@@ -746,7 +768,8 @@ public final string inviteTemplate = string `
                                                       mso-table-lspace: 0pt;
                                                       mso-table-rspace: 0pt;
                                                       color: #ff957d;
-                                                      font-family: 'Roboto',
+                                                      font-family:
+                                                        &quot;Roboto&quot;,
                                                         Helvetica, sans-serif;
                                                       font-size: 16px;
                                                       line-height: 24px;
@@ -759,7 +782,8 @@ public final string inviteTemplate = string `
                                                     <p
                                                       class="cTitleDark"
                                                       style="
-                                                        font-family: 'Roboto',
+                                                        font-family:
+                                                          &quot;Roboto&quot;,
                                                           Helvetica, sans-serif;
                                                         padding-bottom: 0;
                                                         font-size: 19px;
@@ -776,12 +800,12 @@ public final string inviteTemplate = string `
                                                       "
                                                     >
                                                       WSO2 Visitor Registration
-                                                      
                                                     </p>
 
                                                     <p
                                                       style="
-                                                        font-family: 'Roboto',
+                                                        font-family:
+                                                          &quot;Roboto&quot;,
                                                           Helvetica, sans-serif;
                                                         padding-bottom: 0;
                                                         font-size: 24px;
@@ -863,7 +887,8 @@ public final string inviteTemplate = string `
                               mso-table-lspace: 0pt;
                               mso-table-rspace: 0pt;
                               color: #465868;
-                              font-family: 'Roboto', Helvetica, sans-serif;
+                              font-family:
+                                &quot;Roboto&quot;, Helvetica, sans-serif;
                               font-size: 16px;
                               line-height: 24px;
                               text-align: center;
@@ -875,7 +900,8 @@ public final string inviteTemplate = string `
                             <p
                               class="cDottedline"
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 padding-bottom: 5px;
                                 font-size: 17px;
                                 line-height: 28px;
@@ -889,11 +915,12 @@ public final string inviteTemplate = string `
                               "
                             >
                               Dear
-                              <!-- [NAME] -->,
+                              <!-- [FIRST_NAME] -->,
                             </p>
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 padding-bottom: 5px;
                                 font-size: 17px;
                                 line-height: 28px;
@@ -904,13 +931,17 @@ public final string inviteTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              We're pleased to inform you that you are invited to visit WSO2.<br/>
-                            For a seamless entry experience, please present the QR code included in this email at the security desk upon your arrival.
+                              We're pleased to inform you that you are invited
+                              to visit WSO2.<br />
+                              For a seamless entry experience, please present
+                              the QR code included in this email at the security
+                              desk upon your arrival.
                             </p>
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 color: #465868;
                                 text-align: left;
@@ -920,7 +951,8 @@ public final string inviteTemplate = string `
                             </p>
                             <ul
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-left: 30px;
@@ -933,7 +965,8 @@ public final string inviteTemplate = string `
                               <li>
                                 <p
                                   style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-family:
+                                      &quot;Roboto&quot;, Helvetica, sans-serif;
                                     font-size: 17px;
                                     color: #465868;
                                     text-align: left;
@@ -946,7 +979,8 @@ public final string inviteTemplate = string `
                               <li>
                                 <p
                                   style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-family:
+                                      &quot;Roboto&quot;, Helvetica, sans-serif;
                                     font-size: 17px;
                                     color: #465868;
                                     text-align: left;
@@ -956,7 +990,7 @@ public final string inviteTemplate = string `
                                   <span><!-- [VISIT_DATE] --></span>
                                 </p>
                               </li>
-                              
+
                               <!-- [TIME_OF_ENTRY] -->
                               <!-- [TIME_OF_DEPARTURE] -->
                               <!-- [PURPOSE_OF_VISIT] -->
@@ -964,9 +998,17 @@ public final string inviteTemplate = string `
                               <!-- [ALLOWED_FLOORS] -->
                             </ul>
 
+                            <img
+                              src="cid:<!-- [CONTENT_ID] -->"
+                              alt="QR Code"
+                              width="400"
+                              height="400"
+                            />
+
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -984,7 +1026,8 @@ public final string inviteTemplate = string `
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -1000,7 +1043,8 @@ public final string inviteTemplate = string `
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -1092,7 +1136,8 @@ public final string inviteTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #606060;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 10px;
                                       line-height: 14px;
@@ -1234,7 +1279,8 @@ public final string inviteTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #465868;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 13px;
                                       line-height: 18px;
@@ -1279,7 +1325,8 @@ public final string inviteTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #505050;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 20px;
                                       font-weight: bold;
@@ -1293,20 +1340,29 @@ public final string inviteTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      ><!-- Light mode -->
+                                      <img
                                         alt="WSO2 Logo"
+                                        class="logo-light"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
-                                          width: 100px;
-                                          -ms-interpolation-mode: bicubic;
+                                          width: 120px;
                                           height: auto;
-                                          outline: none;
-                                          text-decoration: none;
+                                          border: 0;
+                                        " />
+
+                                      <!-- Dark mode -->
+                                      <img
+                                        alt="WSO2 Logo"
+                                        class="logo-dark"
+                                        height="40"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        style="
+                                          width: 120px;
+                                          height: auto;
                                           border: 0;
                                         "
-                                        width="100"
                                     /></a>
                                   </td>
                                 </tr>
@@ -1320,7 +1376,8 @@ public final string inviteTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #465868;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 13px;
                                       line-height: 18px;
@@ -1374,7 +1431,9 @@ public final string visitorCompletionTemplate = string `
         font-family: "Roboto", Arial, Verdana, Helvetica, sans-serif;
         font-style: normal;
         font-weight: 400;
-        src: local("Roboto"), local("Roboto"),
+        src:
+          local("Roboto"),
+          local("Roboto"),
           url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap")
             format("Roboto");
       }
@@ -1529,6 +1588,14 @@ public final string visitorCompletionTemplate = string `
 
       .wso2_center {
         text-align: center !important;
+      }
+
+      .logo-dark {
+        display: none;
+      }
+
+      .logo-light {
+        display: block;
       }
 
       @media only screen and (max-width: 650px) {
@@ -1831,6 +1898,14 @@ public final string visitorCompletionTemplate = string `
           height: 40px !important;
           text-align: left !important;
         }
+
+        .logo-dark {
+          display: block !important;
+        }
+
+        .logo-light {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -1838,7 +1913,7 @@ public final string visitorCompletionTemplate = string `
   <body
     class="wso2_body bgtest"
     style="
-      font-family: 'Roboto', Helvetica, sans-serif;
+      font-family: &quot;Roboto&quot;, Helvetica, sans-serif;
       -webkit-text-size-adjust: 100%;
       -ms-text-size-adjust: 100%;
       height: 100% !important;
@@ -1907,7 +1982,7 @@ public final string visitorCompletionTemplate = string `
                       mso-table-rspace: 0pt;
                       margin: 0;
                       height: 275px;
-                      background: url('https://wso2.cachefly.net/wso2/sites/all/2022-optimized/bg-hr-mailer-new.png');
+                      background: url(&quot;https://wso2.cachefly.net/wso2/sites/all/2022-optimized/bg-hr-mailer-new.png&quot;);
                       background-size: auto;
                       background-repeat: no-repeat;
                       background-position: top;
@@ -1948,7 +2023,8 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #505050;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 20px;
                                       font-weight: bold;
@@ -1968,9 +2044,9 @@ public final string visitorCompletionTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
-                                          width: 100px;
+                                          width: 150px;
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
@@ -2027,7 +2103,8 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #ffffff;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 16px;
                                       line-height: 5px;
@@ -2057,7 +2134,8 @@ public final string visitorCompletionTemplate = string `
                                               mso-table-lspace: 0pt;
                                               mso-table-rspace: 0pt;
                                               color: #ffffff;
-                                              font-family: 'Roboto', Helvetica,
+                                              font-family:
+                                                &quot;Roboto&quot;, Helvetica,
                                                 sans-serif;
                                               font-size: 16px;
                                               line-height: 5px;
@@ -2088,7 +2166,8 @@ public final string visitorCompletionTemplate = string `
                                                       mso-table-lspace: 0pt;
                                                       mso-table-rspace: 0pt;
                                                       color: #ff957d;
-                                                      font-family: 'Roboto',
+                                                      font-family:
+                                                        &quot;Roboto&quot;,
                                                         Helvetica, sans-serif;
                                                       font-size: 16px;
                                                       line-height: 24px;
@@ -2101,7 +2180,8 @@ public final string visitorCompletionTemplate = string `
                                                     <p
                                                       class="cTitleDark"
                                                       style="
-                                                        font-family: 'Roboto',
+                                                        font-family:
+                                                          &quot;Roboto&quot;,
                                                           Helvetica, sans-serif;
                                                         padding-bottom: 0;
                                                         font-size: 19px;
@@ -2122,7 +2202,8 @@ public final string visitorCompletionTemplate = string `
 
                                                     <p
                                                       style="
-                                                        font-family: 'Roboto',
+                                                        font-family:
+                                                          &quot;Roboto&quot;,
                                                           Helvetica, sans-serif;
                                                         padding-bottom: 0;
                                                         font-size: 24px;
@@ -2204,7 +2285,8 @@ public final string visitorCompletionTemplate = string `
                               mso-table-lspace: 0pt;
                               mso-table-rspace: 0pt;
                               color: #465868;
-                              font-family: 'Roboto', Helvetica, sans-serif;
+                              font-family:
+                                &quot;Roboto&quot;, Helvetica, sans-serif;
                               font-size: 16px;
                               line-height: 24px;
                               text-align: center;
@@ -2216,7 +2298,8 @@ public final string visitorCompletionTemplate = string `
                             <p
                               class="cDottedline"
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 padding-bottom: 5px;
                                 font-size: 17px;
                                 line-height: 28px;
@@ -2230,11 +2313,12 @@ public final string visitorCompletionTemplate = string `
                               "
                             >
                               Dear
-                              <!-- [NAME] -->,
+                              <!-- [FIRST_NAME] -->,
                             </p>
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 padding-bottom: 5px;
                                 font-size: 17px;
                                 line-height: 28px;
@@ -2252,7 +2336,8 @@ public final string visitorCompletionTemplate = string `
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 color: #465868;
                                 text-align: left;
@@ -2262,7 +2347,8 @@ public final string visitorCompletionTemplate = string `
                             </p>
                             <ul
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-left: 30px;
@@ -2275,7 +2361,8 @@ public final string visitorCompletionTemplate = string `
                               <li>
                                 <p
                                   style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-family:
+                                      &quot;Roboto&quot;, Helvetica, sans-serif;
                                     font-size: 17px;
                                     color: #465868;
                                     text-align: left;
@@ -2293,7 +2380,8 @@ public final string visitorCompletionTemplate = string `
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 padding-bottom: 5px;
                                 font-size: 17px;
                                 line-height: 28px;
@@ -2310,7 +2398,8 @@ public final string visitorCompletionTemplate = string `
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -2321,12 +2410,15 @@ public final string visitorCompletionTemplate = string `
                                 text-align: left;
                               "
                             >
-                              We would love to hear your thoughts about your visit! You can reach us anytime at <!-- [CONTACT_EMAIL] -->.
+                              We would love to hear your thoughts about your
+                              visit! You can reach us anytime at
+                              <!-- [CONTACT_EMAIL] -->.
                             </p>
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -2342,7 +2434,8 @@ public final string visitorCompletionTemplate = string `
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -2434,7 +2527,8 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #606060;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 10px;
                                       line-height: 14px;
@@ -2576,7 +2670,8 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #465868;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 13px;
                                       line-height: 18px;
@@ -2621,7 +2716,8 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #505050;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 20px;
                                       font-weight: bold;
@@ -2635,20 +2731,29 @@ public final string visitorCompletionTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      ><!-- Light mode -->
+                                      <img
                                         alt="WSO2 Logo"
+                                        class="logo-light"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
-                                          width: 100px;
-                                          -ms-interpolation-mode: bicubic;
+                                          width: 120px;
                                           height: auto;
-                                          outline: none;
-                                          text-decoration: none;
+                                          border: 0;
+                                        " />
+
+                                      <!-- Dark mode -->
+                                      <img
+                                        alt="WSO2 Logo"
+                                        class="logo-dark"
+                                        height="40"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        style="
+                                          width: 120px;
+                                          height: auto;
                                           border: 0;
                                         "
-                                        width="100"
                                     /></a>
                                   </td>
                                 </tr>
@@ -2662,7 +2767,8 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #465868;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 13px;
                                       line-height: 18px;
@@ -2695,7 +2801,6 @@ public final string visitorCompletionTemplate = string `
     <!-- // END TEMPLATE -->
   </body>
 </html>
-
 `;
 
 public final string visitorApproveTemplate = string `
@@ -2717,7 +2822,9 @@ public final string visitorApproveTemplate = string `
         font-family: "Roboto", Arial, Verdana, Helvetica, sans-serif;
         font-style: normal;
         font-weight: 400;
-        src: local("Roboto"), local("Roboto"),
+        src:
+          local("Roboto"),
+          local("Roboto"),
           url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap")
             format("Roboto");
       }
@@ -2872,6 +2979,14 @@ public final string visitorApproveTemplate = string `
 
       .wso2_center {
         text-align: center !important;
+      }
+
+      .logo-dark {
+        display: none;
+      }
+
+      .logo-light {
+        display: block;
       }
 
       @media only screen and (max-width: 650px) {
@@ -3174,6 +3289,14 @@ public final string visitorApproveTemplate = string `
           height: 40px !important;
           text-align: left !important;
         }
+
+        .logo-dark {
+          display: block !important;
+        }
+
+        .logo-light {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -3181,7 +3304,7 @@ public final string visitorApproveTemplate = string `
   <body
     class="wso2_body bgtest"
     style="
-      font-family: 'Roboto', Helvetica, sans-serif;
+      font-family: &quot;Roboto&quot;, Helvetica, sans-serif;
       -webkit-text-size-adjust: 100%;
       -ms-text-size-adjust: 100%;
       height: 100% !important;
@@ -3250,7 +3373,7 @@ public final string visitorApproveTemplate = string `
                       mso-table-rspace: 0pt;
                       margin: 0;
                       height: 275px;
-                      background: url('https://wso2.cachefly.net/wso2/sites/all/2022-optimized/bg-hr-mailer-new.png');
+                      background: url(&quot;https://wso2.cachefly.net/wso2/sites/all/2022-optimized/bg-hr-mailer-new.png&quot;);
                       background-size: auto;
                       background-repeat: no-repeat;
                       background-position: top;
@@ -3291,7 +3414,8 @@ public final string visitorApproveTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #505050;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 20px;
                                       font-weight: bold;
@@ -3311,9 +3435,9 @@ public final string visitorApproveTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
-                                          width: 100px;
+                                          width: 150px;
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
@@ -3370,7 +3494,8 @@ public final string visitorApproveTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #ffffff;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 16px;
                                       line-height: 5px;
@@ -3400,7 +3525,8 @@ public final string visitorApproveTemplate = string `
                                               mso-table-lspace: 0pt;
                                               mso-table-rspace: 0pt;
                                               color: #ffffff;
-                                              font-family: 'Roboto', Helvetica,
+                                              font-family:
+                                                &quot;Roboto&quot;, Helvetica,
                                                 sans-serif;
                                               font-size: 16px;
                                               line-height: 5px;
@@ -3431,7 +3557,8 @@ public final string visitorApproveTemplate = string `
                                                       mso-table-lspace: 0pt;
                                                       mso-table-rspace: 0pt;
                                                       color: #ff957d;
-                                                      font-family: 'Roboto',
+                                                      font-family:
+                                                        &quot;Roboto&quot;,
                                                         Helvetica, sans-serif;
                                                       font-size: 16px;
                                                       line-height: 24px;
@@ -3444,7 +3571,8 @@ public final string visitorApproveTemplate = string `
                                                     <p
                                                       class="cTitleDark"
                                                       style="
-                                                        font-family: 'Roboto',
+                                                        font-family:
+                                                          &quot;Roboto&quot;,
                                                           Helvetica, sans-serif;
                                                         padding-bottom: 0;
                                                         font-size: 19px;
@@ -3465,7 +3593,8 @@ public final string visitorApproveTemplate = string `
 
                                                     <p
                                                       style="
-                                                        font-family: 'Roboto',
+                                                        font-family:
+                                                          &quot;Roboto&quot;,
                                                           Helvetica, sans-serif;
                                                         padding-bottom: 0;
                                                         font-size: 24px;
@@ -3547,7 +3676,8 @@ public final string visitorApproveTemplate = string `
                               mso-table-lspace: 0pt;
                               mso-table-rspace: 0pt;
                               color: #465868;
-                              font-family: 'Roboto', Helvetica, sans-serif;
+                              font-family:
+                                &quot;Roboto&quot;, Helvetica, sans-serif;
                               font-size: 16px;
                               line-height: 24px;
                               text-align: center;
@@ -3556,10 +3686,11 @@ public final string visitorApproveTemplate = string `
                             "
                             valign="top"
                           >
-                          <p
+                            <p
                               class="cDottedline"
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 padding-bottom: 5px;
                                 font-size: 17px;
                                 line-height: 28px;
@@ -3573,11 +3704,12 @@ public final string visitorApproveTemplate = string `
                               "
                             >
                               Dear
-                              <!-- [NAME] -->,
+                              <!-- [FIRST_NAME] -->,
                             </p>
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 padding-bottom: 5px;
                                 font-size: 17px;
                                 line-height: 28px;
@@ -3588,14 +3720,16 @@ public final string visitorApproveTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              Your visit to WSO2 has officially started.<br/>
-You have successfully checked in at the security desk using your QR code. You may now proceed as guided by security or your host.
-
+                              Your visit to WSO2 has officially started.<br />
+                              You have successfully checked in at the security
+                              desk using your QR code. You may now proceed as
+                              guided by security or your host.
                             </p>
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 color: #465868;
                                 text-align: left;
@@ -3605,7 +3739,8 @@ You have successfully checked in at the security desk using your QR code. You ma
                             </p>
                             <ul
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-left: 30px;
@@ -3618,7 +3753,8 @@ You have successfully checked in at the security desk using your QR code. You ma
                               <li>
                                 <p
                                   style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-family:
+                                      &quot;Roboto&quot;, Helvetica, sans-serif;
                                     font-size: 17px;
                                     color: #465868;
                                     text-align: left;
@@ -3636,7 +3772,8 @@ You have successfully checked in at the security desk using your QR code. You ma
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -3654,7 +3791,8 @@ You have successfully checked in at the security desk using your QR code. You ma
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -3670,7 +3808,8 @@ You have successfully checked in at the security desk using your QR code. You ma
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -3762,7 +3901,8 @@ You have successfully checked in at the security desk using your QR code. You ma
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #606060;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 10px;
                                       line-height: 14px;
@@ -3904,7 +4044,8 @@ You have successfully checked in at the security desk using your QR code. You ma
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #465868;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 13px;
                                       line-height: 18px;
@@ -3949,7 +4090,8 @@ You have successfully checked in at the security desk using your QR code. You ma
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #505050;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 20px;
                                       font-weight: bold;
@@ -3963,20 +4105,29 @@ You have successfully checked in at the security desk using your QR code. You ma
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      ><!-- Light mode -->
+                                      <img
                                         alt="WSO2 Logo"
+                                        class="logo-light"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
-                                          width: 100px;
-                                          -ms-interpolation-mode: bicubic;
+                                          width: 120px;
                                           height: auto;
-                                          outline: none;
-                                          text-decoration: none;
+                                          border: 0;
+                                        " />
+
+                                      <!-- Dark mode -->
+                                      <img
+                                        alt="WSO2 Logo"
+                                        class="logo-dark"
+                                        height="40"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        style="
+                                          width: 120px;
+                                          height: auto;
                                           border: 0;
                                         "
-                                        width="100"
                                     /></a>
                                   </td>
                                 </tr>
@@ -3990,7 +4141,8 @@ You have successfully checked in at the security desk using your QR code. You ma
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #465868;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 13px;
                                       line-height: 18px;
@@ -4044,7 +4196,9 @@ public final string visitorRejectingTemplate = string `
         font-family: "Roboto", Arial, Verdana, Helvetica, sans-serif;
         font-style: normal;
         font-weight: 400;
-        src: local("Roboto"), local("Roboto"),
+        src:
+          local("Roboto"),
+          local("Roboto"),
           url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap")
             format("Roboto");
       }
@@ -4199,6 +4353,14 @@ public final string visitorRejectingTemplate = string `
 
       .wso2_center {
         text-align: center !important;
+      }
+
+      .logo-dark {
+        display: none;
+      }
+
+      .logo-light {
+        display: block;
       }
 
       @media only screen and (max-width: 650px) {
@@ -4501,6 +4663,14 @@ public final string visitorRejectingTemplate = string `
           height: 40px !important;
           text-align: left !important;
         }
+
+        .logo-dark {
+          display: block !important;
+        }
+
+        .logo-light {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -4508,7 +4678,7 @@ public final string visitorRejectingTemplate = string `
   <body
     class="wso2_body bgtest"
     style="
-      font-family: 'Roboto', Helvetica, sans-serif;
+      font-family: &quot;Roboto&quot;, Helvetica, sans-serif;
       -webkit-text-size-adjust: 100%;
       -ms-text-size-adjust: 100%;
       height: 100% !important;
@@ -4577,7 +4747,7 @@ public final string visitorRejectingTemplate = string `
                       mso-table-rspace: 0pt;
                       margin: 0;
                       height: 275px;
-                      background: url('https://wso2.cachefly.net/wso2/sites/all/2022-optimized/bg-hr-mailer-new.png');
+                      background: url(&quot;https://wso2.cachefly.net/wso2/sites/all/2022-optimized/bg-hr-mailer-new.png&quot;);
                       background-size: auto;
                       background-repeat: no-repeat;
                       background-position: top;
@@ -4618,7 +4788,8 @@ public final string visitorRejectingTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #505050;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 20px;
                                       font-weight: bold;
@@ -4638,9 +4809,9 @@ public final string visitorRejectingTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
-                                          width: 100px;
+                                          width: 150px;
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
@@ -4697,7 +4868,8 @@ public final string visitorRejectingTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #ffffff;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 16px;
                                       line-height: 5px;
@@ -4727,7 +4899,8 @@ public final string visitorRejectingTemplate = string `
                                               mso-table-lspace: 0pt;
                                               mso-table-rspace: 0pt;
                                               color: #ffffff;
-                                              font-family: 'Roboto', Helvetica,
+                                              font-family:
+                                                &quot;Roboto&quot;, Helvetica,
                                                 sans-serif;
                                               font-size: 16px;
                                               line-height: 5px;
@@ -4758,7 +4931,8 @@ public final string visitorRejectingTemplate = string `
                                                       mso-table-lspace: 0pt;
                                                       mso-table-rspace: 0pt;
                                                       color: #ff957d;
-                                                      font-family: 'Roboto',
+                                                      font-family:
+                                                        &quot;Roboto&quot;,
                                                         Helvetica, sans-serif;
                                                       font-size: 16px;
                                                       line-height: 24px;
@@ -4771,7 +4945,8 @@ public final string visitorRejectingTemplate = string `
                                                     <p
                                                       class="cTitleDark"
                                                       style="
-                                                        font-family: 'Roboto',
+                                                        font-family:
+                                                          &quot;Roboto&quot;,
                                                           Helvetica, sans-serif;
                                                         padding-bottom: 0;
                                                         font-size: 19px;
@@ -4792,7 +4967,8 @@ public final string visitorRejectingTemplate = string `
 
                                                     <p
                                                       style="
-                                                        font-family: 'Roboto',
+                                                        font-family:
+                                                          &quot;Roboto&quot;,
                                                           Helvetica, sans-serif;
                                                         padding-bottom: 0;
                                                         font-size: 24px;
@@ -4874,7 +5050,8 @@ public final string visitorRejectingTemplate = string `
                               mso-table-lspace: 0pt;
                               mso-table-rspace: 0pt;
                               color: #465868;
-                              font-family: 'Roboto', Helvetica, sans-serif;
+                              font-family:
+                                &quot;Roboto&quot;, Helvetica, sans-serif;
                               font-size: 16px;
                               line-height: 24px;
                               text-align: center;
@@ -4883,10 +5060,11 @@ public final string visitorRejectingTemplate = string `
                             "
                             valign="top"
                           >
-                          <p
+                            <p
                               class="cDottedline"
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 padding-bottom: 5px;
                                 font-size: 17px;
                                 line-height: 28px;
@@ -4900,11 +5078,12 @@ public final string visitorRejectingTemplate = string `
                               "
                             >
                               Dear
-                              <!-- [NAME] -->,
+                              <!-- [FIRST_NAME] -->,
                             </p>
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 padding-bottom: 5px;
                                 font-size: 17px;
                                 line-height: 28px;
@@ -4921,7 +5100,8 @@ public final string visitorRejectingTemplate = string `
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 padding-bottom: 5px;
                                 font-size: 17px;
                                 line-height: 28px;
@@ -4941,7 +5121,8 @@ public final string visitorRejectingTemplate = string `
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 color: #465868;
                                 text-align: left;
@@ -4951,7 +5132,8 @@ public final string visitorRejectingTemplate = string `
                             </p>
                             <ul
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 20px;
                                 padding-left: 30px;
@@ -4964,7 +5146,8 @@ public final string visitorRejectingTemplate = string `
                               <li>
                                 <p
                                   style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-family:
+                                      &quot;Roboto&quot;, Helvetica, sans-serif;
                                     font-size: 17px;
                                     color: #465868;
                                     text-align: left;
@@ -4980,7 +5163,8 @@ public final string visitorRejectingTemplate = string `
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -4998,7 +5182,8 @@ public final string visitorRejectingTemplate = string `
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -5014,7 +5199,8 @@ public final string visitorRejectingTemplate = string `
 
                             <p
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-family:
+                                  &quot;Roboto&quot;, Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -5106,7 +5292,8 @@ public final string visitorRejectingTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #606060;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 10px;
                                       line-height: 14px;
@@ -5248,7 +5435,8 @@ public final string visitorRejectingTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #465868;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 13px;
                                       line-height: 18px;
@@ -5293,7 +5481,8 @@ public final string visitorRejectingTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #505050;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 20px;
                                       font-weight: bold;
@@ -5307,20 +5496,29 @@ public final string visitorRejectingTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      ><!-- Light mode -->
+                                      <img
                                         alt="WSO2 Logo"
+                                        class="logo-light"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
-                                          width: 100px;
-                                          -ms-interpolation-mode: bicubic;
+                                          width: 120px;
                                           height: auto;
-                                          outline: none;
-                                          text-decoration: none;
+                                          border: 0;
+                                        " />
+
+                                      <!-- Dark mode -->
+                                      <img
+                                        alt="WSO2 Logo"
+                                        class="logo-dark"
+                                        height="40"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        style="
+                                          width: 120px;
+                                          height: auto;
                                           border: 0;
                                         "
-                                        width="100"
                                     /></a>
                                   </td>
                                 </tr>
@@ -5334,7 +5532,8 @@ public final string visitorRejectingTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #465868;
-                                      font-family: 'Roboto', Helvetica,
+                                      font-family:
+                                        &quot;Roboto&quot;, Helvetica,
                                         sans-serif;
                                       font-size: 13px;
                                       line-height: 18px;
@@ -5547,6 +5746,14 @@ public final string employeeVisitorArrivalTemplate = string `
         text-align: center !important;
       }
 
+      .logo-dark {
+        display: none;
+      }
+
+      .logo-light {
+        display: block;
+      }
+
       @media only screen and (max-width: 650px) {
         .fadeimg {
           width: 100% !important;
@@ -5847,6 +6054,14 @@ public final string employeeVisitorArrivalTemplate = string `
           height: 40px !important;
           text-align: left !important;
         }
+
+        .logo-dark {
+          display: block !important;
+        }
+
+        .logo-light {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -5985,9 +6200,9 @@ public final string employeeVisitorArrivalTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
-                                          width: 100px;
+                                          width: 150px;
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
@@ -6366,8 +6581,9 @@ public final string employeeVisitorArrivalTemplate = string `
                                 text-align: left;
                               "
                             >
-                              If you have any questions or require assistance,
-                              please contact the reception desk. Best regards,
+                              If you require any further assistance, please do
+                              not hesitate to contact us at
+                              <!-- [CONTACT_EMAIL] -->.
                             </p>
 
                             <p
@@ -6386,8 +6602,7 @@ public final string employeeVisitorArrivalTemplate = string `
                               "
                             >
                               Best regards,<br />
-                              <b>WSO2 Visitor Management System</b><br />
-                              WSO2 LLC
+                              Administration Team
                             </p>
                           </td>
                         </tr>
@@ -6670,20 +6885,29 @@ public final string employeeVisitorArrivalTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      ><!-- Light mode -->
+                                      <img
                                         alt="WSO2 Logo"
+                                        class="logo-light"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
-                                          width: 100px;
-                                          -ms-interpolation-mode: bicubic;
+                                          width: 120px;
                                           height: auto;
-                                          outline: none;
-                                          text-decoration: none;
+                                          border: 0;
+                                        " />
+
+                                      <!-- Dark mode -->
+                                      <img
+                                        alt="WSO2 Logo"
+                                        class="logo-dark"
+                                        height="40"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        style="
+                                          width: 120px;
+                                          height: auto;
                                           border: 0;
                                         "
-                                        width="100"
                                     /></a>
                                   </td>
                                 </tr>

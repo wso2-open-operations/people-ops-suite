@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,9 +13,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { Email } from "@mui/icons-material";
-import { Autocomplete, Avatar, Chip, Stack, TextField, Typography, useTheme } from "@mui/material";
+import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
+import {
+  Autocomplete,
+  Avatar,
+  Box,
+  Chip,
+  CircularProgress,
+  InputAdornment,
+  Stack,
+  TextField,
+  Typography,
+  useTheme,
+} from "@mui/material";
 
 import { useEffect, useState } from "react";
 
@@ -26,6 +36,7 @@ import { CachedMail, State } from "@root/src/types/types";
 
 interface EmployeeOption {
   label: string;
+  displayName: string;
   email: string;
   thumbnail: string | null;
   isFixed?: boolean;
@@ -48,7 +59,7 @@ export default function NotifyPeople({
 
   const employeeState = useAppSelector(selectEmployeeState);
   const employees = useAppSelector(selectEmployees);
-  const loading = employeeState === State.loading;
+  const loading = employeeState === State.idle || employeeState === State.loading;
 
   const appConfig = useAppSelector(selectAppConfig);
   useEffect(() => {
@@ -58,6 +69,7 @@ export default function NotifyPeople({
 
     const mandatoryOptions = defaultMails.mandatoryMails.map((mail) => ({
       label: mail.email,
+      displayName: mail.email,
       email: mail.email,
       thumbnail: mail.thumbnail || null,
       isFixed: true,
@@ -67,6 +79,7 @@ export default function NotifyPeople({
       .filter((mail) => !defaultMails.mandatoryMails.find((m) => m.email === mail.email))
       .map((mail) => ({
         label: mail.email,
+        displayName: mail.email,
         email: mail.email,
         thumbnail: mail.thumbnail || null,
         isFixed: false,
@@ -85,15 +98,28 @@ export default function NotifyPeople({
     if (employees.length > 0) {
       const employeeOptionsFromApi = employees.map((employee) => ({
         label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
+        displayName: `${employee.firstName} ${employee.lastName}`.trim(),
         email: employee.workEmail,
         thumbnail: employee.employeeThumbnail,
         isFixed: fixedEmails.includes(employee.workEmail),
       }));
 
       setEmployeeOptions((prev) => {
+        const apiByEmail = new Map(employeeOptionsFromApi.map((o) => [o.email, o]));
         const existingEmails = new Set(prev.map((o) => o.email));
 
-        return [...prev, ...employeeOptionsFromApi.filter((opt) => !existingEmails.has(opt.email))];
+        // Update existing cached entries with real name + thumbnail from API
+        const updated = prev.map((opt) => {
+          const apiMatch = apiByEmail.get(opt.email);
+          if (apiMatch) {
+            return { ...opt, displayName: apiMatch.displayName, thumbnail: apiMatch.thumbnail };
+          }
+          return opt;
+        });
+
+        // Append API employees not already in the list
+        const newEntries = employeeOptionsFromApi.filter((opt) => !existingEmails.has(opt.email));
+        return [...updated, ...newEntries];
       });
     }
   }, [employees, fixedEmails]);
@@ -101,17 +127,17 @@ export default function NotifyPeople({
   const selectedOptions = employeeOptions
     .filter((opt) => opt.isFixed || selectedEmails.includes(opt.email))
     .sort((a, b) => {
-      // Add mandatory mails first, then optional mails
       if (a.isFixed && !b.isFixed) return -1;
       if (!a.isFixed && b.isFixed) return 1;
       return 0;
     });
 
   return (
-    <Stack gap="1rem">
-      <Stack flexDirection="row" alignItems="center" justifyContent="space-between">
-        <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
-          Select people/groups to notify (via email)
+    <Stack gap={2}>
+      <Stack direction="row" alignItems="center" gap={1}>
+        <GroupsRoundedIcon sx={{ fontSize: 20, color: theme.palette.primary.main }} />
+        <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p1.active }}>
+          Notify people
         </Typography>
       </Stack>
       <Autocomplete
@@ -122,7 +148,6 @@ export default function NotifyPeople({
         loadingText="Loading employees..."
         noOptionsText="No employees found"
         onChange={(_, newValue) => {
-          // Keep fixed options in value
           const newEmails = [
             ...fixedEmails,
             ...newValue.filter((opt) => !opt.isFixed).map((opt) => opt.email),
@@ -131,66 +156,76 @@ export default function NotifyPeople({
         }}
         getOptionLabel={(option) => option.label}
         isOptionEqualToValue={(option, value) => option.email === value.email}
-        renderInput={(params) => <TextField {...params} label="Select emails" />}
+        renderOption={(props, option) => (
+          <li
+            {...props}
+            key={option.email}
+            style={{ display: "flex", alignItems: "center", gap: 12 }}
+          >
+            <Avatar src={option.thumbnail ?? undefined} sx={{ width: 32, height: 32 }}>
+              {option.displayName.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+              <Typography variant="body2" noWrap>
+                {option.displayName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {option.email}
+              </Typography>
+            </Box>
+          </li>
+        )}
+        disabled={loading}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Search people or groups"
+            size="small"
+            placeholder={loading ? "Loading employees..." : undefined}
+            slotProps={{
+              input: {
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {loading && (
+                      <InputAdornment position="end">
+                        <CircularProgress size={18} />
+                      </InputAdornment>
+                    )}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              },
+            }}
+          />
+        )}
         renderTags={(value, getTagProps) =>
-          value.map((option, index) => {
-            const ChipAvatar = option.thumbnail ? (
-              <Avatar
-                src={option.thumbnail}
-                alt={option.email}
-                imgProps={{
-                  onError: (e: any) => {
-                    e.target.style.display = "none";
-                  },
-                }}
-                sx={{ width: 30, height: 30 }}
-              >
-                {!option.thumbnail && (
-                  <Email
-                    sx={{
-                      fontSize: theme.typography.caption.fontSize,
-                      color: theme.palette.primary.contrastText,
-                    }}
-                  />
-                )}
-              </Avatar>
-            ) : (
-              <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 30, height: 30 }}>
-                <Email
-                  sx={{
-                    fontSize: theme.typography.caption.fontSize,
-                    color: theme.palette.primary.contrastText,
-                  }}
-                />
-              </Avatar>
-            );
-
-            return (
-              <Chip
-                {...getTagProps({ index })}
-                key={option.email}
-                label={option.email}
-                avatar={ChipAvatar}
-                onDelete={option.isFixed ? undefined : getTagProps({ index }).onDelete}
-                sx={{
-                  ".MuiChip-root:hover": {
-                    backgroundColor: theme.palette.action.hover,
-                  },
-                  ".MuiChip-deleteIcon": {
-                    color: theme.palette.primary.main,
-                  },
-                }}
-              />
-            );
-          })
+          value.map((option, index) => (
+            <Chip
+              {...getTagProps({ index })}
+              key={option.email}
+              label={option.displayName}
+              avatar={
+                <Avatar src={option.thumbnail ?? undefined} sx={{ width: 24, height: 24 }}>
+                  {option.displayName.charAt(0).toUpperCase()}
+                </Avatar>
+              }
+              size="small"
+              onDelete={option.isFixed ? undefined : getTagProps({ index }).onDelete}
+            />
+          ))
         }
         sx={{
           "& .MuiChip-root": {
-            backgroundColor: theme.palette.background.paper,
-            color: theme.palette.primary.main,
+            backgroundColor: theme.palette.surface.territory.active,
+            color: theme.palette.customText.primary.p2.active,
             fontWeight: 500,
-            borderRadius: "6px",
-            border: `1px solid ${theme.palette.primary.main}`,
+            borderRadius: "8px",
+            border: `1px solid ${theme.palette.customBorder.territory.active}`,
+          },
+          "& .MuiChip-deleteIcon": {
+            color: theme.palette.customText.primary.p4.active,
+            "&:hover": { color: theme.palette.error.main },
           },
         }}
       />

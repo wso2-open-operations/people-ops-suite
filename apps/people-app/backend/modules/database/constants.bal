@@ -17,4 +17,17 @@
 # A constant default limit of a database query
 public const DEFAULT_LIMIT = 100;
 
+# A constant error message for no rows updated
 const ERROR_NO_ROWS_UPDATED = "No rows were updated";
+
+# A constant max token count for search operations
+const MAX_TOKEN_COUNT = 10;
+
+# A constant default page number
+const DEFAULT_PAGE_NUMBER = 1;
+
+# A constant default records per page
+const DEFAULT_RECORDS_PER_PAGE = 20;
+
+# Prefix shared by all consultancy-type employee IDs 
+public const CONSULTANCY_ID_PREFIX = "CON";

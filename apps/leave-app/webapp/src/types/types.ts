@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import type { RouteObject } from "react-router-dom";
 
 export type NavState = {
@@ -86,6 +85,11 @@ export enum LeaveType {
   MATERNITY = "maternity",
   PATERNITY = "paternity",
   LIEU = "lieu",
+  SICK = "sick",
+  CONGES_PAYES = "conges_payes",
+  RTT = "rtt",
+  SPAIN_ANNUAL = "spain_annual",
+  SPAIN_CASUAL = "spain_casual",
 }
 
 export enum LeaveLabel {
@@ -94,7 +98,21 @@ export enum LeaveLabel {
   PATERNITY = "Paternity",
   LIEU = "Lieu",
   SABBATICAL = "Sabbatical",
+  SICK = "Sick Leave",
+  CONGES_PAYES = "Congés Payés",
+  RTT = "RTT",
+  SPAIN_ANNUAL = "Annual Leave",
+  SPAIN_CASUAL = "Casual Leave",
 }
+
+// Tooltip descriptions for leave types.
+export const LeaveTooltip: Partial<Record<LeaveType, string>> = {
+  [LeaveType.CONGES_PAYES]: "Paid Annual Leave",
+  [LeaveType.RTT]: "Réduction du Temps de Travail",
+  [LeaveType.SPAIN_ANNUAL]: "Annual Leave (Spain)",
+  [LeaveType.SPAIN_CASUAL]: "Casual Leave (Spain)",
+  [LeaveType.SICK]: "Sick Leave",
+};
 
 // Leave Approval action.
 export enum Action {
@@ -194,6 +212,13 @@ export interface LeaveHistoryResponse {
   leaves: SingleLeaveHistory[];
 }
 
+// Employee status enum (mirrors backend EmployeeStatus).
+export enum EmployeeStatus {
+  ACTIVE = "Active",
+  MARKED_LEAVER = "Marked leaver",
+  LEFT = "Left",
+}
+
 // Query parameters for leave history request.
 export interface LeaveHistoryQueryParam {
   email?: string;
@@ -205,6 +230,8 @@ export interface LeaveHistoryQueryParam {
   limit?: number;
   offset?: number;
   orderBy?: OrderBy;
+  employeeStatuses?: EmployeeStatus[];
+  subordinatesLeaves?: boolean;
 }
 
 // Lead report request type.
@@ -226,6 +253,11 @@ export interface LeadReportResponse {
     maternity?: number;
     paternity?: number;
     sabbatical?: number;
+    conges_payes?: number;
+    rtt?: number;
+    spain_annual?: number;
+    spain_casual?: number;
+    sick?: number;
   };
 }
 
@@ -262,4 +294,32 @@ export interface AppConfigResponse {
   sabbaticalLeaveEligibilityDuration: number;
   sabbaticalLeaveMaxApplicationDuration: number;
   cachedEmails: CachedMail;
+}
+
+// Leave policy entitlement/consumed counts.
+export interface LeavePolicy {
+  annual?: number | null;
+  casual?: number | null;
+  congesPayes?: number | null;
+  rtt?: number | null;
+  spainAnnual?: number | null;
+  spainCasual?: number | null;
+  sick?: number | null;
+}
+
+// Leave entitlement response for a single year/period.
+export interface LeaveEntitlement {
+  year: number;
+  location: string | null;
+  leavePolicy: LeavePolicy;
+  policyAdjustedLeave: LeavePolicy;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+}
+
+// Employee location constants.
+export enum EmployeeLocation {
+  LK = "Sri Lanka",
+  FR = "France",
+  ES = "Spain",
 }

@@ -15,6 +15,7 @@
 // under the License.
 
 import leave_service.authorization;
+import leave_service.calendar_events;
 import leave_service.database;
 import leave_service.email;
 import leave_service.employee;
@@ -84,8 +85,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                 jobRole: empInfo.jobRole,
                 privileges: privileges,
                 isLead: empInfo.lead,
-                employmentStartDate: empInfo.startDate,
-                subordinateCount: subordinates.length()
+                employmentStartDate: empInfo.continuousServiceDate ?: empInfo.startDate,
+                subordinateCount: subordinates.length(),
+                location: empInfo.location
             };
 
             return userInfoResponse;
@@ -186,10 +188,12 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + endDate - End date filter
     # + approverEmail - Approver email to filter the leaves
     # + statuses - Statuses to filter the leaves
+    # + subordinatesLeaves - Whether to fetch the leaves of subordinates of the user.
     # + return - List of leaves
     resource function get leaves(http:RequestContext ctx, string? email = (), string? startDate = (),
             string? endDate = (), string? approverEmail = (), database:LeaveType[]? leaveCategory = (),
-            Status[] statuses = [], int? 'limit = (), int? offset = 0, database:OrderBy? orderBy = database:ASC
+            Status[] statuses = [], int? 'limit = (), int? offset = 0, database:OrderBy? orderBy = database:ASC,
+            EmployeeStatus[]? employeeStatuses = (), boolean subordinatesLeaves = false
     ) returns FetchedLeavesRecord|http:Forbidden|http:InternalServerError|http:BadRequest {
 
         if email is string && !email.matches(WSO2_EMAIL_PATTERN) {
@@ -200,59 +204,173 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        do {
-            readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
-            boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
-                    authorization:authorizedRoles.employeeRoles);
-            if !validateForSingleRole {
-                log:printWarn(string `The user ${userInfo.email} was not privileged to access the resource 
-                        /leaves with email=${email.toString()}`);
-                return <http:Forbidden>{
-                    body: {
-                        message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
-                    }
-                };
-            }
-            boolean isPeopleOpsTeamMember = authorization:checkPermissions(
-                    authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups);
-            // Restrict access to fetch leaves of all employees if the user is not a people ops team member
-            if !isPeopleOpsTeamMember && (
-                (email is string && email != userInfo.email) || (email is () && approverEmail is ()) ||
-                (approverEmail is string && approverEmail != userInfo.email)
-            ) {
-                return <http:Forbidden>{
-                    body: {
-                        message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
-                    }
-                };
-            }
-
-            string[]? emails = (email is string) ? [email] : ();
-            database:Leave[]|error leaves = database:getLeaves({
-                                                                   emails,
-                                                                   statuses,
-                                                                   startDate,
-                                                                   endDate,
-                                                                   approverEmail,
-                                                                   leaveTypes: leaveCategory,
-                                                                   orderBy: orderBy
-                                                               }, 'limit);
-            if leaves is error {
-                fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
-            }
-            return {
-                leaves
-            };
-
-        } on fail error internalErr {
-            string errMsg = "Error occurred while fetching leaves";
-            log:printError(errMsg, internalErr);
+        readonly & authorization:CustomJwtPayload|error userInfoResult = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfoResult is error {
+            string errMsg = "Error occurred while decoding user info from token";
+            log:printError(errMsg, userInfoResult);
             return <http:InternalServerError>{
                 body: {
                     message: errMsg
                 }
             };
         }
+        readonly & authorization:CustomJwtPayload userInfo = userInfoResult;
+
+        boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
+                authorization:authorizedRoles.employeeRoles);
+        if !validateForSingleRole {
+            log:printWarn(string `The user ${userInfo.email} was not privileged to access the resource
+                    /leaves with email=${email.toString()}`);
+            return <http:Forbidden>{
+                body: {
+                    message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
+                }
+            };
+        }
+
+        boolean isPeopleOpsTeamMember = authorization:checkPermissions(
+                authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups);
+        // Restrict access to fetch leaves of all employees if the user is not a people ops team member
+        if !isPeopleOpsTeamMember && !subordinatesLeaves && (
+            (email is string && email != userInfo.email) || (email is () && approverEmail is ()) ||
+            (approverEmail is string && approverEmail != userInfo.email)
+        ) {
+            return <http:Forbidden>{
+                body: {
+                    message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
+                }
+            };
+        }
+
+        string[]? emails;
+        string? effectiveApproverEmail = approverEmail;
+        EmployeeStatus[]? effectiveStatuses = employeeStatuses is EmployeeStatus[] && employeeStatuses.length() > 0
+            ? employeeStatuses
+            : ();
+
+        if subordinatesLeaves {
+            // Resolve subordinate emails from the HR system using the logged-in user as manager
+            employee:Employee[]|error subordinates = employee:getEmployees({
+                                                                               status: effectiveStatuses,
+                                                                               leadEmail: userInfo.email
+                                                                           });
+            if subordinates is error {
+                log:printError(ERR_MSG_LEAVES_RETRIEVAL_FAILED, subordinates);
+                return <http:InternalServerError>{
+                    body: {
+                        message: ERR_MSG_LEAVES_RETRIEVAL_FAILED
+                    }
+                };
+            }
+            string[] subordinateEmails = from employee:Employee emp in subordinates
+                select emp.workEmail;
+            emails = email is string
+                ? (from string e in subordinateEmails
+                    where e == email
+                    select e)
+                : subordinateEmails;
+            effectiveApproverEmail = ();
+        } else if effectiveStatuses is EmployeeStatus[] {
+            employee:Employee[]|error filteredEmployees = employee:getEmployees({
+                                                                                    status: effectiveStatuses,
+                                                                                    leadEmail: approverEmail
+                                                                                });
+            if filteredEmployees is error {
+                log:printError(ERR_MSG_LEAVES_RETRIEVAL_FAILED, filteredEmployees);
+                return <http:InternalServerError>{
+                    body: {
+                        message: ERR_MSG_LEAVES_RETRIEVAL_FAILED
+                    }
+                };
+            }
+            string[] filteredEmails = from employee:Employee emp in filteredEmployees
+                select emp.workEmail;
+            emails = email is string
+                ? (from string e in filteredEmails
+                    where e == email
+                    select e)
+                : filteredEmails;
+            effectiveApproverEmail = ();
+        } else {
+            emails = (email is string) ? [email] : ();
+        }
+
+        database:Leave[]|error leaves = database:getLeaves({
+                                                               emails,
+                                                               statuses,
+                                                               startDate,
+                                                               endDate,
+                                                               approverEmail: effectiveApproverEmail,
+                                                               leaveTypes: leaveCategory,
+                                                               orderBy: orderBy
+                                                           }, 'limit);
+        if leaves is error {
+            log:printError(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_LEAVES_RETRIEVAL_FAILED
+                }
+            };
+        }
+
+        // Clip first element: if the leave starts before the given startDate,
+        // recalculate numberOfDays from startDate to the leave's endDate.
+        if startDate is string && leaves.length() > 0 {
+            database:Leave firstLeave = leaves[0];
+            if firstLeave.periodType != database:HALF_DAY_LEAVE &&
+                firstLeave.startDate.substring(0, 10) < startDate.substring(0, 10) {
+                time:Utc|error rangeStart = getUtcDateFromString(startDate);
+                time:Utc|error leaveEnd = getUtcDateFromString(firstLeave.endDate);
+                if rangeStart is time:Utc && leaveEnd is time:Utc {
+                    database:Day[] weekdays = getWeekdaysFromRange(rangeStart, leaveEnd);
+                    database:Holiday[]|error holidays = calendar_events:getHolidaysForCountry(
+                            firstLeave.location ?: "", startDate, firstLeave.endDate);
+                    if holidays is error {
+                        string errMsg = "Error occurred while fetching holidays for calendar event";
+                        log:printError(errMsg, holidays);
+                        return <http:InternalServerError>{
+                            body: {
+                                message: errMsg
+                            }
+                        };
+                    }
+                    weekdays = getWorkingDaysAfterHolidays(weekdays, holidays);
+                    leaves[0].numberOfDays = <float>weekdays.length();
+                    leaves[0].startDate = startDate;
+                }
+            }
+        }
+
+        // Clip last element: if the leave ends after the given endDate,
+        // recalculate numberOfDays from the leave's startDate to endDate.
+        if endDate is string && leaves.length() > 0 {
+            int lastIdx = leaves.length() - 1;
+            database:Leave lastLeave = leaves[lastIdx];
+            if lastLeave.periodType != database:HALF_DAY_LEAVE &&
+                lastLeave.endDate.substring(0, 10) > endDate.substring(0, 10) {
+                time:Utc|error leaveStart = getUtcDateFromString(lastLeave.startDate);
+                time:Utc|error rangeEnd = getUtcDateFromString(endDate);
+                if leaveStart is time:Utc && rangeEnd is time:Utc {
+                    database:Day[] weekdays = getWeekdaysFromRange(leaveStart, rangeEnd);
+                    database:Holiday[]|error holidays = calendar_events:getHolidaysForCountry(
+                            lastLeave.location ?: "", lastLeave.startDate, endDate);
+                    if holidays is error {
+                        string errMsg = "Error occurred while fetching holidays for calendar event";
+                        log:printError(errMsg, holidays);
+                        return <http:InternalServerError>{
+                            body: {
+                                message: errMsg
+                            }
+                        };
+                    }
+                    weekdays = getWorkingDaysAfterHolidays(weekdays, holidays);
+                    leaves[lastIdx].numberOfDays = <float>weekdays.length();
+                    leaves[lastIdx].endDate = endDate;
+                }
+            }
+        }
+
+        return {leaves};
     }
 
     # Create a new leave.
@@ -305,7 +423,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     };
                 }
 
-                string? employmentStartDate = employeeDetails.startDate;
+                string? employmentStartDate = employeeDetails.continuousServiceDate ?: employeeDetails.startDate;
                 if employmentStartDate is () {
                     string errMsg = "Employee employment start date not found.";
                     return <http:InternalServerError>{
@@ -401,10 +519,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            // Logic for all other leave types (casual, maternity, paternity, lieu...etc)
-            log:printInfo(string `Leave${isValidationOnlyMode ? " validation " : " "}request received from email: ${
-                        email} with payload: ${payload.toString()}`);
-
             [time:Utc, time:Utc]|error validatedDateRange = validateDateRange(payload.startDate, payload.endDate);
             if validatedDateRange is error {
                 log:printError(ERR_MSG_INVALID_DATE_FORMAT, validatedDateRange);
@@ -482,7 +596,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 email: leave.email,
                 isMorningLeave: leave.isMorningLeave
             };
-            log:printInfo(string `Submitted leave successfully. ID: ${leaveResponse.id}.`);
 
             future<error?> notificationFuture = start email:sendLeaveNotification(
                         emailContentForLeave,
@@ -925,31 +1038,33 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        string? approverEmail = leave.approverEmail;
-        if approverEmail is () {
-            string errMsg = "Sabbatical leave approver email is not assigned.";
-            log:printError(errMsg);
+
+        // Fetch applicant details to verify the logged-in user is their manager.
+        Employee|error applicantInfo = employee:getEmployee(leave.email);
+        if applicantInfo is error {
+            string errMsg = "Error occurred while fetching leave applicant details.";
+            log:printError(errMsg, applicantInfo);
             return <http:InternalServerError>{
-                body: {
-                    message: errMsg
-                }
-            };
-        }
-        if approverEmail.toLowerAscii() != email.toLowerAscii() {
-            string errMsg = "The current user is not authorized to approve/reject this sabbatical leave application";
-            log:printError(errMsg);
-            return <http:Forbidden>{
                 body: {
                     message: errMsg
                 }
             };
         }
 
-        Employee|error applicantInfo = employee:getEmployee(leave.email);
-        if applicantInfo is error {
-            string errMsg = "Error occurred while fetching sabbatical leave applicant details.";
-            log:printError(errMsg, applicantInfo);
+        string? applicantLeadEmail = applicantInfo.leadEmail;
+        if applicantLeadEmail is () {
+            string errMsg = "Sabbatical leave applicant's manager email is not available.";
+            log:printError(errMsg);
             return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        if applicantLeadEmail.toLowerAscii() != email.toLowerAscii() {
+            string errMsg = "The current user is not authorized to approve/reject this sabbatical leave application";
+            log:printError(errMsg);
+            return <http:Forbidden>{
                 body: {
                     message: errMsg
                 }
@@ -979,7 +1094,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                                   applicantEmail: leave.email,
                                                                   leaveStartDate: leave.startDate.substring(0, 10),
                                                                   leaveEndDate: leave.endDate.substring(0, 10),
-                                                                  approverEmail,
+                                                                  approverEmail: email,
                                                                   leaveId: id
                                                               });
         if approvalResult is error {

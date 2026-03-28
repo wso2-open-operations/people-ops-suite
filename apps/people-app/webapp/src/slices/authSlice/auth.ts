@@ -16,13 +16,14 @@
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { PRIVILEGE_ADMIN, PRIVILEGE_EMPLOYEE, SnackMessage } from "@config/constant";
+import { ADMIN_PRIVILEGE, EMPLOYEE_PRIVILEGE, LEAD_PRIVILEGE, SnackMessage } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import type { RootState } from "@slices/store";
 
 export enum Role {
   ADMIN = "ADMIN",
   EMPLOYEE = "EMPLOYEE",
+  LEAD = "LEAD",
 }
 
 export enum State {
@@ -83,10 +84,13 @@ export const loadPrivileges = createAsyncThunk(
     const userPrivileges = userInfo.privileges || [];
     const roles: Role[] = [];
 
-    if (userPrivileges.includes(PRIVILEGE_ADMIN)) {
+    if (userPrivileges.includes(LEAD_PRIVILEGE)) {
+      roles.push(Role.LEAD);
+    }
+    if (userPrivileges.includes(ADMIN_PRIVILEGE)) {
       roles.push(Role.ADMIN);
     }
-    if (userPrivileges.includes(PRIVILEGE_EMPLOYEE)) {
+    if (userPrivileges.includes(EMPLOYEE_PRIVILEGE)) {
       roles.push(Role.EMPLOYEE);
     }
 
