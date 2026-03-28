@@ -379,8 +379,6 @@ export default function SplitView() {
 
   const isDisabled = Boolean(searchTerm || teamSearchTerm || subTeamSearchTerm || unitSearchTerm);
 
-  console.log("filteredBusinessUnits : ", filteredBusinessUnits);
-
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
