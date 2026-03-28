@@ -18,14 +18,11 @@ import { lazy } from "react";
 const help = lazy(() => import("@view/help/help"));
 const me = lazy(() => import("@view/me"));
 const employees = lazy(() => import("@view/employees/Employee"));
-const meCopy = lazy(() => import("@view/me-copy/Me"));
-const masterData = lazy(() => import("@view/master-data/MasterData"))
+const masterData = lazy(() => import("@view/master-data/MasterData"));
 
 export const View = {
   help,
   me,
   employees,
-  meCopy,
-  masterData
-}
-;
+  masterData,
+};
