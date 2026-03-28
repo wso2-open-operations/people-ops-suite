@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,145 +13,159 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { Suspense, useCallback, useEffect, useState } from "react";
-
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
+import { Suspense, useCallback, useEffect, useState } from "react";
+
+import PreLoader from "@component/common/PreLoader";
+import { redirectUrl as savedRedirectUrl } from "@config/constant";
 import ConfirmationModalContextProvider from "@context/DialogContext";
 import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
-import { alpha, Box, Typography, CircularProgress } from "@mui/material";
-import CssBaseline from "@mui/material/CssBaseline";
-import { useTheme } from "@mui/material/styles";
-import pJson from "@root/package.json";
 import { selectRoles } from "@slices/authSlice/auth";
-import { RootState, useAppSelector } from "@slices/store";
+import { type RootState, useAppSelector } from "@slices/store";
+import { ColorModeContext } from "@src/App";
+
+import MobileBottomBar from "./MobileBottomBar/MobileBottomBar";
 
 export default function Layout() {
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
   const common = useAppSelector((state: RootState) => state.common);
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
   const [open, setOpen] = useState(false);
   const roles = useSelector(selectRoles);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Memoize enqueueSnackbar to prevent unnecessary re-renders
   const showSnackbar = useCallback(() => {
-    if (common.timestamp != null) {
+    if (common.timestamp !== null) {
       enqueueSnackbar(common.message, {
         variant: common.type,
         preventDuplicate: true,
-        anchorOrigin: { horizontal: "center", vertical: "bottom" },
-        action: (key) => (
-          <button
-            onClick={() => closeSnackbar(key)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "white",
-              cursor: "pointer",
-              fontSize: 16,
-              marginLeft: 8,
-              marginRight: 8,
-              padding: 0,
-            }}
-            aria-label="close"
-          >
-            ✕
-          </button>
-        ),
+        anchorOrigin: { horizontal: "right", vertical: "bottom" },
       });
     }
-  }, [
-    common.message,
-    common.type,
-    common.timestamp,
-    enqueueSnackbar,
-    closeSnackbar,
-  ]);
+  }, [common.message, common.type, common.timestamp, enqueueSnackbar]);
 
-  // Show Snackbar Notifications
   useEffect(() => {
     showSnackbar();
   }, [showSnackbar]);
 
-  // Handle Redirect After Login
   useEffect(() => {
-    const redirectUrl = localStorage.getItem("people-app-redirect-url");
+    const redirectUrl = localStorage.getItem(savedRedirectUrl);
     if (redirectUrl) {
       navigate(redirectUrl);
-      localStorage.removeItem("people-app-redirect-url");
+      localStorage.removeItem(savedRedirectUrl);
     }
   }, [navigate]);
 
   return (
     <ConfirmationModalContextProvider>
-      <Box sx={{ display: "flex" }}>
-        <CssBaseline />
-        <Sidebar
-          roles={roles}
-          currentPath={location.pathname}
-          open={open}
-          handleDrawer={() => setOpen(!open)}
-          theme={theme}
-        />
-        <Header />
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            height: "100vh",
-            p: 3,
-            pt: 7.5,
-            pb: 4.5,
-          }}
-        >
-          <Suspense
-            fallback={
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  minHeight: "calc(100vh - 120px)",
-                  height: "100%",
-                  width: "100%",
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  zIndex: 10,
-                  backgroundColor: "background.default",
-                }}
-              >
-                <CircularProgress size={48} thickness={2} />
+      <ColorModeContext.Consumer>
+        {(colorMode) => {
+          return (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100vh",
+                width: "100vw",
+                backgroundColor: theme.palette.surface.primary.active,
+              }}
+            >
+              {/* Header */}
+              <Header />
+
+              {/* Main content container */}
+              <Box sx={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
+                {/* Sidebar - Overlay on mobile */}
+                {isMobile ? (
+                  <>
+                    {/* Backdrop when sidebar is open */}
+                    {open && (
+                      <Box
+                        onClick={() => setOpen(false)}
+                        sx={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor:
+                            theme.palette.mode === "light" ? "rgba(0, 0, 0, 0.5)" : "transparent",
+                          zIndex: 999,
+                        }}
+                      />
+                    )}
+                    {/* Sidebar overlay */}
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        height: "100%",
+                        zIndex: 1000,
+                        transform: open ? "translateX(0)" : "translateX(-100%)",
+                        transition: "transform 0.3s ease-in-out",
+                      }}
+                    >
+                      <Sidebar
+                        roles={roles}
+                        currentPath={location.pathname}
+                        open={open}
+                        handleDrawer={() => setOpen(!open)}
+                        mode={colorMode.mode}
+                        onThemeToggle={colorMode.toggleColorMode}
+                      />
+                    </Box>
+                  </>
+                ) : (
+                  <Box sx={{ width: "fit-content", height: "100%" }}>
+                    <Sidebar
+                      roles={roles}
+                      currentPath={location.pathname}
+                      open={open}
+                      handleDrawer={() => setOpen(!open)}
+                      mode={colorMode.mode}
+                      onThemeToggle={colorMode.toggleColorMode}
+                    />
+                  </Box>
+                )}
+
+                {/* Main content area */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    padding: 2,
+                    paddingY: 2.5,
+                    paddingBottom: isMobile ? "80px" : "18px",
+                    overflowY: "auto",
+                  }}
+                >
+                  <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
+                    <Outlet />
+                  </Suspense>
+                </Box>
+
+                {/* Mobile Bottom Bar - Only on Mobile */}
+                {isMobile && (
+                  <MobileBottomBar
+                    onMenuClick={() => setOpen(!open)}
+                    onThemeToggle={colorMode.toggleColorMode}
+                    open={open}
+                    mode={colorMode.mode}
+                    roles={roles}
+                  />
+                )}
               </Box>
-            }
-          >
-            <Outlet />
-          </Suspense>
-          <Box
-            className="layout-note"
-            sx={{
-              background:
-                theme.palette.mode === "light"
-                  ? (theme) =>
-                      alpha(
-                        theme.palette.secondary.main,
-                        theme.palette.action.activatedOpacity
-                      )
-                  : (theme) => alpha(theme.palette.common.black, 0.4),
-            }}
-          >
-            <Typography variant="h6" sx={{ color: "#919090" }}>
-              v {pJson.version} | © {new Date().getFullYear()} WSO2 LLC
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
+            </Box>
+          );
+        }}
+      </ColorModeContext.Consumer>
     </ConfirmationModalContextProvider>
   );
 }

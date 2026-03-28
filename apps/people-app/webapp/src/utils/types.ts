@@ -14,7 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export type stateType = "failed" | "success" | "loading" | "idle";
+export interface Employee {
+  workEmail: string;
+  firstName: string;
+  lastName: string;
+  jobBand: number;
+  employeeThumbnail: string;
+}
 
 export interface Header {
   title: string;
@@ -25,4 +31,23 @@ export interface Header {
 export enum ThemeMode {
   Light = "light",
   Dark = "dark",
+}
+
+export interface ErrorHandlerProps {
+  message: string | null;
+}
+
+export enum ConfirmationType {
+  update = "update",
+  send = "send",
+  upload = "upload",
+  accept = "accept",
+}
+
+export enum NodeType {
+  Company = "COMPANY",
+  BusinessUnit = "BUSINESS_UNIT",
+  Team = "TEAM",
+  SubTeam = "SUB_TEAM",
+  Unit = "UNIT"
 }

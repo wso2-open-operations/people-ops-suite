@@ -13,33 +13,45 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import { configureStore } from "@reduxjs/toolkit";
 import { enableMapSet } from "immer";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
-import { configureStore } from "@reduxjs/toolkit";
+import { organizationApi } from "@services/organization";
+import { configApi } from "@services/config.api";
+import { employeeApi } from "@services/employee";
+import { userApi } from "@services/user.api";
 import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
-import appConfigReducer from "@slices/configSlice/config";
 import employeeReducer from "@slices/employeeSlice/employee";
 import employeePersonalInfoReducer from "@slices/employeeSlice/employeePersonalInfo";
-import userReducer from "@slices/userSlice/user";
 import organizationReducer from "@slices/organizationSlice/organization";
+import userReducer from "@slices/userSlice/user";
+import organizationStructureReducer from "@slices/organizationSlice/organizationStructure";
 
 enableMapSet();
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    user: userReducer,
     common: commonReducer,
+    user: userReducer,
     employee: employeeReducer,
     employeePersonalInfo: employeePersonalInfoReducer,
-    appConfig: appConfigReducer,
     organization: organizationReducer,
+    organizationStructure: organizationStructureReducer,
+    
+    [userApi.reducerPath]: userApi.reducer,
+    [configApi.reducerPath]: configApi.reducer,
+    [employeeApi.reducerPath]: employeeApi.reducer,
+    [organizationApi.reducerPath]: organizationApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware(),
+    getDefaultMiddleware()
+      .concat(userApi.middleware)
+      .concat(configApi.middleware)
+      .concat(employeeApi.middleware)
+      .concat(organizationApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

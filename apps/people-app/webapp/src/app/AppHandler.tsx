@@ -13,20 +13,32 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { useMemo } from "react";
+import { FC, memo, useMemo } from "react";
 
+import { AppState } from "@/types/types";
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
 import Layout from "@layout/Layout";
 import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
-import { RootState, useAppSelector } from "@slices/store";
-import { getActiveRoutesV2, routes } from "@src/route";
+import { RootState } from "@slices/store";
+import { useAppSelector } from "@slices/store";
+import { getAllowedRoutes } from "@src/route";
 
-const AppHandler = () => {
-  const auth = useAppSelector((state: RootState) => state.auth);
+const getAppState = (authStatus: string, authMode: string): AppState => {
+  if (authMode === AppState.Maintenance) return AppState.Maintenance;
+  if (authStatus === AppState.Loading) return AppState.Loading;
+  if (authStatus === AppState.Failed) return AppState.Failed;
+  return AppState.Success;
+};
+
+const AppHandler: FC = () => {
+  const { status, mode, roles, statusMessage } = useAppSelector((state: RootState) => state.auth);
+
+  const appState = useMemo(() => getAppState(status, mode), [status, mode]);
+
   const router = useMemo(
     () =>
       createBrowserRouter([
@@ -34,27 +46,29 @@ const AppHandler = () => {
           path: "/",
           element: <Layout />,
           errorElement: <NotFoundPage />,
-          children: getActiveRoutesV2(routes, auth.roles),
+          children: getAllowedRoutes(roles),
         },
       ]),
-    [auth.roles]
+    [roles],
   );
 
-  return (
-    <>
-      {auth.status === "loading" && (
-        <PreLoader isLoading={true} message={auth.statusMessage} />
-      )}
-      {auth.status === "success" && auth.mode === "active" && (
-        <RouterProvider router={router} />
-      )}
-      {auth.status === "success" && auth.mode === "maintenance" && (
-        <MaintenancePage />
-      )}
-      {auth.status === "failed" && (
-        <ErrorHandler message={auth.statusMessage} />
-      )}
-    </>
-  );
+  const renderApp = () => {
+    if (appState === AppState.Loading) {
+      return <PreLoader isLoading={true} message="We are getting things ready..." />;
+    }
+
+    if (appState === AppState.Maintenance) {
+      return <MaintenancePage />;
+    }
+
+    if (appState === AppState.Failed) {
+      return <ErrorHandler message={statusMessage} />;
+    }
+
+    return <RouterProvider router={router} />;
+  };
+
+  return renderApp();
 };
-export default AppHandler;
+
+export default memo(AppHandler);

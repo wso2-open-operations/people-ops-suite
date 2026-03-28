@@ -13,18 +13,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import GroupsIcon from "@mui/icons-material/Groups";
+import { CircleQuestionMark } from "lucide-react";
+import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 
 import React from "react";
 
 import {
   Navigate,
-  NonIndexRouteObject,
   Outlet,
   useLocation,
 } from "react-router-dom";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import GroupsIcon from "@mui/icons-material/Groups";
 import PersonOffIcon from "@mui/icons-material/PersonOff";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
@@ -34,31 +35,7 @@ import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
 import { BadgeSharp, Groups } from "@mui/icons-material";
 
-export interface RouteObjectWithRole extends NonIndexRouteObject {
-  allowRoles: string[];
-  /** Route is excluded from the router and sidebar if the user has any of these roles. */
-  excludeRoles?: string[];
-  icon:
-    | React.ReactElement<any, string | React.JSXElementConstructor<any>>
-    | undefined;
-  text: string;
-  children?: RouteObjectWithRole[];
-  bottomNav?: boolean;
-  hideFromSidebar?: boolean;
-}
-
-export interface RouteDetail {
-  path: string;
-  allowRoles: string[];
-  excludeRoles?: string[];
-  icon:
-    | React.ReactElement<any, string | React.JSXElementConstructor<any>>
-    | undefined;
-  text: string;
-  children?: RouteDetail[];
-  bottomNav?: boolean;
-  hideFromSidebar?: boolean;
-}
+import type { RouteDetail, RouteObjectWithRole } from "./types/types";
 
 const EmployeesRoot = () => {
   const { pathname } = useLocation();
@@ -154,13 +131,20 @@ export const routes: RouteObjectWithRole[] = [
       },
     ],
   },
-  // Todo: Uncomment when help view is ready
+ {
+    path: "/master-data",
+    text: "Master Data",
+    icon: React.createElement(AccountTreeOutlinedIcon),
+    element: React.createElement(View.masterData),
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+  },
+  // Temporarily remove the help route
   // {
   //   path: "/help",
-  //   text: "Help",
-  //   icon: React.createElement(HelpOutlineIcon),
+  //   text: "Help & Support",
+  //   icon: React.createElement(CircleQuestionMark),
   //   element: React.createElement(View.help),
-  //   allowRoles: [Role.ADMIN, Role.TEAM],
+  //   allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   //   bottomNav: true,
   // },
   {
@@ -180,6 +164,19 @@ export const routes: RouteObjectWithRole[] = [
     hideFromSidebar: true,
   },
 ];
+
+export const getAllowedRoutes = (roles: string[]): RouteDetail[] => {
+  const routesObj: RouteDetail[] = [];
+  routes.forEach((routeObj) => {
+    if (isIncludedRole(roles, routeObj.allowRoles)) {
+      routesObj.push({
+        ...routeObj,
+        path: routeObj.path ?? "",
+      });
+    }
+  });
+  return routesObj;
+};
 
 function isRouteActive(routeObj: RouteObjectWithRole, roles: string[]): boolean {
   return (

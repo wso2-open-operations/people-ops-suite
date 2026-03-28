@@ -13,20 +13,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import { Box, Button, Container } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { Box, Container, Button, useTheme } from "@mui/material";
-import logoBlack from "@assets/images/WSO2-Logo-Black.png";
-import logoWhite from "@assets/images/WSO2-Logo-White.png";
 
 interface PreLoaderProps {
   message?: string | null;
+  hideLogo?: boolean;
   action: () => void;
 }
 
 const StatusWithAction = (props: PreLoaderProps) => {
-  const theme = useTheme();
   return (
     <Box
       sx={{
@@ -46,20 +43,24 @@ const StatusWithAction = (props: PreLoaderProps) => {
             alignItems="center"
             spacing={2}
           >
-            <Grid item xs={12}>
-              <img
-                alt="logo"
-                width="150"
-                height="auto"
-                src={theme.palette.mode === "dark" ? logoWhite : logoBlack}
-              ></img>
+            <Grid size={{ xs: 12 }}>
+              {!props.hideLogo && (
+                <img
+                  alt="logo"
+                  width="150"
+                  height="auto"
+                  src="https://wso2.cachefly.net/wso2/sites/images/brand/downloads/wso2-logo.png"
+                />
+              )}
             </Grid>
-            <Grid item xs={12}></Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}></Grid>
+
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h5">{props.message}</Typography>
             </Grid>
-            <Grid item xs={12}></Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}></Grid>
+
+            <Grid size={{ xs: 12 }}>
               <Button
                 size="large"
                 variant="contained"

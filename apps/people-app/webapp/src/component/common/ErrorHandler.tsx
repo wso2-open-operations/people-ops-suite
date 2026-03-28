@@ -13,19 +13,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Box, Container } from "@mui/material";
 
+import ErrorSvg from "@assets/images/error.svg";
+import Wso2Logo from "@assets/images/wso2-logo.svg";
 import StateWithImage from "@component/ui/StateWithImage";
-import logoBlack from "@assets/images/WSO2-Logo-Black.png";
-import logoWhite from "@assets/images/WSO2-Logo-White.png";
-import { Box, Container, useTheme } from "@mui/material";
-import Grid from "@mui/material/Grid";
 
-interface ErrorHandlerProps {
+export interface ErrorHandlerProps {
   message: string | null;
 }
 
 const ErrorHandler = (props: ErrorHandlerProps) => {
-  const theme = useTheme();
   return (
     <Box
       sx={{
@@ -34,30 +32,13 @@ const ErrorHandler = (props: ErrorHandlerProps) => {
       }}
     >
       <Container maxWidth="md">
-        <Grid
-          container
-          direction="column"
-          justifyContent="center"
-          alignItems="center"
-          gap={2}
-        >
-          <Grid item xs={12}>
-            <img
-              alt="logo"
-              width="150"
-              height="auto"
-              src={theme.palette.mode === "dark" ? logoWhite : logoBlack}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <StateWithImage
-              message={
-                props.message || "Something went wrong! Please try again later."
-              }
-              imageUrl={require("@assets/images/error.svg").default}
-            />
-          </Grid>
-        </Grid>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+          <img alt="logo" width="150" height="auto" src={Wso2Logo} />
+          <StateWithImage
+            message={props.message || "Something went wrong! Please try again later."}
+            imageUrl={ErrorSvg}
+          />
+        </Box>
       </Container>
     </Box>
   );

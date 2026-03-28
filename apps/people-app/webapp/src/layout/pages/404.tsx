@@ -44,9 +44,9 @@ export default function NotFoundPage() {
         404
       </Typography>
       <Typography variant="h6" style={{ color: "gray" }}>
-        The page you're looking for doesn't exist..
+        The page you’re looking for doesn’t exist.
       </Typography>
-      <Button component={Link} to={"/"} color="secondary" variant="contained" sx={{ mt: 2, textTransform: 'none' }}>
+      <Button component={Link} to={"/"} variant="contained">
         Back Home
       </Button>
     </Box>

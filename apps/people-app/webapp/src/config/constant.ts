@@ -16,14 +16,13 @@
 
 export const SnackMessage = {
   success: {
-    addEmployee: "Successfully created the employee",
+    addCollections: "Successfully added the Collection",
   },
   error: {
     fetchEmployee: "Error while fetching employee",
     fetchEmployees: "Error while fetching employees",
     fetchPrivileges: "Error while fetching user privileges",
-    insufficientPrivileges:
-      "You don't have sufficient privileges to access this resource",
+    insufficientPrivileges: "You don't have sufficient privileges to access this resource",
     fetchAppConfigMessage: "Error while fetching app config",
     updateEmployeePersonalInfo: "Error while updating personal info",
     addEmployee: "Unable to add employee",
@@ -32,12 +31,27 @@ export const SnackMessage = {
 };
 export const ADMIN_PRIVILEGE = 999;
 export const LEAD_PRIVILEGE = 993;
+export const EMPLOYEE_PRIVILEGE = 987;
+
 export const DEFAULT_LIMIT_VALUE = 10;
 export const DEFAULT_OFFSET_VALUE = 0;
 export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
 
+export const APP_DESC = "People app";
+
+export const APP_THEME = "people-app-theme";
+
+export const redirectUrl = "people-app-redirect-url";
+
+export const EmployeeTypes = [
+  { id: 1, label: "Full-time" },
+  { id: 2, label: "Intern" },
+  { id: 3, label: "Consultancy" },
+];
 export const SEARCH_REGEX = /^[\p{L}\p{M}0-9\s@._'+-]*$/u;
 export const SEARCH_MAX_LENGTH = 100;
+
+export const EXPANDED_NODES_KEY = "expanded node key";
 
 export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
 

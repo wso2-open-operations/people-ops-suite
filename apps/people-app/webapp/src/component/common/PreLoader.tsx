@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,115 +13,127 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Box, LinearProgress, Typography, useTheme } from "@mui/material";
+import Lottie from "lottie-react";
 
-import { APP_NAME } from "@config/config";
-import logoBlack from "@assets/images/WSO2-Logo-Black.png";
-import logoWhite from "@assets/images/WSO2-Logo-White.png";
-import { alpha, Box, Typography, useTheme } from "@mui/material";
+import animatedLogoLight from "@assets/animations/animation-light.json";
+import animatedLogoDark from "@assets/animations/animation-logo-dark.json";
+import { APP_NAME } from "@root/src/config/config";
 
-interface StatusWithActionProps {
-  message: string | null;
-  hideLogo?: boolean;
+interface PreLoaderProps {
+  message?: string;
   isLoading?: boolean;
+  hideImage?: boolean;
+  marqueeOn?: boolean;
 }
 
-const PreLoader = (props: StatusWithActionProps) => {
+const PreLoader = (props: PreLoaderProps) => {
+  const loadingMsg = [APP_NAME, props.message];
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
+  const { hideImage = true, marqueeOn = false } = props;
+
+  const logo = theme.palette.mode === "light" ? animatedLogoLight : animatedLogoDark;
+
+  const style = {
+    height: "150px",
+  };
 
   return (
     <Box
       sx={{
-        width: "100vw",
-        height: "100vh",
         display: "flex",
-        alignItems: "center",
+        flexDirection: "column",
         justifyContent: "center",
-        background: theme.palette.background.gradient,
+        alignItems: "center",
+        height: "100vh",
+        width: "100%",
+        backgroundColor: theme.palette.surface.primary.active,
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 2.5,
-          px: 7,
-          py: 6,
-          borderRadius: 3,
-          backgroundColor: alpha(
-            theme.palette.background.paper,
-            isDark ? 0.55 : 0.75,
-          ),
-          backdropFilter: "blur(16px)",
-          boxShadow: isDark
-            ? "0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)"
-            : "0 16px 48px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)",
-          minWidth: 300,
-        }}
-      >
-        {/* Logo */}
-        {!props.hideLogo && (
+      {!hideImage && <Lottie animationData={logo} style={style} />}
+
+      {props.message && props.isLoading && (
+        <LinearProgress
+          sx={{
+            position: "relative",
+            top: -16,
+            width: "150px",
+          }}
+        />
+      )}
+
+      {props.message && marqueeOn && (
+        <Box
+          sx={{
+            position: "relative",
+            top: props.isLoading ? 4 : -16,
+            height: "24px",
+            overflow: "hidden",
+            textAlign: "center",
+          }}
+        >
           <Box
-            component="img"
-            alt="logo"
-            src={isDark ? logoWhite : logoBlack}
-            sx={{ width: 110, height: "auto", opacity: isDark ? 0.9 : 1 }}
-          />
-        )}
-
-        {/* App name */}
-        <Box sx={{ textAlign: "center" }}>
-          <Typography
-            variant="h5"
-            fontWeight={700}
-            color="text.primary"
-            sx={{ letterSpacing: "-0.3px" }}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              animation: "vertical-marquee 2s cubic-bezier(0.76, 0, 0.24, 1) infinite",
+              "@keyframes vertical-marquee": {
+                "0%, 30%": { transform: "translateY(0%)" },
+                "50%, 80%": { transform: "translateY(-33.33%)" },
+                "100%": { transform: "translateY(-66.66%)" },
+              },
+            }}
           >
-            {APP_NAME}
-          </Typography>
-        </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                color: theme.palette.customText.primary.p2.active,
+                height: "24px",
+                lineHeight: "24px",
+              }}
+            >
+              {loadingMsg[0]}
+            </Typography>
 
-        {/* Animated dots */}
-        {props.isLoading && (
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center", my: 0.5 }}>
-            {[0, 1, 2].map((i) => (
-              <Box
-                key={i}
-                sx={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  backgroundColor: "#ff7300",
-                  "@keyframes dotPulse": {
-                    "0%, 60%, 100%": {
-                      opacity: 0.2,
-                      transform: "scale(0.75)",
-                    },
-                    "30%": {
-                      opacity: 1,
-                      transform: "scale(1)",
-                    },
-                  },
-                  animation: "dotPulse 1.2s ease-in-out infinite",
-                  animationDelay: `${i * 0.2}s`,
-                }}
-              />
-            ))}
+            <Typography
+              variant="h6"
+              sx={{
+                color: theme.palette.customText.primary.p2.active,
+                height: "24px",
+                lineHeight: "24px",
+              }}
+            >
+              {loadingMsg[1]}
+            </Typography>
+
+            {/* Duplicate of first element to create seamless loop */}
+            <Typography
+              variant="h6"
+              sx={{
+                color: theme.palette.customText.primary.p2.active,
+                height: "24px",
+                lineHeight: "24px",
+              }}
+            >
+              {loadingMsg[0]}
+            </Typography>
           </Box>
-        )}
+        </Box>
+      )}
 
-        {/* Status message */}
-        {props.message && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ fontSize: "0.78rem", letterSpacing: "0.2px" }}
-          >
-            {props.message}
-          </Typography>
-        )}
-      </Box>
+      {props.message && !marqueeOn && (
+        <Typography
+          variant="h6"
+          sx={{
+            position: "relative",
+            top: props.isLoading ? 4 : -16,
+            color: theme.palette.customText.primary.p2.active,
+            textAlign: "center",
+          }}
+        >
+          {props.message}
+        </Typography>
+      )}
     </Box>
   );
 };

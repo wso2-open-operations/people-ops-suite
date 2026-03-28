@@ -13,23 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { ConfirmationType, State } from "@/types/types";
-import { useConfirmationModalContext } from "@context/DialogContext";
-import {
-  BadgeOutlined,
-  BusinessOutlined,
-  EmailOutlined,
-  WorkOutline,
-} from "@mui/icons-material";
+import { BadgeOutlined, BusinessOutlined, EmailOutlined, WorkOutline } from "@mui/icons-material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SaveIcon from "@mui/icons-material/Save";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
-import QrCode2Icon from "@mui/icons-material/QrCode2";
 import {
   Accordion,
   AccordionDetails,
@@ -54,6 +46,22 @@ import IconButton from "@mui/material/IconButton";
 import type { Theme } from "@mui/material/styles";
 import { alpha } from "@mui/material/styles";
 import {
+  FieldArray,
+  Form,
+  Formik,
+  FormikErrors,
+  FormikHandlers,
+  FormikValues,
+  getIn,
+} from "formik";
+import { useLocation, useNavigate } from "react-router-dom";
+import { array, object, string } from "yup";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { ConfirmationType, State } from "@/types/types";
+import { useConfirmationModalContext } from "@context/DialogContext";
+import {
   fetchEmployee,
   fetchEmployeeQrCode,
   resetEmployee,
@@ -65,33 +73,12 @@ import {
   resetPersonalInfo,
   updateEmployeePersonalInfo,
 } from "@root/src/slices/employeeSlice/employeePersonalInfo";
-import {
-  calculateAge,
-  calculateServiceLength,
-  formatServiceLength,
-} from "@root/src/utils/utils";
-import {
-  FieldArray,
-  Form,
-  Formik,
-  FormikErrors,
-  FormikHandlers,
-  FormikValues,
-  getIn,
-} from "formik";
-import { useEffect, useRef, useState, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { array, object, string } from "yup";
+import { calculateAge, calculateServiceLength, formatServiceLength } from "@root/src/utils/utils";
 import { Role, selectRoles } from "@slices/authSlice/auth";
+
 import { useAppDispatch, useAppSelector } from "../../slices/store";
 
-const ReadOnly = ({
-  label,
-  value,
-}: {
-  label: string;
-  value?: string | number | null;
-}) => (
+const ReadOnly = ({ label, value }: { label: string; value?: string | number | null }) => (
   <>
     <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
       {label}
@@ -143,9 +130,7 @@ const FieldInput = ({
       disabled={isSavingChanges}
       error={getIn(touched, name) && Boolean(getIn(errors, name))}
       helperText={
-        getIn(touched, name) && getIn(errors, name)
-          ? String(getIn(errors, name))
-          : undefined
+        getIn(touched, name) && getIn(errors, name) ? String(getIn(errors, name)) : undefined
       }
       variant="outlined"
       InputProps={{ style: { fontSize: 15 } }}
@@ -155,56 +140,44 @@ const FieldInput = ({
   );
 };
 
-export const getEmployeeStatusChipStyles =
-  (status?: string) => (theme: Theme) => {
-    const normalized = (status ?? "").trim().toLowerCase();
-    const mainColor =
-      normalized === "active"
-        ? theme.palette.success.main
-        : normalized === "marked leaver"
-          ? theme.palette.warning.main
-          : theme.palette.error.main;
+export const getEmployeeStatusChipStyles = (status?: string) => (theme: Theme) => {
+  const normalized = (status ?? "").trim().toLowerCase();
+  const mainColor =
+    normalized === "active"
+      ? theme.palette.success.main
+      : normalized === "marked leaver"
+        ? theme.palette.warning.main
+        : theme.palette.error.main;
 
-    return {
-      borderRadius: 999,
-      height: 24,
-      fontWeight: 600,
-      px: 0,
-      color: mainColor,
-      borderColor: alpha(mainColor, 0.45),
-      backgroundColor: alpha(
-        mainColor,
-        theme.palette.mode === "dark" ? 0.14 : 0.1,
-      ),
-      "& .MuiChip-label": {
-        px: 0.75,
-        py: 0,
-        fontSize: 12,
-        lineHeight: 1,
-        textTransform: "capitalize",
-      },
-    };
+  return {
+    borderRadius: 999,
+    height: 24,
+    fontWeight: 600,
+    px: 0,
+    color: mainColor,
+    borderColor: alpha(mainColor, 0.45),
+    backgroundColor: alpha(mainColor, theme.palette.mode === "dark" ? 0.14 : 0.1),
+    "& .MuiChip-label": {
+      px: 0.75,
+      py: 0,
+      fontSize: 12,
+      lineHeight: 1,
+      textTransform: "capitalize",
+    },
   };
+};
 
 const emergencyContactItemSchema = object().shape({
-  name: string()
-    .required("Name is required")
-    .max(100, "Name must be at most 100 characters"),
+  name: string().required("Name is required").max(100, "Name must be at most 100 characters"),
   relationship: string()
     .required("Relationship is required")
     .max(50, "Relationship must be at most 50 characters"),
   telephone: string()
     .nullable()
-    .matches(
-      /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-      "Invalid telephone number format",
-    ),
+    .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid telephone number format"),
   mobile: string()
     .required("Mobile is required")
-    .matches(
-      /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-      "Invalid mobile number format",
-    ),
+    .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid mobile number format"),
 });
 
 export default function Me({
@@ -218,9 +191,7 @@ export default function Me({
   const roles = useAppSelector(selectRoles);
   const { userInfo } = useAppSelector((state) => state.user);
   const targetEmployeeId = employeeId ?? userInfo?.employeeId;
-  const { employee, state: employeeState } = useAppSelector(
-    (state) => state.employee,
-  );
+  const { employee, state: employeeState } = useAppSelector((state) => state.employee);
   const { personalInfo, state: personalInfoState } = useAppSelector(
     (state) => state.employeePersonalInfo,
   );
@@ -228,16 +199,13 @@ export default function Me({
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [qrImageNaturalSize, setQrImageNaturalSize] = useState<number | null>(null);
   const { qrCodeUrl, qrCodeState } = useAppSelector((state) => state.employee);
-  const initialHasEmergencyContactsRef = useRef<boolean>(
-    !!personalInfo?.emergencyContacts?.length,
+  const initialHasEmergencyContactsRef = useRef<boolean>(!!personalInfo?.emergencyContacts?.length);
+
+  const [shouldRequireEmergencyContacts, setShouldRequireEmergencyContacts] = useState<boolean>(
+    initialHasEmergencyContactsRef.current,
   );
 
-  const [shouldRequireEmergencyContacts, setShouldRequireEmergencyContacts] =
-    useState<boolean>(initialHasEmergencyContactsRef.current);
-
-  const serviceLength = employee?.startDate
-    ? calculateServiceLength(employee.startDate)
-    : null;
+  const serviceLength = employee?.startDate ? calculateServiceLength(employee.startDate) : null;
 
   const serviceText = formatServiceLength(serviceLength);
 
@@ -245,9 +213,7 @@ export default function Me({
 
   const designationText = useMemo(() => {
     if (!employee) return "-";
-    const parts = [employee.designation, employee.secondaryJobTitle].filter(
-      Boolean,
-    );
+    const parts = [employee.designation, employee.secondaryJobTitle].filter(Boolean);
     return parts.length > 0 ? parts.join(" ") : "-";
   }, [employee]);
 
@@ -264,42 +230,26 @@ export default function Me({
       .max(254, "Email must be at most 254 characters"),
     personalPhone: string()
       .nullable()
-      .matches(
-        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid personal phone number format",
-      ),
+      .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid personal phone number format"),
     residentNumber: string()
       .nullable()
-      .matches(
-        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid resident number format",
-      ),
-    addressLine1: string()
-      .nullable()
-      .max(255, "Address Line 1 must be at most 255 characters"),
-    addressLine2: string()
-      .nullable()
-      .max(255, "Address Line 2 must be at most 255 characters"),
+      .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid resident number format"),
+    addressLine1: string().nullable().max(255, "Address Line 1 must be at most 255 characters"),
+    addressLine2: string().nullable().max(255, "Address Line 2 must be at most 255 characters"),
     city: string().nullable().max(100, "City must be at most 100 characters"),
-    country: string()
-      .nullable()
-      .max(100, "Country must be at most 100 characters"),
-    stateOrProvince: string()
-      .nullable()
-      .max(100, "State/Province must be at most 100 characters"),
-    postalCode: string()
-      .nullable()
-      .max(20, "Postal code must be at most 20 characters"),
+    country: string().nullable().max(100, "Country must be at most 100 characters"),
+    stateOrProvince: string().nullable().max(100, "State/Province must be at most 100 characters"),
+    postalCode: string().nullable().max(20, "Postal code must be at most 20 characters"),
     emergencyContacts: shouldRequireEmergencyContacts
       ? array()
-        .required("At least one emergency contact is required")
-        .min(1, "At least one emergency contact is required")
-        .max(4, "Maximum 4 emergency contacts allowed")
-        .of(emergencyContactItemSchema)
+          .required("At least one emergency contact is required")
+          .min(1, "At least one emergency contact is required")
+          .max(4, "Maximum 4 emergency contacts allowed")
+          .of(emergencyContactItemSchema)
       : array()
-        .nullable()
-        .max(4, "Maximum 4 emergency contacts allowed")
-        .of(emergencyContactItemSchema),
+          .nullable()
+          .max(4, "Maximum 4 emergency contacts allowed")
+          .of(emergencyContactItemSchema),
   });
 
   useEffect(() => {
@@ -335,9 +285,7 @@ export default function Me({
       ConfirmationType.discard,
       () => {
         resetForm();
-        setShouldRequireEmergencyContacts(
-          initialHasEmergencyContactsRef.current,
-        );
+        setShouldRequireEmergencyContacts(initialHasEmergencyContactsRef.current);
       },
       "Discard",
       "Keep Changes",
@@ -357,14 +305,12 @@ export default function Me({
           stateOrProvince: values.stateOrProvince,
           postalCode: values.postalCode,
           country: values.country,
-          emergencyContacts: (values.emergencyContacts || []).map(
-            (contact) => ({
-              name: contact.name,
-              relationship: contact.relationship,
-              telephone: contact.telephone,
-              mobile: contact.mobile,
-            }),
-          ),
+          emergencyContacts: (values.emergencyContacts || []).map((contact) => ({
+            name: contact.name,
+            relationship: contact.relationship,
+            telephone: contact.telephone,
+            mobile: contact.mobile,
+          })),
         };
         setSavingChanges(true);
         dispatch(
@@ -487,12 +433,7 @@ export default function Me({
           alignItems={{ xs: "flex-start", sm: "center" }}
           justifyContent="space-between"
         >
-          <Stack
-            direction="row"
-            spacing={2.5}
-            alignItems="center"
-            sx={{ minWidth: 0, flex: 1 }}
-          >
+          <Stack direction="row" spacing={2.5} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
             {employeeState === "loading" ? (
               <>
                 <Skeleton variant="circular" width={72} height={72} sx={{ flexShrink: 0 }} />
@@ -520,11 +461,7 @@ export default function Me({
                     {employee ? `${employee.firstName} ${employee.lastName}` : ""}
                   </Typography>
 
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{ mt: 1.25, flexWrap: "wrap", rowGap: 1 }}
-                  >
+                  <Stack direction="row" spacing={1} sx={{ mt: 1.25, flexWrap: "wrap", rowGap: 1 }}>
                     {employee?.employeeId && (
                       <Chip
                         size="medium"
@@ -565,12 +502,7 @@ export default function Me({
               </>
             )}
           </Stack>
-          <Stack
-            direction="row"
-            spacing={2}
-            alignItems="center"
-            sx={{ alignSelf: "center" }}
-          >
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ alignSelf: "center" }}>
             {employee && (
               <Tooltip title="View QR Code">
                 <IconButton color="secondary" onClick={handleQrOpen} sx={{ p: 0.5 }}>
@@ -578,17 +510,20 @@ export default function Me({
                 </IconButton>
               </Tooltip>
             )}
-            {readOnly && targetEmployeeId && roles.includes(Role.ADMIN) && !location.state?.fromMyTeam && (
-              <Button
-                variant="contained"
-                color="secondary"
-                startIcon={<EditOutlinedIcon />}
-                sx={{ textTransform: "none", whiteSpace: "nowrap" }}
-                onClick={() => navigate(`/employees/${targetEmployeeId}/edit`)}
-              >
-                Edit
-              </Button>
-            )}
+            {readOnly &&
+              targetEmployeeId &&
+              roles.includes(Role.ADMIN) &&
+              !location.state?.fromMyTeam && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<EditOutlinedIcon />}
+                  sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+                  onClick={() => navigate(`/employees/${targetEmployeeId}/edit`)}
+                >
+                  Edit
+                </Button>
+              )}
           </Stack>
         </Stack>
       </Paper>
@@ -750,10 +685,7 @@ export default function Me({
                           fontWeight: 600,
                           px: 0,
                           color: theme.palette.secondary.contrastText,
-                          borderColor: alpha(
-                            theme.palette.secondary.contrastText,
-                            0.45,
-                          ),
+                          borderColor: alpha(theme.palette.secondary.contrastText, 0.45),
                           backgroundColor: alpha(
                             theme.palette.secondary.contrastText,
                             theme.palette.mode === "dark" ? 0.14 : 0.1,
@@ -789,10 +721,7 @@ export default function Me({
                           fontWeight: 600,
                           px: 0,
                           color: theme.palette.secondary.contrastText,
-                          borderColor: alpha(
-                            theme.palette.secondary.contrastText,
-                            0.45,
-                          ),
+                          borderColor: alpha(theme.palette.secondary.contrastText, 0.45),
                           backgroundColor: alpha(
                             theme.palette.secondary.contrastText,
                             theme.palette.mode === "dark" ? 0.14 : 0.1,
@@ -823,9 +752,7 @@ export default function Me({
                         label={employee.employeeStatus}
                         size="small"
                         variant="outlined"
-                        sx={getEmployeeStatusChipStyles(
-                          employee.employeeStatus,
-                        )}
+                        sx={getEmployeeStatusChipStyles(employee.employeeStatus)}
                       />
                     ) : (
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -879,10 +806,7 @@ export default function Me({
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
-                  <Typography
-                    color="text.secondary"
-                    sx={{ fontWeight: 500, mb: 0.75 }}
-                  >
+                  <Typography color="text.secondary" sx={{ fontWeight: 500, mb: 0.75 }}>
                     Additional Lead Emails
                   </Typography>
 
@@ -899,11 +823,7 @@ export default function Me({
                         .map((e) => e.trim())
                         .filter(Boolean)
                         .map((email) => (
-                          <Typography
-                            key={email}
-                            variant="h6"
-                            sx={{ fontWeight: 600 }}
-                          >
+                          <Typography key={email} variant="h6" sx={{ fontWeight: 600 }}>
                             {email}
                           </Typography>
                         ))}
@@ -925,9 +845,7 @@ export default function Me({
               </Grid>
             </Box>
           ) : (
-            <Typography color="text.secondary">
-              General information not found.
-            </Typography>
+            <Typography color="text.secondary">General information not found.</Typography>
           )}
         </AccordionDetails>
       </Accordion>
@@ -968,15 +886,7 @@ export default function Me({
                 await handleSaveChanges(values);
               }}
             >
-              {({
-                values,
-                handleChange,
-                handleBlur,
-                errors,
-                touched,
-                dirty,
-                resetForm,
-              }) => (
+              {({ values, handleChange, handleBlur, errors, touched, dirty, resetForm }) => (
                 <Form>
                   <Grid container rowSpacing={1.5} columnSpacing={3} pt={2}>
                     <Grid item xs={12} sm={6} md={3}>
@@ -1006,19 +916,13 @@ export default function Me({
                       <ReadOnly label="Gender" value={values.gender} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <ReadOnly
-                        label="Nationality"
-                        value={values.nationality}
-                      />
+                      <ReadOnly label="Nationality" value={values.nationality} />
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>
                       {readOnly ? (
-                        <ReadOnly
-                          label="Personal Email"
-                          value={values.personalEmail}
-                        />
+                        <ReadOnly label="Personal Email" value={values.personalEmail} />
                       ) : (
                         <FieldInput
                           name="personalEmail"
@@ -1035,10 +939,7 @@ export default function Me({
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       {readOnly ? (
-                        <ReadOnly
-                          label="Personal Phone"
-                          value={values.personalPhone}
-                        />
+                        <ReadOnly label="Personal Phone" value={values.personalPhone} />
                       ) : (
                         <FieldInput
                           name="personalPhone"
@@ -1055,10 +956,7 @@ export default function Me({
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       {readOnly ? (
-                        <ReadOnly
-                          label="Resident Number"
-                          value={values.residentNumber}
-                        />
+                        <ReadOnly label="Resident Number" value={values.residentNumber} />
                       ) : (
                         <FieldInput
                           name="residentNumber"
@@ -1077,10 +975,7 @@ export default function Me({
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>
                       {readOnly ? (
-                        <ReadOnly
-                          label="Address Line 1"
-                          value={values.addressLine1}
-                        />
+                        <ReadOnly label="Address Line 1" value={values.addressLine1} />
                       ) : (
                         <FieldInput
                           name="addressLine1"
@@ -1096,10 +991,7 @@ export default function Me({
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       {readOnly ? (
-                        <ReadOnly
-                          label="Address Line 2"
-                          value={values.addressLine2}
-                        />
+                        <ReadOnly label="Address Line 2" value={values.addressLine2} />
                       ) : (
                         <FieldInput
                           name="addressLine2"
@@ -1133,10 +1025,7 @@ export default function Me({
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       {readOnly ? (
-                        <ReadOnly
-                          label="State/Province"
-                          value={values.stateOrProvince}
-                        />
+                        <ReadOnly label="State/Province" value={values.stateOrProvince} />
                       ) : (
                         <FieldInput
                           name="stateOrProvince"
@@ -1168,10 +1057,7 @@ export default function Me({
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       {readOnly ? (
-                        <ReadOnly
-                          label="Postal Code"
-                          value={values.postalCode}
-                        />
+                        <ReadOnly label="Postal Code" value={values.postalCode} />
                       ) : (
                         <FieldInput
                           name="postalCode"
@@ -1197,13 +1083,11 @@ export default function Me({
                             }}
                           >
                             <Typography sx={{ fontWeight: 600 }}>
-                              Emergency Contacts (
-                              {values.emergencyContacts?.length ?? 0}/4)
+                              Emergency Contacts ({values.emergencyContacts?.length ?? 0}/4)
                             </Typography>
                           </Box>
 
-                          {!values.emergencyContacts ||
-                            values.emergencyContacts.length === 0 ? (
+                          {!values.emergencyContacts || values.emergencyContacts.length === 0 ? (
                             <Typography
                               variant="body2"
                               color="text.secondary"
@@ -1224,16 +1108,10 @@ export default function Me({
                                   <ReadOnly label="Name" value={c?.name} />
                                 </Grid>
                                 <Grid item xs={12} sm={6} md={3}>
-                                  <ReadOnly
-                                    label="Relationship"
-                                    value={c?.relationship}
-                                  />
+                                  <ReadOnly label="Relationship" value={c?.relationship} />
                                 </Grid>
                                 <Grid item xs={12} sm={6} md={3}>
-                                  <ReadOnly
-                                    label="Telephone"
-                                    value={c?.telephone}
-                                  />
+                                  <ReadOnly label="Telephone" value={c?.telephone} />
                                 </Grid>
                                 <Grid item xs={12} sm={6} md={3}>
                                   <ReadOnly label="Mobile" value={c?.mobile} />
@@ -1255,25 +1133,19 @@ export default function Me({
                                 }}
                               >
                                 <Typography sx={{ fontWeight: 600 }}>
-                                  Emergency Contacts (
-                                  {values.emergencyContacts?.length ?? 0}/4)
+                                  Emergency Contacts ({values.emergencyContacts?.length ?? 0}/4)
                                 </Typography>
                               </Box>
 
                               {touched.emergencyContacts &&
-                                typeof errors.emergencyContacts ===
-                                "string" && (
-                                  <Typography
-                                    color="error"
-                                    variant="body2"
-                                    sx={{ mt: 1, mb: 2 }}
-                                  >
+                                typeof errors.emergencyContacts === "string" && (
+                                  <Typography color="error" variant="body2" sx={{ mt: 1, mb: 2 }}>
                                     {errors.emergencyContacts}
                                   </Typography>
                                 )}
 
                               {!values.emergencyContacts ||
-                                values.emergencyContacts.length === 0 ? (
+                              values.emergencyContacts.length === 0 ? (
                                 <Typography
                                   variant="body2"
                                   color="text.secondary"
@@ -1355,8 +1227,7 @@ export default function Me({
 
                                         <Tooltip
                                           title={
-                                            (values.emergencyContacts?.length ??
-                                              0) <= 1
+                                            (values.emergencyContacts?.length ?? 0) <= 1
                                               ? "At least one emergency contact is required"
                                               : "Remove contact"
                                           }
@@ -1366,14 +1237,12 @@ export default function Me({
                                               color="error"
                                               size="small"
                                               onClick={() =>
-                                                (values.emergencyContacts
-                                                  ?.length ?? 0) > 1 &&
+                                                (values.emergencyContacts?.length ?? 0) > 1 &&
                                                 remove(index)
                                               }
                                               disabled={
                                                 isSavingChanges ||
-                                                (values.emergencyContacts
-                                                  ?.length ?? 0) === 1
+                                                (values.emergencyContacts?.length ?? 0) === 1
                                               }
                                               sx={{ flexShrink: 0 }}
                                             >
@@ -1403,27 +1272,25 @@ export default function Me({
                                     setShouldRequireEmergencyContacts(true);
                                   }}
                                   disabled={
-                                    isSavingChanges ||
-                                    (values.emergencyContacts?.length ?? 0) >= 4
+                                    isSavingChanges || (values.emergencyContacts?.length ?? 0) >= 4
                                   }
                                 >
                                   Add Contact
                                 </Button>
 
-                                {(values.emergencyContacts?.length ?? 0) >=
-                                  4 && (
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
-                                      sx={{
-                                        display: "block",
-                                        textAlign: "center",
-                                        mt: 1,
-                                      }}
-                                    >
-                                      Maximum 4 emergency contacts reached.
-                                    </Typography>
-                                  )}
+                                {(values.emergencyContacts?.length ?? 0) >= 4 && (
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{
+                                      display: "block",
+                                      textAlign: "center",
+                                      mt: 1,
+                                    }}
+                                  >
+                                    Maximum 4 emergency contacts reached.
+                                  </Typography>
+                                )}
                               </>
                             </Box>
                           )}
@@ -1473,9 +1340,7 @@ export default function Me({
               )}
             </Formik>
           ) : (
-            <Typography color="text.secondary">
-              Personal Information not found.
-            </Typography>
+            <Typography color="text.secondary">Personal Information not found.</Typography>
           )}
         </AccordionDetails>
       </Accordion>

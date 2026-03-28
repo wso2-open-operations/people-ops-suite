@@ -405,8 +405,7 @@ export const createEmployee = createAsyncThunk(
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.addEmployee
-          : error.response?.data?.message ||
-            "Failed to create employee. Please try again.";
+          : error.response?.data?.message || "Failed to create employee. Please try again.";
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
@@ -631,8 +630,7 @@ const EmployeeSlice = createSlice({
       .addCase(fetchEmployeesBasicInfo.fulfilled, (state, action) => {
         state.employeesBasicInfo = action.payload;
         state.employeeBasicInfoState = State.success;
-        state.stateMessage =
-          "Employees' basic information fetched successfully";
+        state.stateMessage = "Employees' basic information fetched successfully";
         state.errorMessage = null;
       })
       .addCase(fetchEmployeesBasicInfo.rejected, (state, action) => {
