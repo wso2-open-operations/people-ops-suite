@@ -43,20 +43,24 @@ export enum ConfirmationType {
 export interface RouteDetail {
   path: string;
   allowRoles: string[];
+  excludeRoles?: string[];
   icon: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
   text: string;
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
   element?: React.ReactNode;
+  hideFromSidebar?: boolean;
 }
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
   allowRoles: string[];
+  excludeRoles?: string[];
   icon: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
   text: string;
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
   element?: React.ReactNode;
+  hideFromSidebar?: boolean;
 }
 
 export enum State {
