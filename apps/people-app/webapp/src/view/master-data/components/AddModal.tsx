@@ -52,8 +52,8 @@ import {
   useAddUnitsMutation,
 } from "@services/organization";
 
-import { SectionHeader } from "../../components/edit-modal/SectionHeader";
 import EmployeeOption from "./EmployeeOption";
+import { SectionHeader } from "./edit-modal/SectionHeader";
 
 type OrgOption =
   | (Partial<BusinessUnitState> & { inputValue?: string; canAdd?: boolean })

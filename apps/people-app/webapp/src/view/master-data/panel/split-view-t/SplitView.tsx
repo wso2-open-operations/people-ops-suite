@@ -30,6 +30,7 @@ import { useEffect, useState } from "react";
 
 import ErrorHandler from "@component/common/ErrorHandler.tsx";
 import PreLoader from "@component/common/PreLoader.tsx";
+import OrgStructureCard from "@root/src/view/master-data/components/OrgStructureCard.tsx";
 import { useGetOrgStructureQuery } from "@services/organization";
 import { State } from "@slices/authSlice/auth.ts";
 import {
@@ -42,9 +43,8 @@ import {
 import { RootState, useAppSelector } from "@slices/store";
 import { NodeType } from "@utils/types";
 import { EditModal } from "@view/master-data/components/EditModal";
-import OrgStructureCard from "@view/master-data/panel/chart-view/components/OrgStructureCard";
 
-import AddPage from "./AddPage.tsx";
+import AddModal from "../../components/AddModal.tsx";
 import { type MatchSearch, itemToMatchSearch } from "./utils/utils.ts";
 
 type OnEdit = {
@@ -921,7 +921,7 @@ export default function SplitView() {
       )}
 
       {addModal.open && addModal.data && addModal.type && (
-        <AddPage
+        <AddModal
           open={addModal.open}
           orgInfo={addModal.data}
           onClose={handleAddModalClose}
