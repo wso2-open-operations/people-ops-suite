@@ -33,7 +33,11 @@ import ConfirmationDialog from "@root/src/component/common/ConfirmationDialog";
 import { Head } from "@root/src/services/organization";
 import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@services/employee";
 
-import { truncateName } from "../../utils";
+// Helper function to truncate name if too long
+export const truncateName = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
+};
 
 const NAME_TRUNCATE_LENGTH = 16;
 const DESIGNATION_TRUNCATE_LENGTH = 20;
