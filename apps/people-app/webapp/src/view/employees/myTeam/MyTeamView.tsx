@@ -13,18 +13,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import CommonPage from "@layout/pages/CommonPage";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+
+import TabsPage from "@layout/pages/TabsPage";
+
 import MyTeamTable from "./MyTeamTable";
 
 export default function MyTeamView() {
   return (
-    <CommonPage
+    <TabsPage
       title="My Team"
-      icon={<PeopleAltIcon />}
-      commonPageTabs={[]}
-      page={<MyTeamTable />}
+      tabsPage={[
+        {
+          tabTitle: "My Team",
+          tabPath: "my-team",
+          icon: <PeopleAltIcon />,
+          page: <MyTeamTable />,
+        },
+      ]}
     />
   );
 }

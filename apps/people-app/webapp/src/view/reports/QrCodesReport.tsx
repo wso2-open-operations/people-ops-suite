@@ -13,12 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import CommonPage from "@layout/pages/CommonPage";
-import QrCode2Icon from "@mui/icons-material/QrCode2";
-import DownloadIcon from "@mui/icons-material/Download";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
+import DownloadIcon from "@mui/icons-material/Download";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
 import {
   Alert,
   Autocomplete,
@@ -34,17 +32,16 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+
+import { useEffect, useRef, useState } from "react";
+
 import { AppConfig } from "@config/config";
 import { SEARCH_MAX_LENGTH, SEARCH_REGEX } from "@config/constant";
-import {
-  Employee,
-  EmployeeStatus,
-  fetchFilteredEmployees,
-} from "@slices/employeeSlice/employee";
-import { useAppDispatch } from "@slices/store";
+import TabsPage from "@layout/pages/TabsPage";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { Employee, EmployeeStatus, fetchFilteredEmployees } from "@slices/employeeSlice/employee";
+import { useAppDispatch } from "@slices/store";
 import { APIService } from "@utils/apiService";
-import { useEffect, useRef, useState } from "react";
 
 const QR_EXPORT_LIMIT = 50;
 const SEARCH_LIMIT = 20;
@@ -168,8 +165,8 @@ function QrCodesReportContent() {
           }}
         >
           Search for employees and add them to the list. Click <strong>Export QR Codes</strong> to
-          save each QR as an individual PNG file. <br />
-          A maximum of <strong>{QR_EXPORT_LIMIT} employees</strong> can be exported at a time.
+          save each QR as an individual PNG file. <br />A maximum of{" "}
+          <strong>{QR_EXPORT_LIMIT} employees</strong> can be exported at a time.
         </Alert>
       </Box>
 
@@ -181,9 +178,7 @@ function QrCodesReportContent() {
           getOptionLabel={(option) =>
             `${option.firstName} ${option.lastName} (${option.employeeId})`
           }
-          filterOptions={(options) =>
-            options.filter((o) => !selectedIds.has(o.employeeId))
-          }
+          filterOptions={(options) => options.filter((o) => !selectedIds.has(o.employeeId))}
           onChange={handleSelect}
           onInputChange={handleInputChange}
           disabled={atLimit}
@@ -255,9 +250,7 @@ function QrCodesReportContent() {
                 alignItems: "center",
                 justifyContent: "space-between",
                 bgcolor:
-                  theme.palette.mode === "dark"
-                    ? theme.palette.grey[900]
-                    : theme.palette.grey[100],
+                  theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[100],
               }}
             >
               <Typography variant="body2" fontWeight={700}>
@@ -358,11 +351,16 @@ function QrCodesReportContent() {
 
 export default function QrCodesReport() {
   return (
-    <CommonPage
+    <TabsPage
       title="QR Codes"
-      icon={<QrCode2Icon />}
-      commonPageTabs={[]}
-      page={<QrCodesReportContent />}
+      tabsPage={[
+        {
+          tabTitle: "QR Codes",
+          tabPath: "qr-codes",
+          icon: <QrCode2Icon />,
+          page: <QrCodesReportContent />,
+        },
+      ]}
     />
   );
 }

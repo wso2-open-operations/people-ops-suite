@@ -13,31 +13,37 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import CommonPage from "@layout/pages/CommonPage";
 import AssessmentIcon from "@mui/icons-material/Assessment";
+
+import TabsPage from "@layout/pages/TabsPage";
 import { EmployeeStatus } from "@slices/employeeSlice/employee";
+
 import EmployeeReportTable from "./EmployeeReportTable";
 
 export default function ActiveEmployeesReportView() {
   return (
-    <CommonPage
+    <TabsPage
       title="Active Employees"
-      icon={<AssessmentIcon />}
-      commonPageTabs={[]}
-      page={
-        <EmployeeReportTable
-          employeeStatus={EmployeeStatus.Active}
-          previewAlertText={
-            <>
-              Showing a preview of the first 10 active employees. <br />
-              Export CSV to download the complete dataset with all fields.
-            </>
-          }
-          countChipLabel="Total Active"
-          downloadFilename={`active-employees_${new Date().toISOString().slice(0, 10)}.csv`}
-        />
-      }
+      tabsPage={[
+        {
+          tabTitle: "Active Employees",
+          tabPath: "active-employees",
+          icon: <AssessmentIcon />,
+          page: (
+            <EmployeeReportTable
+              employeeStatus={EmployeeStatus.Active}
+              previewAlertText={
+                <>
+                  Showing a preview of the first 10 active employees. <br />
+                  Export CSV to download the complete dataset with all fields.
+                </>
+              }
+              countChipLabel="Total Active"
+              downloadFilename={`active-employees_${new Date().toISOString().slice(0, 10)}.csv`}
+            />
+          ),
+        },
+      ]}
     />
   );
 }
