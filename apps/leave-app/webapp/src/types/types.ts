@@ -90,6 +90,7 @@ export enum LeaveType {
   RTT = "rtt",
   SPAIN_ANNUAL = "spain_annual",
   SPAIN_CASUAL = "spain_casual",
+  INDIA_ANNUAL = "annual",
 }
 
 export enum LeaveLabel {
@@ -103,6 +104,7 @@ export enum LeaveLabel {
   RTT = "RTT",
   SPAIN_ANNUAL = "Annual Leave",
   SPAIN_CASUAL = "Casual Leave",
+  INDIA_ANNUAL = "Annual / Earned",
 }
 
 // Tooltip descriptions for leave types.
@@ -322,4 +324,5 @@ export enum EmployeeLocation {
   LK = "Sri Lanka",
   FR = "France",
   ES = "Spain",
+  IN = "India",
 }

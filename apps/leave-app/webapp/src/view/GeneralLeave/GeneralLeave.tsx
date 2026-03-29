@@ -57,6 +57,8 @@ export default function GeneralLeave() {
         return LeaveType.CONGES_PAYES;
       case EmployeeLocation.ES:
         return LeaveType.SPAIN_ANNUAL;
+      case EmployeeLocation.IN:
+        return LeaveType.INDIA_ANNUAL;
       default:
         return LeaveType.CASUAL;
     }

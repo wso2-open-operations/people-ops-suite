@@ -45,6 +45,7 @@ interface LeaveTypeOption {
   label: LeaveLabel;
   icon: SvgIconComponent;
   tooltip?: string;
+  info?: string;
 }
 
 const COMMON_LEAVE_TYPES: LeaveTypeOption[] = [
@@ -55,6 +56,21 @@ const COMMON_LEAVE_TYPES: LeaveTypeOption[] = [
 
 const LOCATION_LEAVE_TYPES: Record<string, LeaveTypeOption[]> = {
   [EmployeeLocation.LK]: [{ type: LeaveType.CASUAL, label: LeaveLabel.CASUAL, icon: WorkOffIcon }],
+  [EmployeeLocation.IN]: [
+    { type: LeaveType.INDIA_ANNUAL, label: LeaveLabel.INDIA_ANNUAL, icon: EventAvailableIcon },
+    {
+      type: LeaveType.CASUAL,
+      label: LeaveLabel.CASUAL,
+      icon: WorkOffIcon,
+      info: "Maharashtra only",
+    },
+    {
+      type: LeaveType.SICK,
+      label: LeaveLabel.SICK,
+      icon: LocalHospitalIcon,
+      info: "Karnataka only",
+    },
+  ],
   [EmployeeLocation.FR]: [
     {
       type: LeaveType.CONGES_PAYES,
@@ -162,6 +178,7 @@ export default function LeaveSelection({
               label={opt.label}
               isSelected={selectedLeaveType === opt.type}
               onClick={() => handleLeaveTypeSelection(opt.type)}
+              info={opt.info}
             />
           );
           return opt.tooltip ? (
