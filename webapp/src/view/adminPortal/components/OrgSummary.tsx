@@ -21,6 +21,10 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import SettingsIcon from "@mui/icons-material/Settings";
 import UpdateIcon from "@mui/icons-material/Update";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import SearchIcon from "@mui/icons-material/Search";
+import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Avatar,
@@ -31,15 +35,17 @@ import {
   Divider,
   Grid,
   IconButton,
+  InputAdornment,
   Link,
   Stack,
   Tab,
   Tabs,
+  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { DataGrid, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
+import { DataGrid, GridPreferencePanelsValue, GridRenderCellParams, useGridApiRef } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 import { useLocation } from "react-router-dom";
 import { useDebounce } from "use-debounce";
@@ -60,8 +66,10 @@ import { ParLeadStatus } from "@slices/employeeHistorySlice/employeeHistory";
 import {
   Employee,
   fetchConfigurations,
+  fetchEmployees,
   fetchParticipants,
   selectEmployeeMap,
+  selectEmployeeMapStatus,
   selectParticipants,
   selectParticipantsStatus,
 } from "@slices/metaSlice/meta";
@@ -129,6 +137,7 @@ export const OrgSummary = ({
   const employeeArray = useAppSelector(selectParticipants);
   const employeeArrayStatus = useAppSelector(selectParticipantsStatus);
   const employeeMap = useAppSelector(selectEmployeeMap);
+  const employeeMapStatus = useAppSelector(selectEmployeeMapStatus);
   const reviewStatus = useAppSelector(selectThreeSixtyReviewStatus);
   const rejectedReviews = useAppSelector(selectRejectedReviews);
   const apiController = useRef(new AbortController());
@@ -144,12 +153,18 @@ export const OrgSummary = ({
   const [activeStep, setActiveStep] = useState(0);
   // Stores the selected team id
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-  // Stores the search text for the teams list
-  const [searchText, setSearchText] = useState("");
+  // Stores the unified search text for the active tab
+  const [tableSearchText, setTableSearchText] = useState("");
   // Stores the filtered summary
   const [filteredSummary, setFilteredSummary] = useState(summary);
-  // Debounces the search text
-  const [debouncedSearchText] = useDebounce(searchText, 500);
+  // Debounces the search text for filteredSummary recalculation
+  const [debouncedTableSearch] = useDebounce(tableSearchText, 500);
+  // ApiRefs for each DataGrid tab
+  const teamApiRef = useGridApiRef();
+  const employeeApiRef = useGridApiRef();
+  const reviewApiRef = useGridApiRef();
+  // NOTE: Array order must match Tab order — [0]=Team View, [1]=Employee View, [2]=Rejected Reviews
+  const tabApiRefs = [teamApiRef, employeeApiRef, reviewApiRef];
   // Stores the selected employee email
   const [selectedEmployeeEmail, setSelectedEmployeeEmail] = useState<string>("");
   // Stores the state of review employee view
@@ -157,8 +172,6 @@ export const OrgSummary = ({
   // Stores the state of reports view
   const [reportView, setReportView] = useState(false);
   const [isParCycleDatesOpen, setIsParCycleDatesOpen] = useState(false);
-  const [employeeSearchText, setEmployeeSearchText] = useState("");
-  const [reviewSearchText, setReviewSearchText] = useState("");
   const closeReviewEmployeeView = () => setReviewEmployeeView(false);
   const openBulkReminderModal = () => setBulkReminderModal(true);
   const closeBulkReminderModal = () => setBulkReminderModal(false);
@@ -184,8 +197,9 @@ export const OrgSummary = ({
     setReviewEmployeeView(true);
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
+    setTableSearchText("");
   };
 
   const handleTeamsTableClick = (parTeamId: number) => {
@@ -256,15 +270,17 @@ export const OrgSummary = ({
   }, [location.search]);
 
   useEffect(() => {
-    const filteredTeams = formattedTeams.filter((team) =>
-      Object.values(team).some((value) =>
-        String(value).toLowerCase().includes(debouncedSearchText.toLowerCase()),
-      ),
-    );
-    const newFilteredSummary = calculateAllTeamsSummary(filteredTeams);
-    setFilteredSummary(newFilteredSummary);
+    if (selectedTab === 0) {
+      const filteredTeams = formattedTeams.filter((team) =>
+        Object.values(team).some((value) =>
+          String(value).toLowerCase().includes(debouncedTableSearch.toLowerCase()),
+        ),
+      );
+      const newFilteredSummary = calculateAllTeamsSummary(filteredTeams);
+      setFilteredSummary(newFilteredSummary);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchText]);
+  }, [debouncedTableSearch, selectedTab]);
 
   useEffect(() => {
     setFilteredSummary(summary);
@@ -305,7 +321,17 @@ export const OrgSummary = ({
     if (selectedTab === 2) {
       fetchReviews();
     }
+    if ((selectedTab === 1 || selectedTab === 2) && employeeMapStatus === RequestState.IDLE) {
+      dispatch(fetchEmployees());
+    }
   }, [selectedTab]);
+
+  useEffect(() => {
+    const ref = tabApiRefs[selectedTab];
+    if (ref?.current) {
+      ref.current.setQuickFilterValues(tableSearchText ? [tableSearchText] : []);
+    }
+  }, [tableSearchText]);
 
   useEffect(() => {
     if (selectedTab === 1 && currentCycle.parCycleId && selectedEmployee) {
@@ -340,7 +366,6 @@ export const OrgSummary = ({
 
   const dataGridSx = {
     border: "none",
-    overflowX: "hidden",
     fontSize: captionFontSize,
     "& .MuiDataGrid-columnHeaderTitle": {
       fontSize: captionFontSize,
@@ -353,9 +378,6 @@ export const OrgSummary = ({
     "& .MuiDataGrid-cell": {
       px: 1,
       py: "3px",
-    },
-    "& .MuiDataGrid-virtualScroller": {
-      overflowX: "hidden",
     },
     "& .MuiDataGrid-row:hover": {
       cursor: "pointer",
@@ -433,10 +455,12 @@ export const OrgSummary = ({
       renderCell: (params: GridRenderCellParams) => (
         <Box display="flex" alignItems="center" position="relative">
           <Avatar
-            src={employeeMap[params.row?.workEmail]?.employeeThumbnail}
-            alt={"Employee Thumbnail"}
-            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem" }}
-          />
+            src={params.row?.employeeThumbnail || ""}
+            alt={params.row?.employeeName}
+            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem" }}
+          >
+            {params.row?.employeeName?.charAt(0)}
+          </Avatar>
           <Typography variant="body2" fontWeight={500}>
             {params.row?.employeeName}
           </Typography>
@@ -525,10 +549,12 @@ export const OrgSummary = ({
       renderCell: (params: GridRenderCellParams) => (
         <Box display="flex" alignItems="center" position="relative">
           <Avatar
-            src={employeeMap[params.row?.employeeEmail]?.employeeThumbnail}
-            alt={"Employee Thumbnail"}
-            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem" }}
-          />
+            src={employeeMap[params.row?.employeeEmail]?.employeeThumbnail || ""}
+            alt={employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail}
+            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem" }}
+          >
+            {(employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail)?.charAt(0)}
+          </Avatar>
           <Box
             sx={{
               position: "relative",
@@ -611,10 +637,12 @@ export const OrgSummary = ({
       renderCell: (params: GridRenderCellParams) => (
         <Box display="flex" alignItems="center" position="relative">
           <Avatar
-            src={employeeMap[params.row?.reviewerEmail]?.employeeThumbnail}
-            alt={"Reviewer Thumbnail"}
-            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem" }}
-          />
+            src={employeeMap[params.row?.reviewerEmail]?.employeeThumbnail || ""}
+            alt={employeeMap[params.row?.reviewerEmail]?.employeeName ?? params.row?.reviewerEmail}
+            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem" }}
+          >
+            {(employeeMap[params.row?.reviewerEmail]?.employeeName ?? params.row?.reviewerEmail)?.charAt(0)}
+          </Avatar>
           <Box
             sx={{
               position: "relative",
@@ -683,7 +711,7 @@ export const OrgSummary = ({
   return (
     <Stack sx={{ height: "100%" }}>
       {!isParCycleSettingsOpen && (
-        <Box height={"100%"}>
+        <Box >
           {selectedTeamId === null &&
             !reviewEmployeeView &&
             !reportView &&
@@ -817,7 +845,7 @@ export const OrgSummary = ({
                   </Grid>
                 </Grid>
                 <>
-                  <Card variant="outlined" sx={{ padding: 1 }}>
+                  <Card variant="outlined" sx={{ padding: 1 , ml: 0.2, mr: 0.2}}>
                     <Grid container>
                       <Grid
                         size={{ xs: 12, sm: 12 }}
@@ -881,30 +909,86 @@ export const OrgSummary = ({
                   <Card
                     variant="outlined"
                     sx={{
-                      height: "auto",
-                      px: 0,
-                      pt: "3px",
-                      pb: "3px",
-                      width: "100%",
+                      padding: 1,
                       flex: 1,
                       mt: "10px",
-                      overflowX: "hidden",
+                      ml: 0.2,
+                      mr: 0.2,
                     }}
                   >
-                    <Tabs
-                      value={selectedTab}
-                      onChange={handleTabChange}
-                      aria-label="admin tabs"
-                      variant="scrollable"
-                      scrollButtons="auto"
-                      allowScrollButtonsMobile
-                      sx={{ borderColor: "divider", px: 1 }}
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      sx={{ borderBottom: 1, borderColor: "divider" }}
                     >
-                      <Tab label="Team View" />
-                      <Tab label="Employee View" />
-                      <Tab label="Rejected Reviews" />
-                      <Tab label="Quota Allocations" />
-                    </Tabs>
+                      <Tabs
+                        value={selectedTab}
+                        onChange={handleTabChange}
+                        aria-label="admin tabs"
+                        variant="scrollable"
+                        scrollButtons="auto"
+                        allowScrollButtonsMobile
+                        sx={{ flex: 1, minWidth: 0, px: 1 }}
+                      >
+                        <Tab label="Team View" />
+                        <Tab label="Employee View" />
+                        <Tab label="Rejected Reviews" />
+                        <Tab label="Quota Allocations" />
+                      </Tabs>
+                      {selectedTab < 3 && (
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          gap={0.5}
+                          sx={{ pr: 1, flexShrink: 0 }}
+                        >
+                          <Tooltip title="Columns" enterDelay={500}>
+                            <IconButton
+                              size="small"
+                              onClick={() =>
+                                tabApiRefs[selectedTab]?.current?.showPreferences(
+                                  GridPreferencePanelsValue.columns,
+                                )
+                              }
+                            >
+                              <ViewColumnIcon sx={{ fontSize: "1.1rem" }} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Filters" enterDelay={500}>
+                            <IconButton
+                              size="small"
+                              onClick={() => tabApiRefs[selectedTab]?.current?.showFilterPanel()}
+                            >
+                              <FilterListIcon sx={{ fontSize: "1.1rem" }} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Export CSV" enterDelay={500}>
+                            <IconButton
+                              size="small"
+                              onClick={() => tabApiRefs[selectedTab]?.current?.exportDataAsCsv()}
+                            >
+                              <FileDownloadIcon sx={{ fontSize: "1.1rem" }} />
+                            </IconButton>
+                          </Tooltip>
+                          <TextField
+                            size="small"
+                            placeholder="Search…"
+                            value={tableSearchText}
+                            onChange={(e) => setTableSearchText(e.target.value)}
+                            slotProps={{
+                              input: {
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <SearchIcon sx={{ fontSize: "1rem" }} />
+                                  </InputAdornment>
+                                ),
+                              },
+                            }}
+                            sx={{ width: 180, "& .MuiInputBase-root": { height: 32 } }}
+                          />
+                        </Box>
+                      )}
+                    </Box>
 
                     {selectedTab === 0 && (
                       <>
@@ -913,8 +997,9 @@ export const OrgSummary = ({
                             variant="outlined"
                             sx={{
                               textAlign: "center",
-                              height: "100",
+                              height: "calc(100vh - 24rem)",
                               overflow: "auto",
+                              mt: 2,
                             }}
                           >
                             <LoadingEffect message={uiMessages.loading.pageLoading} />
@@ -939,44 +1024,18 @@ export const OrgSummary = ({
                           <>
                             {teams.length > 0 ? (
                               <DataGrid
+                                apiRef={teamApiRef}
                                 sx={dataGridSx}
                                 rows={formattedTeams}
                                 columns={columns}
                                 autoHeight
                                 disableRowSelectionOnClick
                                 pageSizeOptions={[10, 20, 25]}
-                                rowHeight={36}
+                                rowHeight={38}
                                 onRowClick={(params) => handleTeamsTableClick(params.row.id)}
-                                slots={{
-                                  toolbar: GridToolbar,
-                                }}
-                                slotProps={{
-                                  toolbar: {
-                                    showQuickFilter: true,
-                                    quickFilterProps: { debounceMs: 500 },
-                                  },
-                                  baseTextField: {
-                                    placeholder: "Search Team",
-                                  },
-                                }}
-                                onFilterModelChange={(model) => {
-                                  setSearchText(model.quickFilterValues?.[0]?.toString() || "");
-                                }}
                                 initialState={{
                                   pagination: {
                                     paginationModel: { pageSize: 10, page: 0 },
-                                  },
-                                  filter: {
-                                    filterModel: {
-                                      items: [
-                                        {
-                                          id: "searchText",
-                                          value: searchText,
-                                          field: "searchText",
-                                          operator: "contains",
-                                        },
-                                      ],
-                                    },
                                   },
                                 }}
                               />
@@ -1033,6 +1092,7 @@ export const OrgSummary = ({
                             {employeeArray.length > 0 ? (
                               <>
                                 <DataGrid
+                                  apiRef={employeeApiRef}
                                   sx={dataGridSx}
                                   rows={employeeArray}
                                   getRowId={(row) => row.workEmail}
@@ -1040,38 +1100,9 @@ export const OrgSummary = ({
                                   rowHeight={36}
                                   autoHeight
                                   pageSizeOptions={[10, 20, 25]}
-                                  slots={{
-                                    toolbar: GridToolbar,
-                                  }}
-                                  slotProps={{
-                                    toolbar: {
-                                      showQuickFilter: true,
-                                      quickFilterProps: { debounceMs: 500 },
-                                    },
-                                    baseTextField: {
-                                      placeholder: "Search Employee",
-                                    },
-                                  }}
-                                  onFilterModelChange={(model) => {
-                                    setEmployeeSearchText(
-                                      model.quickFilterValues?.[0]?.toString() || "",
-                                    );
-                                  }}
                                   initialState={{
                                     pagination: {
                                       paginationModel: { pageSize: 10, page: 0 },
-                                    },
-                                    filter: {
-                                      filterModel: {
-                                        items: [
-                                          {
-                                            id: "employeeSearchText",
-                                            value: employeeSearchText,
-                                            field: "employeeSearchText",
-                                            operator: "contains",
-                                          },
-                                        ],
-                                      },
                                     },
                                   }}
                                 />
@@ -1147,6 +1178,7 @@ export const OrgSummary = ({
                             {rejectedReviews.length > 0 ? (
                               <>
                                 <DataGrid
+                                  apiRef={reviewApiRef}
                                   sx={dataGridSx}
                                   rows={rejectedReviews}
                                   getRowId={(row) => {
@@ -1156,38 +1188,9 @@ export const OrgSummary = ({
                                   rowHeight={36}
                                   autoHeight
                                   pageSizeOptions={[10, 20, 25]}
-                                  slots={{
-                                    toolbar: GridToolbar,
-                                  }}
-                                  slotProps={{
-                                    toolbar: {
-                                      showQuickFilter: true,
-                                      quickFilterProps: { debounceMs: 500 },
-                                    },
-                                    baseTextField: {
-                                      placeholder: "Search Reviews",
-                                    },
-                                  }}
-                                  onFilterModelChange={(model) => {
-                                    setReviewSearchText(
-                                      model.quickFilterValues?.[0]?.toString() || "",
-                                    );
-                                  }}
                                   initialState={{
                                     pagination: {
                                       paginationModel: { pageSize: 10, page: 0 },
-                                    },
-                                    filter: {
-                                      filterModel: {
-                                        items: [
-                                          {
-                                            id: "reviewSearchText",
-                                            value: reviewSearchText,
-                                            field: "searchText",
-                                            operator: "contains",
-                                          },
-                                        ],
-                                      },
                                     },
                                   }}
                                 />
