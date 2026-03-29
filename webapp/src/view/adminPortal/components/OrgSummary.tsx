@@ -423,26 +423,31 @@ export const OrgSummary = ({
       flex: 0.1,
       disableExport: true,
       renderCell: (params: GridRenderCellParams<FormattedTeam>) => (
-        <Tooltip
-          arrow
-          title="Open Team"
-          enterDelay={tooltipVisibilityDelay}
-          enterNextDelay={tooltipVisibilityDelay}
-        >
-          <IconButton
-            size="small"
-            onClick={() => handleTeamsTableClick(params.row.id)}
-            sx={{
-              color: theme.palette.primary.main,
-              "&:hover": {
-                bgcolor: theme.palette.primary.main,
-                color: theme.palette.common.white,
-              },
-            }}
+        <Box display="flex" alignItems="center" height="100%">
+          <Tooltip
+            arrow
+            title="Open Team"
+            enterDelay={tooltipVisibilityDelay}
+            enterNextDelay={tooltipVisibilityDelay}
           >
-            <KeyboardArrowRightIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+            <IconButton
+              size="small"
+              onClick={() => handleTeamsTableClick(params.row.id)}
+              sx={{
+                borderRadius: "4px",
+                padding: "4px",
+                color: theme.palette.primary.main,
+                "&:hover": {
+                  borderRadius: "4px",
+                  bgcolor: theme.palette.primary.main,
+                  color: theme.palette.common.white,
+                },
+              }}
+            >
+              <KeyboardArrowRightIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       ),
     },
   ];
@@ -483,60 +488,58 @@ export const OrgSummary = ({
       sortable: false,
       flex: 0.3,
       renderCell: (params: GridRenderCellParams) => (
-        <>
-          <IconButton
-            sx={{
-              color: theme.palette.primary.main,
-              "&:hover": {
-                bgcolor: theme.palette.primary.main,
-                color: theme.palette.common.white,
-              },
-              mr: 2,
-            }}
-            onClick={() => handleEmployeeSelect(params.row, false)}
+        <Box display="flex" alignItems="center" height="100%" gap={0.5}>
+          <Tooltip
+            arrow
+            title={params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? "View" : "Review"}
+            enterDelay={tooltipVisibilityDelay}
+            enterNextDelay={tooltipVisibilityDelay}
           >
-            {params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? (
-              <Tooltip
-                arrow
-                title="View"
-                enterDelay={tooltipVisibilityDelay}
-                enterNextDelay={tooltipVisibilityDelay}
-              >
-                <VisibilityIcon />
-              </Tooltip>
-            ) : (
-              <Tooltip
-                arrow
-                title="Review"
-                enterDelay={tooltipVisibilityDelay}
-                enterNextDelay={tooltipVisibilityDelay}
-              >
-                <RateReviewIcon />
-              </Tooltip>
-            )}
-          </IconButton>
-          <IconButton
-            sx={{
-              color: theme.palette.primary.main,
-              "&:hover": {
-                bgcolor: theme.palette.primary.main,
-                color: theme.palette.common.white,
-              },
-            }}
-            onClick={() => {
-              handleEmployeeSelect(params.row, true);
-            }}
-          >
-            <Tooltip
-              arrow
-              title="View summary of PAR history"
-              enterDelay={tooltipVisibilityDelay}
-              enterNextDelay={tooltipVisibilityDelay}
+            <IconButton
+              size="small"
+              onClick={() => handleEmployeeSelect(params.row, false)}
+              sx={{
+                borderRadius: "4px",
+                padding: "4px",
+                color: theme.palette.primary.main,
+                "&:hover": {
+                  borderRadius: "4px",
+                  bgcolor: theme.palette.primary.main,
+                  color: theme.palette.common.white,
+                },
+              }}
             >
-              <HistoryEduIcon />
-            </Tooltip>
-          </IconButton>
-        </>
+              {params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? (
+                <VisibilityIcon fontSize="small" />
+              ) : (
+                <RateReviewIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+          <Tooltip
+            arrow
+            title="View summary of PAR history"
+            enterDelay={tooltipVisibilityDelay}
+            enterNextDelay={tooltipVisibilityDelay}
+          >
+            <IconButton
+              size="small"
+              onClick={() => handleEmployeeSelect(params.row, true)}
+              sx={{
+                borderRadius: "4px",
+                padding: "4px",
+                color: theme.palette.primary.main,
+                "&:hover": {
+                  borderRadius: "4px",
+                  bgcolor: theme.palette.primary.main,
+                  color: theme.palette.common.white,
+                },
+              }}
+            >
+              <HistoryEduIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       ),
     },
   ];
@@ -613,13 +616,13 @@ export const OrgSummary = ({
               backgroundColor:
                 params.row.isOfferedFeedback === "TRUE"
                   ? (theme) =>
-                      theme.palette.mode === "light"
-                        ? alpha(theme.palette.info.main, 0.1)
-                        : alpha(theme.palette.info.main, 0.8)
+                    theme.palette.mode === "light"
+                      ? alpha(theme.palette.info.main, 0.1)
+                      : alpha(theme.palette.info.main, 0.8)
                   : (theme) =>
-                      theme.palette.mode === "light"
-                        ? alpha(theme.palette.warning.main, 0.1)
-                        : alpha(theme.palette.warning.main, 0.8),
+                    theme.palette.mode === "light"
+                      ? alpha(theme.palette.warning.main, 0.1)
+                      : alpha(theme.palette.warning.main, 0.8),
 
               "& .MuiChip-label": {
                 px: 1.5,
@@ -845,7 +848,7 @@ export const OrgSummary = ({
                   </Grid>
                 </Grid>
                 <>
-                  <Card variant="outlined" sx={{ padding: 1 , ml: 0.2, mr: 0.2}}>
+                  <Card variant="outlined" sx={{ padding: 1, ml: 0.2, mr: 0.2 }}>
                     <Grid container>
                       <Grid
                         size={{ xs: 12, sm: 12 }}
