@@ -17,7 +17,6 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import SettingsIcon from "@mui/icons-material/Settings";
 import UpdateIcon from "@mui/icons-material/Update";
@@ -52,7 +51,7 @@ import { useDebounce } from "use-debounce";
 
 import { useEffect, useRef, useState } from "react";
 
-import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
+import { CompletionStatusSection } from "@component/common/CompletionStatusSection";
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
 import { CustomModal } from "@component/common/CustomModal";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
@@ -848,67 +847,13 @@ export const OrgSummary = ({
                   </Grid>
                 </Grid>
                 <>
-                  <Card variant="outlined" sx={{ padding: 1, ml: 0.2, mr: 0.2 }}>
-                    <Grid container>
-                      <Grid
-                        size={{ xs: 12, sm: 12 }}
-                        display={"flex"}
-                        alignItems={"center"}
-                        justifyContent={"space-between"}
-                      >
-                        <Typography sx={{ color: theme.palette.brandColors.lightOrange }}>
-                          Completion Status
-                        </Typography>
-                        <Box>
-                          <Tooltip
-                            arrow
-                            title="PAR Completion Overview"
-                            enterDelay={tooltipVisibilityDelay}
-                            enterNextDelay={tooltipVisibilityDelay}
-                          >
-                            <IconButton
-                              aria-label="PAR completion overview"
-                              onClick={openParCompletionView}
-                              sx={{
-                                p: 0,
-                                mr: "8px",
-                                color: "primary.main",
-                                "&:hover": {
-                                  bgcolor: "primary.main",
-                                  color: "white",
-                                },
-                              }}
-                            >
-                              <OpenInNewIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </Grid>
-                    </Grid>
-                    <Grid container spacing={10}>
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <CompletionStatusCard
-                          name="Employee PAR"
-                          completed={filteredSummary.totalEmployeeParComplete}
-                          total={filteredSummary.totalEmployees}
-                        />
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <CompletionStatusCard
-                          name="Lead's PAR"
-                          completed={filteredSummary.totalLeadReviewComplete}
-                          total={filteredSummary.totalEmployees}
-                        />
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <CompletionStatusCard
-                          name="F2F"
-                          completed={filteredSummary.totalF2fComplete}
-                          total={filteredSummary.totalEmployees}
-                        />
-                      </Grid>
-                    </Grid>
-                  </Card>
+                  <CompletionStatusSection
+                    employeeParComplete={filteredSummary.totalEmployeeParComplete}
+                    leadReviewComplete={filteredSummary.totalLeadReviewComplete}
+                    f2fComplete={filteredSummary.totalF2fComplete}
+                    total={filteredSummary.totalEmployees}
+                    onOpenOverview={openParCompletionView}
+                  />
                   <Card
                     variant="outlined"
                     sx={{
