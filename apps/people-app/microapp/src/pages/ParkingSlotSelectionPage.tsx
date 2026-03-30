@@ -271,7 +271,9 @@ function ParkingSlotSelectionPage() {
                     key={slot.slotId}
                     type="button"
                     disabled={isBooked}
-                    onClick={() => setSelectedSlot(slot)}
+                    onClick={() =>
+                      isSelected ? setSelectedSlot(undefined) : setSelectedSlot(slot)
+                    }
                     className={`rounded-[1.2rem] border p-3 min-h-[102px] transition-colors ${
                       isSelected ? "shadow-[0_0_0_2px_rgba(255,115,0,0.15)]" : ""
                     }`}
