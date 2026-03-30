@@ -23,6 +23,7 @@ import {
 import { getToken } from "../components/microapp-bridge";
 import { jwtDecode } from "jwt-decode";
 import { Logger } from "./logger";
+import { ErrorMessages } from "./constants";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -141,16 +142,28 @@ const useHttp = () => {
             currentTry: currentTry + 1,
           });
         } else {
-          const errorMessage =
-            responseBody &&
-            typeof responseBody === "object" &&
-            "error" in responseBody &&
-            (responseBody as { error?: unknown }).error
-              ? (responseBody as { error?: unknown }).error
-              : response.status;
+          const errorMessage = (() => {
+            if (responseBody && typeof responseBody === "object") {
+              const body = responseBody as Record<string, unknown>;
+              const backendError = body.error;
+              const backendMessage = body.message;
+              const backendDetail = body.detail ?? body.details;
+              const backendDescription = body.description;
 
-          Logger.error(String(errorMessage));
-          if (failFn) failFn(String(errorMessage));
+              const candidate =
+                (typeof backendError === "string" && backendError) ||
+                (typeof backendMessage === "string" && backendMessage) ||
+                (typeof backendDetail === "string" && backendDetail) ||
+                (typeof backendDescription === "string" && backendDescription);
+
+              if (candidate) return candidate;
+            }
+
+            return ErrorMessages.ERROR_MSG;
+          })();
+
+          Logger.error(errorMessage);
+          if (failFn) failFn(errorMessage);
           if (loadingFn) loadingFn(false);
         }
       }

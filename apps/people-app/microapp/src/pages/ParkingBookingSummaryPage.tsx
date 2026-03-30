@@ -453,24 +453,42 @@ function ParkingBookingSummaryPage() {
         </div>
 
         {showPaymentFailureModal && (
-          <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] z-20 grid place-items-center px-5">
+          <div className="fixed inset-0 bg-black/10 backdrop-blur-[2px] z-20 grid place-items-center px-5">
             <div className="w-full max-w-[360px] bg-white border border-red-200 rounded-[1.2rem] p-4">
               <div className="text-[#1F2A44] font-extrabold text-[16px]">
-                Payment unsuccessful
+                Payment Unsuccessful
               </div>
               <div className="text-[#808080] text-sm mt-2">
-                {error ?? "Please try again."}
+                <div className="px-2 py-1">
+                  {error ?? "Please try again."}
+                </div>
               </div>
-              <button
-                type="button"
-                className="mt-4 w-full p-[0.9rem] text-lg font-semibold rounded-[0.7rem] bg-primary text-white"
-                onClick={() => {
-                  setShowPaymentFailureModal(false);
-                  setError(undefined);
-                }}
-              >
-                Close
-              </button>
+
+              <div className="mt-4 flex gap-3">
+                <button
+                  type="button"
+                  className="flex-1 py-[0.7rem] px-3 text-[15px] font-semibold rounded-[0.7rem] bg-primary text-white disabled:bg-[#F4F4F4] disabled:text-[#A7A7A7]"
+                  disabled={busyConfirm}
+                  onClick={() => {
+                    setShowPaymentFailureModal(false);
+                    setError(undefined);
+                    void handleConfirmAndPay();
+                  }}
+                >
+                  Retry
+                </button>
+
+                <button
+                  type="button"
+                  className="flex-1 py-[0.7rem] px-3 text-[15px] font-semibold rounded-[0.7rem] border border-[#E5E5E5] bg-white text-[#1F2A44]"
+                  onClick={() => {
+                    setShowPaymentFailureModal(false);
+                    setError(undefined);
+                  }}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}
