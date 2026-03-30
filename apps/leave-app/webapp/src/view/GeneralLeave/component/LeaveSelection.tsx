@@ -57,7 +57,7 @@ const COMMON_LEAVE_TYPES: LeaveTypeOption[] = [
 const LOCATION_LEAVE_TYPES: Record<string, LeaveTypeOption[]> = {
   [EmployeeLocation.LK]: [{ type: LeaveType.CASUAL, label: LeaveLabel.CASUAL, icon: WorkOffIcon }],
   [EmployeeLocation.IN]: [
-    { type: LeaveType.INDIA_ANNUAL, label: LeaveLabel.INDIA_ANNUAL, icon: EventAvailableIcon },
+    { type: LeaveType.ANNUAL, label: LeaveLabel.INDIA_ANNUAL, icon: EventAvailableIcon },
     {
       type: LeaveType.CASUAL,
       label: LeaveLabel.CASUAL,

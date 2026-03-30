@@ -58,7 +58,7 @@ export default function GeneralLeave() {
       case EmployeeLocation.ES:
         return LeaveType.SPAIN_ANNUAL;
       case EmployeeLocation.IN:
-        return LeaveType.INDIA_ANNUAL;
+        return LeaveType.ANNUAL;
       default:
         return LeaveType.CASUAL;
     }

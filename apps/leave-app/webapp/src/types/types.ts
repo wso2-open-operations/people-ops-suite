@@ -90,7 +90,6 @@ export enum LeaveType {
   RTT = "rtt",
   SPAIN_ANNUAL = "spain_annual",
   SPAIN_CASUAL = "spain_casual",
-  INDIA_ANNUAL = "annual",
 }
 
 export enum LeaveLabel {
