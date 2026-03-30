@@ -36,7 +36,7 @@ export interface CreateParkingReservationResponse {
   coinsAmount: DecimalLike;
 }
 
-export type ParkingReservationStatus = "PENDING" | "CONFIRMED";
+export type ParkingReservationStatus = "PENDING" | "CONFIRMED" | "EXPIRED";
 
 export interface ParkingReservationDetails {
   id: number;

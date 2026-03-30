@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import {
   CalendarMonthSharp,
   DirectionsCarSharp,
+  ArrowForwardSharp,
   KeyboardBackspaceSharp,
   WarningAmberSharp,
 } from "@mui/icons-material";
@@ -36,9 +37,9 @@ import type {
 import { getTodayBookingDate, formatBookingDate } from "@/utils/helpers/date";
 import { formatCoins } from "@/utils/helpers/coins";
 import {
-  clearPaymentStage2State,
-  getPaymentStage2State,
-  setPaymentStage2State,
+  clearParkingPaymentContextState,
+  getParkingPaymentContextState,
+  setParkingPaymentContextState,
   setConfirmationState,
 } from "@/utils/parkingStorage";
 import { Logger } from "@/utils/logger";
@@ -57,11 +58,12 @@ function ParkingBookingSummaryPage() {
   const navigate = useNavigate();
   const { handleRequest, handleRequestWithNewToken } = useHttp();
 
-  const stage2 = getPaymentStage2State();
+  const paymentContext = getParkingPaymentContextState();
   const todayBookingDate = getTodayBookingDate();
+  const hasPaymentContext = Boolean(paymentContext);
 
-  const bookingDate = stage2?.bookingDate ?? todayBookingDate;
-  const expectedCoins = stage2?.coinsAmount ?? 0;
+  const bookingDate = paymentContext?.bookingDate ?? todayBookingDate;
+  const expectedCoins = paymentContext?.coinsAmount ?? 0;
 
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [vehicleId, setVehicleId] = useState<number | undefined>(undefined);
@@ -73,7 +75,7 @@ function ParkingBookingSummaryPage() {
   const [showPaymentFailureModal, setShowPaymentFailureModal] = useState(false);
 
   useEffect(() => {
-    if (!stage2) return;
+    if (!hasPaymentContext) return;
 
     let cancelled = false;
 
@@ -147,13 +149,15 @@ function ParkingBookingSummaryPage() {
     return () => {
       cancelled = true;
     };
-  }, [stage2, handleRequest, handleRequestWithNewToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPaymentContext]);
 
   const createReservation = () => {
-    if (!stage2 || !vehicleId) return Promise.reject("Vehicle not selected");
+    if (!paymentContext || !vehicleId)
+      return Promise.reject("Vehicle not selected");
 
     const body = {
-      slotId: stage2.slotId,
+      slotId: paymentContext.slotId,
       bookingDate,
       vehicleId,
     };
@@ -239,7 +243,7 @@ function ParkingBookingSummaryPage() {
   };
 
   const handleConfirmAndPay = async () => {
-    if (!stage2 || !vehicleId) return;
+    if (!paymentContext || !vehicleId) return;
     if (busyConfirm) return;
 
     setBusyConfirm(true);
@@ -250,8 +254,8 @@ function ParkingBookingSummaryPage() {
       // Stage 1: create a pending reservation in backend.
       const reservation = await createReservation();
 
-      setPaymentStage2State({
-        ...stage2,
+      setParkingPaymentContextState({
+        ...paymentContext,
         reservationId: reservation.reservationId,
         coinsAmount: reservation.coinsAmount,
       });
@@ -277,12 +281,14 @@ function ParkingBookingSummaryPage() {
       await saveLocalDataAsync(PEOPLE_WALLET_PAYMENT_TX_HASH_KEY, "");
       await saveLocalDataAsync("people_parking_payment_error", "");
 
-      // Stage 2 (PR #17-style): open wallet micro-app and pass launch context.
       // Wallet will use launchData to set the "send" form and navigate to confirm.
       requestOpenMicroApp("com.wso2.superapp.microapp.wallet", {
-        initialRoute: "#/send",
+        initialRoute: "/send",
         wallet_address: carParkConfig.publicWalletAddress,
         coin_amount: reservation.coinsAmount,
+        source_app_id: "com.wso2.superapp.microapp.people",
+        return_app_id: "com.wso2.superapp.microapp.people",
+        return_route: "/services/parking/summary",
       });
 
       const paymentResult = await waitForWalletPaymentResult();
@@ -300,7 +306,7 @@ function ParkingBookingSummaryPage() {
       );
 
       setConfirmationState(confirmed);
-      clearPaymentStage2State();
+      clearParkingPaymentContextState();
       navigate("/services/parking/confirmation", {
         state: { reservationId: confirmed.id },
       });
@@ -314,7 +320,7 @@ function ParkingBookingSummaryPage() {
     }
   };
 
-  if (!stage2) {
+  if (!paymentContext) {
     return (
       <PageTransitionWrapper type="secondary">
         <div className="h-screen bg-white grid place-items-center px-6">
@@ -339,8 +345,8 @@ function ParkingBookingSummaryPage() {
   }
 
   const topContent = (
-    <section className="px-4 mt-2 pb-6">
-      <div className="bg-white border border-[#E5E5E5] rounded-[1.2rem] px-4 pt-5 pb-3 shadow-sm">
+    <section className="px-4 mt-2 pb-4">
+      <div className="bg-white border border-[#E5E5E5] rounded-[1.2rem] px-4 pt-5 pb-6 shadow-sm">
         <div className="flex flex-col items-center">
           <div className="w-16 h-16 rounded-[1rem] bg-[#FFE1C9] grid place-items-center">
             <div
@@ -355,10 +361,10 @@ function ParkingBookingSummaryPage() {
             PARKING SLOT
           </div>
           <div className="text-[34px] font-extrabold text-[#1F2A44] leading-none mt-1">
-            {stage2.slotId}
+            {paymentContext.slotId}
           </div>
           <div className="mt-2 px-3 py-1 rounded-full bg-[#F4F4F4] text-[13px] font-semibold text-[#1F2A44]">
-            {stage2.floorName}
+            {paymentContext.floorName}
           </div>
         </div>
 
@@ -415,19 +421,19 @@ function ParkingBookingSummaryPage() {
         </div>
 
         <div className="mt-6 border-t border-[#E5E5E5] pt-5">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full">
             <div className="w-10 h-10 rounded-full bg-[#EAF3FF] grid place-items-center">
               <CalendarMonthSharp style={{ color: "#0B64C0" }} />
             </div>
             <div className="text-[13px] font-bold text-[#808080]">Date</div>
           </div>
 
-          <div className="mt-3 text-[16px] font-bold text-[#1F2A44]">
+          <div className="mt-2 inline-block ml-[8px] text-left text-[16px] font-bold text-[#1F2A44] leading-none">
             {formatBookingDate(bookingDate)}
           </div>
         </div>
 
-        <div className="mt-5 border-t border-dashed border-[#E5E5E5] pt-4">
+        <div className="mt-4 border-t border-dashed border-[#E5E5E5] pt-4">
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium text-[#808080]">Amount to Pay</div>
             <div className="text-[26px] font-extrabold text-[#ff7300]">
@@ -447,24 +453,42 @@ function ParkingBookingSummaryPage() {
         </div>
 
         {showPaymentFailureModal && (
-          <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] z-20 grid place-items-center px-5">
+          <div className="fixed inset-0 bg-black/10 backdrop-blur-[2px] z-20 grid place-items-center px-5">
             <div className="w-full max-w-[360px] bg-white border border-red-200 rounded-[1.2rem] p-4">
               <div className="text-[#1F2A44] font-extrabold text-[16px]">
-                Payment unsuccessful
+                Payment Unsuccessful
               </div>
               <div className="text-[#808080] text-sm mt-2">
-                {error ?? "Please try again."}
+                <div className="px-2 py-1">
+                  {error ?? "Please try again."}
+                </div>
               </div>
-              <button
-                type="button"
-                className="mt-4 w-full p-[0.9rem] text-lg font-semibold rounded-[0.7rem] bg-primary text-white"
-                onClick={() => {
-                  setShowPaymentFailureModal(false);
-                  setError(undefined);
-                }}
-              >
-                Close
-              </button>
+
+              <div className="mt-4 flex gap-3">
+                <button
+                  type="button"
+                  className="flex-1 py-[0.7rem] px-3 text-[15px] font-semibold rounded-[0.7rem] bg-primary text-white disabled:bg-[#F4F4F4] disabled:text-[#A7A7A7]"
+                  disabled={busyConfirm}
+                  onClick={() => {
+                    setShowPaymentFailureModal(false);
+                    setError(undefined);
+                    void handleConfirmAndPay();
+                  }}
+                >
+                  Retry
+                </button>
+
+                <button
+                  type="button"
+                  className="flex-1 py-[0.7rem] px-3 text-[15px] font-semibold rounded-[0.7rem] border border-[#E5E5E5] bg-white text-[#1F2A44]"
+                  onClick={() => {
+                    setShowPaymentFailureModal(false);
+                    setError(undefined);
+                  }}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -476,7 +500,10 @@ function ParkingBookingSummaryPage() {
             disabled={busyConfirm || !vehicleId || vehiclesSetupRequired}
             onClick={handleConfirmAndPay}
           >
-            {busyConfirm ? "Confirming..." : "Confirm & Pay"}
+            <span className="flex items-center justify-center gap-2">
+              {busyConfirm ? "Confirming..." : "Confirm & Pay"}
+              <ArrowForwardSharp className="text-white" />
+            </span>
           </button>
         </div>
       </div>
@@ -485,11 +512,17 @@ function ParkingBookingSummaryPage() {
 
   return (
     <PageTransitionWrapper type="secondary">
-      <div className="h-screen bg-white relative overflow-hidden">
+      <div className="h-screen bg-white relative overflow-y-auto pb-12">
         <section className="px-4 pt-6">
-          <IconButton onClick={() => navigate(-1)} aria-label="Back">
-            <KeyboardBackspaceSharp className="text-black" />
-          </IconButton>
+          <div className="flex items-center justify-between">
+            <IconButton onClick={() => navigate(-1)} aria-label="Back">
+              <KeyboardBackspaceSharp className="text-black" />
+            </IconButton>
+            <h1 className="text-[18px] font-semibold text-[#1F2A44]">
+              Booking Summary
+            </h1>
+            <div className="w-[40px]" />
+          </div>
         </section>
 
         {topContent}
@@ -500,7 +533,7 @@ function ParkingBookingSummaryPage() {
           </div>
         )}
 
-        <div className="px-4 text-[12.5px] font-medium text-[#808080] mt-2 text-center">
+        <div className="px-4 text-[12.5px] font-medium text-[#808080] mt-1 text-center">
           Payment will be deducted from your Wallet
         </div>
 

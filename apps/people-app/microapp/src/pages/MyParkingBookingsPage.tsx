@@ -16,13 +16,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, IconButton } from "@mui/material";
 import {
   CalendarMonthSharp,
+  CancelSharp,
   CheckCircleSharp,
   HourglassTopSharp,
   LocationOnSharp,
+  KeyboardBackspaceSharp,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import { PageTransitionWrapper, BottomNav } from "@/components/shared";
 import type { ParkingReservationDetails, ParkingReservationStatus } from "@/types";
 import useHttp, { executeWithTokenHandling } from "@/utils/http";
@@ -31,6 +34,7 @@ import { getTodayBookingDate, formatBookingDate } from "@/utils/helpers/date";
 import { formatCoins } from "@/utils/helpers/coins";
 
 function MyParkingBookingsPage() {
+  const navigate = useNavigate();
   const { handleRequest, handleRequestWithNewToken } = useHttp();
   const today = getTodayBookingDate();
 
@@ -82,7 +86,9 @@ function MyParkingBookingsPage() {
     return reservations
       .filter(
         (r) =>
-          r.bookingDate !== today && r.status === ("CONFIRMED" as ParkingReservationStatus),
+          r.bookingDate < today &&
+          (r.status === ("CONFIRMED" as ParkingReservationStatus) ||
+            r.status === ("EXPIRED" as ParkingReservationStatus)),
       )
       .sort((a, b) =>
         String(b.bookingDate).localeCompare(String(a.bookingDate)),
@@ -91,14 +97,24 @@ function MyParkingBookingsPage() {
 
   return (
     <PageTransitionWrapper type="secondary">
-      <div className="h-screen bg-white overflow-hidden relative">
+      <div className="h-screen bg-white relative flex flex-col">
         <header className="pt-6 px-5">
-          <h2 className="text-center text-[20px] font-extrabold text-[#1F2A44]">
-            My Bookings
-          </h2>
+          <div className="flex items-center justify-between">
+            <IconButton
+              onClick={() => navigate("/")}
+              aria-label="Back"
+              size="small"
+            >
+              <KeyboardBackspaceSharp className="text-black" />
+            </IconButton>
+            <h2 className="flex-1 text-center text-[20px] font-bold text-[#1F2A44]">
+              My Bookings
+            </h2>
+            <div className="w-[40px]" />
+          </div>
         </header>
 
-        <section className="px-4 mt-5 pb-28">
+        <section className="px-4 mt-5 pb-28 overflow-y-auto flex-1 min-h-0">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-red-800 text-sm font-medium">
               {error}
@@ -213,11 +229,20 @@ function PastBookingCard({
 }: {
   reservation: ParkingReservationDetails;
 }) {
+  const isExpired = reservation.status === ("EXPIRED" as ParkingReservationStatus);
   return (
     <div className="border border-[#E5E5E5] rounded-[1rem] px-4 py-3 bg-white flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full grid place-items-center bg-[#EAF9EF] text-[#2ECC71]">
-          <CheckCircleSharp style={{ fontSize: 22 }} />
+        <div
+          className={`w-10 h-10 rounded-full grid place-items-center ${
+            isExpired ? "bg-[#FFF2F2] text-[#FF4D4D]" : "bg-[#EAF9EF] text-[#2ECC71]"
+          }`}
+        >
+          {isExpired ? (
+            <CancelSharp style={{ fontSize: 22 }} />
+          ) : (
+            <CheckCircleSharp style={{ fontSize: 22 }} />
+          )}
         </div>
         <div>
           <div className="text-[16px] font-extrabold text-[#1F2A44]">

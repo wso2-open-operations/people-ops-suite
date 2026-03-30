@@ -20,6 +20,9 @@ import { Logger } from "@/utils/logger";
 
 type Callback<T> = (data?: T) => void;
 
+let isNativeTokenRequestInProgress = false;
+let nativeTokenCallbackQueue: Callback<string>[] = [];
+
 declare global {
   interface Window {
     nativebridge?: {
@@ -44,14 +47,49 @@ declare global {
 
 // Function to get token from React Native
 export const getToken = (callback: Callback<string>): void => {
-  if (window.nativebridge) {
-    window.nativebridge.requestToken();
-    window.nativebridge.resolveToken = (token: string) => {
-      callback(token);
-    };
-  } else {
+
+  if (!window.nativebridge) {
     Logger.error("Native bridge is not available");
     callback();
+    return;
+  }
+
+  nativeTokenCallbackQueue.push(callback);
+  if (isNativeTokenRequestInProgress) return;
+
+  isNativeTokenRequestInProgress = true;
+  window.nativebridge.resolveToken = (token: string) => {
+    const queue = nativeTokenCallbackQueue;
+    nativeTokenCallbackQueue = [];
+    isNativeTokenRequestInProgress = false;
+
+    queue.forEach((cb) => {
+      try {
+        cb(token);
+      } catch (error) {
+        Logger.error("Error while executing native token callback", error);
+      }
+    });
+  };
+
+  try {
+    window.nativebridge.requestToken();
+  } catch (error) {
+    Logger.error("Failed to request token from native bridge", error);
+    const queue = nativeTokenCallbackQueue;
+    nativeTokenCallbackQueue = [];
+    isNativeTokenRequestInProgress = false;
+    window.nativebridge.resolveToken = () => {};
+    queue.forEach((cb) => {
+      try {
+        cb();
+      } catch (callbackError) {
+        Logger.error(
+          "Error while executing native token callback after request failure",
+          callbackError,
+        );
+      }
+    });
   }
 };
 
@@ -178,7 +216,7 @@ export const getLocalDataAsync = async <T = unknown>(key: string) => {
 
 /**
  * Request the super app to open another micro app.
- * Used for switching to the Wallet microapp for stage 2 payment.
+ * Used for switching to the Wallet microapp for payment.
  */
 export const requestOpenMicroApp = (
   targetAppId: string,
