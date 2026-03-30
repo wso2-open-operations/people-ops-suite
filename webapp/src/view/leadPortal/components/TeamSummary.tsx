@@ -37,7 +37,7 @@ import dayjs from "dayjs";
 
 import { useEffect, useState } from "react";
 
-import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
+import { CompletionStatusSection } from "@component/common/CompletionStatusSection";
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
 import { CustomModal } from "@component/common/CustomModal";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
@@ -455,7 +455,6 @@ export const TeamSummary = ({
       {teamReportState === RequestState.SUCCEEDED && teamReport !== null && (
         <Box sx={{ height: "100%" }} display={"flex"} flexDirection={"column"}>
           <Box
-            mb={1}
             sx={{
               display: "flex",
               width: "100%",
@@ -533,34 +532,13 @@ export const TeamSummary = ({
             )}
           </Box>
           <Stack direction="row" spacing={2}>
-            <Card variant="outlined" sx={{ padding: 2, flex: 2 }}>
-              <Box>
-                <Typography variant="h5">Completion Status</Typography>
-              </Box>
-              <Stack direction={"row"} spacing={4}>
-                <Box sx={{ width: "33%" }}>
-                  <CompletionStatusCard
-                    name="Employee PAR"
-                    completed={teamReport.summary.employeeParCompletedCount}
-                    total={teamReport.numberOfTeamMembers}
-                  />
-                </Box>
-                <Box sx={{ width: "33%" }}>
-                  <CompletionStatusCard
-                    name="Lead's PAR"
-                    completed={teamReport.summary.leadsReviewCompletedCount}
-                    total={teamReport.numberOfTeamMembers}
-                  />
-                </Box>
-                <Box sx={{ width: "33%" }}>
-                  <CompletionStatusCard
-                    name="F2F"
-                    completed={teamReport.summary.f2fCompletedCount}
-                    total={teamReport.numberOfTeamMembers}
-                  />
-                </Box>
-              </Stack>
-            </Card>
+            <CompletionStatusSection
+              employeeParComplete={teamReport.summary.employeeParCompletedCount}
+              leadReviewComplete={teamReport.summary.leadsReviewCompletedCount}
+              f2fComplete={teamReport.summary.f2fCompletedCount}
+              total={teamReport.numberOfTeamMembers}
+              sx={{ flex: 1 }}
+            />
             {/* Commented out temporarily for testing new features; to be removed later. */}
             {/* <Card variant="outlined" sx={{ padding: 2, flex: 1 }}>
               <Box
