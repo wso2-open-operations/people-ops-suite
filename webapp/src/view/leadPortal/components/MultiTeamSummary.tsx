@@ -30,7 +30,7 @@ import dayjs from "dayjs";
 
 import React, { useState } from "react";
 
-import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
+import { CompletionStatusSection } from "@component/common/CompletionStatusSection";
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
 import { CustomModal } from "@component/common/CustomModal";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
@@ -127,41 +127,12 @@ export const MultiTeamSummary = ({
           </Button>
         </Box>
       </Stack>
-      <Card variant="outlined" sx={{ padding: 2 }}>
-        <Grid container>
-          <Grid
-            size={{ xs: 12, sm: 12 }}
-            display={"flex"}
-            alignItems={"center"}
-            justifyContent={"space-between"}
-          >
-            <Typography variant="h5">Completion Status</Typography>
-          </Grid>
-        </Grid>
-        <Grid container spacing={10}>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <CompletionStatusCard
-              name="Employee PAR"
-              completed={filteredSummary.totalEmployeeParComplete}
-              total={filteredSummary.totalEmployees}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <CompletionStatusCard
-              name="Lead's PAR"
-              completed={filteredSummary.totalLeadReviewComplete}
-              total={filteredSummary.totalEmployees}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <CompletionStatusCard
-              name="F2F"
-              completed={filteredSummary.totalF2fComplete}
-              total={filteredSummary.totalEmployees}
-            />
-          </Grid>
-        </Grid>
-      </Card>
+      <CompletionStatusSection
+        employeeParComplete={filteredSummary.totalEmployeeParComplete}
+        leadReviewComplete={filteredSummary.totalLeadReviewComplete}
+        f2fComplete={filteredSummary.totalF2fComplete}
+        total={filteredSummary.totalEmployees}
+      />
       <Card
         variant="outlined"
         sx={{
