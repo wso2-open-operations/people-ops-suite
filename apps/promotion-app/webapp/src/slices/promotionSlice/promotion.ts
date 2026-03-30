@@ -24,13 +24,23 @@ import { PromotionRequest } from "@root/src/utils/types";
 
 interface Promotion {
   state: State;
+  postState: State;
   stateMessage: string | null;
   errorMessage: string | null;
   promotions: PromotionRequest[] | null;
 }
 
+interface InsertPromotionPaylod {
+  PromotionCycleID: number,
+  type: string,
+  promotingJobBand: number,
+  employeeEmail: string,
+  statement: string,
+}
+
 const initialState: Promotion = {
   state: State.idle,
+  postState: State.idle,
   stateMessage: null,
   errorMessage: null,
   promotions: null,
@@ -42,9 +52,13 @@ export const fetchPromotions = createAsyncThunk(
     {
       employeeEmail,
       statusArray,
+      type,
+      recommendedBy,
     }: {
       employeeEmail?: string;
       statusArray?: string[];
+      type?: string;
+      recommendedBy?: string;
     },
     { dispatch, rejectWithValue }
   ) => {
@@ -56,6 +70,8 @@ export const fetchPromotions = createAsyncThunk(
         .get(AppConfig.serviceUrls.retrieveAllPromotionRequests, {
           params: {
             employeeEmail,
+            type,
+            recommendedBy,
             statusArray: statusArray?.join(","),
           },
           cancelToken: newCancelTokenSource.token,
@@ -85,6 +101,49 @@ export const fetchPromotions = createAsyncThunk(
   }
 );
 
+export const insertPromotions = createAsyncThunk(
+  "promotion/insertPromotions",
+  async (payload: InsertPromotionPaylod,
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken(); 
+    return new Promise<{ applicationID: number }>((resolve, reject) => {
+      APIService.getInstance()
+        .post(AppConfig.serviceUrls.retrieveAllPromotionRequests, payload,{
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve({
+            applicationID: response.data
+          })
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Successfully Create a Promotion!",
+              type: "success",
+            })
+          );
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            reject(rejectWithValue("Request canceled"));
+            return;
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? "Failed to Create a Promotion!"
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error.response?.data?.message);
+        });
+    });
+  }
+);
+
 
 const PromotionSlice = createSlice({
   name: "promotion",
@@ -92,6 +151,7 @@ const PromotionSlice = createSlice({
   reducers: {
     resetSubmitState(state) {
       state.state = State.idle;
+      state.postState = State.idle;
     },
   },
   extraReducers: (builder) => {
@@ -108,6 +168,18 @@ const PromotionSlice = createSlice({
       .addCase(fetchPromotions.rejected, (state) => {
         state.state = State.failed;
         state.stateMessage = "Failed to fetch!";
+      })
+      .addCase(insertPromotions.pending, (state) => {
+        state.postState = State.loading;
+        state.stateMessage = "Inserting promotion data...";
+      })
+      .addCase(insertPromotions.fulfilled, (state, action) => {
+        state.postState = State.success;
+        state.stateMessage = "Successfully Created!";
+      })
+      .addCase(insertPromotions.rejected, (state) => {
+        state.postState = State.failed;
+        state.stateMessage = "Failed to Insert the promotion!";
       });
   },
 });

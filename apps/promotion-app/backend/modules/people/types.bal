@@ -75,7 +75,7 @@ public type Employee record {
 
 // Get employee graphQL service Responses.
 # Employee.
-public type EmployeesBasicInfo record {|
+public type EmployeeBasicInfo record {|
     # Id of the employee
     string employeeId;
     # Email of the employee
@@ -97,24 +97,28 @@ type EmployeeData record {
 };
 
 # Employee data.
-type EmployeeInfo record {
+public type EmployeeBasicInfoData record {
     # Employee
-    EmployeesBasicInfo employee;
+    EmployeeBasicInfo employee;
 };
 
 # Employee response.
 type EmployeeResponse record {
     # Employee data
-    EmployeeInfo data;
+    EmployeeBasicInfoData data;
 };
 
 # The EmployeeFilter record type represents the filter criteria for the employees.
-public type EmployeeFilter record {|
-    # The employee statuses
-    string[]? employeeStatus?;
-    # The employment types
-    string[]? employmentType?;
-|};
+public type EmployeeFilter record {
+    # Array of employee status
+    string[] employeeStatus;
+    # Array of employment type
+    string[] employmentType;
+    # Lead or not
+    boolean? lead = ();
+    # Array of job bands
+    int[]? jobBand = ();
+};
 
 # Basic employee information.
 public type EmployeeBasic record {|
@@ -129,7 +133,7 @@ public type EmployeeBasic record {|
 |};
 
 # Employees data.
-type EmployeesData record {
+type EmployeesBasicData record {
     # Array of employees
     EmployeeBasic[] employees;
 };
@@ -137,7 +141,7 @@ type EmployeesData record {
 # Employees response.
 type EmployeesResponse record {
     # Employees data
-    EmployeesData data;
+    EmployeesBasicData data;
 };
 
 # Return record for single employee.
@@ -200,4 +204,71 @@ type EmployeeThumbnailData record {
 public type EmployeeThumbnail record {
     # Thumbnail of the employee
     string? employeeThumbnail = "";
+};
+# lead array of EmployeeInfo service
+type EmployeesInfoData record {
+    # EmployeeInfo object
+    EmployeeInfo[] employees;
+};
+
+# Return record of EmployeeInfo service
+type EmployeesInfoResult record {
+    # EmployeeInfoData Object
+    EmployeesInfoData data;
+};
+
+# Return record of EmployeeInfo service
+type EmployeesResult record {
+    # EmployeeInfoData Object
+    EmployeesData data;
+};
+
+# Employees data.
+type EmployeesData record {
+    # Array of employees
+    Employee[] employees;
+};
+
+# Return record of EmployeeInfo service.
+type EmployeeInfoResult record {
+    # EmployeeInfoData Object
+    EmployeeInfoData data;
+};
+
+# Lead array of EmployeeInfo service.
+type EmployeeInfoData record {
+    # EmployeeInfo object
+    EmployeeInfo[] employees;
+};
+
+# Return record for single lead.
+public type EmployeeInfo record {
+    # First Name of the employee
+    string firstName;
+    # Last Name of the employee
+    string lastName;
+    # WSO2 email
+    string workEmail;
+    # Job Band of the employee
+    int? jobBand = ();
+    # Job Role of the employee
+    string jobRole;
+    # Thumbnail of the employee
+    string? employeeThumbnail = ();
+    # Last Promoted Date if so
+    string? lastPromotedDate = ();
+    # Manager email of the employee
+    string? managerEmail = ();
+    # Start Date of the employee
+    string? startDate = ();
+    # Employment type
+    string employmentType;
+    # Business unit of the employee
+    string businessUnit;
+    # Department of the employee
+    string department;
+    # Team of the employee
+    string? team = ();
+    # Sub team of the employee
+    string? subTeam = ();
 };

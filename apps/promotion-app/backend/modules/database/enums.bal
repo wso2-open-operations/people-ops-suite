@@ -1,4 +1,4 @@
-// Promotion Application User Roles.
+# Promotion Application User Roles.
 public enum Role {
     HR_ADMIN,
     PROMOTION_BOARD_MEMBER,
@@ -7,7 +7,7 @@ public enum Role {
     LEAD
 }
 
-// Promotion Request Lifecycle Status.
+# Promotion Request Lifecycle Status.
 public enum PromotionRequestStatus {
     DRAFT,
     SUBMITTED,
@@ -21,17 +21,26 @@ public enum PromotionRequestStatus {
     PROCESSING
 }
 
-// Promotion Cycle Status.
+# Promotion Cycle Status.
 public enum PromotionCyclesStatus {
     OPEN,
     CLOSED,
     END
 }
 
-// Promotion Request Types.
+# Promotion Request Types.
 public enum PromotionRequestType {
     NORMAL,
     SPECIAL,
     TIME_BASED,
     INDIVIDUAL_CONTRIBUTOR
+}
+
+# Promotion Recommendation Lifecycle Status.
+public enum PromotionRecommendationStatus {
+    DRAFT,
+    REQUESTED,
+    SUBMITTED,
+    DECLINED,
+    EXPIRED
 }

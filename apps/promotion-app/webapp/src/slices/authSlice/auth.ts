@@ -24,6 +24,7 @@ import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 export enum Role {
   ADMIN = "ADMIN",
   TEAM = "TEAM",
+  LEAD = "LEAD"
 }
 
 interface AuthState {
@@ -103,6 +104,9 @@ export const loadPrivileges = createAsyncThunk(
     }
     if (userPrivileges.includes(987)) {
       roles.push(Role.TEAM);
+    }
+    if (userPrivileges.includes(624)) {
+      roles.push(Role.LEAD);
     }
 
     if (roles.length === 0) {

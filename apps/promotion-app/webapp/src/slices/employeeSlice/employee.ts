@@ -22,13 +22,7 @@ import { SnackMessage } from "@config/constant";
 import { UserState } from "@slices/authSlice/auth";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-
-interface Employee {
-  firstName: string;
-  lastName: string;
-  workEmail: string;
-  employeeThumbnail: string | null;
-}
+import { Employee } from "@root/src/utils/types";
 
 interface EmployeeJoinedDetails {
   workEmail: string;
@@ -48,7 +42,7 @@ interface EmployeesState {
   state: State;
   stateMessage: string | null;
   errorMessage: string | null;
-  employees: Employee[] | null;
+  employees: Employee[] ;
   employeeHistory: EmployeeJoinedDetails | null
 }
 
@@ -56,7 +50,7 @@ const initialState: EmployeesState = {
   state: State.idle,
   stateMessage: null,
   errorMessage: null,
-  employees: null,
+  employees: [],
   employeeHistory: null,
 };
 
@@ -72,7 +66,7 @@ export const fetchEmployees = createAsyncThunk(
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
-          const filteredEmployees = response.data.filter((emp: Employee) => emp.workEmail !== userInfo?.workEmail);
+          const filteredEmployees = response.data.employees.filter((emp: Employee) => emp.workEmail !== userInfo?.workEmail);
           resolve(filteredEmployees);
         })
         .catch((error) => {

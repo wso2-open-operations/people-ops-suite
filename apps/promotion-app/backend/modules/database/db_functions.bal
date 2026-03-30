@@ -125,3 +125,69 @@ public isolated function getRecommendations(int? id = (), int? promotionRequestI
     return from FullPromotionRecommendation promotionRequest in resultStream
         select promotionRequest;
 }
+
+# Get Promotion Cycles By Status.
+#
+# + statusArray - Array of the promotion cycle Status
+# + return - Array of Promotion Cycles
+public isolated function getPromotionCyclesByStatus(PromotionCyclesStatus[]? statusArray)
+    returns PromotionCycle[]|error {
+
+    stream<PromotionCycle, error?> resultStream = databaseClient->query(getPromotionCyclesByStatusQuery(statusArray));
+
+    PromotionCycle[] cycles = [];
+    _ = check from PromotionCycle promotionCycle in resultStream
+        do {
+            cycles.push(promotionCycle);
+        };
+    return cycles;
+}
+
+# Is Duplicate Promotion Request.
+#
+# + employeeEmail - Employee WSO2 email  
+# + promotionCycleId - Promotion cycle id 
+# + return - true if duplicate request exists or error if any
+public isolated function isDuplicatePromotionRequest(
+        string employeeEmail, int promotionCycleId) returns boolean|error {
+
+    int count = check databaseClient->queryRow(getDuplicatePromotionRequestCountQuery(employeeEmail,
+            promotionCycleId));
+
+    return count > 0;
+}
+
+# Insert Promotion Request.
+#
+# + payload - Promotion Request Insert Payload
+# + return - Id of the Created Record
+public isolated function insertPromotionRequest(PromotionRequestDbInsertPayload payload)
+    returns int|error {
+
+    sql:ExecutionResult result = check databaseClient->execute(insertPromotionRequestQuery(payload));
+
+    int|string? lastInsertId = result.lastInsertId;
+    if lastInsertId is int {
+        return lastInsertId;
+    }
+
+    return error("Failed to retrieve last inserted promotion ID!");
+}
+
+# Insert New Promotion Recommendation.
+#
+# + payload - Promotion Recommendation Data
+# + return - Promotion Recommendation ID
+public isolated function insertPromotionRecommendation(PromotionRecommendationInsertPayload payload)
+        returns int|error {
+
+    sql:ExecutionResult result = check databaseClient->execute(insertPromotionRecommendationQuery(payload));
+
+    int|string? lastInsertId = result.lastInsertId;
+
+    if lastInsertId is int {
+        return lastInsertId;
+    }
+
+    return error("Failed to retrieve last inserted promotion recommendation ID!");
+}

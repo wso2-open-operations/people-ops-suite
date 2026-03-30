@@ -20,6 +20,7 @@ import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import PersonPinIcon from '@mui/icons-material/PersonPin';
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
@@ -49,6 +50,14 @@ export const routes: RouteObjectWithRole[] = [
     icon: React.createElement(EmojiEventsIcon),
     element: React.createElement(View.history),
     allowRoles: [Role.ADMIN, Role.TEAM],
+    bottomNav: false,
+  },
+  {
+    path: "/individualContributor",
+    text: "Individual Contributor",
+    icon: React.createElement(PersonPinIcon),
+    element: React.createElement(View.individualContributor),
+    allowRoles: [Role.LEAD],
     bottomNav: false,
   },
   {
