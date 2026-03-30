@@ -26,8 +26,6 @@ export default function GeneralLeaveHistory() {
         LeaveType.CASUAL,
         LeaveType.CONGES_PAYES,
         LeaveType.RTT,
-        LeaveType.SPAIN_ANNUAL,
-        LeaveType.SPAIN_CASUAL,
         LeaveType.SICK,
         LeaveType.LIEU,
         LeaveType.MATERNITY,
