@@ -88,8 +88,6 @@ export enum LeaveType {
   SICK = "sick",
   CONGES_PAYES = "conges_payes",
   RTT = "rtt",
-  SPAIN_ANNUAL = "spain_annual",
-  SPAIN_CASUAL = "spain_casual",
 }
 
 export enum LeaveLabel {
@@ -110,8 +108,6 @@ export enum LeaveLabel {
 export const LeaveTooltip: Partial<Record<LeaveType, string>> = {
   [LeaveType.CONGES_PAYES]: "Paid Annual Leave",
   [LeaveType.RTT]: "Réduction du Temps de Travail",
-  [LeaveType.SPAIN_ANNUAL]: "Annual Leave (Spain)",
-  [LeaveType.SPAIN_CASUAL]: "Casual Leave (Spain)",
   [LeaveType.SICK]: "Sick Leave",
 };
 
@@ -303,8 +299,6 @@ export interface LeavePolicy {
   casual?: number | null;
   congesPayes?: number | null;
   rtt?: number | null;
-  spainAnnual?: number | null;
-  spainCasual?: number | null;
   sick?: number | null;
 }
 

@@ -50,20 +50,14 @@ interface BalanceRow {
 const LEAVE_KEY_LABEL: Record<string, { label: string; tooltip?: string }> = {
   congesPayes: { label: LeaveLabel.CONGES_PAYES, tooltip: LeaveTooltip[LeaveType.CONGES_PAYES] },
   rtt: { label: LeaveLabel.RTT, tooltip: LeaveTooltip[LeaveType.RTT] },
-  spainAnnual: {
-    label: LeaveLabel.SPAIN_ANNUAL,
-    tooltip: LeaveTooltip[LeaveType.SPAIN_ANNUAL],
-  },
-  spainCasual: {
-    label: LeaveLabel.SPAIN_CASUAL,
-    tooltip: LeaveTooltip[LeaveType.SPAIN_CASUAL],
-  },
+  annual: { label: LeaveLabel.SPAIN_ANNUAL },
+  casual: { label: LeaveLabel.SPAIN_CASUAL },
   sick: { label: LeaveLabel.SICK },
 };
 
 const LOCATION_KEYS: Record<string, string[]> = {
   [EmployeeLocation.FR]: ["congesPayes", "rtt", "sick"],
-  [EmployeeLocation.ES]: ["spainAnnual", "spainCasual", "sick"],
+  [EmployeeLocation.ES]: ["annual", "casual", "sick"],
 };
 
 function formatPeriod(start?: string | null, end?: string | null): string | undefined {

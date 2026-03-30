@@ -56,7 +56,7 @@ export default function GeneralLeave() {
       case EmployeeLocation.FR:
         return LeaveType.CONGES_PAYES;
       case EmployeeLocation.ES:
-        return LeaveType.SPAIN_ANNUAL;
+        return LeaveType.ANNUAL;
       case EmployeeLocation.IN:
         return LeaveType.ANNUAL;
       default:
@@ -67,8 +67,6 @@ export default function GeneralLeave() {
   const LEAVE_TYPE_KEY_MAP: Record<string, string> = {
     [LeaveType.CONGES_PAYES]: "congesPayes",
     [LeaveType.RTT]: "rtt",
-    [LeaveType.SPAIN_ANNUAL]: "spainAnnual",
-    [LeaveType.SPAIN_CASUAL]: "spainCasual",
     [LeaveType.SICK]: "sick",
     [LeaveType.CASUAL]: "casual",
     [LeaveType.ANNUAL]: "annual",
@@ -77,8 +75,6 @@ export default function GeneralLeave() {
   const LEAVE_TYPE_LABEL_MAP: Record<string, string> = {
     [LeaveType.CONGES_PAYES]: LeaveLabel.CONGES_PAYES,
     [LeaveType.RTT]: LeaveLabel.RTT,
-    [LeaveType.SPAIN_ANNUAL]: LeaveLabel.SPAIN_ANNUAL,
-    [LeaveType.SPAIN_CASUAL]: LeaveLabel.SPAIN_CASUAL,
     [LeaveType.SICK]: LeaveLabel.SICK,
     [LeaveType.CASUAL]: LeaveLabel.CASUAL,
     [LeaveType.ANNUAL]: LeaveLabel.CASUAL,

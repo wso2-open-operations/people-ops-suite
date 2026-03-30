@@ -92,16 +92,14 @@ const LOCATION_LEAVE_TYPES: Record<string, LeaveTypeOption[]> = {
   ],
   [EmployeeLocation.ES]: [
     {
-      type: LeaveType.SPAIN_ANNUAL,
+      type: LeaveType.ANNUAL,
       label: LeaveLabel.SPAIN_ANNUAL,
       icon: EventAvailableIcon,
-      tooltip: LeaveTooltip[LeaveType.SPAIN_ANNUAL],
     },
     {
-      type: LeaveType.SPAIN_CASUAL,
+      type: LeaveType.CASUAL,
       label: LeaveLabel.SPAIN_CASUAL,
       icon: WorkOffIcon,
-      tooltip: LeaveTooltip[LeaveType.SPAIN_CASUAL],
     },
     {
       type: LeaveType.SICK,
