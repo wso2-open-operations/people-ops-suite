@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import {
   CalendarMonthSharp,
   DirectionsCarSharp,
+  ArrowForwardSharp,
   KeyboardBackspaceSharp,
   WarningAmberSharp,
 } from "@mui/icons-material";
@@ -344,8 +345,8 @@ function ParkingBookingSummaryPage() {
   }
 
   const topContent = (
-    <section className="px-4 mt-2 pb-6">
-      <div className="bg-white border border-[#E5E5E5] rounded-[1.2rem] px-4 pt-5 pb-3 shadow-sm">
+    <section className="px-4 mt-2 pb-4">
+      <div className="bg-white border border-[#E5E5E5] rounded-[1.2rem] px-4 pt-5 pb-6 shadow-sm">
         <div className="flex flex-col items-center">
           <div className="w-16 h-16 rounded-[1rem] bg-[#FFE1C9] grid place-items-center">
             <div
@@ -420,19 +421,19 @@ function ParkingBookingSummaryPage() {
         </div>
 
         <div className="mt-6 border-t border-[#E5E5E5] pt-5">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full">
             <div className="w-10 h-10 rounded-full bg-[#EAF3FF] grid place-items-center">
               <CalendarMonthSharp style={{ color: "#0B64C0" }} />
             </div>
             <div className="text-[13px] font-bold text-[#808080]">Date</div>
           </div>
 
-          <div className="mt-3 text-[16px] font-bold text-[#1F2A44]">
+          <div className="mt-2 inline-block ml-[8px] text-left text-[16px] font-bold text-[#1F2A44] leading-none">
             {formatBookingDate(bookingDate)}
           </div>
         </div>
 
-        <div className="mt-5 border-t border-dashed border-[#E5E5E5] pt-4">
+        <div className="mt-4 border-t border-dashed border-[#E5E5E5] pt-4">
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium text-[#808080]">Amount to Pay</div>
             <div className="text-[26px] font-extrabold text-[#ff7300]">
@@ -481,7 +482,10 @@ function ParkingBookingSummaryPage() {
             disabled={busyConfirm || !vehicleId || vehiclesSetupRequired}
             onClick={handleConfirmAndPay}
           >
-            {busyConfirm ? "Confirming..." : "Confirm & Pay"}
+            <span className="flex items-center justify-center gap-2">
+              {busyConfirm ? "Confirming..." : "Confirm & Pay"}
+              <ArrowForwardSharp className="text-white" />
+            </span>
           </button>
         </div>
       </div>
@@ -490,11 +494,17 @@ function ParkingBookingSummaryPage() {
 
   return (
     <PageTransitionWrapper type="secondary">
-      <div className="h-screen bg-white relative overflow-hidden">
+      <div className="h-screen bg-white relative overflow-y-auto pb-12">
         <section className="px-4 pt-6">
-          <IconButton onClick={() => navigate(-1)} aria-label="Back">
-            <KeyboardBackspaceSharp className="text-black" />
-          </IconButton>
+          <div className="flex items-center justify-between">
+            <IconButton onClick={() => navigate(-1)} aria-label="Back">
+              <KeyboardBackspaceSharp className="text-black" />
+            </IconButton>
+            <h1 className="text-[18px] font-semibold text-[#1F2A44]">
+              Booking Summary
+            </h1>
+            <div className="w-[40px]" />
+          </div>
         </section>
 
         {topContent}
@@ -505,7 +515,7 @@ function ParkingBookingSummaryPage() {
           </div>
         )}
 
-        <div className="px-4 text-[12.5px] font-medium text-[#808080] mt-2 text-center">
+        <div className="px-4 text-[12.5px] font-medium text-[#808080] mt-1 text-center">
           Payment will be deducted from your Wallet
         </div>
 
