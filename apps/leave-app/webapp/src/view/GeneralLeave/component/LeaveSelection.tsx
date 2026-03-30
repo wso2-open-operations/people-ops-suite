@@ -60,7 +60,7 @@ const LOCATION_LEAVE_TYPES: Record<string, LeaveTypeOption[]> = {
     { type: LeaveType.ANNUAL, label: LeaveLabel.INDIA_ANNUAL, icon: EventAvailableIcon },
     {
       type: LeaveType.CASUAL,
-      label: LeaveLabel.CASUAL,
+      label: LeaveLabel.INDIA_CASUAL,
       icon: WorkOffIcon,
       info: "Maharashtra only",
     },

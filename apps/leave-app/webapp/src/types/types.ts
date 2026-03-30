@@ -102,6 +102,7 @@ export enum LeaveLabel {
   SPAIN_ANNUAL = "Annual Leave",
   SPAIN_CASUAL = "Casual Leave",
   INDIA_ANNUAL = "Annual / Earned",
+  INDIA_CASUAL = "Casual",
 }
 
 // Tooltip descriptions for leave types.
