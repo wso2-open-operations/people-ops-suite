@@ -128,11 +128,9 @@ public isolated function getEmployees(boolean? filterLeads = (), int[]? jobBandA
     EmployeeInfoResult|error employeeData = hrClient->execute(document, {filter});
 
     if employeeData is error {
-        log:printError(employeeData.toBalString());
         return error((filterLeads is boolean && filterLeads == true) ? "Error while retrieving lead list!" : "Error while retrieving employee list!");
     }
 
-    // Null Check.
     if employeeData.data.employees.length() <= 0 {
         return error((filterLeads is boolean && filterLeads == true) ? "No active leads found!" : "No active employees found!");
     }

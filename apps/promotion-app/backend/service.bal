@@ -79,7 +79,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         people:EmployeeHistory|error employeeData = people:fetchEmployeeHistory(userInfo.email);
         if employeeData is error {
-            log:printError(`Error occurred while retrieving employee history: ${userInfo.email}!`, employeeData);
+            log:printError(string `Error occurred while retrieving employee history: ${userInfo.email}!`, employeeData);
             return {
                 body: {
                     message: "Error occurred while retrieving employee history!"
@@ -187,11 +187,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         people:EmployeeInfo[]|error employees = people:getEmployees();
 
         if employees is error {
-            string customError = string `Error occurred while retrieving employees!`;
-            log:printError(customError, employees);
+            log:printError(employees.message(), employees);
             return <http:InternalServerError>{
                 body: {
-                    message: customError
+                    message: employees.message()
                 }
             };
         }
@@ -459,7 +458,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        // Verifying the requester.
+        
         // [Special Promotion Request] leads can create promotion requests for others.
         if !database:checkRoles([database:LEAD], userAppPrivileges.roles) && userInfo.email != application.employeeEmail {
             string customError = "Insufficient privilege to create promotion application for others.";
@@ -470,7 +469,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        // [End] Resource level authorization.
 
         people:Employee|error employeeData = people:getEmployee(workEmail = application.employeeEmail);
 
