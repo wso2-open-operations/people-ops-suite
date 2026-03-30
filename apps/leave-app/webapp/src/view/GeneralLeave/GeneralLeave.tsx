@@ -95,6 +95,7 @@ export default function GeneralLeave() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDateValidating, setIsDateValidating] = useState(false);
   const [dateError, setDateError] = useState(false);
+  const [balanceKey, setBalanceKey] = useState(0);
 
   useEffect(() => {
     setSelectedLeaveType(getDefaultLeaveType(userLocation));
@@ -144,6 +145,7 @@ export default function GeneralLeave() {
       await submitLeaveRequest(payload);
 
       enqueueSnackbar("Leave request submitted successfully!", { variant: "success" });
+      setBalanceKey((k) => k + 1);
 
       setStartDate(null);
       setEndDate(null);
@@ -259,7 +261,7 @@ export default function GeneralLeave() {
       </Box>
 
       {/* Leave Balance (France/Spain only) */}
-      <LeaveBalanceSummary />
+      <LeaveBalanceSummary key={balanceKey} />
 
       {/* Date & Leave Type Section */}
       <Box sx={sectionCard}>
