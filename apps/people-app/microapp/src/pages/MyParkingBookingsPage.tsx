@@ -21,8 +21,11 @@ import {
   CalendarMonthSharp,
   CancelSharp,
   CheckCircleSharp,
+  CloseSharp,
+  DirectionsCarSharp,
   HourglassTopSharp,
   LocationOnSharp,
+  PaidSharp,
   KeyboardBackspaceSharp,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -43,6 +46,46 @@ function MyParkingBookingsPage() {
   const [reservations, setReservations] = useState<
     ParkingReservationDetails[]
   >([]);
+
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | undefined>(
+    undefined,
+  );
+  const [details, setDetails] = useState<ParkingReservationDetails | undefined>(
+    undefined,
+  );
+
+  const openReservationDetails = (reservation: ParkingReservationDetails) => {
+    setDetails(reservation);
+    setDetailsOpen(true);
+    setDetailsLoading(true);
+    setDetailsError(undefined);
+
+    executeWithTokenHandling(
+      handleRequest,
+      handleRequestWithNewToken,
+      serviceUrls.fetchParkingReservationById(reservation.id),
+      "GET",
+      null,
+      (data) => {
+        setDetails(data as ParkingReservationDetails);
+        setDetailsLoading(false);
+      },
+      (err) => {
+        setDetailsError(String(err ?? "Failed to load reservation"));
+        setDetailsLoading(false);
+      },
+      (pending) => setDetailsLoading(pending),
+    );
+  };
+
+  const closeReservationDetails = () => {
+    setDetailsOpen(false);
+    setDetailsLoading(false);
+    setDetailsError(undefined);
+    setDetails(undefined);
+  };
 
   useEffect(() => {
     executeWithTokenHandling(
@@ -138,7 +181,11 @@ function MyParkingBookingsPage() {
               ) : (
                 <div className="grid gap-3">
                   {activeBookings.map((r) => (
-                    <ActiveBookingCard key={r.id} reservation={r} />
+                    <ActiveBookingCard
+                      key={r.id}
+                      reservation={r}
+                      onOpen={() => openReservationDetails(r)}
+                    />
                   ))}
                 </div>
               )}
@@ -150,7 +197,11 @@ function MyParkingBookingsPage() {
                   </div>
                   <div className="grid gap-3">
                     {pendingBookings.map((r) => (
-                      <PendingBookingCard key={r.id} reservation={r} />
+                      <PendingBookingCard
+                        key={r.id}
+                        reservation={r}
+                        onOpen={() => openReservationDetails(r)}
+                      />
                     ))}
                   </div>
                 </>
@@ -167,7 +218,11 @@ function MyParkingBookingsPage() {
               ) : (
                 <div className="grid gap-3">
                   {pastBookings.map((r) => (
-                    <PastBookingCard key={r.id} reservation={r} />
+                    <PastBookingCard
+                      key={r.id}
+                      reservation={r}
+                      onOpen={() => openReservationDetails(r)}
+                    />
                   ))}
                 </div>
               )}
@@ -175,19 +230,140 @@ function MyParkingBookingsPage() {
           )}
         </section>
 
+        {detailsOpen && (
+          <div
+            className="fixed inset-0 bg-black/10 backdrop-blur-[2px] z-30 grid place-items-center px-5"
+            onClick={closeReservationDetails}
+          >
+            <div
+              className="w-full max-w-[380px] bg-white border border-red-200 rounded-[1.2rem] p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-[#1F2A44] font-extrabold text-[16px]">
+                  Reservation Details
+                </div>
+                <IconButton
+                  onClick={closeReservationDetails}
+                  aria-label="Close details"
+                  size="small"
+                >
+                  <CloseSharp />
+                </IconButton>
+              </div>
+
+              {detailsLoading ? (
+                <div className="grid place-items-center py-6">
+                  <CircularProgress size={28} sx={{ color: "#ff7300" }} />
+                </div>
+              ) : detailsError ? (
+                <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-red-800 text-sm font-medium">
+                  {detailsError}
+                </div>
+              ) : details ? (
+                <div className="mt-3">
+                  <ReservationStatusBadge status={details.status} />
+
+                  <div className="mt-3 text-[22px] font-extrabold text-[#1F2A44]">
+                    {details.slotId}
+                  </div>
+                  <div className="mt-1 text-[#808080] text-[14px] font-medium flex items-center gap-2">
+                    <LocationOnSharp style={{ fontSize: 16 }} />
+                    {details.floorName}
+                  </div>
+
+                  <div className="mt-3">
+                    <InfoBox
+                      label="Date"
+                      value={formatBookingDate(details.bookingDate)}
+                      icon={<CalendarMonthSharp style={{ fontSize: 18, color: "#808080" }} />}
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <InfoBox
+                      label="Vehicle"
+                      value={details.vehicleRegistrationNumber}
+                      icon={
+                        <DirectionsCarSharp
+                          style={{ fontSize: 18, color: "#808080" }}
+                        />
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <InfoBox
+                      label="Amount"
+                      value={`${formatCoins(details.coinsAmount)} O2C`}
+                      icon={
+                        <PaidSharp
+                          style={{ fontSize: 18, color: "#808080" }}
+                        />
+                      }
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
+
         <BottomNav active="history" />
       </div>
     </PageTransitionWrapper>
   );
 }
 
+function ReservationStatusBadge({ status }: { status: ParkingReservationStatus | string }) {
+  const normalized = String(status);
+  const isConfirmed = normalized === ("CONFIRMED" as ParkingReservationStatus);
+  const isExpired = normalized === ("EXPIRED" as ParkingReservationStatus);
+
+  if (isConfirmed) {
+    return (
+      <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#ff7300] text-white text-[12px] font-extrabold">
+        <CheckCircleSharp style={{ fontSize: 16, marginRight: 6 }} />
+        CONFIRMED
+      </div>
+    );
+  }
+
+  if (isExpired) {
+    return (
+      <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#FFF2F2] text-[#FF4D4D] text-[12px] font-extrabold border border-[#FFD9D9]">
+        <CancelSharp style={{ fontSize: 16, marginRight: 6 }} />
+        EXPIRED
+      </div>
+    );
+  }
+
+  // default to pending UI
+  return (
+    <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#FFF6EA] text-[#F59E0B] text-[12px] font-extrabold">
+      <HourglassTopSharp style={{ fontSize: 16, marginRight: 6 }} />
+      PENDING
+    </div>
+  );
+}
+
 function ActiveBookingCard({
   reservation,
+  onOpen,
 }: {
   reservation: ParkingReservationDetails;
+  onOpen: () => void;
 }) {
   return (
-    <div className="border border-[#ff7300] rounded-[1.2rem] px-4 py-4 bg-[#FFF2E8]">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen();
+      }}
+      className="border border-[#ff7300] rounded-[1.2rem] px-4 py-4 bg-[#FFF2E8] cursor-pointer"
+    >
       <div className="flex items-start justify-between">
         <div>
           <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#ff7300] text-white text-[12px] font-extrabold">
@@ -226,12 +402,22 @@ function ActiveBookingCard({
 
 function PastBookingCard({
   reservation,
+  onOpen,
 }: {
   reservation: ParkingReservationDetails;
+  onOpen: () => void;
 }) {
   const isExpired = reservation.status === ("EXPIRED" as ParkingReservationStatus);
   return (
-    <div className="border border-[#E5E5E5] rounded-[1rem] px-4 py-3 bg-white flex items-center justify-between">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen();
+      }}
+      className="border border-[#E5E5E5] rounded-[1rem] px-4 py-3 bg-white flex items-center justify-between cursor-pointer"
+    >
       <div className="flex items-center gap-3">
         <div
           className={`w-10 h-10 rounded-full grid place-items-center ${
@@ -266,11 +452,21 @@ function PastBookingCard({
 
 function PendingBookingCard({
   reservation,
+  onOpen,
 }: {
   reservation: ParkingReservationDetails;
+  onOpen: () => void;
 }) {
   return (
-    <div className="border border-[#FFD18A] rounded-[1rem] px-4 py-3 bg-white flex items-center justify-between">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen();
+      }}
+      className="border border-[#FFD18A] rounded-[1rem] px-4 py-3 bg-white flex items-center justify-between cursor-pointer"
+    >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full grid place-items-center bg-[#FFF6EA] text-[#F59E0B]">
           <HourglassTopSharp style={{ fontSize: 22 }} />
