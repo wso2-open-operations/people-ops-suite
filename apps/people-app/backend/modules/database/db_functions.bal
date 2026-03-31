@@ -469,7 +469,7 @@ isolated function syncAdditionalManagers(string employeeId, Email[] desiredEmail
         databaseClient->query(getAdditionalManagerEmailsQuery(employeeId));
 
     string[] currentEmails = check from AdditionalManagerEmailRow emailRow in currentStream
-        select emailRow.additional_manager_email.toLowerAscii();
+        select emailRow.additionalManagerEmail.toLowerAscii();
 
     string[] desiredLower = from Email email in desiredEmails
         select email.trim().toLowerAscii();

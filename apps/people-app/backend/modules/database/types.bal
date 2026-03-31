@@ -595,7 +595,8 @@ public type EmergencyContactRow record {|
 # Additional manager email row mapping.
 public type AdditionalManagerEmailRow record {|
     # Additional manager email
-    string additional_manager_email;
+    @sql:Column {name: "additional_manager_email"}
+    string additionalManagerEmail;
 |};
 
 # Create personal info payload.
