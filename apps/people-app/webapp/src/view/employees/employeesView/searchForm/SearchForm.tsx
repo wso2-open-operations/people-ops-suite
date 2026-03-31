@@ -174,7 +174,7 @@ export function SearchForm() {
     dispatch(
       setEmployeeFilter({
         searchString: normalizedSearchString,
-        filters: { excludeFutureStartDate: true },
+        filters: {},
         pagination: {
           limit: DEFAULT_LIMIT_VALUE,
           offset: DEFAULT_OFFSET_VALUE,

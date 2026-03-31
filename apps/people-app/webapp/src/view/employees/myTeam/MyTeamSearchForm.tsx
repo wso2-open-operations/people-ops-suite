@@ -164,7 +164,7 @@ export function MyTeamSearchForm({
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     onFilterChange({
       searchString: normalizeSearchString(searchText),
-      filters: { directReports: false, excludeFutureStartDate: true },
+      filters: { directReports: false },
       pagination: { limit: DEFAULT_LIMIT_VALUE, offset: DEFAULT_OFFSET_VALUE },
       sort: filterRef.current.sort,
     });
