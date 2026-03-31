@@ -227,6 +227,8 @@ public type EmployeeFilters record {|
     string? employeeStatus = ();
     # Direct reports only (true = direct only, false = all subordinates recursively)
     boolean? directReports = ();
+    # When true, excludes employees whose start date is in the future
+    boolean? excludeFutureStartDate = ();
 |};
 
 # Pagination information.

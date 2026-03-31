@@ -572,10 +572,17 @@ export default function Me({
             sx={{ alignSelf: "center" }}
           >
             {employee && (
-              <Tooltip title="View QR Code">
-                <IconButton color="secondary" onClick={handleQrOpen} sx={{ p: 0.5 }}>
-                  <QrCode2Icon sx={{ fontSize: 32 }} />
-                </IconButton>
+              <Tooltip title={employee.house ? "View QR Code" : "QR code unavailable: no house assigned"}>
+                <span>
+                  <IconButton
+                    color="secondary"
+                    onClick={handleQrOpen}
+                    disabled={!employee.house}
+                    sx={{ p: 0.5 }}
+                  >
+                    <QrCode2Icon sx={{ fontSize: 32 }} />
+                  </IconButton>
+                </span>
               </Tooltip>
             )}
             {readOnly && targetEmployeeId && roles.includes(Role.ADMIN) && !location.state?.fromMyTeam && (

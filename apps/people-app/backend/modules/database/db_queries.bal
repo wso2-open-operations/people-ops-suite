@@ -169,6 +169,8 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.unit_id AS unitId,
             c.name AS company,
             e.company_id AS companyId,
+            h.name AS house,
+            e.house_id AS houseId,
             r.date                    AS resignationDate,
             r.final_day_in_office     AS finalDayInOffice,
             r.final_day_of_employment AS finalDayOfEmployment,
@@ -177,23 +179,23 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
         FROM
             employee e
             LEFT JOIN (
-                SELECT 
+                SELECT
                     employee_pk_id,
-                    GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                    GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',')
                     AS additionalManagerEmails
                 FROM employee_additional_managers
                 GROUP BY employee_pk_id
             ) eam ON eam.employee_pk_id = e.id
 
             LEFT JOIN (
-                SELECT 
+                SELECT
                     LOWER(manager_email) AS managerEmail,
                     COUNT(*) AS subordinateCount
                 FROM employee
                 WHERE manager_email IS NOT NULL AND manager_email <> ''
                 GROUP BY LOWER(manager_email)
             ) sc ON sc.managerEmail = LOWER(e.work_email)
-            
+
             INNER JOIN personal_info pi ON pi.id = e.personal_info_id
             INNER JOIN employment_type et ON et.id = e.employment_type_id
             INNER JOIN designation d ON d.id = e.designation_id
@@ -203,6 +205,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             INNER JOIN team t ON t.id = e.team_id
             INNER JOIN sub_team st ON st.id = e.sub_team_id
             LEFT JOIN unit u ON u.id = e.unit_id
+            LEFT JOIN house h ON h.id = e.house_id
             LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 
@@ -278,6 +281,10 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     appendIntFilter(filters, payload.filters.subTeamId, `e.sub_team_id = ${payload.filters.subTeamId}`);
     appendIntFilter(filters, payload.filters.unitId, `e.unit_id = ${payload.filters.unitId}`);
     appendIntFilter(filters, payload.filters.employmentTypeId, `e.employment_type_id = ${payload.filters.employmentTypeId}`);
+
+    if payload.filters.excludeFutureStartDate == true {
+        filters.push(`e.start_date <= CURDATE()`);
+    }
 
     string? searchString = payload.searchString;
 

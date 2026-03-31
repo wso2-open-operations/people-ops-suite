@@ -122,6 +122,7 @@ export type Filters = {
   gender?: string;
   employeeStatus?: EmployeeStatus;
   directReports?: boolean;
+  excludeFutureStartDate?: boolean;
 };
 
 export type Pagination = {
@@ -240,6 +241,7 @@ const initialState: EmployeesState = {
   employeeFilter: {
     filters: {
       employeeStatus: EmployeeStatus.Active,
+      excludeFutureStartDate: true,
     },
     pagination: {
       limit: DEFAULT_LIMIT_VALUE,
@@ -460,10 +462,13 @@ export const updateEmployeeJobInfo = createAsyncThunk(
 
 export const downloadEmployeeReportByStatus = createAsyncThunk(
   "employee/downloadEmployeeReportByStatus",
-  async (status: EmployeeStatus | undefined, { dispatch, rejectWithValue }) => {
+  async (
+    { status, excludeFutureStartDate }: { status: EmployeeStatus | undefined; excludeFutureStartDate?: boolean },
+    { dispatch, rejectWithValue },
+  ) => {
     try {
       const response = await APIService.getInstance().post(
-        AppConfig.serviceUrls.reportsEmployees(status),
+        AppConfig.serviceUrls.reportsEmployees(status, excludeFutureStartDate),
         {},
         { responseType: "text" },
       );
@@ -655,7 +660,7 @@ const EmployeeSlice = createSlice({
           !searchString &&
           filters.employeeStatus === EmployeeStatus.Active &&
           Object.entries(filters).every(([key, value]) => {
-            return key === "employeeStatus" || value === undefined;
+            return key === "employeeStatus" || key === "excludeFutureStartDate" || value === undefined;
           });
         if (isTotalActiveQuery) {
           state.totalActiveEmployeeCount = action.payload.totalCount;

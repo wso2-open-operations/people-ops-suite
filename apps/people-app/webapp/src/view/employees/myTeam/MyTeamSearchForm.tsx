@@ -164,7 +164,7 @@ export function MyTeamSearchForm({
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     onFilterChange({
       searchString: normalizeSearchString(searchText),
-      filters: { directReports: false },
+      filters: { directReports: false, excludeFutureStartDate: true },
       pagination: { limit: DEFAULT_LIMIT_VALUE, offset: DEFAULT_OFFSET_VALUE },
       sort: filterRef.current.sort,
     });
@@ -172,16 +172,16 @@ export function MyTeamSearchForm({
 
   // Filters beyond the default "Active + directReports" baseline (used for showing "Filtered" chip and "Clear filters" button).
   function hasNonBaselineFilters(filters: EmployeeSearchPayload["filters"]): boolean {
-    const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId } = filters;
-    return Boolean(businessUnitId || teamId || subTeamId || unitId || careerFunctionId || gender || designationId || employmentTypeId || managerEmail || companyId || officeId);
+    const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, excludeFutureStartDate } = filters;
+    return Boolean(businessUnitId || teamId || subTeamId || unitId || careerFunctionId || gender || designationId || employmentTypeId || managerEmail || companyId || officeId || excludeFutureStartDate);
   }
 
   const activeFilterCount = useMemo(() => {
-    const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatus, directReports } = filterPayload.filters;
+    const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatus, directReports, excludeFutureStartDate } = filterPayload.filters;
     // employeeStatus is always applied (Active by default) — count it so the badge reflects it.
     // directReports defaults to false (show all); turning it on (Direct Reports Only) is an active filter.
     const directReportsOn = directReports === true;
-    return [businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatus, directReportsOn || undefined].filter(Boolean).length;
+    return [businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatus, directReportsOn || undefined, excludeFutureStartDate].filter(Boolean).length;
   }, [filterPayload.filters]);
 
   const active = activeFilterCount > 0;

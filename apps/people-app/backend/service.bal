@@ -1463,7 +1463,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + status - Optional employee status query parameter (e.g. "Active", "Left"); omit to export all employees
     # + return - CSV file response or HTTP errors
-    resource function post reports/employees/generate(http:RequestContext ctx, database:EmployeeStatus? status = ())
+    resource function post reports/employees/generate(http:RequestContext ctx, database:EmployeeStatus? status = (),
+        boolean excludeFutureStartDate = true)
         returns http:Response|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -1486,7 +1487,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
                                                                                     searchString: (),
-                                                                                    filters: {employeeStatus: status},
+                                                                                    filters: {employeeStatus: status, excludeFutureStartDate: excludeFutureStartDate},
                                                                                     pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
                                                                                     sort: {sortField: "employeeId", sortOrder: "ASC"}
                                                                                 });
