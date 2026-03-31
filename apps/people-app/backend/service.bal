@@ -1207,7 +1207,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updateResult = database:updateVehicle({
-            vehicleId: vehicleId,
+            vehicleId
             vehicleStatus: database:INACTIVE,
             updatedBy: userInfo.email
         });
