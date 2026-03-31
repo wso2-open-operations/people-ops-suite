@@ -459,9 +459,12 @@ export const OrgSummary = ({
       renderCell: (params: GridRenderCellParams) => (
         <Box display="flex" alignItems="center" position="relative">
           <Avatar
-            src={params.row?.employeeThumbnail || ""}
-            alt={params.row?.employeeName}
-            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem" }}
+            src={employeeMap[params.row?.workEmail]?.employeeThumbnail || ""}
+            alt={
+              employeeMap[params.row?.parEmployeeEmail]?.employeeName ||
+              params.row?.parEmployeeEmail
+            }
+            sx={{ marginRight: 2, height: "1.9rem", width: "1.9rem" }}
           >
             {params.row?.employeeName?.charAt(0)}
           </Avatar>
