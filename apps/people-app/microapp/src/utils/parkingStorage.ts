@@ -34,13 +34,14 @@ const CONFIRMATION_KEY = "people_parking_confirmation";
 export function setParkingPaymentContextState(
   state: ParkingPaymentContextState,
 ) {
-  sessionStorage.setItem(PAYMENT_CONTEXT_KEY, JSON.stringify(state));
+  // Persist across WebView reloads during wallet handoff.
+  localStorage.setItem(PAYMENT_CONTEXT_KEY, JSON.stringify(state));
 }
 
 export function getParkingPaymentContextState():
   | ParkingPaymentContextState
   | undefined {
-  const raw = sessionStorage.getItem(PAYMENT_CONTEXT_KEY);
+  const raw = localStorage.getItem(PAYMENT_CONTEXT_KEY);
   if (!raw) return undefined;
   try {
     return JSON.parse(raw) as ParkingPaymentContextState;
@@ -50,17 +51,18 @@ export function getParkingPaymentContextState():
 }
 
 export function clearParkingPaymentContextState() {
-  sessionStorage.removeItem(PAYMENT_CONTEXT_KEY);
+  localStorage.removeItem(PAYMENT_CONTEXT_KEY);
 }
 
 export function setConfirmationState(reservation: ParkingReservationDetails) {
-  sessionStorage.setItem(CONFIRMATION_KEY, JSON.stringify(reservation));
+  // Persist across WebView reloads so confirmation screen can render.
+  localStorage.setItem(CONFIRMATION_KEY, JSON.stringify(reservation));
 }
 
 export function getConfirmationState():
   | ParkingReservationDetails
   | undefined {
-  const raw = sessionStorage.getItem(CONFIRMATION_KEY);
+  const raw = localStorage.getItem(CONFIRMATION_KEY);
   if (!raw) return undefined;
   try {
     return JSON.parse(raw) as ParkingReservationDetails;
@@ -70,6 +72,6 @@ export function getConfirmationState():
 }
 
 export function clearConfirmationState() {
-  sessionStorage.removeItem(CONFIRMATION_KEY);
+  localStorage.removeItem(CONFIRMATION_KEY);
 }
 
