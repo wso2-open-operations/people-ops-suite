@@ -82,10 +82,6 @@ function ParkingBookingConfirmationPage() {
             <div className="text-[26px] font-extrabold text-[#1F2A44] mt-5">
               Booking Successful!
             </div>
-            <div className="text-[#808080] text-[14.5px] font-medium text-center mt-2">
-              Your parking spot has been reserved. A receipt has been sent to
-              your email.
-            </div>
           </div>
 
           <div className="mt-6 bg-white border border-[#E5E5E5] rounded-[1.2rem] p-4">
