@@ -337,8 +337,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string? house = employee.house;
         if house is () {
-            return <http:BadRequest>{body: {
-                message: string `Employee ${employeeId} has no house assigned`}};
+            return <http:BadRequest>{
+                body: {
+                    message: string `Employee ${employeeId} has no house assigned`
+                }
+            };
         }
 
         byte[]|error imageBytes = qr:generateEmployeeQrCode({
@@ -1162,12 +1165,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error vehicleResult = database:addVehicle({
-                                                          owner: userInfo.email,
-                                                          vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
-                                                          vehicleType: vehicle.vehicleType,
-                                                          vehicleStatus: database:ACTIVE,
-                                                          createdBy: userInfo.email
-                                                      });
+            owner: userInfo.email,
+            vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
+            vehicleType: vehicle.vehicleType,
+            vehicleStatus: database:ACTIVE,
+            createdBy: userInfo.email
+        });
         if vehicleResult is error {
             string customError = string `Error occurred while adding vehicle!`;
             log:printError(customError, vehicleResult);
@@ -1204,10 +1207,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updateResult = database:updateVehicle({
-                                                                vehicleId: vehicleId,
-                                                                vehicleStatus: database:INACTIVE,
-                                                                updatedBy: userInfo.email
-                                                            });
+            vehicleId
+            vehicleStatus: database:INACTIVE,
+            updatedBy: userInfo.email
+        });
 
         if updateResult is error {
             string customError = string `Error occurred while updating vehicle!`;
@@ -1384,13 +1387,13 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error reservationId = database:addParkingReservation({
-                                                                     slotId: body.slotId,
-                                                                     bookingDate: body.bookingDate,
-                                                                     employeeEmail: userInfo.email,
-                                                                     vehicleId: body.vehicleId,
-                                                                     coinsAmount: slot.coinsPerSlot,
-                                                                     createdBy: userInfo.email
-                                                                 });
+            slotId: body.slotId,
+            bookingDate: body.bookingDate,
+            employeeEmail: userInfo.email,
+            vehicleId: body.vehicleId,
+            coinsAmount: slot.coinsPerSlot,
+            createdBy: userInfo.email
+        });
         if reservationId is error {
             log:printError("Error creating parking reservation", reservationId);
             return <http:InternalServerError>{
@@ -1462,8 +1465,10 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Export employees as a CSV file, optionally filtered by status.
     #
     # + status - Optional employee status query parameter (e.g. "Active", "Left"); omit to export all employees
+    # + excludeFutureStartDate - When true (default), excludes employees whose start date is in the future
     # + return - CSV file response or HTTP errors
-    resource function post reports/employees/generate(http:RequestContext ctx, database:EmployeeStatus? status = ())
+    resource function post reports/employees/generate(http:RequestContext ctx, database:EmployeeStatus? status = (),
+            boolean excludeFutureStartDate = true)
         returns http:Response|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -1485,11 +1490,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
-                                                                                    searchString: (),
-                                                                                    filters: {employeeStatus: status},
-                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
-                                                                                });
+                searchString: (),
+                filters: {employeeStatus: status, excludeFutureStartDate: excludeFutureStartDate},
+                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                sort: {sortField: "employeeId", sortOrder: "ASC"}
+            });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
@@ -1575,11 +1580,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updated = database:updateParkingReservationStatus({
-                                                                            reservationId: reservation.id,
-                                                                            status: database:CONFIRMED,
-                                                                            transactionHash: body.transactionHash,
-                                                                            updatedBy: userInfo.email
-                                                                        });
+            reservationId: reservation.id,
+            status: database:CONFIRMED,
+            transactionHash: body.transactionHash,
+            updatedBy: userInfo.email
+        });
         if updated is error {
             log:printError("Error confirming reservation", updated);
             return <http:InternalServerError>{

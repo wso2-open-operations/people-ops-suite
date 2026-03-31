@@ -59,11 +59,12 @@ Runtime config injected via `window.config`. Required keys: `CLIENT_ID`, `SIGN_I
 ### Backend
 
 - Ballerina 2201.12.7, organized as package `wso2_open_operations/people`
-- Four modules:
+- Five modules:
   - **`authorization`** — `JwtInterceptor` reads the `x-jwt-assertion` header, decodes the JWT, validates group membership, and stores `CustomJwtPayload` in the request context. Roles configured via `Config.toml`: `EMPLOYEE_ROLE` and `ADMIN_ROLE`.
   - **`database`** — MySQL client, all DB queries (`db_queries.bal`), DB functions (`db_functions.bal`), types, enums, and utils.
   - **`gsheet`** — Google Sheets integration for car park booking records.
   - **`transaction`** — Blockchain transaction integration for O2C parking payments.
+  - **`qr`** — QR code generation for employees (`qr.bal`, `clients.bal`, `types.bal`).
 - Every resource function in `service.bal` extracts `userInfo` from `ctx` and checks role permissions before executing business logic.
 - Three privilege levels — `EMPLOYEE_PRIVILEGE`, `LEAD_PRIVILEGE`, and `ADMIN_PRIVILEGE` — are returned to the frontend in `/user-info`.
 - Database schema is managed via SQL files in `backend/resources/` (initial creation script + numbered migration files).

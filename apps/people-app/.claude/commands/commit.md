@@ -14,7 +14,7 @@ Follow Conventional Commits:
 <type>(<scope>): <short summary>
 
 Types: feat | fix | chore | refactor | docs | style | ci
-Scopes: frontend | backend
+Note: Include both frontend and backend changes in same commit if they are part of the same logical change.
 
 ## Examples
 feat(frontend): add dark mode toggle to navbar
