@@ -23,6 +23,7 @@ import {
   isMatch,
   isValid,
   parse,
+  format,
 } from "date-fns";
 
 export const isIncludedRole = (a: string[], b: string[]): boolean => {
@@ -103,12 +104,33 @@ export const formatServiceLength = (length: ServiceLength | null): string => {
   if (years === 0 && months === 0) return "Less than 1 month";
 
   if (years > 0 && months > 0) {
-    return `${years} ${years === 1 ? "year" : "years"} ${months} ${months === 1 ? "month" : "months"
-      }`;
+    return `${years} ${years === 1 ? "year" : "years"} ${months} ${
+      months === 1 ? "month" : "months"
+    }`;
   }
 
   if (years > 0) return `${years} ${years === 1 ? "year" : "years"}`;
   return `${months} ${months === 1 ? "month" : "months"}`;
+};
+
+export const formatDate = (
+  isoDate?: string | null,
+  fallback?: string | null,
+): string | null => {
+  if (!isoDate) return fallback ?? null;
+  const parsedDate = parseStrictYyyyMmDd(isoDate);
+  if (!parsedDate) return fallback ?? null;
+  return format(parsedDate, "dd/MM/yyyy");
+};
+
+export const isPresentOrFuture = (isoDate?: string | null): boolean => {
+  if (!isoDate) return false;
+  const parsedDate = parseStrictYyyyMmDd(isoDate);
+  if (!parsedDate) return false;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  parsedDate.setHours(0, 0, 0, 0);
+  return parsedDate >= todayStart;
 };
 
 export const toSentenceCase = (value: string): string => {

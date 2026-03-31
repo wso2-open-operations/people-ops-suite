@@ -69,6 +69,8 @@ import {
   calculateAge,
   calculateServiceLength,
   formatServiceLength,
+  formatDate,
+  isPresentOrFuture,
 } from "@root/src/utils/utils";
 import {
   FieldArray,
@@ -226,7 +228,9 @@ export default function Me({
   );
   const [isSavingChanges, setSavingChanges] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
-  const [qrImageNaturalSize, setQrImageNaturalSize] = useState<number | null>(null);
+  const [qrImageNaturalSize, setQrImageNaturalSize] = useState<number | null>(
+    null,
+  );
   const { qrCodeUrl, qrCodeState } = useAppSelector((state) => state.employee);
   const initialHasEmergencyContactsRef = useRef<boolean>(
     !!personalInfo?.emergencyContacts?.length,
@@ -292,14 +296,14 @@ export default function Me({
       .max(20, "Postal code must be at most 20 characters"),
     emergencyContacts: shouldRequireEmergencyContacts
       ? array()
-        .required("At least one emergency contact is required")
-        .min(1, "At least one emergency contact is required")
-        .max(4, "Maximum 4 emergency contacts allowed")
-        .of(emergencyContactItemSchema)
+          .required("At least one emergency contact is required")
+          .min(1, "At least one emergency contact is required")
+          .max(4, "Maximum 4 emergency contacts allowed")
+          .of(emergencyContactItemSchema)
       : array()
-        .nullable()
-        .max(4, "Maximum 4 emergency contacts allowed")
-        .of(emergencyContactItemSchema),
+          .nullable()
+          .max(4, "Maximum 4 emergency contacts allowed")
+          .of(emergencyContactItemSchema),
   });
 
   useEffect(() => {
@@ -495,14 +499,31 @@ export default function Me({
           >
             {employeeState === "loading" ? (
               <>
-                <Skeleton variant="circular" width={72} height={72} sx={{ flexShrink: 0 }} />
+                <Skeleton
+                  variant="circular"
+                  width={72}
+                  height={72}
+                  sx={{ flexShrink: 0 }}
+                />
                 <Box sx={{ minWidth: 0 }}>
                   <Skeleton width={220} height={44} />
                   <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
                     <Skeleton width={90} height={32} sx={{ borderRadius: 4 }} />
-                    <Skeleton width={150} height={32} sx={{ borderRadius: 4 }} />
-                    <Skeleton width={200} height={32} sx={{ borderRadius: 4 }} />
-                    <Skeleton width={130} height={32} sx={{ borderRadius: 4 }} />
+                    <Skeleton
+                      width={150}
+                      height={32}
+                      sx={{ borderRadius: 4 }}
+                    />
+                    <Skeleton
+                      width={200}
+                      height={32}
+                      sx={{ borderRadius: 4 }}
+                    />
+                    <Skeleton
+                      width={130}
+                      height={32}
+                      sx={{ borderRadius: 4 }}
+                    />
                   </Stack>
                 </Box>
               </>
@@ -517,7 +538,9 @@ export default function Me({
 
                 <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h4" fontWeight={850} noWrap>
-                    {employee ? `${employee.firstName} ${employee.lastName}` : ""}
+                    {employee
+                      ? `${employee.firstName} ${employee.lastName}`
+                      : ""}
                   </Typography>
 
                   <Stack
@@ -585,17 +608,22 @@ export default function Me({
                 </span>
               </Tooltip>
             )}
-            {readOnly && targetEmployeeId && roles.includes(Role.ADMIN) && !location.state?.fromMyTeam && (
-              <Button
-                variant="contained"
-                color="secondary"
-                startIcon={<EditOutlinedIcon />}
-                sx={{ textTransform: "none", whiteSpace: "nowrap" }}
-                onClick={() => navigate(`/employees/${targetEmployeeId}/edit`)}
-              >
-                Edit
-              </Button>
-            )}
+            {readOnly &&
+              targetEmployeeId &&
+              roles.includes(Role.ADMIN) &&
+              !location.state?.fromMyTeam && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<EditOutlinedIcon />}
+                  sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+                  onClick={() =>
+                    navigate(`/employees/${targetEmployeeId}/edit`)
+                  }
+                >
+                  Edit
+                </Button>
+              )}
           </Stack>
         </Stack>
       </Paper>
@@ -848,7 +876,7 @@ export default function Me({
                     Start Date
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.startDate || "-"}
+                    {formatDate(employee.startDate, "-")}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
@@ -859,22 +887,26 @@ export default function Me({
                     {serviceText}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Probation End Date
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.probationEndDate || "N/A"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Agreement End Date
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.agreementEndDate || "N/A"}
-                  </Typography>
-                </Grid>
+                {isPresentOrFuture(employee?.probationEndDate) && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Probation End Date
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {formatDate(employee.probationEndDate, "N/A")}
+                    </Typography>
+                  </Grid>
+                )}
+                {employee.agreementEndDate ? (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Agreement End Date
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {formatDate(employee.agreementEndDate, "-")}
+                    </Typography>
+                  </Grid>
+                ) : null}
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                 <Grid item xs={12} sm={6} md={3}>
@@ -1004,7 +1036,10 @@ export default function Me({
                       <ReadOnly label="NIC" value={values.nicOrPassport} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <ReadOnly label="Date of Birth" value={values.dob} />
+                      <ReadOnly
+                        label="Date of Birth"
+                        value={formatDate(values.dob)}
+                      />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Age" value={age} />
@@ -1210,7 +1245,7 @@ export default function Me({
                           </Box>
 
                           {!values.emergencyContacts ||
-                            values.emergencyContacts.length === 0 ? (
+                          values.emergencyContacts.length === 0 ? (
                             <Typography
                               variant="body2"
                               color="text.secondary"
@@ -1269,7 +1304,7 @@ export default function Me({
 
                               {touched.emergencyContacts &&
                                 typeof errors.emergencyContacts ===
-                                "string" && (
+                                  "string" && (
                                   <Typography
                                     color="error"
                                     variant="body2"
@@ -1280,7 +1315,7 @@ export default function Me({
                                 )}
 
                               {!values.emergencyContacts ||
-                                values.emergencyContacts.length === 0 ? (
+                              values.emergencyContacts.length === 0 ? (
                                 <Typography
                                   variant="body2"
                                   color="text.secondary"
@@ -1419,18 +1454,18 @@ export default function Me({
 
                                 {(values.emergencyContacts?.length ?? 0) >=
                                   4 && (
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
-                                      sx={{
-                                        display: "block",
-                                        textAlign: "center",
-                                        mt: 1,
-                                      }}
-                                    >
-                                      Maximum 4 emergency contacts reached.
-                                    </Typography>
-                                  )}
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{
+                                      display: "block",
+                                      textAlign: "center",
+                                      mt: 1,
+                                    }}
+                                  >
+                                    Maximum 4 emergency contacts reached.
+                                  </Typography>
+                                )}
                               </>
                             </Box>
                           )}
@@ -1487,7 +1522,12 @@ export default function Me({
         </AccordionDetails>
       </Accordion>
 
-      <Dialog open={qrDialogOpen} onClose={handleQrClose} maxWidth="xs" fullWidth>
+      <Dialog
+        open={qrDialogOpen}
+        onClose={handleQrClose}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>
           Employee QR Code
           {employee?.workEmail && (
