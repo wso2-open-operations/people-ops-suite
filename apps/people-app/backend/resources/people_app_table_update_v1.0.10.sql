@@ -1,3 +1,12 @@
+-- Add is_active to personal_info_emergency_contacts
+ALTER TABLE `personal_info_emergency_contacts`
+  ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1 AFTER `relationship`,
+  ADD UNIQUE KEY `uk_ec_personal_mobile` (`personal_info_id`, `mobile`);
+
+-- Add is_active to employee_additional_managers
+ALTER TABLE `employee_additional_managers`
+  ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1 AFTER `additional_manager_email`;
+
 -- Personal Info Audit table
 CREATE TABLE `personal_info_audit` (
   `id` bigint NOT NULL AUTO_INCREMENT,
