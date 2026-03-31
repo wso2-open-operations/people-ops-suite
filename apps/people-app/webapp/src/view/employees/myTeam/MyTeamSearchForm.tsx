@@ -173,7 +173,7 @@ export function MyTeamSearchForm({
   // Filters beyond the default "Active + directReports" baseline (used for showing "Filtered" chip and "Clear filters" button).
   function hasNonBaselineFilters(filters: EmployeeSearchPayload["filters"]): boolean {
     const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, excludeFutureStartDate } = filters;
-    return Boolean(businessUnitId || teamId || subTeamId || unitId || careerFunctionId || gender || designationId || employmentTypeId || managerEmail || companyId || officeId || excludeFutureStartDate);
+    return Boolean(businessUnitId || teamId || subTeamId || unitId || careerFunctionId || gender || designationId || employmentTypeId || managerEmail || companyId || officeId || excludeFutureStartDate === false);
   }
 
   const activeFilterCount = useMemo(() => {
@@ -314,7 +314,7 @@ export function MyTeamSearchForm({
 
   const hasActiveFilters = useMemo(() => hasNonBaselineFilters(filterPayload.filters), [filterPayload.filters]);
   const hasSearchString = !!filterPayload.searchString?.trim();
-  const showFilteredCard = hasActiveFilters || hasSearchString;
+  const showFilteredCard = (filtersAppliedOnce && hasActiveFilters) || hasSearchString;
   const isLoading = employeeState.filteredEmployeesResponseState === State.loading;
 
   return (

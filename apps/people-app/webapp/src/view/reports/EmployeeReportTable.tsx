@@ -72,7 +72,7 @@ export default function EmployeeReportTable({
     setTotalCount(null);
     dispatch(
       fetchFilteredEmployees({
-        filters: { employeeStatus, excludeFutureStartDate: showExcludeFutureFilter && excludeFutureStartDate ? true : undefined },
+        filters: { employeeStatus, excludeFutureStartDate: showExcludeFutureFilter ? excludeFutureStartDate : undefined },
         pagination: { limit: PREVIEW_LIMIT, offset: 0 },
         sort: { sortField: "employeeId", sortOrder: "ASC" },
         leadOnly: false,
@@ -300,7 +300,7 @@ export default function EmployeeReportTable({
     setDownloading(true);
     try {
       const csvText = unwrapResult(
-        await dispatch(downloadEmployeeReportByStatus({ status: employeeStatus, excludeFutureStartDate: showExcludeFutureFilter && excludeFutureStartDate ? true : undefined })),
+        await dispatch(downloadEmployeeReportByStatus({ status: employeeStatus, excludeFutureStartDate: showExcludeFutureFilter ? excludeFutureStartDate : undefined })),
       );
       const blob = new Blob([csvText], { type: "text/csv" });
       const url = URL.createObjectURL(blob);

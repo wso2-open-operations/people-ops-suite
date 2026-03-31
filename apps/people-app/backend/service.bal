@@ -1465,6 +1465,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Export employees as a CSV file, optionally filtered by status.
     #
     # + status - Optional employee status query parameter (e.g. "Active", "Left"); omit to export all employees
+    # + excludeFutureStartDate - When true (default), excludes employees whose start date is in the future
     # + return - CSV file response or HTTP errors
     resource function post reports/employees/generate(http:RequestContext ctx, database:EmployeeStatus? status = (),
             boolean excludeFutureStartDate = true)
