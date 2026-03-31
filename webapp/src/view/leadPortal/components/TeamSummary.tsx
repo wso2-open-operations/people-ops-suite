@@ -469,7 +469,7 @@ export const TeamSummary = ({
                     aria-label="back"
                     color="primary"
                     onClick={closeTeamSummary}
-                    sx={{ mb: 1, mr: 1 }}
+                    sx={{ mb: "10px", mr: 1 }}
                   >
                     <ArrowBackIcon />
                   </IconButton>
@@ -531,7 +531,7 @@ export const TeamSummary = ({
               </Box>
             )}
           </Box>
-          <Stack direction="row" spacing={2}>
+          <Stack>
             <CompletionStatusSection
               employeeParComplete={teamReport.summary.employeeParCompletedCount}
               leadReviewComplete={teamReport.summary.leadsReviewCompletedCount}
@@ -604,8 +604,9 @@ export const TeamSummary = ({
             variant="outlined"
             sx={{
               p: 2,
-              mt: 2,
-              mb: 1,
+              mt: "10px",
+              ml: 0.2,
+              mr: 0.2,
               height: "100%",
               width: "100%",
               display: "flex",
