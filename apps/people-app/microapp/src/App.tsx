@@ -34,6 +34,7 @@ import {
 import type { PageProps, User } from "@/types";
 import { useEffect, useState } from "react";
 import { getToken } from "./components/microapp-bridge";
+import { ParkingWalletReturnResume } from "@/components/ParkingWalletReturnResume";
 import { getDisplayNameFromJwt, getEmailFromJwt } from "@/utils/http";
 
 function AnimatedRoutes({ user }: PageProps) {
@@ -84,6 +85,7 @@ function App() {
 
   return (
     <HashRouter>
+      <ParkingWalletReturnResume />
       <AnimatedRoutes user={user} />
     </HashRouter>
   );
