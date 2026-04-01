@@ -13,12 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Button, TextField, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, TextField, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Controller, useForm } from "react-hook-form";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import { NodeType } from "@root/src/utils/types";
 import { UnitTypeLabel } from "@utils/utils";
 
@@ -29,13 +31,15 @@ interface RenameFormValues {
 interface RenameFieldProps {
   entityType: NodeType;
   currentName: string;
-  onRenameSuccess: (entityName: string) => void;
+  onRenameSuccess: (entityName: string) => Promise<void> | void;
+  isSubmitting?: boolean;
 }
 
 export const RenameField: React.FC<RenameFieldProps> = ({
   entityType,
   currentName,
   onRenameSuccess,
+  isSubmitting = false,
 }) => {
   const theme = useTheme();
   const [isFocused, setIsFocused] = useState(false);
@@ -50,9 +54,17 @@ export const RenameField: React.FC<RenameFieldProps> = ({
     mode: "onChange",
   });
 
+  useEffect(() => {
+    reset({ entityName: currentName });
+    setIsFocused(false);
+  }, [currentName, reset]);
+
   const onSubmit = async ({ entityName }: RenameFormValues) => {
-    onRenameSuccess(entityName);
+    await onRenameSuccess(entityName);
+    setIsFocused(false);
   };
+
+  const showSpinner = useMinimumLoadingVisibility(isSubmitting, SPLIT_VIEW_SKELETON_DELAY_MS);
 
   const handleCancel = () => {
     reset({ entityName: currentName });
@@ -122,7 +134,14 @@ export const RenameField: React.FC<RenameFieldProps> = ({
           )}
         />
 
-        <Button type="submit" variant="outlined" disabled={!isDirty || !isValid}>
+        <Button
+          type="submit"
+          variant="outlined"
+          disabled={isSubmitting || !isDirty || !isValid}
+          startIcon={
+            showSpinner ? <CircularProgress size={14} thickness={5} color="inherit" /> : undefined
+          }
+        >
           Rename
         </Button>
       </Box>
