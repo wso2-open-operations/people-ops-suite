@@ -30,10 +30,12 @@ import {
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import ErrorHandler from "@root/src/component/common/ErrorHandler";
 import BackdropProgress from "@root/src/component/ui/BackdropProgress";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@root/src/services/employee";
 import {
   BusinessUnitState,
@@ -42,6 +44,7 @@ import {
   UnitState,
 } from "@root/src/slices/organizationSlice/organizationStructure";
 import { NodeType } from "@root/src/utils/types";
+import { convertDataTypeToLabel } from "@root/src/utils/utils";
 import {
   useAddBusinessUnitTeamMutation,
   useAddBusinessUnitsMutation,
@@ -83,13 +86,25 @@ export default function AddPage(props: AddPageProps) {
   const [isNewItem, setIsNewItem] = useState<boolean>(false);
 
   const { data: employees = [], isLoading } = useGetEmployeesBasicInfoQuery();
-  const [addBusinessUnits] = useAddBusinessUnitsMutation();
-  const [addBusinessUnitTeam] = useAddBusinessUnitTeamMutation();
-  const [addTeams] = useAddTeamsMutation();
-  const [addSubTeams] = useAddSubTeamsMutation();
-  const [addTeamSubTeam] = useAddTeamSubTeamMutation();
-  const [addUnits] = useAddUnitsMutation();
-  const [addSubTeamUnit] = useAddSubTeamUnitMutation();
+  const [addBusinessUnits, { isLoading: isAddingBusinessUnit }] = useAddBusinessUnitsMutation();
+  const [addBusinessUnitTeam, { isLoading: isAddingBusinessUnitTeam }] =
+    useAddBusinessUnitTeamMutation();
+  const [addTeams, { isLoading: isAddingTeam }] = useAddTeamsMutation();
+  const [addSubTeams, { isLoading: isAddingSubTeam }] = useAddSubTeamsMutation();
+  const [addTeamSubTeam, { isLoading: isAddingTeamSubTeam }] = useAddTeamSubTeamMutation();
+  const [addUnits, { isLoading: isAddingUnit }] = useAddUnitsMutation();
+  const [addSubTeamUnit, { isLoading: isAddingSubTeamUnit }] = useAddSubTeamUnitMutation();
+
+  const isAdding =
+    isAddingBusinessUnit ||
+    isAddingBusinessUnitTeam ||
+    isAddingTeam ||
+    isAddingSubTeam ||
+    isAddingTeamSubTeam ||
+    isAddingUnit ||
+    isAddingSubTeamUnit;
+
+  const showSpinner = useMinimumLoadingVisibility(isAdding, SPLIT_VIEW_SKELETON_DELAY_MS);
 
   const theme = useTheme();
 
@@ -109,87 +124,95 @@ export default function AddPage(props: AddPageProps) {
 
   const selectedOrgNode = watch("orgNode");
 
-  const createNewMapping = (
+  const createNewMapping = async (
     data: AddOrgItemFormValues,
     parent: BusinessUnitState | TeamState | SubTeamState | UnitState,
   ) => {
     const { orgNode, functionalLead } = data;
 
-    if (!orgNode?.id || !functionalLead?.workEmail) return;
+    if (!orgNode?.id || !functionalLead?.workEmail) {
+      throw new Error("Missing org node or functional lead for mapping");
+    }
 
     switch (nodeType) {
       case NodeType.Team: {
-        addBusinessUnitTeam({
+        await addBusinessUnitTeam({
           payload: {
             businessUnitId: parent.id,
             teamId: orgNode.id,
             functionalLeadEmail: functionalLead.workEmail,
           },
-        });
+        }).unwrap();
         break;
       }
       case NodeType.SubTeam: {
-        addTeamSubTeam({
+        await addTeamSubTeam({
           payload: {
             businessUnitTeamId: (parent as TeamState).businessUnitTeamId,
             subTeamId: orgNode.id,
             functionalLeadEmail: functionalLead.workEmail,
           },
-        });
+        }).unwrap();
         break;
       }
       case NodeType.Unit: {
-        addSubTeamUnit({
+        await addSubTeamUnit({
           payload: {
             businessUnitTeamSubTeamId: (parent as SubTeamState).businessUnitTeamSubTeamId,
             unitId: orgNode.id,
             functionalLeadEmail: functionalLead.workEmail,
           },
-        });
+        }).unwrap();
         break;
       }
       default:
-        break;
+        throw new Error(`Mapping is not supported for node type: ${nodeType}`);
     }
   };
 
-  const createNewOrgItem = (
+  const createNewOrgItem = async (
     data: AddOrgItemFormValues,
-    parent: BusinessUnitState | TeamState | SubTeamState | UnitState,
+    parent: BusinessUnitState | TeamState | SubTeamState | UnitState | null,
   ) => {
     const { orgNode, orgNodeHead, functionalLead } = data;
 
     if (!nodeType || !orgNode?.name || !orgNodeHead?.workEmail) {
-      return;
+      throw new Error("Missing required org item fields");
+    }
+
+    if (nodeType !== NodeType.BusinessUnit && !functionalLead?.workEmail) {
+      throw new Error("Functional lead is required");
     }
 
     switch (nodeType) {
       case NodeType.BusinessUnit: {
-        addBusinessUnits({
+        await addBusinessUnits({
           name: orgNode.name,
           headEmail: orgNodeHead.workEmail,
-        });
+        }).unwrap();
         break;
       }
 
       case NodeType.Team: {
-        addTeams({
-          buId: String(parent!.id),
+        if (!parent) throw new Error("Parent business unit is required");
+        await addTeams({
+          buId: String(parent.id),
           payload: {
             name: orgNode.name,
             headEmail: orgNodeHead.workEmail,
             businessUnit: {
-              businessUnitId: parent!.id,
+              businessUnitId: parent.id,
               functionalLeadEmail: functionalLead!.workEmail,
             },
           },
-        });
+        }).unwrap();
         break;
       }
 
       case NodeType.SubTeam: {
-        addSubTeams({
-          teamId: String(parent!.id),
+        if (!parent) throw new Error("Parent team is required");
+        await addSubTeams({
+          teamId: String(parent.id),
           payload: {
             name: orgNode.name,
             headEmail: orgNodeHead.workEmail,
@@ -198,13 +221,14 @@ export default function AddPage(props: AddPageProps) {
               functionalLeadEmail: functionalLead!.workEmail,
             },
           },
-        });
+        }).unwrap();
         break;
       }
 
       case NodeType.Unit: {
-        addUnits({
-          subTeamId: String(parent!.id),
+        if (!parent) throw new Error("Parent sub-team is required");
+        await addUnits({
+          subTeamId: String(parent.id),
           payload: {
             name: orgNode.name,
             headEmail: orgNodeHead.workEmail,
@@ -213,21 +237,41 @@ export default function AddPage(props: AddPageProps) {
               functionalLeadEmail: functionalLead!.workEmail,
             },
           },
-        });
+        }).unwrap();
         break;
       }
 
       default:
-        break;
+        throw new Error(`Create is not supported for node type: ${nodeType}`);
     }
   };
 
-  if (!selectedNode) {
+  useEffect(() => {
+    if (showSpinner) return;
+
+    reset({ orgNode: null, orgNodeHead: null, functionalLead: null });
+    setIsNewItem(false);
+  }, [showSpinner, reset]);
+
+  if (nodeType !== NodeType.BusinessUnit && !selectedNode) {
     return <ErrorHandler message="Parent node is required" />;
   }
 
   const onSubmit = async (data: AddOrgItemFormValues) => {
-    isNewItem ? createNewOrgItem(data, selectedNode) : createNewMapping(data, selectedNode);
+    const parent = nodeType === NodeType.BusinessUnit ? null : selectedNode;
+    if (nodeType !== NodeType.BusinessUnit && !parent) {
+      return;
+    }
+
+    try {
+      if (isNewItem) {
+        await createNewOrgItem(data, parent);
+      } else {
+        await createNewMapping(data, parent!);
+      }
+    } catch (e) {
+      console.error("Add org item failed", e);
+    }
   };
 
   const handleCancel = () => {
@@ -280,7 +324,7 @@ export default function AddPage(props: AddPageProps) {
             fontWeight: 600,
           }}
         >
-          Add Page
+          Add {convertDataTypeToLabel(nodeType)}
         </Typography>
 
         <IconButton
@@ -306,7 +350,7 @@ export default function AddPage(props: AddPageProps) {
           padding: "16px !important",
         }}
       >
-        <SectionHeader title="Add Teams" />
+        <SectionHeader title={`${convertDataTypeToLabel(nodeType)} Information`} />
 
         <Box
           sx={{
@@ -327,6 +371,7 @@ export default function AddPage(props: AddPageProps) {
                 value={field.value}
                 options={orgInfo as OrgOption[]}
                 loading={isLoading}
+                disabled={showSpinner}
                 getOptionDisabled={(option) => option.canAdd === false}
                 getOptionLabel={(option) => option.name ?? ""}
                 filterOptions={(options, params) => {
@@ -410,6 +455,7 @@ export default function AddPage(props: AddPageProps) {
                   onChange={(_, data) => field.onChange(data)}
                   options={employees}
                   loading={isLoading}
+                  disabled={showSpinner}
                   getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
                   renderOption={(props, employee) => (
                     <EmployeeOption
@@ -455,6 +501,7 @@ export default function AddPage(props: AddPageProps) {
                   onChange={(_, data) => field.onChange(data)}
                   options={employees}
                   loading={isLoading}
+                  disabled={showSpinner}
                   getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
                   renderOption={(props, employee) => (
                     <EmployeeOption
@@ -494,7 +541,16 @@ export default function AddPage(props: AddPageProps) {
               Cancel
             </Button>
 
-            <Button type="submit" variant={"primary" as any} size="small">
+            <Button
+              type="submit"
+              variant={"primary" as any}
+              size="small"
+              startIcon={
+                showSpinner ? (
+                  <CircularProgress size={14} thickness={5} color="inherit" />
+                ) : undefined
+              }
+            >
               Add Team
             </Button>
           </Box>
