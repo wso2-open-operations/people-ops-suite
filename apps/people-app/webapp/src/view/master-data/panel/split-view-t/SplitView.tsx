@@ -29,25 +29,27 @@ import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import ErrorHandler from "@component/common/ErrorHandler.tsx";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant.ts";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility.ts";
+import { buildAddModalOptions } from "@root/src/utils/utils.ts";
 import OrgStructureCard from "@root/src/view/master-data/components/OrgStructureCard.tsx";
 import { useGetOrgStructureQuery } from "@services/organization";
 import { State } from "@slices/authSlice/auth.ts";
 import {
   BusinessUnitState,
   OrgStructureState,
+  OrganizationInfo,
   SubTeamState,
   TeamState,
   UnitState,
 } from "@slices/organizationSlice/organizationStructure";
-import { RootState, useAppSelector } from "@slices/store";
+import { RootState, store, useAppSelector } from "@slices/store";
 import { NodeType } from "@utils/types";
 import { EditModal } from "@view/master-data/components/EditModal";
 
 import AddModal from "../../components/AddModal.tsx";
 import SplitViewSkeleton from "./SplitViewSkeleton.tsx";
 import { type MatchSearch, itemToMatchSearch } from "./utils/utils.ts";
-import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant.ts";
 
 /** Match header `MIN_GLOBAL_LOADING_INDICATOR_MS` — hide skeleton until loading is sustained this long. */
 
@@ -57,7 +59,9 @@ type OnEdit = {
   type: NodeType | null;
 };
 
-type AddOption = (BusinessUnitState | TeamState | SubTeamState | UnitState) & { canAdd?: boolean };
+export type AddOption = (BusinessUnitState | TeamState | SubTeamState | UnitState) & {
+  canAdd?: boolean;
+};
 
 type OnAdd = {
   open: boolean;
@@ -132,15 +136,11 @@ export default function SplitView() {
 
   // Only show the full skeleton on initial load (no cached org structure yet).
   // For background refreshes, keep rendering the current view to avoid UI flicker/unmounting modals.
-  if (showOrgSkeleton || (!orgItems && orgItemState.state === State.Loading)) {
+  if (showOrgSkeleton || orgItemState.state === State.Idle) {
     return <SplitViewSkeleton />;
   }
 
-  if (orgItemState.state === State.Failed && !orgItems) {
-    return <ErrorHandler message={"An unknown error occurred when fetching org items"} />;
-  }
-
-  if (!orgItems) {
+  if (orgItemState.state === State.Failed || !orgItems) {
     return <ErrorHandler message={"An unknown error occurred when fetching org items"} />;
   }
 
@@ -269,98 +269,31 @@ export default function SplitView() {
 
   // Add handlers
   const handleBusinessUnitAdd = () => {
-    onAdd(orgItems.businessUnits, NodeType.BusinessUnit, null);
+    if (!orgItems) return;
+    const data = buildAddModalOptions(NodeType.BusinessUnit, null, orgItems);
+    if (!data) return;
+    onAdd(data, NodeType.BusinessUnit, null);
   };
 
   const handleTeamAdd = () => {
-    if (!selectedBusinessUnit) return;
-
-    const isOnSelectedBusinessUnit = (t: TeamState) => t.businessUnitId === selectedBusinessUnit.id;
-
-    const teamsOnSelectedBusinessUnit = orgItems.teams.filter(isOnSelectedBusinessUnit);
-
-    const idsAlreadyOnSelectedBusinessUnit = new Set(teamsOnSelectedBusinessUnit.map((t) => t.id));
-
-    const firstOffBusinessUnitRowById = new Map<number, TeamState>();
-    for (const t of orgItems.teams) {
-      if (isOnSelectedBusinessUnit(t)) continue;
-      if (!firstOffBusinessUnitRowById.has(t.id)) firstOffBusinessUnitRowById.set(t.id, t);
-    }
-
-    const linkableOffBusinessUnit = [...firstOffBusinessUnitRowById.values()].filter(
-      (t) => !idsAlreadyOnSelectedBusinessUnit.has(t.id),
-    );
-
-    const teamOptionsForModal: AddOption[] = [
-      ...teamsOnSelectedBusinessUnit,
-      ...linkableOffBusinessUnit,
-    ].map((t) => ({
-      ...t,
-      canAdd: !isOnSelectedBusinessUnit(t),
-    }));
-
-    onAdd(teamOptionsForModal, NodeType.Team, selectedBusinessUnit);
+    if (!selectedBusinessUnit || !orgItems) return;
+    const data = buildAddModalOptions(NodeType.Team, selectedBusinessUnit, orgItems);
+    if (!data) return;
+    onAdd(data, NodeType.Team, selectedBusinessUnit);
   };
 
   const handleSubTeamAdd = () => {
-    if (!selectedTeam) return;
-    const isOnSelectedTeam = (s: SubTeamState) =>
-      s.businessUnitId === selectedTeam.businessUnitId &&
-      s.businessUnitTeamId === selectedTeam.businessUnitTeamId;
-
-    const subTeamsOnSelectedTeam = orgItems.subTeams.filter(isOnSelectedTeam);
-
-    const idsAlreadyOnSelectedTeam = new Set(subTeamsOnSelectedTeam.map((s) => s.id));
-    const firstOffTeamRowById = new Map<number, SubTeamState>();
-    for (const s of orgItems.subTeams) {
-      if (isOnSelectedTeam(s)) continue;
-      if (!firstOffTeamRowById.has(s.id)) firstOffTeamRowById.set(s.id, s);
-    }
-
-    const linkableOffTeam = [...firstOffTeamRowById.values()].filter(
-      (s) => !idsAlreadyOnSelectedTeam.has(s.id),
-    );
-
-    const subTeamOptionsForModal: AddOption[] = [...subTeamsOnSelectedTeam, ...linkableOffTeam].map(
-      (s) => ({
-        ...s,
-        canAdd: !isOnSelectedTeam(s),
-      }),
-    );
-
-    onAdd(subTeamOptionsForModal, NodeType.SubTeam, selectedTeam);
+    if (!selectedTeam || !orgItems) return;
+    const data = buildAddModalOptions(NodeType.SubTeam, selectedTeam, orgItems);
+    if (!data) return;
+    onAdd(data, NodeType.SubTeam, selectedTeam);
   };
 
   const handleUnitAdd = () => {
-    if (!selectedSubTeam) return;
-
-    const isOnSelectedSubTeam = (u: UnitState) =>
-      u.businessUnitId === selectedSubTeam.businessUnitId &&
-      u.businessUnitTeamId === selectedSubTeam.businessUnitTeamId &&
-      u.businessUnitTeamSubTeamId === selectedSubTeam.businessUnitTeamSubTeamId;
-
-    const unitsOnSelectedSubTeam = orgItems.units.filter(isOnSelectedSubTeam);
-
-    const idsAlreadyOnSelectedSubTeam = new Set(unitsOnSelectedSubTeam.map((u) => u.id));
-
-    const firstOffSubTeamRowById = new Map<number, UnitState>();
-    for (const u of orgItems.units) {
-      if (isOnSelectedSubTeam(u)) continue;
-      if (!firstOffSubTeamRowById.has(u.id)) firstOffSubTeamRowById.set(u.id, u);
-    }
-
-    const linkableOffSubTeam = [...firstOffSubTeamRowById.values()].filter(
-      (u) => !idsAlreadyOnSelectedSubTeam.has(u.id),
-    );
-
-    const unitOptionsForModal: AddOption[] = [...unitsOnSelectedSubTeam, ...linkableOffSubTeam].map(
-      (u) => ({
-        ...u,
-        canAdd: !isOnSelectedSubTeam(u),
-      }),
-    );
-
-    onAdd(unitOptionsForModal, NodeType.Unit, selectedSubTeam);
+    if (!selectedSubTeam || !orgItems) return;
+    const data = buildAddModalOptions(NodeType.Unit, selectedSubTeam, orgItems);
+    if (!data) return;
+    onAdd(data, NodeType.Unit, selectedSubTeam);
   };
 
   // Global search handlers
