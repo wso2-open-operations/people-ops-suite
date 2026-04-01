@@ -26,6 +26,7 @@ import {
 } from "@root/src/slices/organizationSlice/organizationStructure";
 import { RootState, useAppSelector } from "@root/src/slices/store";
 import { NodeType } from "@root/src/utils/types";
+import { convertDataTypeToLabel } from "@root/src/utils/utils";
 
 import { useOrgEntityActions } from "../panel/chart-view/hooks/useOrgEntityActions";
 import { DeleteCurrent } from "../panel/chart-view/sections/danger-section/DeleteCurrent";
@@ -67,13 +68,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
     return <ErrorHandler message={"Something went wrong. Please try again..."} />;
   }
 
-  const {
-    handleLeadSwap,
-    handleHeadSwap,
-    handleDeleteCurrent,
-    handleRenameCurrent,
-    isRenaming,
-  } =
+  const { handleLeadSwap, handleHeadSwap, handleDeleteCurrent, handleRenameCurrent, isRenaming } =
     useOrgEntityActions({ data, onClose });
 
   return (
@@ -112,7 +107,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
             fontWeight: 600,
           }}
         >
-          Edit {data.type}
+          Edit {convertDataTypeToLabel(data.type)}
         </Typography>
 
         <IconButton

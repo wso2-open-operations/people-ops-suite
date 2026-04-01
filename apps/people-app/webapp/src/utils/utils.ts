@@ -263,3 +263,18 @@ export function normalizeCompanyToOrganizationState(companyDto: Company): Organi
     units,
   };
 }
+
+export const convertDataTypeToLabel = (dataType: NodeType) => {
+  switch (dataType) {
+    case NodeType.BusinessUnit:
+      return "Business Unit";
+    case NodeType.Team:
+      return "Team";
+    case NodeType.SubTeam:
+      return "Sub Team";
+    case NodeType.Unit:
+      return "Unit";
+    default:
+      return "";
+  }
+};
