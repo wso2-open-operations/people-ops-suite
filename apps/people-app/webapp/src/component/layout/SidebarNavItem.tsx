@@ -95,7 +95,7 @@ function SidebarNavItem({
           sx={{
             display: "flex",
             flexDirection: "column",
-            gap: theme.spacing(1.5),
+            gap: 1.5,
             alignItems: "center",
             justifyContent: "center",
             marginLeft: open ? theme.spacing(2.5) : 0,
