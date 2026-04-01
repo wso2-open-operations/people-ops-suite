@@ -29,7 +29,8 @@ import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import ErrorHandler from "@component/common/ErrorHandler.tsx";
-import PreLoader from "@component/common/PreLoader.tsx";
+import { useDelayedLoadingVisibility } from "@root/src/hooks/useDelayedLoadingVisibility";
+import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility.ts";
 import OrgStructureCard from "@root/src/view/master-data/components/OrgStructureCard.tsx";
 import { useGetOrgStructureQuery } from "@services/organization";
 import { State } from "@slices/authSlice/auth.ts";
@@ -45,7 +46,11 @@ import { NodeType } from "@utils/types";
 import { EditModal } from "@view/master-data/components/EditModal";
 
 import AddModal from "../../components/AddModal.tsx";
+import SplitViewSkeleton from "./SplitViewSkeleton.tsx";
 import { type MatchSearch, itemToMatchSearch } from "./utils/utils.ts";
+
+/** Match header `MIN_GLOBAL_LOADING_INDICATOR_MS` — hide skeleton until loading is sustained this long. */
+const SPLIT_VIEW_SKELETON_DELAY_MS = 2000;
 
 type OnEdit = {
   open: boolean;
@@ -67,6 +72,9 @@ export default function SplitView() {
 
   const orgItemState = useAppSelector((state: RootState) => state.organizationStructure);
   const orgItems = orgItemState.organizationInfo;
+
+  const isOrgLoading = orgItemState.state === State.Loading;
+  const showOrgSkeleton = useMinimumLoadingVisibility(isOrgLoading, SPLIT_VIEW_SKELETON_DELAY_MS);
 
   const theme = useTheme();
   const [editModal, setEditModal] = useState<OnEdit>({
@@ -121,8 +129,8 @@ export default function SplitView() {
     setSelectedUnitId(currentMatch.unitId as number | null);
   }, [currentMatch]);
 
-  if (orgItemState.state === State.Loading) {
-    return <PreLoader isLoading message="We are retrieving org data" />;
+  if (showOrgSkeleton) {
+    return <SplitViewSkeleton />;
   }
 
   if (!orgItems || orgItemState.state === State.Failed) {
@@ -381,94 +389,95 @@ export default function SplitView() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
-        <Tooltip
-          placement="top"
-          title={isDisabled ? "Clear other filters to enable global search" : ""}
-          disableHoverListener={!isDisabled}
-          disableFocusListener={!isDisabled}
-          disableTouchListener={!isDisabled}
-        >
-          <TextField
-            placeholder="Search..."
-            value={globalSearchTerm}
-            onChange={(e) => setGlobalSearchTerm(e.target.value)}
-            disabled={isDisabled}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleGlobalSearch();
-              }
-            }}
-            size="small"
-            sx={{
-              backgroundColor: theme.palette.surface.secondary.active,
-            }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon size={16} color={theme.palette.customText.primary.p3.active} />
-                  </InputAdornment>
-                ),
-                endAdornment: globalSearchTerm ? (
-                  <InputAdornment position="end">
-                    <IconButton
-                      size="small"
-                      onClick={handleClearGlobalSearch}
-                      sx={{
-                        padding: 0,
-                        color: theme.palette.customText.primary.p3.active,
-                        "&:hover": {
-                          color: theme.palette.customText.primary.p2.active,
-                        },
-                      }}
-                    >
-                      <ClearIcon sx={{ fontSize: "16px" }} />
-                    </IconButton>
-                  </InputAdornment>
-                ) : null,
-              },
-            }}
-          />
-        </Tooltip>
-        {/* Right: prev / next chevrons */}
-        {searchMatches.length > 0 ? (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
-            <ChevronLeftIcon
-              size={14}
-              color={theme.palette.customText.primary.p3.active}
-              onClick={goToPreviousMatch}
-              style={{ cursor: "pointer" }}
-            />
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              {[String(activeMatchIndex + 1), "/", String(searchMatches.length)].map((token, i) => (
-                <Typography
-                  variant="caption"
-                  key={i}
-                  sx={{
-                    color: theme.palette.customText.primary.p3.active,
-                  }}
-                >
-                  {token}
-                </Typography>
-              ))}
-            </Box>
-            <ChevronRightIcon
-              size={12}
-              color={theme.palette.customText.primary.p3.active}
-              onClick={goToNextMatch}
-              style={{ cursor: "pointer" }}
-            />
-          </Box>
-        ) : null}
-      </Box>
+      {/* Temporarily commenting the global search functionality */}
+      {/* <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}> */}
+      {/*   <Tooltip */}
+      {/*     placement="top" */}
+      {/*     title={isDisabled ? "Clear other filters to enable global search" : ""} */}
+      {/*     disableHoverListener={!isDisabled} */}
+      {/*     disableFocusListener={!isDisabled} */}
+      {/*     disableTouchListener={!isDisabled} */}
+      {/*   > */}
+      {/*     <TextField */}
+      {/*       placeholder="Search..." */}
+      {/*       value={globalSearchTerm} */}
+      {/*       onChange={(e) => setGlobalSearchTerm(e.target.value)} */}
+      {/*       disabled={isDisabled} */}
+      {/*       onKeyDown={(e) => { */}
+      {/*         if (e.key === "Enter") { */}
+      {/*           e.preventDefault(); */}
+      {/*           handleGlobalSearch(); */}
+      {/*         } */}
+      {/*       }} */}
+      {/*       size="small" */}
+      {/*       sx={{ */}
+      {/*         backgroundColor: theme.palette.surface.secondary.active, */}
+      {/*       }} */}
+      {/*       slotProps={{ */}
+      {/*         input: { */}
+      {/*           startAdornment: ( */}
+      {/*             <InputAdornment position="start"> */}
+      {/*               <SearchIcon size={16} color={theme.palette.customText.primary.p3.active} /> */}
+      {/*             </InputAdornment> */}
+      {/*           ), */}
+      {/*           endAdornment: globalSearchTerm ? ( */}
+      {/*             <InputAdornment position="end"> */}
+      {/*               <IconButton */}
+      {/*                 size="small" */}
+      {/*                 onClick={handleClearGlobalSearch} */}
+      {/*                 sx={{ */}
+      {/*                   padding: 0, */}
+      {/*                   color: theme.palette.customText.primary.p3.active, */}
+      {/*                   "&:hover": { */}
+      {/*                     color: theme.palette.customText.primary.p2.active, */}
+      {/*                   }, */}
+      {/*                 }} */}
+      {/*               > */}
+      {/*                 <ClearIcon sx={{ fontSize: "16px" }} /> */}
+      {/*               </IconButton> */}
+      {/*             </InputAdornment> */}
+      {/*           ) : null, */}
+      {/*         }, */}
+      {/*       }} */}
+      {/*     /> */}
+      {/*   </Tooltip> */}
+      {/*   {/* Right: prev / next chevrons */}
+      {/*   {searchMatches.length > 0 ? ( */}
+      {/*     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}> */}
+      {/*       <ChevronLeftIcon */}
+      {/*         size={14} */}
+      {/*         color={theme.palette.customText.primary.p3.active} */}
+      {/*         onClick={goToPreviousMatch} */}
+      {/*         style={{ cursor: "pointer" }} */}
+      {/*       /> */}
+      {/*       <Box */}
+      {/*         sx={{ */}
+      {/*           display: "flex", */}
+      {/*           alignItems: "center", */}
+      {/*           gap: "4px", */}
+      {/*         }} */}
+      {/*       > */}
+      {/*         {[String(activeMatchIndex + 1), "/", String(searchMatches.length)].map((token, i) => ( */}
+      {/*           <Typography */}
+      {/*             variant="caption" */}
+      {/*             key={i} */}
+      {/*             sx={{ */}
+      {/*               color: theme.palette.customText.primary.p3.active, */}
+      {/*             }} */}
+      {/*           > */}
+      {/*             {token} */}
+      {/*           </Typography> */}
+      {/*         ))} */}
+      {/*       </Box> */}
+      {/*       <ChevronRightIcon */}
+      {/*         size={12} */}
+      {/*         color={theme.palette.customText.primary.p3.active} */}
+      {/*         onClick={goToNextMatch} */}
+      {/*         style={{ cursor: "pointer" }} */}
+      {/*       /> */}
+      {/*     </Box> */}
+      {/*   ) : null} */}
+      {/* </Box> */}
 
       <Box sx={{ width: "100%", display: "flex", gap: 2 }}>
         <Box
