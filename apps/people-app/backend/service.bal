@@ -1392,33 +1392,61 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if booked {
             return <http:BadRequest>{
-                body: {message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. It may be temporarily reserved or already booked.`}
+                body: {
+                    message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. `
+                        + "It may be temporarily reserved or already booked."
+                }
             };
         }
 
         // If there is a previously expired reservation for the same slot/date, reuse the latest one.
         int|error? latestExpiredId = database:getLatestExpiredParkingReservationForSlotDate(body.slotId, body.bookingDate);
+        if latestExpiredId is error {
+            log:printError("Error fetching latest expired parking reservation", latestExpiredId);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while creating reservation."}
+            };
+        }
+
         if latestExpiredId is int {
             boolean|error reused = database:reuseExpiredParkingReservationToPending({
-                                                                                     reservationId: latestExpiredId,
-                                                                                     employeeEmail: userInfo.email,
-                                                                                     vehicleId: body.vehicleId,
-                                                                                     coinsAmount: slot.coinsPerSlot,
-                                                                                     createdBy: userInfo.email
-                                                                                 });
-            if reused is error || !reused {
-                log:printError("Error reusing expired reservation");
+                reservationId: latestExpiredId,
+                employeeEmail: userInfo.email,
+                vehicleId: body.vehicleId,
+                coinsAmount: slot.coinsPerSlot,
+                createdBy: userInfo.email
+            });
+            if reused is error {
+                log:printError("Error reusing expired reservation", reused);
                 return <http:InternalServerError>{
                     body: {message: "Error occurred while reusing reservation."}
                 };
             }
-            return {
-                reservationId: latestExpiredId,
-                coinsAmount: slot.coinsPerSlot
-            };
+            if reused {
+                return {
+                    reservationId: latestExpiredId,
+                    coinsAmount: slot.coinsPerSlot
+                };
+            }
+            // Another request reused the same row first, or row was no longer EXPIRED.
+            boolean|error bookedAfterReuse = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate);
+            if bookedAfterReuse is error {
+                log:printError("Error rechecking slot availability after reuse race", bookedAfterReuse);
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while checking slot availability."}
+                };
+            }
+            if bookedAfterReuse {
+                return <http:BadRequest>{
+                    body: {
+                        message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. `
+                            + "It may be temporarily reserved or already booked."
+                    }
+                };
+            }
         }
 
-        // Otherwise create a new PENDING reservation.
+        // No expired row to reuse, or reuse lost race but slot is still free, insert new PENDING reservation.
         int|error reservationId = database:addParkingReservation({
             slotId: body.slotId,
             bookingDate: body.bookingDate,
