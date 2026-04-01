@@ -81,6 +81,7 @@ public type UserInfo record {|
 # Generic single-flag DB result shape for EXISTS-based checks.
 public type ExistsFlagResult record {|
     # 1 when a matching row exists, otherwise 0
+    @sql:Column {name: "exists_flag"}
     int existsFlag;
 |};
 
