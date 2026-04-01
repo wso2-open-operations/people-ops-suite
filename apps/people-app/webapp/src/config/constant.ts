@@ -48,6 +48,9 @@ export const EmployeeTypes = [
   { id: 2, label: "Intern" },
   { id: 3, label: "Consultancy" },
 ];
+
+export const SPLIT_VIEW_SKELETON_DELAY_MS = 2000;
+
 export const SEARCH_REGEX = /^[\p{L}\p{M}0-9\s@._'+-]*$/u;
 export const SEARCH_MAX_LENGTH = 100;
 
