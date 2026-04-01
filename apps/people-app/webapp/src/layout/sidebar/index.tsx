@@ -79,6 +79,20 @@ const Sidebar = (props: SidebarProps) => {
         }}
       >
         {icon}
+
+        {props.open && (
+          <Typography
+            variant="body2"
+            sx={{
+              whiteSpace: "nowrap",
+              color: "#CCCCCC",
+              width: "100%",
+              textAlign: "left"
+            }}
+          >
+            {tooltipTitle}
+          </Typography>
+        )}
       </Box>
     );
 
@@ -107,7 +121,7 @@ const Sidebar = (props: SidebarProps) => {
       {/* Navigation List */}
       <Stack
         direction="column"
-        gap={1}
+        gap={2}
         sx={{
           overflow: "visible",
           width: props.open ? "100%" : "fit-content",
@@ -115,7 +129,8 @@ const Sidebar = (props: SidebarProps) => {
       >
         {allRoutes.map((route, idx) => {
           return (
-            !route.bottomNav && (
+            !route.bottomNav &&
+            !route.hideFromSidebar && (
               <Box
                 key={idx}
                 sx={{
@@ -137,7 +152,7 @@ const Sidebar = (props: SidebarProps) => {
       {!isMobile && (
         <Stack
           direction="column"
-          gap={1}
+          gap={2}
           sx={{
             alignItems: "center",
           }}
@@ -158,44 +173,60 @@ const Sidebar = (props: SidebarProps) => {
             );
           })}
 
-          {/* Theme Toggle */}
-          {renderControlButton(
-            mode === "dark" ? <Sun size={16} /> : <Moon size={16} />,
-            onThemeToggle,
-            mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode",
-          )}
+          <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 1.5 }}>
+            {/* Theme Toggle */}
+            {renderControlButton(
+              mode === "dark" ? <Sun size={16} /> : <Moon size={16} />,
+              onThemeToggle,
+              mode === "dark" ? "Light Mode" : "Dark Mode",
+            )}
 
-          {/* Sidebar Toggle */}
-          {renderControlButton(
-            !props.open ? <ChevronRight size={18} /> : <ChevronLeft size={18} />,
-            props.handleDrawer,
-            props.open ? "Collapse Sidebar" : "Expand Sidebar",
-          )}
+            {/* Sidebar Toggle */}
+            {renderControlButton(
+              !props.open ? <ChevronRight size={18} /> : <ChevronLeft size={18} />,
+              props.handleDrawer,
+              props.open ? "Collapse Sidebar" : "Expand Sidebar",
+            )}
+          </Box>
 
-          <Divider
+          {/* <Divider
             sx={{
               width: "100%",
               backgroundColor: theme.palette.customBorder.primary.b1.active,
             }}
-          />
+          /> */}
 
           {/* Version Info */}
-          {renderControlButton(
+          <Box
+            component="button"
+            type="button"
+            sx={{
+              width: props.open ? "100%" : "fit-content",
+              padding: theme.spacing(1),
+              borderRadius: "8px",
+              border: "none",
+              background: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: props.open ? "flex-start" : "center",
+              gap: theme.spacing(1),
+              color: theme.palette.customNavigation.text,
+              transition: "all 0.2s ease-in-out",
+              backgroundColor: "#262626",
+            }}
+          >
             <Typography
               variant="body2"
               sx={{
                 whiteSpace: "nowrap",
-                color: "inherit",
+                color: "#CCCCCC",
                 width: "100%",
+                letterSpacing: "0.1em",
               }}
             >
-              {props.open
-                ? `v${pJson.version} | © ${new Date().getFullYear()} WSO2 LLC`
-                : `v${pJson.version.split(".")[0]}`}
-            </Typography>,
-            undefined,
-            `Version ${pJson.version}`,
-          )}
+              {props.open ? `Version ${pJson.version}` : `v${pJson.version.split(".")[0]}`}
+            </Typography>
+          </Box>
         </Stack>
       )}
     </Box>
