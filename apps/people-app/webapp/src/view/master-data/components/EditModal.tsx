@@ -67,7 +67,13 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
     return <ErrorHandler message={"Something went wrong. Please try again..."} />;
   }
 
-  const { handleLeadSwap, handleHeadSwap, handleDeleteCurrent, handleRenameCurrent } =
+  const {
+    handleLeadSwap,
+    handleHeadSwap,
+    handleDeleteCurrent,
+    handleRenameCurrent,
+    isRenaming,
+  } =
     useOrgEntityActions({ data, onClose });
 
   return (
@@ -89,15 +95,6 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
         },
       }}
     >
-      {/* <BackdropProgress */}
-      {/*   open={isLoading} */}
-      {/*   sx={{ */}
-      {/*     position: "absolute", */}
-      {/*     zIndex: (theme) => theme.zIndex.modal + 1, */}
-      {/*     borderRadius: "8px", */}
-      {/*   }} */}
-      {/* /> */}
-
       <DialogTitle
         sx={{
           display: "flex",
@@ -157,6 +154,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
             entityType={data.type}
             currentName={data.name}
             onRenameSuccess={handleRenameCurrent}
+            isSubmitting={isRenaming}
           />
         </Box>
 
