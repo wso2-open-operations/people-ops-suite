@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import { UserDropdown } from "@asgardeo/react";
-import { Box, Stack, useMediaQuery, useTheme } from "@mui/material";
+import { Box, LinearProgress, Stack, useMediaQuery, useTheme } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 
@@ -25,19 +25,31 @@ import { useWso2Logo } from "@root/src/hooks/useWso2Logo";
 import { isGlobalLoadingSelector } from "@root/src/slices/selectors";
 import { useAppSelector } from "@slices/store";
 
+const MIN_GLOBAL_LOADING_INDICATOR_MS = 2000;
+
 const Header = () => {
   const theme = useTheme();
   const wso2Logo = useWso2Logo();
 
   const user = useAppSelector((state) => state.user.userInfo);
+  const isGlobalLoading = useAppSelector(isGlobalLoadingSelector);
+  const showGlobalLoadingBar = useMinimumLoadingVisibility(
+    isGlobalLoading,
+    MIN_GLOBAL_LOADING_INDICATOR_MS,
+  );
+
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
     <Box
       sx={{
+        position: "relative",
         zIndex: 10,
         backgroundColor: theme.palette.surface.secondary.active,
         boxShadow: theme.shadows[4],
+        display: "flex",
+        flexDirection: "column",
+        gap: 1,
       }}
     >
       <Toolbar
@@ -45,9 +57,9 @@ const Header = () => {
         sx={{
           paddingY: 0.3,
           display: "flex",
-          gap: 0.5,
+          gap: 2,
           "&.MuiToolbar-root": {
-            pl: 0.3,
+            px: 1.5,
           },
         }}
       >
@@ -126,6 +138,27 @@ const Header = () => {
           )}
         </Box>
       </Toolbar>
+
+      {showGlobalLoadingBar && (
+        <LinearProgress
+          sx={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 2,
+            borderRadius: 0,
+            transition: "opacity 200ms ease-in-out",
+            pointerEvents: "none",
+            "& .MuiLinearProgress-bar1": {
+              animationDuration: "1s",
+            },
+            "& .MuiLinearProgress-bar2": {
+              animationDuration: "1s",
+            },
+          }}
+        />
+      )}
     </Box>
   );
 };
