@@ -1501,7 +1501,8 @@ isolated function reuseExpiredParkingReservationToPendingQuery(ReuseExpiredParki
         created_on = NOW(6),
         created_by = ${payload.createdBy},
         updated_by = ${payload.createdBy}
-    WHERE id = ${payload.reservationId}`;
+    WHERE id = ${payload.reservationId}
+      AND status = ${EXPIRED}`;
 
 # Insert parking reservation (PENDING).
 #
