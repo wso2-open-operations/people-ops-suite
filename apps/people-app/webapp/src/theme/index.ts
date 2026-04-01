@@ -122,11 +122,11 @@ export const tokens = (mode: PaletteMode) => {
             },
             brand: {
               p1: {
-                active: colors.primary["1200"],
+                active: colors.primary["800"],
                 hover: "#FF6A0096",
                 disabled: alpha(colors.primary["1200"], 0.59),
               },
-              p2: { active: colors.primary.main, hover: "#FF6A0096", disabled: "#ff73005c" },
+              p2: { active: colors.primary["200"], hover: "#FF6A0096", disabled: "#ff73005c" },
             },
           },
 
@@ -165,18 +165,18 @@ export const tokens = (mode: PaletteMode) => {
                 active: colors.primary["1300"],
                 hover: "#e56000",
                 clicked: "#ffffff",
-                disabled: "#ffffff",
+                disabled: alpha(colors.primary[1300], 0.35),
               },
             },
           },
 
           // Navigation colors - Dark mode
           navigation: {
-            text: colors.neutral["800"],
+            text: colors.neutral["1000"],
             hover: colors.neutral["400"],
-            textClicked: colors.neutral.white,
+            textClicked: colors.primary["1000"],
             hoverBg: colors.neutral["1800"],
-            clickedBg: colors.primary["1200"],
+            clickedBg: "#2E190F",
             border: colors.neutral["1700"],
           },
 
@@ -205,7 +205,7 @@ export const tokens = (mode: PaletteMode) => {
                 disabled: alpha(colors.primary["1700"], 0.59),
               },
               light: {
-                active: colors.primary["1800"],
+                active: "#2E190F",
                 hover: "#411b01",
                 clicked: "#FFFFFF",
                 disabled: alpha(colors.primary["1800"], 0.59),
