@@ -1524,7 +1524,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
                 searchString: (),
-                filters: {employeeStatus: status},
+                filters: {employeeStatus: status, excludeFutureStartDate: excludeFutureStartDate},
                 pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
                 sort: {sortField: "employeeId", sortOrder: "ASC"}
             });
