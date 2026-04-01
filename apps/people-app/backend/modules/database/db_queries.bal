@@ -1471,39 +1471,6 @@ isolated function expireStalePendingParkingReservationForSlotDateQuery(string sl
       AND status = ${PENDING}
       AND created_on < DATE_SUB(NOW(), INTERVAL ${expiryMinutes} MINUTE)`;
 
-# Get the latest EXPIRED reservation id for slot/date.
-#
-# + slotId - Slot id
-# + bookingDate - Booking date (YYYY-MM-DD)
-# + return - Query to get latest expired reservation id
-isolated function getLatestExpiredParkingReservationForSlotDateQuery(string slotId, string bookingDate)
-    returns sql:ParameterizedQuery =>
-    `SELECT id
-    FROM parking_reservation
-    WHERE slot_id = ${slotId}
-      AND booking_date = ${bookingDate}
-      AND status = ${EXPIRED}
-    ORDER BY created_on DESC, id DESC
-    LIMIT 1`;
-
-# Reuse an EXPIRED reservation row by updating it to PENDING and overwriting all details.
-#
-# + payload - Reuse payload
-# + return - Query to update EXPIRED row to PENDING
-isolated function reuseExpiredParkingReservationToPendingQuery(ReuseExpiredParkingReservationToPendingPayload payload)
-        returns sql:ParameterizedQuery =>
-    `UPDATE parking_reservation
-    SET status = ${PENDING},
-        employee_email = ${payload.employeeEmail},
-        vehicle_id = ${payload.vehicleId},
-        coins_amount = ${payload.coinsAmount},
-        transaction_hash = NULL,
-        created_on = NOW(6),
-        created_by = ${payload.createdBy},
-        updated_by = ${payload.createdBy}
-    WHERE id = ${payload.reservationId}
-      AND status = ${EXPIRED}`;
-
 # Insert parking reservation (PENDING).
 #
 # + payload - Reservation payload

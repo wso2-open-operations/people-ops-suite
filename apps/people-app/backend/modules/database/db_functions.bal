@@ -680,35 +680,6 @@ public isolated function expireStalePendingParkingReservationForSlotDate(string 
     return result.affectedRowCount > 0;
 }
 
-# Get the latest EXPIRED reservation id for slot/date (if any).
-#
-# + slotId - Slot id
-# + bookingDate - Booking date (YYYY-MM-DD)
-# + return - Reservation id or () if none exists
-public isolated function getLatestExpiredParkingReservationForSlotDate(string slotId, string bookingDate)
-        returns int|error? {
-    ReservationIdRow|error row = databaseClient->queryRow(
-        getLatestExpiredParkingReservationForSlotDateQuery(slotId, bookingDate));
-    if row is sql:NoRowsError {
-        return ();
-    }
-    if row is error {
-        return row;
-    }
-    return row.id;
-}
-
-# Reuse an EXPIRED reservation row as a new PENDING reservation.
-#
-# + payload - Reuse payload
-# + return - True if updated
-public isolated function reuseExpiredParkingReservationToPending(
-        ReuseExpiredParkingReservationToPendingPayload payload) returns boolean|error {
-    sql:ExecutionResult result = check databaseClient->execute(
-        reuseExpiredParkingReservationToPendingQuery(payload));
-    return result.affectedRowCount > 0;
-}
-
 # Create parking reservation (PENDING).
 #
 # + payload - Reservation payload
