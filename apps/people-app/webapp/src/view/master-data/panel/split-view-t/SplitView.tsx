@@ -73,8 +73,10 @@ export default function SplitView() {
   const orgItemState = useAppSelector((state: RootState) => state.organizationStructure);
   const orgItems = orgItemState.organizationInfo;
 
-  const isOrgLoading = orgItemState.state === State.Loading;
-  const showOrgSkeleton = useMinimumLoadingVisibility(isOrgLoading, SPLIT_VIEW_SKELETON_DELAY_MS);
+  const showOrgSkeleton = useMinimumLoadingVisibility(
+    orgItemState.state === State.Loading,
+    SPLIT_VIEW_SKELETON_DELAY_MS,
+  );
 
   const theme = useTheme();
   const [editModal, setEditModal] = useState<OnEdit>({
@@ -129,11 +131,11 @@ export default function SplitView() {
     setSelectedUnitId(currentMatch.unitId as number | null);
   }, [currentMatch]);
 
-  if (showOrgSkeleton) {
+  if (showOrgSkeleton || !orgItems) {
     return <SplitViewSkeleton />;
   }
 
-  if (!orgItems || orgItemState.state === State.Failed) {
+  if (orgItemState.state === State.Failed || (orgItemState.state !== State.Loading && !orgItems)) {
     return <ErrorHandler message={"An unknown error occurred when fetching org items"} />;
   }
 
