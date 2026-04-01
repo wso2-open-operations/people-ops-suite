@@ -27,6 +27,7 @@ import type {
 
 import { DATE_FMT } from "../config/constant";
 import { ServiceLength } from "../types/types";
+import { AddOption } from "../view/master-data/panel/split-view-t/SplitView";
 import { NodeType } from "./types";
 
 export function isIncludedRole(roles: string[], allowedRoles: string[]) {
@@ -278,3 +279,95 @@ export const convertDataTypeToLabel = (dataType: NodeType) => {
       return "";
   }
 };
+
+export function buildAddModalOptions(
+  type: NodeType,
+  selectedNode: BusinessUnitState | TeamState | SubTeamState | UnitState | null,
+  orgItems: OrganizationInfo,
+): AddOption[] | null {
+  switch (type) {
+    case NodeType.BusinessUnit:
+      return orgItems.businessUnits as AddOption[];
+    case NodeType.Team: {
+      if (!selectedNode) return null;
+      const selectedBusinessUnit = selectedNode as BusinessUnitState;
+      const isOnSelectedBusinessUnit = (t: TeamState) =>
+        t.businessUnitId === selectedBusinessUnit.id;
+
+      const teamsOnSelectedBusinessUnit = orgItems.teams.filter(isOnSelectedBusinessUnit);
+
+      const idsAlreadyOnSelectedBusinessUnit = new Set(
+        teamsOnSelectedBusinessUnit.map((t) => t.id),
+      );
+
+      const firstOffBusinessUnitRowById = new Map<number, TeamState>();
+      for (const t of orgItems.teams) {
+        if (isOnSelectedBusinessUnit(t)) continue;
+        if (!firstOffBusinessUnitRowById.has(t.id)) firstOffBusinessUnitRowById.set(t.id, t);
+      }
+
+      const linkableOffBusinessUnit = [...firstOffBusinessUnitRowById.values()].filter(
+        (t) => !idsAlreadyOnSelectedBusinessUnit.has(t.id),
+      );
+
+      return [...teamsOnSelectedBusinessUnit, ...linkableOffBusinessUnit].map((t) => ({
+        ...t,
+        canAdd: !isOnSelectedBusinessUnit(t),
+      }));
+    }
+    case NodeType.SubTeam: {
+      if (!selectedNode) return null;
+      const selectedTeam = selectedNode as TeamState;
+      const isOnSelectedTeam = (s: SubTeamState) =>
+        s.businessUnitId === selectedTeam.businessUnitId &&
+        s.businessUnitTeamId === selectedTeam.businessUnitTeamId;
+
+      const subTeamsOnSelectedTeam = orgItems.subTeams.filter(isOnSelectedTeam);
+
+      const idsAlreadyOnSelectedTeam = new Set(subTeamsOnSelectedTeam.map((s) => s.id));
+      const firstOffTeamRowById = new Map<number, SubTeamState>();
+      for (const s of orgItems.subTeams) {
+        if (isOnSelectedTeam(s)) continue;
+        if (!firstOffTeamRowById.has(s.id)) firstOffTeamRowById.set(s.id, s);
+      }
+
+      const linkableOffTeam = [...firstOffTeamRowById.values()].filter(
+        (s) => !idsAlreadyOnSelectedTeam.has(s.id),
+      );
+
+      return [...subTeamsOnSelectedTeam, ...linkableOffTeam].map((s) => ({
+        ...s,
+        canAdd: !isOnSelectedTeam(s),
+      }));
+    }
+    case NodeType.Unit: {
+      if (!selectedNode) return null;
+      const selectedSubTeam = selectedNode as SubTeamState;
+      const isOnSelectedSubTeam = (u: UnitState) =>
+        u.businessUnitId === selectedSubTeam.businessUnitId &&
+        u.businessUnitTeamId === selectedSubTeam.businessUnitTeamId &&
+        u.businessUnitTeamSubTeamId === selectedSubTeam.businessUnitTeamSubTeamId;
+
+      const unitsOnSelectedSubTeam = orgItems.units.filter(isOnSelectedSubTeam);
+
+      const idsAlreadyOnSelectedSubTeam = new Set(unitsOnSelectedSubTeam.map((u) => u.id));
+
+      const firstOffSubTeamRowById = new Map<number, UnitState>();
+      for (const u of orgItems.units) {
+        if (isOnSelectedSubTeam(u)) continue;
+        if (!firstOffSubTeamRowById.has(u.id)) firstOffSubTeamRowById.set(u.id, u);
+      }
+
+      const linkableOffSubTeam = [...firstOffSubTeamRowById.values()].filter(
+        (u) => !idsAlreadyOnSelectedSubTeam.has(u.id),
+      );
+
+      return [...unitsOnSelectedSubTeam, ...linkableOffSubTeam].map((u) => ({
+        ...u,
+        canAdd: !isOnSelectedSubTeam(u),
+      }));
+    }
+    default:
+      return null;
+  }
+}
