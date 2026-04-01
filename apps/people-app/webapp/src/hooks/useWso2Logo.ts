@@ -17,9 +17,15 @@ import { useTheme } from "@mui/material";
 
 import wso2LogoBlack from "@assets/images/WSO2-Logo-Black.png";
 import wso2LogoWhite from "@assets/images/WSO2-Logo-White.png";
+import wso2LogoTwoBlack from "@assets/images/wso2-logo-black_orange.svg";
+import wso2LogoTwoWhite from "@assets/images/wso2-logo-white_orange.svg";
 
 export const useWso2Logo = (): string => {
   const theme = useTheme();
   return theme.palette.mode === "dark" ? wso2LogoWhite : wso2LogoBlack;
 };
 
+export const useWso2LogoColoredPulse = (): string => {
+  const theme = useTheme();
+  return theme.palette.mode === "dark" ? wso2LogoTwoWhite : wso2LogoTwoBlack;
+};
