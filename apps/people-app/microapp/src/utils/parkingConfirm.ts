@@ -60,6 +60,25 @@ export function confirmParkingReservation(
   });
 }
 
+export function fetchParkingReservationById(
+  handleRequest: HttpHandleRequest,
+  handleRequestWithNewToken: HttpHandleRequestWithNewToken,
+  reservationId: number,
+): Promise<ParkingReservationDetails> {
+  return new Promise<ParkingReservationDetails>((resolve, reject) => {
+    executeWithTokenHandling(
+      handleRequest,
+      handleRequestWithNewToken,
+      serviceUrls.fetchParkingReservationById(reservationId),
+      "GET",
+      null,
+      (data) => resolve(data as ParkingReservationDetails),
+      (err) => reject(err ?? "Failed to fetch reservation"),
+      () => {},
+    );
+  });
+}
+
 /**
  * After a successful confirm API: clear wallet bridge keys, persist receipt,
  * drop payment context, navigate to confirmation.

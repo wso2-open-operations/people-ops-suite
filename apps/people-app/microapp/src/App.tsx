@@ -68,6 +68,7 @@ function AnimatedRoutes({ user }: PageProps) {
 
 function App() {
   const [user, setUser] = useState<User | undefined>(undefined);
+  const [resumeReady, setResumeReady] = useState(false);
   useEffect(() => {
     const init = () => {
       getToken((token: string | undefined) => {
@@ -85,8 +86,10 @@ function App() {
 
   return (
     <HashRouter>
-      <ParkingWalletReturnResume />
-      <AnimatedRoutes user={user} />
+      <ParkingWalletReturnResume
+        onInitialResumeComplete={() => setResumeReady(true)}
+      />
+      {resumeReady ? <AnimatedRoutes user={user} /> : null}
     </HashRouter>
   );
 }
