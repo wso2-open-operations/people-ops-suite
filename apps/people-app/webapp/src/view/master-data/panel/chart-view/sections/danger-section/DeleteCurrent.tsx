@@ -58,6 +58,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({ onDelete }) => {
             variant="body2"
             sx={{
               color: theme.palette.customText.primary.p2.active,
+              fontWeight: 500
             }}
           >
             Delete this business unit
