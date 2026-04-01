@@ -13,27 +13,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { BadgeSharp, Groups } from "@mui/icons-material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import GroupsIcon from "@mui/icons-material/Groups";
-import { CircleQuestionMark } from "lucide-react";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
+import AssessmentIcon from "@mui/icons-material/Assessment";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import GroupsIcon from "@mui/icons-material/Groups";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import PersonOffIcon from "@mui/icons-material/PersonOff";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
+import { CircleQuestionMark } from "lucide-react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import React from "react";
 
-import {
-  Navigate,
-  Outlet,
-  useLocation,
-} from "react-router-dom";
-import AssessmentIcon from "@mui/icons-material/Assessment";
-import PersonOffIcon from "@mui/icons-material/PersonOff";
-import QrCode2Icon from "@mui/icons-material/QrCode2";
-import GroupAddIcon from "@mui/icons-material/GroupAdd";
-import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
-import { BadgeSharp, Groups } from "@mui/icons-material";
 
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
 
@@ -131,7 +127,7 @@ export const routes: RouteObjectWithRole[] = [
       },
     ],
   },
- {
+  {
     path: "/master-data",
     text: "Master Data",
     icon: React.createElement(AccountTreeOutlinedIcon),
