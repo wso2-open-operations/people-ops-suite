@@ -49,6 +49,21 @@ export function useOrgEntityActions({ data, onClose }: UseOrgEntityActionsParams
     error,
   } = useOrgMutation();
 
+  const isRenaming = (() => {
+    switch (data.type) {
+      case NodeType.BusinessUnit:
+        return status.isUpdatingBU;
+      case NodeType.Team:
+        return status.isUpdatingTeam;
+      case NodeType.SubTeam:
+        return status.isUpdatingSubTeam;
+      case NodeType.Unit:
+        return status.isUpdatingUnit;
+      default:
+        return false;
+    }
+  })();
+
   const handleLeadSwap = async (selectedEmployee: EmployeeBasicInfo) => {
     const payload = { functionalLeadEmail: selectedEmployee.workEmail };
 
@@ -143,6 +158,7 @@ export function useOrgEntityActions({ data, onClose }: UseOrgEntityActionsParams
     handleDeleteCurrent,
     handleRenameCurrent,
     isLoading,
+    isRenaming,
     isError,
     status,
     error,
