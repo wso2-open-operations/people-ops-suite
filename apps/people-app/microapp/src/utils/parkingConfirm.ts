@@ -22,6 +22,7 @@ import {
   clearParkingPaymentContextState,
   setConfirmationState,
 } from "@/utils/parkingStorage";
+import { Logger } from "@/utils/logger";
 import { executeWithTokenHandling, type RequestOptions } from "@/utils/http";
 
 /** Bridge local keys written by the wallet / read by People parking flow. */
@@ -88,7 +89,14 @@ export async function finalizeParkingConfirmationAfterSuccess(
   navigate: NavigateFunction,
   options?: { replace?: boolean },
 ): Promise<void> {
-  await clearWalletParkingPaymentBridgeKeys();
+  try {
+    await clearWalletParkingPaymentBridgeKeys();
+  } catch (e) {
+    Logger.error(
+      "Wallet bridge key cleanup failed",
+      e,
+    );
+  }
   setConfirmationState(confirmed);
   clearParkingPaymentContextState();
   navigate("/services/parking/confirmation", {
