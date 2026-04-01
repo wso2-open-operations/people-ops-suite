@@ -29,7 +29,6 @@ import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import ErrorHandler from "@component/common/ErrorHandler.tsx";
-import { useDelayedLoadingVisibility } from "@root/src/hooks/useDelayedLoadingVisibility";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility.ts";
 import OrgStructureCard from "@root/src/view/master-data/components/OrgStructureCard.tsx";
 import { useGetOrgStructureQuery } from "@services/organization";
@@ -48,9 +47,9 @@ import { EditModal } from "@view/master-data/components/EditModal";
 import AddModal from "../../components/AddModal.tsx";
 import SplitViewSkeleton from "./SplitViewSkeleton.tsx";
 import { type MatchSearch, itemToMatchSearch } from "./utils/utils.ts";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant.ts";
 
 /** Match header `MIN_GLOBAL_LOADING_INDICATOR_MS` — hide skeleton until loading is sustained this long. */
-const SPLIT_VIEW_SKELETON_DELAY_MS = 2000;
 
 type OnEdit = {
   open: boolean;
@@ -74,7 +73,7 @@ export default function SplitView() {
   const orgItems = orgItemState.organizationInfo;
 
   const showOrgSkeleton = useMinimumLoadingVisibility(
-    orgItemState.state === State.Loading,
+    orgItemState.state === State.Loading && !orgItems,
     SPLIT_VIEW_SKELETON_DELAY_MS,
   );
 
@@ -131,11 +130,17 @@ export default function SplitView() {
     setSelectedUnitId(currentMatch.unitId as number | null);
   }, [currentMatch]);
 
-  if (showOrgSkeleton || !orgItems) {
+  // Only show the full skeleton on initial load (no cached org structure yet).
+  // For background refreshes, keep rendering the current view to avoid UI flicker/unmounting modals.
+  if (showOrgSkeleton || (!orgItems && orgItemState.state === State.Loading)) {
     return <SplitViewSkeleton />;
   }
 
-  if (orgItemState.state === State.Failed || (orgItemState.state !== State.Loading && !orgItems)) {
+  if (orgItemState.state === State.Failed && !orgItems) {
+    return <ErrorHandler message={"An unknown error occurred when fetching org items"} />;
+  }
+
+  if (!orgItems) {
     return <ErrorHandler message={"An unknown error occurred when fetching org items"} />;
   }
 
