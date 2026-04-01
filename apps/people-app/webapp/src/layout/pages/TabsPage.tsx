@@ -121,6 +121,7 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
               sx={{
                 display: "flex",
                 gap: 1,
+                px: 1.2,
                 borderRadius: "6px",
                 backgroundColor:
                   activeIndex === index ? theme.palette.fill.primary.light.active : "none",
@@ -145,6 +146,7 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
                 variant={activeIndex === index ? "body1" : "body1"}
                 sx={{
                   color: activeIndex === index ? theme.palette.customText.brand.p1.active : "none",
+                  fontWeight: activeIndex === index ? 500 : 400,
                 }}
               >
                 {tab.tabTitle}
