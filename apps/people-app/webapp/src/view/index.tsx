@@ -17,7 +17,7 @@ import { lazy } from "react";
 
 const help = lazy(() => import("@view/help/help"));
 const me = lazy(() => import("@view/me"));
-const employees = lazy(() => import("@view/employees/Employee"));
+const employees = lazy(() => import("@view/employees/EmployeeForm"));
 const masterData = lazy(() => import("@view/master-data/MasterData"));
 const employeeOnboarding = lazy(
   () => import("@view/employees/employeeOnboarding/employeeOnboarding"),
