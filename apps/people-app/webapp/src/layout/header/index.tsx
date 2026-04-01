@@ -18,13 +18,16 @@ import { Box, Stack, useMediaQuery, useTheme } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 
-import Wso2Logo from "@assets/images/wso2-logo.svg";
 import { APP_NAME } from "@config/config";
 import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
+import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
+import { useWso2Logo } from "@root/src/hooks/useWso2Logo";
+import { isGlobalLoadingSelector } from "@root/src/slices/selectors";
 import { useAppSelector } from "@slices/store";
 
 const Header = () => {
   const theme = useTheme();
+  const wso2Logo = useWso2Logo();
 
   const user = useAppSelector((state) => state.user.userInfo);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -51,11 +54,10 @@ const Header = () => {
         <img
           alt="wso2"
           style={{
-            height: "48px",
             maxWidth: "100px",
           }}
           onClick={() => (window.location.href = "/")}
-          src={Wso2Logo}
+          src={wso2Logo}
         ></img>
 
         <Box

@@ -15,9 +15,9 @@
 // under the License.
 import { Box, Container } from "@mui/material";
 
-import ErrorSvg from "@assets/images/error.svg";
-import Wso2Logo from "@assets/images/wso2-logo.svg";
 import StateWithImage from "@component/ui/StateWithImage";
+import Wso2Logo from "@src/assets/images/WSO2-Logo-Black.png";
+import ErrorSvg from "@src/assets/images/error.svg";
 
 export interface ErrorHandlerProps {
   message: string | null;
