@@ -27,7 +27,7 @@ import type {
 
 import { DATE_FMT } from "../config/constant";
 import { ServiceLength } from "../types/types";
-import { AddOption } from "../view/master-data/panel/split-view-t/SplitView";
+import { AddOption } from "../view/master-data/panel/split-view/SplitView";
 import { NodeType } from "./types";
 
 export function isIncludedRole(roles: string[], allowedRoles: string[]) {
