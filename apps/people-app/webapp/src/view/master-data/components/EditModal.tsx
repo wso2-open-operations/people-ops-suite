@@ -17,7 +17,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
-import ErrorHandler from "@component/common/ErrorHandler";
 import {
   BusinessUnitState,
   SubTeamState,
@@ -43,33 +42,37 @@ interface EditModalProps {
 
 export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, nodeType }) => {
   const theme = useTheme();
-  const orgInfo = useAppSelector(
-    (state: RootState) => state.organizationStructure.organizationInfo,
-  );
+  const orgInfo = useAppSelector((state: RootState) => state.organizationStructure);
+  const orgData = orgInfo.organizationInfo;
 
   const data: BusinessUnitState | TeamState | SubTeamState | UnitState | null = (() => {
-    if (!orgInfo) return null;
+    if (!orgData) return null;
 
     switch (nodeType) {
       case NodeType.BusinessUnit:
-        return orgInfo.businessUnits.find((item) => item.uniqueId === uniqueId) ?? null;
+        return orgData.businessUnits.find((item) => item.uniqueId === uniqueId) ?? null;
       case NodeType.Team:
-        return orgInfo.teams.find((item) => item.uniqueId === uniqueId) ?? null;
+        return orgData.teams.find((item) => item.uniqueId === uniqueId) ?? null;
       case NodeType.SubTeam:
-        return orgInfo.subTeams.find((item) => item.uniqueId === uniqueId) ?? null;
+        return orgData.subTeams.find((item) => item.uniqueId === uniqueId) ?? null;
       case NodeType.Unit:
-        return orgInfo.units.find((item) => item.uniqueId === uniqueId) ?? null;
+        return orgData.units.find((item) => item.uniqueId === uniqueId) ?? null;
       default:
         return null;
     }
   })();
 
-  if (!data) {
-    return <ErrorHandler message={"Something went wrong. Please try again..."} />;
-  }
+  const {
+    handleLeadSwap,
+    handleHeadSwap,
+    handleDeleteCurrent,
+    handleRenameCurrent,
+    isRenaming,
+    isUpdating,
+    isDeleting,
+  } = useOrgEntityActions({ data });
 
-  const { handleLeadSwap, handleHeadSwap, handleDeleteCurrent, handleRenameCurrent, isRenaming } =
-    useOrgEntityActions({ data, onClose });
+  if (!data) return null;
 
   return (
     <Dialog
@@ -169,6 +172,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
               functionalLead={"functionalLead" in data ? data.functionalLead : undefined}
               onSwapHead={handleHeadSwap}
               onSwapFunctionalLead={handleLeadSwap}
+              isUpdating={isUpdating}
             />
 
             {/* {children.length > 0 && (
@@ -200,7 +204,11 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
               borderRadius: "6px",
             }}
           >
-            <DeleteCurrent onDelete={handleDeleteCurrent} />
+            <DeleteCurrent
+              onDelete={handleDeleteCurrent}
+              isDeleting={isDeleting}
+              onDeleteSuccessComplete={onClose}
+            />
 
             {/* <Box
               sx={{
