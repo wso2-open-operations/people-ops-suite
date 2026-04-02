@@ -48,7 +48,7 @@ import { NodeType } from "@utils/types";
 import { EditModal } from "@view/master-data/components/EditModal";
 
 import AddModal from "../../components/AddModal.tsx";
-import SplitViewSkeleton from "./SplitViewSkeleton.tsx";
+import SplitViewSkeleton from "./components/SplitViewSkeleton.tsx";
 import { type MatchSearch, itemToMatchSearch } from "./utils/globalSearch.ts";
 
 /** Match header `MIN_GLOBAL_LOADING_INDICATOR_MS` — hide skeleton until loading is sustained this long. */
