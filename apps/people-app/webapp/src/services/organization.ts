@@ -17,6 +17,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 
 import { AppConfig } from "@config/config.ts";
 
+import { enqueueSnackbarMessage } from "../slices/commonSlice/common.ts";
 import { baseQueryWithRetry } from "./BaseQuery.ts";
 
 export interface Head {
@@ -171,6 +172,10 @@ export interface OrgNodeMappingPayload {
   functionalLeadEmail: string;
 }
 
+export interface ApiMessageOnSuccess {
+  message?: string;
+}
+
 export const organizationApi = createApi({
   reducerPath: "organizationApi",
   baseQuery: baseQueryWithRetry,
@@ -209,154 +214,419 @@ export const organizationApi = createApi({
       providesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    addBusinessUnits: builder.mutation<void, CreateBusinessUnitPayload>({
+    addBusinessUnits: builder.mutation<ApiMessageOnSuccess, CreateBusinessUnitPayload>({
       queryFn: async (payload, _api, _extraOptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/business-units`,
           method: "POST",
           body: payload,
         });
-        return data.error ? { error: data.error } : { data: undefined };
+
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_payload, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully added business unit",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message ||
+            `An error occurred while adding business unit ${_payload.name}`;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
-    addTeams: builder.mutation<void, { buId: string; payload: CreateTeamPayload }>({
+    addTeams: builder.mutation<ApiMessageOnSuccess, { buId: string; payload: CreateTeamPayload }>({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/teams`,
           method: "POST",
           body: payload,
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted({ payload }, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? `Successfully added team ${payload.name}`,
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || `An error occurred while adding team ${payload.name}`;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
-    addSubTeams: builder.mutation<void, { teamId: string; payload: CreateSubTeamPayload }>({
+    addSubTeams: builder.mutation<
+      ApiMessageOnSuccess,
+      { teamId: string; payload: CreateSubTeamPayload }
+    >({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/sub-teams`,
           method: "POST",
           body: payload,
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted({ payload }, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? `Successfully added sub team ${payload.name}`,
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || `An error occurred while adding sub team ${payload.name}`;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
-    addUnits: builder.mutation<void, { subTeamId: string; payload: CreateUnitPayload }>({
+    addUnits: builder.mutation<
+      ApiMessageOnSuccess,
+      { subTeamId: string; payload: CreateUnitPayload }
+    >({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/units`,
           method: "POST",
           body: payload,
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted({ payload }, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? `Successfully added unit ${payload.name}`,
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || `An error occurred while adding unit ${payload.name}`;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
-    addBusinessUnitTeam: builder.mutation<void, { payload: CreateBusinessUnitTeamPayload }>({
+    addBusinessUnitTeam: builder.mutation<
+      ApiMessageOnSuccess,
+      { payload: CreateBusinessUnitTeamPayload }
+    >({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/business-unit/team`,
           method: "POST",
           body: payload,
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully linked team to business unit",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while linking team to business unit";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
-    addTeamSubTeam: builder.mutation<void, { payload: CreateBusinessUnitTeamSubTeamPayload }>({
+    addTeamSubTeam: builder.mutation<
+      ApiMessageOnSuccess,
+      { payload: CreateBusinessUnitTeamSubTeamPayload }
+    >({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/team/sub-team`,
           method: "POST",
           body: payload,
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully linked sub team to team",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while linking sub team to team";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
-    addSubTeamUnit: builder.mutation<void, { payload: CreateBusinessUnitTeamSubTeamUnitPayload }>({
+    addSubTeamUnit: builder.mutation<
+      ApiMessageOnSuccess,
+      { payload: CreateBusinessUnitTeamSubTeamUnitPayload }
+    >({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/sub-team/unit`,
           method: "POST",
           body: payload,
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully linked unit to sub team",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while linking unit to sub team";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
     updateBusinessUnit: builder.mutation<
-      void,
+      ApiMessageOnSuccess,
       { buId: number; payload: Partial<UpdateBusinessUnitPayload> }
     >({
       queryFn: async ({ buId, payload }, _api, _extraoptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}`,
           method: "PATCH",
           body: {
             ...payload,
           },
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully updated business unit",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while updating business unit";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
-    updateTeam: builder.mutation<void, { teamId: number; payload: Partial<UpdateTeamPayload> }>({
+    updateTeam: builder.mutation<
+      ApiMessageOnSuccess,
+      { teamId: number; payload: Partial<UpdateTeamPayload> }
+    >({
       queryFn: async ({ teamId, payload }, _api, _extraoptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/team/${teamId}`,
           method: "PATCH",
           body: {
             ...payload,
           },
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully updated team",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while updating team";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
     updateSubTeam: builder.mutation<
-      void,
+      ApiMessageOnSuccess,
       { subTeamId: number; payload: Partial<UpdateSubTeamPayload> }
     >({
       queryFn: async ({ subTeamId, payload }, _api, _extraoptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/sub-team/${subTeamId}`,
           method: "PATCH",
           body: {
             ...payload,
           },
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully updated sub team",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while updating sub team";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
-    updateUnit: builder.mutation<void, { unitId: number; payload: Partial<UpdateUnitPayload> }>({
+    updateUnit: builder.mutation<
+      ApiMessageOnSuccess,
+      { unitId: number; payload: Partial<UpdateUnitPayload> }
+    >({
       queryFn: async ({ unitId, payload }, _api, _extraoptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/unit/${unitId}`,
           method: "PATCH",
           body: {
             ...payload,
           },
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully updated unit",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while updating unit";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
     updateBusinessUnitTeam: builder.mutation<
-      void,
+      ApiMessageOnSuccess,
       {
         buId: number;
         teamId: number;
@@ -364,20 +634,42 @@ export const organizationApi = createApi({
       }
     >({
       queryFn: async ({ buId, teamId, payload }, _api, _extraoptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}/team/${teamId}`,
           method: "PATCH",
           body: {
             ...payload,
           },
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully updated functional lead",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while updating functional lead";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
     updateTeamSubTeam: builder.mutation<
-      void,
+      ApiMessageOnSuccess,
       {
         businessUnitTeamId: number;
         subTeamId: number;
@@ -390,20 +682,42 @@ export const organizationApi = createApi({
         _extraoptions,
         baseQuery,
       ) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/team/${businessUnitTeamId}/sub-team/${subTeamId}`,
           method: "PATCH",
           body: {
             ...payload,
           },
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully updated functional lead",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while updating functional lead";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
     updateSubTeamUnit: builder.mutation<
-      void,
+      ApiMessageOnSuccess,
       {
         businessUnitTeamSubTeamId: number;
         unitId: number;
@@ -416,64 +730,179 @@ export const organizationApi = createApi({
         _extraoptions,
         baseQuery,
       ) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/sub-team/${businessUnitTeamSubTeamId}/unit/${unitId}`,
           method: "PATCH",
           body: {
             ...payload,
           },
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully updated functional lead",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while updating functional lead";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
-    deleteBusinessUnit: builder.mutation<void, { buId: number }>({
+    deleteBusinessUnit: builder.mutation<ApiMessageOnSuccess, { buId: number }>({
       queryFn: async ({ buId }, _api, _extraoptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}`,
           method: "DELETE",
         });
 
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
-    }),
-
-    deleteBusinessUnitTeam: builder.mutation<void, { buId: number; teamId: number }>({
-      queryFn: async ({ buId, teamId }, _api, _extraoptions, baseQuery) => {
-        const data = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}/team/${teamId}`,
-          method: "DELETE",
-        });
-        return data.error ? { error: data.error } : { data: undefined };
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully deleted business unit",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while deleting business unit";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
       },
-      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    deleteTeamSubTeam: builder.mutation<void, { businessUnitTeamId: number; subTeamId: number }>({
+    deleteBusinessUnitTeam: builder.mutation<ApiMessageOnSuccess, { buId: number; teamId: number }>(
+      {
+        queryFn: async ({ buId, teamId }, _api, _extraoptions, baseQuery) => {
+          const result = await baseQuery({
+            url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}/team/${teamId}`,
+            method: "DELETE",
+          });
+          if (result.error) return { error: result.error };
+
+          return { data: (result.data as ApiMessageOnSuccess) ?? {} };
+        },
+        invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+        async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+          try {
+            const response = await queryFulfilled;
+            dispatch(
+              enqueueSnackbarMessage({
+                message: response.data.message ?? "Successfully deleted team",
+                type: "success",
+              }),
+            );
+          } catch (error: any) {
+            const errorMessage =
+              error.error?.data?.message || "An error occurred while deleting team";
+            dispatch(
+              enqueueSnackbarMessage({
+                message: errorMessage,
+                type: "error",
+              }),
+            );
+          }
+        },
+      },
+    ),
+
+    deleteTeamSubTeam: builder.mutation<
+      ApiMessageOnSuccess,
+      { businessUnitTeamId: number; subTeamId: number }
+    >({
       queryFn: async ({ businessUnitTeamId, subTeamId }, _api, _extraoptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/team/${businessUnitTeamId}/sub-team/${subTeamId}`,
           method: "DELETE",
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully deleted sub team",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while deleting sub team";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
 
     deleteSubTeamUnit: builder.mutation<
-      void,
+      ApiMessageOnSuccess,
       { businessUnitTeamSubTeamId: number; unitId: number }
     >({
       queryFn: async ({ businessUnitTeamSubTeamId, unitId }, _api, _extraoptions, baseQuery) => {
-        const data = await baseQuery({
+        const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/sub-team/${businessUnitTeamSubTeamId}/unit/${unitId}`,
           method: "DELETE",
         });
-        return data.error ? { error: data.error } : { data: undefined };
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully deleted unit",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while deleting unit";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
   }),
 });
