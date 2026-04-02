@@ -471,7 +471,7 @@ CREATE TABLE `parking_reservation` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_pr_slot` FOREIGN KEY (`slot_id`) REFERENCES `parking_slot` (`slot_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_pr_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicle` (`vehicle_id`) ON DELETE RESTRICT,
-  KEY `idx_pr_slot_id` (`slot_id`),
+  KEY `idx_pr_slot_booking_date` (`slot_id`, `booking_date`),
   UNIQUE KEY `uk_parking_reservation_tx_hash` (`transaction_hash`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
