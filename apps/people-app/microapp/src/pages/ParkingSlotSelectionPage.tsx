@@ -309,7 +309,7 @@ function ParkingSlotSelectionPage() {
                       </div>
                       {isBooked && (
                         <div className="text-[10.5px] font-bold mt-1 tracking-wide text-[#9B9B9B]">
-                          BOOKED
+                          Unavailable
                         </div>
                       )}
                     </div>
