@@ -1294,7 +1294,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date);
+        database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date,
+            wso2_coin:pendingReservationExpiryMinutes);
         if slots is error {
             log:printError("Error fetching parking slots", slots);
             return <http:InternalServerError>{
@@ -1383,7 +1384,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate);
+        boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate,
+            wso2_coin:pendingReservationExpiryMinutes);
         if booked is error {
             log:printError("Error checking slot availability", booked);
             return <http:InternalServerError>{

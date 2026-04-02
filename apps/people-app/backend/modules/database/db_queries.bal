@@ -1408,8 +1408,10 @@ isolated function getParkingFloorsQuery() returns sql:ParameterizedQuery =>
 #
 # + floorId - Floor id
 # + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
 # + return - Query to get parking slots with isBooked
-isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) returns sql:ParameterizedQuery =>
+isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate, int pendingExpiryMinutes)
+        returns sql:ParameterizedQuery =>
     `SELECT
         ps.slot_id as 'slotId',
         ps.floor_id as 'floorId',
@@ -1419,7 +1421,11 @@ isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) r
             SELECT 1 FROM parking_reservation pr
             WHERE pr.slot_id = ps.slot_id
               AND pr.booking_date = ${bookingDate}
-              AND pr.status IN (${PENDING}, ${CONFIRMED})
+              AND (
+                pr.status = ${CONFIRMED}
+                OR (pr.status = ${PENDING}
+                    AND pr.created_on >= DATE_SUB(NOW(), INTERVAL ${pendingExpiryMinutes} MINUTE))
+              )
         ) THEN 1 ELSE 0 END) as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
@@ -1446,14 +1452,20 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
 #
 # + slotId - Slot id
 # + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
 # + return - Query to get reservation id if slot is unavailable
-isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, string bookingDate)
+isolated function getActiveParkingReservationForSlotDateQuery(string slotId, string bookingDate,
+        int pendingExpiryMinutes)
     returns sql:ParameterizedQuery =>
     `SELECT id
     FROM parking_reservation
     WHERE slot_id = ${slotId}
       AND booking_date = ${bookingDate}
-      AND status IN (${PENDING}, ${CONFIRMED})
+      AND (
+        status = ${CONFIRMED}
+        OR (status = ${PENDING}
+            AND created_on >= DATE_SUB(NOW(), INTERVAL ${pendingExpiryMinutes} MINUTE))
+      )
     LIMIT 1`;
 
 # Expire stale pending reservations (PENDING -> EXPIRED) for slot/date.
