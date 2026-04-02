@@ -85,9 +85,10 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
             position: "relative",
             width: "700px",
             maxHeight: "600px",
-            borderRadius: "8px",
+            borderRadius: 1.5,
             boxShadow: "0px 4px 24px rgba(0, 0, 0, 0.1)",
             backgroundColor: theme.palette.fill.secondary.light.active,
+            backgroundImage: "none",
             padding: "4px",
           },
         },
@@ -116,11 +117,11 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
         <IconButton
           onClick={onClose}
           sx={{
-            color: theme.palette.customText.primary.p2.active,
+            color: theme.palette.customText.secondary.p1.active,
             p: 0,
           }}
         >
-          <CloseIcon />
+          <CloseIcon sx={{ fontSize: 20 }} />
         </IconButton>
       </DialogTitle>
 
@@ -200,7 +201,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
               display: "flex",
               flexDirection: "column",
               gap: "6px",
-              border: `1px solid ${theme.palette.error.light}`,
+              border: `.5px solid ${theme.palette.error.main}`,
               borderRadius: "6px",
             }}
           >
