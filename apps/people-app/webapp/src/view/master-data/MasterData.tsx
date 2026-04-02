@@ -15,8 +15,9 @@
 // under the License.
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 
+import PreLoader from "@component/common/PreLoader";
 import TabsPage from "@layout/pages/TabsPage";
-import SplitView from "@view/master-data/panel/split-view-t/SplitView.tsx";
+import SplitView from "@view/master-data/panel/split-view/SplitView";
 
 export default function MasterData() {
   return (
