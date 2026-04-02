@@ -269,10 +269,7 @@ export default function SplitView() {
 
   // Add handlers
   const handleBusinessUnitAdd = () => {
-    if (!orgItems) return;
-    const data = buildAddModalOptions(NodeType.BusinessUnit, null, orgItems);
-    if (!data) return;
-    onAdd(data, NodeType.BusinessUnit, null);
+    onAdd([], NodeType.BusinessUnit, null);
   };
 
   const handleTeamAdd = () => {
