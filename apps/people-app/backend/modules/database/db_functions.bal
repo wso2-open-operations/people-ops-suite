@@ -616,9 +616,12 @@ public isolated function getParkingFloors() returns ParkingFloor[]|error {
 #
 # + floorId - Floor id
 # + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
 # + return - Parking slots (with isBooked)
-public isolated function getParkingSlotsByFloor(int floorId, string bookingDate) returns ParkingSlot[]|error {
-    stream<ParkingSlotRow, error?> slotStream = databaseClient->query(getParkingSlotsByFloorQuery(floorId, bookingDate));
+public isolated function getParkingSlotsByFloor(int floorId, string bookingDate, int pendingExpiryMinutes)
+        returns ParkingSlot[]|error {
+    stream<ParkingSlotRow, error?> slotStream = databaseClient->query(
+        getParkingSlotsByFloorQuery(floorId, bookingDate, pendingExpiryMinutes));
     return from ParkingSlotRow r in slotStream
         select {
             slotId: r.slotId,
@@ -654,10 +657,12 @@ public isolated function getParkingSlotById(string slotId) returns ParkingSlot|e
 #
 # + slotId - Slot id
 # + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
 # + return - True if slot has an active reservation (PENDING/CONFIRMED), false otherwise, or error
-public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate) returns boolean|error {
+public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate, int pendingExpiryMinutes)
+        returns boolean|error {
     ReservationIdRow|error row = databaseClient->queryRow(
-        getConfirmedParkingReservationForSlotDateQuery(slotId, bookingDate));
+        getConfirmedParkingReservationForSlotDateQuery(slotId, bookingDate, pendingExpiryMinutes));
     if row is sql:NoRowsError {
         return false;
     }
