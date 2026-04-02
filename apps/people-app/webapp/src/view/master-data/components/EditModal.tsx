@@ -29,10 +29,10 @@ import { RootState, useAppSelector } from "@root/src/slices/store";
 import { NodeType } from "@root/src/utils/types";
 import { convertDataTypeToLabel } from "@root/src/utils/utils";
 
-import { useOrgEntityActions } from "../panel/hooks/useOrgEntityActions";
-import { DeleteCurrent } from "../panel/sections/danger-section/DeleteCurrent";
-import { RenameField } from "../panel/sections/general-section/RenameField";
-import { SwapLeads } from "../panel/sections/leads-section/SwapLeads";
+import { useOrgEntityActions } from "../hooks/useOrgEntityActions";
+import { DeleteCurrent } from "../sections/danger-section/DeleteCurrent";
+import { RenameField } from "../sections/general-section/RenameField";
+import { SwapLeads } from "../sections/leads-section/SwapLeads";
 import { SectionHeader } from "./edit-modal/SectionHeader";
 
 interface EditModalProps {
