@@ -89,7 +89,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if employeeBasicInfo is () {
             string customErr = "Employee basic information not found";
             log:printWarn(customErr, user = userInfo.email);
-            return <http:InternalServerError>{
+            return <http:NotFound>{
                 body: {
                     message: customErr
                 }

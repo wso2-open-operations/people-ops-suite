@@ -19,30 +19,63 @@ import { AppConfig } from "@config/config";
 import { APIService } from "@utils/apiService";
 import { UserState, UserInfoInterface } from "@slices/authSlice/auth";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { AxiosError } from "axios";
+import { HttpStatusCode, isAxiosError } from "axios";
 
 const initialState: UserState = {
   state: State.idle,
   stateMessage: null,
   errorMessage: null,
   userInfo: null,
+  isProfileMissing: false,
 };
 
-export const getUserInfo = createAsyncThunk("user/getUserInfo", async () => {
-  return new Promise<{
-    UserInfo: UserInfoInterface;
-  }>((resolve, reject) => {
-    APIService.getInstance()
-      .get(AppConfig.serviceUrls.userInfo)
-      .then((resp) => {
-        resolve({
-          UserInfo: resp.data,
+type GetUserInfoResult = {
+  UserInfo: UserInfoInterface | null;
+  isProfileMissing: boolean;
+};
+
+type GetUserInfoReject = {
+  status?: number;
+  message: string;
+};
+
+export const getUserInfo = createAsyncThunk<
+  GetUserInfoResult,
+  void,
+  { rejectValue: GetUserInfoReject }
+>("user/getUserInfo", async (_, { rejectWithValue }) => {
+  try {
+    const resp = await APIService.getInstance().get(
+      AppConfig.serviceUrls.userInfo,
+    );
+    return {
+      UserInfo: resp.data as UserInfoInterface,
+      isProfileMissing: false,
+    };
+  } catch (err: unknown) {
+    if (isAxiosError(err)) {
+      const status = err.response?.status;
+
+      if (status === HttpStatusCode.NotFound) {
+        return { UserInfo: null, isProfileMissing: true };
+      }
+
+      if (
+        status === HttpStatusCode.Unauthorized ||
+        status === HttpStatusCode.Forbidden
+      ) {
+        return rejectWithValue({
+          status,
+          message:
+            "Oops! Looks like you are not authorized to access this application.",
         });
-      })
-      .catch((error: Error) => {
-        reject(error);
-      });
-  });
+      }
+    }
+
+    return rejectWithValue({
+      message: "Something went wrong while authenticating the user.",
+    });
+  }
 });
 
 export const UserSlice = createSlice({
@@ -58,20 +91,22 @@ export const UserSlice = createSlice({
       .addCase(getUserInfo.pending, (state, action) => {
         state.state = State.loading;
         state.stateMessage = "Checking User Info...";
+        state.errorMessage = null;
+        state.isProfileMissing = false;
       })
       .addCase(getUserInfo.fulfilled, (state, action) => {
         state.userInfo = action.payload.UserInfo;
+        state.isProfileMissing = action.payload.isProfileMissing;
         state.state = State.success;
+        state.errorMessage = null;
       })
       .addCase(getUserInfo.rejected, (state, action) => {
         state.state = State.failed;
-        if (action.error.code === AxiosError.ERR_BAD_REQUEST) {
-          state.errorMessage =
-            "Oops! Looks like you are not authorized to access this application.";
-        } else {
-          state.errorMessage =
-            "Something went wrong while authenticating the user.";
-        }
+        state.isProfileMissing = false;
+        const payload = action.payload as GetUserInfoReject | undefined;
+        state.errorMessage =
+          payload?.message ||
+          "Something went wrong while authenticating the user.";
       });
   },
 });
