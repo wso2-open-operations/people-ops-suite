@@ -34,6 +34,7 @@ import {
 import type { PageProps, User } from "@/types";
 import { useEffect, useState } from "react";
 import { getToken } from "./components/microapp-bridge";
+import { ParkingWalletReturnResume } from "@/components/ParkingWalletReturnResume";
 import { getDisplayNameFromJwt, getEmailFromJwt } from "@/utils/http";
 
 function AnimatedRoutes({ user }: PageProps) {
@@ -67,6 +68,7 @@ function AnimatedRoutes({ user }: PageProps) {
 
 function App() {
   const [user, setUser] = useState<User | undefined>(undefined);
+  const [resumeReady, setResumeReady] = useState(false);
   useEffect(() => {
     const init = () => {
       getToken((token: string | undefined) => {
@@ -84,7 +86,10 @@ function App() {
 
   return (
     <HashRouter>
-      <AnimatedRoutes user={user} />
+      <ParkingWalletReturnResume
+        onInitialResumeComplete={() => setResumeReady(true)}
+      />
+      {resumeReady ? <AnimatedRoutes user={user} /> : null}
     </HashRouter>
   );
 }

@@ -31,23 +31,24 @@ import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 import { serviceUrls } from "@/config/config";
 import type {
   CreateParkingReservationResponse,
-  ParkingReservationDetails,
   VehicleResponse,
 } from "@/types";
 import { getTodayBookingDate, formatBookingDate } from "@/utils/helpers/date";
 import { formatCoins } from "@/utils/helpers/coins";
 import {
-  clearParkingPaymentContextState,
   getParkingPaymentContextState,
   setParkingPaymentContextState,
-  setConfirmationState,
 } from "@/utils/parkingStorage";
-import { Logger } from "@/utils/logger";
 import {
-  getLocalDataAsync,
-  requestOpenMicroApp,
-  saveLocalDataAsync,
-} from "@/components/microapp-bridge";
+  PARKING_WALLET_PAYMENT_ERROR_KEY,
+  PARKING_WALLET_PAYMENT_STATUS_KEY,
+  PARKING_WALLET_PAYMENT_TX_HASH_KEY,
+  clearWalletParkingPaymentBridgeKeys,
+  confirmParkingReservation,
+  finalizeParkingConfirmationAfterSuccess,
+} from "@/utils/parkingConfirm";
+import { Logger } from "@/utils/logger";
+import { getLocalDataAsync, requestOpenMicroApp } from "@/components/microapp-bridge";
 
 type VehicleOption = {
   vehicleId: number;
@@ -176,25 +177,6 @@ function ParkingBookingSummaryPage() {
     });
   };
 
-  const confirmReservation = (reservationId: number, txHash: string) => {
-    const body = { reservationId, transactionHash: txHash };
-    return new Promise<ParkingReservationDetails>((resolve, reject) => {
-      executeWithTokenHandling(
-        handleRequest,
-        handleRequestWithNewToken,
-        serviceUrls.confirmParkingReservation(),
-        "POST",
-        body,
-        (data) => resolve(data as ParkingReservationDetails),
-        (err) => reject(err ?? "Failed to confirm reservation"),
-        () => {},
-      );
-    });
-  };
-
-  const PEOPLE_WALLET_PAYMENT_STATUS_KEY = "people_parking_payment_status";
-  const PEOPLE_WALLET_PAYMENT_TX_HASH_KEY = "people_parking_payment_tx_hash";
-
   const waitForWalletPaymentResult = async (): Promise<{
     status: "SUCCESS" | "FAILED";
     txHash?: string;
@@ -207,7 +189,7 @@ function ParkingBookingSummaryPage() {
     while (Date.now() - startedAt < TIMEOUT_MS) {
       try {
         const status = await getLocalDataAsync(
-          PEOPLE_WALLET_PAYMENT_STATUS_KEY,
+          PARKING_WALLET_PAYMENT_STATUS_KEY,
         );
         if (status) {
           const parsedStatus =
@@ -217,7 +199,7 @@ function ParkingBookingSummaryPage() {
 
           if (parsedStatus === "SUCCESS") {
             const txHash = await getLocalDataAsync(
-              PEOPLE_WALLET_PAYMENT_TX_HASH_KEY,
+              PARKING_WALLET_PAYMENT_TX_HASH_KEY,
             );
             if (txHash) {
               return { status: "SUCCESS", txHash: String(txHash) };
@@ -226,7 +208,9 @@ function ParkingBookingSummaryPage() {
             continue;
           }
 
-          const error = await getLocalDataAsync("people_parking_payment_error");
+          const error = await getLocalDataAsync(
+            PARKING_WALLET_PAYMENT_ERROR_KEY,
+          );
           return {
             status: "FAILED",
             error: error ? String(error) : undefined,
@@ -277,9 +261,7 @@ function ParkingBookingSummaryPage() {
       );
 
       // Reset previous payment result
-      await saveLocalDataAsync(PEOPLE_WALLET_PAYMENT_STATUS_KEY, "");
-      await saveLocalDataAsync(PEOPLE_WALLET_PAYMENT_TX_HASH_KEY, "");
-      await saveLocalDataAsync("people_parking_payment_error", "");
+      await clearWalletParkingPaymentBridgeKeys();
 
       // Wallet will use launchData to set the "send" form and navigate to confirm.
       requestOpenMicroApp("com.wso2.superapp.microapp.wallet", {
@@ -300,16 +282,14 @@ function ParkingBookingSummaryPage() {
         );
       }
 
-      const confirmed = await confirmReservation(
+      const confirmed = await confirmParkingReservation(
+        handleRequest,
+        handleRequestWithNewToken,
         reservation.reservationId,
         paymentResult.txHash,
       );
 
-      setConfirmationState(confirmed);
-      clearParkingPaymentContextState();
-      navigate("/services/parking/confirmation", {
-        state: { reservationId: confirmed.id },
-      });
+      await finalizeParkingConfirmationAfterSuccess(confirmed, navigate);
     } catch (e) {
       const msg = String(e ?? "Payment failed");
       setError(msg);
