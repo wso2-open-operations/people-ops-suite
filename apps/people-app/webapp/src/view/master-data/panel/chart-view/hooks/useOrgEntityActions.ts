@@ -153,32 +153,28 @@ export function useOrgEntityActions({ data }: UseOrgEntityActionsParams) {
   const handleDeleteCurrent = async (_reason: string) => {
     if (!data) return;
 
-    try {
-      switch (data.type) {
-        case NodeType.BusinessUnit:
-          await deleteBusinessUnit({ buId: data.id }).unwrap();
-          break;
-        case NodeType.Team:
-          await deleteBusinessUnitTeam({
-            buId: (data as TeamState).businessUnitId,
-            teamId: data.id,
-          }).unwrap();
-          break;
-        case NodeType.SubTeam:
-          await deleteTeamSubTeam({
-            businessUnitTeamId: (data as SubTeamState).businessUnitTeamId,
-            subTeamId: data.id,
-          }).unwrap();
-          break;
-        case NodeType.Unit:
-          await deleteSubTeamUnit({
-            businessUnitTeamSubTeamId: (data as UnitState).businessUnitTeamSubTeamUnitId,
-            unitId: data.id,
-          }).unwrap();
-          break;
-      }
-    } catch (err) {
-      console.error("Failed to delete entity", err);
+    switch (data.type) {
+      case NodeType.BusinessUnit:
+        await deleteBusinessUnit({ buId: data.id }).unwrap();
+        break;
+      case NodeType.Team:
+        await deleteBusinessUnitTeam({
+          buId: (data as TeamState).businessUnitId,
+          teamId: data.id,
+        }).unwrap();
+        break;
+      case NodeType.SubTeam:
+        await deleteTeamSubTeam({
+          businessUnitTeamId: (data as SubTeamState).businessUnitTeamId,
+          subTeamId: data.id,
+        }).unwrap();
+        break;
+      case NodeType.Unit:
+        await deleteSubTeamUnit({
+          businessUnitTeamSubTeamId: (data as UnitState).businessUnitTeamSubTeamUnitId,
+          unitId: data.id,
+        }).unwrap();
+        break;
     }
   };
 
