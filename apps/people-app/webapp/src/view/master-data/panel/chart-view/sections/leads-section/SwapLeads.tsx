@@ -27,9 +27,11 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import ConfirmationDialog from "@root/src/component/common/ConfirmationDialog";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import { Head } from "@root/src/services/organization";
 import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@services/employee";
 
@@ -143,7 +145,7 @@ const SelectLeadPanel: React.FC<SelectLeadPanelProps> = ({ onRequestConfirm }) =
         justifyContent: "space-between",
       }}
     >
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1, flex: 0.9 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, flex: 0.9 }}>
         <Autocomplete
           options={employees}
           loading={isLoading}
@@ -202,7 +204,7 @@ const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle }) 
   const theme = useTheme();
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: "200px" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1, minWidth: "200px" }}>
       <Typography
         variant="body2"
         sx={{ color: theme.palette.customText.primary.p3.active, fontWeight: 500 }}
@@ -293,7 +295,7 @@ const SwappableLead: React.FC<SwappableLeadProps> = ({
       minWidth: "250px",
       display: "flex",
       flexDirection: "column",
-      gap: 1,
+      gap: 1.5,
     }}
   >
     <LeadRow label={label} lead={lead} isExpanded={isExpanded} onToggle={onToggle} />
@@ -304,8 +306,9 @@ const SwappableLead: React.FC<SwappableLeadProps> = ({
 export interface SwapLeadsProps {
   head: Head;
   functionalLead?: Head;
-  onSwapHead: (employee: EmployeeBasicInfo, reason: string) => void;
-  onSwapFunctionalLead: (employee: EmployeeBasicInfo, reason: string) => void;
+  isUpdating: boolean;
+  onSwapHead: (employee: EmployeeBasicInfo, reason: string) => Promise<void>;
+  onSwapFunctionalLead: (employee: EmployeeBasicInfo, reason: string) => Promise<void>;
 }
 
 export const SwapLeads: React.FC<SwapLeadsProps> = ({
@@ -313,29 +316,44 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
   functionalLead,
   onSwapHead,
   onSwapFunctionalLead,
+  isUpdating,
 }) => {
   const [activePanel, setActivePanel] = useState<LeadPanelType | null>(null);
   const [pendingSwap, setPendingSwap] = useState<PendingSwap | null>(null);
+  const [pendingCloseAfterSpinner, setPendingCloseAfterSpinner] = useState(false);
+
+  const showSpinner = useMinimumLoadingVisibility(isUpdating, SPLIT_VIEW_SKELETON_DELAY_MS);
+
+  const dialogSubmitting = pendingCloseAfterSpinner && showSpinner;
 
   const handleRequestConfirm = (panel: LeadPanelType) => (employee: EmployeeBasicInfo) => {
     setPendingSwap({ panel, employee });
   };
 
-  const handleConfirm = (_reason: string) => {
+  const handleConfirm = async (_reason: string) => {
     if (!pendingSwap) return;
     const { panel, employee } = pendingSwap;
 
-    if (panel === "head") {
-      onSwapHead(employee, _reason);
-    } else {
-      onSwapFunctionalLead(employee, _reason);
+    try {
+      if (panel === "head") {
+        await onSwapHead(employee, _reason);
+      } else {
+        await onSwapFunctionalLead(employee, _reason);
+      }
+      setPendingCloseAfterSpinner(true);
+    } catch (e) {
+      console.error("Swap lead failed", e);
     }
-
-    setPendingSwap(null);
-    setActivePanel(null);
   };
 
   const handleCancel = () => setPendingSwap(null);
+
+  useEffect(() => {
+    if (!pendingCloseAfterSpinner || showSpinner) return;
+    setPendingSwap(null);
+    setActivePanel(null);
+    setPendingCloseAfterSpinner(false);
+  }, [pendingCloseAfterSpinner, showSpinner]);
 
   const togglePanel = (panel: LeadPanelType) =>
     setActivePanel((current) => (current === panel ? null : panel));
@@ -348,6 +366,7 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
         message="This action will replace the current lead. Are you sure?"
         onConfirm={handleConfirm}
         onCancel={handleCancel}
+        isSubmitting={dialogSubmitting}
       />
 
       <Box sx={{ display: "flex", flexDirection: "column", width: "100%", px: 0.5, gap: 2 }}>
