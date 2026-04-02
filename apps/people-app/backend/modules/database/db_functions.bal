@@ -658,7 +658,8 @@ public isolated function getParkingSlotById(string slotId) returns ParkingSlot|e
 # + slotId - Slot id
 # + bookingDate - Booking date (YYYY-MM-DD)
 # + pendingExpiryMinutes - Pending expiry duration in minutes
-# + return - True if slot has an active reservation (PENDING/CONFIRMED), false otherwise, or error
+# + return - True if slot has an active reservation (CONFIRMED, or PENDING within `pendingExpiryMinutes`), false
+#           otherwise, or error
 public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate, int pendingExpiryMinutes)
         returns boolean|error {
     ReservationIdRow|error row = databaseClient->queryRow(
