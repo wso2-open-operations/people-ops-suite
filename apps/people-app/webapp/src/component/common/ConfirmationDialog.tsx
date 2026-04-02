@@ -14,9 +14,19 @@
 // specific language governing permissions and limitations
 // under the License.
 import CloseIcon from "@mui/icons-material/Close";
-import { Box, Button, Dialog, IconButton, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  IconButton,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useForm } from "react-hook-form";
+
+import { useEffect } from "react";
 
 import InfoIcon from "@assets/icons/InfoIcon";
 
@@ -24,10 +34,11 @@ interface ConfirmationDialogProps {
   open: boolean;
   title: string;
   message: React.ReactNode;
-  onConfirm: (reason: string) => void;
+  onConfirm: (reason: string) => void | Promise<void>;
   onCancel: () => void;
   confirmLabel?: string;
   cancelLabel?: string;
+  isSubmitting?: boolean;
 }
 
 interface FormValues {
@@ -42,6 +53,7 @@ function ConfirmationDialog({
   onCancel,
   confirmLabel = "Yes",
   cancelLabel = "Cancel",
+  isSubmitting = false,
 }: ConfirmationDialogProps) {
   const theme = useTheme();
   const { register, handleSubmit, watch, reset } = useForm<FormValues>({
@@ -51,16 +63,22 @@ function ConfirmationDialog({
   const reason = watch("reason");
   const isValid = reason.trim().length > 0;
 
-  const handleConfirm = handleSubmit(({ reason }) => {
+  useEffect(() => {
+    if (!open) {
+      reset();
+    }
+  }, [open, reset]);
+
+  const handleConfirm = handleSubmit(async ({ reason }) => {
     const trimmed = reason.trim();
-    if (!trimmed) {
+    if (!trimmed || isSubmitting) {
       return;
     }
-    onConfirm(trimmed);
-    reset();
+    await onConfirm(trimmed);
   });
 
   const handleCancel = () => {
+    if (isSubmitting) return;
     reset();
     onCancel();
   };
@@ -104,6 +122,7 @@ function ConfirmationDialog({
 
         <IconButton
           onClick={handleCancel}
+          disabled={isSubmitting}
           size="small"
           sx={{ p: 0, width: 16, height: 16, color: theme.palette.customText.primary.p2.active }}
         >
@@ -114,13 +133,18 @@ function ConfirmationDialog({
       {/* ── Reason textarea ── */}
       <form onSubmit={handleConfirm}>
         <TextField
+          {...register("reason")}
           multiline
           minRows={3}
           maxRows={5}
           fullWidth
           placeholder="Reason for this action ?"
-          {...register("reason")}
-          sx={{ mb: "16px" }}
+          disabled={isSubmitting}
+          slotProps={{
+            input: {
+              sx: { padding: "4px !important", mb: 2 },
+            },
+          }}
         />
 
         {/* ── Info / warning message ── */}
@@ -142,12 +166,29 @@ function ConfirmationDialog({
         {/* ── Action buttons ── */}
         <Box sx={{ display: "flex", gap: "12px" }}>
           {/* Cancel — brand outline */}
-          <Button fullWidth variant="outlined" color="brand" onClick={handleCancel} type="button">
+          <Button
+            fullWidth
+            variant="outlined"
+            color="brand"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+            type="button"
+          >
             {cancelLabel}
           </Button>
 
           {/* Confirm — neutral outline, brand on hover; disabled until reason typed */}
-          <Button fullWidth variant="outlined" disabled={!isValid} type="submit">
+          <Button
+            fullWidth
+            variant="outlined"
+            disabled={!isValid || isSubmitting}
+            type="submit"
+            startIcon={
+              isSubmitting ? (
+                <CircularProgress size={14} thickness={5} color="inherit" />
+              ) : undefined
+            }
+          >
             {confirmLabel}
           </Button>
         </Box>
