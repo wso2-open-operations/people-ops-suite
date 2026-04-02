@@ -26,11 +26,10 @@ import { EmployeeBasicInfo } from "@services/employee";
 import { useOrgMutation } from "./useOrgMutations";
 
 interface UseOrgEntityActionsParams {
-  data: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState;
-  onClose?: () => void;
+  data: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState | null;
 }
 
-export function useOrgEntityActions({ data, onClose }: UseOrgEntityActionsParams) {
+export function useOrgEntityActions({ data }: UseOrgEntityActionsParams) {
   const {
     updateBusinessUnit,
     updateTeam,
@@ -50,6 +49,8 @@ export function useOrgEntityActions({ data, onClose }: UseOrgEntityActionsParams
   } = useOrgMutation();
 
   const isRenaming = (() => {
+    if (!data) return false;
+
     switch (data.type) {
       case NodeType.BusinessUnit:
         return status.isUpdatingBU;
@@ -64,7 +65,43 @@ export function useOrgEntityActions({ data, onClose }: UseOrgEntityActionsParams
     }
   })();
 
-  const handleLeadSwap = async (selectedEmployee: EmployeeBasicInfo) => {
+  const isUpdating = (() => {
+    if (!data) return false;
+
+    switch (data.type) {
+      case NodeType.BusinessUnit:
+        return status.isUpdatingBU;
+      case NodeType.Team:
+        return status.isUpdatingTeam || status.isUpdatingBUTeam;
+      case NodeType.SubTeam:
+        return status.isUpdatingSubTeam || status.isUpdatingTeamSubTeam;
+      case NodeType.Unit:
+        return status.isUpdatingUnit || status.isUpdatingSubTeamUnit;
+      default:
+        return false;
+    }
+  })();
+
+  const isDeleting = (() => {
+    if (!data) return false;
+
+    switch (data.type) {
+      case NodeType.BusinessUnit:
+        return status.isDeletingBU;
+      case NodeType.Team:
+        return status.isDeletingBUTeam;
+      case NodeType.SubTeam:
+        return status.isDeletingTeamSubTeam;
+      case NodeType.Unit:
+        return status.isDeletingSubTeamUnit;
+      default:
+        return false;
+    }
+  })();
+
+  const handleLeadSwap = async (selectedEmployee: EmployeeBasicInfo, _reason?: string) => {
+    if (!data) return;
+
     const payload = { functionalLeadEmail: selectedEmployee.workEmail };
 
     switch (data.type) {
@@ -73,67 +110,81 @@ export function useOrgEntityActions({ data, onClose }: UseOrgEntityActionsParams
           buId: (data as TeamState).businessUnitId,
           teamId: (data as TeamState).id,
           payload,
-        });
+        }).unwrap();
         break;
       case NodeType.SubTeam:
         await updateTeamSubTeam({
           businessUnitTeamId: (data as SubTeamState).businessUnitTeamId,
           subTeamId: (data as SubTeamState).id,
           payload,
-        });
+        }).unwrap();
         break;
       case NodeType.Unit:
         await updateSubTeamUnit({
           businessUnitTeamSubTeamId: (data as UnitState).businessUnitTeamSubTeamId,
           unitId: (data as UnitState).id,
           payload,
-        });
+        }).unwrap();
         break;
     }
   };
 
   const handleHeadSwap = async (selectedEmployee: EmployeeBasicInfo, _reason: string) => {
+    if (!data) return;
+
     const payload = { headEmail: selectedEmployee.workEmail };
 
     switch (data.type) {
       case NodeType.BusinessUnit:
-        await updateBusinessUnit({ buId: data.id, payload });
+        await updateBusinessUnit({ buId: data.id, payload }).unwrap();
         break;
       case NodeType.Team:
-        await updateTeam({ teamId: data.id, payload });
+        await updateTeam({ teamId: data.id, payload }).unwrap();
         break;
       case NodeType.SubTeam:
-        await updateSubTeam({ subTeamId: data.id, payload });
+        await updateSubTeam({ subTeamId: data.id, payload }).unwrap();
         break;
       case NodeType.Unit:
-        await updateUnit({ unitId: data.id, payload });
+        await updateUnit({ unitId: data.id, payload }).unwrap();
         break;
     }
   };
 
   const handleDeleteCurrent = async (_reason: string) => {
+    if (!data) return;
+
     try {
       switch (data.type) {
         case NodeType.BusinessUnit:
           await deleteBusinessUnit({ buId: data.id }).unwrap();
           break;
         case NodeType.Team:
-          await deleteBusinessUnitTeam({ buId: data.id, teamId: data.id }).unwrap();
+          await deleteBusinessUnitTeam({
+            buId: (data as TeamState).businessUnitId,
+            teamId: data.id,
+          }).unwrap();
           break;
         case NodeType.SubTeam:
-          await deleteTeamSubTeam({ businessUnitTeamId: data.id, subTeamId: data.id }).unwrap();
+          await deleteTeamSubTeam({
+            businessUnitTeamId: (data as SubTeamState).businessUnitTeamId,
+            subTeamId: data.id,
+          }).unwrap();
           break;
         case NodeType.Unit:
-          await deleteSubTeamUnit({ businessUnitTeamSubTeamId: data.id, unitId: data.id }).unwrap();
+          await deleteSubTeamUnit({
+            businessUnitTeamSubTeamId: (data as UnitState).businessUnitTeamSubTeamUnitId,
+            unitId: data.id,
+          }).unwrap();
           break;
       }
-      if (onClose) onClose();
     } catch (err) {
       console.error("Failed to delete entity", err);
     }
   };
 
   const handleRenameCurrent = async (entityName: string) => {
+    if (!data) return;
+
     const payload = { name: entityName };
 
     switch (data.type) {
@@ -159,6 +210,8 @@ export function useOrgEntityActions({ data, onClose }: UseOrgEntityActionsParams
     handleRenameCurrent,
     isLoading,
     isRenaming,
+    isUpdating,
+    isDeleting,
     isError,
     status,
     error,
