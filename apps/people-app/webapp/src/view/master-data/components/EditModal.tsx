@@ -17,6 +17,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
+import { useEffect, useRef, useState } from "react";
+
 import {
   BusinessUnitState,
   SubTeamState,
@@ -62,6 +64,16 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
     }
   })();
 
+  const lastResolvedData = useRef<BusinessUnitState | TeamState | SubTeamState | UnitState | null>(
+    null,
+  );
+
+  if (data) {
+    lastResolvedData.current = data;
+  }
+
+  const displayData = data ?? lastResolvedData.current;
+
   const {
     handleLeadSwap,
     handleHeadSwap,
@@ -70,9 +82,9 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
     isRenaming,
     isUpdating,
     isDeleting,
-  } = useOrgEntityActions({ data });
+  } = useOrgEntityActions({ data: displayData });
 
-  if (!data) return null;
+  if (!displayData) return null;
 
   return (
     <Dialog
@@ -111,7 +123,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
             fontWeight: 600,
           }}
         >
-          Edit {convertDataTypeToLabel(data.type)}
+          Edit {convertDataTypeToLabel(displayData.type)}
         </Typography>
 
         <IconButton
@@ -150,15 +162,15 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
           <SectionHeader title="General" />
 
           <RenameField
-            entityType={data.type}
-            currentName={data.name}
+            entityType={displayData.type}
+            currentName={displayData.name}
             onRenameSuccess={handleRenameCurrent}
             isSubmitting={isRenaming}
           />
         </Box>
 
         {/* Leads Section */}
-        {data.head && (
+        {displayData.head && (
           <Box
             sx={{
               display: "flex",
@@ -169,8 +181,10 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
             <SectionHeader title="Manage Leads" />
 
             <SwapLeads
-              head={data.head}
-              functionalLead={"functionalLead" in data ? data.functionalLead : undefined}
+              head={displayData.head}
+              functionalLead={
+                "functionalLead" in displayData ? displayData.functionalLead : undefined
+              }
               onSwapHead={handleHeadSwap}
               onSwapFunctionalLead={handleLeadSwap}
               isUpdating={isUpdating}
