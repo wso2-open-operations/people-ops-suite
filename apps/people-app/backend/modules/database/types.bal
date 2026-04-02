@@ -978,6 +978,7 @@ public type FunctionalLead record {|
 public type OrgUnit record {|
     # Unique identifier of the unit
     int id;
+    # Parent mapping: business_unit_team_sub_team_unit.id
     int businessUnitTeamSubTeamUnitId;
     # Parent mapping: business_unit_team_sub_team.id
     int businessUnitTeamSubTeamId;
@@ -999,6 +1000,7 @@ public type OrgUnit record {|
 public type OrgSubTeam record {|
     # Unique identifier of the sub-team
     int id;
+    # Parent mapping: business_unit_team_sub_team.id
     int businessUnitTeamSubTeamId;
     # Parent mapping: business_unit_team.id
     int businessUnitTeamId;
