@@ -17,7 +17,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 
 import {
   BusinessUnitState,
@@ -189,14 +189,6 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
               onSwapFunctionalLead={handleLeadSwap}
               isUpdating={isUpdating}
             />
-
-            {/* {children.length > 0 && (
-              <ManageChildren
-                children={children}
-                childType={childTypeLabel}
-                onTransfer={handleChildTransfer}
-              />
-            )} */}
           </Box>
         )}
 
@@ -224,25 +216,6 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
               isDeleting={isDeleting}
               onDeleteSuccessComplete={onClose}
             />
-
-            {/* <Box
-              sx={{
-                width: "100%",
-                height: "1px",
-                backgroundColor: theme.palette.customBorder.primary.b2.active,
-              }}
-            /> */}
-
-            {/* 
-            {children.length > 0 && (
-              <DeleteChild
-                children={children}
-                childType={childTypeLabel}
-                selectedChild={selectedChildToDelete}
-                onChildSelect={setSelectedChildToDelete}
-                onDelete={handleDeleteChildren}
-              />
-            )} */}
           </Box>
         </Box>
       </DialogContent>
