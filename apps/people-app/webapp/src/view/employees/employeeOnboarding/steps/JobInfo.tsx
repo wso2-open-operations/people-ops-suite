@@ -373,7 +373,11 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     offices,
     employmentTypes,
     houses,
+    suggestedHouseId,
   } = useAppSelector((state) => state.organization);
+  const suggestedHouseName = suggestedHouseId
+    ? houses.find((h) => h.id === suggestedHouseId)?.name
+    : undefined;
 
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
     null,
@@ -1638,7 +1642,11 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               value={values.houseId || 0}
               onChange={(e) => setFieldValue("houseId", Number(e.target.value))}
               onBlur={handleBlur}
-              helperText="Auto-assigned to the house with the fewest active employees"
+              helperText={
+                suggestedHouseName
+                  ? `Fewest active employees: ${suggestedHouseName}`
+                  : "Assign the house for this employee"
+              }
               sx={textFieldSx}
             >
               {houses.length ? (
