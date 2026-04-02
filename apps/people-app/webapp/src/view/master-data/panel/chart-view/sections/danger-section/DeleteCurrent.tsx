@@ -16,21 +16,55 @@
 import { Box, Button, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import ConfirmationDialog from "@component/common/ConfirmationDialog";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 
 interface DeleteCurrentProps {
-  onDelete: (reason: string) => void;
+  onDelete: (reason: string) => Promise<void>;
+  isDeleting: boolean;
+  onDeleteSuccessComplete?: () => void;
 }
 
-export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({ onDelete }) => {
+export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
+  onDelete,
+  isDeleting,
+  onDeleteSuccessComplete,
+}) => {
   const theme = useTheme();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingCloseAfterSpinner, setPendingCloseAfterSpinner] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
-  const handleConfirm = (reason: string) => {
+  const isDeleteInProgress = isDeleting || confirming;
+  const showSpinner = useMinimumLoadingVisibility(isDeleteInProgress, SPLIT_VIEW_SKELETON_DELAY_MS);
+  const dialogSubmitting = isDeleteInProgress || (pendingCloseAfterSpinner && showSpinner);
+
+  useEffect(() => {
+    if (!pendingCloseAfterSpinner || showSpinner) return;
+
     setConfirmOpen(false);
-    onDelete(reason);
+    setPendingCloseAfterSpinner(false);
+    onDeleteSuccessComplete?.();
+  }, [pendingCloseAfterSpinner, showSpinner, onDeleteSuccessComplete]);
+
+  const handleConfirm = async (reason: string) => {
+    setConfirming(true);
+    try {
+      await onDelete(reason);
+      setPendingCloseAfterSpinner(true);
+    } catch (e) {
+      console.error("Delete business unit failed", e);
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (dialogSubmitting) return;
+    setConfirmOpen(false);
   };
 
   return (
@@ -58,7 +92,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({ onDelete }) => {
             variant="body2"
             sx={{
               color: theme.palette.customText.primary.p2.active,
-              fontWeight: 500
+              fontWeight: 500,
             }}
           >
             Delete this business unit
@@ -91,7 +125,8 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({ onDelete }) => {
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={handleConfirm}
-        onCancel={() => setConfirmOpen(false)}
+        onCancel={handleCancel}
+        isSubmitting={dialogSubmitting}
       />
     </>
   );
