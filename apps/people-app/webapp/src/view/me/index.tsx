@@ -30,6 +30,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
+import PersonOffIcon from "@mui/icons-material/PersonOff";
 import {
   Accordion,
   AccordionDetails,
@@ -218,7 +219,11 @@ export default function Me({
   const location = useLocation();
   const { showConfirmation } = useConfirmationModalContext();
   const roles = useAppSelector(selectRoles);
-  const { userInfo } = useAppSelector((state) => state.user);
+  const {
+    userInfo,
+    state: userState,
+    isProfileMissing,
+  } = useAppSelector((state) => state.user);
   const targetEmployeeId = employeeId ?? userInfo?.employeeId;
   const { employee, state: employeeState } = useAppSelector(
     (state) => state.employee,
@@ -481,6 +486,87 @@ export default function Me({
     a.click();
     document.body.removeChild(a);
   };
+
+  if (!employeeId && userState === State.success && isProfileMissing) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "80vh",
+        }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            p: { xs: 4, sm: 6 },
+            border: 1,
+            borderColor: "divider",
+            maxWidth: 480,
+            width: "100%",
+            textAlign: "center",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2.5,
+            }}
+          >
+            <Box
+              sx={{
+                width: 88,
+                height: 88,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: (theme) =>
+                  alpha(theme.palette.secondary.contrastText, 0.1),
+                border: (theme) =>
+                  `2px dashed ${alpha(theme.palette.secondary.contrastText, 0.35)}`,
+              }}
+            >
+              <PersonOffIcon
+                sx={{
+                  fontSize: 40,
+                  color: (theme) => theme.palette.secondary.contrastText,
+                }}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="h5" fontWeight={700} gutterBottom>
+                Profile Not Found
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ lineHeight: 1.7 }}
+              >
+                We couldn't find your employee profile yet. Please contact the{" "}
+                <Typography
+                  component="span"
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: (theme) => theme.palette.secondary.contrastText,
+                  }}
+                >
+                  People Operations
+                </Typography>{" "}
+                team to set up your profile, then try signing in again.
+              </Typography>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ mt: 1, pb: 5 }}>
