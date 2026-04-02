@@ -19,7 +19,7 @@ import { AppConfig } from "@config/config";
 import { APIService } from "@utils/apiService";
 import { UserState, UserInfoInterface } from "@slices/authSlice/auth";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { HttpStatusCode, isAxiosError } from "axios";
+import { HttpStatusCode, isAxiosError, isCancel } from "axios";
 
 const initialState: UserState = {
   state: State.idle,
@@ -52,9 +52,10 @@ export const getUserInfo = createAsyncThunk<
       UserInfo: resp.data as UserInfoInterface,
       isProfileMissing: false,
     };
-  } catch (err: unknown) {
-    if (isAxiosError(err)) {
-      const status = err.response?.status;
+  } catch (error: any) {
+    if (isCancel(error)) return rejectWithValue({ message: "cancelled" });
+    if (isAxiosError(error)) {
+      const status = error.response?.status;
 
       if (status === HttpStatusCode.NotFound) {
         return { UserInfo: null, isProfileMissing: true };
@@ -88,7 +89,7 @@ export const UserSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getUserInfo.pending, (state, action) => {
+      .addCase(getUserInfo.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Checking User Info...";
         state.errorMessage = null;
