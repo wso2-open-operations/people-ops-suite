@@ -1454,7 +1454,7 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
 # + bookingDate - Booking date (YYYY-MM-DD)
 # + pendingExpiryMinutes - Pending expiry duration in minutes
 # + return - Query to get reservation id if slot is unavailable
-isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, string bookingDate,
+isolated function getActiveParkingReservationForSlotDateQuery(string slotId, string bookingDate,
         int pendingExpiryMinutes)
     returns sql:ParameterizedQuery =>
     `SELECT id

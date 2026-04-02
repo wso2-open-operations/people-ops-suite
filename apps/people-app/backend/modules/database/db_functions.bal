@@ -663,7 +663,7 @@ public isolated function getParkingSlotById(string slotId) returns ParkingSlot|e
 public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate, int pendingExpiryMinutes)
         returns boolean|error {
     ReservationIdRow|error row = databaseClient->queryRow(
-        getConfirmedParkingReservationForSlotDateQuery(slotId, bookingDate, pendingExpiryMinutes));
+        getActiveParkingReservationForSlotDateQuery(slotId, bookingDate, pendingExpiryMinutes));
     if row is sql:NoRowsError {
         return false;
     }
