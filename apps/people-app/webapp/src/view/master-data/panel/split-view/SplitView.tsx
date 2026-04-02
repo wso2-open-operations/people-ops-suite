@@ -38,12 +38,11 @@ import { State } from "@slices/authSlice/auth.ts";
 import {
   BusinessUnitState,
   OrgStructureState,
-  OrganizationInfo,
   SubTeamState,
   TeamState,
   UnitState,
 } from "@slices/organizationSlice/organizationStructure";
-import { RootState, store, useAppSelector } from "@slices/store";
+import { RootState, useAppSelector } from "@slices/store";
 import { NodeType } from "@utils/types";
 import { EditModal } from "@view/master-data/components/EditModal";
 
