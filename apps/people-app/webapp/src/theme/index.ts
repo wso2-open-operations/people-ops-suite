@@ -225,7 +225,7 @@ export const tokens = (mode: PaletteMode) => {
                 disabled: "#0A475C96",
               },
               light: {
-                active: colors.secondary["1400"],
+                active: "#17223A",
                 hover: colors.secondary["1300"],
                 clicked: colors.secondary["1500"],
                 disabled: "#0A475C96",
@@ -389,7 +389,7 @@ export const tokens = (mode: PaletteMode) => {
                 disabled: "#00CEFF96",
               },
               light: {
-                active: colors.secondary["0"],
+                active: colors.secondary["100"],
                 hover: colors.secondary["100"],
                 clicked: colors.secondary["200"],
                 disabled: alpha(colors.secondary["0"], 0.5),
