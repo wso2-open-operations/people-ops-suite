@@ -1645,6 +1645,8 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               helperText={
                 suggestedHouseName
                   ? `Fewest active employees: ${suggestedHouseName}`
+                  : suggestedHouseId
+                  ? "Loading suggested house..."
                   : "Assign the house for this employee"
               }
               sx={textFieldSx}
