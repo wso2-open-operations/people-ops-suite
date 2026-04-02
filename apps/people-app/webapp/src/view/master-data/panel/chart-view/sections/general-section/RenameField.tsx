@@ -97,7 +97,7 @@ export const RenameField: React.FC<RenameFieldProps> = ({
       <Box
         sx={{
           display: "flex",
-          gap: "8px",
+          gap: 1.5,
           alignItems: "flex-start",
           width: "100%",
         }}
