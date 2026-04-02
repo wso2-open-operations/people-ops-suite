@@ -1373,6 +1373,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Expire stale pending reservations so the slot/date becomes reusable.
+        boolean|error cleared = database:expireStalePendingParkingReservationForSlotDate(body.slotId, body.bookingDate,
+            wso2_coin:pendingReservationExpiryMinutes);
+        if cleared is error {
+            log:printError("Error expiring stale pending reservations", cleared);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while validating slot availability."}
+            };
+        }
+
         boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate);
         if booked is error {
             log:printError("Error checking slot availability", booked);
@@ -1382,10 +1392,14 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if booked {
             return <http:BadRequest>{
-                body: {message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. It may be temporarily reserved or already booked.`}
+                body: {
+                    message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. `
+                        + "It may be temporarily reserved or already booked."
+                }
             };
         }
 
+        // Insert a new PENDING row
         int|error reservationId = database:addParkingReservation({
             slotId: body.slotId,
             bookingDate: body.bookingDate,

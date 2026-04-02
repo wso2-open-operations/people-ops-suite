@@ -1456,6 +1456,21 @@ isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, 
       AND status IN (${PENDING}, ${CONFIRMED})
     LIMIT 1`;
 
+# Expire stale pending reservations (PENDING -> EXPIRED) for slot/date.
+#
+# + slotId - Slot id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + expiryMinutes - Expiry duration in minutes
+# + return - Query to mark stale pending reservation as EXPIRED
+isolated function expireStalePendingParkingReservationForSlotDateQuery(string slotId, string bookingDate,
+        int expiryMinutes) returns sql:ParameterizedQuery =>
+    `UPDATE parking_reservation
+    SET status = ${EXPIRED}
+    WHERE slot_id = ${slotId}
+      AND booking_date = ${bookingDate}
+      AND status = ${PENDING}
+      AND created_on < DATE_SUB(NOW(), INTERVAL ${expiryMinutes} MINUTE)`;
+
 # Insert parking reservation (PENDING).
 #
 # + payload - Reservation payload

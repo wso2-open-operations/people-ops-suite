@@ -458,7 +458,13 @@ CREATE TABLE `parking_reservation` (
   `booking_date` date NOT NULL,
   `employee_email` varchar(100) NOT NULL,
   `vehicle_id` int NOT NULL,
-  `status` enum('PENDING','CONFIRMED') NOT NULL DEFAULT 'PENDING',
+  `status` enum('PENDING','CONFIRMED','EXPIRED') NOT NULL DEFAULT 'PENDING',
+  `active_slot_date` varchar(64) GENERATED ALWAYS AS (
+    CASE
+      WHEN status IN ('PENDING','CONFIRMED') THEN CONCAT(slot_id, '|', booking_date)
+      ELSE NULL
+    END
+  ) STORED,
   `transaction_hash` varchar(255) DEFAULT NULL,
   `coins_amount` decimal(10, 4) NOT NULL,
   `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -468,7 +474,7 @@ CREATE TABLE `parking_reservation` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_pr_slot` FOREIGN KEY (`slot_id`) REFERENCES `parking_slot` (`slot_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_pr_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicle` (`vehicle_id`) ON DELETE RESTRICT,
-  UNIQUE KEY `uk_slot_booking_date` (`slot_id`, `booking_date`),
+  UNIQUE KEY `uk_active_slot_booking_date` (`active_slot_date`),
   UNIQUE KEY `uk_parking_reservation_tx_hash` (`transaction_hash`)
 );
 
