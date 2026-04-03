@@ -71,7 +71,6 @@ export default function SplitView() {
     SPLIT_VIEW_SKELETON_DELAY_MS,
   );
 
-  const theme = useTheme();
   const [editModal, setEditModal] = useState<OnEdit>({
     open: false,
     uniqueId: null,
@@ -91,6 +90,11 @@ export default function SplitView() {
   const [unitSearchTerm, setUnitSearchTerm] = useState<string | null>();
   const [searchMatches, setSearchMatches] = useState<MatchSearch[]>([]);
   const [activeMatchIndex, setActiveMatchIndex] = useState<number>(-1);
+  const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<number | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [selectedSubTeamId, setSelectedSubTeamId] = useState<number | null>(null);
+  const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
+  const currentMatch = activeMatchIndex >= 0 ? searchMatches[activeMatchIndex] : null;
 
   // Global search UI is temporarily disabled; keep this derived flag nearby
   // so re-enabling the <GlobalSearch /> block only requires uncommenting both sections.
@@ -100,11 +104,7 @@ export default function SplitView() {
   //   Boolean(subTeamSearchTerm?.trim()) ||
   //   Boolean(unitSearchTerm?.trim());
 
-  const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<number | null>(null);
-  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-  const [selectedSubTeamId, setSelectedSubTeamId] = useState<number | null>(null);
-  const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
-  const currentMatch = activeMatchIndex >= 0 ? searchMatches[activeMatchIndex] : null;
+  const theme = useTheme();
 
   const clearGlobalSearchState = () => {
     setSearchMatches([]);
