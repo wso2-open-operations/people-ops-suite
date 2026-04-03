@@ -1247,7 +1247,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
-        return {publicWalletAddress: wso2_coin:masterWalletAddress};
+        return {
+            publicWalletAddress: wso2_coin:masterWalletAddress,
+            reservationWindowStartHour: wso2_coin:reservationWindowStartHour,
+            reservationWindowEndHour: wso2_coin:reservationWindowEndHour
+        };
     }
 
     # List parking floors.
