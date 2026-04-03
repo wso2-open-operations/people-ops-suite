@@ -103,6 +103,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             privileges.push(authorization:ADMIN_PRIVILEGE);
         }
+        if authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups) {
+            privileges.push(authorization:SERVICE_DESK_PRIVILEGE);
+        }
         boolean|error isLeadUser = database:isLead(userInfo.email);
         if isLeadUser is error {
             string customErr = "Error occurred while checking lead status";
@@ -303,8 +306,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions(
-                [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasQrExportAccess
+                = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+                || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
 
         database:Employee|error? employee = database:getEmployeeInfo(employeeId);
         if employee is error {
@@ -316,7 +320,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:NotFound>{body: {message: string `Employee not found: ${employeeId}`}};
         }
 
-        if !hasAdminAccess {
+        if !hasQrExportAccess {
             boolean isSelf = employee.workEmail == userInfo.email;
             if !isSelf {
                 boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
@@ -420,6 +424,8 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         boolean hasAdminAccess
             = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasServiceDeskAccess
+            = authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
 
         if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
             string customErr = "Invalid sort field: " + payload.sort.sortField;
@@ -437,6 +443,31 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:BadRequest>{
                 body: {
                     message: customErr
+                }
+            };
+        }
+
+        if hasServiceDeskAccess && !payload.leadOnly {
+            database:EmployeesResponse|error result = database:getEmployees(payload);
+            if result is error {
+                string customErr = "Error occurred while fetching employees";
+                log:printError(customErr, result);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+            database:EmployeeQrInfo[] qrInfoList = result.employees.map(e => {
+                employeeId: e.employeeId,
+                firstName: e.firstName,
+                lastName: e.lastName,
+                workEmail: e.workEmail,
+                employeeThumbnail: e.employeeThumbnail,
+                house: e.house,
+                houseId: e.houseId,
+                employeeStatus: e.employeeStatus
+            });
+            return <http:Ok>{
+                body: {
+                    employees: qrInfoList,
+                    totalCount: result.totalCount
                 }
             };
         }

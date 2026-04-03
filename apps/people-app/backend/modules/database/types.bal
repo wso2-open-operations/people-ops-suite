@@ -309,6 +309,25 @@ public type EmployeesResponse record {|
     int totalCount;
 |};
 
+# Employee record for QR code export — extends EmployeeBasicInfo with house and status fields.
+public type EmployeeQrInfo record {|
+    *EmployeeBasicInfo;
+    # House
+    string? house;
+    # House ID
+    int? houseId;
+    # Employee status
+    string employeeStatus;
+|};
+
+# QR code export response.
+public type EmployeeQrInfoResponse record {|
+    # List of employees
+    EmployeeQrInfo[] employees;
+    # Total count of matching employees
+    int totalCount;
+|};
+
 # Personal information of an employee.
 public type EmployeePersonalInfo record {|
     # National Identity Card number
