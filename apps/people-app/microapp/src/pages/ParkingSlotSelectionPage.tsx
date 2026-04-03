@@ -21,7 +21,6 @@ import {
   AccessTimeSharp,
   KeyboardBackspaceSharp,
   Search,
-  WarningAmberSharp,
 } from "@mui/icons-material";
 import { CircularProgress, IconButton } from "@mui/material";
 
