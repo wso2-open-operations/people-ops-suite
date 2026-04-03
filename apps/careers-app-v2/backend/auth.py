@@ -19,7 +19,8 @@ import logging
 import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+from jose import JWTError, jwk, jwt
+from jose.utils import base64url_decode
 
 from config import Settings, get_settings
 
@@ -39,6 +40,20 @@ async def _get_jwks(settings: Settings) -> dict:
     return _jwks_cache
 
 
+def _get_key_for_token(token: str, jwks: dict):
+    """Select the JWK matching the token's kid header."""
+    headers = jwt.get_unverified_header(token)
+    kid = headers.get("kid")
+    for key in jwks.get("keys", []):
+        if key.get("kid") == kid:
+            return jwk.construct(key)
+    # Fallback: use the first key if kid not matched
+    keys = jwks.get("keys", [])
+    if keys:
+        return jwk.construct(keys[0])
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No matching key found")
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     settings: Settings = Depends(get_settings),
@@ -46,9 +61,10 @@ async def get_current_user(
     token = credentials.credentials
     try:
         jwks = await _get_jwks(settings)
+        key = _get_key_for_token(token, jwks)
         payload = jwt.decode(
             token,
-            jwks,
+            key,
             algorithms=["RS256"],
             options={"verify_aud": False},
         )
@@ -56,6 +72,8 @@ async def get_current_user(
         if not sub:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         return {"sub": sub}
+    except HTTPException:
+        raise
     except JWTError as e:
         logger.warning("JWT validation failed (%s) — falling back to introspection", e)
 
@@ -72,7 +90,10 @@ async def get_current_user(
 
         if not data.get("active"):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inactive")
-        return {"sub": data.get("sub", "")}
+        sub = data.get("sub", "")
+        if not sub:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        return {"sub": sub}
     except HTTPException:
         raise
     except Exception as e:

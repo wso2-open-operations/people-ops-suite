@@ -66,19 +66,23 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     if (!isAuthenticated || userLoaded) return;
 
     const loadUser = async () => {
-      const [userInfo, idToken] = await Promise.all([getBasicUserInfo(), getDecodedIDToken()]);
-      dispatch(setUserAuthData({ userInfo, decodedIdToken: idToken }));
-      dispatch(
-        setUserInfo({
-          personId: idToken.sub ?? "",
-          firstName: (userInfo.givenName as string) ?? "",
-          lastName: (userInfo.familyName as string) ?? "",
-          workEmail: (userInfo.email as string) ?? "",
-          employeeThumbnail: (userInfo.profile as string) ?? null,
-          jobRole: null,
-        }),
-      );
-      setUserLoaded(true);
+      try {
+        const [userInfo, idToken] = await Promise.all([getBasicUserInfo(), getDecodedIDToken()]);
+        dispatch(setUserAuthData({ userInfo, decodedIdToken: idToken }));
+        dispatch(
+          setUserInfo({
+            personId: idToken.sub ?? "",
+            firstName: (userInfo.givenName as string) ?? "",
+            lastName: (userInfo.familyName as string) ?? "",
+            workEmail: (userInfo.email as string) ?? "",
+            employeeThumbnail: (userInfo.profile as string) ?? null,
+            jobRole: null,
+          }),
+        );
+        setUserLoaded(true);
+      } catch {
+        signOut();
+      }
     };
 
     loadUser();

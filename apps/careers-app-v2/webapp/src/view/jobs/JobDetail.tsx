@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import DOMPurify from "dompurify";
+
 import {
   Box,
   Button,
@@ -187,7 +189,7 @@ const JobDetail = () => {
             >
               <CardContent sx={{ p: 3 }}>
                 <Box
-                  dangerouslySetInnerHTML={{ __html: detail.mainContent }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(detail.mainContent ?? "") }}
                   sx={{
                     fontSize: "14px",
                     lineHeight: 1.8,
@@ -211,7 +213,7 @@ const JobDetail = () => {
             >
               <CardContent sx={{ p: 3 }}>
                 <Box
-                  dangerouslySetInnerHTML={{ __html: detail.taskInformation }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(detail.taskInformation ?? "") }}
                   sx={{
                     fontSize: "14px",
                     lineHeight: 1.8,
@@ -235,7 +237,7 @@ const JobDetail = () => {
             >
               <CardContent sx={{ p: 3 }}>
                 <Box
-                  dangerouslySetInnerHTML={{ __html: detail.additionalContent }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(detail.additionalContent ?? "") }}
                   sx={{
                     fontSize: "14px",
                     lineHeight: 1.8,

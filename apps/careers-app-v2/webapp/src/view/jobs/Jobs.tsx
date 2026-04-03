@@ -51,10 +51,14 @@ const Jobs = () => {
   const [applyJob, setApplyJob] = useState<Job | null>(null);
 
   useEffect(() => {
-    getAccessToken().then((token) => {
-      dispatch(loadJobs(token));
-      dispatch(loadOrgStructure(token));
-    });
+    getAccessToken()
+      .then((token) => {
+        dispatch(loadJobs(token));
+        dispatch(loadOrgStructure(token));
+      })
+      .catch(() => {
+        dispatch({ type: "careers/loadJobs/rejected" });
+      });
   }, [dispatch, getAccessToken]);
 
   const filtered = useMemo(() => {

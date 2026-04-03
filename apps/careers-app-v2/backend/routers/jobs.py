@@ -45,6 +45,9 @@ async def list_jobs(
     except httpx.HTTPStatusError as e:
         logger.error("Vacancy service error on GET /vacancies/basic-info: %s — %s", e.response.status_code, e.response.text)
         raise HTTPException(status_code=502, detail="Failed to fetch jobs from upstream service")
+    except httpx.RequestError as e:
+        logger.error("Network error on GET /vacancies/basic-info: %s", e)
+        raise HTTPException(status_code=504, detail="Upstream service unreachable")
 
 
 @router.get("/org-structure")
@@ -64,6 +67,9 @@ async def get_org_structure(
     except httpx.HTTPStatusError as e:
         logger.error("Vacancy service error on GET /org-structure: %s — %s", e.response.status_code, e.response.text)
         raise HTTPException(status_code=502, detail="Failed to fetch org structure from upstream service")
+    except httpx.RequestError as e:
+        logger.error("Network error on GET /org-structure: %s", e)
+        raise HTTPException(status_code=504, detail="Upstream service unreachable")
 
 
 @router.get("/{job_id}")
@@ -88,3 +94,6 @@ async def get_job(
     except httpx.HTTPStatusError as e:
         logger.error("Vacancy service error on GET /vacancies/%s: %s — %s", job_id, e.response.status_code, e.response.text)
         raise HTTPException(status_code=502, detail="Failed to fetch job from upstream service")
+    except httpx.RequestError as e:
+        logger.error("Network error on GET /vacancies/%s: %s", job_id, e)
+        raise HTTPException(status_code=504, detail="Upstream service unreachable")

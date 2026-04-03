@@ -47,5 +47,5 @@ async def get_vacancy_token(settings: Settings) -> str:
 
     data = resp.json()
     _cached_token = data["access_token"]
-    _token_expiry = time.time() + data["expires_in"] - 60
+    _token_expiry = time.time() + max(0, data["expires_in"] - 60)
     return _cached_token

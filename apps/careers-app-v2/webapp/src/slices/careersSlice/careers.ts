@@ -92,9 +92,16 @@ export const CareersSlice = createSlice({
       .addCase(loadJobs.rejected, (state) => {
         state.jobsState = State.failed;
       })
+      .addCase(loadOrgStructure.pending, (state) => {
+        state.orgStructureState = State.loading;
+      })
       .addCase(loadOrgStructure.fulfilled, (state, action) => {
         state.orgStructure = action.payload;
         state.orgStructureState = State.success;
+      })
+      .addCase(loadOrgStructure.rejected, (state) => {
+        state.orgStructureState = State.failed;
+        state.orgStructure = { locations: [], teams: [] };
       });
   },
 });
