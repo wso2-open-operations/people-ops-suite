@@ -15,13 +15,14 @@
 // under the License.
 
 import AppHandler from "@app/AppHandler";
+import { AuthProvider } from "@asgardeo/auth-react";
 import { StyledEngineProvider, ThemeProvider, createTheme } from "@mui/material/styles";
 import { SnackbarProvider } from "notistack";
 import { Provider } from "react-redux";
 
 import { createContext, useEffect, useMemo, useState } from "react";
 
-import { APP_NAME } from "@config/config";
+import { APP_NAME, AsgardeoConfig } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
 import { store } from "@slices/store";
 import { themeSettings } from "@src/theme";
@@ -79,9 +80,11 @@ function App() {
         <SnackbarProvider maxSnack={3} preventDuplicate>
           <ThemeProvider theme={theme}>
             <Provider store={store}>
-              <AppAuthProvider>
-                <AppHandler />
-              </AppAuthProvider>
+              <AuthProvider config={AsgardeoConfig}>
+                <AppAuthProvider>
+                  <AppHandler />
+                </AppAuthProvider>
+              </AuthProvider>
             </Provider>
           </ThemeProvider>
         </SnackbarProvider>

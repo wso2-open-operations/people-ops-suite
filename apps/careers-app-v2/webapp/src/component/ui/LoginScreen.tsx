@@ -28,7 +28,6 @@ import {
   useTheme,
 } from "@mui/material";
 import {
-  BookOpen,
   Briefcase,
   CheckCircle,
   Globe,
@@ -48,13 +47,13 @@ const LoginScreen = () => {
   const featuredJobs = mockJobs.slice(0, 3);
 
   const deptColors: Record<string, string> = {
-    Engineering: "#3B82F6",
-    Cloud: "#8B5CF6",
-    "Developer Relations": "#10B981",
-    Product: "#F59E0B",
-    Sales: "#EF4444",
-    "Human Resources": "#EC4899",
-    Marketing: "#06B6D4",
+    ENGINEERING: "#3B82F6",
+    "CUSTOMER SUCCESS": "#8B5CF6",
+    MARKETING: "#10B981",
+    SALES: "#EF4444",
+    "SALES ENGINEERING": "#F59E0B",
+    "People Operations": "#EC4899",
+    FINANCE: "#06B6D4",
   };
 
   return (
@@ -80,7 +79,7 @@ const LoginScreen = () => {
         }}
       >
         <Container maxWidth="lg">
-          <Stack direction="row" alignItems="center" justifyContent="space-between" py={1.5}>
+          <Stack direction="row" alignItems="center" py={1.5}>
             <Stack direction="row" alignItems="center" gap={1.5}>
               <Box
                 component="img"
@@ -103,17 +102,6 @@ const LoginScreen = () => {
                 </Typography>
               </Box>
             </Stack>
-            <LoadingButton
-              variant="contained"
-              size="small"
-              onClick={() => {
-                appSignOut();
-                appSignIn();
-              }}
-              sx={{ fontWeight: 600, borderRadius: "8px", px: 2.5 }}
-            >
-              Sign in with Asgardeo
-            </LoadingButton>
           </Stack>
         </Container>
       </Box>
@@ -180,7 +168,7 @@ const LoginScreen = () => {
                 }}
                 sx={{ fontWeight: 600, borderRadius: "10px", px: 4, py: 1.5 }}
               >
-                Explore Jobs ({mockJobs.length})
+                Sign In
               </LoadingButton>
             </Stack>
 
@@ -229,40 +217,27 @@ const LoginScreen = () => {
                   </Box>
                   <Box>
                     <Typography fontWeight={700} fontSize="15px">
-                      Candidate Passport
+                      Your Candidate Passport
                     </Typography>
                     <Typography fontSize="12px" color="text.secondary">
-                      Your persistent professional identity
+                      One profile. Every WSO2 application.
                     </Typography>
                   </Box>
-                  <Chip
-                    label="70% complete"
-                    size="small"
-                    sx={{ ml: "auto", backgroundColor: "#FF730020", color: "#FF7300", fontWeight: 600 }}
-                  />
                 </Stack>
 
                 <Divider sx={{ mb: 2 }} />
 
                 <Stack gap={1.5}>
                   {[
-                    { icon: <CheckCircle size={14} />, label: "Basic Info", done: true },
-                    { icon: <CheckCircle size={14} />, label: "5 Skills added", done: true },
-                    { icon: <CheckCircle size={14} />, label: "Resume uploaded", done: true },
-                    { icon: <BookOpen size={14} />, label: "Work Experience missing", done: false },
-                    { icon: <Globe size={14} />, label: "Portfolio not added", done: false },
+                    { icon: <CheckCircle size={14} />, label: "Build your profile once, reuse everywhere" },
+                    { icon: <CheckCircle size={14} />, label: "Add skills, experience & portfolio" },
+                    { icon: <CheckCircle size={14} />, label: "Upload your resume — no repeats" },
+                    { icon: <CheckCircle size={14} />, label: "Track all your applications in one place" },
+                    { icon: <CheckCircle size={14} />, label: "Apply to any role instantly" },
                   ].map((item, i) => (
                     <Stack key={i} direction="row" alignItems="center" gap={1.5}>
-                      <Box sx={{ color: item.done ? "#10B981" : theme.palette.text.disabled }}>
-                        {item.icon}
-                      </Box>
-                      <Typography
-                        fontSize="13px"
-                        sx={{
-                          color: item.done ? "text.primary" : "text.disabled",
-                          textDecoration: item.done ? "none" : "none",
-                        }}
-                      >
+                      <Box sx={{ color: "#10B981" }}>{item.icon}</Box>
+                      <Typography fontSize="13px" color="text.primary">
                         {item.label}
                       </Typography>
                     </Stack>
@@ -282,7 +257,7 @@ const LoginScreen = () => {
                   <Stack direction="row" alignItems="center" gap={1}>
                     <Zap size={14} color="#FF7300" />
                     <Typography fontSize="12px" color="#FF7300" fontWeight={600}>
-                      Apply to any job instantly with your Passport
+                      Sign in or create a profile to get started
                     </Typography>
                   </Stack>
                 </Box>
@@ -328,12 +303,12 @@ const LoginScreen = () => {
                 >
                   <CardContent sx={{ p: 2.5 }}>
                     <Chip
-                      label={job.department}
+                      label={job.team}
                       size="small"
                       sx={{
                         mb: 1.5,
-                        backgroundColor: `${deptColors[job.department] ?? "#6B7280"}20`,
-                        color: deptColors[job.department] ?? "#6B7280",
+                        backgroundColor: `${deptColors[job.team] ?? "#6B7280"}20`,
+                        color: deptColors[job.team] ?? "#6B7280",
                         fontWeight: 600,
                         fontSize: "11px",
                       }}
@@ -344,13 +319,13 @@ const LoginScreen = () => {
                     <Stack direction="row" alignItems="center" gap={0.5} mb={0.5}>
                       <MapPin size={12} color={theme.palette.text.secondary} />
                       <Typography fontSize="12px" color="text.secondary">
-                        {job.location}
+                        {job.country.join(", ")}
                       </Typography>
                     </Stack>
                     <Stack direction="row" alignItems="center" gap={0.5}>
                       <Briefcase size={12} color={theme.palette.text.secondary} />
                       <Typography fontSize="12px" color="text.secondary">
-                        {job.experienceLevel}
+                        {job.jobType}
                       </Typography>
                     </Stack>
                   </CardContent>

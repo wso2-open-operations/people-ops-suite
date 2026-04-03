@@ -24,12 +24,13 @@ import {
   type SelectChangeEvent,
 } from "@mui/material";
 
-import { Department, ExperienceLevel } from "@config/constant";
+import { JOB_TYPES } from "@config/constant";
+import { RootState, useAppSelector } from "@slices/store";
 
 export interface JobFilterValues {
   location: string;
-  department: string;
-  experienceLevel: string;
+  team: string;
+  jobType: string;
 }
 
 interface JobFiltersProps {
@@ -37,15 +38,15 @@ interface JobFiltersProps {
   onChange: (filters: JobFilterValues) => void;
 }
 
-const locations = ["All Locations", "Sri Lanka", "Remote", "USA", "UK"];
-
 const JobFilters = ({ filters, onChange }: JobFiltersProps) => {
+  const { locations, teams } = useAppSelector((state: RootState) => state.careers.orgStructure);
+
   const handleChange = (key: keyof JobFilterValues) => (e: SelectChangeEvent) => {
     onChange({ ...filters, [key]: e.target.value });
   };
 
   const handleReset = () => {
-    onChange({ location: "", department: "", experienceLevel: "" });
+    onChange({ location: "", team: "", jobType: "" });
   };
 
   return (
@@ -59,7 +60,7 @@ const JobFilters = ({ filters, onChange }: JobFiltersProps) => {
           sx={{ borderRadius: "8px" }}
         >
           <MenuItem value="">All Locations</MenuItem>
-          {locations.slice(1).map((l) => (
+          {locations.map((l) => (
             <MenuItem key={l} value={l}>
               {l}
             </MenuItem>
@@ -68,40 +69,40 @@ const JobFilters = ({ filters, onChange }: JobFiltersProps) => {
       </FormControl>
 
       <FormControl size="small" sx={{ minWidth: 180 }}>
-        <InputLabel>Department</InputLabel>
+        <InputLabel>Team</InputLabel>
         <Select
-          value={filters.department}
-          label="Department"
-          onChange={handleChange("department")}
+          value={filters.team}
+          label="Team"
+          onChange={handleChange("team")}
           sx={{ borderRadius: "8px" }}
         >
-          <MenuItem value="">All Departments</MenuItem>
-          {Object.values(Department).map((d) => (
-            <MenuItem key={d} value={d}>
-              {d}
+          <MenuItem value="">All Teams</MenuItem>
+          {teams.map((t) => (
+            <MenuItem key={t} value={t}>
+              {t}
             </MenuItem>
           ))}
         </Select>
       </FormControl>
 
-      <FormControl size="small" sx={{ minWidth: 200 }}>
-        <InputLabel>Experience Level</InputLabel>
+      <FormControl size="small" sx={{ minWidth: 160 }}>
+        <InputLabel>Job Type</InputLabel>
         <Select
-          value={filters.experienceLevel}
-          label="Experience Level"
-          onChange={handleChange("experienceLevel")}
+          value={filters.jobType}
+          label="Job Type"
+          onChange={handleChange("jobType")}
           sx={{ borderRadius: "8px" }}
         >
-          <MenuItem value="">All Levels</MenuItem>
-          {Object.values(ExperienceLevel).map((e) => (
-            <MenuItem key={e} value={e}>
-              {e}
+          <MenuItem value="">All Types</MenuItem>
+          {JOB_TYPES.map((t) => (
+            <MenuItem key={t} value={t}>
+              {t}
             </MenuItem>
           ))}
         </Select>
       </FormControl>
 
-      {(filters.location || filters.department || filters.experienceLevel) && (
+      {(filters.location || filters.team || filters.jobType) && (
         <Button
           variant="text"
           size="small"
