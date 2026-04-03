@@ -1279,12 +1279,12 @@ isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) r
         ps.floor_id as 'floorId',
         pf.name as 'floorName',
         pf.coins_per_slot as 'coinsPerSlot',
-        (CASE WHEN EXISTS (
+        CASE WHEN EXISTS (
             SELECT 1 FROM parking_reservation pr
             WHERE pr.slot_id = ps.slot_id
               AND pr.booking_date = ${bookingDate}
-              AND pr.status IN (${PENDING}, ${CONFIRMED})
-        ) THEN 1 ELSE 0 END) as 'isBooked'
+              AND pr.status = ${CONFIRMED}
+        ) THEN 1 ELSE 0 END as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.floor_id = ${floorId}
@@ -1306,18 +1306,18 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.slot_id = ${slotId}`;
 
-# Get active reservation id for slot and date (existence check).
+# Get confirmed reservation id for slot and date (existence check).
 #
 # + slotId - Slot id
 # + bookingDate - Booking date (YYYY-MM-DD)
-# + return - Query to get reservation id if slot is unavailable
+# + return - Query to get reservation id if booked
 isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, string bookingDate)
     returns sql:ParameterizedQuery =>
     `SELECT id
     FROM parking_reservation
     WHERE slot_id = ${slotId}
       AND booking_date = ${bookingDate}
-      AND status IN (${PENDING}, ${CONFIRMED})
+      AND status = ${CONFIRMED}
     LIMIT 1`;
 
 # Insert parking reservation (PENDING).
@@ -1453,3 +1453,766 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
 
     return sql:queryConcat(mainQuery, ` ORDER BY pr.booking_date DESC, pr.created_on DESC`);
 }
+
+# Fetch the organization structure with business units, teams, sub-teams, units,
+#
+# + return - Query to get the full organization hierarchy
+isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        c.id AS id,
+        c.name AS name,
+        COALESCE((
+            SELECT COUNT(*)
+            FROM employee e
+            INNER JOIN office o ON e.office_id = o.id
+            WHERE o.company_id = c.id
+        ), 0) AS headCount,
+        COALESCE(
+            (
+                SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', bu.id,
+                    'name', bu.name,
+                    'headCount', COALESCE((
+                        SELECT COUNT(*) FROM employee e
+                        WHERE e.business_unit_id = bu.id
+                    ), 0),
+                    'head', CASE 
+                        WHEN bu_head.work_email IS NOT NULL THEN JSON_OBJECT(
+                            'name', CONCAT(bu_head.first_name, ' ', bu_head.last_name),
+                            'email', bu_head.work_email,
+                            'avatar', bu_head.employee_thumbnail
+                        )
+                        ELSE CAST('null' AS JSON)
+                    END,
+                    'teams', COALESCE(
+                        (
+                            SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                                'id', t.id,
+                                'businessUnitTeamId', but.id,
+                                'businessUnitId', bu.id,
+                                'name', t.name,
+                                'headCount', COALESCE((
+                                    SELECT COUNT(*) FROM employee e
+                                    WHERE e.team_id = t.id
+                                      AND e.business_unit_id = bu.id
+                                ), 0),
+                                'head', CASE 
+                                    WHEN t_head.work_email IS NOT NULL THEN JSON_OBJECT(
+                                        'name', CONCAT(t_head.first_name, ' ', t_head.last_name),
+                                        'email', t_head.work_email,
+                                        'avatar', t_head.employee_thumbnail
+                                    )
+                                    ELSE CAST('null' AS JSON)
+                                END,
+                                'functionalLead', CASE 
+                                    WHEN t_fl.work_email IS NOT NULL THEN JSON_OBJECT(
+                                        'name', CONCAT(t_fl.first_name, ' ', t_fl.last_name),
+                                        'email', t_fl.work_email,
+                                        'avatar', t_fl.employee_thumbnail
+                                    )
+                                    ELSE CAST('null' AS JSON)
+                                END,
+                                'subTeams', COALESCE(
+                                    (
+                                        SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                                            'id', st.id,
+                                            'businessUnitTeamSubTeamId', butst.id,
+                                            'businessUnitTeamId', but.id,
+                                            'businessUnitId', bu.id,
+                                            'name', st.name,
+                                            'headCount', COALESCE((
+                                                SELECT COUNT(*) FROM employee e
+                                                WHERE e.sub_team_id = st.id
+                                                  AND e.team_id = t.id
+                                                  AND e.business_unit_id = bu.id
+                                            ), 0),
+                                            'head', CASE 
+                                                WHEN st_head.work_email IS NOT NULL THEN JSON_OBJECT(
+                                                    'name', CONCAT(st_head.first_name, ' ', st_head.last_name),
+                                                    'email', st_head.work_email,
+                                                    'avatar', st_head.employee_thumbnail
+                                                )
+                                                ELSE CAST('null' AS JSON)
+                                            END,
+                                            'functionalLead', CASE 
+                                                WHEN st_fl.work_email IS NOT NULL THEN JSON_OBJECT(
+                                                    'name', CONCAT(st_fl.first_name, ' ', st_fl.last_name),
+                                                    'email', st_fl.work_email,
+                                                    'avatar', st_fl.employee_thumbnail
+                                                )   
+                                                ELSE CAST('null' AS JSON)
+                                            END
+                                            ,
+                                            'units', COALESCE(
+                                                (
+                                                    SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                                                        'id', u.id,
+                                                        'businessUnitTeamSubTeamUnitId', butstu.id,
+                                                        'businessUnitTeamSubTeamId', butst.id,
+                                                        'businessUnitTeamId', but.id,
+                                                        'businessUnitId', bu.id,
+                                                        'name', u.name,
+                                                        'headCount', COALESCE((
+                                                            SELECT COUNT(*) FROM employee e
+                                                            WHERE e.unit_id = u.id
+                                                              AND e.sub_team_id = st.id
+                                                              AND e.team_id = t.id
+                                                              AND e.business_unit_id = bu.id
+                                                        ), 0),
+                                                        'head', CASE 
+                                                            WHEN u_head.work_email IS NOT NULL THEN JSON_OBJECT(
+                                                                'name', CONCAT(u_head.first_name, ' ', u_head.last_name),
+                                                                'email', u_head.work_email,
+                                                                'avatar', u_head.employee_thumbnail
+                                                            )
+                                                            ELSE CAST('null' AS JSON)
+                                                        END,
+                                                        'functionalLead', CASE 
+                                                            WHEN u_fl.work_email IS NOT NULL THEN JSON_OBJECT(
+                                                                'name', CONCAT(u_fl.first_name, ' ', u_fl.last_name),
+                                                                'email', u_fl.work_email,
+                                                                'avatar', u_fl.employee_thumbnail
+                                                            )
+                                                            ELSE CAST('null' AS JSON)
+                                                        END
+                                                    ))
+                                                    FROM unit u
+                                                    INNER JOIN business_unit_team_sub_team_unit butstu
+                                                        ON u.id = butstu.unit_id AND butstu.is_active = 1
+                                                    LEFT JOIN employee u_head
+                                                        ON u.head_email = u_head.work_email
+                                                    LEFT JOIN employee u_fl
+                                                        ON butstu.head_email = u_fl.work_email
+                                                    WHERE butstu.business_unit_team_sub_team_id = butst.id
+                                                ),
+                                                JSON_ARRAY()
+                                            )
+                                        ))
+                                        FROM sub_team st
+                                        INNER JOIN business_unit_team_sub_team butst
+                                            ON st.id = butst.sub_team_id AND butst.is_active = 1
+                                        LEFT JOIN employee st_head
+                                            ON st.head_email = st_head.work_email
+                                        LEFT JOIN employee st_fl
+                                            ON butst.head_email = st_fl.work_email
+                                        WHERE butst.business_unit_team_id = but.id
+                                    ),
+                                    JSON_ARRAY()
+                                )
+                            ))
+                            FROM team t
+                            INNER JOIN business_unit_team but
+                                ON t.id = but.team_id AND but.is_active = 1
+                            LEFT JOIN employee t_head
+                                ON t.head_email = t_head.work_email
+                            LEFT JOIN employee t_fl
+                                ON but.head_email = t_fl.work_email
+                            WHERE but.business_unit_id = bu.id
+                        ),
+                        JSON_ARRAY()
+                    )
+                ))
+                FROM 
+                    business_unit bu
+                    LEFT JOIN employee bu_head ON bu.head_email = bu_head.work_email
+                WHERE bu.is_active = 1
+            ),
+            JSON_ARRAY()
+        ) AS businessUnits
+    FROM 
+        company c
+    WHERE
+        c.is_active = 1
+    LIMIT 1`;
+
+# Build query to insert a new business-unit.
+#
+# + userEmail - Email of the user performing the action
+# + payload - Node details (name and head email)
+# + return - Parameterized INSERT query for the new business-unit
+isolated function addBusinessUnitQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
+  INSERT INTO business_unit(
+    name,
+    head_email,
+    created_by,
+    created_on,
+    updated_by,
+    updated_on
+  ) VALUES (
+    ${payload.name},
+    ${payload.headEmail},
+    ${userEmail},
+    current_timestamp,
+    ${userEmail},
+    current_timestamp
+  )
+`;
+
+# Build query to insert a new team.
+#
+# + userEmail - Email of the user performing the action
+# + payload - Node details (name and head email)
+# + return - Parameterized INSERT query for the new team
+isolated function addTeamQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
+  INSERT INTO team(
+    name,
+    head_email,
+    created_by,
+    created_on,
+    updated_by,
+    updated_on
+  ) VALUES (
+    ${payload.name},
+    ${payload.headEmail},
+    ${userEmail},
+    current_timestamp,
+    ${userEmail},
+    current_timestamp
+  )
+`;
+
+# Build query to insert a new sub team.
+#
+# + userEmail - Email of the user performing the action
+# + payload - Node details (name and head email)
+# + return - Parameterized INSERT query for the new sub team
+isolated function addSubTeamQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
+  INSERT INTO sub_team(
+    name,
+    head_email,
+    created_by,
+    created_on,
+    updated_by,
+    updated_on
+  ) VALUES (
+    ${payload.name},
+    ${payload.headEmail},
+    ${userEmail},
+    current_timestamp,
+    ${userEmail},
+    current_timestamp
+  )
+`;
+
+# Build query to insert a new unit.
+#
+# + userEmail - Email of the user performing the action
+# + payload - Node details (name and head email)
+# + return - Parameterized INSERT query for the new unit
+isolated function addUnitQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
+  INSERT INTO unit(
+    name,
+    head_email,
+    created_by,
+    created_on,
+    updated_by,
+    updated_on
+  ) VALUES (
+    ${payload.name},
+    ${payload.headEmail},
+    ${userEmail},
+    current_timestamp,
+    ${userEmail},
+    current_timestamp
+  )
+`;
+
+# Build query to insert a new business-unit-team mapping.
+#
+# + userEmail - Email of the user performing the action
+# + payload - Business unit ID, team ID, and functional lead email
+# + return - Parameterized INSERT query for the new business-unit-team
+isolated function addBusinessUnitTeamQuery(string userEmail, CreateBusinessUnitTeamPayload payload)
+    returns sql:ParameterizedQuery => `
+
+    INSERT INTO business_unit_team(
+        business_unit_id,
+        team_id,
+        head_email,
+        created_by,
+        created_on,
+        updated_by,
+        updated_on
+    ) VALUES (
+        ${payload.businessUnitId},
+        ${payload.teamId},
+        ${payload.functionalLeadEmail},
+        ${userEmail},
+        current_timestamp,
+        ${userEmail},
+        current_timestamp
+    )
+`;
+
+# Build query to insert a new business-unit-team-sub-team mapping.
+#
+# + userEmail - Email of the user performing the action
+# + payload - Business unit-team ID, sub-team ID, and functional lead email
+# + return - Parameterized INSERT query for the new business_unit_team_sub_team mapping
+isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, CreateBusinessUnitTeamSubTeamPayload payload)
+    returns sql:ParameterizedQuery => `
+
+    INSERT INTO business_unit_team_sub_team(
+        business_unit_team_id,
+        sub_team_id,
+        head_email,
+        created_by,
+        created_on,
+        updated_by,
+        updated_on
+    ) VALUES (
+        ${payload.businessUnitTeamId},
+        ${payload.subTeamId},
+        ${payload.functionalLeadEmail},
+        ${userEmail},
+        current_timestamp,
+        ${userEmail},
+        current_timestamp
+    )
+`;
+
+# Build query to insert a new business-unit-team-sub-team-unit mapping.
+#
+# + userEmail - Email of the user performing the action
+# + payload - Business unit-team-sub-team ID, unit ID, and functional lead email
+# + return - Parameterized INSERT query for the new business_unit_team_sub_team_unit mapping
+isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, CreateBusinessUnitTeamSubTeamUnitPayload payload)
+    returns sql:ParameterizedQuery => `
+
+    INSERT INTO business_unit_team_sub_team_unit(
+        business_unit_team_sub_team_id,
+        unit_id,
+        head_email,
+        created_by,
+        created_on,
+        updated_by,
+        updated_on
+    ) VALUES (
+        ${payload.businessUnitTeamSubTeamId},
+        ${payload.unitId},
+        ${payload.functionalLeadEmail},
+        ${userEmail},
+        current_timestamp,
+        ${userEmail},
+        current_timestamp
+    )
+`;
+
+# Build query to update a business unit.
+#
+# + payload - Fields to update in the business unit
+# + buId - ID of the business unit to update
+# + return - Parameterized UPDATE query for the business unit
+isolated function updateBusinessUnitQuery(UpdateOrgUnitPayload payload, int buId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit
+      SET
+    `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, buId);
+}
+
+# Build query to update a team.
+#
+# + payload - Fields to update in the team
+# + teamId - ID of the team to update
+# + return - Parameterized UPDATE query for the team
+isolated function updateTeamQuery(UpdateOrgUnitPayload payload, int teamId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        team
+      SET
+    `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, teamId);
+}
+
+# Build query to update a sub team.
+#
+# + payload - Fields to update in the sub team
+# + subTeamId - ID of the sub team to update
+# + return - Parameterized UPDATE query for the sub team
+isolated function updateSubTeamQuery(UpdateOrgUnitPayload payload, int subTeamId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        sub_team
+      SET
+    `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, subTeamId);
+}
+
+# Build query to update a unit.
+#
+# + payload - Fields to update in the unit
+# + unitId - ID of the unit to update
+# + return - Parameterized UPDATE query for the unit
+isolated function updateUnitQuery(UpdateOrgUnitPayload payload, int unitId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        unit
+      SET
+    `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, unitId);
+}
+
+# Build query to update the functional lead of a business unit-team mapping.
+#
+# + payload - Fields to update in the business unit-team mapping
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - Parameterized UPDATE query for the business_unit_team mapping
+isolated function updateBusinessUnitTeamQuery(UpdateBusinessUnitTeamPayload payload, int buId, int teamId)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit_team
+      SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+      WHERE business_unit_id = ${buId} AND team_id = ${teamId}
+    `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if payload.functionalLeadEmail is string {
+        filters.push(` head_email = ${payload.functionalLeadEmail}`);
+    }
+
+    filters.push(` updated_by = ${payload.updatedBy}`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, subQuery);
+}
+
+# Build query to update the functional lead of a team-sub team mapping.
+#
+# + payload - Fields to update in the team-sub team mapping
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - Parameterized UPDATE query for the business_unit_team_sub_team mapping
+isolated function updateTeamSubTeamQuery(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit_team_sub_team
+      SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+      WHERE business_unit_team_id = ${teamId} AND sub_team_id = ${subTeamId}
+    `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if payload.functionalLeadEmail is string {
+        filters.push(` head_email = ${payload.functionalLeadEmail}`);
+    }
+
+    filters.push(` updated_by = ${payload.updatedBy}`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, subQuery);
+}
+
+# Build query to update the functional lead of a sub team-unit mapping.
+#
+# + payload - Fields to update in the sub team-unit mapping
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - Parameterized UPDATE query for the business_unit_team_sub_team_unit mapping
+isolated function updateSubTeamUnitQuery(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId)
+returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit_team_sub_team_unit
+      SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+      WHERE business_unit_team_sub_team_id = ${subTeamId} AND unit_id = ${unitId}
+    `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if payload.functionalLeadEmail is string {
+        filters.push(` head_email = ${payload.functionalLeadEmail}`);
+    }
+
+    filters.push(` updated_by = ${payload.updatedBy}`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, subQuery);
+}
+
+# Build query to soft delete a business unit.
+#
+# + email - Email of the user performing the update
+# + buId - ID of the business unit to delete
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteBusinessUnitQuery(string email, int buId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit
+      SET
+        is_active = 0,
+        updated_by = ${email},
+        updated_on = current_timestamp
+      WHERE 
+        id = ${buId}
+    `;
+
+    return query;
+};
+
+# Build query to soft delete a business unit-team mapping.
+#
+# + email - Email of the user performing the update
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteBusinessUnitTeamQuery(string email, int buId, int teamId)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit_team
+      SET
+        is_active = 0,
+        updated_by = ${email},
+        updated_on = current_timestamp
+      WHERE
+        business_unit_id = ${buId} AND team_id = ${teamId}
+    `;
+
+    return query;
+}
+
+# Build query to soft delete a team-sub team mapping.
+#
+# + email - Email of the user performing the update
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteTeamSubTeamQuery(string email, int teamId, int subTeamId)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit_team_sub_team
+      SET
+        is_active = 0,
+        updated_by = ${email},
+        updated_on = current_timestamp
+      WHERE
+        business_unit_team_id = ${teamId} AND sub_team_id = ${subTeamId}
+    `;
+
+    return query;
+}
+
+# Build query to soft delete a sub team-unit mapping.
+#
+# + email - Email of the user performing the update
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteSubTeamUnitQuery(string email, int subTeamId, int unitId)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit_team_sub_team_unit
+      SET
+        is_active = 0,
+        updated_by = ${email},
+        updated_on = current_timestamp
+      WHERE
+        business_unit_team_sub_team_id = ${subTeamId} AND unit_id = ${unitId}
+    `;
+
+    return query;
+}
+
+# Build query to check if a business unit name is unique.
+#
+# + businessUnitName - Business unit name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function validateBusinessUnitNameUniquenessQuery(string businessUnitName) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit
+        WHERE is_active = 1 AND name = ${businessUnitName}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a team name is unique.
+#
+# + teamName - Team name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function validateTeamNameUniquenessQuery(string teamName) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM team
+        WHERE is_active = 1 AND name = ${teamName}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a sub-team name is unique.
+#
+# + subTeamName - Sub-team name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function validateSubTeamNameUniquenessQuery(string subTeamName) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM sub_team
+        WHERE is_active = 1 AND name = ${subTeamName}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a unit name is unique.
+#
+# + unitName - Unit name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function validateUnitNameUniquenessQuery(string unitName) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM unit
+        WHERE is_active = 1 AND name = ${unitName}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a BusinessUnit exists by ID.
+#
+# + buId - BusinessUnit ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function businessUnitExistsQuery(int buId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit
+        WHERE is_active = 1 AND id = ${buId}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a Team exists by ID.
+#
+# + teamId - Team ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function teamExistsQuery(int teamId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM team
+        WHERE is_active = 1 AND id = ${teamId}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a SubTeam exists by ID.
+#
+# + subTeamId - Sub-team ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function subTeamExistsQuery(int subTeamId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM sub_team
+        WHERE is_active = 1 AND id = ${subTeamId}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a Unit exists by ID.
+#
+# + unitId - Unit ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function unitExistsQuery(int unitId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM unit
+        WHERE is_active = 1 AND id = ${unitId}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a BusinessUnit-Team mapping exists by ID.
+#
+# + id - business_unit_team mapping ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function businessUnitTeamMappingExistsQuery(int id) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team
+        WHERE is_active = 1 AND id = ${id}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a BusinessUnit-Team-SubTeam mapping exists by ID.
+#
+# + id - business_unit_team_sub_team mapping ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function businessUnitTeamSubTeamMappingExistsQuery(int id) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team_sub_team
+        WHERE is_active = 1 AND id = ${id}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check whether a business unit has child teams.
+#
+# + buId - Business unit ID
+# + return - Query returning `exists_flag` (1 if children exist, else 0)
+isolated function businessUnitHasChildrenQuery(int buId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team
+        WHERE is_active = 1 AND business_unit_id = ${buId}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check whether a business unit-team mapping has child sub-teams.
+#
+# + businessUnitId - Business unit ID
+# + teamId - Team ID
+# + return - Query returning `exists_flag` (1 if children exist, else 0)
+isolated function businessUnitTeamHasChildrenQuery(int businessUnitId, int teamId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team_sub_team butst
+        INNER JOIN business_unit_team but
+          ON butst.business_unit_team_id = but.id
+        WHERE but.business_unit_id = ${businessUnitId}
+          AND but.team_id = ${teamId}
+          AND but.is_active = 1
+          AND butst.is_active = 1
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check whether a team-sub-team mapping has child units.
+#
+# + teamId - Team ID
+# + subTeamId - Sub-team ID
+# + return - Query returning `exists_flag` (1 if children exist, else 0)
+isolated function teamSubTeamHasChildrenQuery(int teamId, int subTeamId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team_sub_team_unit butstu
+        INNER JOIN business_unit_team_sub_team butst
+          ON butstu.business_unit_team_sub_team_id = butst.id
+        WHERE butst.business_unit_team_id = ${teamId}
+          AND butst.sub_team_id = ${subTeamId}
+          AND butst.is_active = 1
+          AND butstu.is_active = 1
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
