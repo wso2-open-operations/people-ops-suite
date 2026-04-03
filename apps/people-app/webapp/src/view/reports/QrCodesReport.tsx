@@ -39,9 +39,9 @@ import {
 import { AppConfig } from "@config/config";
 import { SEARCH_MAX_LENGTH, SEARCH_REGEX } from "@config/constant";
 import {
-  Employee,
+  EmployeeQrInfo,
   EmployeeStatus,
-  fetchFilteredEmployees,
+  fetchQrCodeEmployees,
 } from "@slices/employeeSlice/employee";
 import { useAppDispatch } from "@slices/store";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
@@ -60,9 +60,9 @@ function QrCodesReportContent() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
 
-  const [selected, setSelected] = useState<Employee[]>([]);
+  const [selected, setSelected] = useState<EmployeeQrInfo[]>([]);
   const [autocompleteKey, setAutocompleteKey] = useState(0);
-  const [searchOptions, setSearchOptions] = useState<Employee[]>([]);
+  const [searchOptions, setSearchOptions] = useState<EmployeeQrInfo[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -76,7 +76,7 @@ function QrCodesReportContent() {
     const seq = ++searchSequenceRef.current;
     setSearchLoading(true);
     const action = await dispatch(
-      fetchFilteredEmployees({
+      fetchQrCodeEmployees({
         ...(inputValue ? { searchString: inputValue } : {}),
         filters: { employeeStatus: EmployeeStatus.Active },
         pagination: { limit: SEARCH_LIMIT, offset: 0 },
@@ -85,7 +85,7 @@ function QrCodesReportContent() {
       }),
     );
     if (seq !== searchSequenceRef.current) return;
-    if (fetchFilteredEmployees.fulfilled.match(action)) {
+    if (fetchQrCodeEmployees.fulfilled.match(action)) {
       setSearchOptions(action.payload.employees);
     }
     setSearchLoading(false);
@@ -110,7 +110,7 @@ function QrCodesReportContent() {
     debounceRef.current = setTimeout(() => performSearch(sanitized), SEARCH_DEBOUNCE_MS);
   }
 
-  function handleSelect(_: unknown, value: Employee | null) {
+  function handleSelect(_: unknown, value: EmployeeQrInfo | null) {
     if (!value || selectedIds.has(value.employeeId) || atLimit) return;
     setSelected((prev) => [...prev, value]);
     setAutocompleteKey((k) => k + 1);

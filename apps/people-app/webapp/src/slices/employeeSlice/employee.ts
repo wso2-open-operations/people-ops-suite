@@ -108,6 +108,22 @@ export type FilteredEmployeesResponse = {
   totalCount: number;
 };
 
+export interface EmployeeQrInfo {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  workEmail: string;
+  employeeThumbnail: string | null;
+  house: string | null;
+  houseId: number | null;
+  employeeStatus: string;
+}
+
+export type QrEmployeesResponse = {
+  employees: EmployeeQrInfo[];
+  totalCount: number;
+};
+
 export type Filters = {
   businessUnitId?: number;
   teamId?: number;
@@ -381,6 +397,36 @@ export const fetchFilteredEmployees = createAsyncThunk<
         }),
       );
 
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const fetchQrCodeEmployees = createAsyncThunk<
+  QrEmployeesResponse,
+  EmployeeSearchPayload
+>(
+  "employees/fetchQrCodeEmployees",
+  async (filterAttributes, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().post(
+        AppConfig.serviceUrls.qrCodesSearch,
+        filterAttributes,
+      );
+      return response.data as QrEmployeesResponse;
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? SnackMessage.error.fetchEmployees
+          : error.response?.data?.message ||
+            "An unknown error occurred while fetching employees.";
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
       return rejectWithValue(errorMessage);
     }
   },

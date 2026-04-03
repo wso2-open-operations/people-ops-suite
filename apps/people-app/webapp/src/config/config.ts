@@ -61,6 +61,7 @@ export const AppConfig = {
     jobInfo: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/job-info`,
     employeeQrCode: (employeeId: string) => `${SERVICE_BASE_URL}/employees/${employeeId}/qr-code`,
+    qrCodesSearch: SERVICE_BASE_URL + "/reports/qr-codes/search",
 
     reportsEmployees: (status?: string, excludeFutureStartDate?: boolean) => {
       const params = new URLSearchParams();

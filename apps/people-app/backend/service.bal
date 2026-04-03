@@ -424,8 +424,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         boolean hasAdminAccess
             = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        boolean hasServiceDeskAccess
-            = authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
 
         if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
             string customErr = "Invalid sort field: " + payload.sort.sortField;
@@ -443,31 +441,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:BadRequest>{
                 body: {
                     message: customErr
-                }
-            };
-        }
-
-        if hasServiceDeskAccess && !payload.leadOnly {
-            database:EmployeesResponse|error result = database:getEmployees(payload);
-            if result is error {
-                string customErr = "Error occurred while fetching employees";
-                log:printError(customErr, result);
-                return <http:InternalServerError>{body: {message: customErr}};
-            }
-            database:EmployeeQrInfo[] qrInfoList = result.employees.map(e => {
-                employeeId: e.employeeId,
-                firstName: e.firstName,
-                lastName: e.lastName,
-                workEmail: e.workEmail,
-                employeeThumbnail: e.employeeThumbnail,
-                house: e.house,
-                houseId: e.houseId,
-                employeeStatus: e.employeeStatus
-            });
-            return <http:Ok>{
-                body: {
-                    employees: qrInfoList,
-                    totalCount: result.totalCount
                 }
             };
         }
@@ -518,6 +491,80 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return <http:Ok>{body: employees};
+    }
+
+    # Search employees for QR code export.
+    #
+    # + payload - QR code search payload
+    # + return - Lean employee list for QR export, or HTTP errors
+    resource function post reports/qr\-codes/search(http:RequestContext ctx, database:QrCodeSearchPayload payload)
+            returns http:Ok|http:InternalServerError|http:BadRequest|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        boolean hasQrSearchAccess
+            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+            || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
+
+        if !hasQrSearchAccess {
+            log:printWarn("User is not authorized to search employees for QR export",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to search employees for QR export"}
+            };
+        }
+
+        if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
+            string customErr = "Invalid sort field: " + payload.sort.sortField;
+            log:printWarn(customErr, sortField = payload.sort.sortField);
+            return <http:BadRequest>{
+                body: {message: customErr}
+            };
+        }
+
+        if !database:SortOrder.hasKey(payload.sort.sortOrder) {
+            string customErr = "Invalid sort order: " + payload.sort.sortOrder;
+            log:printWarn(customErr, sortOrder = payload.sort.sortOrder);
+            return <http:BadRequest>{
+                body: {message: customErr}
+            };
+        }
+
+        database:EmployeesResponse|error result = database:getEmployees({
+            searchString: payload.searchString,
+            filters: {employeeStatus: payload.filters.employeeStatus},
+            pagination: payload.pagination,
+            sort: payload.sort
+        });
+        if result is error {
+            string customErr = "Error occurred while fetching employees for QR export";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {message: customErr}
+            };
+        }
+        database:EmployeeQrInfo[] qrInfoList = from database:Employee e in result.employees
+            select {
+                employeeId: e.employeeId,
+                firstName: e.firstName,
+                lastName: e.lastName,
+                workEmail: e.workEmail,
+                employeeThumbnail: e.employeeThumbnail,
+                house: e.house,
+                houseId: e.houseId,
+                employeeStatus: e.employeeStatus
+            };
+        return <http:Ok>{
+            body: {
+                employees: qrInfoList,
+                totalCount: result.totalCount
+            }
+        };
     }
 
     # Fetch continuous service record by work email.
