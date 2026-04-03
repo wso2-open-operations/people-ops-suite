@@ -33,4 +33,6 @@ Config.toml
 .env
 react-app-env.d.ts
 node_modules
+SKILLS.md
+.claude/
 

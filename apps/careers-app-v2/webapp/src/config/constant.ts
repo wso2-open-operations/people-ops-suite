@@ -55,9 +55,4 @@ export enum Department {
   Marketing = "Marketing",
 }
 
-export enum ExperienceLevel {
-  Junior = "Junior (0-2 yrs)",
-  Mid = "Mid-level (2-5 yrs)",
-  Senior = "Senior (5-8 yrs)",
-  Lead = "Lead (8+ yrs)",
-}
+export const JOB_TYPES = ["Full Time", "Internship", "Consultancy", "Permanent"] as const;

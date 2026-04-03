@@ -14,9 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { useAuthContext } from "@asgardeo/auth-react";
 import { useIdleTimer } from "react-idle-timer";
 
-import React, { useCallback, useContext, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
@@ -24,18 +25,11 @@ import LoginScreen from "@component/ui/LoginScreen";
 import { setUserAuthData } from "@slices/authSlice/auth";
 import { useAppDispatch } from "@slices/store";
 import { setUserInfo } from "@slices/userSlice/user";
-import { mockCandidateProfile } from "@utils/mockData";
 
 type AuthContextType = {
   appSignIn: () => void;
   appSignOut: () => void;
 };
-
-enum AppState {
-  Unauthenticated = "unauthenticated",
-  Authenticating = "authenticating",
-  Authenticated = "authenticated",
-}
 
 const AuthContext = React.createContext<AuthContextType>({} as AuthContextType);
 
@@ -43,13 +37,17 @@ const timeout = 15 * 60 * 1000;
 const promptBeforeIdle = 4_000;
 
 const AppAuthProvider = (props: { children: React.ReactNode }) => {
+  const { signIn, signOut, state, getBasicUserInfo, getDecodedIDToken } = useAuthContext();
+  const isAuthenticated = state.isAuthenticated;
+  const isLoading = state.isLoading;
+
   const [sessionWarningOpen, setSessionWarningOpen] = useState<boolean>(false);
-  const [appState, setAppState] = useState<AppState>(AppState.Unauthenticated);
+  const [userLoaded, setUserLoaded] = useState<boolean>(false);
 
   const dispatch = useAppDispatch();
 
   const onPrompt = () => {
-    appState === AppState.Authenticated && setSessionWarningOpen(true);
+    isAuthenticated && setSessionWarningOpen(true);
   };
 
   const { activate } = useIdleTimer({
@@ -64,68 +62,56 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     activate();
   };
 
-  const setupMockUser = useCallback(() => {
-    dispatch(
-      setUserAuthData({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        userInfo: { username: mockCandidateProfile.email } as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        decodedIdToken: { sub: mockCandidateProfile.personId } as any,
-      }),
-    );
-    dispatch(
-      setUserInfo({
-        personId: mockCandidateProfile.personId,
-        firstName: mockCandidateProfile.firstName,
-        lastName: mockCandidateProfile.lastName,
-        workEmail: mockCandidateProfile.email,
-        employeeThumbnail: null,
-        jobRole: mockCandidateProfile.currentRole,
-      }),
-    );
-  }, [dispatch]);
+  useEffect(() => {
+    if (!isAuthenticated || userLoaded) return;
 
-  const appSignIn = useCallback(async () => {
-    setAppState(AppState.Authenticating);
-    // Simulate auth delay for demo realism
-    await new Promise((r) => setTimeout(r, 1200));
-    setupMockUser();
-    setAppState(AppState.Authenticated);
-  }, [setupMockUser]);
+    const loadUser = async () => {
+      try {
+        const [userInfo, idToken] = await Promise.all([getBasicUserInfo(), getDecodedIDToken()]);
+        dispatch(setUserAuthData({ userInfo, decodedIdToken: idToken }));
+        dispatch(
+          setUserInfo({
+            personId: idToken.sub ?? "",
+            firstName: (userInfo.givenName as string) ?? "",
+            lastName: (userInfo.familyName as string) ?? "",
+            workEmail: (userInfo.email as string) ?? "",
+            employeeThumbnail: (userInfo.profile as string) ?? null,
+            jobRole: null,
+          }),
+        );
+        setUserLoaded(true);
+      } catch {
+        signOut();
+      }
+    };
+
+    loadUser();
+  }, [isAuthenticated, userLoaded, getBasicUserInfo, getDecodedIDToken, dispatch]);
+
+  const appSignIn = useCallback(() => {
+    signIn();
+  }, [signIn]);
 
   const appSignOut = useCallback(() => {
-    setAppState(AppState.Unauthenticated);
-  }, []);
+    setUserLoaded(false);
+    signOut();
+  }, [signOut]);
 
   const authContext: AuthContextType = { appSignIn, appSignOut };
 
-  const renderContent = () => {
-    switch (appState) {
-      case AppState.Authenticating:
-        return <PreLoader isLoading message="Setting up your Candidate Passport ..." />;
-
-      case AppState.Authenticated:
-        return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
-
-      case AppState.Unauthenticated:
-      default:
-        return (
-          <AuthContext.Provider value={authContext}>
-            <LoginScreen />
-          </AuthContext.Provider>
-        );
-    }
-  };
+  if (isLoading) {
+    return <PreLoader isLoading message="Setting up your Candidate Passport ..." />;
+  }
 
   return (
-    <>
+    <AuthContext.Provider value={authContext}>
       <SessionWarningDialog
         open={sessionWarningOpen}
         handleContinue={handleContinue}
         appSignOut={appSignOut}
       />
-      {renderContent()}
-    </>
+      {isAuthenticated && userLoaded ? props.children : <LoginScreen />}
+    </AuthContext.Provider>
   );
 };
 

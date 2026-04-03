@@ -24,7 +24,7 @@ export interface UserInfoInterface {
   lastName: string;
   workEmail: string;
   employeeThumbnail: string | null;
-  jobRole: string;
+  jobRole: string | null;
 }
 
 interface UserState {
