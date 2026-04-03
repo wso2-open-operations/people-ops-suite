@@ -124,6 +124,17 @@ export type QrEmployeesResponse = {
   totalCount: number;
 };
 
+export type QrCodeSearchFilters = {
+  employeeStatus?: string;
+};
+
+export type QrCodeSearchPayload = {
+  searchString?: string;
+  filters: QrCodeSearchFilters;
+  pagination: { limit: number; offset: number };
+  sort: { sortField: string; sortOrder: string };
+};
+
 export type Filters = {
   businessUnitId?: number;
   teamId?: number;
@@ -404,7 +415,7 @@ export const fetchFilteredEmployees = createAsyncThunk<
 
 export const fetchQrCodeEmployees = createAsyncThunk<
   QrEmployeesResponse,
-  EmployeeSearchPayload
+  QrCodeSearchPayload
 >(
   "employees/fetchQrCodeEmployees",
   async (filterAttributes, { dispatch, rejectWithValue }) => {

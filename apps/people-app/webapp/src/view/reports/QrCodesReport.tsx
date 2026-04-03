@@ -81,7 +81,6 @@ function QrCodesReportContent() {
         filters: { employeeStatus: EmployeeStatus.Active },
         pagination: { limit: SEARCH_LIMIT, offset: 0 },
         sort: { sortField: "startDate", sortOrder: "DESC" },
-        leadOnly: false,
       }),
     );
     if (seq !== searchSequenceRef.current) return;
