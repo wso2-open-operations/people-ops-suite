@@ -26,6 +26,8 @@ import {
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { useAuthContext } from "@asgardeo/auth-react";
+
 import ApplyModal from "@component/careers/ApplyModal";
 import JobCard from "@component/careers/JobCard";
 import JobFilters, { JobFilterValues } from "@component/careers/JobFilters";
@@ -36,6 +38,7 @@ import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 
 const Jobs = () => {
   const dispatch = useAppDispatch();
+  const { getAccessToken } = useAuthContext();
   const jobs = useAppSelector((state: RootState) => state.careers.jobs);
   const jobsState = useAppSelector((state: RootState) => state.careers.jobsState);
 
@@ -48,9 +51,11 @@ const Jobs = () => {
   const [applyJob, setApplyJob] = useState<Job | null>(null);
 
   useEffect(() => {
-    dispatch(loadJobs());
-    dispatch(loadOrgStructure());
-  }, [dispatch]);
+    getAccessToken().then((token) => {
+      dispatch(loadJobs(token));
+      dispatch(loadOrgStructure(token));
+    });
+  }, [dispatch, getAccessToken]);
 
   const filtered = useMemo(() => {
     return jobs.filter((job) => {

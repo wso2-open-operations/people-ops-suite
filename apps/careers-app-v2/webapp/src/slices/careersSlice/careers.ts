@@ -41,12 +41,12 @@ const initialState: CareersState = {
   savedJobIds: mockSavedJobIds,
 };
 
-export const loadJobs = createAsyncThunk("careers/loadJobs", async () => {
-  return await fetchVacancies();
+export const loadJobs = createAsyncThunk("careers/loadJobs", async (accessToken: string) => {
+  return await fetchVacancies(accessToken);
 });
 
-export const loadOrgStructure = createAsyncThunk("careers/loadOrgStructure", async () => {
-  return await fetchOrgStructure();
+export const loadOrgStructure = createAsyncThunk("careers/loadOrgStructure", async (accessToken: string) => {
+  return await fetchOrgStructure(accessToken);
 });
 
 export const CareersSlice = createSlice({

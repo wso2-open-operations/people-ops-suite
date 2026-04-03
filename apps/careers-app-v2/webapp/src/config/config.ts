@@ -27,10 +27,6 @@ declare global {
       AUTH_SIGN_IN_REDIRECT_URL: string;
       AUTH_SIGN_OUT_REDIRECT_URL: string;
       REACT_APP_BACKEND_BASE_URL: string;
-      VACANCY_SERVICE_BASE_URL: string;
-      VACANCY_TOKEN_URL: string;
-      VACANCY_CLIENT_ID: string;
-      VACANCY_CLIENT_SECRET: string;
     };
   }
 }
@@ -46,13 +42,6 @@ export const AsgardeoConfig: BaseURLAuthClientConfig = {
 export const APP_NAME = window.config?.APP_NAME ?? "WSO2 Careers";
 export const APP_DOMAIN = window.config?.APP_DOMAIN ?? "";
 export const ServiceBaseUrl = window.config?.REACT_APP_BACKEND_BASE_URL ?? "";
-
-export const VacancyServiceConfig = {
-  baseUrl: window.config?.VACANCY_SERVICE_BASE_URL ?? "",
-  tokenUrl: window.config?.VACANCY_TOKEN_URL ?? "",
-  clientId: window.config?.VACANCY_CLIENT_ID ?? "",
-  clientSecret: window.config?.VACANCY_CLIENT_SECRET ?? "",
-};
 
 export const AppConfig = {
   serviceUrls: {

@@ -37,6 +37,8 @@ import {
   Zap,
 } from "lucide-react";
 
+import wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
+import wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
 import { mockJobs } from "@utils/mockData";
 import { useAppAuthContext } from "@context/AuthContext";
 
@@ -84,9 +86,7 @@ const LoginScreen = () => {
               <Box
                 component="img"
                 src={
-                  theme.palette.mode === "dark"
-                    ? "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
-                    : "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
+                  theme.palette.mode === "dark" ? wso2LogoWhite : wso2LogoBlack
                 }
                 alt="WSO2"
                 sx={{ height: 28, width: "auto" }}
@@ -95,7 +95,7 @@ const LoginScreen = () => {
                 <Typography
                   sx={{ fontWeight: 700, fontSize: "16px", lineHeight: 1, color: "text.primary" }}
                 >
-                  WSO2 Careers
+                  Careers
                 </Typography>
                 <Typography sx={{ fontSize: "11px", color: "text.secondary" }}>
                   Candidate Passport Platform
@@ -350,9 +350,7 @@ const LoginScreen = () => {
             <Box
               component="img"
               src={
-                theme.palette.mode === "dark"
-                  ? "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
-                  : "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
+                theme.palette.mode === "dark" ? wso2LogoWhite : wso2LogoBlack
               }
               alt="WSO2"
               sx={{ height: 20, width: "auto", opacity: 0.7 }}

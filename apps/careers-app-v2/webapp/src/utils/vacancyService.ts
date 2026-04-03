@@ -16,7 +16,7 @@
 
 import axios from "axios";
 
-import { VacancyServiceConfig } from "@config/config";
+import { AppConfig } from "@config/config";
 import { Job } from "@/types/types";
 
 interface VacancyBasicInfo {
@@ -34,47 +34,6 @@ export interface OrgStructure {
   teams: string[];
 }
 
-let cachedToken: string | null = null;
-let tokenExpiry = 0;
-
-async function getToken(): Promise<string> {
-  if (cachedToken && Date.now() < tokenExpiry) {
-    return cachedToken;
-  }
-
-  const params = new URLSearchParams();
-  params.append("grant_type", "client_credentials");
-
-  const response = await axios.post(VacancyServiceConfig.tokenUrl, params, {
-    auth: {
-      username: VacancyServiceConfig.clientId,
-      password: VacancyServiceConfig.clientSecret,
-    },
-  });
-
-  cachedToken = response.data.access_token;
-  tokenExpiry = Date.now() + (response.data.expires_in - 60) * 1000;
-  return cachedToken!;
-}
-
-export async function fetchVacancies(): Promise<Job[]> {
-  const token = await getToken();
-  const response = await axios.get<VacancyBasicInfo[]>(
-    `${VacancyServiceConfig.baseUrl}/vacancies/basic-info`,
-    { headers: { Authorization: `Bearer ${token}` } },
-  );
-
-  return response.data.map((v) => ({
-    id: String(v.id),
-    title: v.title,
-    team: v.team,
-    country: v.country,
-    jobType: v.job_type,
-    publishStatus: v.publish_status,
-    postedDate: v.published_on,
-  }));
-}
-
 export interface VacancyDetail {
   id: string;
   title: string;
@@ -89,8 +48,27 @@ export interface VacancyDetail {
   additionalContent: string | null;
 }
 
-export async function fetchVacancyDetail(id: string): Promise<VacancyDetail> {
-  const token = await getToken();
+function authHeader(accessToken: string) {
+  return { Authorization: `Bearer ${accessToken}` };
+}
+
+export async function fetchVacancies(accessToken: string): Promise<Job[]> {
+  const response = await axios.get<VacancyBasicInfo[]>(AppConfig.serviceUrls.jobs, {
+    headers: authHeader(accessToken),
+  });
+
+  return response.data.map((v) => ({
+    id: String(v.id),
+    title: v.title,
+    team: v.team,
+    country: v.country,
+    jobType: v.job_type,
+    publishStatus: v.publish_status,
+    postedDate: v.published_on,
+  }));
+}
+
+export async function fetchVacancyDetail(id: string, accessToken: string): Promise<VacancyDetail> {
   const response = await axios.get<{
     id: number;
     title: string;
@@ -103,8 +81,8 @@ export async function fetchVacancyDetail(id: string): Promise<VacancyDetail> {
     mainContent: string | null;
     taskInformation: string | null;
     additionalContent: string | null;
-  }>(`${VacancyServiceConfig.baseUrl}/vacancies/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
+  }>(`${AppConfig.serviceUrls.jobs}/${id}`, {
+    headers: authHeader(accessToken),
   });
 
   const v = response.data;
@@ -123,11 +101,10 @@ export async function fetchVacancyDetail(id: string): Promise<VacancyDetail> {
   };
 }
 
-export async function fetchOrgStructure(): Promise<OrgStructure> {
-  const token = await getToken();
+export async function fetchOrgStructure(accessToken: string): Promise<OrgStructure> {
   const response = await axios.get<{ location_list: Record<string, string>; team_list: Record<string, string> }>(
-    `${VacancyServiceConfig.baseUrl}/org-structure`,
-    { headers: { Authorization: `Bearer ${token}` } },
+    `${AppConfig.serviceUrls.jobs}/org-structure`,
+    { headers: authHeader(accessToken) },
   );
 
   return {

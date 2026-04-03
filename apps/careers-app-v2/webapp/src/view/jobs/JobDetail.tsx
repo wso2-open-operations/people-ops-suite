@@ -29,6 +29,8 @@ import { ArrowLeft, Bookmark, BookmarkCheck, Briefcase, MapPin, Send } from "luc
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { useAuthContext } from "@asgardeo/auth-react";
+
 import ApplyModal from "@component/careers/ApplyModal";
 import { Job } from "@/types/types";
 import { toggleSaveJob } from "@slices/careersSlice/careers";
@@ -52,6 +54,7 @@ const JobDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { getAccessToken } = useAuthContext();
 
   const savedJobIds = useAppSelector((state: RootState) => state.careers.savedJobIds);
   const applications = useAppSelector((state: RootState) => state.careers.applications);
@@ -65,11 +68,12 @@ const JobDetail = () => {
     if (!id) return;
     setLoading(true);
     setError(false);
-    fetchVacancyDetail(id)
+    getAccessToken()
+      .then((token) => fetchVacancyDetail(id, token))
       .then(setDetail)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, getAccessToken]);
 
   if (loading) {
     return (
