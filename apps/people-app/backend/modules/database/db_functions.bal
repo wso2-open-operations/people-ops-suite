@@ -847,8 +847,8 @@ public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload pa
 # + return - True if updated, false if not found, error if the update fails
 public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId) 
     returns boolean|error {
-        
-    sql:ExecutionResult executionResults = 
+
+    sql:ExecutionResult executionResults =
         check databaseClient->execute(updateTeamSubTeamQuery(payload, teamId, subTeamId));
 
     return executionResults.affectedRowCount > 0;
@@ -877,7 +877,7 @@ public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int
 public isolated function deleteBusinessUnit(string userEmail, int buId) returns boolean|error {
     sql:ExecutionResult executionResult = 
         check databaseClient->execute(deleteBusinessUnitQuery(userEmail, buId));
-    
+
     return executionResult.affectedRowCount > 0;
 }
 
@@ -902,7 +902,7 @@ public isolated function deleteBusinessUnitTeam(string userEmail, int buId, int 
 # + subTeamId - ID of the sub team
 # + return - True if deleted, false if not found, error on failure
 public isolated function deleteTeamSubTeam(string userEmail, int teamId, int subTeamId) returns boolean|error {
-    sql:ExecutionResult executionResult = 
+    sql:ExecutionResult executionResult =
         check databaseClient->execute(deleteTeamSubTeamQuery(userEmail, teamId, subTeamId));
 
     return executionResult.affectedRowCount > 0;

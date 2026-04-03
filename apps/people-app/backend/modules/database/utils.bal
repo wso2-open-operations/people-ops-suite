@@ -72,7 +72,7 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
 # + return - Complete parameterized UPDATE query with SET clauses and WHERE condition
 isolated function buildOrganizationUnitUpdateQuery(sql:ParameterizedQuery mainQuery, UpdateOrgUnitPayload payload, int id)
     returns sql:ParameterizedQuery {
-        
+
     UpdateOrgUnitPayload {name, headEmail, updatedBy} = payload;
 
     sql:ParameterizedQuery[] filters = [];
@@ -186,7 +186,7 @@ public isolated function checkAffectedCount(int? affectedRowCount) returns error
 isolated function csvEscape(string? value) returns string {
     string v = value ?: "";
     if v.includes(",") || v.includes("\"") || v.includes("\n") || v.includes("\r") {
-        return "\"" + re`"`.replaceAll(v, "\"\"") + "\"";
+        return "\"" + re `"`.replaceAll(v, "\"\"") + "\"";
     }
     return v;
 }
