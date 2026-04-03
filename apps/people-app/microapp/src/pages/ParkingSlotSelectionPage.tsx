@@ -17,14 +17,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { AccessTimeSharp, KeyboardBackspaceSharp, Search } from "@mui/icons-material";
+import {
+  AccessTimeSharp,
+  KeyboardBackspaceSharp,
+  Search,
+  WarningAmberSharp,
+} from "@mui/icons-material";
 import { CircularProgress, IconButton } from "@mui/material";
 
 import { PageTransitionWrapper, BottomNav } from "@/components/shared";
-import type { ParkingFloor, ParkingSlot, VehicleResponse } from "@/types";
+import type {
+  CarParkConfigResponse,
+  ParkingFloor,
+  ParkingSlot,
+  VehicleResponse,
+} from "@/types";
 import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 import { serviceUrls } from "@/config/config";
-import { getTodayBookingDate } from "@/utils/helpers/date";
+import {
+  formatHour12WithMinutes,
+  getTodayBookingDate,
+  isWithinParkingReservationWindow,
+} from "@/utils/helpers/date";
 import { formatCoins } from "@/utils/helpers/coins";
 import {
   clearParkingPaymentContextState,
@@ -53,6 +67,29 @@ function ParkingSlotSelectionPage() {
   const [error, setError] = useState<string | undefined>(undefined);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [vehiclesSetupRequired, setVehiclesSetupRequired] = useState(false);
+
+  const [reservationWindowStartHour, setReservationWindowStartHour] =
+    useState(5);
+  const [reservationWindowEndHour, setReservationWindowEndHour] = useState(7);
+  const [bookingWindowTick, setBookingWindowTick] = useState(0);
+
+  const isBookingWindowActive = useMemo(() => {
+    void bookingWindowTick;
+    return isWithinParkingReservationWindow(
+      reservationWindowStartHour,
+      reservationWindowEndHour,
+    );
+  }, [
+    bookingWindowTick,
+    reservationWindowStartHour,
+    reservationWindowEndHour,
+  ]);
+
+  const reservationWindowMessage = useMemo(
+    () =>
+      `Bookings must be made between ${formatHour12WithMinutes(reservationWindowStartHour)} and ${formatHour12WithMinutes(reservationWindowEndHour)} on the day of parking`,
+    [reservationWindowStartHour, reservationWindowEndHour],
+  );
 
   const fetchFloors = () => {
     setLoadingFloors(true);
@@ -92,6 +129,51 @@ function ParkingSlotSelectionPage() {
       (loading) => setLoadingSlots(loading),
     );
   };
+
+  useEffect(() => {
+    const bump = () => setBookingWindowTick((t) => t + 1);
+    const id = window.setInterval(bump, 10_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") bump();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
+  useEffect(() => {
+    executeWithTokenHandling(
+      handleRequest,
+      handleRequestWithNewToken,
+      serviceUrls.fetchCarParkConfigs(),
+      "GET",
+      null,
+      (data) => {
+        const c = data as CarParkConfigResponse;
+        if (typeof c.reservationWindowStartHour === "number") {
+          setReservationWindowStartHour(c.reservationWindowStartHour);
+        }
+        if (typeof c.reservationWindowEndHour === "number") {
+          setReservationWindowEndHour(c.reservationWindowEndHour);
+        }
+      },
+      () => {
+        /* keep defaults */
+      },
+      () => {
+        /* no loading UI for config */
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!isBookingWindowActive) {
+      setSelectedSlot(undefined);
+    }
+  }, [isBookingWindowActive]);
 
   useEffect(() => {
     clearParkingPaymentContextState();
@@ -157,7 +239,13 @@ function ParkingSlotSelectionPage() {
   }, [search, slots]);
 
   const handleProceedToPayment = () => {
-    if (!selectedSlot || busyPayment || vehiclesLoading || vehiclesSetupRequired) {
+    if (
+      !isBookingWindowActive ||
+      !selectedSlot ||
+      busyPayment ||
+      vehiclesLoading ||
+      vehiclesSetupRequired
+    ) {
       if (!vehiclesLoading && vehiclesSetupRequired) {
         navigate("/services/vehicles");
       }
@@ -209,8 +297,7 @@ function ParkingSlotSelectionPage() {
               </div>
             </div>
             <div className="text-[14.5px] font-medium text-[#0B64C0]">
-              Bookings must be made between 5:00 AM and 7:00 AM on the day of
-              parking
+              {reservationWindowMessage}
             </div>
           </div>
 
@@ -253,16 +340,19 @@ function ParkingSlotSelectionPage() {
               {filteredSlots.map((slot) => {
                 const isSelected = slot.slotId === selectedSlot?.slotId;
                 const isBooked = slot.isBooked;
+                const selectionDisabled = isBooked || !isBookingWindowActive;
+                const isViewOnly = !isBookingWindowActive && !isBooked;
 
                 const borderColor = isSelected
                   ? "#ff7300"
                   : isBooked
                     ? "transparent"
                     : "#E5E5E5";
+                const borderStyle: "solid" | "dashed" = isViewOnly ? "dashed" : "solid";
                 const iconColor = isSelected
                   ? "#ff7300"
                   : isBooked
-                    ? "#BDBDBD"
+                    ? "#616161"
                     : "#BDBDBD";
                 const bg = isBooked ? "#F2F2F2" : "white";
 
@@ -270,25 +360,28 @@ function ParkingSlotSelectionPage() {
                   <button
                     key={slot.slotId}
                     type="button"
-                    disabled={isBooked}
-                    onClick={() =>
-                      isSelected ? setSelectedSlot(undefined) : setSelectedSlot(slot)
-                    }
+                    disabled={selectionDisabled}
+                    onClick={() => {
+                      if (!isBookingWindowActive || isBooked) return;
+                      isSelected ? setSelectedSlot(undefined) : setSelectedSlot(slot);
+                    }}
                     className={`rounded-[1.2rem] border p-3 min-h-[102px] transition-colors ${
                       isSelected ? "shadow-[0_0_0_2px_rgba(255,115,0,0.15)]" : ""
-                    }`}
+                    } ${isViewOnly ? "cursor-not-allowed" : ""}`}
                     style={{
                       borderColor,
-                      opacity: isBooked ? 0.7 : 1,
+                      borderStyle,
                       backgroundColor: bg,
                     }}
                   >
                     <div
                       className="w-[42px] h-[42px] rounded-full grid place-items-center mx-auto"
                       style={{
-                        border: `3px solid ${borderColor}`,
+                        border: `3px solid ${
+                          isSelected ? borderColor : isBooked ? "#9E9E9E" : borderColor
+                        }`,
                         color: iconColor,
-                        backgroundColor: isBooked ? "#F6F6F6" : "white",
+                        backgroundColor: isBooked ? "#EEEEEE" : "white",
                       }}
                     >
                       <span className="font-extrabold text-xl">P</span>
@@ -297,18 +390,22 @@ function ParkingSlotSelectionPage() {
                     <div className="mt-3 text-center">
                       <div
                         className="font-semibold"
-                        style={{ color: isBooked ? "#BDBDBD" : "#1F2A44" }}
+                        style={{
+                          color: isBooked ? "#3D3D3D" : "#1F2A44",
+                        }}
                       >
                         {slot.slotId}
                       </div>
                       <div
                         className="text-[11.5px] font-medium mt-0.5"
-                        style={{ color: isBooked ? "#BDBDBD" : "#6B6B6B" }}
+                        style={{
+                          color: isBooked ? "#595959" : "#6B6B6B",
+                        }}
                       >
                         {formatCoins(slot.coinsPerSlot)} O2C
                       </div>
                       {isBooked && (
-                        <div className="text-[10.5px] font-bold mt-1 tracking-wide text-[#9B9B9B]">
+                        <div className="text-[10.5px] font-bold mt-1 tracking-wide text-[#595959]">
                           Unavailable
                         </div>
                       )}
