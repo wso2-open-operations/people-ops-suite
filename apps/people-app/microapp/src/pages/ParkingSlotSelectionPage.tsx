@@ -21,6 +21,7 @@ import {
   AccessTimeSharp,
   KeyboardBackspaceSharp,
   Search,
+  WarningAmberSharp,
 } from "@mui/icons-material";
 import { CircularProgress, IconButton } from "@mui/material";
 
@@ -289,16 +290,18 @@ function ParkingSlotSelectionPage() {
             </div>
           </div>
 
-          <div className="mt-4 border border-[#8FC4FF] bg-[#EAF3FF] rounded-lg px-3 py-2 flex items-start gap-2">
-            <div className="mt-0.5">
-              <div className="w-7 h-7 rounded-full bg-white grid place-items-center border border-[#8FC4FF]">
-                <AccessTimeSharp style={{ color: "#0B64C0" }} />
+          {isBookingWindowActive && (
+            <div className="mt-4 border border-[#8FC4FF] bg-[#EAF3FF] rounded-lg px-3 py-2 flex items-start gap-2">
+              <div className="mt-0.5">
+                <div className="w-7 h-7 rounded-full bg-white grid place-items-center border border-[#8FC4FF]">
+                  <AccessTimeSharp style={{ color: "#0B64C0" }} />
+                </div>
+              </div>
+              <div className="text-[14.5px] font-medium text-[#0B64C0]">
+                {reservationWindowMessage}
               </div>
             </div>
-            <div className="text-[14.5px] font-medium text-[#0B64C0]">
-              {reservationWindowMessage}
-            </div>
-          </div>
+          )}
 
           <div className="flex gap-3 mt-4">
             {floors.map((f) => {
@@ -417,7 +420,29 @@ function ParkingSlotSelectionPage() {
         </section>
 
         <div className="fixed left-4 right-4 bottom-[84px]">
-          {selectedSlot && (
+          {!isBookingWindowActive && (
+            <div className="bg-[#FFF7EB] rounded-[1rem] shadow-[0_8px_24px_rgba(0,0,0,0.08)] border border-[#FFB74D] px-4 py-3">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-[#FFE4C4] grid place-items-center border border-[#FFB74D]">
+                    <WarningAmberSharp
+                      style={{ color: "#E65100", fontSize: 22 }}
+                    />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="text-[14px] font-semibold text-[#E65100] leading-snug">
+                    {reservationWindowMessage}
+                  </div>
+                  <div className="mt-1 text-[12px] text-[#A75A2A] font-medium">
+                    Slots are view-only right now. You can select and book a slot once the booking window opens.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isBookingWindowActive && selectedSlot && (
             <div className="bg-white rounded-[1rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-[#E5E5E5] p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
