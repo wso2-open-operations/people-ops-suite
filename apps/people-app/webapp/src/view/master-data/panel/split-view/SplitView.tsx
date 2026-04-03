@@ -15,16 +15,8 @@
 // under the License.
 import AddIcon from "@mui/icons-material/Add";
 import ClearIcon from "@mui/icons-material/Clear";
-import {
-  Box,
-  IconButton,
-  InputAdornment,
-  TextField,
-  Tooltip,
-  Typography,
-  useTheme,
-} from "@mui/material";
-import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
+import { Box, IconButton, InputAdornment, TextField, Typography, useTheme } from "@mui/material";
+import { SearchIcon } from "lucide-react";
 
 import { useEffect, useState } from "react";
 
@@ -47,10 +39,9 @@ import { NodeType } from "@utils/types";
 import { EditModal } from "@view/master-data/components/EditModal";
 
 import AddModal from "../../components/AddModal.tsx";
+import GlobalSearch from "./components/GlobalSearch.tsx";
 import SplitViewSkeleton from "./components/SplitViewSkeleton.tsx";
-import { type MatchSearch, itemToMatchSearch } from "./utils/globalSearch.ts";
-
-/** Match header `MIN_GLOBAL_LOADING_INDICATOR_MS` — hide skeleton until loading is sustained this long. */
+import { MatchSearch } from "./utils/globalSearch.ts";
 
 type OnEdit = {
   open: boolean;
@@ -98,9 +89,16 @@ export default function SplitView() {
   const [teamSearchTerm, setTeamSearchTerm] = useState<string | null>();
   const [subTeamSearchTerm, setSubTeamSearchTerm] = useState<string | null>();
   const [unitSearchTerm, setUnitSearchTerm] = useState<string | null>();
-  const [globalSearchTerm, setGlobalSearchTerm] = useState<string>("");
   const [searchMatches, setSearchMatches] = useState<MatchSearch[]>([]);
   const [activeMatchIndex, setActiveMatchIndex] = useState<number>(-1);
+
+  // Global search UI is temporarily disabled; keep this derived flag nearby
+  // so re-enabling the <GlobalSearch /> block only requires uncommenting both sections.
+  // const isGlobalSearchDisabled =
+  //   Boolean(searchTerm?.trim()) ||
+  //   Boolean(teamSearchTerm?.trim()) ||
+  //   Boolean(subTeamSearchTerm?.trim()) ||
+  //   Boolean(unitSearchTerm?.trim());
 
   const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<number | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
@@ -108,14 +106,29 @@ export default function SplitView() {
   const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
   const currentMatch = activeMatchIndex >= 0 ? searchMatches[activeMatchIndex] : null;
 
-  const goToPreviousMatch = () => {
-    setActiveMatchIndex((i) =>
-      searchMatches.length ? (i - 1 + searchMatches.length) % searchMatches.length : -1,
-    );
+  const clearGlobalSearchState = () => {
+    setSearchMatches([]);
+    setActiveMatchIndex(-1);
   };
 
-  const goToNextMatch = () => {
-    setActiveMatchIndex((i) => (searchMatches.length ? (i + 1) % searchMatches.length : -1));
+  const handleBusinessUnitSearchChange = (value: string) => {
+    setSearchTerm(value);
+    clearGlobalSearchState();
+  };
+
+  const handleTeamSearchChange = (value: string) => {
+    setTeamSearchTerm(value);
+    clearGlobalSearchState();
+  };
+
+  const handleSubTeamSearchChange = (value: string) => {
+    setSubTeamSearchTerm(value);
+    clearGlobalSearchState();
+  };
+
+  const handleUnitSearchChange = (value: string) => {
+    setUnitSearchTerm(value);
+    clearGlobalSearchState();
   };
 
   useEffect(() => {
@@ -133,8 +146,6 @@ export default function SplitView() {
     setSelectedUnitId(currentMatch.unitId as number | null);
   }, [currentMatch]);
 
-  // Only show the full skeleton on initial load (no cached org structure yet).
-  // For background refreshes, keep rendering the current view to avoid UI flicker/unmounting modals.
   if (showOrgSkeleton || orgItemState.state === State.Idle) {
     return <SplitViewSkeleton />;
   }
@@ -292,128 +303,19 @@ export default function SplitView() {
     onAdd(data, NodeType.Unit, selectedSubTeam);
   };
 
-  // Global search handlers
-  const handleGlobalSearch = () => {
-    if (!globalSearchTerm.trim()) {
-      setSearchMatches([]);
-      setActiveMatchIndex(-1);
-      return;
-    }
-
-    const term = globalSearchTerm.toLowerCase();
-    const allOrgItems = [
-      ...orgItems.businessUnits,
-      ...orgItems.teams,
-      ...orgItems.subTeams,
-      ...orgItems.units,
-    ];
-
-    const matches = allOrgItems.filter((item) => item.name.toLowerCase().includes(term));
-    const searchResults: MatchSearch[] = matches.map((match) => itemToMatchSearch(orgItems, match));
-
-    setSearchMatches(searchResults);
-    setActiveMatchIndex(searchResults.length ? 0 : -1);
-  };
-
-  const handleClearGlobalSearch = () => {
-    setGlobalSearchTerm("");
-    setSearchMatches([]);
-    setActiveMatchIndex(-1);
-  };
-
-  const isDisabled = Boolean(searchTerm || teamSearchTerm || subTeamSearchTerm || unitSearchTerm);
-
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      {/* Temporarily commenting the global search functionality */}
-      {/* <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}> */}
-      {/*   <Tooltip */}
-      {/*     placement="top" */}
-      {/*     title={isDisabled ? "Clear other filters to enable global search" : ""} */}
-      {/*     disableHoverListener={!isDisabled} */}
-      {/*     disableFocusListener={!isDisabled} */}
-      {/*     disableTouchListener={!isDisabled} */}
-      {/*   > */}
-      {/*     <TextField */}
-      {/*       placeholder="Search..." */}
-      {/*       value={globalSearchTerm} */}
-      {/*       onChange={(e) => setGlobalSearchTerm(e.target.value)} */}
-      {/*       disabled={isDisabled} */}
-      {/*       onKeyDown={(e) => { */}
-      {/*         if (e.key === "Enter") { */}
-      {/*           e.preventDefault(); */}
-      {/*           handleGlobalSearch(); */}
-      {/*         } */}
-      {/*       }} */}
-      {/*       size="small" */}
-      {/*       sx={{ */}
-      {/*         backgroundColor: theme.palette.surface.secondary.active, */}
-      {/*       }} */}
-      {/*       slotProps={{ */}
-      {/*         input: { */}
-      {/*           startAdornment: ( */}
-      {/*             <InputAdornment position="start"> */}
-      {/*               <SearchIcon size={16} color={theme.palette.customText.primary.p3.active} /> */}
-      {/*             </InputAdornment> */}
-      {/*           ), */}
-      {/*           endAdornment: globalSearchTerm ? ( */}
-      {/*             <InputAdornment position="end"> */}
-      {/*               <IconButton */}
-      {/*                 size="small" */}
-      {/*                 onClick={handleClearGlobalSearch} */}
-      {/*                 sx={{ */}
-      {/*                   padding: 0, */}
-      {/*                   color: theme.palette.customText.primary.p3.active, */}
-      {/*                   "&:hover": { */}
-      {/*                     color: theme.palette.customText.primary.p2.active, */}
-      {/*                   }, */}
-      {/*                 }} */}
-      {/*               > */}
-      {/*                 <ClearIcon sx={{ fontSize: "16px" }} /> */}
-      {/*               </IconButton> */}
-      {/*             </InputAdornment> */}
-      {/*           ) : null, */}
-      {/*         }, */}
-      {/*       }} */}
-      {/*     /> */}
-      {/*   </Tooltip> */}
-      {/*   {/* Right: prev / next chevrons */}
-      {/*   {searchMatches.length > 0 ? ( */}
-      {/*     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}> */}
-      {/*       <ChevronLeftIcon */}
-      {/*         size={14} */}
-      {/*         color={theme.palette.customText.primary.p3.active} */}
-      {/*         onClick={goToPreviousMatch} */}
-      {/*         style={{ cursor: "pointer" }} */}
-      {/*       /> */}
-      {/*       <Box */}
-      {/*         sx={{ */}
-      {/*           display: "flex", */}
-      {/*           alignItems: "center", */}
-      {/*           gap: "4px", */}
-      {/*         }} */}
-      {/*       > */}
-      {/*         {[String(activeMatchIndex + 1), "/", String(searchMatches.length)].map((token, i) => ( */}
-      {/*           <Typography */}
-      {/*             variant="caption" */}
-      {/*             key={i} */}
-      {/*             sx={{ */}
-      {/*               color: theme.palette.customText.primary.p3.active, */}
-      {/*             }} */}
-      {/*           > */}
-      {/*             {token} */}
-      {/*           </Typography> */}
-      {/*         ))} */}
-      {/*       </Box> */}
-      {/*       <ChevronRightIcon */}
-      {/*         size={12} */}
-      {/*         color={theme.palette.customText.primary.p3.active} */}
-      {/*         onClick={goToNextMatch} */}
-      {/*         style={{ cursor: "pointer" }} */}
-      {/*       /> */}
-      {/*     </Box> */}
-      {/*   ) : null} */}
-      {/* </Box> */}
+      {/* Temporarily remove the global search */}
+      {/* <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+        <GlobalSearch
+          isDisabled={isGlobalSearchDisabled}
+          orgItems={orgItems}
+          searchMatches={searchMatches}
+          activeMatchIndex={activeMatchIndex}
+          setSearchMatches={setSearchMatches}
+          setActiveMatchIndex={setActiveMatchIndex}
+        />
+      </Box> */}
 
       <Box sx={{ width: "100%", display: "flex", gap: 2 }}>
         <Box
@@ -455,7 +357,7 @@ export default function SplitView() {
             >
               <TextField
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleBusinessUnitSearchChange(e.target.value)}
                 placeholder="Search business units"
                 slotProps={{
                   input: {
@@ -468,7 +370,7 @@ export default function SplitView() {
                       <InputAdornment position="end">
                         <IconButton
                           size="small"
-                          onClick={() => setSearchTerm("")}
+                          onClick={() => handleBusinessUnitSearchChange("")}
                           sx={{
                             padding: 0,
                             color: theme.palette.customText.primary.p3.active,
@@ -562,7 +464,7 @@ export default function SplitView() {
             >
               <TextField
                 value={teamSearchTerm}
-                onChange={(e) => setTeamSearchTerm(e.target.value)}
+                onChange={(e) => handleTeamSearchChange(e.target.value)}
                 placeholder="Search teams"
                 disabled={!selectedBusinessUnitId}
                 slotProps={{
@@ -576,7 +478,7 @@ export default function SplitView() {
                       <InputAdornment position="end">
                         <IconButton
                           size="small"
-                          onClick={() => setTeamSearchTerm("")}
+                          onClick={() => handleTeamSearchChange("")}
                           sx={{
                             padding: 0,
                             color: theme.palette.customText.primary.p3.active,
@@ -672,7 +574,7 @@ export default function SplitView() {
             >
               <TextField
                 value={subTeamSearchTerm}
-                onChange={(e) => setSubTeamSearchTerm(e.target.value)}
+                onChange={(e) => handleSubTeamSearchChange(e.target.value)}
                 placeholder="Search sub teams"
                 disabled={!selectedTeamId}
                 slotProps={{
@@ -686,7 +588,7 @@ export default function SplitView() {
                       <InputAdornment position="end">
                         <IconButton
                           size="small"
-                          onClick={() => setSubTeamSearchTerm("")}
+                          onClick={() => handleSubTeamSearchChange("")}
                           sx={{
                             padding: 0,
                             color: theme.palette.customText.primary.p3.active,
@@ -782,7 +684,7 @@ export default function SplitView() {
             >
               <TextField
                 value={unitSearchTerm}
-                onChange={(e) => setUnitSearchTerm(e.target.value)}
+                onChange={(e) => handleUnitSearchChange(e.target.value)}
                 placeholder="Search units"
                 disabled={!selectedSubTeamId}
                 slotProps={{
@@ -796,7 +698,7 @@ export default function SplitView() {
                       <InputAdornment position="end">
                         <IconButton
                           size="small"
-                          onClick={() => setUnitSearchTerm("")}
+                          onClick={() => handleUnitSearchChange("")}
                           sx={{
                             padding: 0,
                             color: theme.palette.customText.primary.p3.active,
