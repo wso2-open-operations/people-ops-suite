@@ -16,6 +16,12 @@
 
 export type DecimalLike = number | string;
 
+export interface CarParkConfigResponse {
+  publicWalletAddress: string;
+  reservationWindowStartHour: number;
+  reservationWindowEndHour: number;
+}
+
 export interface ParkingFloor {
   id: number;
   name: string;

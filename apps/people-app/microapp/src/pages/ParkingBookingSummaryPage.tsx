@@ -30,6 +30,7 @@ import { PageTransitionWrapper } from "@/components/shared";
 import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 import { serviceUrls } from "@/config/config";
 import type {
+  CarParkConfigResponse,
   CreateParkingReservationResponse,
   VehicleResponse,
 } from "@/types";
@@ -245,7 +246,7 @@ function ParkingBookingSummaryPage() {
       });
 
       // Stage 2: ask Wallet to transfer coins, then confirm reservation with txHash.
-      const carParkConfig = await new Promise<{ publicWalletAddress: string }>(
+      const carParkConfig = await new Promise<CarParkConfigResponse>(
         (resolve, reject) => {
           executeWithTokenHandling(
             handleRequest,
@@ -253,7 +254,7 @@ function ParkingBookingSummaryPage() {
             serviceUrls.fetchCarParkConfigs(),
             "GET",
             null,
-            (data) => resolve(data as { publicWalletAddress: string }),
+            (data) => resolve(data as CarParkConfigResponse),
             (err) => reject(err),
             () => {},
           );

@@ -119,20 +119,29 @@ function MyParkingBookingsPage() {
 
   const pendingBookings = useMemo(() => {
     return reservations
-      .filter((r) => r.status === ("PENDING" as ParkingReservationStatus))
+      .filter(
+        (r) =>
+          r.status === ("PENDING" as ParkingReservationStatus) &&
+          r.bookingDate === today,
+      )
       .sort((a, b) =>
         String(b.createdOn).localeCompare(String(a.createdOn)),
       );
-  }, [reservations]);
+  }, [reservations, today]);
 
   const pastBookings = useMemo(() => {
     return reservations
-      .filter(
-        (r) =>
-          r.bookingDate < today &&
-          (r.status === ("CONFIRMED" as ParkingReservationStatus) ||
-            r.status === ("EXPIRED" as ParkingReservationStatus)),
-      )
+      .filter((r) => {
+        const confirmedOrExpired =
+          r.status === ("CONFIRMED" as ParkingReservationStatus) ||
+          r.status === ("EXPIRED" as ParkingReservationStatus);
+        if (!confirmedOrExpired) return false;
+        if (r.bookingDate < today) return true;
+        return (
+          r.bookingDate === today &&
+          r.status === ("EXPIRED" as ParkingReservationStatus)
+        );
+      })
       .sort((a, b) =>
         String(b.bookingDate).localeCompare(String(a.bookingDate)),
       );
