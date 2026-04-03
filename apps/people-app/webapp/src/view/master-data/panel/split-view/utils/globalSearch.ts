@@ -32,8 +32,6 @@ export type MatchSearch = {
 
 type OrgItem = BusinessUnitState | TeamState | SubTeamState | UnitState;
 
-const NULL_IDS = { teamId: null, subTeamId: null, unitId: null } as const;
-
 const itemToMatchSearchByType: Record<
   NodeType,
   (org: OrganizationInfo, i: OrgItem) => MatchSearch
