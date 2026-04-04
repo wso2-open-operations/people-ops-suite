@@ -259,7 +259,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                   timeOfDeparture: timeOfDeparture is string ? idealDepartureTime : (),
                                                   status: database:REQUESTED,
                                                   visitDate: payload.visitDate,
-                                                  uuid: payload.uuid
+                                                  uuid: payload.uuid,
+                                                  watchList: payload.watchList
                                               }, invokerInfo.email, invokerInfo.email);
         if visitId is error {
             string customError = "Error occurred while adding visit!";
@@ -405,8 +406,12 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             string[] ccList = [email:receptionEmail, invokerInfo.email];
             string? whoTheyMeetEmail = payload.whomTheyMeet;
+            string[]? watchList = payload.watchList;
             if whoTheyMeetEmail is string {
                 ccList.push(whoTheyMeetEmail);
+            }
+            if watchList is string[] {
+                ccList.push(...watchList);
             }
             error? emailError = email:sendEmail({
                                                     attachments: [
@@ -584,6 +589,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Get visitor email for sending notifications
         string? visitorEmail = visit.email;
         string? visitorLastName = visit.lastName;
+        string[]? watchList = visit.watchList;
 
         // Approve a visit.
         if action == APPROVE {
@@ -749,7 +755,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                 'from: email:fromEmailAddress,
                                 subject: email:VISIT_ACCEPTED_SUBJECT,
                                 template: content,
-                                cc: [email:receptionEmail]
+                                cc: [email:receptionEmail, ...(watchList ?: [])]
                             });
                     if emailError is error {
                         string customError = "An error occurred while sending the approval email!";
@@ -804,7 +810,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     error? emailError = email:sendEmail(
                             {
                                 to: [hostEmail],
-                                cc: [email:receptionEmail],
+                                cc: [email:receptionEmail, ...(watchList ?: [])],
                                 'from: email:fromEmailAddress,
                                 subject: email:EMPLOYEE_VISITOR_ARRIVAL_SUBJECT,
                                 template: content
@@ -923,6 +929,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                     string[] ccList = [email:receptionEmail];
                     if hostEmail is string {
                         ccList.push(hostEmail);
+                    }
+                    if watchList is string[] {
+                        ccList.push(...watchList);
                     }
                     error? emailError = email:sendEmail(
                                 {
@@ -1075,6 +1084,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                     string[] ccList = [email:receptionEmail];
                     if hostEmail is string {
                         ccList.push(hostEmail);
+                    }
+                    if watchList is string[] {
+                        ccList.push(...watchList);
                     }
                     error? emailError = email:sendEmail(
                             {

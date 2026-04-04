@@ -133,6 +133,8 @@ public type AddVisitPayload record {|
     string visitDate;
     # Unique identifier for the visit
     string uuid;
+    # List of email addresses to be notified about the visit
+    string[]? watchList;
 |};
 
 # [Database] Visit record.
@@ -156,6 +158,8 @@ public type VisitRecord record {|
     string passNumber?;
     # The person the visitor is supposed to meet
     string? whomTheyMeet;
+    # List of email addresses to be notified about the visit
+    string? watchList;
     # Purpose of the visit
     string? purposeOfVisit;
     # The floors and rooms that the visitor can access
@@ -187,6 +191,8 @@ public type Visit record {|
     string passNumber?;
     # The person the visitor is supposed to meet
     string? whomTheyMeet = ();
+    # List of email addresses to be notified about the visit
+    string[]? watchList = ();
     # Purpose of the visit
     string? purposeOfVisit = ();
     # The floors and rooms that the visitor can access
