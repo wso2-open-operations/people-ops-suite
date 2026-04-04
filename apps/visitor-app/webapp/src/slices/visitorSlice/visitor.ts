@@ -94,7 +94,7 @@ export const fetchVisitor = createAsyncThunk(
 
 export const addVisitor = createAsyncThunk(
   "visitor/addVisitor",
-  async (payload: AddVisitorPayload, { dispatch }) => {
+  (payload: AddVisitorPayload, { dispatch }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<AddVisitorPayload>((resolve, reject) => {
