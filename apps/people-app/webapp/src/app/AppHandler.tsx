@@ -25,7 +25,7 @@ import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
 import { RootState } from "@slices/store";
 import { useAppSelector } from "@slices/store";
-import { getAllowedRoutes } from "@src/route";
+import { getActiveRoutes, routes } from "@src/route";
 
 const getAppState = (authStatus: string, authMode: string): AppState => {
   if (authMode === AppState.Maintenance) return AppState.Maintenance;
@@ -46,7 +46,7 @@ const AppHandler: FC = () => {
           path: "/",
           element: <Layout />,
           errorElement: <NotFoundPage />,
-          children: getAllowedRoutes(roles),
+          children: getActiveRoutes(routes, roles),
         },
       ]),
     [roles],
