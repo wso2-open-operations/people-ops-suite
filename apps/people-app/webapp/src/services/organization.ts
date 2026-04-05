@@ -189,20 +189,20 @@ export const organizationApi = createApi({
           if (bu.head) bu.head.title = buHeadTitle;
 
           bu.teams.forEach((team) => {
-            const teamHeadTitle = `${bu.name} ${team.name} Head`;
-            const teamLeadTitle = `${bu.name} ${team.name} Lead`;
+            const teamHeadTitle = `${team.name}`;
+            const teamLeadTitle = `${bu.name} Bu - ${team.name}`;
             if (team.head) team.head.title = teamHeadTitle;
             if (team.functionalLead) team.functionalLead.title = teamLeadTitle;
 
             team.subTeams.forEach((subTeam) => {
-              const subTeamHeadTitle = `${teamHeadTitle} ${subTeam.name} Head`;
-              const subTeamLeadTitle = `${teamLeadTitle} ${subTeam.name} Lead`;
+              const subTeamHeadTitle = `${subTeam.name}`;
+              const subTeamLeadTitle = `${teamLeadTitle} - ${subTeam.name} Sub Team`;
               if (subTeam.head) subTeam.head.title = subTeamHeadTitle;
               if (subTeam.functionalLead) subTeam.functionalLead.title = subTeamLeadTitle;
 
               subTeam.units.forEach((unit) => {
-                const unitHeadTitle = `${subTeamHeadTitle} ${unit.name} Head`;
-                const unitLeadTitle = `${subTeamLeadTitle} ${unit.name} Lead`;
+                const unitHeadTitle = `${unit.name}`;
+                const unitLeadTitle = `${subTeamLeadTitle} - ${unit.name} Unit`;
                 if (unit.head) unit.head.title = unitHeadTitle;
                 if (unit.functionalLead) unit.functionalLead.title = unitLeadTitle;
               });
