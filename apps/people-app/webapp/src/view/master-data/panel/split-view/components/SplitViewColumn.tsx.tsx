@@ -8,23 +8,52 @@ import { NodeType } from "@root/src/utils/types";
 
 import OrgStructureCard from "../../../components/OrgStructureCard";
 
-interface SplitViewColumnProps {
-  searchTerm: string;
-  selectedOrgItemId: number;
+interface SplitViewColumnProps<T extends OrgStructureState> {
+  title: string;
+  placeholder: string;
+  nodeType: NodeType;
+  searchTerm: string | null;
+  selectedOrgItemId: number | null;
+  isSearchDisabled?: boolean;
+  isAddDisabled?: boolean;
   onSearch: (value: string) => void;
   onAdd: () => void;
-  onEdit: (item: OrgStructureState, nodeType: NodeType) => void;
-  onClick: (item: OrgStructureState) => void;
-  orgItems: OrgStructureState[];
+  onEdit: (item: T, nodeType: NodeType) => void;
+  onClick: (item: T) => void;
+  orgItems: T[];
 }
 
-export default function SplitViewColumn(props: SplitViewColumnProps) {
-  const { searchTerm, selectedOrgItemId, onChange, onSearch, onAdd, onEdit, onClick, orgItems } =
-    props;
+export default function SplitViewColumn<T extends OrgStructureState>(
+  props: SplitViewColumnProps<T>,
+) {
+  const {
+    title,
+    placeholder,
+    nodeType,
+    searchTerm,
+    selectedOrgItemId,
+    isSearchDisabled = false,
+    isAddDisabled = false,
+    onSearch,
+    onAdd,
+    onEdit,
+    onClick,
+    orgItems,
+  } = props;
+
   const theme = useTheme();
 
   return (
-    <Box>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
+        borderRadius: 1,
+        backgroundColor: theme.palette.surface.secondary.active,
+      }}
+    >
       <Box
         sx={{
           py: 1.5,
@@ -38,7 +67,7 @@ export default function SplitViewColumn(props: SplitViewColumnProps) {
             textAlign: "center",
           }}
         >
-          Business Unit
+          {title}
         </Typography>
       </Box>
 
@@ -49,13 +78,14 @@ export default function SplitViewColumn(props: SplitViewColumnProps) {
             display: "flex",
             gap: 1,
             justifyContent: "center",
-            alignItems: "center",
+            alignItems: "stretch",
           }}
         >
           <TextField
             value={searchTerm}
             onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search business units"
+            placeholder={placeholder}
+            disabled={isSearchDisabled}
             slotProps={{
               input: {
                 startAdornment: (
@@ -89,13 +119,15 @@ export default function SplitViewColumn(props: SplitViewColumnProps) {
 
           <Box
             sx={{
-              height: "100%",
+              alignSelf: "stretch",
               display: "flex",
               alignItems: "center",
               border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
               px: "6px",
               borderRadius: "6px",
-              cursor: "pointer",
+              cursor: isAddDisabled ? "not-allowed" : "pointer",
+              opacity: isAddDisabled ? 0.4 : 1,
+              pointerEvents: isAddDisabled ? "none" : "auto",
             }}
             onClick={onAdd}
           >
@@ -109,10 +141,11 @@ export default function SplitViewColumn(props: SplitViewColumnProps) {
               key={item.id}
               name={item.name}
               headCount={item.headCount}
-              hasChildren={Boolean(item.head)}
+              hasChildren={Boolean(item.head || ("functionalLead" in item && item.functionalLead))}
               togglePeopleSectionVisibility={true}
               teamHead={item.head}
-              onEdit={() => onEdit(item, NodeType.BusinessUnit)}
+              functionLead={"functionalLead" in item ? item.functionalLead : undefined}
+              onEdit={() => onEdit(item, nodeType)}
               onClick={() => onClick(item)}
               isPeopleSectionVertical={true}
               isHighlighted={selectedOrgItemId === item.id}
