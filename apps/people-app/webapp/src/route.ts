@@ -22,32 +22,14 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import PersonOffIcon from "@mui/icons-material/PersonOff";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
-import { CircleQuestionMark } from "lucide-react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import React from "react";
 
 import { Role } from "@slices/authSlice/auth";
-import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
 
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
-
-const EmployeesRoot = () => {
-  const { pathname } = useLocation();
-  if (pathname === "/employees") {
-    return React.createElement(Navigate, { to: "/employees/view", replace: true });
-  }
-  return React.createElement(Outlet);
-};
-
-const ReportsRoot = () => {
-  const { pathname } = useLocation();
-  if (pathname === "/reports") {
-    return React.createElement(Navigate, { to: "/reports/active-employees", replace: true });
-  }
-  return React.createElement(Outlet);
-};
+import { isRouteActive, joinRoutePaths } from "./utils/utils";
 
 export const routes: RouteObjectWithRole[] = [
   {
@@ -61,25 +43,24 @@ export const routes: RouteObjectWithRole[] = [
     path: "/employees",
     text: "Employees",
     icon: React.createElement(BadgeSharp),
-    element: React.createElement(EmployeesRoot),
     allowRoles: [Role.ADMIN],
     children: [
       {
-        path: "/employees/view",
+        path: "view",
         text: "All",
         element: React.createElement(View.employeesList),
         icon: React.createElement(Groups),
         allowRoles: [Role.ADMIN],
       },
       {
-        path: "/employees/onboarding",
+        path: "onboarding",
         text: "Onboarding",
         icon: React.createElement(GroupAddIcon),
         element: React.createElement(View.employeeOnboarding),
         allowRoles: [Role.ADMIN],
       },
       {
-        path: "/employees/my-team",
+        path: "my-team",
         text: "My Team",
         icon: React.createElement(PeopleAltIcon),
         element: React.createElement(View.myTeamView),
@@ -90,7 +71,7 @@ export const routes: RouteObjectWithRole[] = [
   // Top-level My Team entry shown only for lead-only users (hidden when the user also has admin
   // access, since admin+lead users see My Team nested under Employees instead).
   {
-    path: "/employees/my-team",
+    path: "my-team",
     text: "My Team",
     icon: React.createElement(PeopleAltIcon),
     element: React.createElement(View.myTeamView),
@@ -101,25 +82,24 @@ export const routes: RouteObjectWithRole[] = [
     path: "/reports",
     text: "Reports",
     icon: React.createElement(AssessmentIcon),
-    element: React.createElement(ReportsRoot),
-    allowRoles: [Role.ADMIN],
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
     children: [
       {
-        path: "/reports/active-employees",
+        path: "active-employees",
         text: "Active Employees",
         icon: React.createElement(Groups),
         element: React.createElement(View.activeEmployeesReport),
-        allowRoles: [Role.ADMIN],
+        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
       },
       {
-        path: "/reports/inactive-employees",
+        path: "inactive-employees",
         text: "Resignations",
         icon: React.createElement(PersonOffIcon),
         element: React.createElement(View.resignationReport),
         allowRoles: [Role.ADMIN],
       },
       {
-        path: "/reports/qr-codes",
+        path: "qr-codes",
         text: "QR Codes",
         icon: React.createElement(QrCode2Icon),
         element: React.createElement(View.qrCodesReport),
@@ -127,6 +107,7 @@ export const routes: RouteObjectWithRole[] = [
       },
     ],
   },
+
   {
     path: "/master-data",
     text: "Master Data",
@@ -161,54 +142,87 @@ export const routes: RouteObjectWithRole[] = [
   },
 ];
 
+/**
+ * Builds routes used by sidebar/navigation rendering.
+ *
+ * - Includes only role-allowed routes.
+ * - Includes parent menu groups when they have at least one visible child.
+ * - Recursively filters children by role rules.
+ */
 export const getAllowedRoutes = (roles: string[]): RouteDetail[] => {
-  const routesObj: RouteDetail[] = [];
-  routes.forEach((routeObj) => {
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
-      routesObj.push({
-        ...routeObj,
-        path: routeObj.path ?? "",
-      });
-    }
-  });
-  return routesObj;
+  const filterRoutes = (routeList: RouteObjectWithRole[]): RouteDetail[] =>
+    routeList.reduce<RouteDetail[]>((acc, routeObj) => {
+      if (isRouteActive(routeObj, roles)) {
+        const allowedChildren = routeObj.children ? filterRoutes(routeObj.children) : undefined;
+
+        // Sidebar should include clickable routes and parent menu groups that have visible children.
+        if (routeObj.element || (allowedChildren && allowedChildren.length > 0)) {
+          acc.push({
+            ...routeObj,
+            path: routeObj.path ?? "",
+            children: allowedChildren && allowedChildren.length > 0 ? allowedChildren : undefined,
+          });
+        }
+      }
+      return acc;
+    }, []);
+
+  return filterRoutes(routes);
 };
 
-function isRouteActive(routeObj: RouteObjectWithRole, roles: string[]): boolean {
-  return (
-    isIncludedRole(roles, routeObj.allowRoles) &&
-    !(routeObj.excludeRoles && isIncludedRole(roles, routeObj.excludeRoles))
-  );
+/**
+ * Recursively converts child route paths to absolute paths using a parent prefix.
+ *
+ * This is used when parent routes are intentionally disabled (no `element`),
+ * but their allowed children should still be routable.
+ */
+function withAbsolutePathPrefix(
+  routes: RouteObjectWithRole[],
+  parentPath: string,
+): RouteObjectWithRole[] {
+  return routes.map((routeObj) => ({
+    ...routeObj,
+    path: routeObj.path ? joinRoutePaths(parentPath, routeObj.path) : parentPath,
+    children: routeObj.children
+      ? withAbsolutePathPrefix(routeObj.children, joinRoutePaths(parentPath, routeObj.path ?? ""))
+      : undefined,
+  }));
 }
 
-export const getActiveRoutesV2 = (
+/**
+ * Builds the active router configuration for the current user roles.
+ *
+ * Behavior:
+ * - Filters routes recursively using role rules.
+ * - Fully disables parent-only routes (no `element`) by not registering them.
+ * - Hoists allowed children to absolute paths so nested pages remain reachable.
+ */
+export const getActiveRoutes = (
   routes: RouteObjectWithRole[] | undefined,
   roles: string[],
 ): RouteObjectWithRole[] => {
   if (!routes) return [];
-  var routesObj: RouteObjectWithRole[] = [];
+  const routesObj: RouteObjectWithRole[] = [];
   routes.forEach((routeObj) => {
     if (isRouteActive(routeObj, roles)) {
-      routesObj.push({
-        ...routeObj,
-        children: routeObj.children ? getActiveRoutesV2(routeObj.children, roles) : undefined,
-      });
+      const activeChildren = routeObj.children
+        ? getActiveRoutes(routeObj.children, roles)
+        : undefined;
+
+      if (!routeObj.element && activeChildren && activeChildren.length > 0) {
+        const parentPath = routeObj.path ?? "";
+        routesObj.push(...withAbsolutePathPrefix(activeChildren, parentPath));
+        return;
+      }
+
+      if (routeObj.element || activeChildren) {
+        routesObj.push({
+          ...routeObj,
+          element: routeObj.element,
+          children: activeChildren,
+        });
+      }
     }
   });
   return routesObj;
-};
-
-export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
-  const filterRoutes = (routeList: RouteObjectWithRole[]): RouteDetail[] =>
-    routeList.reduce<RouteDetail[]>((acc, routeObj) => {
-      if (isRouteActive(routeObj, roles)) {
-        acc.push({
-          ...routeObj,
-          path: routeObj.path ?? "",
-          children: routeObj.children ? filterRoutes(routeObj.children) : undefined,
-        });
-      }
-      return acc;
-    }, []);
-  return filterRoutes(routes);
 };
