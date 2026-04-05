@@ -82,14 +82,14 @@ export const routes: RouteObjectWithRole[] = [
     path: "/reports",
     text: "Reports",
     icon: React.createElement(AssessmentIcon),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.ADMIN],
     children: [
       {
         path: "active-employees",
         text: "Active Employees",
         icon: React.createElement(Groups),
         element: React.createElement(View.activeEmployeesReport),
-        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+        allowRoles: [Role.ADMIN],
       },
       {
         path: "inactive-employees",
