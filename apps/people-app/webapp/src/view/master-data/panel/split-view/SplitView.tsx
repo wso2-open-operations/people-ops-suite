@@ -13,33 +13,42 @@
 // KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import AddIcon from "@mui/icons-material/Add";
-import ClearIcon from "@mui/icons-material/Clear";
-import { Box, IconButton, InputAdornment, TextField, Typography, useTheme } from "@mui/material";
-import { SearchIcon } from "lucide-react";
+import { Box } from "@mui/material";
 
 import { useEffect, useState } from "react";
 
 import ErrorHandler from "@component/common/ErrorHandler.tsx";
 import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant.ts";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility.ts";
+import {
+  fetchBusinessUnits,
+  fetchSubTeams,
+  fetchTeams,
+  fetchUnits,
+} from "@root/src/slices/organizationSlice/organization.ts";
 import { buildAddModalOptions } from "@root/src/utils/utils.ts";
-import OrgStructureCard from "@root/src/view/master-data/components/OrgStructureCard.tsx";
 import { useGetOrgStructureQuery } from "@services/organization";
 import { State } from "@slices/authSlice/auth.ts";
 import {
+  BusinessUnit as RawBusinessUnit,
+  SubTeam as RawSubTeam,
+  Team as RawTeam,
+  Unit as RawUnit,
+} from "@slices/organizationSlice/organization";
+import {
   BusinessUnitState,
+  CompanyState,
   OrgStructureState,
   SubTeamState,
   TeamState,
   UnitState,
 } from "@slices/organizationSlice/organizationStructure";
-import { RootState, useAppSelector } from "@slices/store";
+import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { NodeType } from "@utils/types";
 import { EditModal } from "@view/master-data/components/EditModal";
 
 import AddModal from "../../components/AddModal.tsx";
-import GlobalSearch from "./components/GlobalSearch.tsx";
+import SplitViewColumn from "./components/SplitViewColumn.tsx.tsx";
 import SplitViewSkeleton from "./components/SplitViewSkeleton.tsx";
 import { MatchSearch } from "./utils/globalSearch.ts";
 
@@ -49,7 +58,7 @@ type OnEdit = {
   type: NodeType | null;
 };
 
-export type AddOption = (BusinessUnitState | TeamState | SubTeamState | UnitState) & {
+export type AddOption = (RawBusinessUnit | RawTeam | RawSubTeam | RawUnit) & {
   canAdd?: boolean;
 };
 
@@ -57,7 +66,7 @@ type OnAdd = {
   open: boolean;
   data: AddOption[] | null;
   type: NodeType | null;
-  selectedNode: BusinessUnitState | TeamState | SubTeamState | UnitState | null;
+  selectedNode: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState | null;
 };
 
 export default function SplitView() {
@@ -90,11 +99,35 @@ export default function SplitView() {
   const [unitSearchTerm, setUnitSearchTerm] = useState<string | null>();
   const [searchMatches, setSearchMatches] = useState<MatchSearch[]>([]);
   const [activeMatchIndex, setActiveMatchIndex] = useState<number>(-1);
+
   const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<number | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [selectedSubTeamId, setSelectedSubTeamId] = useState<number | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
   const currentMatch = activeMatchIndex >= 0 ? searchMatches[activeMatchIndex] : null;
+
+  const { businessUnits, teams, subTeams, units } = useAppSelector((state) => state.organization);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    if (!open) return;
+
+    dispatch(fetchBusinessUnits());
+    dispatch(fetchTeams({}));
+    dispatch(fetchSubTeams({}));
+    dispatch(fetchUnits({}));
+  }, [dispatch, open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    console.log("Fetched org items in AddModal", {
+      businessUnits,
+      teams,
+      subTeams,
+      units,
+    });
+  }, [open, businessUnits, teams, subTeams, units]);
 
   // Global search UI is temporarily disabled; keep this derived flag nearby
   // so re-enabling the <GlobalSearch /> block only requires uncommenting both sections.
@@ -103,8 +136,6 @@ export default function SplitView() {
   //   Boolean(teamSearchTerm?.trim()) ||
   //   Boolean(subTeamSearchTerm?.trim()) ||
   //   Boolean(unitSearchTerm?.trim());
-
-  const theme = useTheme();
 
   const clearGlobalSearchState = () => {
     setSearchMatches([]);
@@ -199,7 +230,7 @@ export default function SplitView() {
   const onAdd = (
     data: AddOption[] | null,
     nodeType: NodeType,
-    selectedNode: BusinessUnitState | TeamState | SubTeamState | UnitState | null,
+    selectedNode: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState | null,
   ) => {
     if (!data) return;
 
@@ -279,26 +310,26 @@ export default function SplitView() {
 
   // Add handlers
   const handleBusinessUnitAdd = () => {
-    onAdd([], NodeType.BusinessUnit, null);
+    onAdd([], NodeType.BusinessUnit, orgItems.company);
   };
 
   const handleTeamAdd = () => {
     if (!selectedBusinessUnit || !orgItems) return;
-    const data = buildAddModalOptions(NodeType.Team, selectedBusinessUnit, orgItems);
+    const data = buildAddModalOptions(NodeType.Team, selectedBusinessUnit, teams);
     if (!data) return;
     onAdd(data, NodeType.Team, selectedBusinessUnit);
   };
 
   const handleSubTeamAdd = () => {
     if (!selectedTeam || !orgItems) return;
-    const data = buildAddModalOptions(NodeType.SubTeam, selectedTeam, orgItems);
+    const data = buildAddModalOptions(NodeType.SubTeam, selectedTeam, subTeams);
     if (!data) return;
     onAdd(data, NodeType.SubTeam, selectedTeam);
   };
 
   const handleUnitAdd = () => {
     if (!selectedSubTeam || !orgItems) return;
-    const data = buildAddModalOptions(NodeType.Unit, selectedSubTeam, orgItems);
+    const data = buildAddModalOptions(NodeType.Unit, selectedSubTeam, units);
     if (!data) return;
     onAdd(data, NodeType.Unit, selectedSubTeam);
   };
@@ -318,442 +349,63 @@ export default function SplitView() {
       </Box> */}
 
       <Box sx={{ width: "100%", display: "flex", gap: 2 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            width: "100%",
-            border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-            borderRadius: 1,
-            backgroundColor: theme.palette.surface.secondary.active,
-          }}
-        >
-          <Box
-            sx={{
-              py: 1.5,
-              borderBottom: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: theme.palette.customText.primary.p2.active,
-                textAlign: "center",
-              }}
-            >
-              Business Unit
-            </Typography>
-          </Box>
+        <SplitViewColumn
+          title="Business Unit"
+          placeholder="Search business units"
+          nodeType={NodeType.BusinessUnit}
+          searchTerm={searchTerm ?? null}
+          selectedOrgItemId={selectedBusinessUnitId}
+          onAdd={handleBusinessUnitAdd}
+          onSearch={handleBusinessUnitSearchChange}
+          onEdit={onEdit}
+          onClick={handleBusinessUnitClick}
+          orgItems={filteredBusinessUnits}
+        />
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, width: "100%", p: 2 }}>
-            <Box
-              sx={{
-                width: "100%",
-                display: "flex",
-                gap: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <TextField
-                value={searchTerm}
-                onChange={(e) => handleBusinessUnitSearchChange(e.target.value)}
-                placeholder="Search business units"
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start" sx={{ margin: 0 }}>
-                        <SearchIcon size={18} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: searchTerm ? (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleBusinessUnitSearchChange("")}
-                          sx={{
-                            padding: 0,
-                            color: theme.palette.customText.primary.p3.active,
-                            "&:hover": {
-                              color: theme.palette.customText.primary.p2.active,
-                            },
-                          }}
-                        >
-                          <ClearIcon sx={{ fontSize: "16px" }} />
-                        </IconButton>
-                      </InputAdornment>
-                    ) : null,
-                  },
-                }}
-                sx={{
-                  width: "100%",
-                }}
-              />
+        <SplitViewColumn
+          title="Teams"
+          placeholder="Search teams"
+          nodeType={NodeType.Team}
+          searchTerm={teamSearchTerm ?? null}
+          selectedOrgItemId={selectedTeamId}
+          isSearchDisabled={!selectedBusinessUnitId}
+          isAddDisabled={!selectedBusinessUnitId}
+          onAdd={handleTeamAdd}
+          onSearch={handleTeamSearchChange}
+          onEdit={onEdit}
+          onClick={handleTeamClick}
+          orgItems={filteredTeams}
+        />
 
-              <Box
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-                  px: "6px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                }}
-                onClick={handleBusinessUnitAdd}
-              >
-                <AddIcon sx={{ color: theme.palette.customText.primary.p3.active }} />
-              </Box>
-            </Box>
+        <SplitViewColumn
+          title="Sub Teams"
+          placeholder="Search sub teams"
+          nodeType={NodeType.SubTeam}
+          searchTerm={subTeamSearchTerm ?? null}
+          selectedOrgItemId={selectedSubTeamId}
+          isSearchDisabled={!selectedTeamId}
+          isAddDisabled={!selectedTeamId}
+          onAdd={handleSubTeamAdd}
+          onSearch={handleSubTeamSearchChange}
+          onEdit={onEdit}
+          onClick={handleSubTeamClick}
+          orgItems={filteredSubTeams}
+        />
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-              {filteredBusinessUnits.map((bu) => (
-                <OrgStructureCard
-                  key={bu.id}
-                  name={bu.name}
-                  headCount={bu.headCount}
-                  hasChildren={Boolean(bu.head)}
-                  togglePeopleSectionVisibility={true}
-                  teamHead={bu.head}
-                  onEdit={() => onEdit(bu, NodeType.BusinessUnit)}
-                  onClick={() => handleBusinessUnitClick(bu)}
-                  isPeopleSectionVertical={true}
-                  isHighlighted={selectedBusinessUnitId === bu.id}
-                />
-              ))}
-            </Box>
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            width: "100%",
-            border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-            borderRadius: 1,
-            backgroundColor: theme.palette.surface.secondary.active,
-          }}
-        >
-          <Box
-            sx={{
-              py: 1.5,
-              borderBottom: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: theme.palette.customText.primary.p2.active,
-                textAlign: "center",
-              }}
-            >
-              Teams
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, width: "100%", p: 2 }}>
-            <Box
-              sx={{
-                width: "100%",
-                display: "flex",
-                gap: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <TextField
-                value={teamSearchTerm}
-                onChange={(e) => handleTeamSearchChange(e.target.value)}
-                placeholder="Search teams"
-                disabled={!selectedBusinessUnitId}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start" sx={{ margin: 0 }}>
-                        <SearchIcon size={18} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: teamSearchTerm ? (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleTeamSearchChange("")}
-                          sx={{
-                            padding: 0,
-                            color: theme.palette.customText.primary.p3.active,
-                            "&:hover": {
-                              color: theme.palette.customText.primary.p2.active,
-                            },
-                          }}
-                        >
-                          <ClearIcon sx={{ fontSize: "16px" }} />
-                        </IconButton>
-                      </InputAdornment>
-                    ) : null,
-                  },
-                }}
-                sx={{
-                  width: "100%",
-                }}
-              />
-              <Box
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-                  px: "6px",
-                  borderRadius: "6px",
-                  cursor: selectedBusinessUnitId ? "pointer" : "not-allowed",
-                  opacity: selectedBusinessUnitId ? 1 : 0.4,
-                  pointerEvents: selectedBusinessUnitId ? "auto" : "none",
-                }}
-                onClick={handleTeamAdd}
-              >
-                <AddIcon sx={{ color: theme.palette.customText.primary.p3.active }} />
-              </Box>
-            </Box>
-
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-              {filteredTeams.map((team) => (
-                <OrgStructureCard
-                  key={team.id}
-                  name={team.name}
-                  headCount={team.headCount}
-                  hasChildren={Boolean(team.head || team.functionalLead)}
-                  togglePeopleSectionVisibility={true}
-                  teamHead={team.head}
-                  functionLead={team.functionalLead}
-                  onEdit={() => onEdit(team, NodeType.Team)}
-                  onClick={() => handleTeamClick(team)}
-                  isPeopleSectionVertical={true}
-                  isHighlighted={selectedTeamId === team.id}
-                />
-              ))}
-            </Box>
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            width: "100%",
-            border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-            borderRadius: 1,
-            backgroundColor: theme.palette.surface.secondary.active,
-          }}
-        >
-          <Box
-            sx={{
-              py: 1.5,
-              borderBottom: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: theme.palette.customText.primary.p2.active,
-                textAlign: "center",
-              }}
-            >
-              Sub Teams
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, width: "100%", p: 2 }}>
-            <Box
-              sx={{
-                width: "100%",
-                display: "flex",
-                gap: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <TextField
-                value={subTeamSearchTerm}
-                onChange={(e) => handleSubTeamSearchChange(e.target.value)}
-                placeholder="Search sub teams"
-                disabled={!selectedTeamId}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start" sx={{ margin: 0 }}>
-                        <SearchIcon size={18} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: subTeamSearchTerm ? (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleSubTeamSearchChange("")}
-                          sx={{
-                            padding: 0,
-                            color: theme.palette.customText.primary.p3.active,
-                            "&:hover": {
-                              color: theme.palette.customText.primary.p2.active,
-                            },
-                          }}
-                        >
-                          <ClearIcon sx={{ fontSize: "16px" }} />
-                        </IconButton>
-                      </InputAdornment>
-                    ) : null,
-                  },
-                }}
-                sx={{
-                  width: "100%",
-                }}
-              />
-              <Box
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-                  px: "6px",
-                  borderRadius: "6px",
-                  cursor: selectedTeamId ? "pointer" : "not-allowed",
-                  opacity: selectedTeamId ? 1 : 0.4,
-                  pointerEvents: selectedTeamId ? "auto" : "none",
-                }}
-                onClick={handleSubTeamAdd}
-              >
-                <AddIcon sx={{ color: theme.palette.customText.primary.p3.active }} />
-              </Box>
-            </Box>
-
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-              {filteredSubTeams.map((subTeam) => (
-                <OrgStructureCard
-                  key={subTeam.id}
-                  name={subTeam.name}
-                  headCount={subTeam.headCount}
-                  hasChildren={Boolean(subTeam.head || subTeam.functionalLead)}
-                  togglePeopleSectionVisibility={true}
-                  teamHead={subTeam.head}
-                  functionLead={subTeam.functionalLead}
-                  onEdit={() => onEdit(subTeam, NodeType.SubTeam)}
-                  onClick={() => handleSubTeamClick(subTeam)}
-                  isPeopleSectionVertical={true}
-                  isHighlighted={selectedSubTeamId === subTeam.id}
-                />
-              ))}
-            </Box>
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            width: "100%",
-            border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-            borderRadius: 1,
-            backgroundColor: theme.palette.surface.secondary.active,
-          }}
-        >
-          <Box
-            sx={{
-              py: 1.5,
-              borderBottom: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: theme.palette.customText.primary.p2.active,
-                textAlign: "center",
-              }}
-            >
-              Units
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, width: "100%", p: 2 }}>
-            <Box
-              sx={{
-                width: "100%",
-                display: "flex",
-                gap: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <TextField
-                value={unitSearchTerm}
-                onChange={(e) => handleUnitSearchChange(e.target.value)}
-                placeholder="Search units"
-                disabled={!selectedSubTeamId}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start" sx={{ margin: 0 }}>
-                        <SearchIcon size={18} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: unitSearchTerm ? (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleUnitSearchChange("")}
-                          sx={{
-                            padding: 0,
-                            color: theme.palette.customText.primary.p3.active,
-                            "&:hover": {
-                              color: theme.palette.customText.primary.p2.active,
-                            },
-                          }}
-                        >
-                          <ClearIcon sx={{ fontSize: "16px" }} />
-                        </IconButton>
-                      </InputAdornment>
-                    ) : null,
-                  },
-                }}
-                sx={{
-                  width: "100%",
-                }}
-              />
-              <Box
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-                  px: "6px",
-                  borderRadius: "6px",
-                  cursor: selectedSubTeamId ? "pointer" : "not-allowed",
-                  opacity: selectedSubTeamId ? 1 : 0.4,
-                  pointerEvents: selectedSubTeamId ? "auto" : "none",
-                }}
-                onClick={handleUnitAdd}
-              >
-                <AddIcon sx={{ color: theme.palette.customText.primary.p3.active }} />
-              </Box>
-            </Box>
-
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-              {filteredUnits.map((unit) => (
-                <OrgStructureCard
-                  key={unit.id}
-                  name={unit.name}
-                  headCount={unit.headCount}
-                  hasChildren={Boolean(unit.head || unit.functionalLead)}
-                  togglePeopleSectionVisibility={true}
-                  teamHead={unit.head}
-                  functionLead={unit.functionalLead}
-                  onEdit={() => onEdit(unit, NodeType.Unit)}
-                  isPeopleSectionVertical={true}
-                  onClick={() => handleUnitClick(unit)}
-                  isHighlighted={selectedUnitId === unit.id}
-                />
-              ))}
-            </Box>
-          </Box>
-        </Box>
+        <SplitViewColumn
+          title="Units"
+          placeholder="Search units"
+          nodeType={NodeType.Unit}
+          searchTerm={unitSearchTerm ?? null}
+          selectedOrgItemId={selectedUnitId}
+          isSearchDisabled={!selectedSubTeamId}
+          isAddDisabled={!selectedSubTeamId}
+          onAdd={handleUnitAdd}
+          onSearch={handleUnitSearchChange}
+          onEdit={onEdit}
+          onClick={handleUnitClick}
+          orgItems={filteredUnits}
+        />
       </Box>
 
       {editModal.open && editModal.uniqueId && editModal.type && (
@@ -765,7 +417,7 @@ export default function SplitView() {
         />
       )}
 
-      {addModal.open && addModal.data && addModal.type && (
+      {addModal.open && addModal.data && addModal.type && addModal.selectedNode && (
         <AddModal
           open={addModal.open}
           orgInfo={addModal.data}
