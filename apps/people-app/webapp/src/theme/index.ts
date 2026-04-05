@@ -296,7 +296,7 @@ export const tokens = (mode: PaletteMode) => {
             },
             secondary: {
               p1: { active: colors.secondary["800"], hover: "#FFFFFF", disabled: "#FFFFFF" },
-              p2: { active: colors.secondary.main, hover: "#FFFFFF", disabled: "#FFFFFF" },
+              p2: { active: "#0099E5", hover: "#FFFFFF", disabled: "#FFFFFF" },
             },
             brand: {
               p1: { active: colors.primary["1100"], hover: "#FFFFFF", disabled: "#ff730096" },
