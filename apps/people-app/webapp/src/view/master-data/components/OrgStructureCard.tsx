@@ -84,9 +84,7 @@ const OrgStructureCard = ({
   const primaryPerson = isCompanyNode ? STATIC_COMPANY_LEADERS.chairman : teamHead;
   const secondaryPerson = isCompanyNode ? STATIC_COMPANY_LEADERS.ceo : functionLead;
 
-  const [isPeopleSectionVisible, setPeopleSectionVisibility] = useState<boolean>(
-    false
-  );
+  const [isPeopleSectionVisible, setPeopleSectionVisibility] = useState<boolean>(false);
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -118,7 +116,9 @@ const OrgStructureCard = ({
       sx={{
         p: 0.25,
         borderRadius: 1,
-        border: isHighlighted ? `1px solid ${theme.palette.customBorder.secondary.b1.active}` : "none"
+        border: isHighlighted
+          ? `1px solid ${theme.palette.customBorder.secondary.b1.active}`
+          : "none",
       }}
     >
       <Box
@@ -198,6 +198,7 @@ const OrgStructureCard = ({
                   name={primaryPerson.name}
                   title={primaryPerson.title}
                   avatar={primaryPerson.avatar}
+                  designation="Head"
                 />
               )}
 
@@ -207,6 +208,7 @@ const OrgStructureCard = ({
                   name={secondaryPerson.name}
                   title={secondaryPerson.title}
                   avatar={secondaryPerson.avatar}
+                  designation="Functional lead"
                 />
               )}
             </Box>
@@ -241,7 +243,7 @@ const OrgStructureCard = ({
           >
             {/* Type Badge */}
             {type && (
-              < Box
+              <Box
                 sx={{
                   backgroundColor: theme.palette.fill.primary.light.active,
                   padding: "4px 8px",
@@ -332,7 +334,7 @@ const OrgStructureCard = ({
             )}
           </Box>
         </Box>
-      </Box >
+      </Box>
     </Box>
   );
 };
