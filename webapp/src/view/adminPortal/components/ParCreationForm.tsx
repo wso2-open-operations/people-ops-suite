@@ -107,6 +107,17 @@ const validationSchema = yup.object().shape({
     .typeError("Invalid date")
     .min(yup.ref("parEmployeeDeadline"), "Must be later than employee PAR deadline date")
     .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR evaluation closing date")
+    .test(
+      "isAfterEmployeeDeadline",
+      "Must be later than employee PAR deadline",
+      (value, context) => {
+        const employeeDeadline = context.parent.parEmployeeDeadline;
+        if (value !== undefined && value !== null) {
+          return value > employeeDeadline;
+        }
+        return false;
+      },
+    )
     .required("Required"),
   parSpecialRatingDeadline: yup
     .date()
@@ -154,7 +165,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
       parCycleName: "",
       parCycleStartDate: "",
       parCycleEndDate: "",
-      parEvaluationStartDate: dayjs().format("YYYY-MM-DD"),
+      parEvaluationStartDate: dayjs(),
       parEvaluationEndDate: "",
       parEmployeeDeadline: "",
       parThreeSixtyRatingDeadline: "",
@@ -176,13 +187,39 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
     setSubmitting(true);
     closeConfirmationDialog();
 
+    const {
+      parCycleName,
+      parCycleStartDate,
+      parCycleEndDate,
+      parEvaluationStartDate,
+      parEvaluationEndDate,
+      parEmployeeDeadline,
+      parThreeSixtyRatingDeadline,
+      parLeadDeadline,
+      parSpecialRatingDeadline,
+      parF2FDeadline,
+      employeeParQuestion,
+      threeSixtyReviewQuestion,
+      parRatings,
+      threeSixtyReviewRatings,
+    } = values;
+
     const formattedValues = {
-      ...values,
+      parCycleName,
+      parCycleStartDate: dayjs(parCycleStartDate).format("YYYY-MM-DD"),
+      parCycleEndDate: dayjs(parCycleEndDate).format("YYYY-MM-DD"),
+      parEvaluationStartDate: dayjs(parEvaluationStartDate).format("YYYY-MM-DD"),
+      parEvaluationEndDate: dayjs(parEvaluationEndDate).format("YYYY-MM-DD"),
+      parEmployeeDeadline: dayjs(parEmployeeDeadline).format("YYYY-MM-DD"),
+      parThreeSixtyRatingDeadline: dayjs(parThreeSixtyRatingDeadline).format("YYYY-MM-DD"),
+      parLeadDeadline: dayjs(parLeadDeadline).format("YYYY-MM-DD"),
+      parSpecialRatingDeadline: dayjs(parSpecialRatingDeadline).format("YYYY-MM-DD"),
+      parF2FDeadline: dayjs(parF2FDeadline).format("YYYY-MM-DD"),
       parCycleConfigurations: {
-        employeeParQuestion: values.employeeParQuestion.trim(),
-        threeSixtyReviewQuestion: values.threeSixtyReviewQuestion.trim(),
-        parRatings: values.parRatings,
-        threeSixtyReviewRatings: values.threeSixtyReviewRatings,
+        employeeParQuestion: employeeParQuestion.trim(),
+        threeSixtyReviewQuestion: threeSixtyReviewQuestion.trim(),
+        parRatings,
+        threeSixtyReviewRatings,
       },
     };
 
@@ -190,6 +227,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
     if (createParCycle.fulfilled.match(resultAction)) {
       handleFormClose();
     }
+
     setSubmitting(false);
   };
 
@@ -247,7 +285,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               <DatePicker
                 disabled
                 value={dayjs(values.parEvaluationStartDate)}
-                onChange={() => {}}
+                onChange={() => { }}
                 slotProps={{ textField: { size: "small", fullWidth: true, disabled: true } }}
               />
             </FormRow>
@@ -437,6 +475,8 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
         message={uiMessages.dialog.createParCycle.message}
         okText={uiMessages.dialog.createParCycle.okText}
         onConfirm={handleConfirmationProceed}
+        ariaLabelledby="alert-par-creation-dialog-title"
+        ariaDescribedby="alert-par-creation-dialog-description"
       />
     </Box>
   );
