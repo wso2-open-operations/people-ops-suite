@@ -33,12 +33,40 @@ import type {
 } from "@slices/organizationSlice/organizationStructure";
 
 import { DATE_FMT } from "../config/constant";
-import { ServiceLength } from "../types/types";
+import { RouteObjectWithRole, ServiceLength } from "../types/types";
 import { AddOption } from "../view/master-data/panel/split-view/SplitView";
 import { NodeType } from "./types";
 
 export function isIncludedRole(roles: string[], allowedRoles: string[]) {
   return roles.some((role) => allowedRoles.includes(role));
+}
+
+/**
+ * Checks whether a route is active for the given user roles.
+ *
+ * A route is active when at least one role matches `allowRoles`
+ * and none of the roles match `excludeRoles`.
+ */
+export function isRouteActive(routeObj: RouteObjectWithRole, roles: string[]): boolean {
+  return (
+    isIncludedRole(roles, routeObj.allowRoles) &&
+    !(routeObj.excludeRoles && isIncludedRole(roles, routeObj.excludeRoles))
+  );
+}
+
+/**
+ * Joins a parent and child route path into a normalized absolute path.
+ *
+ * If `childPath` is already absolute, it is returned as-is.
+ */
+export function joinRoutePaths(parentPath: string, childPath: string): string {
+  if (!childPath) return parentPath;
+  if (childPath.startsWith("/")) return childPath;
+
+  const normalizedParent = parentPath.endsWith("/") ? parentPath.slice(0, -1) : parentPath;
+  const normalizedChild = childPath.startsWith("/") ? childPath.slice(1) : childPath;
+
+  return `${normalizedParent}/${normalizedChild}`;
 }
 
 const parseStrictYyyyMmDd = (s: string): Date | null => {
