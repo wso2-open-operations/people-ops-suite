@@ -39,6 +39,7 @@ import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVi
 import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@root/src/services/employee";
 import {
   BusinessUnitState,
+  CompanyState,
   SubTeamState,
   TeamState,
   UnitState,
@@ -54,6 +55,12 @@ import {
   useAddTeamsMutation,
   useAddUnitsMutation,
 } from "@services/organization";
+import {
+  BusinessUnit as RawBusinessUnit,
+  SubTeam as RawSubTeam,
+  Team as RawTeam,
+  Unit as RawUnit,
+} from "@slices/organizationSlice/organization";
 
 import EmployeeOption from "./EmployeeOption";
 import { SectionHeader } from "./edit-modal/SectionHeader";
@@ -64,14 +71,21 @@ type OrgOption =
   | (Partial<SubTeamState> & { inputValue?: string; canAdd?: boolean })
   | (Partial<UnitState> & { inputValue?: string; canAdd?: boolean });
 
+type OrgOptionTest =
+  | (RawBusinessUnit & { inputValue?: string; canAdd?: boolean })
+  | (RawTeam & { inputValue?: string; canAdd?: boolean })
+  | (RawSubTeam & { inputValue?: string; canAdd?: boolean })
+  | (RawUnit & { inputValue?: string; canAdd?: boolean });
+
 const filter = createFilterOptions<OrgOption>();
 
+type ParentNode = BusinessUnitState | TeamState | SubTeamState | UnitState;
 interface AddPageProps {
   open: boolean;
-  orgInfo: OrgOption[];
+  orgInfo: OrgOptionTest[];
   nodeType: NodeType;
   onClose: () => void;
-  selectedNode: BusinessUnitState | TeamState | SubTeamState | UnitState | null;
+  selectedNode: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState;
 }
 
 interface AddOrgItemFormValues {
@@ -124,13 +138,17 @@ export default function AddPage(props: AddPageProps) {
 
   const selectedOrgNode = watch("orgNode");
 
+  const isParentNode = (
+    node: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState,
+  ): node is ParentNode => node.type !== NodeType.Company;
+
   const createNewMapping = async (
     data: AddOrgItemFormValues,
     parent: BusinessUnitState | TeamState | SubTeamState | UnitState,
   ) => {
     const { orgNode, functionalLead } = data;
 
-    if (!orgNode?.id || !functionalLead?.workEmail) {
+    if (!parent || !orgNode?.id || !functionalLead?.workEmail) {
       throw new Error("Missing org node or functional lead for mapping");
     }
 
@@ -138,7 +156,7 @@ export default function AddPage(props: AddPageProps) {
       case NodeType.Team: {
         await addBusinessUnitTeam({
           payload: {
-            businessUnitId: parent.id,
+            businessUnitId: (parent as BusinessUnitState).id,
             teamId: orgNode.id,
             functionalLeadEmail: functionalLead.workEmail,
           },
@@ -172,7 +190,7 @@ export default function AddPage(props: AddPageProps) {
 
   const createNewOrgItem = async (
     data: AddOrgItemFormValues,
-    parent: BusinessUnitState | TeamState | SubTeamState | UnitState | null,
+    parent: BusinessUnitState | TeamState | SubTeamState | UnitState,
   ) => {
     const { orgNode, orgNodeHead, functionalLead } = data;
 
@@ -196,12 +214,11 @@ export default function AddPage(props: AddPageProps) {
       case NodeType.Team: {
         if (!parent) throw new Error("Parent business unit is required");
         await addTeams({
-          buId: String(parent.id),
           payload: {
             name: orgNode.name,
             headEmail: orgNodeHead.workEmail,
             businessUnit: {
-              businessUnitId: parent.id,
+              businessUnitId: (parent as BusinessUnitState).id,
               functionalLeadEmail: functionalLead!.workEmail,
             },
           },
@@ -212,7 +229,6 @@ export default function AddPage(props: AddPageProps) {
       case NodeType.SubTeam: {
         if (!parent) throw new Error("Parent team is required");
         await addSubTeams({
-          teamId: String(parent.id),
           payload: {
             name: orgNode.name,
             headEmail: orgNodeHead.workEmail,
@@ -228,7 +244,6 @@ export default function AddPage(props: AddPageProps) {
       case NodeType.Unit: {
         if (!parent) throw new Error("Parent sub-team is required");
         await addUnits({
-          subTeamId: String(parent.id),
           payload: {
             name: orgNode.name,
             headEmail: orgNodeHead.workEmail,
@@ -253,12 +268,15 @@ export default function AddPage(props: AddPageProps) {
     setIsNewItem(false);
   }, [showSpinner, reset]);
 
-  if (nodeType !== NodeType.BusinessUnit && !selectedNode) {
+  if (!selectedNode) {
     return <ErrorHandler message="Parent node is required" />;
   }
 
   const onSubmit = async (data: AddOrgItemFormValues) => {
-    const parent = nodeType === NodeType.BusinessUnit ? null : selectedNode;
+    if (!isParentNode(selectedNode)) return;
+
+    const parent = selectedNode;
+
     if (nodeType !== NodeType.BusinessUnit && !parent) {
       return;
     }
@@ -267,7 +285,8 @@ export default function AddPage(props: AddPageProps) {
       if (isNewItem) {
         await createNewOrgItem(data, parent);
       } else {
-        await createNewMapping(data, parent!);
+        if (parent.type === NodeType.Company) return;
+        await createNewMapping(data, parent);
       }
     } catch (e) {
       console.error("Add org item failed", e);
@@ -278,6 +297,8 @@ export default function AddPage(props: AddPageProps) {
     reset();
     onClose();
   };
+
+  const title = `New ${convertDataTypeToLabel(nodeType)} for ${selectedNode.name} ${convertDataTypeToLabel(selectedNode.type)}`;
 
   return (
     <Dialog
@@ -325,17 +346,17 @@ export default function AddPage(props: AddPageProps) {
             fontWeight: 600,
           }}
         >
-          Add {convertDataTypeToLabel(nodeType)}
+          Create a new {convertDataTypeToLabel(nodeType)}
         </Typography>
 
         <IconButton
           onClick={onClose}
           sx={{
-            color: theme.palette.customText.primary.p2.active,
+            color: theme.palette.customText.secondary.p1.active,
             p: 0,
           }}
         >
-          <CloseIcon />
+          <CloseIcon sx={{ fontSize: "20px" }} />
         </IconButton>
       </DialogTitle>
 
@@ -351,7 +372,7 @@ export default function AddPage(props: AddPageProps) {
           padding: "16px !important",
         }}
       >
-        <SectionHeader title={`${convertDataTypeToLabel(nodeType)} Information`} />
+        <SectionHeader title={title} />
 
         <Box
           sx={{
@@ -362,178 +383,205 @@ export default function AddPage(props: AddPageProps) {
           component="form"
           onSubmit={handleSubmit(onSubmit)}
         >
-          <Controller
-            name="orgNode"
-            control={control}
-            rules={{ required: "Org node is required " }}
-            render={({ field }) => (
-              <Autocomplete<OrgOption>
-                {...field}
-                value={field.value}
-                options={orgInfo as OrgOption[]}
-                loading={isLoading}
-                disabled={showSpinner}
-                getOptionDisabled={(option) => option.canAdd === false}
-                getOptionLabel={(option) => option.name ?? ""}
-                filterOptions={(options, params) => {
-                  const filtered = filter(options as OrgOption[], params);
-                  const { inputValue } = params;
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: theme.palette.customText.primary.p3.active, fontWeight: 500 }}
+            >
+              {convertDataTypeToLabel(nodeType)}
+            </Typography>
 
-                  // Check if the input matches any existing option
-                  const isExisting = options.some(
-                    (option) => inputValue.toLowerCase() === (option.name ?? "").toLowerCase(),
-                  );
+            <Controller
+              name="orgNode"
+              control={control}
+              rules={{ required: `${convertDataTypeToLabel(nodeType)} is required` }}
+              render={({ field }) => (
+                <Autocomplete<OrgOption>
+                  {...field}
+                  value={field.value}
+                  options={orgInfo as OrgOption[]}
+                  loading={isLoading}
+                  disabled={showSpinner}
+                  getOptionDisabled={(option) => option.canAdd === false}
+                  getOptionLabel={(option) => option.name ?? ""}
+                  filterOptions={(options, params) => {
+                    const filtered = filter(options as OrgOption[], params);
+                    const { inputValue } = params;
 
-                  setIsNewItem(inputValue !== "" && !isExisting);
+                    // Check if the input matches any existing option
+                    const isExisting = options.some(
+                      (option) => inputValue.toLowerCase() === (option.name ?? "").toLowerCase(),
+                    );
 
-                  if (inputValue !== "" && !isExisting) {
-                    filtered.push({
-                      name: inputValue,
-                      inputValue,
-                    });
-                  }
+                    setIsNewItem(inputValue !== "" && !isExisting);
 
-                  return filtered;
-                }}
-                onChange={(_, data) => {
-                  if (data && "inputValue" in data && data.inputValue) {
-                    field.onChange(data as OrgOption);
-                  } else if (data && data.name) {
-                    field.onChange(data as OrgOption);
-                  } else {
-                    field.onChange(data as OrgOption);
-                  }
-                }}
-                renderOption={(props, option) => {
-                  const isCreate = option.inputValue !== undefined;
-                  return (
-                    <li {...props}>
-                      <Typography
-                        sx={{
-                          color: isCreate
-                            ? theme.palette.customText.secondary.p2.active
-                            : theme.palette.customText.primary.p2.active,
+                    if (inputValue !== "" && !isExisting) {
+                      filtered.push({
+                        name: inputValue,
+                        inputValue,
+                      });
+                    }
+
+                    return filtered;
+                  }}
+                  onChange={(_, data) => {
+                    if (data && "inputValue" in data && data.inputValue) {
+                      field.onChange(data as OrgOption);
+                    } else if (data && data.name) {
+                      field.onChange(data as OrgOption);
+                    } else {
+                      field.onChange(data as OrgOption);
+                    }
+                  }}
+                  renderOption={(props, option) => {
+                    const isCreate = option.inputValue !== undefined;
+                    return (
+                      <li {...props}>
+                        <Typography
+                          sx={{
+                            color: isCreate
+                              ? theme.palette.customText.secondary.p2.active
+                              : theme.palette.customText.primary.p2.active,
+                          }}
+                        >
+                          {isCreate ? `Add "${option.inputValue}"` : option.name}
+                        </Typography>
+                      </li>
+                    );
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder={`Select or create a ${convertDataTypeToLabel(nodeType).toLowerCase()}`}
+                      error={!!errors.orgNode}
+                      helperText={errors.orgNode?.message}
+                      slotProps={{
+                        input: {
+                          ...params.InputProps,
+                          sx: { padding: "4px !important" },
+                          endAdornment: (
+                            <>
+                              {isLoading && <CircularProgress size={14} />}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        },
+                      }}
+                    />
+                  )}
+                />
+              )}
+            />
+          </Box>
+
+          {(nodeType === NodeType.BusinessUnit || (selectedOrgNode && isNewItem)) && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: theme.palette.customText.primary.p3.active, fontWeight: 500 }}
+              >
+                {convertDataTypeToLabel(nodeType)} Head
+              </Typography>
+
+              <Controller
+                name="orgNodeHead"
+                control={control}
+                rules={{ required: "Head is required" }}
+                render={({ field }) => (
+                  <Autocomplete
+                    {...field}
+                    value={field.value}
+                    onChange={(_, data) => field.onChange(data)}
+                    options={employees}
+                    loading={isLoading}
+                    disabled={showSpinner}
+                    getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                    renderOption={(props, employee) => (
+                      <EmployeeOption
+                        key={employee.employeeId}
+                        listItemProps={props}
+                        employee={employee}
+                      />
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder={`Select a ${convertDataTypeToLabel(nodeType).toLowerCase()} head`}
+                        error={!!errors.orgNodeHead}
+                        helperText={errors.orgNodeHead?.message}
+                        slotProps={{
+                          input: {
+                            ...params.InputProps,
+                            sx: { padding: "4px !important" },
+                            endAdornment: (
+                              <>
+                                {isLoading && <CircularProgress size={14} />}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          },
                         }}
-                      >
-                        {isCreate ? `Add "${option.inputValue}"` : option.name}
-                      </Typography>
-                    </li>
-                  );
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    placeholder="Select or create an org node"
-                    error={!!errors.orgNode}
-                    helperText={errors.orgNode?.message}
-                    slotProps={{
-                      input: {
-                        ...params.InputProps,
-                        sx: { padding: "4px !important" },
-                        endAdornment: (
-                          <>
-                            {isLoading && <CircularProgress size={14} />}
-                            {params.InputProps.endAdornment}
-                          </>
-                        ),
-                      },
-                    }}
+                      />
+                    )}
                   />
                 )}
               />
-            )}
-          />
-
-          {(nodeType === NodeType.BusinessUnit || (selectedOrgNode && isNewItem)) && (
-            <Controller
-              name="orgNodeHead"
-              control={control}
-              rules={{ required: "Org node head is required" }}
-              render={({ field }) => (
-                <Autocomplete
-                  {...field}
-                  value={field.value}
-                  onChange={(_, data) => field.onChange(data)}
-                  options={employees}
-                  loading={isLoading}
-                  disabled={showSpinner}
-                  getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                  renderOption={(props, employee) => (
-                    <EmployeeOption
-                      key={employee.employeeId}
-                      listItemProps={props}
-                      employee={employee}
-                    />
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Select a head"
-                      error={!!errors.orgNodeHead}
-                      helperText={errors.orgNodeHead?.message}
-                      slotProps={{
-                        input: {
-                          ...params.InputProps,
-                          sx: { padding: "4px !important" },
-                          endAdornment: (
-                            <>
-                              {isLoading && <CircularProgress size={14} />}
-                              {params.InputProps.endAdornment}
-                            </>
-                          ),
-                        },
-                      }}
-                    />
-                  )}
-                />
-              )}
-            />
+            </Box>
           )}
 
           {nodeType !== NodeType.BusinessUnit && (
-            <Controller
-              name="functionalLead"
-              control={control}
-              rules={{ required: "Functional lead is required " }}
-              render={({ field }) => (
-                <Autocomplete
-                  {...field}
-                  value={field.value}
-                  onChange={(_, data) => field.onChange(data)}
-                  options={employees}
-                  loading={isLoading}
-                  disabled={showSpinner}
-                  getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                  renderOption={(props, employee) => (
-                    <EmployeeOption
-                      key={employee.employeeId}
-                      listItemProps={props}
-                      employee={employee}
-                    />
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Select a functional lead"
-                      error={!!errors.functionalLead}
-                      helperText={errors.functionalLead?.message}
-                      slotProps={{
-                        input: {
-                          ...params.InputProps,
-                          sx: { padding: "4px !important" },
-                          endAdornment: (
-                            <>
-                              {isLoading && <CircularProgress size={14} />}
-                              {params.InputProps.endAdornment}
-                            </>
-                          ),
-                        },
-                      }}
-                    />
-                  )}
-                />
-              )}
-            />
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: theme.palette.customText.primary.p3.active, fontWeight: 500 }}
+              >
+                {convertDataTypeToLabel(nodeType)} functional lead
+              </Typography>
+
+              <Controller
+                name="functionalLead"
+                control={control}
+                rules={{ required: "Functional lead is required " }}
+                render={({ field }) => (
+                  <Autocomplete
+                    {...field}
+                    value={field.value}
+                    onChange={(_, data) => field.onChange(data)}
+                    options={employees}
+                    loading={isLoading}
+                    disabled={showSpinner}
+                    getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                    renderOption={(props, employee) => (
+                      <EmployeeOption
+                        key={employee.employeeId}
+                        listItemProps={props}
+                        employee={employee}
+                      />
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Select a functional lead"
+                        error={!!errors.functionalLead}
+                        helperText={errors.functionalLead?.message}
+                        slotProps={{
+                          input: {
+                            ...params.InputProps,
+                            sx: { padding: "4px !important" },
+                            endAdornment: (
+                              <>
+                                {isLoading && <CircularProgress size={14} />}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          },
+                        }}
+                      />
+                    )}
+                  />
+                )}
+              />
+            </Box>
           )}
 
           {/* Action buttons */}
@@ -552,7 +600,7 @@ export default function AddPage(props: AddPageProps) {
                 ) : undefined
               }
             >
-              Add Team
+              Add {convertDataTypeToLabel(nodeType)}
             </Button>
           </Box>
         </Box>
