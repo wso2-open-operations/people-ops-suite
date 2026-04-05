@@ -247,7 +247,7 @@ export const organizationApi = createApi({
       },
     }),
 
-    addTeams: builder.mutation<ApiMessageOnSuccess, { buId: string; payload: CreateTeamPayload }>({
+    addTeams: builder.mutation<ApiMessageOnSuccess, { payload: CreateTeamPayload }>({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
         const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/teams`,
@@ -281,10 +281,7 @@ export const organizationApi = createApi({
       },
     }),
 
-    addSubTeams: builder.mutation<
-      ApiMessageOnSuccess,
-      { teamId: string; payload: CreateSubTeamPayload }
-    >({
+    addSubTeams: builder.mutation<ApiMessageOnSuccess, { payload: CreateSubTeamPayload }>({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
         const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/sub-teams`,
@@ -318,10 +315,7 @@ export const organizationApi = createApi({
       },
     }),
 
-    addUnits: builder.mutation<
-      ApiMessageOnSuccess,
-      { subTeamId: string; payload: CreateUnitPayload }
-    >({
+    addUnits: builder.mutation<ApiMessageOnSuccess, { payload: CreateUnitPayload }>({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
         const result = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/units`,
