@@ -187,6 +187,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
               }
               onSwapHead={handleHeadSwap}
               onSwapFunctionalLead={handleLeadSwap}
+              nodeType={nodeType}
               isUpdating={isUpdating}
             />
           </Box>
