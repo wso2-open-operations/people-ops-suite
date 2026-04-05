@@ -38,8 +38,6 @@ export interface Unit {
   id: number;
   businessUnitTeamSubTeamUnitId: number;
   businessUnitTeamSubTeamId: number;
-  businessUnitTeamId: number;
-  businessUnitId: number;
   name: string;
   headCount: number;
   head?: Head;
@@ -50,7 +48,6 @@ export interface SubTeam {
   id: number;
   businessUnitTeamSubTeamId: number;
   businessUnitTeamId: number;
-  businessUnitId: number;
   name: string;
   headCount: number;
   head?: Head;
