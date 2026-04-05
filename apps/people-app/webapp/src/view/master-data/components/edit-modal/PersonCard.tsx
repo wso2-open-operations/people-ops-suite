@@ -17,17 +17,20 @@ import { Avatar, Box, Tooltip, Typography, useTheme } from "@mui/material";
 
 import { memo } from "react";
 
+import { truncateName } from "@root/src/utils/utils";
+
 interface PersonCardProps {
   name: string;
   title: string;
   avatar?: string;
+  designation: string;
 }
 
 /**
  * Reusable component for displaying person information (Team Head or Function Lead)
  * Shows avatar, name, and title in a compact card format
  */
-const PersonCard = memo<PersonCardProps>(({ name, title, avatar }) => {
+const PersonCard = memo<PersonCardProps>(({ name, title, avatar, designation }) => {
   const theme = useTheme();
 
   return (
@@ -78,7 +81,7 @@ const PersonCard = memo<PersonCardProps>(({ name, title, avatar }) => {
           </Typography>
         </Tooltip>
 
-        <Tooltip title={title} placement="top">
+        <Tooltip title={`${designation} of ${title}`} placement="top">
           <Typography
             sx={{
               fontSize: "12px",
@@ -90,7 +93,7 @@ const PersonCard = memo<PersonCardProps>(({ name, title, avatar }) => {
               whiteSpace: "nowrap",
             }}
           >
-            {title}
+            {designation} of {truncateName(title, 30)}
           </Typography>
         </Tooltip>
       </Box>

@@ -33,16 +33,12 @@ import ConfirmationDialog from "@root/src/component/common/ConfirmationDialog";
 import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import { Head } from "@root/src/services/organization";
+import { NodeType } from "@root/src/utils/types";
+import { convertDataTypeToLabel, truncateName } from "@root/src/utils/utils";
 import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@services/employee";
 
-// Helper function to truncate name if too long
-export const truncateName = (text: string, maxLength: number) => {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + "...";
-};
-
 const NAME_TRUNCATE_LENGTH = 16;
-const DESIGNATION_TRUNCATE_LENGTH = 20;
+const DESIGNATION_TRUNCATE_LENGTH = 30;
 
 type LeadPanelType = "head" | "functionalLead";
 
@@ -292,7 +288,7 @@ const SwappableLead: React.FC<SwappableLeadProps> = ({
   <Box
     sx={{
       width: "fit-content",
-      minWidth: "250px",
+      minWidth: "300px",
       display: "flex",
       flexDirection: "column",
       gap: 1.5,
@@ -307,6 +303,7 @@ export interface SwapLeadsProps {
   head: Head;
   functionalLead?: Head;
   isUpdating: boolean;
+  nodeType: NodeType;
   onSwapHead: (employee: EmployeeBasicInfo, reason: string) => Promise<void>;
   onSwapFunctionalLead: (employee: EmployeeBasicInfo, reason: string) => Promise<void>;
 }
@@ -317,6 +314,7 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
   onSwapHead,
   onSwapFunctionalLead,
   isUpdating,
+  nodeType,
 }) => {
   const [activePanel, setActivePanel] = useState<LeadPanelType | null>(null);
   const [pendingSwap, setPendingSwap] = useState<PendingSwap | null>(null);
@@ -372,7 +370,7 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
       <Box sx={{ display: "flex", flexDirection: "column", width: "100%", px: 0.5, gap: 2 }}>
         {head && (
           <SwappableLead
-            label="Business Unit Head"
+            label={`${convertDataTypeToLabel(nodeType)} Head`}
             lead={head}
             isExpanded={activePanel === "head"}
             onToggle={() => togglePanel("head")}
@@ -382,7 +380,7 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
 
         {functionalLead && (
           <SwappableLead
-            label="Functional Lead"
+            label={`${convertDataTypeToLabel(nodeType)} Functional Lead`}
             lead={functionalLead}
             isExpanded={activePanel === "functionalLead"}
             onToggle={() => togglePanel("functionalLead")}
