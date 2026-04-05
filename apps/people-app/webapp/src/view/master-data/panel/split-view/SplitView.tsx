@@ -118,17 +118,6 @@ export default function SplitView() {
     dispatch(fetchUnits({}));
   }, [dispatch, open]);
 
-  useEffect(() => {
-    if (!open) return;
-
-    console.log("Fetched org items in AddModal", {
-      businessUnits,
-      teams,
-      subTeams,
-      units,
-    });
-  }, [open, businessUnits, teams, subTeams, units]);
-
   // Global search UI is temporarily disabled; keep this derived flag nearby
   // so re-enabling the <GlobalSearch /> block only requires uncommenting both sections.
   // const isGlobalSearchDisabled =
@@ -177,7 +166,7 @@ export default function SplitView() {
     setSelectedUnitId(currentMatch.unitId as number | null);
   }, [currentMatch]);
 
-  if (showOrgSkeleton || orgItemState.state === State.Idle) {
+  if (showOrgSkeleton || orgItemState.state === State.Idle || orgItemState.state === State.Loading) {
     return <SplitViewSkeleton />;
   }
 
