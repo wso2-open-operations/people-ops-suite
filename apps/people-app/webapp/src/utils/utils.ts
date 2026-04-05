@@ -16,9 +16,16 @@
 import { differenceInMonths, differenceInYears, isAfter, isMatch, isValid, parse } from "date-fns";
 
 import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
+import {
+  BusinessUnit as RawBusinessUnit,
+  SubTeam as RawSubTeam,
+  Team as RawTeam,
+  Unit as RawUnit,
+} from "@slices/organizationSlice/organization";
 import type {
   BusinessUnitState,
   CompanyState,
+  OrgStructureState,
   OrganizationInfo,
   SubTeamState,
   TeamState,
@@ -280,94 +287,47 @@ export const convertDataTypeToLabel = (dataType: NodeType) => {
   }
 };
 
+// Helper function to truncate name if too long
+export const truncateName = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + " ...";
+};
+
+/**
+ * Build add modal options by marking which items can be added.
+ * Items that already exist as children are marked with canAdd: false.
+ *
+ * @param type - The node type being added
+ * @param selectedNode - The parent node
+ * @param orgItems - Available items to choose from
+ * @returns Items with canAdd flag indicating if they can be added
+ */
 export function buildAddModalOptions(
   type: NodeType,
-  selectedNode: BusinessUnitState | TeamState | SubTeamState | UnitState | null,
-  orgItems: OrganizationInfo,
-): AddOption[] | null {
+  selectedNode: OrgStructureState,
+  orgItems: RawBusinessUnit[] | RawTeam[] | RawSubTeam[] | RawUnit[],
+): AddOption[] {
+  let existingIds: number[] = [];
+
   switch (type) {
+    case NodeType.Team:
+      existingIds = (selectedNode as BusinessUnitState).teams?.map((t) => t.id) ?? [];
+      break;
+    case NodeType.SubTeam:
+      existingIds = (selectedNode as TeamState).subTeams?.map((st) => st.id) ?? [];
+      break;
+    case NodeType.Unit:
+      existingIds = (selectedNode as SubTeamState).units?.map((u) => u.id) ?? [];
+      break;
     case NodeType.BusinessUnit:
-      return orgItems.businessUnits as AddOption[];
-    case NodeType.Team: {
-      if (!selectedNode) return null;
-      const selectedBusinessUnit = selectedNode as BusinessUnitState;
-      const isOnSelectedBusinessUnit = (t: TeamState) =>
-        t.businessUnitId === selectedBusinessUnit.id;
-
-      const teamsOnSelectedBusinessUnit = orgItems.teams.filter(isOnSelectedBusinessUnit);
-
-      const idsAlreadyOnSelectedBusinessUnit = new Set(
-        teamsOnSelectedBusinessUnit.map((t) => t.id),
-      );
-
-      const firstOffBusinessUnitRowById = new Map<number, TeamState>();
-      for (const t of orgItems.teams) {
-        if (isOnSelectedBusinessUnit(t)) continue;
-        if (!firstOffBusinessUnitRowById.has(t.id)) firstOffBusinessUnitRowById.set(t.id, t);
-      }
-
-      const linkableOffBusinessUnit = [...firstOffBusinessUnitRowById.values()].filter(
-        (t) => !idsAlreadyOnSelectedBusinessUnit.has(t.id),
-      );
-
-      return [...teamsOnSelectedBusinessUnit, ...linkableOffBusinessUnit].map((t) => ({
-        ...t,
-        canAdd: !isOnSelectedBusinessUnit(t),
-      }));
-    }
-    case NodeType.SubTeam: {
-      if (!selectedNode) return null;
-      const selectedTeam = selectedNode as TeamState;
-      const isOnSelectedTeam = (s: SubTeamState) =>
-        s.businessUnitId === selectedTeam.businessUnitId &&
-        s.businessUnitTeamId === selectedTeam.businessUnitTeamId;
-
-      const subTeamsOnSelectedTeam = orgItems.subTeams.filter(isOnSelectedTeam);
-
-      const idsAlreadyOnSelectedTeam = new Set(subTeamsOnSelectedTeam.map((s) => s.id));
-      const firstOffTeamRowById = new Map<number, SubTeamState>();
-      for (const s of orgItems.subTeams) {
-        if (isOnSelectedTeam(s)) continue;
-        if (!firstOffTeamRowById.has(s.id)) firstOffTeamRowById.set(s.id, s);
-      }
-
-      const linkableOffTeam = [...firstOffTeamRowById.values()].filter(
-        (s) => !idsAlreadyOnSelectedTeam.has(s.id),
-      );
-
-      return [...subTeamsOnSelectedTeam, ...linkableOffTeam].map((s) => ({
-        ...s,
-        canAdd: !isOnSelectedTeam(s),
-      }));
-    }
-    case NodeType.Unit: {
-      if (!selectedNode) return null;
-      const selectedSubTeam = selectedNode as SubTeamState;
-      const isOnSelectedSubTeam = (u: UnitState) =>
-        u.businessUnitId === selectedSubTeam.businessUnitId &&
-        u.businessUnitTeamId === selectedSubTeam.businessUnitTeamId &&
-        u.businessUnitTeamSubTeamId === selectedSubTeam.businessUnitTeamSubTeamId;
-
-      const unitsOnSelectedSubTeam = orgItems.units.filter(isOnSelectedSubTeam);
-
-      const idsAlreadyOnSelectedSubTeam = new Set(unitsOnSelectedSubTeam.map((u) => u.id));
-
-      const firstOffSubTeamRowById = new Map<number, UnitState>();
-      for (const u of orgItems.units) {
-        if (isOnSelectedSubTeam(u)) continue;
-        if (!firstOffSubTeamRowById.has(u.id)) firstOffSubTeamRowById.set(u.id, u);
-      }
-
-      const linkableOffSubTeam = [...firstOffSubTeamRowById.values()].filter(
-        (u) => !idsAlreadyOnSelectedSubTeam.has(u.id),
-      );
-
-      return [...unitsOnSelectedSubTeam, ...linkableOffSubTeam].map((u) => ({
-        ...u,
-        canAdd: !isOnSelectedSubTeam(u),
-      }));
-    }
     default:
-      return null;
+      existingIds = [];
+      break;
   }
+
+  // Mark items that already exist as canAdd: false
+  return orgItems.map((item) => ({
+    ...item,
+    canAdd: !existingIds.includes(item.id),
+  }));
 }
