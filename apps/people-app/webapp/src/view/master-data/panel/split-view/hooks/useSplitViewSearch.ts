@@ -16,7 +16,7 @@
 import { useState } from "react";
 
 import { MatchSearch } from "../utils/globalSearch";
-
+  
 export function useSplitViewSearch() {
   const [searchMatches, setSearchMatches] = useState<MatchSearch[]>([]);
   const [activeMatchIndex, setActiveMatchIndex] = useState<number>(-1);
