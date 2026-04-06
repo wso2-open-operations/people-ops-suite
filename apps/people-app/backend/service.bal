@@ -103,6 +103,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             privileges.push(authorization:ADMIN_PRIVILEGE);
         }
+        if authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups) {
+            privileges.push(authorization:SERVICE_DESK_PRIVILEGE);
+        }
         boolean|error isLeadUser = database:isLead(userInfo.email);
         if isLeadUser is error {
             string customErr = "Error occurred while checking lead status";
@@ -303,8 +306,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions(
-                [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasQrExportAccess
+                = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+                || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
 
         database:Employee|error? employee = database:getEmployeeInfo(employeeId);
         if employee is error {
@@ -316,7 +320,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:NotFound>{body: {message: string `Employee not found: ${employeeId}`}};
         }
 
-        if !hasAdminAccess {
+        if !hasQrExportAccess {
             boolean isSelf = employee.workEmail == userInfo.email;
             if !isSelf {
                 boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
@@ -421,9 +425,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         boolean hasAdminAccess
             = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
 
-        if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
-            string customErr = "Invalid sort field: " + payload.sort.sortField;
-            log:printWarn(customErr, sortField = payload.sort.sortField);
+        string sortField = payload.sort.sortField;
+        if !database:EmployeeSortField.hasKey(sortField) {
+            string customErr = string `Invalid sort field ${sortField}`;
+            log:printWarn(customErr, sortField = sortField);
             return <http:BadRequest>{
                 body: {
                     message: customErr
@@ -431,9 +436,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !database:SortOrder.hasKey(payload.sort.sortOrder) {
-            string customErr = "Invalid sort order: " + payload.sort.sortOrder;
-            log:printWarn(customErr, sortOrder = payload.sort.sortOrder);
+        string sortOrder = payload.sort.sortOrder;
+        if !database:SortOrder.hasKey(sortOrder) {
+            string customErr = string `Invalid sort order ${sortOrder}`;
+            log:printWarn(customErr, sortOrder = sortOrder);
             return <http:BadRequest>{
                 body: {
                     message: customErr
@@ -487,6 +493,80 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return <http:Ok>{body: employees};
+    }
+
+    # Search employees for QR code export.
+    #
+    # + payload - QR code search payload
+    # + return - Lean employee list for QR export, or HTTP errors
+    resource function post reports/qr\-codes/search(http:RequestContext ctx, database:QrCodeSearchPayload payload)
+            returns http:Ok|http:InternalServerError|http:BadRequest|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        boolean hasQrSearchAccess
+            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+            || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
+
+        if !hasQrSearchAccess {
+            log:printWarn("User is not authorized to search employees for QR export",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to search employees for QR export"}
+            };
+        }
+
+        if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
+            string customErr = "Invalid sort field: " + payload.sort.sortField;
+            log:printWarn(customErr, sortField = payload.sort.sortField);
+            return <http:BadRequest>{
+                body: {message: customErr}
+            };
+        }
+
+        if !database:SortOrder.hasKey(payload.sort.sortOrder) {
+            string customErr = "Invalid sort order: " + payload.sort.sortOrder;
+            log:printWarn(customErr, sortOrder = payload.sort.sortOrder);
+            return <http:BadRequest>{
+                body: {message: customErr}
+            };
+        }
+
+        database:EmployeesResponse|error result = database:getEmployees({
+            searchString: payload.searchString,
+            filters: {employeeStatus: payload.filters.employeeStatus},
+            pagination: payload.pagination,
+            sort: payload.sort
+        });
+        if result is error {
+            string customErr = "Error occurred while fetching employees for QR export";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {message: customErr}
+            };
+        }
+        database:EmployeeQrInfo[] qrInfoList = from database:Employee e in result.employees
+            select {
+                employeeId: e.employeeId,
+                firstName: e.firstName,
+                lastName: e.lastName,
+                workEmail: e.workEmail,
+                employeeThumbnail: e.employeeThumbnail,
+                house: e.house,
+                houseId: e.houseId,
+                employeeStatus: e.employeeStatus
+            };
+        return <http:Ok>{
+            body: {
+                employees: qrInfoList,
+                totalCount: result.totalCount
+            }
+        };
     }
 
     # Fetch continuous service record by work email.

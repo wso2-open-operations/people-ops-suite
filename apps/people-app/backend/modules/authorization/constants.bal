@@ -22,3 +22,4 @@ public const HEADER_USER_INFO = "user-info";
 public const ADMIN_PRIVILEGE = 999;
 public const EMPLOYEE_PRIVILEGE = 987;
 public const LEAD_PRIVILEGE = 993;
+public const SERVICE_DESK_PRIVILEGE = 991;
