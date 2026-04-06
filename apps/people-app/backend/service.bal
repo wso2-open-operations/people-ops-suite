@@ -425,9 +425,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         boolean hasAdminAccess
             = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
 
-        if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
-            string customErr = "Invalid sort field: " + payload.sort.sortField;
-            log:printWarn(customErr, sortField = payload.sort.sortField);
+        string sortField = payload.sort.sortField;
+        if !database:EmployeeSortField.hasKey(sortField) {
+            string customErr = string `Invalid sort field ${sortField}`;
+            log:printWarn(customErr, sortField = sortField);
             return <http:BadRequest>{
                 body: {
                     message: customErr
@@ -435,9 +436,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !database:SortOrder.hasKey(payload.sort.sortOrder) {
-            string customErr = "Invalid sort order: " + payload.sort.sortOrder;
-            log:printWarn(customErr, sortOrder = payload.sort.sortOrder);
+        string sortOrder = payload.sort.sortOrder;
+        if !database:SortOrder.hasKey(sortOrder) {
+            string customErr = string `Invalid sort order ${sortOrder}`;
+            log:printWarn(customErr, sortOrder = sortOrder);
             return <http:BadRequest>{
                 body: {
                     message: customErr
