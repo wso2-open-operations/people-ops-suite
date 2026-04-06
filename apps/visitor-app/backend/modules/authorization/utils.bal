@@ -25,5 +25,5 @@ public isolated function checkPermissions(string[] requiredRoles, string[] userR
     }
 
     final string[] & readonly userRolesReadOnly = userRoles.cloneReadOnly();
-    return requiredRoles.every(role => userRolesReadOnly.indexOf(role) !is ());
+    return requiredRoles.some(role => userRolesReadOnly.indexOf(role) !is ());
 }

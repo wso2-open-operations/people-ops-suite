@@ -90,7 +90,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Fetch the user's privileges based on the roles.
         int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_ROLE], userInfo.groups) {
+        if authorization:checkPermissions([...authorization:authorizedRoles.EMPLOYEE_ROLE], userInfo.groups) {
             privileges.push(authorization:EMPLOYEE_PRIVILEGE);
         }
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
