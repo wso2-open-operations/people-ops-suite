@@ -309,6 +309,47 @@ public type EmployeesResponse record {|
     int totalCount;
 |};
 
+# Employee record for QR code export — extends EmployeeBasicInfo with house and status fields.
+public type EmployeeQrInfo record {|
+    *EmployeeBasicInfo;
+    # House
+    string? house;
+    # House ID
+    int? houseId;
+    # Employee status
+    string employeeStatus;
+|};
+
+# QR code export response.
+public type EmployeeQrInfoResponse record {|
+    # List of employees
+    EmployeeQrInfo[] employees;
+    # Total count of matching employees
+    int totalCount;
+|};
+
+# Filters relevant to the QR code employee search.
+public type QrCodeSearchFilters record {|
+    # Employee status
+    string? employeeStatus = ();
+|};
+
+# Search payload for the QR code export endpoint.
+public type QrCodeSearchPayload record {|
+    # Search query
+    @constraint:String {
+        maxLength: 100,
+        pattern: re `^[\p{L}\p{M}0-9\s@._'+-]*$`
+    }
+    string? searchString = ();
+    # Filters
+    QrCodeSearchFilters filters;
+    # Pagination
+    Pagination pagination;
+    # Sort configuration
+    Sort sort;
+|};
+
 # Personal information of an employee.
 public type EmployeePersonalInfo record {|
     # National Identity Card number

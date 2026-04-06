@@ -22,6 +22,8 @@ import {
   Outlet,
   useLocation,
 } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectRoles } from "@slices/authSlice/auth";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import GroupsIcon from "@mui/icons-material/Groups";
@@ -70,8 +72,12 @@ const EmployeesRoot = () => {
 
 const ReportsRoot = () => {
   const { pathname } = useLocation();
+  const roles = useSelector(selectRoles);
   if (pathname === "/reports") {
-    return React.createElement(Navigate, { to: "/reports/active-employees", replace: true });
+    const redirectTo = roles.includes(Role.ADMIN)
+      ? "/reports/active-employees"
+      : "/reports/qr-codes";
+    return React.createElement(Navigate, { to: redirectTo, replace: true });
   }
   return React.createElement(Outlet);
 };
@@ -129,7 +135,7 @@ export const routes: RouteObjectWithRole[] = [
     text: "Reports",
     icon: React.createElement(AssessmentIcon),
     element: React.createElement(ReportsRoot),
-    allowRoles: [Role.ADMIN],
+    allowRoles: [Role.ADMIN, Role.SERVICE_DESK],
     children: [
       {
         path: "/reports/active-employees",
@@ -150,7 +156,7 @@ export const routes: RouteObjectWithRole[] = [
         text: "QR Codes",
         icon: React.createElement(QrCode2Icon),
         element: React.createElement(View.qrCodesReport),
-        allowRoles: [Role.ADMIN],
+        allowRoles: [Role.ADMIN, Role.SERVICE_DESK],
       },
     ],
   },
