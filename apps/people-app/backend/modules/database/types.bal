@@ -982,10 +982,6 @@ public type OrgUnit record {|
     int businessUnitTeamSubTeamUnitId;
     # Parent mapping: business_unit_team_sub_team.id
     int businessUnitTeamSubTeamId;
-    # Parent mapping: business_unit_team.id
-    int businessUnitTeamId;
-    # Parent: business_unit.id
-    int businessUnitId;
     # Display name of the unit
     string name;
     # Total number of employees or members in the unit
@@ -1004,8 +1000,6 @@ public type OrgSubTeam record {|
     int businessUnitTeamSubTeamId;
     # Parent mapping: business_unit_team.id
     int businessUnitTeamId;
-    # Parent: business_unit.id
-    int businessUnitId;
     # Display name of the sub-team
     string name;
     # Total number of employees or members in the sub-team

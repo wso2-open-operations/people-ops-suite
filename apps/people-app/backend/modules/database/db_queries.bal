@@ -1518,7 +1518,6 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                             'id', st.id,
                                             'businessUnitTeamSubTeamId', butst.id,
                                             'businessUnitTeamId', but.id,
-                                            'businessUnitId', bu.id,
                                             'name', st.name,
                                             'headCount', COALESCE((
                                                 SELECT COUNT(*) FROM employee e
@@ -1549,8 +1548,6 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                                         'id', u.id,
                                                         'businessUnitTeamSubTeamUnitId', butstu.id,
                                                         'businessUnitTeamSubTeamId', butst.id,
-                                                        'businessUnitTeamId', but.id,
-                                                        'businessUnitId', bu.id,
                                                         'name', u.name,
                                                         'headCount', COALESCE((
                                                             SELECT COUNT(*) FROM employee e
