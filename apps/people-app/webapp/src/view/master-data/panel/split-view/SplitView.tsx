@@ -233,7 +233,15 @@ function SplitViewReady({ orgItems, teams, subTeams, units }: SplitViewReadyProp
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        height: "100%",
+        minHeight: 0,
+      }}
+    >
       {/* Temporarily remove the global search */}
       {/* <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
         <GlobalSearch
@@ -246,7 +254,16 @@ function SplitViewReady({ orgItems, teams, subTeams, units }: SplitViewReadyProp
         />
       </Box> */}
 
-      <Box sx={{ width: "100%", display: "flex", gap: 2 }}>
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          gap: 2,
+          flex: 1,
+          minHeight: 0,
+          alignItems: "stretch",
+        }}
+      >
         <SplitViewColumn
           title="Business Unit"
           placeholder="Search business units"

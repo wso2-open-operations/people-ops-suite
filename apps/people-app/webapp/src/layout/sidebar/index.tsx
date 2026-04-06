@@ -87,7 +87,7 @@ const Sidebar = (props: SidebarProps) => {
               whiteSpace: "nowrap",
               color: "#CCCCCC",
               width: "100%",
-              textAlign: "left"
+              textAlign: "left",
             }}
           >
             {tooltipTitle}

@@ -49,6 +49,8 @@ export default function SplitViewColumn<T extends OrgStructureState>(
         display: "flex",
         flexDirection: "column",
         width: "100%",
+        height: "100%",
+        minHeight: 0,
         border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
         borderRadius: 1,
         backgroundColor: theme.palette.surface.secondary.active,
@@ -71,7 +73,18 @@ export default function SplitViewColumn<T extends OrgStructureState>(
         </Typography>
       </Box>
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, width: "100%", p: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2.5,
+          width: "100%",
+          p: 2,
+          flex: 1,
+          minHeight: 0,
+          paddingBottom: 0,
+        }}
+      >
         <Box
           sx={{
             width: "100%",
@@ -135,7 +148,21 @@ export default function SplitViewColumn<T extends OrgStructureState>(
           </Box>
         </Box>
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            width: "100%",
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            position: "relative",
+            pr: 0.5,
+            pb: 1,
+            overscrollBehaviorY: "contain",
+          }}
+        >
           {orgItems.map((item) => (
             <OrgStructureCard
               key={item.id}
@@ -151,6 +178,22 @@ export default function SplitViewColumn<T extends OrgStructureState>(
               isHighlighted={selectedOrgItemId === item.id}
             />
           ))}
+
+          <Box
+            sx={{
+              position: "sticky",
+              bottom: -10,
+              left: 0,
+              right: 0,
+              flexShrink: 0,
+              height: 32,
+              pointerEvents: "none",
+              background: `linear-gradient(to bottom, rgba(0,0,0,0), ${theme.palette.surface.secondary.active})`,
+              backdropFilter: "blur(2px)",
+              WebkitBackdropFilter: "blur(2px)",
+              zIndex: 10,
+            }}
+          />
         </Box>
       </Box>
     </Box>

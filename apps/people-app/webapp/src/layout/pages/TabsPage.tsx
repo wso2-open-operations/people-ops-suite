@@ -70,7 +70,7 @@ export default function TabsPage({ tabsPage }: TabsPageProps) {
       {tabsPage.map(
         (tab, index) =>
           value === index && (
-            <Box key={index} sx={{ width: "100%" }}>
+            <Box key={index} sx={{ width: "100%", height: "100%", minHeight: 0 }}>
               <TabPanel value={value} index={index}>
                 {tab.page}
               </TabPanel>
@@ -188,7 +188,8 @@ export function TabPanel(props: TabPanelProps) {
       aria-labelledby={`simple-tab-${index}`}
       {...other}
       sx={{
-        maxHeight: "calc(100vh - 150px)",
+        height: "calc(100vh - 160px)",
+        minHeight: 0,
         overflowY: "auto",
         // Hide scrollbar for Chrome, Safari and Opera
         "&::-webkit-scrollbar": {
@@ -199,7 +200,7 @@ export function TabPanel(props: TabPanelProps) {
         scrollbarWidth: "none",
       }}
     >
-      <Box>{children}</Box>
+      {children}
     </Box>
   );
 }
