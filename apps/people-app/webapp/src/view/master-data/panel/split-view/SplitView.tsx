@@ -39,6 +39,7 @@ import {
   BusinessUnitState,
   CompanyState,
   OrgStructureState,
+  OrganizationInfo,
   SubTeamState,
   TeamState,
   UnitState,
@@ -50,7 +51,8 @@ import { EditModal } from "@view/master-data/components/EditModal";
 import AddModal from "../../components/AddModal.tsx";
 import SplitViewColumn from "./components/SplitViewColumn.tsx.tsx";
 import SplitViewSkeleton from "./components/SplitViewSkeleton.tsx";
-import { MatchSearch } from "./utils/globalSearch.ts";
+import { useSplitViewSearch } from "./hooks/useSplitViewSearch.ts";
+import { useSplitViewSelection } from "./hooks/useSplitViewSelection.ts";
 
 type OnEdit = {
   open: boolean;
@@ -69,87 +71,46 @@ type OnAdd = {
   selectedNode: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState | null;
 };
 
-export default function SplitView() {
-  useGetOrgStructureQuery();
+type SplitViewReadyProps = {
+  orgItems: OrganizationInfo;
+  teams: RawTeam[];
+  subTeams: RawSubTeam[];
+  units: RawUnit[];
+};
 
-  const orgItemState = useAppSelector((state: RootState) => state.organizationStructure);
-  const orgItems = orgItemState.organizationInfo;
+function SplitViewReady({ orgItems, teams, subTeams, units }: SplitViewReadyProps) {
+  const {
+    selectedBusinessUnitId,
+    setSelectedBusinessUnitId,
+    selectedTeamId,
+    setSelectedTeamId,
+    selectedSubTeamId,
+    setSelectedSubTeamId,
+    selectedUnitId,
+    setSelectedUnitId,
+    selectedTeams,
+    selectedSubTeams,
+    selectedUnits,
+    selectedBusinessUnit,
+    selectedTeam,
+    selectedSubTeam,
+    handleBusinessUnitClick,
+    handleTeamClick,
+    handleSubTeamClick,
+    handleUnitClick,
+  } = useSplitViewSelection({ orgItems });
 
-  const showOrgSkeleton = useMinimumLoadingVisibility(
-    orgItemState.state === State.Loading && !orgItems,
-    SPLIT_VIEW_SKELETON_DELAY_MS,
-  );
-
-  const [editModal, setEditModal] = useState<OnEdit>({
-    open: false,
-    uniqueId: null,
-    type: null,
-  });
-
-  const [addModal, setAddModal] = useState<OnAdd>({
-    open: false,
-    data: null,
-    type: null,
-    selectedNode: null,
-  });
-
-  const [searchTerm, setSearchTerm] = useState<string | null>();
-  const [teamSearchTerm, setTeamSearchTerm] = useState<string | null>();
-  const [subTeamSearchTerm, setSubTeamSearchTerm] = useState<string | null>();
-  const [unitSearchTerm, setUnitSearchTerm] = useState<string | null>();
-  const [searchMatches, setSearchMatches] = useState<MatchSearch[]>([]);
-  const [activeMatchIndex, setActiveMatchIndex] = useState<number>(-1);
-
-  const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<number | null>(null);
-  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-  const [selectedSubTeamId, setSelectedSubTeamId] = useState<number | null>(null);
-  const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
-  const currentMatch = activeMatchIndex >= 0 ? searchMatches[activeMatchIndex] : null;
-
-  const { businessUnits, teams, subTeams, units } = useAppSelector((state) => state.organization);
-  const dispatch = useAppDispatch();
-
-  useEffect(() => {
-    if (!open) return;
-
-    dispatch(fetchBusinessUnits());
-    dispatch(fetchTeams({}));
-    dispatch(fetchSubTeams({}));
-    dispatch(fetchUnits({}));
-  }, [dispatch, open]);
-
-  // Global search UI is temporarily disabled; keep this derived flag nearby
-  // so re-enabling the <GlobalSearch /> block only requires uncommenting both sections.
-  // const isGlobalSearchDisabled =
-  //   Boolean(searchTerm?.trim()) ||
-  //   Boolean(teamSearchTerm?.trim()) ||
-  //   Boolean(subTeamSearchTerm?.trim()) ||
-  //   Boolean(unitSearchTerm?.trim());
-
-  const clearGlobalSearchState = () => {
-    setSearchMatches([]);
-    setActiveMatchIndex(-1);
-  };
-
-  const handleBusinessUnitSearchChange = (value: string) => {
-    setSearchTerm(value);
-    clearGlobalSearchState();
-  };
-
-  const handleTeamSearchChange = (value: string) => {
-    setTeamSearchTerm(value);
-    clearGlobalSearchState();
-  };
-
-  const handleSubTeamSearchChange = (value: string) => {
-    setSubTeamSearchTerm(value);
-    clearGlobalSearchState();
-  };
-
-  const handleUnitSearchChange = (value: string) => {
-    setUnitSearchTerm(value);
-    clearGlobalSearchState();
-  };
+  const {
+    searchTerm,
+    teamSearchTerm,
+    subTeamSearchTerm,
+    unitSearchTerm,
+    currentMatch,
+    handleBusinessUnitSearchChange,
+    handleTeamSearchChange,
+    handleSubTeamSearchChange,
+    handleUnitSearchChange,
+  } = useSplitViewSearch();
 
   useEffect(() => {
     if (!currentMatch) {
@@ -166,30 +127,18 @@ export default function SplitView() {
     setSelectedUnitId(currentMatch.unitId as number | null);
   }, [currentMatch]);
 
-  if (showOrgSkeleton || orgItemState.state === State.Idle || orgItemState.state === State.Loading) {
-    return <SplitViewSkeleton />;
-  }
+  const [editModal, setEditModal] = useState<OnEdit>({
+    open: false,
+    uniqueId: null,
+    type: null,
+  });
 
-  if (orgItemState.state === State.Failed || !orgItems) {
-    return <ErrorHandler message={"An unknown error occurred when fetching org items"} />;
-  }
-
-  const selectedTeams =
-    orgItems.businessUnits.find((bu) => bu.id === selectedBusinessUnitId)?.teams ?? null;
-
-  const selectedSubTeams =
-    selectedTeams?.find((team) => team.id === selectedTeamId)?.subTeams ?? null;
-
-  const selectedUnits =
-    selectedSubTeams?.find((subTeam) => subTeam.id === selectedSubTeamId)?.units ?? null;
-
-  const selectedBusinessUnit =
-    orgItems.businessUnits.find((bu) => bu.id === selectedBusinessUnitId) ?? null;
-
-  const selectedTeam = selectedTeams?.find((team) => team.id === selectedTeamId) ?? null;
-
-  const selectedSubTeam =
-    selectedSubTeams?.find((subTeam) => subTeam.id === selectedSubTeamId) ?? null;
+  const [addModal, setAddModal] = useState<OnAdd>({
+    open: false,
+    data: null,
+    type: null,
+    selectedNode: null,
+  });
 
   const handleClose = () => {
     setEditModal({
@@ -231,50 +180,11 @@ export default function SplitView() {
     });
   };
 
-  const handleBusinessUnitClick = (bu: BusinessUnitState) => {
-    if (selectedBusinessUnitId === bu.id) {
-      setSelectedBusinessUnitId(null);
-      setSelectedTeamId(null);
-      setSelectedSubTeamId(null);
-    } else {
-      setSelectedBusinessUnitId(bu.id);
-      setSelectedTeamId(null);
-      setSelectedSubTeamId(null);
-    }
-  };
+  const filteredBusinessUnits = orgItems.businessUnits.filter((bu) => {
+    if (!searchTerm || searchTerm.trim() === "") return true;
 
-  const handleTeamClick = (team: TeamState) => {
-    if (selectedTeamId === team.id) {
-      setSelectedTeamId(null);
-      setSelectedSubTeamId(null);
-    } else {
-      setSelectedTeamId(team.id);
-      setSelectedSubTeamId(null);
-    }
-  };
-
-  const handleSubTeamClick = (subTeam: SubTeamState) => {
-    if (selectedSubTeamId === subTeam.id) {
-      setSelectedSubTeamId(null);
-    } else {
-      setSelectedSubTeamId(subTeam.id);
-    }
-  };
-
-  const handleUnitClick = (unit: UnitState) => {
-    if (selectedUnitId === unit.id) {
-      setSelectedUnitId(null);
-    } else {
-      setSelectedUnitId(unit.id);
-    }
-  };
-
-  const filteredBusinessUnits =
-    orgItems.businessUnits.filter((bu) => {
-      if (!searchTerm || searchTerm.trim() === "") return true;
-
-      return bu.name.toLowerCase().includes(searchTerm.toLowerCase());
-    }) || [];
+    return bu.name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const filteredTeams =
     selectedTeams?.filter((team) => {
@@ -297,27 +207,26 @@ export default function SplitView() {
       return unit.name.toLowerCase().includes(unitSearchTerm.toLowerCase());
     }) || [];
 
-  // Add handlers
   const handleBusinessUnitAdd = () => {
     onAdd([], NodeType.BusinessUnit, orgItems.company);
   };
 
   const handleTeamAdd = () => {
-    if (!selectedBusinessUnit || !orgItems) return;
+    if (!selectedBusinessUnit) return;
     const data = buildAddModalOptions(NodeType.Team, selectedBusinessUnit, teams);
     if (!data) return;
     onAdd(data, NodeType.Team, selectedBusinessUnit);
   };
 
   const handleSubTeamAdd = () => {
-    if (!selectedTeam || !orgItems) return;
+    if (!selectedTeam) return;
     const data = buildAddModalOptions(NodeType.SubTeam, selectedTeam, subTeams);
     if (!data) return;
     onAdd(data, NodeType.SubTeam, selectedTeam);
   };
 
   const handleUnitAdd = () => {
-    if (!selectedSubTeam || !orgItems) return;
+    if (!selectedSubTeam) return;
     const data = buildAddModalOptions(NodeType.Unit, selectedSubTeam, units);
     if (!data) return;
     onAdd(data, NodeType.Unit, selectedSubTeam);
@@ -417,4 +326,44 @@ export default function SplitView() {
       )}
     </Box>
   );
+}
+
+export default function SplitView() {
+  useGetOrgStructureQuery();
+
+  const orgItemState = useAppSelector((state: RootState) => state.organizationStructure);
+  const orgItems = orgItemState.organizationInfo;
+
+  const { teams, subTeams, units } = useAppSelector((state) => state.organization);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(fetchBusinessUnits());
+    dispatch(fetchTeams({}));
+    dispatch(fetchSubTeams({}));
+    dispatch(fetchUnits({}));
+  }, [dispatch]);
+
+  const showOrgSkeleton = useMinimumLoadingVisibility(
+    orgItemState.state === State.Loading && !orgItems,
+    SPLIT_VIEW_SKELETON_DELAY_MS,
+  );
+
+  if (
+    showOrgSkeleton ||
+    orgItemState.state === State.Idle ||
+    orgItemState.state === State.Loading
+  ) {
+    return <SplitViewSkeleton />;
+  }
+
+  if (orgItemState.state === State.Failed) {
+    return <ErrorHandler message={"An unknown error occurred when fetching org items"} />;
+  }
+
+  if (!orgItems) {
+    return <ErrorHandler message={"Organization data is missing after loading."} />;
+  }
+
+  return <SplitViewReady orgItems={orgItems} teams={teams} subTeams={subTeams} units={units} />;
 }
