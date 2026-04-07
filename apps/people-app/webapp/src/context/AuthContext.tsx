@@ -187,6 +187,11 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     appSignOut: appSignOut,
   };
 
+  useEffect(() => {
+    if (appState !== AppState.Unauthenticated) return;
+    void appSignIn();
+  }, [appState]);
+
   const renderContent = () => {
     switch (appState) {
       case AppState.Loading:
@@ -201,11 +206,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
 
       case AppState.Unauthenticated:
-        return (
-          <AuthContext.Provider value={authContext}>
-            <LoginScreen />
-          </AuthContext.Provider>
-        );
+        return <PreLoader isLoading marqueeOn={true} hideImage={false} message="Signing Out" />;
 
       default:
         return null;
