@@ -31,8 +31,9 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useTheme,
 } from "@mui/material";
-import { DataGrid, GridRenderCellParams, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridRenderCellParams, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 
 import { useEffect, useState } from "react";
@@ -82,6 +83,7 @@ export const TeamSummary = ({
   closeTeamSummary,
 }: DashboardProps) => {
   const dispatch = useAppDispatch();
+  const theme = useTheme();
   const teamReportState = useAppSelector(selectTeamReportStatus);
   const teamReport = useAppSelector<TeamReport | null>(selectTeamReport);
   const employeeMap = useAppSelector(selectEmployeeMap);
@@ -101,19 +103,6 @@ export const TeamSummary = ({
   const [isParCycleDatesOpen, setIsParCycleDatesOpen] = useState(false);
   const [feedbackRequestModalOpen, setFeedbackRequestModalOpen] = useState(false);
 
-  // Create a safe extractor to get IDs regardless of MUI DataGrid version structure
-  const getSelectedIds = (): GridRowId[] => {
-    if (!selectionModel) return [];
-    // If MUI is returning an object like { type: 'row', ids: [...] }
-    if (!Array.isArray(selectionModel) && "ids" in selectionModel) {
-      return (selectionModel as any).ids as GridRowId[];
-    }
-    // If MUI is still returning a standard array
-    if (Array.isArray(selectionModel)) {
-      return selectionModel as GridRowId[];
-    }
-    return [];
-  };
   const handleOpenFeedbackRequestModal = () => setFeedbackRequestModalOpen(true);
   const handleCloseFeedbackRequestModal = () => setFeedbackRequestModalOpen(false);
 
@@ -121,7 +110,7 @@ export const TeamSummary = ({
   const closeCycleDeadlines = () => setIsParCycleDatesOpen(false);
 
   const openParShareDialog = () => {
-    const ratingMap = getSelectedRatings(getSelectedIds(), teamReport?.details ?? []);
+    const ratingMap = getSelectedRatings(Array.from(selectionModel.ids), teamReport?.details ?? []);
 
     if (!validateRatings(ratingMap)) {
       dispatch(ShowSnackBarMessage(SnackMessage.error.invalidBulkShare, "error"));
@@ -148,79 +137,65 @@ export const TeamSummary = ({
   const filteredMembers =
     teamReport !== null
       ? teamReport.details
-          ?.map((member: ParRatingShort) => ({
-            ...member,
-            id: member.parRatingId,
-          }))
-          .filter((member: ParRatingShort) =>
-            `${member.parEmployeeName.toLowerCase()}${member.parEmployeeEmail.toLowerCase()}`.includes(
-              searchTerm.toLowerCase(),
-            ),
-          )
+        ?.map((member: ParRatingShort) => ({
+          ...member,
+          id: member.parRatingId,
+        }))
+        .filter((member: ParRatingShort) =>
+          `${member.parEmployeeName.toLowerCase()}${member.parEmployeeEmail.toLowerCase()}`.includes(
+            searchTerm.toLowerCase(),
+          ),
+        )
       : [];
 
-  const columns = [
+  const columns: GridColDef<ParRatingShort>[] = [
     {
       field: "parEmployeeName",
       headerName: "Team Member",
       flex: 0.2,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <Box display="flex" alignItems="center" position="relative">
+        <Box display="flex" alignItems="center" height="100%" width="100%" gap={0.75}>
           <Avatar
             src={employeeMap[params.row?.parEmployeeEmail]?.employeeThumbnail}
             alt={
               employeeMap[params.row?.parEmployeeEmail]?.employeeName ||
               params.row?.parEmployeeEmail
             }
-            sx={{ marginRight: 2, height: "2.2rem", width: "2.2rem" }}
-          />
-          <Box
-            sx={{
-              position: "relative",
-              transition: "transform 0.3s ease",
-              "&:hover": {
-                transform: "translateY(-10px)",
-              },
-              "&:hover > div": {
-                opacity: 1,
-              },
-            }}
+            sx={{ flexShrink: 0, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem" }}
           >
-            <Typography variant="h5">{params.row?.parEmployeeName}</Typography>
-            <Box
-              sx={{
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                display: "flex",
-                alignItems: "center",
-                padding: "1px 0",
-                borderRadius: "4px",
-                opacity: 0,
-                transition: "opacity 0.3s",
+            {(
+              employeeMap[params.row?.parEmployeeEmail]?.employeeName ||
+              params.row?.parEmployeeEmail
+            )?.charAt(0)}
+          </Avatar>
+          <Tooltip
+            arrow
+            title={params.row?.parEmployeeEmail}
+            enterDelay={tooltipVisibilityDelay}
+            enterNextDelay={tooltipVisibilityDelay}
+          >
+            <Typography variant="body2" fontWeight={500} noWrap>
+              {params.row?.parEmployeeName}
+            </Typography>
+          </Tooltip>
+          <Tooltip
+            title="Copy Email"
+            enterDelay={tooltipVisibilityDelay}
+            enterNextDelay={tooltipVisibilityDelay}
+          >
+            <IconButton
+              size="small"
+              aria-label="Copy Email"
+              onClick={() => {
+                navigator.clipboard.writeText(params.row?.parEmployeeEmail);
+                dispatch(ShowSnackBarMessage("Email copied", "success"));
               }}
+              sx={{ flexShrink: 0, color: theme.palette.text.disabled }}
             >
-              <Typography color={"GrayText"} variant="h6" mr={1}>
-                {params.row?.parEmployeeEmail}
-              </Typography>
-              <Tooltip
-                title="Copy Email"
-                enterDelay={tooltipVisibilityDelay}
-                enterNextDelay={tooltipVisibilityDelay}
-              >
-                <IconButton
-                  size="small"
-                  aria-label="Copy Email"
-                  onClick={() => {
-                    navigator.clipboard.writeText(params.row?.parEmployeeEmail);
-                    dispatch(ShowSnackBarMessage("Email copied", "success"));
-                  }}
-                >
-                  <ContentCopyIcon sx={{ fontSize: "15px" }} />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Box>
+              <ContentCopyIcon sx={{ fontSize: "0.85rem" }} />
+            </IconButton>
+          </Tooltip>
         </Box>
       ),
     },
@@ -228,93 +203,104 @@ export const TeamSummary = ({
       field: "parEmployeeStatus",
       headerName: "Employee PAR",
       flex: 0.1,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <ParStatusChip content={params.row?.parEmployeeStatus || ""} />
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+          <ParStatusChip content={params.row?.parEmployeeStatus || ""} />
+        </Box>
       ),
     },
     {
       field: "par360ReviewStatus",
       headerName: "360° Feedback",
-      flex: 0.1,
+      flex: 0.12,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <ParStatusChip
-          content={params.row?.par360ReviewStatus || ""}
-          countDetails={{
-            completed: params.row?.par360ReviewCounts?.sharedReviewCount || 0,
-            total: params.row?.par360ReviewCounts?.requestedReviewCount || 0,
-          }}
-        />
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+          <ParStatusChip
+            content={params.row?.par360ReviewStatus || ""}
+            countDetails={{
+              completed: params.row?.par360ReviewCounts?.sharedReviewCount || 0,
+              total: params.row?.par360ReviewCounts?.requestedReviewCount || 0,
+            }}
+          />
+        </Box>
       ),
     },
     {
       field: "parLeadStatus",
       headerName: "Lead's PAR",
       flex: 0.1,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <ParStatusChip content={params.row?.parLeadStatus || ""} />
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+          <ParStatusChip content={params.row?.parLeadStatus || ""} />
+        </Box>
       ),
     },
     {
       field: "parRating",
       headerName: "Rating",
       flex: 0.15,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <ParStatusChip content={params.row?.parRating || ""} />
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+          <ParStatusChip content={params.row?.parRating || ""} />
+        </Box>
       ),
     },
     {
       field: "parSpecialRating",
       headerName: "Top 5%/20% Rating",
       flex: 0.15,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <ParStatusChip content={params.row?.parSpecialRating || ""} />
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+          <ParStatusChip content={params.row?.parSpecialRating || ""} />
+        </Box>
       ),
     },
     {
       field: "parF2fStatus",
       headerName: "F2F",
-      flex: 0.1,
+      flex: 0.08,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <ParStatusChip content={params.row?.parF2fStatus || ""} />
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+          <ParStatusChip content={params.row?.parF2fStatus || ""} />
+        </Box>
       ),
     },
-
     {
       field: "actions",
       headerName: "",
       sortable: false,
-      flex: 0.1,
+      flex: 0.08,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <IconButton
-          sx={{
-            color: "primary.main",
-            "&:hover": {
-              bgcolor: "primary.main",
-              color: "white",
-            },
-          }}
-          onClick={() => handleMembersTableClick(params.row)}
-        >
-          {params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? (
-            <Tooltip
-              arrow
-              title="View"
-              enterDelay={tooltipVisibilityDelay}
-              enterNextDelay={tooltipVisibilityDelay}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+          <Tooltip
+            arrow
+            title={params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? "View" : "Review"}
+            enterDelay={tooltipVisibilityDelay}
+            enterNextDelay={tooltipVisibilityDelay}
+          >
+            <IconButton
+              size="small"
+              onClick={() => handleMembersTableClick(params.row)}
+              sx={{
+                color: "primary.main",
+                "&:hover": { bgcolor: "primary.main", color: "white" },
+              }}
             >
-              <VisibilityIcon />
-            </Tooltip>
-          ) : (
-            <Tooltip
-              arrow
-              title="Review"
-              enterDelay={tooltipVisibilityDelay}
-              enterNextDelay={tooltipVisibilityDelay}
-            >
-              <RateReviewIcon />
-            </Tooltip>
-          )}
-        </IconButton>
+              {params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? (
+                <VisibilityIcon fontSize="small" />
+              ) : (
+                <RateReviewIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+        </Box>
       ),
     },
   ];
@@ -339,7 +325,7 @@ export const TeamSummary = ({
 
   const updateSelectedRatings = async () => {
     try {
-      const ratingMap = getSelectedRatings(getSelectedIds(), teamReport?.details ?? []);
+      const ratingMap = getSelectedRatings(Array.from(selectionModel.ids), teamReport?.details ?? []);
 
       if (!validateRatings(ratingMap)) {
         dispatch(ShowSnackBarMessage(SnackMessage.error.invalidBulkShare, "error"));
@@ -409,7 +395,7 @@ export const TeamSummary = ({
   };
 
   const copySelectedEmailsToClipboard = () => {
-    const emails = getSelectedIds().map((rowId) => {
+    const emails = Array.from(selectionModel.ids).map((rowId) => {
       const employeeParRating = teamReport?.details.find((member) => member.parRatingId === rowId);
       if (employeeParRating?.parEmployeeEmail) {
         return employeeParRating?.parEmployeeEmail;
@@ -608,7 +594,6 @@ export const TeamSummary = ({
               ml: 0.2,
               mr: 0.2,
               height: "100%",
-              width: "100%",
               display: "flex",
               flexDirection: "column",
             }}
@@ -619,7 +604,7 @@ export const TeamSummary = ({
                 <Button
                   variant="contained"
                   onClick={copySelectedEmailsToClipboard}
-                  disabled={getSelectedIds().length === 0}
+                  disabled={selectionModel.ids.size === 0}
                   sx={{ mr: 2 }}
                 >
                   Copy Emails
@@ -628,7 +613,7 @@ export const TeamSummary = ({
                   <Button
                     variant="contained"
                     onClick={openParShareDialog}
-                    disabled={getSelectedIds().length === 0}
+                    disabled={selectionModel.ids.size === 0}
                     sx={{ mr: 2 }}
                   >
                     Share
@@ -654,17 +639,11 @@ export const TeamSummary = ({
               }}
             >
               <DataGrid
-                sx={{
-                  border: "none",
-                  "& .MuiDataGrid-row:hover": {
-                    backgroundColor: "inherit",
-                  },
-                }}
                 rows={filteredMembers.sort((a, b) =>
                   a.parEmployeeName.localeCompare(b.parEmployeeName),
                 )}
                 columns={columns}
-                rowHeight={50}
+                rowHeight={36}
                 checkboxSelection
                 pageSizeOptions={[10, 20, 25]}
                 initialState={{
