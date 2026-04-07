@@ -99,13 +99,6 @@ export const routes: RouteObjectWithRole[] = [
         allowRoles: [Role.ADMIN],
       },
       {
-        path: "/employees/onboarding",
-        text: "Onboarding",
-        icon: React.createElement(GroupAddIcon),
-        element: React.createElement(View.employeeOnboarding),
-        allowRoles: [Role.ADMIN],
-      },
-      {
         path: "/employees/my-team",
         text: "My Team",
         icon: React.createElement(PeopleAltIcon),
@@ -113,6 +106,13 @@ export const routes: RouteObjectWithRole[] = [
         allowRoles: [Role.LEAD],
       },
     ],
+  },
+  {
+    path: "/onboarding",
+    text: "Onboarding",
+    icon: React.createElement(GroupAddIcon),
+    element: React.createElement(View.employeeOnboarding),
+    allowRoles: [Role.ADMIN],
   },
   // Top-level My Team entry shown only for lead-only users (hidden when the user also has admin
   // access, since admin+lead users see My Team nested under Employees instead).

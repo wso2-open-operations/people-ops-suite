@@ -167,3 +167,70 @@ export function getEmployeeStatusColor(
       return "default";
   }
 }
+
+// Escapes a string for safe inclusion in a CSV cell, handling commas, quotes, and newlines.
+export const escapeCsvCell = (value: string): string => {
+  if (/[",\r\n]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+};
+
+// Parses CSV text into a 2D array of strings, correctly handling quoted cells with commas and newlines.
+export const parseCsvRows = (csvText: string): string[][] => {
+  const rows: string[][] = [];
+  let cell = "";
+  let inQuotes = false;
+  let currentRow: string[] = [];
+
+  for (let i = 0; i < csvText.length; i += 1) {
+    const ch = csvText[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (csvText[i + 1] === '"') {
+          cell += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cell += ch;
+      }
+      continue;
+    }
+    if (ch === '"' && cell.length === 0) {
+      inQuotes = true;
+    } else if (ch === '"') {
+      cell += ch;
+    } else if (ch === ",") {
+      currentRow.push(cell);
+      cell = "";
+    } else if (ch === "\n") {
+      currentRow.push(cell);
+      rows.push(currentRow);
+      currentRow = [];
+      cell = "";
+    } else if (ch !== "\r") {
+      cell += ch;
+    }
+  }
+
+  if (cell.length > 0 || currentRow.length > 0) {
+    currentRow.push(cell);
+    rows.push(currentRow);
+  }
+
+  return rows;
+};
+
+// Counts the number of non-empty data rows in a CSV, excluding the header and any completely empty rows.
+export const countCsvDataRows = (rows: string[][]): number => {
+  if (rows.length <= 1) return 0;
+  return rows
+    .slice(1)
+    .filter((row) => row.some((cell) => cell.trim().length > 0)).length;
+};
+
+// Strips the Byte Order Mark (BOM) from the beginning of a string if it exists.
+export const stripBom = (text: string): string =>
+  text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
