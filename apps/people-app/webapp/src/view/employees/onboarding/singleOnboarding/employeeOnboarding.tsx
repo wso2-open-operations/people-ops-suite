@@ -15,7 +15,25 @@
 // under the License.
 
 import EmployeeForm from "../EmployeeForm";
+import CommonPage from "@layout/pages/CommonPage";
+import BulkOnboarding from "../bulkOnboarding/BulkOnboarding";
 
 export default function EmployeeOnboarding() {
-  return <EmployeeForm mode="create" />;
+  return (
+    <CommonPage
+      title="Onboarding"
+      commonPageTabs={[
+        {
+          tabTitle: "Single Onboarding",
+          tabPath: "single",
+          page: <EmployeeForm mode="create" />,
+        },
+        {
+          tabTitle: "Bulk Onboarding",
+          tabPath: "bulk",
+          page: <BulkOnboarding />,
+        },
+      ]}
+    />
+  );
 }

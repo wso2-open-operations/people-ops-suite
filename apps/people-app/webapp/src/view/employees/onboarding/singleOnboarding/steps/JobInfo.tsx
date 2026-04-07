@@ -147,19 +147,24 @@ export const createJobInfoValidationSchema = (
       .trim()
       .transform((value) => (value === "" ? null : value))
       .nullable()
-      .when("employmentTypeId", (employmentTypeId: number, schema: any) => {
-        if (!employmentTypeId) return schema;
-        if (!employmentTypes || employmentTypes.length === 0) return schema;
-        const selected = employmentTypes.find(
-          (et) => et.id === employmentTypeId,
-        );
-        const isFixed = selected
-          ? FIXED_TERM_EMPLOYMENT_TYPE.test((selected.name || "").trim())
-          : false;
-        return isFixed
-          ? schema.required("Employee ID is required for fixed-term employment")
-          : schema;
-      }),
+      .when(
+        "employmentTypeId",
+        ([employmentTypeId]: [number | undefined], schema: any) => {
+          if (!employmentTypeId) return schema;
+          if (!employmentTypes || employmentTypes.length === 0) return schema;
+          const selected = employmentTypes.find(
+            (et) => et.id === employmentTypeId,
+          );
+          const isFixed = selected
+            ? FIXED_TERM_EMPLOYMENT_TYPE.test((selected.name || "").trim())
+            : false;
+          return isFixed
+            ? schema.required(
+                "Employee ID is required for fixed-term employment",
+              )
+            : schema;
+        },
+      ),
   });
 
 const SectionHeader = React.memo(
@@ -568,7 +573,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       ?.name?.trim()
       .toLowerCase();
     if (!normalized) return false;
-    return /internship|consultancy|fixed\s+term/.test(normalized);
+    return /\b(internship|consult(ancy|ant)?|fixed\s+term)\b/.test(normalized);
   }, [employmentTypes, values.employmentTypeId]);
 
   const computedAgreementDate = useMemo(() => {

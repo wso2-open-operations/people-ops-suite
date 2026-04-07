@@ -17,7 +17,8 @@
 import { lazy } from "react";
 
 const me = lazy(() => import("@view/me"));
-const employeeOnboarding = lazy(() => import("@view/employees/employeeOnboarding/employeeOnboarding"));
+const employeeOnboarding = lazy(() => import("@view/employees/onboarding/singleOnboarding/employeeOnboarding"));
+const bulkOnboarding = lazy(() => import("@view/employees/onboarding/bulkOnboarding/BulkOnboarding"));
 const employeesList = lazy(() => import("@view/employees/employeesView/EmployeesView"));
 const help = lazy(() => import("@view/help/help"));
 const employeeDetails = lazy(() => import("@view/employees/employeeDetail/employeeDetail"));
@@ -30,6 +31,7 @@ const qrCodesReport = lazy(() => import("@view/reports/QrCodesReport"));
 export const View = {
   me,
   employeeOnboarding,
+  bulkOnboarding,
   employeesList,
   myTeamView,
   employeeDetails,

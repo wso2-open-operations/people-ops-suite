@@ -39,12 +39,12 @@ import {
   alpha,
 } from "@mui/material";
 import { Formik, Form, useFormikContext } from "formik";
-import PersonalInfoStep from "./employeeOnboarding/steps/PersonalInfo";
-import JobInfoStep from "./employeeOnboarding/steps/JobInfo";
-import ReviewStep from "./employeeOnboarding/steps/Review";
+import PersonalInfoStep from "./singleOnboarding/steps/PersonalInfo";
+import JobInfoStep from "./singleOnboarding/steps/JobInfo";
+import ReviewStep from "./singleOnboarding/steps/Review";
 import { Check, ArrowBack, ArrowForward } from "@mui/icons-material";
-import { personalInfoValidationSchema } from "./employeeOnboarding/steps/PersonalInfo";
-import { createJobInfoValidationSchema } from "./employeeOnboarding/steps/JobInfo";
+import { personalInfoValidationSchema } from "./singleOnboarding/steps/PersonalInfo";
+import { createJobInfoValidationSchema } from "./singleOnboarding/steps/JobInfo";
 import {
   CreateEmployeeFormValues,
   emptyCreateEmployeeValues,
