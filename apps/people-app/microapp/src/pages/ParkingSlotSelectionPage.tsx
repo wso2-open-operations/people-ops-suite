@@ -263,15 +263,23 @@ function ParkingSlotSelectionPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative">
-        <section className="px-4 pt-6">
-          <IconButton onClick={() => navigate("/")} aria-label="Back">
-            <KeyboardBackspaceSharp className="text-black" />
-          </IconButton>
+        <header className="pt-6 px-5">
+          <div className="flex items-center justify-between">
+            <IconButton
+              onClick={() => navigate("/")}
+              aria-label="Back"
+              size="small"
+            >
+              <KeyboardBackspaceSharp className="text-black" />
+            </IconButton>
+            <h2 className="flex-1 text-center text-[20px] font-bold text-[#1F2A44]">
+              Select Parking Slot
+            </h2>
+            <div className="w-[40px]" />
+          </div>
+        </header>
 
-          <h2 className="text-center text-lg font-semibold -mt-7">
-            Select Parking Slot
-          </h2>
-
+        <section className="px-4">
           {isBookingWindowActive && (
             <div className="mt-6 border border-[#8FC4FF] bg-[#EAF3FF] rounded-lg px-3 py-2 flex items-start gap-2">
               <div className="mt-0.5">
