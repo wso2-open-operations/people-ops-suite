@@ -531,6 +531,29 @@ export const themeSettings = (mode: PaletteMode) => {
       },
     },
     components: {
+      MuiDataGrid: {
+        styleOverrides: {
+          root: {
+            border: "none",
+            fontSize: typography.caption.fontSize,
+          },
+          columnHeaderTitle: {
+            fontSize: typography.caption.fontSize,
+            fontWeight: 600,
+          },
+          columnHeader: {
+            padding: 0,
+          },
+          cell: {
+            padding: 0,
+            display: "flex",
+            alignItems: "center",
+          },
+          row: {
+            "&:hover": { backgroundColor: "inherit" },
+          },
+        },
+      },
       MuiButton: {
         styleOverrides: {
           root: {
