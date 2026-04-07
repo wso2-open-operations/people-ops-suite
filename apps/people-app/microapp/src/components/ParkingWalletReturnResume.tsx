@@ -24,6 +24,7 @@ import {
 import {
   PARKING_WALLET_PAYMENT_STATUS_KEY,
   PARKING_WALLET_PAYMENT_TX_HASH_KEY,
+  PARKING_WALLET_PAYMENT_ERROR_KEY,
   confirmParkingReservation,
   fetchParkingReservationById,
   finalizeParkingConfirmationAfterSuccess,
@@ -33,6 +34,9 @@ import { Logger } from "@/utils/logger";
 const RESUME_LOCK_PREFIX = "people_parking_wallet_resume_lock_";
 const BOOT_RETRY_COUNT = 8;
 const BOOT_RETRY_DELAY_MS = 250;
+/** Wait if another resume pass holds the lock (e.g. React Strict Mode remount). */
+const LOCK_WAIT_ATTEMPTS = 40;
+const LOCK_WAIT_MS = 100;
 
 type ParkingWalletReturnResumeProps = {
   onInitialResumeComplete?: () => void;
@@ -69,7 +73,28 @@ export function ParkingWalletReturnResume({
       try {
         for (let attempt = 0; attempt < BOOT_RETRY_COUNT; attempt += 1) {
           const status = await getLocalDataAsync(PARKING_WALLET_PAYMENT_STATUS_KEY);
-          if (!status || status !== "SUCCESS") {
+          if (!status) {
+            if (!options?.forInitialGate) return;
+            await wait(BOOT_RETRY_DELAY_MS);
+            continue;
+          }
+
+          if (status === "FAILED") {
+            const error = await getLocalDataAsync(PARKING_WALLET_PAYMENT_ERROR_KEY);
+            if (!cancelled) {
+              navigate("/services/parking/summary", {
+                replace: true,
+                state: {
+                  resumeError:
+                    (error ? String(error) : "") ||
+                    "Payment was not completed. Please try again.",
+                },
+              });
+            }
+            return;
+          }
+
+          if (status !== "SUCCESS") {
             if (!options?.forInitialGate) return;
             await wait(BOOT_RETRY_DELAY_MS);
             continue;
@@ -86,7 +111,33 @@ export function ParkingWalletReturnResume({
           }
 
           lockKey = `${RESUME_LOCK_PREFIX}${reservationId}`;
-          if (sessionStorage.getItem(lockKey)) return;
+          let lockHeld = false;
+          for (let w = 0; w < LOCK_WAIT_ATTEMPTS; w += 1) {
+            if (!sessionStorage.getItem(lockKey)) break;
+            lockHeld = true;
+            await wait(LOCK_WAIT_MS);
+            if (cancelled) return;
+          }
+          if (sessionStorage.getItem(lockKey)) {
+            Logger.error(
+              "ParkingWalletReturnResume",
+              new Error("Resume lock still held after wait; skipping duplicate confirm"),
+            );
+            if (!cancelled) {
+              navigate("/services/parking/summary", {
+                replace: true,
+                state: {
+                  resumeError:
+                    "Could not confirm your reservation. Please open My Bookings or try again.",
+                },
+              });
+            }
+            return;
+          }
+          if (lockHeld) {
+            // Another pass released the lock; re-read wallet keys before confirming.
+            continue;
+          }
           sessionStorage.setItem(lockKey, "1");
 
           const confirmed = await confirmParkingReservation(
@@ -102,6 +153,10 @@ export function ParkingWalletReturnResume({
             replace: true,
           });
           return;
+        }
+
+        if (options?.forInitialGate && !cancelled) {
+          navigate("/services/parking/summary", { replace: true });
         }
       } catch (e) {
         const message = String(e ?? "").toLowerCase();
@@ -123,10 +178,21 @@ export function ParkingWalletReturnResume({
           }
         } else {
           Logger.error("ParkingWalletReturnResume", e);
+          if (!cancelled) {
+            navigate("/services/parking/summary", {
+              replace: true,
+              state: {
+                resumeError:
+                  "Reservation confirmation failed due to a server issue. Please retry.",
+              },
+            });
+          }
         }
       } finally {
         if (lockKey) sessionStorage.removeItem(lockKey);
-        if (options?.forInitialGate) markInitialSettled();
+        // Avoid showing routes on "/" while a cancelled pass is still mid-flight
+        // (e.g. React Strict Mode effect cleanup).
+        if (options?.forInitialGate && !cancelled) markInitialSettled();
       }
     };
 
@@ -140,7 +206,13 @@ export function ParkingWalletReturnResume({
     return () => {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisibility);
-      markInitialSettled();
+      // Release resume lock so a remount (e.g. React Strict Mode) can confirm.
+      // Do NOT call onInitialResumeComplete here — that would mount routes on "/"
+      // while confirm is still in flight.
+      const rid = getParkingPaymentContextState()?.reservationId;
+      if (rid) {
+        sessionStorage.removeItem(`${RESUME_LOCK_PREFIX}${rid}`);
+      }
     };
   }, [handleRequest, handleRequestWithNewToken, navigate, onInitialResumeComplete]);
 

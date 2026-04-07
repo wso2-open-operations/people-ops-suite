@@ -32,8 +32,9 @@ import {
   MyParkingBookings,
 } from "@/pages";
 import type { PageProps, User } from "@/types";
-import { useEffect, useState } from "react";
-import { getToken } from "./components/microapp-bridge";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { CircularProgress } from "@mui/material";
+import { getToken, requestDeviceSafeAreaInsets } from "./components/microapp-bridge";
 import { ParkingWalletReturnResume } from "@/components/ParkingWalletReturnResume";
 import { getDisplayNameFromJwt, getEmailFromJwt } from "@/utils/http";
 
@@ -69,6 +70,20 @@ function AnimatedRoutes({ user }: PageProps) {
 function App() {
   const [user, setUser] = useState<User | undefined>(undefined);
   const [resumeReady, setResumeReady] = useState(false);
+
+  useLayoutEffect(() => {
+    requestDeviceSafeAreaInsets((data) => {
+      if (data?.insets) {
+        const { top, right, bottom, left } = data.insets;
+        const root = document.documentElement;
+        root.style.setProperty("--safe-top", `${top}px`);
+        root.style.setProperty("--safe-right", `${right}px`);
+        root.style.setProperty("--safe-bottom", `${bottom}px`);
+        root.style.setProperty("--safe-left", `${left}px`);
+      }
+    });
+  }, []);
+
   useEffect(() => {
     const init = () => {
       getToken((token: string | undefined) => {
@@ -89,7 +104,26 @@ function App() {
       <ParkingWalletReturnResume
         onInitialResumeComplete={() => setResumeReady(true)}
       />
-      {resumeReady ? <AnimatedRoutes user={user} /> : null}
+      {resumeReady ? (
+        <AnimatedRoutes user={user} />
+      ) : (
+        <div className="h-screen bg-white grid place-items-center px-6 pt-[calc(var(--safe-top)+24px)] pb-[calc(var(--safe-bottom)+24px)]">
+          <div className="text-center max-w-[320px]">
+            <div className="grid place-items-center mb-6">
+              <CircularProgress size={40} sx={{ color: "#ff7300" }} />
+            </div>
+            <div className="text-[#1F2A44] font-semibold text-lg mb-2">
+              Confirming your booking
+            </div>
+            <div className="text-[#808080] font-medium text-[15px] leading-snug">
+              Please wait while we confirm your reservation.
+            </div>
+            <div className="text-[#808080] font-medium text-[13px] leading-snug mt-4">
+              Do not close or leave the app until this finishes.
+            </div>
+          </div>
+        </div>
+      )}
     </HashRouter>
   );
 }
