@@ -23,6 +23,7 @@ export const TOPIC = {
   CONFIRM_ALERT: "confirm_alert",
   TOTP: "totp",
   NATIVE_LOG: "native_log",
+  NAVIGATE_TO_MY_APPS: "close_webview",
 };
 
 export type TopicType = (typeof TOPIC)[keyof typeof TOPIC];

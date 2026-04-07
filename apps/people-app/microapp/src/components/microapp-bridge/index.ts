@@ -132,6 +132,12 @@ export const sendNativeLog = (
   }
 };
 
+export const goToMyAppsScreen = (): void => {
+  if (window.nativebridge) {
+    triggerSuperAppAction(TOPIC.NAVIGATE_TO_MY_APPS);
+  }
+};
+
 // Scan QR Code
 export const scanQRCode = (
   successCallback: (qrData: string) => void,
