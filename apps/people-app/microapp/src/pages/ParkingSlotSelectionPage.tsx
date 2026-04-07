@@ -69,6 +69,7 @@ function ParkingSlotSelectionPage() {
   const [reservationWindowStartHour, setReservationWindowStartHour] =
     useState(5);
   const [reservationWindowEndHour, setReservationWindowEndHour] = useState(7);
+  const [reservationConfigLoaded, setReservationConfigLoaded] = useState(false);
   const [bookingWindowTick, setBookingWindowTick] = useState(0);
 
   const isBookingWindowActive = useMemo(() => {
@@ -156,6 +157,7 @@ function ParkingSlotSelectionPage() {
         if (typeof c.reservationWindowEndHour === "number") {
           setReservationWindowEndHour(c.reservationWindowEndHour);
         }
+        setReservationConfigLoaded(true);
       },
       () => {
         /* keep defaults */
@@ -404,7 +406,7 @@ function ParkingSlotSelectionPage() {
         </section>
 
         <div className="fixed left-4 right-4 bottom-[84px]">
-          {!isBookingWindowActive && (
+          {reservationConfigLoaded && !isBookingWindowActive && (
             <div className="bg-[#FFF7EB] rounded-[1rem] shadow-[0_8px_24px_rgba(0,0,0,0.08)] border border-[#FFB74D] px-4 py-3">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 shrink-0">
