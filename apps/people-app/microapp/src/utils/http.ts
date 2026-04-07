@@ -30,8 +30,8 @@ type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export interface RequestOptions {
   url: string;
   method: HttpMethod;
-  body?: unknown;
-  successFn: (data: unknown) => void;
+  body?: any;
+  successFn: (data: any) => void;
   failFn?: (error?: string) => void;
   loadingFn?: (isLoading: boolean) => void;
   headers?: HeadersInit;
@@ -111,7 +111,7 @@ const useHttp = () => {
 
       const responseText = await response.text();
 
-      let responseBody: unknown = "";
+      let responseBody: any = "";
       if (responseText) {
         try {
           responseBody = JSON.parse(responseText);
@@ -292,10 +292,10 @@ export function executeWithTokenHandling(
   handleRequestWithNewToken: (callback: () => void) => void,
   url: string,
   method: HttpMethod,
-  body: object | null,
-  successFn: (param: unknown) => void,
-  failFn: (param: string | undefined) => void,
-  loadingFn: (param: boolean) => void,
+  body: Object | null,
+  successFn: (param: any) => void,
+  failFn: (param: any) => void,
+  loadingFn: (param: any) => void,
   headers?: HeadersInit | null,
 ) {
   handleRequestWithNewToken(() => {
