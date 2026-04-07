@@ -14,11 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { HistorySharp, HomeSharp } from "@mui/icons-material";
+import { HistorySharp, LocalParkingSharp } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-type BottomNavKey = "home" | "history";
+type BottomNavKey = "parking" | "history";
 
 interface BottomNavProps {
   active: BottomNavKey;
@@ -36,15 +36,17 @@ function BottomNav({ active }: BottomNavProps) {
         <IconButton
           onClick={() => navigate("/services/parking")}
           sx={{ padding: 0 }}
-          aria-label="Home"
+          aria-label="Parking"
         >
           <div className="flex flex-col items-center gap-1">
-            <HomeSharp style={{ color: active === "home" ? accent : muted }} />
+            <LocalParkingSharp
+              style={{ color: active === "parking" ? accent : muted }}
+            />
             <span
               className="text-[12.5px] font-medium"
-              style={{ color: active === "home" ? accent : muted }}
+              style={{ color: active === "parking" ? accent : muted }}
             >
-              Home
+              Parking
             </span>
           </div>
         </IconButton>

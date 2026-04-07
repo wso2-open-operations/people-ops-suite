@@ -19,11 +19,9 @@ import type { ReactNode } from "react";
 import { CircularProgress, IconButton } from "@mui/material";
 import {
   CalendarMonthSharp,
-  CancelSharp,
   CheckCircleSharp,
   CloseSharp,
   DirectionsCarSharp,
-  HourglassTopSharp,
   LocationOnSharp,
   PaidSharp,
   KeyboardBackspaceSharp,
@@ -117,31 +115,13 @@ function MyParkingBookingsPage() {
     );
   }, [reservations, today]);
 
-  const pendingBookings = useMemo(() => {
+  const pastBookings = useMemo(() => {
     return reservations
       .filter(
         (r) =>
-          r.status === ("PENDING" as ParkingReservationStatus) &&
-          r.bookingDate === today,
+          r.status === ("CONFIRMED" as ParkingReservationStatus) &&
+          r.bookingDate < today,
       )
-      .sort((a, b) =>
-        String(b.createdOn).localeCompare(String(a.createdOn)),
-      );
-  }, [reservations, today]);
-
-  const pastBookings = useMemo(() => {
-    return reservations
-      .filter((r) => {
-        const confirmedOrExpired =
-          r.status === ("CONFIRMED" as ParkingReservationStatus) ||
-          r.status === ("EXPIRED" as ParkingReservationStatus);
-        if (!confirmedOrExpired) return false;
-        if (r.bookingDate < today) return true;
-        return (
-          r.bookingDate === today &&
-          r.status === ("EXPIRED" as ParkingReservationStatus)
-        );
-      })
       .sort((a, b) =>
         String(b.bookingDate).localeCompare(String(a.bookingDate)),
       );
@@ -197,23 +177,6 @@ function MyParkingBookingsPage() {
                     />
                   ))}
                 </div>
-              )}
-
-              {pendingBookings.length > 0 && (
-                <>
-                  <div className="text-[13px] font-bold text-[#808080] mt-3 mb-3">
-                    PENDING
-                  </div>
-                  <div className="grid gap-3">
-                    {pendingBookings.map((r) => (
-                      <PendingBookingCard
-                        key={r.id}
-                        reservation={r}
-                        onOpen={() => openReservationDetails(r)}
-                      />
-                    ))}
-                  </div>
-                </>
               )}
 
               <div className="text-[13px] font-bold text-[#808080] mt-6 mb-3">
@@ -335,31 +298,13 @@ function MyParkingBookingsPage() {
 function ReservationStatusBadge({ status }: { status: ParkingReservationStatus | string }) {
   const normalized = String(status);
   const isConfirmed = normalized === ("CONFIRMED" as ParkingReservationStatus);
-  const isExpired = normalized === ("EXPIRED" as ParkingReservationStatus);
 
-  if (isConfirmed) {
-    return (
-      <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#ff7300] text-white text-[12px] font-extrabold">
-        <CheckCircleSharp style={{ fontSize: 16, marginRight: 6 }} />
-        CONFIRMED
-      </div>
-    );
-  }
+  if (!isConfirmed) return null;
 
-  if (isExpired) {
-    return (
-      <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#FFF2F2] text-[#FF4D4D] text-[12px] font-extrabold border border-[#FFD9D9]">
-        <CancelSharp style={{ fontSize: 16, marginRight: 6 }} />
-        EXPIRED
-      </div>
-    );
-  }
-
-  // default to pending UI
   return (
-    <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#FFF6EA] text-[#F59E0B] text-[12px] font-extrabold">
-      <HourglassTopSharp style={{ fontSize: 16, marginRight: 6 }} />
-      PENDING
+    <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#EAF9EF] text-[#2ECC71] text-[12px] font-extrabold">
+      <CheckCircleSharp style={{ fontSize: 16, marginRight: 6 }} />
+      CONFIRMED
     </div>
   );
 }
@@ -438,7 +383,6 @@ function PastBookingCard({
   reservation: ParkingReservationDetails;
   onOpen: () => void;
 }) {
-  const isExpired = reservation.status === ("EXPIRED" as ParkingReservationStatus);
   return (
     <div
       role="button"
@@ -451,56 +395,9 @@ function PastBookingCard({
     >
       <div className="flex items-center gap-3">
         <div
-          className={`w-10 h-10 rounded-full grid place-items-center ${
-            isExpired ? "bg-[#FFF2F2] text-[#FF4D4D]" : "bg-[#EAF9EF] text-[#2ECC71]"
-          }`}
+          className="w-10 h-10 rounded-full grid place-items-center bg-[#EAF9EF] text-[#2ECC71]"
         >
-          {isExpired ? (
-            <CancelSharp style={{ fontSize: 22 }} />
-          ) : (
-            <CheckCircleSharp style={{ fontSize: 22 }} />
-          )}
-        </div>
-        <div>
-          <div className="text-[16px] font-extrabold text-[#1F2A44]">
-            {reservation.slotId}
-          </div>
-          <div className="text-[12.5px] text-[#808080] font-medium mt-0.5">
-            {formatBookingDate(reservation.bookingDate)}
-          </div>
-        </div>
-      </div>
-
-      <div className="text-right">
-        <div className="text-[16px] font-extrabold text-[#1F2A44]">
-          {formatCoins(reservation.coinsAmount)}{" "}
-          <span className="text-[12.5px] font-bold">O2C</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PendingBookingCard({
-  reservation,
-  onOpen,
-}: {
-  reservation: ParkingReservationDetails;
-  onOpen: () => void;
-}) {
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") onOpen();
-      }}
-      className="border border-[#FFD18A] rounded-[1rem] px-4 py-3 bg-white flex items-center justify-between cursor-pointer"
-    >
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full grid place-items-center bg-[#FFF6EA] text-[#F59E0B]">
-          <HourglassTopSharp style={{ fontSize: 22 }} />
+          <CheckCircleSharp style={{ fontSize: 22 }} />
         </div>
         <div>
           <div className="text-[16px] font-extrabold text-[#1F2A44]">

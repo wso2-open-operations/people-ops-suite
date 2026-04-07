@@ -20,7 +20,6 @@ import { useNavigate } from "react-router-dom";
 import {
   AccessTimeSharp,
   KeyboardBackspaceSharp,
-  Search,
   WarningAmberSharp,
 } from "@mui/icons-material";
 import { CircularProgress, IconButton } from "@mui/material";
@@ -60,7 +59,6 @@ function ParkingSlotSelectionPage() {
     undefined,
   );
 
-  const [search, setSearch] = useState("");
   const [loadingFloors, setLoadingFloors] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [busyPayment, setBusyPayment] = useState(false);
@@ -232,12 +230,6 @@ function ParkingSlotSelectionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFloorId]);
 
-  const filteredSlots = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return slots;
-    return slots.filter((s) => s.slotId.toLowerCase().includes(q));
-  }, [search, slots]);
-
   const handleProceedToPayment = () => {
     if (
       !isBookingWindowActive ||
@@ -278,20 +270,8 @@ function ParkingSlotSelectionPage() {
             Select Parking Slot
           </h2>
 
-          <div className="mt-6 relative">
-            <div className="flex items-center gap-2 w-full bg-[#EFEFEF] px-3 py-2 rounded-lg">
-              <Search style={{ color: "#787878", fontSize: 23 }} />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search slot ID..."
-                className="flex-1 bg-transparent outline-none text-lg font-medium placeholder:text-[#8F8F8F]"
-              />
-            </div>
-          </div>
-
           {isBookingWindowActive && (
-            <div className="mt-4 border border-[#8FC4FF] bg-[#EAF3FF] rounded-lg px-3 py-2 flex items-start gap-2">
+            <div className="mt-6 border border-[#8FC4FF] bg-[#EAF3FF] rounded-lg px-3 py-2 flex items-start gap-2">
               <div className="mt-0.5">
                 <div className="w-7 h-7 rounded-full bg-white grid place-items-center border border-[#8FC4FF]">
                   <AccessTimeSharp style={{ color: "#0B64C0" }} />
@@ -338,8 +318,8 @@ function ParkingSlotSelectionPage() {
           )}
 
           {!loadingFloors && !loadingSlots && (
-            <div className="grid grid-cols-3 gap-3">
-              {filteredSlots.map((slot) => {
+            <div className="grid grid-cols-2 gap-3">
+              {slots.map((slot) => {
                 const isSelected = slot.slotId === selectedSlot?.slotId;
                 const isBooked = slot.isBooked;
                 const selectionDisabled = isBooked || !isBookingWindowActive;
@@ -365,7 +345,11 @@ function ParkingSlotSelectionPage() {
                     disabled={selectionDisabled}
                     onClick={() => {
                       if (!isBookingWindowActive || isBooked) return;
-                      isSelected ? setSelectedSlot(undefined) : setSelectedSlot(slot);
+                      if (isSelected) {
+                        setSelectedSlot(undefined);
+                      } else {
+                        setSelectedSlot(slot);
+                      }
                     }}
                     className={`rounded-[1.2rem] border p-3 min-h-[102px] transition-colors ${
                       isSelected ? "shadow-[0_0_0_2px_rgba(255,115,0,0.15)]" : ""
@@ -509,7 +493,7 @@ function ParkingSlotSelectionPage() {
           )}
         </div>
 
-        <BottomNav active="home" />
+        <BottomNav active="parking" />
       </div>
     </PageTransitionWrapper>
   );
