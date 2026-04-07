@@ -70,6 +70,7 @@ function AnimatedRoutes({ user }: PageProps) {
 function App() {
   const [user, setUser] = useState<User | undefined>(undefined);
   const [resumeReady, setResumeReady] = useState(false);
+  const [parkingResumeGateActive, setParkingResumeGateActive] = useState(false);
 
   useLayoutEffect(() => {
     requestDeviceSafeAreaInsets((data) => {
@@ -103,6 +104,7 @@ function App() {
     <HashRouter>
       <ParkingWalletReturnResume
         onInitialResumeComplete={() => setResumeReady(true)}
+        onParkingResumeGateActive={setParkingResumeGateActive}
       />
       {resumeReady ? (
         <AnimatedRoutes user={user} />
@@ -112,15 +114,28 @@ function App() {
             <div className="grid place-items-center mb-6">
               <CircularProgress size={40} sx={{ color: "#ff7300" }} />
             </div>
-            <div className="text-[#1F2A44] font-semibold text-lg mb-2">
-              Confirming your booking
-            </div>
-            <div className="text-[#808080] font-medium text-[15px] leading-snug">
-              Please wait while we confirm your reservation.
-            </div>
-            <div className="text-[#808080] font-medium text-[13px] leading-snug mt-4">
-              Do not close or leave the app until this finishes.
-            </div>
+            {parkingResumeGateActive ? (
+              <>
+                <div className="text-[#1F2A44] font-semibold text-lg mb-2">
+                  Confirming your booking
+                </div>
+                <div className="text-[#808080] font-medium text-[15px] leading-snug">
+                  Please wait while we confirm your reservation.
+                </div>
+                <div className="text-[#808080] font-medium text-[13px] leading-snug mt-4">
+                  Do not close or leave the app until this finishes.
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-[#1F2A44] font-semibold text-lg mb-2">
+                  Loading
+                </div>
+                <div className="text-[#808080] font-medium text-[15px] leading-snug">
+                  Please wait.
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

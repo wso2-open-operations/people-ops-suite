@@ -40,10 +40,12 @@ const LOCK_WAIT_MS = 100;
 
 type ParkingWalletReturnResumeProps = {
   onInitialResumeComplete?: () => void;
+  onParkingResumeGateActive?: (active: boolean) => void;
 };
 
 export function ParkingWalletReturnResume({
   onInitialResumeComplete,
+  onParkingResumeGateActive,
 }: ParkingWalletReturnResumeProps) {
   const navigate = useNavigate();
   const { handleRequest, handleRequestWithNewToken } = useHttp();
@@ -54,6 +56,7 @@ export function ParkingWalletReturnResume({
     const markInitialSettled = () => {
       if (initialSettled) return;
       initialSettled = true;
+      onParkingResumeGateActive?.(false);
       onInitialResumeComplete?.();
     };
 
@@ -66,6 +69,10 @@ export function ParkingWalletReturnResume({
       if (!reservationId) {
         if (options?.forInitialGate) markInitialSettled();
         return;
+      }
+
+      if (options?.forInitialGate) {
+        onParkingResumeGateActive?.(true);
       }
 
       let lockKey: string | null = null;
@@ -205,16 +212,20 @@ export function ParkingWalletReturnResume({
 
     return () => {
       cancelled = true;
+      onParkingResumeGateActive?.(false);
       document.removeEventListener("visibilitychange", onVisibility);
-      // Release resume lock so a remount (e.g. React Strict Mode) can confirm.
-      // Do NOT call onInitialResumeComplete here — that would mount routes on "/"
-      // while confirm is still in flight.
       const rid = getParkingPaymentContextState()?.reservationId;
       if (rid) {
         sessionStorage.removeItem(`${RESUME_LOCK_PREFIX}${rid}`);
       }
     };
-  }, [handleRequest, handleRequestWithNewToken, navigate, onInitialResumeComplete]);
+  }, [
+    handleRequest,
+    handleRequestWithNewToken,
+    navigate,
+    onInitialResumeComplete,
+    onParkingResumeGateActive,
+  ]);
 
   return null;
 }
