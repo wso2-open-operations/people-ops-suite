@@ -264,7 +264,7 @@ function ParkingSlotSelectionPage() {
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative">
         <section className="px-4 pt-6">
-          <IconButton onClick={() => navigate(-1)} aria-label="Back">
+          <IconButton onClick={() => navigate("/")} aria-label="Back">
             <KeyboardBackspaceSharp className="text-black" />
           </IconButton>
 
