@@ -106,7 +106,9 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
   return (
     <BottomSheet
       onClose={() => {
-        !busy && onClose();
+        if (!busy) {
+          onClose();
+        }
       }}
     >
       <div className="relative">

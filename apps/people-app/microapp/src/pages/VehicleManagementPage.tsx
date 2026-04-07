@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
 
@@ -45,7 +45,7 @@ function VehicleManagementPage() {
   const { handleRequest, handleRequestWithNewToken } = useHttp();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fetchVehicles = async () => {
+  const fetchVehicles = useCallback(async () => {
     executeWithTokenHandling(
       handleRequest,
       handleRequestWithNewToken,
@@ -66,11 +66,11 @@ function VehicleManagementPage() {
       (error) => Logger.error("Error while fetching vehicle list:", error),
       (loading) => setIsLoading(loading),
     );
-  };
+  }, [handleRequest, handleRequestWithNewToken]);
 
   useEffect(() => {
     fetchVehicles();
-  }, []);
+  }, [fetchVehicles]);
 
   const handleDeleteRequest = (id: number) => {
     setVehiclePendingRemoval(id);

@@ -21,6 +21,7 @@ import { PageTransitionWrapper } from "@/components/shared";
 import { ServiceTile } from "@/components/features/services";
 
 function HomePage({ user: _user }: PageProps) {
+  void _user;
   return (
     <PageTransitionWrapper type="main">
       <Header />

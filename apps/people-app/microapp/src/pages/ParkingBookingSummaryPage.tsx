@@ -217,7 +217,7 @@ function ParkingBookingSummaryPage() {
             error: error ? String(error) : undefined,
           };
         }
-      } catch (e) {
+      } catch {
         // Ignore polling errors; keep waiting.
       }
 
