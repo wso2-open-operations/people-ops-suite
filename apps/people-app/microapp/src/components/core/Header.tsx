@@ -69,7 +69,7 @@ function Header() {
                 fontSize: "0.875rem",
                 lineHeight: 1.2,
                 color: "#5F6368",
-                whiteSpace: "nowrap",
+                whiteSpace: "normal",
               }}
             >
               Are you sure you want to leave this application?
