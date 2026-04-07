@@ -139,7 +139,7 @@ function MyParkingBookingsPage() {
             >
               <KeyboardBackspaceSharp className="text-black" />
             </IconButton>
-            <h2 className="flex-1 text-center text-[20px] font-bold text-[#1F2A44]">
+            <h2 className="flex-1 text-center text-[18px] font-bold text-[#1F2A44]">
               My Bookings
             </h2>
             <div className="w-[40px]" />

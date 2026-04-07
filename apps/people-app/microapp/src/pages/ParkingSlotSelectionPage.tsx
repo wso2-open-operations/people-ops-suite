@@ -272,8 +272,8 @@ function ParkingSlotSelectionPage() {
             >
               <KeyboardBackspaceSharp className="text-black" />
             </IconButton>
-            <h2 className="flex-1 text-center text-[20px] font-bold text-[#1F2A44]">
-              Select Parking Slot
+            <h2 className="flex-1 text-center text-[18px] font-bold text-[#1F2A44]">
+              Book Parking Slot
             </h2>
             <div className="w-[40px]" />
           </div>
@@ -293,7 +293,7 @@ function ParkingSlotSelectionPage() {
             </div>
           )}
 
-          <div className="flex gap-3 mt-4">
+          <div className="flex gap-3 mt-5">
             {floors.map((f) => {
               const isActive = f.id === selectedFloorId;
               return (
