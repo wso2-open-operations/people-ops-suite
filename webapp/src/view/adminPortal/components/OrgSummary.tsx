@@ -20,10 +20,6 @@ import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import SettingsIcon from "@mui/icons-material/Settings";
 import UpdateIcon from "@mui/icons-material/Update";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import SearchIcon from "@mui/icons-material/Search";
-import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Avatar,
@@ -34,17 +30,15 @@ import {
   Divider,
   Grid,
   IconButton,
-  InputAdornment,
   Link,
   Stack,
   Tab,
   Tabs,
-  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { DataGrid, GridPreferencePanelsValue, GridRenderCellParams, useGridApiRef } from "@mui/x-data-grid";
+import { DataGrid, GridRenderCellParams, useGridApiRef } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 import { useLocation } from "react-router-dom";
 import { useDebounce } from "use-debounce";
@@ -52,6 +46,7 @@ import { useDebounce } from "use-debounce";
 import { useEffect, useRef, useState } from "react";
 
 import { CompletionStatusSection } from "@component/common/CompletionStatusSection";
+import { DataGridToolbar } from "@component/common/DataGridToolbar";
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
 import { CustomModal } from "@component/common/CustomModal";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
@@ -887,55 +882,11 @@ export const OrgSummary = ({
                         <Tab label="Quota Allocations" />
                       </Tabs>
                       {selectedTab < 3 && (
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          gap={0.5}
-                          sx={{ pr: 1, flexShrink: 0 }}
-                        >
-                          <Tooltip title="Columns" enterDelay={500}>
-                            <IconButton
-                              size="small"
-                              onClick={() =>
-                                tabApiRefs[selectedTab]?.current?.showPreferences(
-                                  GridPreferencePanelsValue.columns,
-                                )
-                              }
-                            >
-                              <ViewColumnIcon sx={{ fontSize: "1.1rem" }} />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Filters" enterDelay={500}>
-                            <IconButton
-                              size="small"
-                              onClick={() => tabApiRefs[selectedTab]?.current?.showFilterPanel()}
-                            >
-                              <FilterListIcon sx={{ fontSize: "1.1rem" }} />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Export CSV" enterDelay={500}>
-                            <IconButton
-                              size="small"
-                              onClick={() => tabApiRefs[selectedTab]?.current?.exportDataAsCsv()}
-                            >
-                              <FileDownloadIcon sx={{ fontSize: "1.1rem" }} />
-                            </IconButton>
-                          </Tooltip>
-                          <TextField
-                            size="small"
-                            placeholder="Search…"
-                            value={tableSearchText}
-                            onChange={(e) => setTableSearchText(e.target.value)}
-                            slotProps={{
-                              input: {
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <SearchIcon sx={{ fontSize: "1rem" }} />
-                                  </InputAdornment>
-                                ),
-                              },
-                            }}
-                            sx={{ width: 180, "& .MuiInputBase-root": { height: 32 } }}
+                        <Box sx={{ pr: 1, flexShrink: 0 }}>
+                          <DataGridToolbar
+                            apiRef={tabApiRefs[selectedTab]}
+                            searchText={tableSearchText}
+                            onSearchChange={setTableSearchText}
                           />
                         </Box>
                       )}
