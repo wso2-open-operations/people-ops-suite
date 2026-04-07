@@ -29,7 +29,7 @@ function Header() {
         <div className="pt-[calc(env(safe-area-inset-top)+12px)] pb-4 border-b border-[#E5E5E5]">
           <div className="relative h-10 mb-4">
             <h1 className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 text-[1.125rem] font-semibold text-[#1F2A44] whitespace-nowrap">
-              People App
+              People
             </h1>
             <IconButton
               onClick={() => setIsExitDialogOpen(true)}
