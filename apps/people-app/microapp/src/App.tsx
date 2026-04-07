@@ -32,7 +32,7 @@ import {
   MyParkingBookings,
 } from "@/pages";
 import type { PageProps, User } from "@/types";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { CircularProgress } from "@mui/material";
 import { getToken, requestDeviceSafeAreaInsets } from "./components/microapp-bridge";
 import { ParkingWalletReturnResume } from "@/components/ParkingWalletReturnResume";
@@ -72,6 +72,10 @@ function App() {
   const [resumeReady, setResumeReady] = useState(false);
   const [parkingResumeGateActive, setParkingResumeGateActive] = useState(false);
 
+  const handleInitialResumeComplete = useCallback(() => {
+    setResumeReady(true);
+  }, []);
+
   useLayoutEffect(() => {
     requestDeviceSafeAreaInsets((data) => {
       if (data?.insets) {
@@ -103,7 +107,7 @@ function App() {
   return (
     <HashRouter>
       <ParkingWalletReturnResume
-        onInitialResumeComplete={() => setResumeReady(true)}
+        onInitialResumeComplete={handleInitialResumeComplete}
         onParkingResumeGateActive={setParkingResumeGateActive}
       />
       {resumeReady ? (
