@@ -39,7 +39,7 @@ type CreateParkingReservationRequest record {|
     # Booking date (YYYY-MM-DD), same-day only
     @constraint:String {
         pattern: {
-            value: re `${database:DATE_PATTERN_STRING}`,
+            value: re `${database:DATE_PATTERN}`,
             message: "Booking date must be in YYYY-MM-DD format."
         }
     }
@@ -68,4 +68,150 @@ type ConfirmParkingReservationRequest record {|
 type CarParkConfigResponse record {|
     # Master wallet address for O2C car park payments (0x-prefixed).
     string publicWalletAddress;
+|};
+
+# A parsed CSV data row paired with its spreadsheet row number.
+type CsvRowInfo record {|
+    # 1-based row number (header = row 1, first data row = row 2)
+    int rowNumber;
+    # Typed CSV row mapped directly from the CSV headers
+    BulkEmployeeCsvRow values;
+|};
+
+# Normalized name-to-ID lookup maps for all reference data.
+type BulkRefData record {|
+    # Normalized business unit name to ID
+    map<int> businessUnitIds;
+    # Normalized team name to ID
+    map<int> teamIds;
+    # Normalized sub-team name to ID
+    map<int> subTeamIds;
+    # Normalized unit name to ID
+    map<int> unitIds;
+    # Normalized designation name to ID
+    map<int> designationIds;
+    # Normalized employment type name to ID
+    map<int> employmentTypeIds;
+    # Normalized company name to ID
+    map<int> companyIds;
+    # Normalized office name to ID
+    map<int> officeIds;
+    # Normalized house name to ID
+    map<int> houseIds;
+    # ID of the house with the fewest active employees for auto-assignment
+    int? suggestedHouseId;
+|};
+
+# Result of the first pass over a bulk CSV upload.
+type BulkFirstPassResult record {|
+    # Parsed data rows with row numbers
+    CsvRowInfo[] rowInfos;
+    # Validation and intra-CSV duplicate errors
+    database:BulkEmployeeError[] errors;
+    # Number of blank rows skipped
+    int skipped;
+    # Normalized work email to row number for DB duplicate detection
+    map<int> emailByRow;
+    # NIC/Passport value to row number for DB duplicate detection
+    map<int> nicByRow;
+    # Work emails to batch-check against the DB
+    string[] candidateEmails;
+    # NIC/Passport values to batch-check against the DB
+    string[] candidateNics;
+|};
+
+# A fully resolved employee with a generated ID and a complete payload ready for DB insertion.
+type ResolvedEmployee record {|
+    # Auto-generated employee ID
+    string employeeId;
+    # Complete payload with all reference IDs resolved
+    database:CreateEmployeePayload payload;
+    # 1-based source row number
+    int rowNumber;
+|};
+
+# Result of the second pass containing all resolved employees ready for bulk DB insertion.
+type BulkPayloadResult record {|
+    # Resolved employees with generated IDs and complete payloads
+    ResolvedEmployee[] employees;
+|};
+
+# Typed record mapped directly from a bulk employee onboarding CSV row.
+type BulkEmployeeCsvRow record {|
+    # First name
+    string firstName = "";
+    # Last name
+    string lastName = "";
+    # Work email
+    string workEmail = "";
+    # Manager email
+    string managerEmail = "";
+    # Job designation
+    string designation = "";
+    # Business unit
+    string businessUnit = "";
+    # Team
+    string team = "";
+    # Sub-team
+    string subTeam = "";
+    # Unit (optional)
+    string unit = "";
+    # Employment start date (YYYY-MM-DD)
+    string startDate = "";
+    # Employment type
+    string employmentType = "";
+    # Company
+    string company = "";
+    # Work location
+    string workLocation = "";
+    # Office (optional)
+    string office = "";
+    # Title
+    string title = "";
+    # NIC or passport number
+    string nicOrPassport = "";
+    # Date of birth (YYYY-MM-DD)
+    string dob = "";
+    # Gender
+    string gender = "";
+    # Nationality
+    string nationality = "";
+    # Personal email (optional)
+    string personalEmail = "";
+    # Personal phone number (optional)
+    string personalPhone = "";
+    # Resident phone number (optional)
+    string residentNumber = "";
+    # Address line 1 (optional)
+    string addressLine1 = "";
+    # Address line 2 (optional)
+    string addressLine2 = "";
+    # City (optional)
+    string city = "";
+    # State or province (optional)
+    string stateOrProvince = "";
+    # Postal code (optional)
+    string postalCode = "";
+    # Country (optional)
+    string country = "";
+    # EPF number (optional)
+    string epf = "";
+    # Secondary job title (optional)
+    string secondaryJobTitle = "";
+    # Continuous service record date (YYYY-MM-DD, optional)
+    string continuousServiceRecord = "";
+    # Probation end date (YYYY-MM-DD, optional)
+    string probationEndDate = "";
+    # Agreement end date (YYYY-MM-DD, optional)
+    string agreementEndDate = "";
+    # Semicolon-separated additional manager emails (optional)
+    string additionalManagerEmails = "";
+    # Emergency contact name (optional — mobile and relationship required if provided)
+    string emergencyContactName = "";
+    # Emergency contact mobile (required when name is provided)
+    string emergencyContactMobile = "";
+    # Emergency contact relationship (required when name is provided)
+    string emergencyContactRelationship = "";
+    # Emergency contact telephone (optional)
+    string emergencyContactTelephone = "";
 |};

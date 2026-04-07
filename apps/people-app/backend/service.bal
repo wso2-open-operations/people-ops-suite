@@ -21,7 +21,6 @@ import people.wso2_coin;
 
 import ballerina/http;
 import ballerina/log;
-import ballerina/regex;
 import ballerina/time;
 
 @display {
@@ -506,7 +505,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:EMAIL_PATTERN.isFullMatch(workEmail) {
             string customErr = "Invalid work email format";
             log:printWarn(customErr, workEmail = workEmail);
             return <http:BadRequest>{
@@ -808,6 +807,106 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:NotFound>{body: {message: "No active houses found"}};
         }
         return house;
+    }
+
+    # Bulk-creates employees from an uploaded CSV file.
+    #
+    # Processes the request in two passes:
+    # - First pass: validates all rows, checks for within-CSV and DB-level
+    # duplicates. Returns 400 with per-row errors if any row fails.
+    # - Second pass: builds payloads, generates employee IDs, and inserts
+    # all records in a single DB transaction.
+    #
+    # + return - Bulk upload result with created/skipped counts, or an HTTP error
+    resource function post employees/bulk(http:RequestContext ctx, http:Request req)
+            returns database:BulkUploadResponse|http:BadRequest|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to bulk create employees", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to bulk create employees"
+                }
+            };
+        }
+
+        byte[]|http:BadRequest fileBytes = extractCsvFileBytes(req);
+        if fileBytes is http:BadRequest {
+            return fileBytes;
+        }
+
+        BulkEmployeeCsvRow[]|error rows = parseCsvBytes(fileBytes);
+        if rows is error {
+            return <http:BadRequest>{
+                body: {
+                    message: rows.message()
+                }
+            };
+        }
+
+        BulkRefData|error refData = loadBulkReferenceData();
+        if refData is error {
+            log:printError("Error loading reference data for bulk upload", refData);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error validating bulk upload"
+                }
+            };
+        }
+
+        BulkFirstPassResult firstPass = processBulkCsvRows(rows, refData);
+
+        database:BulkEmployeeError[]|error dbErrors = detectDbDuplicates(
+                firstPass.emailByRow, firstPass.nicByRow,
+                firstPass.candidateEmails, firstPass.candidateNics);
+        if dbErrors is error {
+            log:printError("Error checking duplicates during bulk upload", dbErrors);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error validating bulk upload"
+                }
+            };
+        }
+
+        database:BulkEmployeeError[] allErrors = [...firstPass.errors, ...dbErrors];
+        if allErrors.length() > 0 {
+            return <http:BadRequest>{
+                body: allErrors
+            };
+        }
+
+        BulkPayloadResult|error payloadResult = buildBulkPayloads(firstPass.rowInfos, refData);
+        if payloadResult is error {
+            log:printError("Error building bulk employee payloads", payloadResult);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                }
+            };
+        }
+
+        int|error created = database:addEmployeesBulk(
+            payloadResult.employees.map(e => e.payload),
+            payloadResult.employees.map(e => e.employeeId),
+            userInfo.email);
+        if created is error {
+            log:printError("Error occurred while bulk creating employees", created);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                }
+            };
+        }
+
+        return {created, skipped: firstPass.skipped, errors: []};
     }
 
     # Create a new employee.
@@ -1288,7 +1387,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !regex:matches(date, database:DATE_PATTERN_STRING) {
+        if !database:DATE_PATTERN.isFullMatch(date) {
             return <http:BadRequest>{
                 body: {message: "Query parameter 'date' must be in YYYY-MM-DD format."}
             };

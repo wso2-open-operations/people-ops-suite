@@ -529,6 +529,48 @@ isolated function getSubTeamsQuery(int? teamId = ()) returns sql:ParameterizedQu
     return sql:queryConcat(query, `;`);
 }
 
+# Fetch existing work emails.
+#
+# + emails - Work email list
+# + return - Query to fetch existing work emails
+isolated function getExistingWorkEmailsQuery(string[] emails) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = ``;
+    foreach int i in 0 ..< emails.length() {
+        if i == 0 {
+            inClause = sql:queryConcat(inClause, `${emails[i]}`);
+        } else {
+            inClause = sql:queryConcat(inClause, `, `, `${emails[i]}`);
+        }
+    }
+
+    return sql:queryConcat(
+            `SELECT LOWER(work_email) AS work_email FROM employee WHERE LOWER(work_email) IN (`,
+            inClause,
+            `);`
+    );
+}
+
+# Fetch existing NIC or passport values.
+#
+# + nics - NIC or passport list
+# + return - Query to fetch existing NIC or passport values
+isolated function getExistingNicOrPassportQuery(string[] nics) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = ``;
+    foreach int i in 0 ..< nics.length() {
+        if i == 0 {
+            inClause = sql:queryConcat(inClause, `${nics[i]}`);
+        } else {
+            inClause = sql:queryConcat(inClause, `, `, `${nics[i]}`);
+        }
+    }
+
+    return sql:queryConcat(
+            `SELECT nic_or_passport FROM personal_info WHERE nic_or_passport IN (`,
+            inClause,
+            `);`
+    );
+}
+
 # Get units query.
 #
 # + subTeamId - Sub team ID (optional)
