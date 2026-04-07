@@ -263,7 +263,7 @@ function ParkingSlotSelectionPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative">
-        <header className="pt-6 px-5">
+        <header className="pt-[calc(var(--safe-top)+24px)] px-5">
           <div className="flex items-center justify-between">
             <IconButton
               onClick={() => navigate("/")}
@@ -314,7 +314,7 @@ function ParkingSlotSelectionPage() {
           </div>
         </section>
 
-        <section className="px-4 mt-4 pb-28">
+        <section className="px-4 mt-4 pb-[calc(7rem+var(--safe-bottom))]">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-red-800 text-sm font-medium">
               {error}
@@ -413,7 +413,7 @@ function ParkingSlotSelectionPage() {
           )}
         </section>
 
-        <div className="fixed left-4 right-4 bottom-[84px]">
+        <div className="fixed left-4 right-4 bottom-[calc(84px+var(--safe-bottom))]">
           {reservationConfigLoaded && !isBookingWindowActive && (
             <div className="bg-[#FFF7EB] rounded-[1rem] shadow-[0_8px_24px_rgba(0,0,0,0.08)] border border-[#FFB74D] px-4 py-3">
               <div className="flex items-start gap-3">

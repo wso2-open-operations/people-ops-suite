@@ -130,7 +130,7 @@ function MyParkingBookingsPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative flex flex-col">
-        <header className="pt-6 px-5">
+        <header className="pt-[calc(var(--safe-top)+24px)] px-5">
           <div className="flex items-center justify-between">
             <IconButton
               onClick={() => navigate("/")}
@@ -146,7 +146,7 @@ function MyParkingBookingsPage() {
           </div>
         </header>
 
-        <section className="px-4 mt-5 pb-28 overflow-y-auto flex-1 min-h-0">
+        <section className="px-4 mt-5 pb-[calc(7rem+var(--safe-bottom))] overflow-y-auto flex-1 min-h-0">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-red-800 text-sm font-medium">
               {error}

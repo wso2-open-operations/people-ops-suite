@@ -31,7 +31,7 @@ function BottomNav({ active }: BottomNavProps) {
   const muted = "#9B9B9B";
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white pb-3 pt-2">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white pt-2 pb-[calc(var(--safe-bottom)+12px)]">
       <div className="flex justify-around">
         <IconButton
           onClick={() => navigate("/services/parking")}
