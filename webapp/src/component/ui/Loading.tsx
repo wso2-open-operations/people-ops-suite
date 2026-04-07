@@ -24,7 +24,7 @@ export const LoadingEffect = (props: { message: string | null; isCircularLoading
         style={{
           display: "flex",
           justifyContent: "center",
-          paddingTop: "30px",
+          paddingTop: "15px",
         }}
       >
         <Typography variant="h5">{props.message}</Typography>

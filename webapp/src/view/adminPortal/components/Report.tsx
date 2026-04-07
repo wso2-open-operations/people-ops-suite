@@ -15,16 +15,11 @@
 // under the License.
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Box, IconButton, Link, Typography } from "@mui/material";
-import {
-  DataGrid,
-  GridColDef,
-  GridRenderCellParams,
-  GridToolbar,
-  GridToolbarExportContainer,
-} from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridRenderCellParams, useGridApiRef } from "@mui/x-data-grid";
 
-import { ChangeEvent, useEffect, useState } from "react";
+import { useEffect } from "react";
 
+import { DataGridToolbar } from "@component/common/DataGridToolbar";
 import ParStatusChip from "@component/common/ParStatusChip";
 import { LoadingEffect } from "@component/ui/Loading";
 import { uiMessages } from "@config/constant";
@@ -37,7 +32,23 @@ import {
 } from "@slices/reportSlice/report";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { RequestState } from "@utils/types";
-import { getSpecialRatingEnum, getSpecialRatingLabel } from "@utils/utils";
+import { getSpecialRatingLabel } from "@utils/utils";
+
+const statusChipColumn = (
+  field: keyof ParReportEntry,
+  headerName: string,
+  overrides?: Partial<GridColDef<ParReportEntry>>,
+): GridColDef<ParReportEntry> => ({
+  field,
+  headerName,
+  flex: 0.7,
+  minWidth: 110,
+  align: "center",
+  renderCell: (params: GridRenderCellParams<ParReportEntry>) => (
+    <ParStatusChip content={(params.row[field] as string) ?? ""} />
+  ),
+  ...overrides,
+});
 
 interface ReportProps {
   parCycle: Partial<ParCycle>;
@@ -49,65 +60,28 @@ export const Report = ({ parCycle, closeReportView, isAdminHistoryViewOn }: Repo
   const dispatch = useAppDispatch();
   const reportDataStatus = useAppSelector(selectReportStatus);
   const reportData = useAppSelector(selectReportData);
-  const [searchText, setSearchText] = useState("");
+  const apiRef = useGridApiRef();
+  const usableReportData = reportData.map((data: ParReportEntry) => ({
+    ...data,
+    id: data.parRatingId,
+  }));
 
-  const usableReportData = reportData.map((data: ParReportEntry) => {
-    return {
-      ...data,
-      id: data.parRatingId,
-      parSpecialRating: getSpecialRatingLabel(data.parSpecialRating),
-    };
-  });
-
-  const columns: GridColDef[] = [
-    { field: "parEmployeeEmail", headerName: "Employee Email", flex: 1 },
-    { field: "parCompany", headerName: "Company", flex: 0.5 },
-    { field: "parLocation", headerName: "Location", flex: 0.5 },
-    { field: "parBusinessUnit", headerName: "Business Unit", flex: 1 },
-    { field: "parDepartment", headerName: "Department", flex: 1 },
-    { field: "parTeam", headerName: "Team", flex: 1 },
-    { field: "parSubTeam", headerName: "Sub Team", flex: 1 },
-    { field: "parLeadEmail", headerName: "Lead Email", flex: 1 },
-    {
-      field: "parRating",
-      headerName: "Rating",
-      flex: 0.5,
-      renderCell: (params: GridRenderCellParams<ParReportEntry>) => (
-        <ParStatusChip content={params.row?.parRating || ""} />
-      ),
-    },
-    {
-      field: "parSpecialRating",
-      headerName: "Top 5%/20% Rating",
-      flex: 0.5,
-      renderCell: (params: GridRenderCellParams<ParReportEntry>) => (
-        <ParStatusChip content={getSpecialRatingEnum(params.row?.parSpecialRating) ?? ""} />
-      ),
-    },
-    {
-      field: "parEmployeeStatus",
-      headerName: "Employee Status",
-      flex: 0.5,
-      renderCell: (params: GridRenderCellParams<ParReportEntry>) => (
-        <ParStatusChip content={params.row?.parEmployeeStatus || ""} />
-      ),
-    },
-    {
-      field: "parLeadStatus",
-      headerName: "Lead Status",
-      flex: 0.5,
-      renderCell: (params: GridRenderCellParams<ParReportEntry>) => (
-        <ParStatusChip content={params.row?.parLeadStatus || ""} />
-      ),
-    },
-    {
-      field: "parF2fStatus",
-      headerName: "F2F Status",
-      flex: 0.5,
-      renderCell: (params: GridRenderCellParams<ParReportEntry>) => (
-        <ParStatusChip content={params.row?.parF2fStatus || ""} />
-      ),
-    },
+  const columns: GridColDef<ParReportEntry>[] = [
+    { field: "parEmployeeEmail", headerName: "Employee Email", flex: 1.5, minWidth: 200 },
+    { field: "parCompany", headerName: "Company", flex: 0.8, minWidth: 110 },
+    { field: "parLocation", headerName: "Location", flex: 0.8, minWidth: 110 },
+    { field: "parBusinessUnit", headerName: "Business Unit", flex: 1, minWidth: 140 },
+    { field: "parDepartment", headerName: "Department", flex: 1, minWidth: 140 },
+    { field: "parTeam", headerName: "Team", flex: 1, minWidth: 120 },
+    { field: "parSubTeam", headerName: "Sub Team", flex: 1, minWidth: 120 },
+    { field: "parLeadEmail", headerName: "Lead Email", flex: 1.5, minWidth: 200 },
+    statusChipColumn("parRating", "Rating"),
+    statusChipColumn("parSpecialRating", "Top 5%/20%", {
+      valueGetter: (_value, row) => getSpecialRatingLabel(row.parSpecialRating),
+    }),
+    statusChipColumn("parEmployeeStatus", "Employee PAR", { flex: 0.8, minWidth: 130 }),
+    statusChipColumn("parLeadStatus", "Lead's PAR"),
+    statusChipColumn("parF2fStatus", "F2F", { flex: 0.5, minWidth: 90 }),
   ];
 
   useEffect(() => {
@@ -118,7 +92,7 @@ export const Report = ({ parCycle, closeReportView, isAdminHistoryViewOn }: Repo
 
   return (
     <Box>
-      <Box mb={2}>
+      <Box>
         <IconButton
           aria-label="back"
           color="primary"
@@ -145,22 +119,25 @@ export const Report = ({ parCycle, closeReportView, isAdminHistoryViewOn }: Repo
       )}
 
       {reportDataStatus === RequestState.SUCCEEDED && (
-        <Box height={"calc(100vh - 23rem)"}>
+        <Box
+          sx={{
+            height: "calc(100vh - 12rem)",
+            minHeight: 400,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Box display="flex" justifyContent="flex-end" sx={{ mb: 0.5, flexShrink: 0 }}>
+            <DataGridToolbar apiRef={apiRef} />
+          </Box>
           <DataGrid
-            sx={{ p: 1, gap: 2 }}
+            apiRef={apiRef}
             rows={usableReportData}
             columns={columns}
+            rowHeight={36}
             disableRowSelectionOnClick
-            pageSizeOptions={[100]}
-            slots={{
-              toolbar: GridToolbar,
-            }}
-            slotProps={{
-              toolbar: {
-                showQuickFilter: true,
-                quickFilterProps: { debounceMs: 500 },
-              },
-            }}
+            pageSizeOptions={[25, 50, 100]}
+            sx={{ flex: 1, minHeight: 0 }}
             initialState={{
               columns: {
                 columnVisibilityModel: {
@@ -171,18 +148,6 @@ export const Report = ({ parCycle, closeReportView, isAdminHistoryViewOn }: Repo
               },
               pagination: {
                 paginationModel: { pageSize: 100, page: 0 },
-              },
-              filter: {
-                filterModel: {
-                  items: [
-                    {
-                      id: "searchText",
-                      value: searchText,
-                      field: "searchText",
-                      operator: "contains",
-                    },
-                  ],
-                },
               },
             }}
           />

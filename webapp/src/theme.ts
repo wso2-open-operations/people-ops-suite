@@ -535,7 +535,6 @@ export const themeSettings = (mode: PaletteMode) => {
         styleOverrides: {
           root: {
             border: "none",
-            fontSize: typography.caption.fontSize,
           },
           columnHeaderTitle: {
             fontSize: typography.caption.fontSize,
@@ -548,6 +547,7 @@ export const themeSettings = (mode: PaletteMode) => {
             padding: 0,
             display: "flex",
             alignItems: "center",
+            fontSize: typography.caption.fontSize,
           },
           row: {
             "&:hover": { backgroundColor: "inherit" },
