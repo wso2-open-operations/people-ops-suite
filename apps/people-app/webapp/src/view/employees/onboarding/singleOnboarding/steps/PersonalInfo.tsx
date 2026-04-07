@@ -188,7 +188,7 @@ const MemoizedTextField = React.memo(
   ),
 );
 
-const SectionHeader = React.memo(({ icon, title }: any) => {
+const SectionHeader = React.memo(({ icon, title }: { icon: React.ReactNode; title: string }) => {
   const theme = useTheme();
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
