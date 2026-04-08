@@ -130,7 +130,7 @@ function MyParkingBookingsPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative flex flex-col">
-        <header className="pt-[calc(var(--safe-top)+24px)] px-5">
+        <header className="pt-[calc(var(--safe-top)+12px)] px-5">
           <div className="flex items-center justify-between">
             <IconButton
               onClick={() => navigate("/")}

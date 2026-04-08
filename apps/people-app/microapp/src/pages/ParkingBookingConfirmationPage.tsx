@@ -74,7 +74,7 @@ function ParkingBookingConfirmationPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative overflow-hidden">
-        <div className="px-5 pt-[calc(var(--safe-top)+36px)]">
+        <div className="px-5 pt-[calc(var(--safe-top)+24px)]">
           <div className="flex flex-col items-center">
             <div className="w-20 h-20 rounded-full bg-[#EAF9EF] grid place-items-center">
               <CheckCircleSharp style={{ color: "#2ECC71", fontSize: 52 }} />

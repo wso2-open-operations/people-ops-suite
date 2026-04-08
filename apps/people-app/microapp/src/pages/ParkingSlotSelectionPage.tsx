@@ -263,7 +263,7 @@ function ParkingSlotSelectionPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative">
-        <header className="pt-[calc(var(--safe-top)+24px)] px-5">
+        <header className="pt-[calc(var(--safe-top)+12px)] px-5">
           <div className="flex items-center justify-between">
             <IconButton
               onClick={() => navigate("/")}

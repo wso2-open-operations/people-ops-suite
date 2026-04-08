@@ -113,7 +113,7 @@ function App() {
       {resumeReady ? (
         <AnimatedRoutes user={user} />
       ) : (
-        <div className="h-screen bg-white grid place-items-center px-6 pt-[calc(var(--safe-top)+24px)] pb-[calc(var(--safe-bottom)+24px)]">
+        <div className="h-screen bg-white grid place-items-center px-6 pt-[calc(var(--safe-top)+12px)] pb-[var(--safe-bottom)]">
           <div className="text-center max-w-[320px]">
             <div className="grid place-items-center mb-6">
               <CircularProgress size={40} sx={{ color: "#ff7300" }} />
