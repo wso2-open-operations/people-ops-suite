@@ -33,11 +33,17 @@ public isolated service class JwtInterceptor {
         }
         string|error idToken = req.getHeader(JWT_ASSERTION_HEADER);
         if idToken is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: "Missing authentication details in the request!"
-                }
-            };
+            // Fallback: check Authorization header (for local development without API gateway).
+            string|error authHeader = req.getHeader("Authorization");
+            if authHeader is string && authHeader.startsWith("Bearer ") {
+                idToken = authHeader.substring(7);
+            } else {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Missing authentication details in the request!"
+                    }
+                };
+            }
         }
 
         CustomJwtPayload|error decodeUserInfo = decodeJwt(idToken);
