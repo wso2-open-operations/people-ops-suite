@@ -504,9 +504,12 @@ function ParkingBookingSummaryPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative overflow-y-auto pb-12">
-        <section className="px-4 pt-[calc(var(--safe-top)+24px)]">
+        <section className="px-4 pt-[calc(var(--safe-top)+12px)]">
           <div className="flex items-center justify-between">
-            <IconButton onClick={() => navigate(-1)} aria-label="Back">
+            <IconButton
+              onClick={() => navigate("/services/parking")}
+              aria-label="Back to slot selection"
+            >
               <KeyboardBackspaceSharp className="text-black" />
             </IconButton>
             <h1 className="text-[18px] font-semibold text-[#1F2A44]">
