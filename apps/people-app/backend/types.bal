@@ -98,8 +98,6 @@ type BulkRefData record {|
     map<int> officeIds;
     # Normalized house name to ID
     map<int> houseIds;
-    # ID of the house with the fewest active employees for auto-assignment
-    int? suggestedHouseId;
 |};
 
 # Result of the first pass over a bulk CSV upload.
@@ -111,9 +109,9 @@ type BulkFirstPassResult record {|
     # Number of blank rows skipped
     int skipped;
     # Normalized work email to row number for DB duplicate detection
-    map<int> emailByRow;
+    map<int> rowByEmail;
     # NIC/Passport value to row number for DB duplicate detection
-    map<int> nicByRow;
+    map<int> rowByNic;
     # Work emails to batch-check against the DB
     string[] candidateEmails;
     # NIC/Passport values to batch-check against the DB
@@ -198,8 +196,6 @@ type BulkEmployeeCsvRow record {|
     string epf = "";
     # Secondary job title (optional)
     string secondaryJobTitle = "";
-    # Continuous service record date (YYYY-MM-DD, optional)
-    string continuousServiceRecord = "";
     # Probation end date (YYYY-MM-DD, optional)
     string probationEndDate = "";
     # Agreement end date (YYYY-MM-DD, optional)

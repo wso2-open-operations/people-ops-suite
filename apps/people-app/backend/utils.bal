@@ -206,9 +206,6 @@ isolated function loadBulkReferenceData() returns BulkRefData|error {
     database:Office[] offices = check database:getOffices();
     database:House[] houses = check database:getHouses();
 
-    database:House|error? suggestedHouse = database:getHouseWithLeastActiveEmployees();
-    int? suggestedHouseId = suggestedHouse is database:House ? suggestedHouse.id : ();
-
     return {
         businessUnitIds: map from database:BusinessUnit bu in businessUnits
             select [normalizeKey(bu.name), bu.id],
@@ -227,8 +224,7 @@ isolated function loadBulkReferenceData() returns BulkRefData|error {
         officeIds: map from database:Office o in offices
             select [normalizeKey(o.name), o.id],
         houseIds: map from database:House h in houses
-            select [normalizeKey(h.name), h.id],
-        suggestedHouseId
+            select [normalizeKey(h.name), h.id]
     };
 }
 
@@ -376,8 +372,9 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
 #
 # + row - Typed CSV row to build the payload from
 # + refData - Pre-loaded reference data lookup maps
+# + suggestedHouseId - House ID to assign, resolved per-employee at call time
 # + return - Fully populated `CreateEmployeePayload` ready for DB insertion
-isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData refData)
+isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData refData, int? suggestedHouseId)
     returns database:CreateEmployeePayload {
 
     string firstName = row.firstName.trim();
@@ -430,9 +427,8 @@ isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData r
         unitId,
         businessUnitId: refData.businessUnitIds[normalizeKey(row.businessUnit)] ?: 0,
         officeId,
-        houseId: refData.suggestedHouseId,
+        houseId: suggestedHouseId,
         additionalManagerEmails,
-        continuousServiceRecord: row.continuousServiceRecord.trim().length() > 0 ? row.continuousServiceRecord.trim() : (),
         probationEndDate: row.probationEndDate.trim().length() > 0 ? row.probationEndDate.trim() : (),
         agreementEndDate: row.agreementEndDate.trim().length() > 0 ? row.agreementEndDate.trim() : (),
         personalInfo: {
@@ -496,43 +492,73 @@ public isolated function extractCsvFileBytes(http:Request req) returns byte[]|ht
     };
 }
 
-# Processes all CSV data rows in a single pass: validates each row
-# and builds intra-CSV email and NIC duplicate indices.
+# Returns true when all required fields in the row are blank.
+#
+# + row - Typed CSV row to inspect
+# + return - `true` if every required field is empty after trimming
+isolated function isEmptyBulkRow(BulkEmployeeCsvRow row) returns boolean {
+    return row.firstName.trim().length() == 0
+        && row.lastName.trim().length() == 0
+        && row.workEmail.trim().length() == 0
+        && row.managerEmail.trim().length() == 0
+        && row.designation.trim().length() == 0
+        && row.businessUnit.trim().length() == 0
+        && row.team.trim().length() == 0
+        && row.subTeam.trim().length() == 0
+        && row.startDate.trim().length() == 0
+        && row.employmentType.trim().length() == 0
+        && row.company.trim().length() == 0
+        && row.workLocation.trim().length() == 0
+        && row.title.trim().length() == 0
+        && row.nicOrPassport.trim().length() == 0
+        && row.dob.trim().length() == 0
+        && row.gender.trim().length() == 0
+        && row.nationality.trim().length() == 0;
+}
+
+# Processes all CSV data rows in a single pass: skips fully-empty rows,
+# validates each non-empty row, and builds intra-CSV email and NIC duplicate indices.
 #
 # + rows - Typed CSV rows parsed from the uploaded file
 # + refData - Pre-loaded reference data lookup maps
-# + return - `BulkFirstPassResult` with parsed rows, errors, and duplicate indices
+# + return - `BulkFirstPassResult` with parsed rows, errors, duplicate indices, and skip count
 isolated function processBulkCsvRows(BulkEmployeeCsvRow[] rows, BulkRefData refData)
         returns BulkFirstPassResult {
     CsvRowInfo[] rowInfos = [];
     database:BulkEmployeeError[] errors = [];
-    map<int> emailByRow = {};
-    map<int> nicByRow = {};
+    map<int> rowByEmail = {};
+    map<int> rowByNic = {};
     string[] candidateEmails = [];
     string[] candidateNics = [];
+    int skipped = 0;
 
     foreach int i in 0 ..< rows.length() {
         BulkEmployeeCsvRow row = rows[i];
         int rowNumber = i + 2;
 
+        if isEmptyBulkRow(row) {
+            skipped += 1;
+            continue;
+        }
+
         errors.push(...validateBulkRow(rowNumber, row, refData));
 
-        string normEmail = normalizeKey(row.workEmail);
+        string normEmail = row.workEmail.trim().toLowerAscii();
         if normEmail.length() > 0 {
-            if emailByRow.hasKey(normEmail) {
-                errors.push({row: rowNumber, 'field: CSV_FIELD_WORK_EMAIL, message: "Duplicate work email in CSV"});
+            if rowByEmail.hasKey(normEmail) {
+                errors.push({row: rowNumber, 'field: CSV_FIELD_WORK_EMAIL, message: string `Duplicate work email in CSV: ${normEmail}`});
             } else {
-                emailByRow[normEmail] = rowNumber;
+                rowByEmail[normEmail] = rowNumber;
                 candidateEmails.push(normEmail);
             }
         }
 
         string normNic = row.nicOrPassport.trim();
         if normNic.length() > 0 {
-            if nicByRow.hasKey(normNic) {
-                errors.push({row: rowNumber, 'field: CSV_FIELD_NIC_OR_PASSPORT, message: "Duplicate NIC/Passport in CSV"});
+            if rowByNic.hasKey(normNic) {
+                errors.push({row: rowNumber, 'field: CSV_FIELD_NIC_OR_PASSPORT, message: string `Duplicate NIC/Passport in CSV: ${normNic}`});
             } else {
-                nicByRow[normNic] = rowNumber;
+                rowByNic[normNic] = rowNumber;
                 candidateNics.push(normNic);
             }
         }
@@ -543,9 +569,9 @@ isolated function processBulkCsvRows(BulkEmployeeCsvRow[] rows, BulkRefData refD
     return {
         rowInfos,
         errors,
-        skipped: 0,
-        emailByRow,
-        nicByRow,
+        skipped,
+        rowByEmail,
+        rowByNic,
         candidateEmails,
         candidateNics
     };
@@ -553,25 +579,25 @@ isolated function processBulkCsvRows(BulkEmployeeCsvRow[] rows, BulkRefData refD
 
 # Checks for database-level duplicate work emails and NIC/Passport numbers.
 #
-# + emailByRow - Normalized work email to row number map
-# + nicByRow - NIC/Passport value to row number map
+# + rowByEmail - Normalized work email to row number map
+# + rowByNic - NIC/Passport value to row number map
 # + candidateEmails - Work emails to batch-check against the DB
 # + candidateNics - NIC/Passport values to batch-check against the DB
 # + return - Duplicate errors found in the DB, or an error if the DB query fails
-public isolated function detectDbDuplicates(map<int> emailByRow, map<int> nicByRow,
+public isolated function detectDbDuplicates(map<int> rowByEmail, map<int> rowByNic,
         string[] candidateEmails, string[] candidateNics)
-        returns database:BulkEmployeeError[]|error {
+    returns database:BulkEmployeeError[]|error {
     database:BulkEmployeeError[] errors = [];
 
     if candidateEmails.length() > 0 {
         string[] existingEmails = check database:getExistingWorkEmails(candidateEmails);
         foreach string existing in existingEmails {
-            int? rowNum = emailByRow[normalizeKey(existing)];
+            int? rowNum = rowByEmail[existing.trim().toLowerAscii()];
             if rowNum is int {
                 errors.push({
                     row: rowNum,
                     'field: CSV_FIELD_WORK_EMAIL,
-                    message: "Work email already exists"
+                    message: string `Work email already exists: ${existing.trim()}`
                 });
             }
         }
@@ -580,12 +606,12 @@ public isolated function detectDbDuplicates(map<int> emailByRow, map<int> nicByR
     if candidateNics.length() > 0 {
         string[] existingNics = check database:getExistingNicOrPassport(candidateNics);
         foreach string existing in existingNics {
-            int? rowNum = nicByRow[existing.trim()];
+            int? rowNum = rowByNic[existing.trim()];
             if rowNum is int {
                 errors.push({
                     row: rowNum,
                     'field: CSV_FIELD_NIC_OR_PASSPORT,
-                    message: "NIC/Passport already exists"
+                    message: string `NIC/Passport already exists: ${existing.trim()}`
                 });
             }
         }
@@ -607,7 +633,9 @@ isolated function buildBulkPayloads(CsvRowInfo[] rowInfos, BulkRefData refData)
     map<int> sequenceCache = {};
 
     foreach CsvRowInfo rowInfo in rowInfos {
-        database:CreateEmployeePayload payload = buildBulkEmployeePayload(rowInfo.values, refData);
+        database:House? house = check database:getHouseWithLeastActiveEmployees();
+        int? suggestedHouseId = house is database:House ? house.id : ();
+        database:CreateEmployeePayload payload = buildBulkEmployeePayload(rowInfo.values, refData, suggestedHouseId);
         string generatedId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
         payload.employeeId = generatedId;
         employees.push({employeeId: generatedId, payload, rowNumber: rowInfo.rowNumber});

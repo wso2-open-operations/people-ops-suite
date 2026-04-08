@@ -83,6 +83,8 @@ const CommonPage = ({ title, commonPageTabs, icon, page }: CommonPageProps) => {
             <Tab
               key={index}
               label={tab.tabTitle}
+              icon={tab.icon}
+              iconPosition="start"
               disableRipple
               id={`common-tab-${index}`}
               aria-controls={`common-tabpanel-${index}`}

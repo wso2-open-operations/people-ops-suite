@@ -48,7 +48,6 @@ const CSV_FIELD_POSTAL_CODE = "postalCode";
 const CSV_FIELD_COUNTRY = "country";
 const CSV_FIELD_EPF = "epf";
 const CSV_FIELD_SECONDARY_JOB_TITLE = "secondaryJobTitle";
-const CSV_FIELD_CONTINUOUS_SERVICE_RECORD = "continuousServiceRecord";
 const CSV_FIELD_PROBATION_END_DATE = "probationEndDate";
 const CSV_FIELD_AGREEMENT_END_DATE = "agreementEndDate";
 const CSV_FIELD_ADDITIONAL_MANAGER_EMAILS = "additionalManagerEmails";

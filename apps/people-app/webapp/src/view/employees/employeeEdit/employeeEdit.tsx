@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import EmployeeForm from "../onboarding/EmployeeForm";
+import EmployeeForm from "@view/employees/onboarding/EmployeeForm";
 
 export default function EmployeeEdit() {
   return <EmployeeForm mode="edit" />;

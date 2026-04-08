@@ -845,9 +845,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         BulkEmployeeCsvRow[]|error rows = parseCsvBytes(fileBytes);
         if rows is error {
+            log:printError("Error parsing bulk upload CSV", rows);
             return <http:BadRequest>{
                 body: {
-                    message: rows.message()
+                    message: "Invalid CSV file"
                 }
             };
         }
@@ -865,8 +866,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         BulkFirstPassResult firstPass = processBulkCsvRows(rows, refData);
 
         database:BulkEmployeeError[]|error dbErrors = detectDbDuplicates(
-                firstPass.emailByRow, firstPass.nicByRow,
-                firstPass.candidateEmails, firstPass.candidateNics);
+            firstPass.rowByEmail, firstPass.rowByNic,
+            firstPass.candidateEmails, firstPass.candidateNics);
         if dbErrors is error {
             log:printError("Error checking duplicates during bulk upload", dbErrors);
             return <http:InternalServerError>{
