@@ -395,82 +395,93 @@ export default function AddPage(props: AddPageProps) {
               name="orgNode"
               control={control}
               rules={{ required: `${convertDataTypeToLabel(nodeType)} is required` }}
-              render={({ field }) => (
-                <Autocomplete<OrgOption>
-                  {...field}
-                  value={field.value}
-                  options={orgInfo as OrgOption[]}
-                  loading={isLoading}
-                  disabled={showSpinner}
-                  getOptionDisabled={(option) => option.canAdd === false}
-                  getOptionLabel={(option) => option.name ?? ""}
-                  filterOptions={(options, params) => {
-                    const filtered = filter(options as OrgOption[], params);
-                    const { inputValue } = params;
+              render={({ field }) =>
+                nodeType === NodeType.BusinessUnit ? (
+                  <TextField
+                    {...field}
+                    value={field.value?.name ?? ""}
+                    onChange={(e) => field.onChange({ name: e.target.value } as OrgOption)}
+                    placeholder={`Enter ${convertDataTypeToLabel(nodeType).toLowerCase()} name`}
+                    disabled={showSpinner}
+                    error={!!errors.orgNode}
+                    helperText={errors.orgNode?.message}
+                  />
+                ) : (
+                  <Autocomplete<OrgOption>
+                    {...field}
+                    value={field.value}
+                    options={orgInfo as OrgOption[]}
+                    loading={isLoading}
+                    disabled={showSpinner}
+                    getOptionDisabled={(option) => option.canAdd === false}
+                    getOptionLabel={(option) => option.name ?? ""}
+                    filterOptions={(options, params) => {
+                      const filtered = filter(options as OrgOption[], params);
+                      const { inputValue } = params;
 
-                    // Check if the input matches any existing option
-                    const isExisting = options.some(
-                      (option) => inputValue.toLowerCase() === (option.name ?? "").toLowerCase(),
-                    );
+                      const isExisting = options.some(
+                        (option) => inputValue.toLowerCase() === (option.name ?? "").toLowerCase(),
+                      );
 
-                    setIsNewItem(inputValue !== "" && !isExisting);
+                      setIsNewItem(inputValue !== "" && !isExisting);
 
-                    if (inputValue !== "" && !isExisting) {
-                      filtered.push({
-                        name: inputValue,
-                        inputValue,
-                      });
-                    }
+                      if (inputValue !== "" && !isExisting) {
+                        filtered.push({
+                          name: inputValue,
+                          inputValue,
+                        });
+                      }
 
-                    return filtered;
-                  }}
-                  onChange={(_, data) => {
-                    if (data && "inputValue" in data && data.inputValue) {
-                      field.onChange(data as OrgOption);
-                    } else if (data && data.name) {
-                      field.onChange(data as OrgOption);
-                    } else {
-                      field.onChange(data as OrgOption);
-                    }
-                  }}
-                  renderOption={(props, option) => {
-                    const isCreate = option.inputValue !== undefined;
-                    return (
-                      <li {...props}>
-                        <Typography
-                          sx={{
-                            color: isCreate
-                              ? theme.palette.customText.secondary.p2.active
-                              : theme.palette.customText.primary.p2.active,
-                          }}
-                        >
-                          {isCreate ? `Add "${option.inputValue}"` : option.name}
-                        </Typography>
-                      </li>
-                    );
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder={`Select or create a ${convertDataTypeToLabel(nodeType).toLowerCase()}`}
-                      error={!!errors.orgNode}
-                      helperText={errors.orgNode?.message}
-                      slotProps={{
-                        input: {
-                          ...params.InputProps,
-                          sx: { padding: "4px !important" },
-                          endAdornment: (
-                            <>
-                              {isLoading && <CircularProgress size={14} />}
-                              {params.InputProps.endAdornment}
-                            </>
-                          ),
-                        },
-                      }}
-                    />
-                  )}
-                />
-              )}
+                      return filtered;
+                    }}
+                    onChange={(_, data) => {
+                      if (data && "inputValue" in data && data.inputValue) {
+                        field.onChange(data as OrgOption);
+                      } else if (data && data.name) {
+                        field.onChange(data as OrgOption);
+                      } else {
+                        field.onChange(data as OrgOption);
+                      }
+                    }}
+                    renderOption={(props, option) => {
+                      const isCreate = option.inputValue !== undefined;
+                      return (
+                        <li {...props}>
+                          <Typography
+                            sx={{
+                              color: isCreate
+                                ? theme.palette.customText.secondary.p2.active
+                                : theme.palette.customText.primary.p2.active,
+                            }}
+                          >
+                            {isCreate ? `Add "${option.inputValue}"` : option.name}
+                          </Typography>
+                        </li>
+                      );
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder={`Select or create a ${convertDataTypeToLabel(nodeType).toLowerCase()}`}
+                        error={!!errors.orgNode}
+                        helperText={errors.orgNode?.message}
+                        slotProps={{
+                          input: {
+                            ...params.InputProps,
+                            sx: { padding: "4px !important" },
+                            endAdornment: (
+                              <>
+                                {isLoading && <CircularProgress size={14} />}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          },
+                        }}
+                      />
+                    )}
+                  />
+                )
+              }
             />
           </Box>
 
