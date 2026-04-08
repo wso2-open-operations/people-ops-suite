@@ -20,7 +20,6 @@ import React, { useContext, useEffect, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
-import LoginScreen from "@component/ui/LoginScreen";
 import { redirectUrl } from "@config/constant";
 import { useLazyGetUserInfoQuery } from "@root/src/services/user.api";
 import { setTokens } from "@services/BaseQuery";
