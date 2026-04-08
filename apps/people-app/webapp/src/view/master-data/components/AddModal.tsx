@@ -140,7 +140,7 @@ export default function AddPage(props: AddPageProps) {
 
   const isParentNode = (
     node: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState,
-  ): node is ParentNode => node.type !== NodeType.Company;
+  ): node is ParentNode => node.type === NodeType.Company || node.type === NodeType.BusinessUnit;
 
   const createNewMapping = async (
     data: AddOrgItemFormValues,
