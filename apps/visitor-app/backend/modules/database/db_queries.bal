@@ -149,6 +149,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, strin
             time_of_departure,
             invitation_id,
             invited_by,
+            watch_list,
             status,
             created_by,
             updated_by
@@ -167,6 +168,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, strin
             ${payload.timeOfDeparture},
             ${invitationId},
             ${invitedBy},
+            ${payload.watchList is string[] ? payload.watchList.toJsonString() : null},
             ${payload.status},
             ${createdBy},
             ${createdBy}
@@ -192,6 +194,7 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             vs.contact_number as contactNumber,
             v.company_name as companyName,
             v.whom_they_meet as whomTheyMeet,
+            v.watch_list as watchList,
             v.purpose_of_visit as purposeOfVisit,
             v.accessible_locations as accessibleLocations,
             v.visit_date as visitDate,

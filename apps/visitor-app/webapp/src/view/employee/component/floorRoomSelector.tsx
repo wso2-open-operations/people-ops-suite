@@ -200,7 +200,7 @@ const FloorRoomSelector: React.FC<FloorRoomSelectorProps> = ({
                     variant="outlined"
                     sx={{
                       mb: 2,
-                      bgcolor: disabled ? "action.hover" : "background.paper",
+                      bgcolor: disabled ? "action.hover" : "background.default",
                     }}
                   >
                     <CardContent>
