@@ -86,6 +86,8 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
 
   if (!displayData) return null;
 
+  console.log("Display data : ", displayData);
+
   return (
     <Dialog
       open={open}
@@ -170,28 +172,26 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
         </Box>
 
         {/* Leads Section */}
-        {displayData.head && (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2.5,
-            }}
-          >
-            <SectionHeader title="Manage Leads" />
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2.5,
+          }}
+        >
+          <SectionHeader title="Manage Leads" />
 
-            <SwapLeads
-              head={displayData.head}
-              functionalLead={
-                "functionalLead" in displayData ? displayData.functionalLead : undefined
-              }
-              onSwapHead={handleHeadSwap}
-              onSwapFunctionalLead={handleLeadSwap}
-              nodeType={nodeType}
-              isUpdating={isUpdating}
-            />
-          </Box>
-        )}
+          <SwapLeads
+            head={displayData.head ?? null}
+            functionalLead={
+              "functionalLead" in displayData ? (displayData.functionalLead ?? null) : null
+            }
+            onSwapHead={handleHeadSwap}
+            onSwapFunctionalLead={handleLeadSwap}
+            nodeType={nodeType}
+            isUpdating={isUpdating}
+          />
+        </Box>
 
         {/* Danger Zone Section */}
         <Box

@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import {
@@ -125,9 +126,10 @@ const EmployeePreview: React.FC<{ employee: EmployeeBasicInfo }> = ({ employee }
 
 interface SelectLeadPanelProps {
   onRequestConfirm: (employee: EmployeeBasicInfo) => void;
+  isAddMode?: boolean;
 }
 
-const SelectLeadPanel: React.FC<SelectLeadPanelProps> = ({ onRequestConfirm }) => {
+const SelectLeadPanel: React.FC<SelectLeadPanelProps> = ({ onRequestConfirm, isAddMode }) => {
   const [selected, setSelected] = useState<EmployeeBasicInfo | null>(null);
   const { data: employees = [], isLoading } = useGetEmployeesBasicInfoQuery();
 
@@ -156,7 +158,7 @@ const SelectLeadPanel: React.FC<SelectLeadPanelProps> = ({ onRequestConfirm }) =
           renderInput={(params) => (
             <TextField
               {...params}
-              placeholder="Search employee..."
+              placeholder={isAddMode ? "Search employee to add..." : "Search employee..."}
               slotProps={{
                 input: {
                   ...params.InputProps,
@@ -182,9 +184,70 @@ const SelectLeadPanel: React.FC<SelectLeadPanelProps> = ({ onRequestConfirm }) =
           disabled={!selected}
           onClick={() => selected && onRequestConfirm(selected)}
         >
-          Confirm
+          {isAddMode ? "Add" : "Confirm"}
         </Button>
       </Box>
+    </Box>
+  );
+};
+
+interface AddLeadPanelProps {
+  label: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onRequestConfirm: (employee: EmployeeBasicInfo) => void;
+}
+
+const AddLeadPanel: React.FC<AddLeadPanelProps> = ({
+  label,
+  isExpanded,
+  onToggle,
+  onRequestConfirm,
+}) => {
+  const theme = useTheme();
+
+  return (
+    <Box
+      sx={{
+        width: "fit-content",
+        minWidth: "300px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 1.5,
+      }}
+    >
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1, minWidth: "200px" }}>
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.customText.primary.p3.active, fontWeight: 500 }}
+        >
+          {label}
+        </Typography>
+
+        <Box
+          onClick={onToggle}
+          sx={{
+            display: "flex",
+            gap: "8px",
+            alignItems: "center",
+            p: 1,
+            borderRadius: "6px",
+            border: `1px dashed ${theme.palette.customBorder.primary.b2.active}`,
+            cursor: "pointer",
+            "&:hover": {
+              backgroundColor: theme.palette.fill.neutral.light.hover,
+            },
+          }}
+        >
+          <Avatar sx={{ width: 40, height: 40, borderRadius: "8px" }}>
+            <AddIcon sx={{ width: 20, height: 20 }} />
+          </Avatar>
+          <Typography variant="body2" sx={{ color: theme.palette.customText.primary.p3.active }}>
+            Click to add
+          </Typography>
+        </Box>
+      </Box>
+      {isExpanded && <SelectLeadPanel onRequestConfirm={onRequestConfirm} isAddMode />}
     </Box>
   );
 };
@@ -300,8 +363,8 @@ const SwappableLead: React.FC<SwappableLeadProps> = ({
 );
 
 export interface SwapLeadsProps {
-  head: Head;
-  functionalLead?: Head;
+  head: Head | null;
+  functionalLead?: Head | null;
   isUpdating: boolean;
   nodeType: NodeType;
   onSwapHead: (employee: EmployeeBasicInfo, reason: string) => Promise<void>;
@@ -360,15 +423,19 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
     <>
       <ConfirmationDialog
         open={pendingSwap !== null}
-        title="Swap Leads"
-        message="This action will replace the current lead. Are you sure?"
+        title={pendingSwap?.panel === "head" ? "Add Head" : "Add Functional Lead"}
+        message={
+          pendingSwap?.panel === "head"
+            ? "This action will set the head for this organization unit. Are you sure?"
+            : "This action will set the functional lead for this organization unit. Are you sure?"
+        }
         onConfirm={handleConfirm}
         onCancel={handleCancel}
         isSubmitting={dialogSubmitting}
       />
 
       <Box sx={{ display: "flex", flexDirection: "column", width: "100%", px: 0.5, gap: 2 }}>
-        {head && (
+        {head ? (
           <SwappableLead
             label={`${convertDataTypeToLabel(nodeType)} Head`}
             lead={head}
@@ -376,17 +443,32 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
             onToggle={() => togglePanel("head")}
             onRequestConfirm={handleRequestConfirm("head")}
           />
-        )}
-
-        {functionalLead && (
-          <SwappableLead
-            label={`${convertDataTypeToLabel(nodeType)} Functional Lead`}
-            lead={functionalLead}
-            isExpanded={activePanel === "functionalLead"}
-            onToggle={() => togglePanel("functionalLead")}
-            onRequestConfirm={handleRequestConfirm("functionalLead")}
+        ) : (
+          <AddLeadPanel
+            label={`${convertDataTypeToLabel(nodeType)} Head`}
+            isExpanded={activePanel === "head"}
+            onToggle={() => togglePanel("head")}
+            onRequestConfirm={handleRequestConfirm("head")}
           />
         )}
+
+        {nodeType !== NodeType.BusinessUnit &&
+          (functionalLead ? (
+            <SwappableLead
+              label={`${convertDataTypeToLabel(nodeType)} Functional Lead`}
+              lead={functionalLead}
+              isExpanded={activePanel === "functionalLead"}
+              onToggle={() => togglePanel("functionalLead")}
+              onRequestConfirm={handleRequestConfirm("functionalLead")}
+            />
+          ) : (
+            <AddLeadPanel
+              label={`${convertDataTypeToLabel(nodeType)} Functional Lead`}
+              isExpanded={activePanel === "functionalLead"}
+              onToggle={() => togglePanel("functionalLead")}
+              onRequestConfirm={handleRequestConfirm("functionalLead")}
+            />
+          ))}
       </Box>
     </>
   );
