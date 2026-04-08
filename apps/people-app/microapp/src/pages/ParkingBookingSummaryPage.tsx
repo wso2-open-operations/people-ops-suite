@@ -15,7 +15,7 @@
 // under the License.
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   CalendarMonthSharp,
@@ -58,6 +58,7 @@ type VehicleOption = {
 
 function ParkingBookingSummaryPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { handleRequest, handleRequestWithNewToken } = useHttp();
 
   const paymentContext = getParkingPaymentContextState();
@@ -75,6 +76,15 @@ function ParkingBookingSummaryPage() {
   const [busyConfirm, setBusyConfirm] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const [showPaymentFailureModal, setShowPaymentFailureModal] = useState(false);
+
+  useEffect(() => {
+    const routeState = location.state as { resumeError?: string } | null;
+    if (!routeState?.resumeError) return;
+
+    setError(routeState.resumeError);
+    setShowPaymentFailureModal(true);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   useEffect(() => {
     if (!hasPaymentContext) return;
@@ -494,9 +504,12 @@ function ParkingBookingSummaryPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative overflow-y-auto pb-12">
-        <section className="px-4 pt-6">
+        <section className="px-4 pt-[calc(var(--safe-top)+12px)]">
           <div className="flex items-center justify-between">
-            <IconButton onClick={() => navigate(-1)} aria-label="Back">
+            <IconButton
+              onClick={() => navigate("/services/parking")}
+              aria-label="Back to slot selection"
+            >
               <KeyboardBackspaceSharp className="text-black" />
             </IconButton>
             <h1 className="text-[18px] font-semibold text-[#1F2A44]">

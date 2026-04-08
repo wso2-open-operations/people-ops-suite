@@ -15,7 +15,7 @@
 // under the License.
 
 import { ErrorMessages } from "@/utils/constants";
-import { TOPIC, type LogLevel, type TopicType } from "./types";
+import { TOPIC, type EdgeInsets, type LogLevel, type TopicType } from "./types";
 import { Logger } from "@/utils/logger";
 
 type Callback<T> = (data?: T) => void;
@@ -38,6 +38,7 @@ declare global {
       rejectGetLocalData: (error: string) => void;
       // Cross-microapp bridge API (provided by SuperApp).
       requestOpenMicroApp: (targetAppId: string, launchData?: unknown) => void;
+      resolveDeviceSafeAreaInsets?: (data: { insets: EdgeInsets }) => void;
     };
     ReactNativeWebView?: {
       postMessage: (message: string) => void;
@@ -129,6 +130,28 @@ export const sendNativeLog = (
     });
   } else {
     Logger.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
+  }
+};
+
+export const goToMyAppsScreen = (): void => {
+  if (window.nativebridge) {
+    triggerSuperAppAction(TOPIC.NAVIGATE_TO_MY_APPS);
+  }
+};
+
+export const requestDeviceSafeAreaInsets = (
+  callback: Callback<{ insets: EdgeInsets }>,
+): void => {
+  if (window.nativebridge) {
+    triggerSuperAppAction(TOPIC.DEVICE_SAFE_AREA_INSETS);
+    window.nativebridge.resolveDeviceSafeAreaInsets = (data) => {
+      callback(data);
+    };
+  } else {
+    Logger.error(
+      ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE + " to fetch device safe area insets",
+    );
+    callback();
   }
 };
 
