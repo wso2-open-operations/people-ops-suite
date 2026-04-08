@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { ServiceLength } from "../types/types";
-import { DATE_FMT } from "../config/constant";
+import { ServiceLength } from "@src/types/types";
+import { DATE_FMT } from "@config/constant";
 import {
   differenceInMonths,
   differenceInYears,

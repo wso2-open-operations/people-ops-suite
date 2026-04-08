@@ -14,9 +14,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import EmployeeForm from "../EmployeeForm";
 import CommonPage from "@layout/pages/CommonPage";
-import BulkOnboarding from "../bulkOnboarding/BulkOnboarding";
+import BulkOnboarding from "@view/employees/onboarding/bulkOnboarding/BulkOnboarding";
+import EmployeeForm from "@view/employees/onboarding/EmployeeForm";
 
 export default function EmployeeOnboarding() {
   return (

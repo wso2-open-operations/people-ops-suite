@@ -248,6 +248,7 @@ function ColumnInfoPopover({ accent }: { accent: string }) {
 }
 
 function buildRowNames(rows: string[][]): Record<number, string> {
+  if (rows.length === 0 || rows[0].length === 0) return {};
   const headers = rows[0].map((h) => h.toLowerCase().replace(/[^a-z]/g, ""));
   const firstIdx = headers.indexOf("firstname");
   const lastIdx = headers.indexOf("lastname");
