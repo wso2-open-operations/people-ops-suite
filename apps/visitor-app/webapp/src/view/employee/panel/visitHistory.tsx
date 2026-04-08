@@ -41,6 +41,7 @@ import { useAppDispatch, useAppSelector } from "@slices/store";
 import { fetchVisits, FloorRoom } from "@slices/visitSlice/visit";
 import ErrorHandler from "@component/common/ErrorHandler";
 import { State } from "@/types/types";
+import React from "react";
 
 const toLocalDateTime = (utcString: string) => {
   dayjs.extend(utc);
@@ -63,7 +64,6 @@ function VisitHistory() {
   const loginUserEmail = useAppSelector((state) => state.auth.userInfo?.email);
 
   const handleViewAccessibleFloors = (floorRooms: FloorRoom[]) => {
-    console.log(floorRooms);
     setAccessibleFloors(floorRooms);
     setViewAccessibleFloors(true);
   };
@@ -250,7 +250,7 @@ function VisitHistory() {
                 }}
               >
                 {accessibleFloors.map((floorRoom: FloorRoom, index: number) => (
-                  <>
+                  <React.Fragment key={index}>
                     <ListItem>
                       <ListItemAvatar>
                         <Avatar>
@@ -263,21 +263,19 @@ function VisitHistory() {
                           <>
                             {floorRoom.rooms.length > 0 ? (
                               floorRoom.rooms.map((room, i) => (
-                                <>
+                                <React.Fragment key={i}>
                                   {room}
-                                  {i === floorRoom.rooms.length - 1
-                                    ? ""
-                                    : ", "}{" "}
-                                </>
+                                  {i === floorRoom.rooms.length - 1 ? "" : ", "}
+                                </React.Fragment>
                               ))
                             ) : (
-                              <>All rooms </>
+                              <>All rooms</>
                             )}
                           </>
                         }
                       />
                     </ListItem>
-                  </>
+                  </React.Fragment>
                 ))}
               </List>
             </Box>
