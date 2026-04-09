@@ -148,8 +148,8 @@ export default function AddPage(props: AddPageProps) {
   ) => {
     const { orgNode, functionalLead } = data;
 
-    if (!parent || !orgNode?.id || !functionalLead?.workEmail) {
-      throw new Error("Missing org node or functional lead for mapping");
+    if (!parent || !orgNode?.id) {
+      throw new Error("Missing org node for mapping");
     }
 
     switch (nodeType) {
@@ -158,7 +158,7 @@ export default function AddPage(props: AddPageProps) {
           payload: {
             businessUnitId: (parent as BusinessUnitState).id,
             teamId: orgNode.id,
-            functionalLeadEmail: functionalLead.workEmail,
+            ...(functionalLead?.workEmail && { functionalLeadEmail: functionalLead.workEmail }),
           },
         }).unwrap();
         break;
@@ -168,7 +168,7 @@ export default function AddPage(props: AddPageProps) {
           payload: {
             businessUnitTeamId: (parent as TeamState).businessUnitTeamId,
             subTeamId: orgNode.id,
-            functionalLeadEmail: functionalLead.workEmail,
+            ...(functionalLead?.workEmail && { functionalLeadEmail: functionalLead.workEmail }),
           },
         }).unwrap();
         break;
@@ -178,7 +178,7 @@ export default function AddPage(props: AddPageProps) {
           payload: {
             businessUnitTeamSubTeamId: (parent as SubTeamState).businessUnitTeamSubTeamId,
             unitId: orgNode.id,
-            functionalLeadEmail: functionalLead.workEmail,
+            ...(functionalLead?.workEmail && { functionalLeadEmail: functionalLead.workEmail }),
           },
         }).unwrap();
         break;
@@ -194,19 +194,18 @@ export default function AddPage(props: AddPageProps) {
   ) => {
     const { orgNode, orgNodeHead, functionalLead } = data;
 
-    if (!nodeType || !orgNode?.name || !orgNodeHead?.workEmail) {
+    console.log("ts");
+    if (!nodeType || !orgNode?.name) {
       throw new Error("Missing required org item fields");
     }
 
-    if (nodeType !== NodeType.BusinessUnit && !functionalLead?.workEmail) {
-      throw new Error("Functional lead is required");
-    }
+    console.log("Create new org item : ");
 
     switch (nodeType) {
       case NodeType.BusinessUnit: {
         await addBusinessUnits({
           name: orgNode.name,
-          headEmail: orgNodeHead.workEmail,
+          ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
         }).unwrap();
         break;
       }
@@ -216,10 +215,10 @@ export default function AddPage(props: AddPageProps) {
         await addTeams({
           payload: {
             name: orgNode.name,
-            headEmail: orgNodeHead.workEmail,
+            ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
             businessUnit: {
               businessUnitId: (parent as BusinessUnitState).id,
-              functionalLeadEmail: functionalLead!.workEmail,
+              ...(functionalLead?.workEmail && { functionalLeadEmail: functionalLead.workEmail }),
             },
           },
         }).unwrap();
@@ -231,10 +230,10 @@ export default function AddPage(props: AddPageProps) {
         await addSubTeams({
           payload: {
             name: orgNode.name,
-            headEmail: orgNodeHead.workEmail,
+            ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
             businessUnitTeam: {
               businessUnitTeamId: (parent as TeamState).businessUnitTeamId,
-              functionalLeadEmail: functionalLead!.workEmail,
+              ...(functionalLead?.workEmail && { functionalLeadEmail: functionalLead.workEmail }),
             },
           },
         }).unwrap();
@@ -246,10 +245,10 @@ export default function AddPage(props: AddPageProps) {
         await addUnits({
           payload: {
             name: orgNode.name,
-            headEmail: orgNodeHead.workEmail,
+            ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
             businessUnitTeamSubTeamUnit: {
               businessUnitTeamSubTeamId: (parent as SubTeamState).businessUnitTeamSubTeamId,
-              functionalLeadEmail: functionalLead!.workEmail,
+              ...(functionalLead?.workEmail && { functionalLeadEmail: functionalLead.workEmail }),
             },
           },
         }).unwrap();
@@ -280,6 +279,8 @@ export default function AddPage(props: AddPageProps) {
     if (nodeType !== NodeType.BusinessUnit && !parent) {
       return;
     }
+
+    console.log("submit");
 
     try {
       if (isNewItem) {
@@ -400,7 +401,10 @@ export default function AddPage(props: AddPageProps) {
                   <TextField
                     {...field}
                     value={field.value?.name ?? ""}
-                    onChange={(e) => field.onChange({ name: e.target.value } as OrgOption)}
+                    onChange={(e) => {
+                      setIsNewItem(true);
+                      field.onChange({ name: e.target.value } as OrgOption);
+                    }}
                     placeholder={`Enter ${convertDataTypeToLabel(nodeType).toLowerCase()} name`}
                     disabled={showSpinner}
                     error={!!errors.orgNode}
@@ -497,7 +501,6 @@ export default function AddPage(props: AddPageProps) {
               <Controller
                 name="orgNodeHead"
                 control={control}
-                rules={{ required: "Head is required" }}
                 render={({ field }) => (
                   <Autocomplete
                     {...field}
@@ -552,7 +555,6 @@ export default function AddPage(props: AddPageProps) {
               <Controller
                 name="functionalLead"
                 control={control}
-                rules={{ required: "Functional lead is required " }}
                 render={({ field }) => (
                   <Autocomplete
                     {...field}
