@@ -19,6 +19,7 @@ import ballerina/data.csv;
 import ballerina/http;
 import ballerina/log;
 import ballerina/mime;
+import ballerina/time;
 
 # Generate the next employee ID for the given payload.
 #
@@ -130,6 +131,18 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
             };
         }
     }
+}
+
+# Validates that a date string is a valid calendar date in the format YYYY-MM-DD.
+#
+# + date - Date string to validate (expected format YYYY-MM-DD)
+# + return - `true` if the string is a valid calendar date in the expected format, `false` otherwise
+isolated function isValidCalendarDate(string date) returns boolean {
+    time:Civil|error civil = time:civilFromString(date + "T00:00:00Z");
+    if civil is error {
+        return false;
+    }
+    return string `${civil.year}-${civil.month.toString().padStart(2, "0")}-${civil.day.toString().padStart(2, "0")}` == date;
 }
 
 # Normalizes a string into a lowercase alphanumeric key.
@@ -270,8 +283,8 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
     }
     if row.startDate.trim().length() == 0 {
         errors.push({row: rowNumber, 'field: CSV_FIELD_START_DATE, message: "Start date is required"});
-    } else if !database:DATE_PATTERN.isFullMatch(row.startDate.trim()) {
-        errors.push({row: rowNumber, 'field: CSV_FIELD_START_DATE, message: "Start date must be YYYY-MM-DD"});
+    } else if !isValidCalendarDate(row.startDate.trim()) {
+        errors.push({row: rowNumber, 'field: CSV_FIELD_START_DATE, message: "Start date must be a valid date in YYYY-MM-DD format"});
     }
     if row.employmentType.trim().length() == 0 {
         errors.push({row: rowNumber, 'field: CSV_FIELD_EMPLOYMENT_TYPE, message: "Employment type is required"});
@@ -290,8 +303,8 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
     }
     if row.dob.trim().length() == 0 {
         errors.push({row: rowNumber, 'field: CSV_FIELD_DOB, message: "Date of birth is required"});
-    } else if !database:DATE_PATTERN.isFullMatch(row.dob.trim()) {
-        errors.push({row: rowNumber, 'field: CSV_FIELD_DOB, message: "Date of birth must be YYYY-MM-DD"});
+    } else if !isValidCalendarDate(row.dob.trim()) {
+        errors.push({row: rowNumber, 'field: CSV_FIELD_DOB, message: "Date of birth must be a valid date in YYYY-MM-DD format"});
     }
     if row.gender.trim().length() == 0 {
         errors.push({row: rowNumber, 'field: CSV_FIELD_GENDER, message: "Gender is required"});
@@ -304,11 +317,19 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
     if row.personalEmail.trim().length() > 0 && !database:EMAIL_PATTERN.isFullMatch(row.personalEmail.trim()) {
         errors.push({row: rowNumber, 'field: CSV_FIELD_PERSONAL_EMAIL, message: "Invalid personal email format"});
     }
-    if row.probationEndDate.trim().length() > 0 && !database:DATE_PATTERN.isFullMatch(row.probationEndDate.trim()) {
-        errors.push({row: rowNumber, 'field: CSV_FIELD_PROBATION_END_DATE, message: "Probation end date must be YYYY-MM-DD"});
+    if row.probationEndDate.trim().length() > 0 && !isValidCalendarDate(row.probationEndDate.trim()) {
+        errors.push({
+            row: rowNumber,
+            'field: CSV_FIELD_PROBATION_END_DATE,
+            message: "Probation end date must be a valid date in YYYY-MM-DD format"
+        });
     }
-    if row.agreementEndDate.trim().length() > 0 && !database:DATE_PATTERN.isFullMatch(row.agreementEndDate.trim()) {
-        errors.push({row: rowNumber, 'field: CSV_FIELD_AGREEMENT_END_DATE, message: "Agreement end date must be YYYY-MM-DD"});
+    if row.agreementEndDate.trim().length() > 0 && !isValidCalendarDate(row.agreementEndDate.trim()) {
+        errors.push({
+            row: rowNumber,
+            'field: CSV_FIELD_AGREEMENT_END_DATE,
+            message: "Agreement end date must be a valid date in YYYY-MM-DD format"
+        });
     }
 
     if row.additionalManagerEmails.trim().length() > 0 {
@@ -341,6 +362,14 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
                 message: "Emergency contact relationship is required when name is provided"
             });
         }
+    } else if row.emergencyContactMobile.trim().length() > 0
+            || row.emergencyContactRelationship.trim().length() > 0
+            || row.emergencyContactTelephone.trim().length() > 0 {
+        errors.push({
+            row: rowNumber,
+            'field: CSV_FIELD_EMERGENCY_CONTACT_NAME,
+            message: "Emergency contact name is required when mobile, relationship, or telephone is provided"
+        });
     }
 
     if row.designation.trim().length() > 0 && !refData.designationIds.hasKey(normalizeKey(row.designation)) {
@@ -354,6 +383,9 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
     }
     if row.subTeam.trim().length() > 0 && !refData.subTeamIds.hasKey(normalizeKey(row.subTeam)) {
         errors.push({row: rowNumber, 'field: CSV_FIELD_SUB_TEAM, message: "Unknown sub team"});
+    }
+    if row.unit.trim().length() > 0 && !refData.unitIds.hasKey(normalizeKey(row.unit)) {
+        errors.push({row: rowNumber, 'field: CSV_FIELD_UNIT, message: "Unknown unit"});
     }
     if row.employmentType.trim().length() > 0 && !refData.employmentTypeIds.hasKey(normalizeKey(row.employmentType)) {
         errors.push({row: rowNumber, 'field: CSV_FIELD_EMPLOYMENT_TYPE, message: "Unknown employment type"});
@@ -574,7 +606,11 @@ isolated function processBulkCsvRows(BulkEmployeeCsvRow[] rows, BulkRefData refD
         string normEmail = row.workEmail.trim().toLowerAscii();
         if normEmail.length() > 0 {
             if rowByEmail.hasKey(normEmail) {
-                errors.push({row: rowNumber, 'field: CSV_FIELD_WORK_EMAIL, message: string `Duplicate work email in CSV: ${normEmail}`});
+                errors.push({
+                    row: rowNumber,
+                    'field: CSV_FIELD_WORK_EMAIL,
+                    message: string `Duplicate work email in CSV: ${normEmail}`
+                });
             } else {
                 rowByEmail[normEmail] = rowNumber;
                 candidateEmails.push(normEmail);
@@ -584,7 +620,11 @@ isolated function processBulkCsvRows(BulkEmployeeCsvRow[] rows, BulkRefData refD
         string normNic = row.nicOrPassport.trim();
         if normNic.length() > 0 {
             if rowByNic.hasKey(normNic) {
-                errors.push({row: rowNumber, 'field: CSV_FIELD_NIC_OR_PASSPORT, message: string `Duplicate NIC/Passport in CSV: ${normNic}`});
+                errors.push({
+                    row: rowNumber,
+                    'field: CSV_FIELD_NIC_OR_PASSPORT,
+                    message: string `Duplicate NIC/Passport in CSV: ${normNic}`
+                });
             } else {
                 rowByNic[normNic] = rowNumber;
                 candidateNics.push(normNic);
