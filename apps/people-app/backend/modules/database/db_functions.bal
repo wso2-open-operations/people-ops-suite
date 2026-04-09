@@ -1066,20 +1066,41 @@ public isolated function teamSubTeamHasChildren(int teamId, int subTeamId) retur
     return result.existsFlag == 1;
 }
 
+# Retrieve the count of employees assigned to a specific Business Unit.
+#
+# + buId - Business Unit ID
+# + return - Number of employees in the Business Unit, or error
 public isolated function retreiveBusinessUnitHeadCount(int buId) returns int|error {
     return databaseClient->queryRow(retrieveBusinessUnitHeadCountQuery(buId));
 }
 
+# Retrieve the count of employees assigned to a specific Team-SubTeam combination.
+# The Team ID is derived from the businessUnitTeamId mapping.
+#
+# + businessUnitTeamId - Business Unit-Team mapping ID
+# + subTeamId - Sub Team ID
+# + return - Number of employees in the Team-SubTeam, or error
 public isolated function retreiveBusinessUnitTeamSubTeamHeadCount(int businessUnitTeamId, int subTeamId)
     returns int|error {
     return databaseClient->queryRow(retrieveBusinessUnitTeamSubTeamHeadCountQuery(businessUnitTeamId, subTeamId));
 }
 
+# Retrieve the count of employees assigned to a specific SubTeam-Unit combination.
+# The Team and SubTeam IDs are derived from the businessUnitTeamSubTeamId mapping.
+#
+# + businessUnitTeamSubTeamId - Business Unit-Team-SubTeam mapping ID
+# + unitId - Unit ID
+# + return - Number of employees in the SubTeam-Unit, or error
 public isolated function retreiveBusinessUnitTeamSubTeamUnitHeadCount(int businessUnitTeamSubTeamId, int unitId)
     returns int|error {
     return databaseClient->queryRow(retrieveBusinessUnitTeamSubTeamUnitHeadCountQuery(businessUnitTeamSubTeamId, unitId));
 }
 
+# Retrieve the count of employees assigned to a specific Business Unit-Team combination.
+#
+# + businessUnitId - Business Unit ID
+# + teamId - Team ID
+# + return - Number of employees in the Business Unit-Team, or error
 public isolated function retreiveBusinessUnitTeamHeadCount(int businessUnitId, int teamId)
     returns int|error {
     return databaseClient->queryRow(retrieveBusinessUnitTeamHeadCountQuery(businessUnitId, teamId));

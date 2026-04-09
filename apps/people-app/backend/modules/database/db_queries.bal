@@ -2212,6 +2212,10 @@ isolated function teamSubTeamHasChildrenQuery(int teamId, int subTeamId) returns
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
 
+# Retrieve headcount of employees assigned to a specific Business Unit.
+#
+# + buId - Business Unit ID
+# + return - Parameterized query to count employees in a Business Unit
 isolated function retrieveBusinessUnitHeadCountQuery(int buId) returns sql:ParameterizedQuery => `
     SELECT 
         COUNT(e.id) AS headCount
@@ -2219,6 +2223,11 @@ isolated function retrieveBusinessUnitHeadCountQuery(int buId) returns sql:Param
     WHERE e.business_unit_id = ${buId}
 `;
 
+# Retrieve headcount of employees assigned to a specific Business Unit-Team combination.
+#
+# + buId - Business Unit ID
+# + teamId - Team ID
+# + return - Parameterized query to count employees in a Business Unit-Team
 isolated function retrieveBusinessUnitTeamHeadCountQuery(int buId, int teamId) returns sql:ParameterizedQuery => `
     SELECT 
         COUNT(e.id) AS headCount
@@ -2226,6 +2235,12 @@ isolated function retrieveBusinessUnitTeamHeadCountQuery(int buId, int teamId) r
     WHERE e.business_unit_id = ${buId} AND e.team_id = ${teamId}
 `;
 
+# Retrieve headcount of employees assigned to a specific Team-SubTeam combination.
+# The Team ID is derived from the businessUnitTeamId mapping.
+#
+# + businessUnitTeamId - Business Unit-Team mapping ID
+# + subTeamId - Sub Team ID
+# + return - Parameterized query to count employees in a Team-SubTeam
 isolated function retrieveBusinessUnitTeamSubTeamHeadCountQuery(int businessUnitTeamId, int subTeamId) returns sql:ParameterizedQuery => `
     SELECT COUNT(e.id) AS headCount
     FROM employee e
@@ -2235,6 +2250,12 @@ isolated function retrieveBusinessUnitTeamSubTeamHeadCountQuery(int businessUnit
       AND e.sub_team_id = ${subTeamId}
 `;
 
+# Retrieve headcount of employees assigned to a specific SubTeam-Unit combination.
+# The Team and SubTeam IDs are derived from the businessUnitTeamSubTeamId mapping.
+#
+# + businessUnitTeamSubTeamId - Business Unit-Team-SubTeam mapping ID
+# + unitId - Unit ID
+# + return - Parameterized query to count employees in a SubTeam-Unit
 isolated function retrieveBusinessUnitTeamSubTeamUnitHeadCountQuery(int businessUnitTeamSubTeamId, int unitId) returns sql:ParameterizedQuery => `
     SELECT COUNT(e.id) AS headCount
     FROM employee e
