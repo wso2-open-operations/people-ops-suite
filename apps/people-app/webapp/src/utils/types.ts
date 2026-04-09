@@ -42,6 +42,7 @@ export enum ConfirmationType {
   send = "send",
   upload = "upload",
   accept = "accept",
+  discard = "accept",
 }
 
 export enum NodeType {
@@ -49,5 +50,5 @@ export enum NodeType {
   BusinessUnit = "BUSINESS_UNIT",
   Team = "TEAM",
   SubTeam = "SUB_TEAM",
-  Unit = "UNIT"
+  Unit = "UNIT",
 }
