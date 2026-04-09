@@ -1117,14 +1117,14 @@ public type OrgNodeInfo record {|
     # Name of the node
     string name;
     # Email of the head of the node
-    string headEmail;
+    string headEmail?;
 |};
 
 public type CreateBusinessUnitPayload record {|
     # Name of the business unit
     string name;
     # Email of the head of the business unit
-    string headEmail;
+    string headEmail?;
 |};
 
 public type CreateBusinessUnitTeamPayload record {|
@@ -1133,14 +1133,14 @@ public type CreateBusinessUnitTeamPayload record {|
     # ID of the team
     int teamId?;
     # Email of the functional lead for the mapping
-    string functionalLeadEmail;
+    string functionalLeadEmail?;
 |};
 
 public type CreateTeamPayload record {|
     # Name of the team
     string name;
     # Email of the head of the team
-    string headEmail;
+    string headEmail?;
     # Business unit-team mapping details
     CreateBusinessUnitTeamPayload businessUnit;
 |};
@@ -1151,14 +1151,14 @@ public type CreateBusinessUnitTeamSubTeamPayload record {|
     # ID of the sub-team
     int subTeamId?;
     # Email of the functional lead for the mapping
-    string functionalLeadEmail;
+    string functionalLeadEmail?;
 |};
 
 public type CreateSubTeamPayload record {|
     # Name of the sub-team
     string name;
     # Email of the head of the sub-team
-    string headEmail;
+    string headEmail?;
     # Business unit-team-sub-team mapping details
     CreateBusinessUnitTeamSubTeamPayload businessUnitTeam;
 |};
@@ -1169,14 +1169,14 @@ public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
     # ID of the unit
     int unitId?;
     # Email of the functional lead for the mapping
-    string functionalLeadEmail;
+    string functionalLeadEmail?;
 |};
 
 public type CreateUnitPayload record {|
     # Name of the unit
     string name;
     # Email of the head of the unit
-    string headEmail;
+    string headEmail?;
     # Business unit team sub-team details
     CreateBusinessUnitTeamSubTeamUnitPayload businessUnitTeamSubTeamUnit;
 |};
