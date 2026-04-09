@@ -615,7 +615,7 @@ public isolated function getParkingReservationsByEmployee(string employeeEmail, 
 }
 
 # Get organization details with business units, teams, sub-teams, units,
-# 
+#
 # + return - Organization details
 public isolated function getOrganizationDetails() returns OrgCompany|error {
     CompanyRaw|error companyRow = databaseClient->queryRow(getOrganizationStructureQuery());
@@ -689,10 +689,10 @@ public isolated function addTeamWithMapping(string userEmail, CreateTeamPayload 
 
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamQuery(userEmail, {
-                businessUnitId: payload.businessUnit.businessUnitId,
-                teamId,
-                functionalLeadEmail: payload.businessUnit.functionalLeadEmail
-            }));
+                                                    businessUnitId: payload.businessUnit.businessUnitId,
+                                                    teamId,
+                                                    functionalLeadEmail: payload.businessUnit.functionalLeadEmail
+                                                }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
 
         check commit;
@@ -713,10 +713,10 @@ public isolated function addSubTeamWithMapping(string userEmail, CreateSubTeamPa
 
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamSubTeamQuery(userEmail, {
-                businessUnitTeamId: payload.businessUnitTeam.businessUnitTeamId,
-                subTeamId,
-                functionalLeadEmail: payload.businessUnitTeam.functionalLeadEmail
-            }));
+                                                           businessUnitTeamId: payload.businessUnitTeam.businessUnitTeamId,
+                                                           subTeamId,
+                                                           functionalLeadEmail: payload.businessUnitTeam.functionalLeadEmail
+                                                       }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
 
         check commit;
@@ -737,10 +737,10 @@ public isolated function addUnitWithMapping(string userEmail, CreateUnitPayload 
 
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamSubTeamUnitQuery(userEmail, {
-                businessUnitTeamSubTeamId: payload.businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId,
-                unitId,
-                functionalLeadEmail: payload.businessUnitTeamSubTeamUnit.functionalLeadEmail
-            }));
+                                                               businessUnitTeamSubTeamId: payload.businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId,
+                                                               unitId,
+                                                               functionalLeadEmail: payload.businessUnitTeamSubTeamUnit.functionalLeadEmail
+                                                           }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
 
         check commit;
@@ -753,7 +753,7 @@ public isolated function addUnitWithMapping(string userEmail, CreateUnitPayload 
 # + userEmail - Email of the user creating the record
 # + payload - Business unit ID, team ID, and functional lead email
 # + return - Created mapping ID or error
-public isolated function addBusinessUnitTeam(string userEmail, CreateBusinessUnitTeamPayload payload) 
+public isolated function addBusinessUnitTeam(string userEmail, CreateBusinessUnitTeamPayload payload)
     returns int|error {
 
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamQuery(userEmail, payload));
@@ -765,10 +765,10 @@ public isolated function addBusinessUnitTeam(string userEmail, CreateBusinessUni
 # + userEmail - Email of the user creating the record
 # + payload - Business unit-team ID, sub-team ID, and functional lead email
 # + return - Created mapping ID or error
-public isolated function addBusinessUnitTeamSubTeam(string userEmail, CreateBusinessUnitTeamSubTeamPayload payload) 
+public isolated function addBusinessUnitTeamSubTeam(string userEmail, CreateBusinessUnitTeamSubTeamPayload payload)
     returns int|error {
 
-    sql:ExecutionResult executionResult = 
+    sql:ExecutionResult executionResult =
         check databaseClient->execute(addBusinessUnitTeamSubTeamQuery(userEmail, payload));
 
     return executionResult.lastInsertId.ensureType(int);
@@ -780,9 +780,9 @@ public isolated function addBusinessUnitTeamSubTeam(string userEmail, CreateBusi
 # + payload - Business unit-team-sub-team ID, unit ID, and functional lead email
 # + return - Created mapping ID or error
 public isolated function addBusinessUnitTeamSubTeamUnit
-    (string userEmail, CreateBusinessUnitTeamSubTeamUnitPayload payload) returns int|error {
+        (string userEmail, CreateBusinessUnitTeamSubTeamUnitPayload payload) returns int|error {
 
-    sql:ExecutionResult executionResult = 
+    sql:ExecutionResult executionResult =
         check databaseClient->execute(addBusinessUnitTeamSubTeamUnitQuery(userEmail, payload));
 
     return executionResult.lastInsertId.ensureType(int);
@@ -830,10 +830,10 @@ public isolated function updateUnit(UpdateOrgUnitPayload payload, int unitId) re
 # + buId - ID of the business unit
 # + teamId - ID of the team
 # + return - True if updated, false if not found, error if the update fails
-public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload payload, int buId, int teamId) 
+public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload payload, int buId, int teamId)
     returns boolean|error {
 
-    sql:ExecutionResult executionResults = 
+    sql:ExecutionResult executionResults =
         check databaseClient->execute(updateBusinessUnitTeamQuery(payload, buId, teamId));
 
     return executionResults.affectedRowCount > 0;
@@ -845,7 +845,7 @@ public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload pa
 # + teamId - ID of the team
 # + subTeamId - ID of the sub team
 # + return - True if updated, false if not found, error if the update fails
-public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId) 
+public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId)
     returns boolean|error {
 
     sql:ExecutionResult executionResults =
@@ -860,10 +860,10 @@ public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int
 # + subTeamId - ID of the sub team
 # + unitId - ID of the unit
 # + return - True if updated, false if not found, error if the update fails
-public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId) 
+public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId)
     returns boolean|error {
 
-    sql:ExecutionResult executionResults = 
+    sql:ExecutionResult executionResults =
         check databaseClient->execute(updateSubTeamUnitQuery(payload, subTeamId, unitId));
 
     return executionResults.affectedRowCount > 0;
@@ -875,7 +875,7 @@ public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int
 # + buId - ID of the business unit to delete
 # + return - True if deleted, false if not found, error on failure
 public isolated function deleteBusinessUnit(string userEmail, int buId) returns boolean|error {
-    sql:ExecutionResult executionResult = 
+    sql:ExecutionResult executionResult =
         check databaseClient->execute(deleteBusinessUnitQuery(userEmail, buId));
 
     return executionResult.affectedRowCount > 0;
@@ -889,14 +889,14 @@ public isolated function deleteBusinessUnit(string userEmail, int buId) returns 
 # + return - True if deleted, false if not found, error on failure
 public isolated function deleteBusinessUnitTeam(string userEmail, int buId, int teamId)
     returns boolean|error {
-    sql:ExecutionResult executionResult = 
+    sql:ExecutionResult executionResult =
         check databaseClient->execute(deleteBusinessUnitTeamQuery(userEmail, buId, teamId));
 
     return executionResult.affectedRowCount > 0;
 }
 
 # Delete a team-sub team mapping.
-#   
+#
 # + userEmail - Email of the user performing the deletion
 # + teamId - ID of the team
 # + subTeamId - ID of the sub team
@@ -915,7 +915,7 @@ public isolated function deleteTeamSubTeam(string userEmail, int teamId, int sub
 # + unitId - ID of the unit
 # + return - True if deleted, false if not found, error on failure
 public isolated function deleteSubTeamUnit(string userEmail, int subTeamId, int unitId) returns boolean|error {
-    sql:ExecutionResult executionResult = 
+    sql:ExecutionResult executionResult =
         check databaseClient->execute(deleteSubTeamUnitQuery(userEmail, subTeamId, unitId));
 
     return executionResult.affectedRowCount > 0;
@@ -1064,4 +1064,23 @@ public isolated function teamSubTeamHasChildren(int teamId, int subTeamId) retur
         check databaseClient->queryRow(teamSubTeamHasChildrenQuery(teamId, subTeamId));
 
     return result.existsFlag == 1;
+}
+
+public isolated function retreiveBusinessUnitHeadCount(int buId) returns int|error {
+    return databaseClient->queryRow(retrieveBusinessUnitHeadCountQuery(buId));
+}
+
+public isolated function retreiveBusinessUnitTeamSubTeamHeadCount(int businessUnitTeamId, int subTeamId)
+    returns int|error {
+    return databaseClient->queryRow(retrieveBusinessUnitTeamSubTeamHeadCountQuery(businessUnitTeamId, subTeamId));
+}
+
+public isolated function retreiveBusinessUnitTeamSubTeamUnitHeadCount(int businessUnitTeamSubTeamId, int unitId)
+    returns int|error {
+    return databaseClient->queryRow(retrieveBusinessUnitTeamSubTeamUnitHeadCountQuery(businessUnitTeamSubTeamId, unitId));
+}
+
+public isolated function retreiveBusinessUnitTeamHeadCount(int businessUnitId, int teamId)
+    returns int|error {
+    return databaseClient->queryRow(retrieveBusinessUnitTeamHeadCountQuery(businessUnitId, teamId));
 }
