@@ -866,8 +866,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         BulkFirstPassResult firstPass = processBulkCsvRows(rows, refData);
 
         database:BulkEmployeeError[]|error dbErrors = detectDbDuplicates(
-            firstPass.rowByEmail, firstPass.rowByNic,
-            firstPass.candidateEmails, firstPass.candidateNics);
+            firstPass.rowByEmail, firstPass.rowByNic, firstPass.rowByEpf,
+            firstPass.candidateEmails, firstPass.candidateNics, firstPass.candidateEpfs);
         if dbErrors is error {
             log:printError("Error checking duplicates during bulk upload", dbErrors);
             return <http:InternalServerError>{

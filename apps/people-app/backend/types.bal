@@ -112,10 +112,14 @@ type BulkFirstPassResult record {|
     map<int> rowByEmail;
     # NIC/Passport value to row number for DB duplicate detection
     map<int> rowByNic;
+    # EPF value to row number for DB duplicate detection
+    map<int> rowByEpf;
     # Work emails to batch-check against the DB
     string[] candidateEmails;
     # NIC/Passport values to batch-check against the DB
     string[] candidateNics;
+    # EPF values to batch-check against the DB
+    string[] candidateEpfs;
 |};
 
 # A fully resolved employee with a generated ID and a complete payload ready for DB insertion.

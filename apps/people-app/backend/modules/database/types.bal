@@ -553,6 +553,17 @@ public type House record {|
     string name;
 |};
 
+# House with active employee count.
+public type HouseWithCount record {|
+    # House ID
+    int id;
+    # House name
+    string name;
+    # Number of currently active employees assigned to this house
+    @sql:Column {name: "active_count"}
+    int activeCount;
+|};
+
 # Manager payload.
 public type Manager record {|
     # Employee ID of the manager
@@ -575,6 +586,12 @@ public type NicOrPassportRow record {|
     # NIC or passport value
     @sql:Column {name: "nic_or_passport"}
     string nicOrPassport;
+|};
+
+# EPF row mapping.
+public type EpfRow record {|
+    # EPF number
+    string epf;
 |};
 
 # Search employee personal information payload.

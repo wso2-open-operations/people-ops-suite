@@ -162,7 +162,7 @@ public isolated function generateBulkEmployeeId(database:CreateEmployeePayload p
     }
 
     match context.employmentType {
-        database:PERMANENT|database:INTERNSHIP|database:FIXED_TERM => {
+        database:PERMANENT|database:INTERNSHIP => {
             string seqKey = context.companyPrefix + ":" + context.employmentType.toString();
             if !sequenceCache.hasKey(seqKey) {
                 database:EmployeeIdSequence seq = check database:getLastEmployeeNumericSuffix(
@@ -492,10 +492,10 @@ public isolated function extractCsvFileBytes(http:Request req) returns byte[]|ht
     };
 }
 
-# Returns true when all required fields in the row are blank.
+# Returns true when every field in the row is blank after trimming.
 #
 # + row - Typed CSV row to inspect
-# + return - `true` if every required field is empty after trimming
+# + return - `true` if every field (required and optional) is empty after trimming
 isolated function isEmptyBulkRow(BulkEmployeeCsvRow row) returns boolean {
     return row.firstName.trim().length() == 0
         && row.lastName.trim().length() == 0
@@ -505,15 +505,35 @@ isolated function isEmptyBulkRow(BulkEmployeeCsvRow row) returns boolean {
         && row.businessUnit.trim().length() == 0
         && row.team.trim().length() == 0
         && row.subTeam.trim().length() == 0
+        && row.unit.trim().length() == 0
         && row.startDate.trim().length() == 0
         && row.employmentType.trim().length() == 0
         && row.company.trim().length() == 0
         && row.workLocation.trim().length() == 0
+        && row.office.trim().length() == 0
         && row.title.trim().length() == 0
         && row.nicOrPassport.trim().length() == 0
         && row.dob.trim().length() == 0
         && row.gender.trim().length() == 0
-        && row.nationality.trim().length() == 0;
+        && row.nationality.trim().length() == 0
+        && row.personalEmail.trim().length() == 0
+        && row.personalPhone.trim().length() == 0
+        && row.residentNumber.trim().length() == 0
+        && row.addressLine1.trim().length() == 0
+        && row.addressLine2.trim().length() == 0
+        && row.city.trim().length() == 0
+        && row.stateOrProvince.trim().length() == 0
+        && row.postalCode.trim().length() == 0
+        && row.country.trim().length() == 0
+        && row.epf.trim().length() == 0
+        && row.secondaryJobTitle.trim().length() == 0
+        && row.probationEndDate.trim().length() == 0
+        && row.agreementEndDate.trim().length() == 0
+        && row.additionalManagerEmails.trim().length() == 0
+        && row.emergencyContactName.trim().length() == 0
+        && row.emergencyContactMobile.trim().length() == 0
+        && row.emergencyContactRelationship.trim().length() == 0
+        && row.emergencyContactTelephone.trim().length() == 0;
 }
 
 # Processes all CSV data rows in a single pass: skips fully-empty rows,
@@ -528,8 +548,10 @@ isolated function processBulkCsvRows(BulkEmployeeCsvRow[] rows, BulkRefData refD
     database:BulkEmployeeError[] errors = [];
     map<int> rowByEmail = {};
     map<int> rowByNic = {};
+    map<int> rowByEpf = {};
     string[] candidateEmails = [];
     string[] candidateNics = [];
+    string[] candidateEpfs = [];
     int skipped = 0;
 
     foreach int i in 0 ..< rows.length() {
@@ -563,6 +585,16 @@ isolated function processBulkCsvRows(BulkEmployeeCsvRow[] rows, BulkRefData refD
             }
         }
 
+        string normEpf = row.epf.trim();
+        if normEpf.length() > 0 {
+            if rowByEpf.hasKey(normEpf) {
+                errors.push({row: rowNumber, 'field: CSV_FIELD_EPF, message: string `Duplicate EPF in CSV: ${normEpf}`});
+            } else {
+                rowByEpf[normEpf] = rowNumber;
+                candidateEpfs.push(normEpf);
+            }
+        }
+
         rowInfos.push({rowNumber, values: row});
     }
 
@@ -572,8 +604,10 @@ isolated function processBulkCsvRows(BulkEmployeeCsvRow[] rows, BulkRefData refD
         skipped,
         rowByEmail,
         rowByNic,
+        rowByEpf,
         candidateEmails,
-        candidateNics
+        candidateNics,
+        candidateEpfs
     };
 }
 
@@ -581,11 +615,13 @@ isolated function processBulkCsvRows(BulkEmployeeCsvRow[] rows, BulkRefData refD
 #
 # + rowByEmail - Normalized work email to row number map
 # + rowByNic - NIC/Passport value to row number map
+# + rowByEpf - EPF value to row number map
 # + candidateEmails - Work emails to batch-check against the DB
 # + candidateNics - NIC/Passport values to batch-check against the DB
+# + candidateEpfs - EPF values to batch-check against the DB
 # + return - Duplicate errors found in the DB, or an error if the DB query fails
-public isolated function detectDbDuplicates(map<int> rowByEmail, map<int> rowByNic,
-        string[] candidateEmails, string[] candidateNics)
+public isolated function detectDbDuplicates(map<int> rowByEmail, map<int> rowByNic, map<int> rowByEpf,
+        string[] candidateEmails, string[] candidateNics, string[] candidateEpfs)
     returns database:BulkEmployeeError[]|error {
     database:BulkEmployeeError[] errors = [];
 
@@ -617,6 +653,20 @@ public isolated function detectDbDuplicates(map<int> rowByEmail, map<int> rowByN
         }
     }
 
+    if candidateEpfs.length() > 0 {
+        string[] existingEpfs = check database:getExistingEpfs(candidateEpfs);
+        foreach string existing in existingEpfs {
+            int? rowNum = rowByEpf[existing.trim()];
+            if rowNum is int {
+                errors.push({
+                    row: rowNum,
+                    'field: CSV_FIELD_EPF,
+                    message: string `EPF already exists: ${existing.trim()}`
+                });
+            }
+        }
+    }
+
     return errors;
 }
 
@@ -632,9 +682,27 @@ isolated function buildBulkPayloads(CsvRowInfo[] rowInfos, BulkRefData refData)
     map<database:EmployeeIdContext> contextCache = {};
     map<int> sequenceCache = {};
 
+    database:HouseWithCount[] houses = check database:getHousesWithActiveEmployeeCounts();
+    map<int> houseCounts = map from database:HouseWithCount h in houses
+        select [h.id.toString(), h.activeCount];
+
     foreach CsvRowInfo rowInfo in rowInfos {
-        database:House? house = check database:getHouseWithLeastActiveEmployees();
-        int? suggestedHouseId = house is database:House ? house.id : ();
+        int? suggestedHouseId = ();
+        if houses.length() > 0 {
+            int minCount = int:MAX_VALUE;
+            int? minHouseId = ();
+            foreach database:HouseWithCount h in houses {
+                int count = houseCounts[h.id.toString()] ?: 0;
+                if count < minCount {
+                    minCount = count;
+                    minHouseId = h.id;
+                }
+            }
+            if minHouseId is int {
+                suggestedHouseId = minHouseId;
+                houseCounts[minHouseId.toString()] = (houseCounts[minHouseId.toString()] ?: 0) + 1;
+            }
+        }
         database:CreateEmployeePayload payload = buildBulkEmployeePayload(rowInfo.values, refData, suggestedHouseId);
         string generatedId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
         payload.employeeId = generatedId;

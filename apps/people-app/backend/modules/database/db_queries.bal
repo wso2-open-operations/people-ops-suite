@@ -571,6 +571,26 @@ isolated function getExistingNicOrPassportQuery(string[] nics) returns sql:Param
     );
 }
 
+# Fetch existing EPF values.
+#
+# + epfs - EPF number list
+# + return - Query to fetch existing EPF values
+isolated function getExistingEpfsQuery(string[] epfs) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = ``;
+    foreach int i in 0 ..< epfs.length() {
+        if i == 0 {
+            inClause = sql:queryConcat(inClause, `${epfs[i]}`);
+        } else {
+            inClause = sql:queryConcat(inClause, `, `, `${epfs[i]}`);
+        }
+    }
+    return sql:queryConcat(
+            `SELECT epf FROM employee WHERE epf IN (`,
+            inClause,
+            `);`
+    );
+}
+
 # Get units query.
 #
 # + subTeamId - Sub team ID (optional)
@@ -749,6 +769,17 @@ isolated function getHouseWithLeastActiveEmployeesQuery() returns sql:Parameteri
      GROUP BY h.id, h.name
      ORDER BY COUNT(e.id) ASC
      LIMIT 1`;
+
+# Get all active houses with their active employee counts query.
+#
+# + return - Query to get all active houses ordered by active employee count ascending
+isolated function getHousesWithActiveEmployeeCountsQuery() returns sql:ParameterizedQuery =>
+    `SELECT h.id, h.name, COUNT(e.id) AS active_count
+     FROM house h
+     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
+     WHERE h.is_active = 1
+     GROUP BY h.id, h.name
+     ORDER BY active_count ASC`;
 
 # Add employee personal information query.
 #

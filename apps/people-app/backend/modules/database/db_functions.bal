@@ -178,6 +178,19 @@ public isolated function getExistingNicOrPassport(string[] nics) returns string[
         select row.nicOrPassport;
 }
 
+# Fetch existing EPF values from the employee table.
+#
+# + epfs - List of EPF values to check
+# + return - Existing EPF values found in the DB, or error
+public isolated function getExistingEpfs(string[] epfs) returns string[]|error {
+    if epfs.length() == 0 {
+        return [];
+    }
+    stream<EpfRow, error?> epfStream = databaseClient->query(getExistingEpfsQuery(epfs));
+    return from EpfRow row in epfStream
+        select row.epf;
+}
+
 # Get units.
 #
 # + subTeamId - Sub team ID (optional)
@@ -286,6 +299,15 @@ public isolated function getHouses() returns House[]|error {
 public isolated function getHouseWithLeastActiveEmployees() returns House|error? {
     House|error result = databaseClient->queryRow(getHouseWithLeastActiveEmployeesQuery());
     return result is sql:NoRowsError ? () : result;
+}
+
+# Get all active houses with their active employee counts, ordered ascending.
+#
+# + return - Houses with active employee counts, or error
+public isolated function getHousesWithActiveEmployeeCounts() returns HouseWithCount[]|error {
+    stream<HouseWithCount, error?> resultStream = databaseClient->query(getHousesWithActiveEmployeeCountsQuery());
+    return from HouseWithCount house in resultStream
+        select house;
 }
 
 # Get managers.
