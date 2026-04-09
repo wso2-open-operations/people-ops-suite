@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
 import ballerina/sql;
 
 # Fetch employee basic information.
@@ -1627,92 +1628,94 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
 # + userEmail - Email of the user performing the action
 # + payload - Node details (name and head email)
 # + return - Parameterized INSERT query for the new business-unit
-isolated function addBusinessUnitQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
-  INSERT INTO business_unit(
-    name,
-    head_email,
-    created_by,
-    created_on,
-    updated_by,
-    updated_on
-  ) VALUES (
-    ${payload.name},
-    ${payload.headEmail},
-    ${userEmail},
-    current_timestamp,
-    ${userEmail},
-    current_timestamp
-  )
-`;
+isolated function addBusinessUnitQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery {
+
+    OrgNodeInfo {name, headEmail} = payload;
+
+    sql:ParameterizedQuery[] columnValuePairs = [];
+
+    columnValuePairs.push(` name = ${name}`);
+
+    if headEmail is string {
+        columnValuePairs.push(` head_email = ${headEmail}`);
+    } else {
+        columnValuePairs.push(` head_email = ${""}`);
+    }
+
+    columnValuePairs.push(` created_by = ${userEmail}`);
+    columnValuePairs.push(` updated_by = ${userEmail}`);
+
+    return buildSqlInsertQuery(`INSERT INTO business_unit SET `, columnValuePairs);
+}
 
 # Build query to insert a new team.
 #
 # + userEmail - Email of the user performing the action
 # + payload - Node details (name and head email)
 # + return - Parameterized INSERT query for the new team
-isolated function addTeamQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
-  INSERT INTO team(
-    name,
-    head_email,
-    created_by,
-    created_on,
-    updated_by,
-    updated_on
-  ) VALUES (
-    ${payload.name},
-    ${payload.headEmail},
-    ${userEmail},
-    current_timestamp,
-    ${userEmail},
-    current_timestamp
-  )
-`;
+isolated function addTeamQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery {
+    OrgNodeInfo {name, headEmail} = payload;
+
+    sql:ParameterizedQuery[] columnValuePairs = [];
+    columnValuePairs.push(` name = ${name}`);
+
+    if headEmail is string {
+        columnValuePairs.push(` head_email = ${headEmail}`);
+    } else {
+        columnValuePairs.push(` head_email = ${""}`);
+    }
+
+    columnValuePairs.push(` created_by = ${userEmail}`);
+    columnValuePairs.push(` updated_by = ${userEmail}`);
+
+    return buildSqlInsertQuery(`INSERT INTO team SET `, columnValuePairs);
+}
 
 # Build query to insert a new sub team.
 #
 # + userEmail - Email of the user performing the action
 # + payload - Node details (name and head email)
 # + return - Parameterized INSERT query for the new sub team
-isolated function addSubTeamQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
-  INSERT INTO sub_team(
-    name,
-    head_email,
-    created_by,
-    created_on,
-    updated_by,
-    updated_on
-  ) VALUES (
-    ${payload.name},
-    ${payload.headEmail},
-    ${userEmail},
-    current_timestamp,
-    ${userEmail},
-    current_timestamp
-  )
-`;
+isolated function addSubTeamQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery {
+    OrgNodeInfo {name, headEmail} = payload;
+
+    sql:ParameterizedQuery[] columnValuePairs = [];
+    columnValuePairs.push(` name = ${name}`);
+
+    if headEmail is string {
+        columnValuePairs.push(` head_email = ${headEmail}`);
+    } else {
+        columnValuePairs.push(` head_email = ${""}`);
+    }
+
+    columnValuePairs.push(` created_by = ${userEmail}`);
+    columnValuePairs.push(` updated_by = ${userEmail}`);
+
+    return buildSqlInsertQuery(`INSERT INTO sub_team SET `, columnValuePairs);
+}
 
 # Build query to insert a new unit.
 #
 # + userEmail - Email of the user performing the action
 # + payload - Node details (name and head email)
 # + return - Parameterized INSERT query for the new unit
-isolated function addUnitQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
-  INSERT INTO unit(
-    name,
-    head_email,
-    created_by,
-    created_on,
-    updated_by,
-    updated_on
-  ) VALUES (
-    ${payload.name},
-    ${payload.headEmail},
-    ${userEmail},
-    current_timestamp,
-    ${userEmail},
-    current_timestamp
-  )
-`;
+isolated function addUnitQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery {
+    OrgNodeInfo {name, headEmail} = payload;
+
+    sql:ParameterizedQuery[] columnValuePairs = [];
+    columnValuePairs.push(` name = ${name}`);
+
+    if headEmail is string {
+        columnValuePairs.push(` head_email = ${headEmail}`);
+    } else {
+        columnValuePairs.push(` head_email = ${""}`);
+    }
+
+    columnValuePairs.push(` created_by = ${userEmail}`);
+    columnValuePairs.push(` updated_by = ${userEmail}`);
+
+    return buildSqlInsertQuery(`INSERT INTO unit SET `, columnValuePairs);
+}
 
 # Build query to insert a new business-unit-team mapping.
 #
@@ -1720,26 +1723,25 @@ isolated function addUnitQuery(string userEmail, OrgNodeInfo payload) returns sq
 # + payload - Business unit ID, team ID, and functional lead email
 # + return - Parameterized INSERT query for the new business-unit-team
 isolated function addBusinessUnitTeamQuery(string userEmail, CreateBusinessUnitTeamPayload payload)
-    returns sql:ParameterizedQuery => `
+    returns sql:ParameterizedQuery {
 
-    INSERT INTO business_unit_team(
-        business_unit_id,
-        team_id,
-        head_email,
-        created_by,
-        created_on,
-        updated_by,
-        updated_on
-    ) VALUES (
-        ${payload.businessUnitId},
-        ${payload.teamId},
-        ${payload.functionalLeadEmail},
-        ${userEmail},
-        current_timestamp,
-        ${userEmail},
-        current_timestamp
-    )
-`;
+    CreateBusinessUnitTeamPayload {businessUnitId, teamId, functionalLeadEmail} = payload;
+
+    sql:ParameterizedQuery[] columnValuePairs = [];
+    columnValuePairs.push(` business_unit_id = ${businessUnitId}`);
+    columnValuePairs.push(` team_id = ${teamId}`);
+
+    if functionalLeadEmail is string {
+        columnValuePairs.push(` head_email = ${functionalLeadEmail}`);
+    } else {
+        columnValuePairs.push(` head_email = ${""}`);
+    }
+
+    columnValuePairs.push(` created_by = ${userEmail}`);
+    columnValuePairs.push(` updated_by = ${userEmail}`);
+
+    return buildSqlInsertQuery(`INSERT INTO business_unit_team SET `, columnValuePairs);
+};
 
 # Build query to insert a new business-unit-team-sub-team mapping.
 #
@@ -1747,26 +1749,24 @@ isolated function addBusinessUnitTeamQuery(string userEmail, CreateBusinessUnitT
 # + payload - Business unit-team ID, sub-team ID, and functional lead email
 # + return - Parameterized INSERT query for the new business_unit_team_sub_team mapping
 isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, CreateBusinessUnitTeamSubTeamPayload payload)
-    returns sql:ParameterizedQuery => `
+    returns sql:ParameterizedQuery {
+    CreateBusinessUnitTeamSubTeamPayload {businessUnitTeamId, subTeamId, functionalLeadEmail} = payload;
 
-    INSERT INTO business_unit_team_sub_team(
-        business_unit_team_id,
-        sub_team_id,
-        head_email,
-        created_by,
-        created_on,
-        updated_by,
-        updated_on
-    ) VALUES (
-        ${payload.businessUnitTeamId},
-        ${payload.subTeamId},
-        ${payload.functionalLeadEmail},
-        ${userEmail},
-        current_timestamp,
-        ${userEmail},
-        current_timestamp
-    )
-`;
+    sql:ParameterizedQuery[] columnValuePairs = [];
+    columnValuePairs.push(` business_unit_team_id = ${businessUnitTeamId}`);
+    columnValuePairs.push(` sub_team_id = ${subTeamId}`);
+
+    if functionalLeadEmail is string {
+        columnValuePairs.push(` head_email = ${functionalLeadEmail}`);
+    } else {
+        columnValuePairs.push(` head_email = ${""}`);
+    }
+
+    columnValuePairs.push(` created_by = ${userEmail}`);
+    columnValuePairs.push(` updated_by = ${userEmail}`);
+
+    return buildSqlInsertQuery(`INSERT INTO business_unit_team_sub_team SET `, columnValuePairs);
+}
 
 # Build query to insert a new business-unit-team-sub-team-unit mapping.
 #
@@ -1774,26 +1774,24 @@ isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, CreateBusine
 # + payload - Business unit-team-sub-team ID, unit ID, and functional lead email
 # + return - Parameterized INSERT query for the new business_unit_team_sub_team_unit mapping
 isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, CreateBusinessUnitTeamSubTeamUnitPayload payload)
-    returns sql:ParameterizedQuery => `
+    returns sql:ParameterizedQuery {
+    CreateBusinessUnitTeamSubTeamUnitPayload {businessUnitTeamSubTeamId, unitId, functionalLeadEmail} = payload;
 
-    INSERT INTO business_unit_team_sub_team_unit(
-        business_unit_team_sub_team_id,
-        unit_id,
-        head_email,
-        created_by,
-        created_on,
-        updated_by,
-        updated_on
-    ) VALUES (
-        ${payload.businessUnitTeamSubTeamId},
-        ${payload.unitId},
-        ${payload.functionalLeadEmail},
-        ${userEmail},
-        current_timestamp,
-        ${userEmail},
-        current_timestamp
-    )
-`;
+    sql:ParameterizedQuery[] columnValuePairs = [];
+    columnValuePairs.push(` business_unit_team_sub_team_id = ${businessUnitTeamSubTeamId}`);
+    columnValuePairs.push(` unit_id = ${unitId}`);
+
+    if functionalLeadEmail is string {
+        columnValuePairs.push(` head_email = ${functionalLeadEmail}`);
+    } else {
+        columnValuePairs.push(` head_email = ${""}`);
+    }
+
+    columnValuePairs.push(` created_by = ${userEmail}`);
+    columnValuePairs.push(` updated_by = ${userEmail}`);
+
+    return buildSqlInsertQuery(`INSERT INTO business_unit_team_sub_team_unit SET `, columnValuePairs);
+}
 
 # Build query to update a business unit.
 #
