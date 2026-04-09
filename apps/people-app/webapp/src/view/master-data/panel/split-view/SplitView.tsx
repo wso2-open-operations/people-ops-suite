@@ -76,9 +76,15 @@ type SplitViewReadyProps = {
   teams: RawTeam[];
   subTeams: RawSubTeam[];
   units: RawUnit[];
+  onEdit: (data: OrgStructureState, nodeType: NodeType) => void;
+  onAdd: (
+    data: AddOption[] | null,
+    nodeType: NodeType,
+    selectedNode: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState | null,
+  ) => void;
 };
 
-function SplitViewReady({ orgItems, teams, subTeams, units }: SplitViewReadyProps) {
+function SplitViewReady({ orgItems, teams, subTeams, units, onEdit, onAdd }: SplitViewReadyProps) {
   const {
     selectedBusinessUnitId,
     setSelectedBusinessUnitId,
@@ -126,59 +132,6 @@ function SplitViewReady({ orgItems, teams, subTeams, units }: SplitViewReadyProp
     setSelectedSubTeamId(currentMatch.subTeamId as number | null);
     setSelectedUnitId(currentMatch.unitId as number | null);
   }, [currentMatch]);
-
-  const [editModal, setEditModal] = useState<OnEdit>({
-    open: false,
-    uniqueId: null,
-    type: null,
-  });
-
-  const [addModal, setAddModal] = useState<OnAdd>({
-    open: false,
-    data: null,
-    type: null,
-    selectedNode: null,
-  });
-
-  const handleClose = () => {
-    setEditModal({
-      open: false,
-      uniqueId: null,
-      type: null,
-    });
-  };
-
-  const handleAddModalClose = () => {
-    setAddModal({
-      open: false,
-      data: null,
-      type: null,
-      selectedNode: null,
-    });
-  };
-
-  const onEdit = (data: OrgStructureState, nodeType: NodeType) => {
-    setEditModal({
-      open: true,
-      uniqueId: data.uniqueId,
-      type: nodeType,
-    });
-  };
-
-  const onAdd = (
-    data: AddOption[] | null,
-    nodeType: NodeType,
-    selectedNode: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState | null,
-  ) => {
-    if (!data) return;
-
-    setAddModal({
-      open: true,
-      data: data,
-      type: nodeType,
-      selectedNode: selectedNode,
-    });
-  };
 
   const filteredBusinessUnits = orgItems.businessUnits.filter((bu) => {
     if (!searchTerm || searchTerm.trim() === "") return true;
@@ -322,25 +275,6 @@ function SplitViewReady({ orgItems, teams, subTeams, units }: SplitViewReadyProp
           orgItems={filteredUnits}
         />
       </Box>
-
-      {editModal.open && editModal.uniqueId && editModal.type && (
-        <EditModal
-          open={editModal.open}
-          uniqueId={editModal.uniqueId}
-          nodeType={editModal.type}
-          onClose={handleClose}
-        />
-      )}
-
-      {addModal.open && addModal.data && addModal.type && addModal.selectedNode && (
-        <AddModal
-          open={addModal.open}
-          orgInfo={addModal.data}
-          onClose={handleAddModalClose}
-          nodeType={addModal.type}
-          selectedNode={addModal.selectedNode}
-        />
-      )}
     </Box>
   );
 }
@@ -353,6 +287,59 @@ export default function SplitView() {
 
   const { teams, subTeams, units } = useAppSelector((state) => state.organization);
   const dispatch = useAppDispatch();
+
+  const [editModal, setEditModal] = useState<OnEdit>({
+    open: false,
+    uniqueId: null,
+    type: null,
+  });
+
+  const [addModal, setAddModal] = useState<OnAdd>({
+    open: false,
+    data: null,
+    type: null,
+    selectedNode: null,
+  });
+
+  const handleClose = () => {
+    setEditModal({
+      open: false,
+      uniqueId: null,
+      type: null,
+    });
+  };
+
+  const handleAddModalClose = () => {
+    setAddModal({
+      open: false,
+      data: null,
+      type: null,
+      selectedNode: null,
+    });
+  };
+
+  const onEdit = (data: OrgStructureState, nodeType: NodeType) => {
+    setEditModal({
+      open: true,
+      uniqueId: data.uniqueId,
+      type: nodeType,
+    });
+  };
+
+  const onAdd = (
+    data: AddOption[] | null,
+    nodeType: NodeType,
+    selectedNode: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState | null,
+  ) => {
+    if (!data) return;
+
+    setAddModal({
+      open: true,
+      data: data,
+      type: nodeType,
+      selectedNode: selectedNode,
+    });
+  };
 
   useEffect(() => {
     dispatch(fetchBusinessUnits());
@@ -382,5 +369,35 @@ export default function SplitView() {
     return <ErrorHandler message={"Organization data is missing after loading."} />;
   }
 
-  return <SplitViewReady orgItems={orgItems} teams={teams} subTeams={subTeams} units={units} />;
+  return (
+    <>
+      <SplitViewReady
+        orgItems={orgItems}
+        teams={teams}
+        subTeams={subTeams}
+        units={units}
+        onEdit={onEdit}
+        onAdd={onAdd}
+      />
+
+      {editModal.open && editModal.uniqueId && editModal.type && (
+        <EditModal
+          open={editModal.open}
+          uniqueId={editModal.uniqueId}
+          nodeType={editModal.type}
+          onClose={handleClose}
+        />
+      )}
+
+      {addModal.open && addModal.data && addModal.type && addModal.selectedNode && (
+        <AddModal
+          open={addModal.open}
+          orgInfo={addModal.data}
+          onClose={handleAddModalClose}
+          nodeType={addModal.type}
+          selectedNode={addModal.selectedNode}
+        />
+      )}
+    </>
+  );
 }
