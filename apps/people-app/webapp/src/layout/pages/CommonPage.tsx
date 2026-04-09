@@ -50,7 +50,10 @@ const CommonPage = ({ title, commonPageTabs, icon, page }: CommonPageProps) => {
     if (currentTab && tabs.indexOf(currentTab) !== -1) {
       setValue(tabs.indexOf(currentTab));
     } else {
-      setSearchParams({ tab: tabs[0] });
+      setSearchParams((prev) => {
+        prev.set("tab", tabs[0]);
+        return prev;
+      });
       setValue(0);
     }
   }, [hasTabs, searchParams, setSearchParams, tabs]);
@@ -124,16 +127,16 @@ interface TabPanelProps {
 
 function TabPanel({ children, value, index, ...other }: TabPanelProps) {
   return (
-    <div
+    <Box
       role="tabpanel"
       hidden={value !== index}
       id={`common-tabpanel-${index}`}
       aria-labelledby={`common-tab-${index}`}
-      style={{ height: "100%" }}
+      sx={{ height: "100%" }}
       {...other}
     >
       {value === index && <Box sx={{ height: "100%" }}>{children}</Box>}
-    </div>
+    </Box>
   );
 }
 
