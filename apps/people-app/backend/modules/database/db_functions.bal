@@ -151,6 +151,46 @@ public isolated function getSubTeams(int? teamId = ()) returns SubTeam[]|error {
         select subTeam;
 }
 
+# Fetch existing work emails from the employee table.
+#
+# + emails - List of lowercased work emails
+# + return - Existing work emails
+public isolated function getExistingWorkEmails(string[] emails) returns string[]|error {
+    if emails.length() == 0 {
+        return [];
+    }
+    stream<WorkEmailRow, error?> emailStream = databaseClient->query(getExistingWorkEmailsQuery(emails));
+    return from WorkEmailRow row in emailStream
+        select row.workEmail;
+}
+
+# Fetch existing NIC or passport values from personal_info.
+#
+# + nics - List of NIC or passport values
+# + return - Existing NIC or passport values
+public isolated function getExistingNicOrPassport(string[] nics) returns string[]|error {
+    if nics.length() == 0 {
+        return [];
+    }
+    stream<NicOrPassportRow, error?> nicStream =
+        databaseClient->query(getExistingNicOrPassportQuery(nics));
+    return from NicOrPassportRow row in nicStream
+        select row.nicOrPassport;
+}
+
+# Fetch existing EPF values from the employee table.
+#
+# + epfs - List of EPF values to check
+# + return - Existing EPF values found in the DB, or error
+public isolated function getExistingEpfs(string[] epfs) returns string[]|error {
+    if epfs.length() == 0 {
+        return [];
+    }
+    stream<EpfRow, error?> epfStream = databaseClient->query(getExistingEpfsQuery(epfs));
+    return from EpfRow row in epfStream
+        select row.epf;
+}
+
 # Get units.
 #
 # + subTeamId - Sub team ID (optional)
@@ -261,6 +301,15 @@ public isolated function getHouseWithLeastActiveEmployees() returns House|error?
     return result is sql:NoRowsError ? () : result;
 }
 
+# Get all active houses with their active employee counts, ordered ascending.
+#
+# + return - Houses with active employee counts, or error
+public isolated function getHousesWithActiveEmployeeCounts() returns HouseWithCount[]|error {
+    stream<HouseWithCount, error?> resultStream = databaseClient->query(getHousesWithActiveEmployeeCountsQuery());
+    return from HouseWithCount house in resultStream
+        select house;
+}
+
 # Get managers.
 #
 # + return - Managers
@@ -319,6 +368,32 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
         check commit;
     }
     return lastInsertedId;
+}
+
+# Add multiple employees in a single transaction.
+#
+# + payloads - Create employee payloads
+# + employeeIds - Pre-resolved employee IDs
+# + createdBy - Creator of the employee records
+# + return - Number of employees created or error
+public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, string[] employeeIds, string createdBy)
+        returns int|error {
+    if payloads.length() != employeeIds.length() {
+        return error("Bulk insert payload length mismatch");
+    }
+
+    retry transaction {
+        foreach int i in 0 ..< payloads.length() {
+            CreateEmployeePayload payload = payloads[i];
+            string employeeId = employeeIds[i];
+            int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
+            _ = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
+            check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
+            check syncAdditionalManagers(employeeId, payload.additionalManagerEmails, createdBy);
+        }
+        check commit;
+    }
+    return payloads.length();
 }
 
 # Fetch employee ID generation context.

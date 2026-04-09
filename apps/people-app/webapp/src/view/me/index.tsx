@@ -86,7 +86,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { array, object, string } from "yup";
 import { Role, selectRoles } from "@slices/authSlice/auth";
-import { useAppDispatch, useAppSelector } from "../../slices/store";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 
 const ReadOnly = ({
   label,

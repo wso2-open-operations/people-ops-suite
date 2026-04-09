@@ -14,8 +14,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import EmployeeForm from "../EmployeeForm";
+import CommonPage from "@layout/pages/CommonPage";
+import BulkOnboarding from "@view/employees/onboarding/bulkOnboarding/BulkOnboarding";
+import EmployeeForm from "@view/employees/onboarding/EmployeeForm";
 
 export default function EmployeeOnboarding() {
-  return <EmployeeForm mode="create" />;
+  return (
+    <CommonPage
+      title="Onboarding"
+      commonPageTabs={[
+        {
+          tabTitle: "Single Onboarding",
+          tabPath: "single",
+          page: <EmployeeForm mode="create" />,
+        },
+        {
+          tabTitle: "Bulk Onboarding",
+          tabPath: "bulk",
+          page: <BulkOnboarding />,
+        },
+      ]}
+    />
+  );
 }
