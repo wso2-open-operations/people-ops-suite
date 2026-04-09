@@ -44,7 +44,7 @@ import {
 } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import type { Theme } from "@mui/material/styles";
-import { alpha } from "@mui/material/styles";
+import { alpha, useTheme } from "@mui/material/styles";
 import {
   FieldArray,
   Form,
@@ -78,16 +78,20 @@ import { Role, selectRoles } from "@slices/authSlice/auth";
 
 import { useAppDispatch, useAppSelector } from "../../slices/store";
 
-const ReadOnly = ({ label, value }: { label: string; value?: string | number | null }) => (
-  <>
-    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-      {label}
-    </Typography>
-    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-      {value || "-"}
-    </Typography>
-  </>
-);
+const ReadOnly = ({ label, value }: { label: string; value?: string | number | null }) => {
+  const theme = useTheme();
+
+  return (
+    <>
+      <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
+        {label}
+      </Typography>
+      <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
+        {value || "-"}
+      </Typography>
+    </>
+  );
+};
 
 const FieldInput = ({
   name,
@@ -204,6 +208,8 @@ export default function Me({
   const [shouldRequireEmergencyContacts, setShouldRequireEmergencyContacts] = useState<boolean>(
     initialHasEmergencyContactsRef.current,
   );
+
+  const theme = useTheme();
 
   const serviceLength = employee?.startDate ? calculateServiceLength(employee.startDate) : null;
 
@@ -527,6 +533,7 @@ export default function Me({
           </Stack>
         </Stack>
       </Paper>
+
       <Accordion
         defaultExpanded
         sx={{
@@ -554,7 +561,7 @@ export default function Me({
             <Box>
               <Grid container spacing={1.5}>
                 {[...Array(20)].map((_, i) => (
-                  <Grid item xs={12} sm={6} md={4} key={i}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
                     <Skeleton width={120} height={32} />
                     <Skeleton width={80} height={28} />
                   </Grid>
@@ -562,114 +569,114 @@ export default function Me({
               </Grid>
             </Box>
           ) : employee ? (
-            <Box>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Grid container rowSpacing={1.5} columnSpacing={3}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Employee ID
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.employeeId || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Name
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.firstName} {employee.lastName}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Work Email
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.workEmail}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     EPF
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.epf || "-"}
                   </Typography>
                 </Grid>
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Designation
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {designationText}
                   </Typography>
                 </Grid>
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Business Unit
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.businessUnit || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Team
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.team}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Sub Team
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.subTeam || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Unit
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.unit || "N/A"}
                   </Typography>
                 </Grid>
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Company
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.company || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Office
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.office || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Work Location
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.workLocation || "-"}
                   </Typography>
                 </Grid>
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Employment Type
                   </Typography>
 
@@ -699,14 +706,14 @@ export default function Me({
                         })}
                       />
                     ) : (
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                         -
                       </Typography>
                     )}
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     House
                   </Typography>
                   <Box sx={{ mt: 1 }}>
@@ -735,14 +742,14 @@ export default function Me({
                         })}
                       />
                     ) : (
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                         -
                       </Typography>
                     )}
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Employee Status
                   </Typography>
 
@@ -755,7 +762,7 @@ export default function Me({
                         sx={getEmployeeStatusChipStyles(employee.employeeStatus)}
                       />
                     ) : (
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                         -
                       </Typography>
                     )}
@@ -763,49 +770,49 @@ export default function Me({
                 </Grid>
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Start Date
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.startDate || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Length of Service
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {serviceText}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Probation End Date
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.probationEndDate || "N/A"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Agreement End Date
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.agreementEndDate || "N/A"}
                   </Typography>
                 </Grid>
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Lead Email
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.managerEmail || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500, mb: 0.75 }}>
                     Additional Lead Emails
                   </Typography>
@@ -823,22 +830,26 @@ export default function Me({
                         .map((e) => e.trim())
                         .filter(Boolean)
                         .map((email) => (
-                          <Typography key={email} variant="h6" sx={{ fontWeight: 600 }}>
+                          <Typography
+                            key={email}
+                            variant="h6"
+                            color={theme.palette.customText.primary.p2.active}
+                          >
                             {email}
                           </Typography>
                         ))}
                     </Box>
                   ) : (
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                       -
                     </Typography>
                   )}
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Subordinate Count
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
                     {employee.subordinateCount ?? "-"}
                   </Typography>
                 </Grid>
@@ -870,7 +881,7 @@ export default function Me({
           {personalInfoState === "loading" && !isSavingChanges ? (
             <Grid container spacing={1.5}>
               {[...Array(15)].map((_, i) => (
-                <Grid item xs={12} sm={6} md={4} key={i}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
                   <Skeleton width={120} height={32} />
                   <Skeleton width={80} height={28} />
                 </Grid>
@@ -887,40 +898,40 @@ export default function Me({
               }}
             >
               {({ values, handleChange, handleBlur, errors, touched, dirty, resetForm }) => (
-                <Form>
+                <Form style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                   <Grid container rowSpacing={1.5} columnSpacing={3} pt={2}>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <ReadOnly label="Title" value={values.title} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <ReadOnly label="First Name" value={values.firstName} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <ReadOnly label="Last Name" value={values.lastName} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <ReadOnly label="Full Name" value={values.fullName} />
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <ReadOnly label="NIC" value={values.nicOrPassport} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <ReadOnly label="Date of Birth" value={values.dob} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <ReadOnly label="Age" value={age} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <ReadOnly label="Gender" value={values.gender} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <ReadOnly label="Nationality" value={values.nationality} />
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       {readOnly ? (
                         <ReadOnly label="Personal Email" value={values.personalEmail} />
                       ) : (
@@ -937,7 +948,7 @@ export default function Me({
                         />
                       )}
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       {readOnly ? (
                         <ReadOnly label="Personal Phone" value={values.personalPhone} />
                       ) : (
@@ -954,7 +965,7 @@ export default function Me({
                         />
                       )}
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       {readOnly ? (
                         <ReadOnly label="Resident Number" value={values.residentNumber} />
                       ) : (
@@ -973,7 +984,7 @@ export default function Me({
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       {readOnly ? (
                         <ReadOnly label="Address Line 1" value={values.addressLine1} />
                       ) : (
@@ -989,7 +1000,7 @@ export default function Me({
                         />
                       )}
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       {readOnly ? (
                         <ReadOnly label="Address Line 2" value={values.addressLine2} />
                       ) : (
@@ -1007,7 +1018,7 @@ export default function Me({
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       {readOnly ? (
                         <ReadOnly label="City" value={values.city} />
                       ) : (
@@ -1023,7 +1034,7 @@ export default function Me({
                         />
                       )}
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       {readOnly ? (
                         <ReadOnly label="State/Province" value={values.stateOrProvince} />
                       ) : (
@@ -1039,7 +1050,7 @@ export default function Me({
                         />
                       )}
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       {readOnly ? (
                         <ReadOnly label="Country" value={values.country} />
                       ) : (
@@ -1055,7 +1066,7 @@ export default function Me({
                         />
                       )}
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       {readOnly ? (
                         <ReadOnly label="Postal Code" value={values.postalCode} />
                       ) : (
@@ -1071,7 +1082,7 @@ export default function Me({
                         />
                       )}
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid size={{ xs: 12 }}>
                       {readOnly ? (
                         <Box sx={{ pt: 2 }}>
                           <Box
@@ -1104,16 +1115,16 @@ export default function Me({
                                 key={index}
                                 sx={{ mb: 2 }}
                               >
-                                <Grid item xs={12} sm={6} md={3}>
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                   <ReadOnly label="Name" value={c?.name} />
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={3}>
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                   <ReadOnly label="Relationship" value={c?.relationship} />
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={3}>
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                   <ReadOnly label="Telephone" value={c?.telephone} />
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={3}>
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                   <ReadOnly label="Mobile" value={c?.mobile} />
                                 </Grid>
                               </Grid>
@@ -1162,7 +1173,7 @@ export default function Me({
                                     key={index}
                                     sx={{ mb: 2 }}
                                   >
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                       <FieldInput
                                         name={`emergencyContacts.${index}.name`}
                                         label="Name"
@@ -1176,7 +1187,7 @@ export default function Me({
                                       />
                                     </Grid>
 
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                       <FieldInput
                                         name={`emergencyContacts.${index}.relationship`}
                                         label="Relationship"
@@ -1190,7 +1201,7 @@ export default function Me({
                                       />
                                     </Grid>
 
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                       <FieldInput
                                         name={`emergencyContacts.${index}.telephone`}
                                         label="Telephone"
@@ -1204,7 +1215,7 @@ export default function Me({
                                       />
                                     </Grid>
 
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                       <Box
                                         sx={{
                                           display: "flex",
@@ -1299,7 +1310,7 @@ export default function Me({
                     </Grid>
 
                     {!readOnly && (
-                      <Grid item xs={12}>
+                      <Grid size={{ xs: 12 }}>
                         {/* --- Action Buttons --- */}
                         <Box
                           sx={{
@@ -1324,9 +1335,7 @@ export default function Me({
                           </Button>
                           <Button
                             startIcon={<SaveIcon />}
-                            sx={{ textTransform: "none" }}
                             variant="contained"
-                            color="secondary"
                             type="submit"
                             disabled={isSavingChanges || !dirty}
                           >
@@ -1340,7 +1349,9 @@ export default function Me({
               )}
             </Formik>
           ) : (
-            <Typography color="text.secondary">Personal Information not found.</Typography>
+            <Typography color={theme.palette.customText.primary.p2.active}>
+              Personal Information not found.
+            </Typography>
           )}
         </AccordionDetails>
       </Accordion>
@@ -1349,7 +1360,11 @@ export default function Me({
         <DialogTitle>
           Employee QR Code
           {employee?.workEmail && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            <Typography
+              variant="body2"
+              color={theme.palette.customText.primary.p2.active}
+              sx={{ mt: 0.5 }}
+            >
               {employee.workEmail}
             </Typography>
           )}
