@@ -2211,3 +2211,38 @@ isolated function teamSubTeamHasChildrenQuery(int teamId, int subTeamId) returns
           AND butstu.is_active = 1
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
+
+isolated function retrieveBusinessUnitHeadCountQuery(int buId) returns sql:ParameterizedQuery => `
+    SELECT 
+        COUNT(e.id) AS headCount
+    FROM employee e
+    WHERE e.business_unit_id = ${buId}
+`;
+
+isolated function retrieveBusinessUnitTeamHeadCountQuery(int buId, int teamId) returns sql:ParameterizedQuery => `
+    SELECT 
+        COUNT(e.id) AS headCount
+    FROM employee e
+    WHERE e.business_unit_id = ${buId} AND e.team_id = ${teamId}
+`;
+
+isolated function retrieveBusinessUnitTeamSubTeamHeadCountQuery(int businessUnitTeamId, int subTeamId) returns sql:ParameterizedQuery => `
+    SELECT COUNT(e.id) AS headCount
+    FROM employee e
+    INNER JOIN business_unit_team but ON but.id = ${businessUnitTeamId}
+    WHERE e.business_unit_id = but.business_unit_id
+      AND e.team_id = but.team_id
+      AND e.sub_team_id = ${subTeamId}
+`;
+
+isolated function retrieveBusinessUnitTeamSubTeamUnitHeadCountQuery(int businessUnitTeamSubTeamId, int unitId) returns sql:ParameterizedQuery => `
+    SELECT COUNT(e.id) AS headCount
+    FROM employee e
+    INNER JOIN business_unit_team_sub_team butst ON butst.id = ${businessUnitTeamSubTeamId}
+    INNER JOIN business_unit_team but ON but.id = butst.business_unit_team_id
+    WHERE e.business_unit_id = but.business_unit_id
+      AND e.team_id = but.team_id
+      AND e.sub_team_id = butst.sub_team_id
+      AND e.unit_id = ${unitId}
+`;
+
