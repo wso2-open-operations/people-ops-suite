@@ -114,42 +114,42 @@ export interface UpdateUnitPayload {
 
 export interface CreateBusinessUnitPayload {
   name: string;
-  headEmail: string;
+  headEmail?: string;
 }
 
 export interface CreateBusinessUnitTeamPayload {
   businessUnitId: number;
   teamId?: number;
-  functionalLeadEmail: string;
+  functionalLeadEmail?: string;
 }
 
 export interface CreateTeamPayload {
   name: string;
-  headEmail: string;
+  headEmail?: string;
   businessUnit?: CreateBusinessUnitTeamPayload;
 }
 
 export interface CreateBusinessUnitTeamSubTeamPayload {
   businessUnitTeamId: number;
   subTeamId?: number;
-  functionalLeadEmail: string;
+  functionalLeadEmail?: string;
 }
 
 export interface CreateSubTeamPayload {
   name: string;
-  headEmail: string;
+  headEmail?: string;
   businessUnitTeam?: CreateBusinessUnitTeamSubTeamPayload;
 }
 
 export interface CreateBusinessUnitTeamSubTeamUnitPayload {
   businessUnitTeamSubTeamId: number;
   unitId?: number;
-  functionalLeadEmail: string;
+  functionalLeadEmail?: string;
 }
 
 export interface CreateUnitPayload {
   name: string;
-  headEmail: string;
+  headEmail?: string;
   businessUnitTeamSubTeamUnit?: CreateBusinessUnitTeamSubTeamUnitPayload;
 }
 
