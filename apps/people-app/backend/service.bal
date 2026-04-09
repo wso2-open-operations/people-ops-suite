@@ -2928,6 +2928,32 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
+        int|error headCount = database:retreiveBusinessUnitHeadCount(buId);
+        if headCount is error {
+            string customErr = "Error while checking employee count in BusinessUnit";
+            log:printError(customErr, headCount, buId = buId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if headCount > 0 {
+            log:printWarn(
+                    "Cannot delete BusinessUnit because it has assigned employees",
+                    buId = buId,
+                    headCount = headCount,
+                    invokerEmail = validatedUserInfo.email
+            );
+            return <http:BadRequest>{
+                body: {
+                    message: string
+                        `Cannot delete this BusinessUnit because it has ${headCount} assigned employee(s). Reassign employees to another BusinessUnit first.`
+                }
+            };
+        }
+
         boolean|error hasChildren = database:businessUnitHasChildren(buId);
         if hasChildren is error {
             string customErr = "Error while checking BusinessUnit children";
@@ -2948,7 +2974,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:BadRequest>{
                 body: {
                     message: string
-                        `Cannot delete BusinessUnit because it has child teams. Remove or deactivate child teams first.`
+                        `Cannot delete BusinessUnit because it has child teams. 
+                        Remove or deactivate child teams first.`
                 }
             };
         }
@@ -2994,6 +3021,33 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
+        }
+
+        int|error headCount = database:retreiveBusinessUnitTeamHeadCount(businessUnitId, teamId);
+        if headCount is error {
+            string customErr = "Error while checking employee count in BusinessUnit-Team";
+            log:printError(customErr, headCount, businessUnitId = businessUnitId, teamId = teamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if headCount > 0 {
+            log:printWarn(
+                    "Cannot delete BusinessUnit-Team because it has assigned employees",
+                    businessUnitId = businessUnitId,
+                    teamId = teamId,
+                    headCount = headCount,
+                    invokerEmail = validatedUserInfo.email
+            );
+            return <http:BadRequest>{
+                body: {
+                    message: string
+                        `Cannot delete this BusinessUnit-Team because it has ${headCount} assigned employee(s). Reassign employees to another Team first.`
+                }
+            };
         }
 
         boolean|error hasChildren = database:businessUnitTeamHasChildren(businessUnitId, teamId);
@@ -3072,6 +3126,33 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
+        int|error headCount = database:retreiveBusinessUnitTeamSubTeamHeadCount(businessUnitTeamId, subTeamId);
+        if headCount is error {
+            string customErr = "Error while checking employee count in Team-SubTeam";
+            log:printError(customErr, headCount, businessUnitTeamId = businessUnitTeamId, subTeamId = subTeamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if headCount > 0 {
+            log:printWarn(
+                    "Cannot delete Team-SubTeam because it has assigned employees",
+                    businessUnitTeamId = businessUnitTeamId,
+                    subTeamId = subTeamId,
+                    headCount = headCount,
+                    invokerEmail = validatedUserInfo.email
+            );
+            return <http:BadRequest>{
+                body: {
+                    message: string
+                        `Cannot delete this Team-SubTeam because it has ${headCount} assigned employee(s). Reassign employees to another SubTeam first.`
+                }
+            };
+        }
+
         boolean|error hasChildren = database:teamSubTeamHasChildren(businessUnitTeamId, subTeamId);
         if hasChildren is error {
             string customErr = "Error while checking Team-SubTeam children";
@@ -3085,7 +3166,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if hasChildren {
             log:printWarn(
-                    "Cannot delete Team-SubTeam because it has child SubTeams",
+                    "Cannot delete Team-SubTeam because it has child Units",
                     businessUnitTeamId = businessUnitTeamId,
                     subTeamId = subTeamId,
                     invokerEmail = validatedUserInfo.email
@@ -3093,8 +3174,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:BadRequest>{
                 body: {
                     message: string
-                        `Cannot delete this Team-SubTeam because it has child SubTeams. 
-                        Remove or deactivate child SubTeams first.`
+                        `Cannot delete this Team-SubTeam because it has child Units. 
+                        Remove or deactivate child Units first.`
                 }
             };
         }
@@ -3146,6 +3227,34 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
+        }
+
+        int|error headCount = database:retreiveBusinessUnitTeamSubTeamUnitHeadCount(businessUnitTeamSubTeamId, unitId);
+        if headCount is error {
+            string customErr = "Error while checking employee count in SubTeam-Unit";
+            log:printError(customErr, headCount, businessUnitTeamSubTeamId = businessUnitTeamSubTeamId, unitId = unitId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if headCount > 0 {
+            log:printWarn(
+                    "Cannot delete SubTeam-Unit because it has assigned employees",
+                    businessUnitTeamSubTeamId = businessUnitTeamSubTeamId,
+                    unitId = unitId,
+                    headCount = headCount,
+                    invokerEmail = validatedUserInfo.email
+            );
+            return <http:BadRequest>{
+                body: {
+                    message: string
+                        `Cannot delete this SubTeam-Unit because it has ${headCount} assigned employee(s). 
+                        Reassign employees to another Unit first.`
+                }
+            };
         }
 
         string workEmail = validatedUserInfo.email;
