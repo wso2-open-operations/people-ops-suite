@@ -1548,26 +1548,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string? headEmail = payload.headEmail;
-        if headEmail is string {
-            EmployeeBasicInfo|error? headsBasicInfo = database:getEmployeeBasicInfo(headEmail);
-            if headsBasicInfo is error {
-                return <http:InternalServerError>{
-                    body: {
-                        message: "Error while validating head's email"
-                    }
-                };
-            }
-
-            if headsBasicInfo is () {
-                return <http:BadRequest>{
-                    body: {
-                        message: "No head is found for given email"
-                    }
-                };
-            }
-        }
-
         string workEmail = validatedUserInfo.email;
         int|error result = database:addBusinessUnit(workEmail, payload);
         if result is error {
