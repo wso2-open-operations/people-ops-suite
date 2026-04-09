@@ -135,7 +135,7 @@ function TabPanel({ children, value, index, ...other }: TabPanelProps) {
       sx={{ height: "100%" }}
       {...other}
     >
-      {value === index && <Box sx={{ height: "100%" }}>{children}</Box>}
+      {value === index && children}
     </Box>
   );
 }

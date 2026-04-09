@@ -938,52 +938,84 @@ export default function BulkOnboarding() {
                     }}
                   />
                   <Stack spacing={1}>
-                    {rowErrors.map((error, idx) => (
-                      <Stack
-                        key={idx}
-                        direction="row"
-                        alignItems="flex-start"
-                        spacing={1}
-                        sx={{ flexWrap: "wrap" }}
-                      >
-                        <Typography
-                          component="code"
-                          sx={{
-                            fontSize: "0.82rem",
-                            fontFamily: "monospace",
-                            fontWeight: 600,
-                            px: 0.75,
-                            py: 0.2,
-                            borderRadius: 0.75,
-                            backgroundColor: alpha(
-                              theme.palette.error.main,
-                              0.1,
-                            ),
-                            color: theme.palette.error.main,
-                            whiteSpace: "nowrap",
-                            flexShrink: 0,
-                          }}
+                    {rowErrors.map((error, idx) => {
+                      const colonIdx = error.message.indexOf(": ");
+                      const msgText =
+                        colonIdx !== -1
+                          ? error.message.slice(0, colonIdx + 2)
+                          : error.message;
+                      const msgValue =
+                        colonIdx !== -1
+                          ? error.message.slice(colonIdx + 2)
+                          : null;
+
+                      return (
+                        <Stack
+                          key={idx}
+                          direction="row"
+                          alignItems="flex-start"
+                          spacing={1}
+                          sx={{ flexWrap: "wrap" }}
                         >
-                          {error.field}
-                        </Typography>
-                        <Typography
-                          component="span"
-                          sx={{
-                            fontSize: "0.82rem",
-                            color: theme.palette.text.secondary,
-                            lineHeight: "1.6rem",
-                          }}
-                        >
-                          —
-                        </Typography>
-                        <Typography
-                          variant="body1"
-                          sx={{ color: theme.palette.text.primary }}
-                        >
-                          {error.message}
-                        </Typography>
-                      </Stack>
-                    ))}
+                          <Typography
+                            component="code"
+                            sx={{
+                              fontSize: "0.82rem",
+                              fontFamily: "monospace",
+                              fontWeight: 600,
+                              px: 0.75,
+                              py: 0.2,
+                              borderRadius: 0.75,
+                              backgroundColor: alpha(
+                                theme.palette.error.main,
+                                0.1,
+                              ),
+                              color: theme.palette.error.main,
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {error.field}
+                          </Typography>
+                          <Typography
+                            component="span"
+                            sx={{
+                              fontSize: "0.82rem",
+                              color: theme.palette.text.secondary,
+                              lineHeight: "1.6rem",
+                            }}
+                          >
+                            —
+                          </Typography>
+                          <Typography
+                            variant="body1"
+                            sx={{ color: theme.palette.text.primary }}
+                          >
+                            {msgText}
+                            {msgValue && (
+                              <Typography
+                                component="code"
+                                sx={{
+                                  fontSize: "0.82rem",
+                                  fontFamily: "monospace",
+                                  fontWeight: 600,
+                                  px: 0.75,
+                                  py: 0.2,
+                                  borderRadius: 0.75,
+                                  backgroundColor: alpha(
+                                    theme.palette.text.primary,
+                                    0.08,
+                                  ),
+                                  color: theme.palette.text.primary,
+                                }}
+                              >
+                                {msgValue}
+                              </Typography>
+                            )}
+                          </Typography>
+                        </Stack>
+                      );
+                    })}
                   </Stack>
                 </AccordionDetails>
               </Accordion>

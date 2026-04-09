@@ -357,6 +357,12 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
     }
     if row.employmentType.trim().length() > 0 && !refData.employmentTypeIds.hasKey(normalizeKey(row.employmentType)) {
         errors.push({row: rowNumber, 'field: CSV_FIELD_EMPLOYMENT_TYPE, message: "Unknown employment type"});
+    } else if row.employmentType.trim().length() > 0 && normalizeKey(row.employmentType) == normalizeKey(database:FIXED_TERM) {
+        errors.push({
+            row: rowNumber,
+            'field: CSV_FIELD_EMPLOYMENT_TYPE,
+            message: "Fixed-term contract is not supported for bulk onboarding. Use the single employee form instead."
+        });
     }
     if row.company.trim().length() > 0 && !refData.companyIds.hasKey(normalizeKey(row.company)) {
         errors.push({row: rowNumber, 'field: CSV_FIELD_COMPANY, message: "Unknown company"});
