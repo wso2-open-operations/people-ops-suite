@@ -92,6 +92,29 @@ isolated function buildOrganizationUnitUpdateQuery(sql:ParameterizedQuery mainQu
     return sql:queryConcat(updatedQuery, ` WHERE id = ${id}`);
 }
 
+# Build a parameterized INSERT query using SET syntax (MySQL).
+#
+# + mainQuery - Base INSERT query (e.g., `INSERT INTO business_unit SET`)
+# + columnValuePairs - Array of column=value pairs (only non-empty pairs included)
+# + return - Complete parameterized INSERT query
+isolated function buildSqlInsertQuery(sql:ParameterizedQuery mainQuery, sql:ParameterizedQuery[] columnValuePairs)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery query = mainQuery;
+
+    boolean isFirst = true;
+    foreach sql:ParameterizedQuery pair in columnValuePairs {
+        if isFirst {
+            query = sql:queryConcat(query, pair);
+            isFirst = false;
+        } else {
+            query = sql:queryConcat(query, `, `, pair);
+        }
+    }
+
+    return query;
+}
+
 # Append a string filter to the filters array if the value is not null or empty.
 #
 # + filters - Array of sub queries to be added to the main query
