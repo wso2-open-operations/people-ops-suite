@@ -38,6 +38,7 @@ export enum ConfirmationType {
   send = "send",
   upload = "upload",
   accept = "accept",
+  discard = "discard",
 }
 
 export interface RouteDetail {
