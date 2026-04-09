@@ -19,6 +19,9 @@ import { useTheme } from "@mui/material/styles";
 
 import { useRef } from "react";
 
+import BackdropProgress from "@root/src/component/ui/BackdropProgress";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import {
   BusinessUnitState,
   SubTeamState,
@@ -39,10 +42,11 @@ interface EditModalProps {
   open: boolean;
   uniqueId: string;
   nodeType: NodeType;
+  parentLoading: boolean;
   onClose: () => void;
 }
 
-export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, nodeType }) => {
+export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, nodeType, parentLoading }) => {
   const theme = useTheme();
   const orgInfo = useAppSelector((state: RootState) => state.organizationStructure);
   const orgData = orgInfo.organizationInfo;
@@ -79,14 +83,16 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
     handleHeadSwap,
     handleDeleteCurrent,
     handleRenameCurrent,
-    isRenaming,
     isUpdating,
     isDeleting,
   } = useOrgEntityActions({ data: displayData });
 
-  if (!displayData) return null;
+  const showSpinner = useMinimumLoadingVisibility(
+    isUpdating || isDeleting || parentLoading,
+    SPLIT_VIEW_SKELETON_DELAY_MS,
+  );
 
-  console.log("Display data : ", displayData);
+  if (!displayData) return null;
 
   return (
     <Dialog
@@ -108,6 +114,15 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
         },
       }}
     >
+      <BackdropProgress
+        open={showSpinner}
+        sx={{
+          position: "absolute",
+          zIndex: (theme) => theme.zIndex.modal + 1,
+          borderRadius: "8px",
+        }}
+      />
+
       <DialogTitle
         sx={{
           display: "flex",
@@ -167,7 +182,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
             entityType={displayData.type}
             currentName={displayData.name}
             onRenameSuccess={handleRenameCurrent}
-            isSubmitting={isRenaming}
+            isSubmitting={isUpdating}
           />
         </Box>
 

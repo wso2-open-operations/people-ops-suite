@@ -84,8 +84,9 @@ interface AddPageProps {
   open: boolean;
   orgInfo: OrgOptionTest[];
   nodeType: NodeType;
-  onClose: () => void;
+  isParentLoading: boolean;
   selectedNode: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState;
+  onClose: () => void;
 }
 
 interface AddOrgItemFormValues {
@@ -95,7 +96,7 @@ interface AddOrgItemFormValues {
 }
 
 export default function AddPage(props: AddPageProps) {
-  const { open, orgInfo, selectedNode, nodeType, onClose } = props;
+  const { open, orgInfo, selectedNode, nodeType, isParentLoading, onClose } = props;
 
   const [isNewItem, setIsNewItem] = useState<boolean>(false);
 
@@ -119,6 +120,7 @@ export default function AddPage(props: AddPageProps) {
     isAddingSubTeamUnit;
 
   const showSpinner = useMinimumLoadingVisibility(isAdding, SPLIT_VIEW_SKELETON_DELAY_MS);
+  const showBackdrop = isAdding || isLoading || isParentLoading
 
   const theme = useTheme();
 
@@ -322,7 +324,7 @@ export default function AddPage(props: AddPageProps) {
       }}
     >
       <BackdropProgress
-        open={isLoading}
+        open={showBackdrop}
         sx={{
           position: "absolute",
           zIndex: (theme) => theme.zIndex.modal + 1,

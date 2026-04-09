@@ -354,9 +354,9 @@ export default function SplitView() {
   );
 
   if (
-    showOrgSkeleton ||
-    orgItemState.state === State.Idle ||
-    orgItemState.state === State.Loading
+    (showOrgSkeleton ||
+      orgItemState.state === State.Idle ||
+      orgItemState.state === State.Loading) && !addModal.open && !editModal.open
   ) {
     return <SplitViewSkeleton />;
   }
@@ -386,6 +386,7 @@ export default function SplitView() {
           uniqueId={editModal.uniqueId}
           nodeType={editModal.type}
           onClose={handleClose}
+          parentLoading={orgItemState.state === State.Loading}
         />
       )}
 
@@ -396,6 +397,7 @@ export default function SplitView() {
           onClose={handleAddModalClose}
           nodeType={addModal.type}
           selectedNode={addModal.selectedNode}
+          isParentLoading={orgItemState.state === State.Loading}
         />
       )}
     </>
