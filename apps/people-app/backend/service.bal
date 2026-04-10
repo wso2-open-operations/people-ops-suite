@@ -2625,6 +2625,20 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        boolean|error buNameExists = database:businessUnitNameExists(trimmedName);
+        if buNameExists is error {
+            log:printError("Error while checking business unit name", buNameExists);
+            return <http:InternalServerError>{
+                body: {message: "Error while checking the business unit name"}
+            };
+        }
+
+        if buNameExists {
+            return <http:BadRequest>{
+                body: {message: string `Business unit '${trimmedName}' already exists`}
+            };
+        }
+
         int|error newBuId = database:renameBusinessUnit({
                                                             businessUnitId: buId,
                                                             name: trimmedName,
@@ -2685,6 +2699,20 @@ service http:InterceptableService / on new http:Listener(9090) {
         if trimmedName.length() == 0 {
             return <http:BadRequest>{
                 body: {message: "Name cannot be empty"}
+            };
+        }
+
+        boolean|error teamNameExists = database:teamNameExists(trimmedName);
+        if teamNameExists is error {
+            log:printError("Error while checking team name", teamNameExists);
+            return <http:InternalServerError>{
+                body: {message: "Error while checking the team name"}
+            };
+        }
+
+        if teamNameExists {
+            return <http:BadRequest>{
+                body: {message: string `Team '${trimmedName}' already exists`}
             };
         }
 
@@ -2751,6 +2779,20 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        boolean|error subTeamNameExists = database:subTeamNameExists(trimmedName);
+        if subTeamNameExists is error {
+            log:printError("Error while checking sub-team name", subTeamNameExists);
+            return <http:InternalServerError>{
+                body: {message: "Error while checking the sub-team name"}
+            };
+        }
+
+        if subTeamNameExists {
+            return <http:BadRequest>{
+                body: {message: string `Sub-team '${trimmedName}' already exists`}
+            };
+        }
+
         int|error newSubTeamId = database:renameSubTeam({
                                                             subTeamId: subTeamId,
                                                             name: trimmedName,
@@ -2811,6 +2853,20 @@ service http:InterceptableService / on new http:Listener(9090) {
         if trimmedName.length() == 0 {
             return <http:BadRequest>{
                 body: {message: "Name cannot be empty"}
+            };
+        }
+
+        boolean|error unitNameExists = database:unitNameExists(trimmedName);
+        if unitNameExists is error {
+            log:printError("Error while checking unit name", unitNameExists);
+            return <http:InternalServerError>{
+                body: {message: "Error while checking the unit name"}
+            };
+        }
+
+        if unitNameExists {
+            return <http:BadRequest>{
+                body: {message: string `Unit '${trimmedName}' already exists`}
             };
         }
 
