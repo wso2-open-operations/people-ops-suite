@@ -1233,3 +1233,115 @@ public isolated function retreiveBusinessUnitTeamHeadCount(int businessUnitId, i
     returns int|error {
     return databaseClient->queryRow(retrieveBusinessUnitTeamHeadCountQuery(businessUnitId, teamId));
 }
+
+# Rename a Business Unit by creating a new one with the updated name.
+# This operation:
+# 1. Inserts a new Business Unit with the new name
+# 2. Updates all business_unit_team mappings to use the new BU
+# 3. Updates all active employees to use the new BU
+# 4. Deactivates the old Business Unit
+#
+# + payload - Payload containing the BU ID, new name, and updated by
+# + return - The new Business Unit ID, or error
+public isolated function renameBusinessUnit(RenameBusinessUnitName payload) returns int|error {
+    transaction {
+        sql:ExecutionResult insertResult = check databaseClient->execute(
+            insertRenamedBusinessUnitQuery(payload));
+        int newBuId = check insertResult.lastInsertId.ensureType(int);
+
+        _ = check databaseClient->execute(
+            updateBusinessUnitTeamMappingsQuery(payload.businessUnitId, newBuId, payload.updatedBy));
+
+        _ = check databaseClient->execute(
+            updateEmployeesBusinessUnitQuery(payload.businessUnitId, newBuId, payload.updatedBy));
+
+        _ = check databaseClient->execute(deactivateOldBusinessUnitQuery(payload));
+
+        check commit;
+        return newBuId;
+    }
+}
+
+# Renames a Team by creating a new one with the updated name.
+# This operation:
+# 1. Inserts a new Team with the new name (copying head_email from old)
+# 2. Updates all business_unit_team mappings to use the new Team
+# 3. Updates all active employees to use the new Team
+# 4. Deactivates the old Team
+#
+# + payload - Payload containing the Team ID, new name, and updated by
+# + return - The new Team ID, or error
+public isolated function renameTeam(RenameTeamName payload) returns int|error {
+    transaction {
+        sql:ExecutionResult insertResult = check databaseClient->execute(
+            insertRenamedTeamQuery(payload));
+        int newTeamId = check insertResult.lastInsertId.ensureType(int);
+
+        _ = check databaseClient->execute(
+            updateBusinessUnitTeamMappingsForTeamQuery(payload.teamId, newTeamId, payload.updatedBy));
+
+        _ = check databaseClient->execute(
+            updateEmployeesTeamQuery(payload.teamId, newTeamId, payload.updatedBy));
+
+        _ = check databaseClient->execute(deactivateOldTeamQuery(payload));
+
+        check commit;
+        return newTeamId;
+    }
+}
+
+# Renames a SubTeam by creating a new one with the updated name.
+# This operation:
+# 1. Inserts a new SubTeam with the new name (copying head_email from old)
+# 2. Updates all business_unit_team_sub_team mappings to use the new SubTeam
+# 3. Updates all active employees to use the new SubTeam
+# 4. Deactivates the old SubTeam
+#
+# + payload - Payload containing the SubTeam ID, new name, and updated by
+# + return - The new SubTeam ID, or error
+public isolated function renameSubTeam(RenameSubTeamName payload) returns int|error {
+    transaction {
+        sql:ExecutionResult insertResult = check databaseClient->execute(
+            insertRenamedSubTeamQuery(payload));
+        int newSubTeamId = check insertResult.lastInsertId.ensureType(int);
+
+        _ = check databaseClient->execute(
+            updateBusinessUnitTeamSubTeamMappingsQuery(payload.subTeamId, newSubTeamId, payload.updatedBy));
+
+        _ = check databaseClient->execute(
+            updateEmployeesSubTeamQuery(payload.subTeamId, newSubTeamId, payload.updatedBy));
+
+        _ = check databaseClient->execute(deactivateOldSubTeamQuery(payload));
+
+        check commit;
+        return newSubTeamId;
+    }
+}
+
+# Renames a Unit by creating a new one with the updated name.
+# This operation:
+# 1. Inserts a new Unit with the new name (copying head_email from old)
+# 2. Updates all business_unit_team_sub_team_unit mappings to use the new Unit
+# 3. Updates all active employees to use the new Unit
+# 4. Deactivates the old Unit
+#
+# + payload - Payload containing the Unit ID, new name, and updated by
+# + return - The new Unit ID, or error
+public isolated function renameUnit(RenameUnitName payload) returns int|error {
+    transaction {
+        sql:ExecutionResult insertResult = check databaseClient->execute(
+            insertRenamedUnitQuery(payload));
+        int newUnitId = check insertResult.lastInsertId.ensureType(int);
+
+        _ = check databaseClient->execute(
+            updateBusinessUnitTeamSubTeamUnitMappingsQuery(payload.unitId, newUnitId, payload.updatedBy));
+
+        _ = check databaseClient->execute(
+            updateEmployeesUnitQuery(payload.unitId, newUnitId, payload.updatedBy));
+
+        _ = check databaseClient->execute(deactivateOldUnitQuery(payload));
+
+        check commit;
+        return newUnitId;
+    }
+}
