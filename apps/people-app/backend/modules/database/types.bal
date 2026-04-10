@@ -121,12 +121,18 @@ public type Employee record {|
     string startDate;
     # Manager email
     string managerEmail;
+    # Manager full name (resolved from DB join)
+    string? managerName;
     # Additional manager email
     string? additionalManagerEmails;
+    # Gender (from employee personal info)
+    string? gender;
     # Employee status
     string employeeStatus;
     # Continuous service record reference (Employee ID)
     string? continuousServiceRecord;
+    # Start date of the continuous service record (resolved via DB join)
+    string? continuousServiceDate;
     # Probation end date
     string? probationEndDate;
     # Agreement end date
@@ -149,6 +155,8 @@ public type Employee record {|
     string designation;
     # Designation ID
     int designationId;
+    # Job band
+    int jobBand;
     # Job role of the user
     string? secondaryJobTitle;
     # Office
