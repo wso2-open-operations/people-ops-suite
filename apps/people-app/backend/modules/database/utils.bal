@@ -173,6 +173,7 @@ isolated function calculateLengthOfService(string startDateStr) returns string {
     time:Civil civil = time:utcToCivil(now);
     int todayYear = civil.year;
     int todayMonth = civil.month;
+    int todayDay = civil.day;
 
     string[] parts = re`-`.split(startDateStr);
     if parts.length() != 3 {
@@ -180,12 +181,24 @@ isolated function calculateLengthOfService(string startDateStr) returns string {
     }
     int|error startYear = int:fromString(parts[0]);
     int|error startMonth = int:fromString(parts[1]);
-    if startYear is error || startMonth is error {
+    int|error startDay = int:fromString(parts[2]);
+    if startYear is error || startMonth is error || startDay is error {
+        return "";
+    }
+
+    // Return empty string if start date is in the future
+    if startYear > todayYear
+        || (startYear == todayYear && startMonth > todayMonth)
+        || (startYear == todayYear && startMonth == todayMonth && startDay > todayDay) {
         return "";
     }
 
     int years = todayYear - startYear;
     int months = todayMonth - startMonth;
+    // If the anniversary day hasn't been reached yet this month, subtract one month
+    if todayDay < startDay {
+        months -= 1;
+    }
     if months < 0 {
         years -= 1;
         months += 12;
@@ -206,7 +219,7 @@ isolated function resolveAdditionalManagerNames(string? emails, map<string> name
     string[] emailList = re`,`.split(emails);
     string[] names = from string email in emailList
         let string trimmed = email.trim()
-        select nameMap[trimmed] ?: trimmed;
+        select nameMap[trimmed.toLowerAscii()] ?: trimmed;
     return string:'join(", ", ...names);
 }
 

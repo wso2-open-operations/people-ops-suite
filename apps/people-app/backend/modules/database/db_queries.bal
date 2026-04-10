@@ -195,6 +195,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
                     GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',')
                     AS additionalManagerEmails
                 FROM employee_additional_managers
+                WHERE is_active = 1
                 GROUP BY employee_pk_id
             ) eam ON eam.employee_pk_id = e.id
 

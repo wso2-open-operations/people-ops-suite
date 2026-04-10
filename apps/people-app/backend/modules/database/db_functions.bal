@@ -737,7 +737,7 @@ public isolated function getEmployeeEmailToNameMap() returns map<string>|error {
     map<string> nameMap = {};
     check from EmployeeNameRow row in resultStream
         do {
-            nameMap[row.workEmail] = row.fullName;
+            nameMap[row.workEmail.toLowerAscii()] = row.fullName;
         };
     return nameMap;
 }
