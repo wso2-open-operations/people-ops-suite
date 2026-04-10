@@ -68,10 +68,6 @@ public type LeavePolicy record {|
     float? congesPayes?;
     # France: RTT (Réduction du Temps de Travail) count
     float? rtt?;
-    # Spain: Annual leave count
-    float? spainAnnual?;
-    # Spain: Casual leave count
-    float? spainCasual?;
     # Sick leave count (open/unlimited when null)
     float? sick?;
 |};

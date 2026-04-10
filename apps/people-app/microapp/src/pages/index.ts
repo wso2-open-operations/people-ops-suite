@@ -16,3 +16,13 @@
 
 export { default as Home } from "@/pages/HomePage";
 export { default as VehicleManagement } from "@/pages/VehicleManagementPage";
+export { default as ParkingSlotSelection } from "@/pages/ParkingSlotSelectionPage";
+export {
+  default as ParkingBookingSummary,
+} from "@/pages/ParkingBookingSummaryPage";
+export {
+  default as ParkingBookingConfirmation,
+} from "@/pages/ParkingBookingConfirmationPage";
+export {
+  default as MyParkingBookings,
+} from "@/pages/MyParkingBookingsPage";

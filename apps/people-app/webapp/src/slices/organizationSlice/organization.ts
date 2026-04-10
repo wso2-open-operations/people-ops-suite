@@ -62,8 +62,7 @@ export interface Company {
   name: string;
   prefix: string;
   location: string;
-  allowedLocations: string[];
-}
+  allowedLocations: { location: string; probationPeriod: number | null }[];}
 
 export interface Office {
   id: number;
@@ -73,6 +72,11 @@ export interface Office {
 }
 
 export interface EmploymentType {
+  id: number;
+  name: string;
+}
+
+export interface House {
   id: number;
   name: string;
 }
@@ -90,6 +94,8 @@ export interface OrganizationState {
   companies: Company[];
   offices: Office[];
   employmentTypes: EmploymentType[];
+  houses: House[];
+  suggestedHouseId: number | null;
 }
 
 const initialState: OrganizationState = {
@@ -105,6 +111,8 @@ const initialState: OrganizationState = {
   companies: [],
   offices: [],
   employmentTypes: [],
+  houses: [],
+  suggestedHouseId: null,
 };
 
 interface FetchParams {
@@ -322,35 +330,7 @@ export const fetchCompanies = createAsyncThunk(
       if (!Array.isArray(resp.data)) {
         throw new Error("Invalid response: companies should be an array");
       }
-      const companies: Company[] = resp.data.map((c: any) => {
-        let allowed: string[] = [];
-
-        if (Array.isArray(c.allowedLocations)) {
-          allowed = c.allowedLocations;
-        } else if (Array.isArray(c.allowed_locations)) {
-          allowed = c.allowed_locations;
-        } else if (typeof c.allowedLocations === "string") {
-          allowed = c.allowedLocations
-            .split(",")
-            .map((s: string) => s.trim())
-            .filter(Boolean);
-        } else if (typeof c.allowed_locations === "string") {
-          allowed = c.allowed_locations
-            .split(",")
-            .map((s: string) => s.trim())
-            .filter(Boolean);
-        }
-
-        return {
-          id: c.id,
-          name: c.name,
-          prefix: c.prefix,
-          location: c.location,
-          allowedLocations: allowed,
-        };
-      });
-
-      return companies;
+      return resp.data as Company[];
     } catch (error: any) {
       if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
@@ -446,6 +426,53 @@ export const fetchEmploymentTypes = createAsyncThunk(
   },
 );
 
+// Fetch Houses
+export const fetchHouses = createAsyncThunk(
+  "organization/fetchHouses",
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.houses}`,
+      );
+      if (!Array.isArray(resp.data)) {
+        throw new Error("Invalid response: houses should be an array");
+      }
+      return resp.data as House[];
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? "Error fetching houses"
+          : error.response?.data?.message ||
+            error.message ||
+            "An unknown error occurred while fetching houses.";
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+// Fetch Suggested House (house with fewest active employees)
+export const fetchSuggestedHouse = createAsyncThunk(
+  "organization/fetchSuggestedHouse",
+  async (_, { rejectWithValue }) => {
+    try {
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.houses}/suggested`,
+      );
+      return (resp.data as House).id;
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      return rejectWithValue("Failed to fetch suggested house");
+    }
+  },
+);
+
 export const organizationSlice = createSlice({
   name: "organization",
   initialState,
@@ -466,6 +493,8 @@ export const organizationSlice = createSlice({
       state.companies = [];
       state.offices = [];
       state.employmentTypes = [];
+      state.houses = [];
+      state.suggestedHouseId = null;
     },
   },
   extraReducers: (builder) => {
@@ -614,6 +643,35 @@ export const organizationSlice = createSlice({
         state.state = State.failed;
         state.errorMessage = action.payload as string;
         state.stateMessage = null;
+      })
+      .addCase(fetchHouses.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Fetching houses...";
+        state.errorMessage = null;
+      })
+      .addCase(fetchHouses.fulfilled, (state, action) => {
+        state.houses = action.payload;
+        state.state = State.success;
+        state.stateMessage = "Houses fetched successfully";
+        state.errorMessage = null;
+      })
+      .addCase(fetchHouses.rejected, (state, action) => {
+        state.state = State.failed;
+        state.errorMessage = action.payload as string;
+        state.stateMessage = null;
+      })
+      .addCase(fetchSuggestedHouse.pending, (state) => {
+        state.state = State.loading;
+        state.errorMessage = null;
+      })
+      .addCase(fetchSuggestedHouse.fulfilled, (state, action) => {
+        state.suggestedHouseId = action.payload;
+        state.state = State.success;
+        state.errorMessage = null;
+      })
+      .addCase(fetchSuggestedHouse.rejected, (state) => {
+        state.suggestedHouseId = null;
+        state.state = State.failed;
       });
   },
 });

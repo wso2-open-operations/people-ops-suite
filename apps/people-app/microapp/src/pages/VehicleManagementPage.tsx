@@ -91,7 +91,7 @@ function VehicleManagementPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen">
-        <section className="px-1 pt-8">
+        <section className="px-1 pt-[calc(var(--safe-top)+24px)]">
           <BackButton />
         </section>
         <div className="flex flex-col-reverse px-4 mt-5">

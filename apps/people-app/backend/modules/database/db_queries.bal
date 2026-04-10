@@ -34,13 +34,14 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
 #
 # + return - Query to get all employees basic information
 isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
+    `SELECT
         employee_id,
         first_name,
         last_name,
         work_email,
         employee_thumbnail
-    FROM employee;`;
+    FROM employee
+    WHERE employee_status = 'Active';`;
 
 # Fetch employee ID by primary key ID.
 #
@@ -99,15 +100,18 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         st.name AS subTeam,
         e.sub_team_id AS subTeamId,
         u.name AS unit,
-        e.unit_id AS unitId
+        e.unit_id AS unitId,
+        h.name AS house,
+        e.house_id AS houseId
     FROM
         employee e
         LEFT JOIN (
-            SELECT 
+            SELECT
                 employee_pk_id,
-                GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',')
                 AS additionalManagerEmails
             FROM employee_additional_managers
+            WHERE is_active = 1
             GROUP BY employee_pk_id
         ) eam ON eam.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
@@ -118,6 +122,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         INNER JOIN sub_team st ON e.sub_team_id = st.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN unit u ON e.unit_id = u.id
+        LEFT JOIN house h ON e.house_id = h.id
     WHERE
         e.employee_id = ${employeeId};`;
 
@@ -166,6 +171,8 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.unit_id AS unitId,
             c.name AS company,
             e.company_id AS companyId,
+            h.name AS house,
+            e.house_id AS houseId,
             r.date                    AS resignationDate,
             r.final_day_in_office     AS finalDayInOffice,
             r.final_day_of_employment AS finalDayOfEmployment,
@@ -174,23 +181,23 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
         FROM
             employee e
             LEFT JOIN (
-                SELECT 
+                SELECT
                     employee_pk_id,
-                    GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                    GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',')
                     AS additionalManagerEmails
                 FROM employee_additional_managers
                 GROUP BY employee_pk_id
             ) eam ON eam.employee_pk_id = e.id
 
             LEFT JOIN (
-                SELECT 
+                SELECT
                     LOWER(manager_email) AS managerEmail,
                     COUNT(*) AS subordinateCount
                 FROM employee
                 WHERE manager_email IS NOT NULL AND manager_email <> ''
                 GROUP BY LOWER(manager_email)
             ) sc ON sc.managerEmail = LOWER(e.work_email)
-            
+
             INNER JOIN personal_info pi ON pi.id = e.personal_info_id
             INNER JOIN employment_type et ON et.id = e.employment_type_id
             INNER JOIN designation d ON d.id = e.designation_id
@@ -200,6 +207,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             INNER JOIN team t ON t.id = e.team_id
             INNER JOIN sub_team st ON st.id = e.sub_team_id
             LEFT JOIN unit u ON u.id = e.unit_id
+            LEFT JOIN house h ON h.id = e.house_id
             LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 
@@ -275,6 +283,10 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     appendIntFilter(filters, payload.filters.subTeamId, `e.sub_team_id = ${payload.filters.subTeamId}`);
     appendIntFilter(filters, payload.filters.unitId, `e.unit_id = ${payload.filters.unitId}`);
     appendIntFilter(filters, payload.filters.employmentTypeId, `e.employment_type_id = ${payload.filters.employmentTypeId}`);
+
+    if payload.filters.excludeFutureStartDate == true {
+        filters.push(`e.start_date <= CURDATE()`);
+    }
 
     string? searchString = payload.searchString;
 
@@ -377,6 +389,7 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
                 GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
                 AS additionalManagerEmails
             FROM employee_additional_managers
+            WHERE is_active = 1
             GROUP BY employee_pk_id
         ) eam ON eam.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
@@ -465,7 +478,8 @@ isolated function getEmergencyContactsByEmployeeIdQuery(string employeeId) retur
         piec.telephone
     FROM personal_info_emergency_contacts piec
     INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
-    WHERE e.employee_id = ${employeeId};`;
+    WHERE e.employee_id = ${employeeId}
+      AND is_active = 1;`;
 
 # Get business units query.
 # + return - Business units query
@@ -631,7 +645,20 @@ isolated function getCompaniesQuery() returns sql:ParameterizedQuery =>
         c.name,
         c.prefix,
         c.location,
-        GROUP_CONCAT(cal.allowed_location ORDER BY cal.allowed_location SEPARATOR ',') AS allowedLocations
+        CASE 
+            WHEN COUNT(cal.id) = 0 THEN NULL
+            ELSE (
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'location', cal2.allowed_location,
+                        'probationPeriod', cal2.probation_period
+                )
+            )
+        FROM companies_allowed_locations cal2
+        WHERE cal2.company_id = c.id AND cal2.is_active = 1
+        ORDER BY cal2.allowed_location
+        )
+    END AS allowedLocations
     FROM company c
     LEFT JOIN companies_allowed_locations cal 
         ON c.id = cal.company_id AND cal.is_active = 1
@@ -659,10 +686,28 @@ isolated function getOfficesQuery(int? companyId = ()) returns sql:Parameterized
 #
 # + return - Employment types query
 isolated function getEmploymentTypesQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
+    `SELECT
         id,
         name
     FROM employment_type;`;
+
+# Get houses query.
+#
+# + return - Houses query
+isolated function getHousesQuery() returns sql:ParameterizedQuery =>
+    `SELECT id, name FROM house WHERE is_active = 1 ORDER BY name`;
+
+# Get the house with the fewest active employees query.
+#
+# + return - Query to get the house with the least active employees
+isolated function getHouseWithLeastActiveEmployeesQuery() returns sql:ParameterizedQuery =>
+    `SELECT h.id, h.name
+     FROM house h
+     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
+     WHERE h.is_active = 1
+     GROUP BY h.id, h.name
+     ORDER BY COUNT(e.id) ASC
+     LIMIT 1`;
 
 # Add employee personal information query.
 #
@@ -716,45 +761,69 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${createdBy}
         );`;
 
-# Add emergency contact query.
+# Fetch company prefix and employment type required for generating the next employee ID.
 #
-# + employeeId - Employee ID
-# + contact - Emergency contact details
-# + createdBy - Creator of the emergency contact record
-# + return - Emergency contact insert query
-isolated function addPersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact, string createdBy)
+# + companyId - Company ID of the new employee
+# + employmentTypeId - Employment type ID of the new employee
+# + return - Query returning `companyPrefix` and `employmentType` columns
+isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
     returns sql:ParameterizedQuery =>
-    `INSERT INTO personal_info_emergency_contacts
-        (
-            personal_info_id,
-            name,
-            mobile,
-            telephone,
-            relationship,
-            created_by,
-            updated_by
-        )
-     VALUES
-        (
-            (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
-            ${contact.name},
-            ${contact.mobile},
-            ${contact.telephone},
-            ${contact.relationship},
-            ${createdBy},
-            ${createdBy}
-        );`;
+    `SELECT
+        c.prefix        AS companyPrefix,
+        UPPER(et.name)  AS employmentType
+    FROM employment_type et
+    JOIN company c ON c.id = ${companyId}
+    WHERE et.id = ${employmentTypeId}`;
+
+# Lock the employee sequence for the provided prefix and return the last numeric ID.
+#
+# + prefix - The ID prefix to lock on (company prefix or consultancy prefix)
+# + employmentTypes - The employment type names that share this sequence
+# + return - Query to lock the sequence and return the last numeric ID
+isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, EmploymentTypeName[] employmentTypes)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery inClause = ``;
+    foreach int i in 0 ..< employmentTypes.length() {
+        if i == 0 {
+            inClause = sql:queryConcat(inClause, `${employmentTypes[i]}`);
+        } else {
+            inClause = sql:queryConcat(inClause, `, `, `${employmentTypes[i]}`);
+        }
+    }
+
+    return sql:queryConcat(
+            `SELECT
+            COALESCE(
+                MAX(CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
+                0
+            ) AS lastNumericId
+        FROM employee e
+        JOIN employment_type et ON et.id = e.employment_type_id
+        WHERE
+            e.employee_id LIKE ${prefix + "%"}
+            AND e.employee_id NOT LIKE ${prefix + "_%-%"}
+            AND UPPER(et.name) IN (`,
+            inClause,
+            `)
+        ORDER BY CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
+        LIMIT 1
+        FOR UPDATE`
+    );
+}
 
 # Add employee query.
 #
 # + payload - Add employee payload
 # + createdBy - Creator of the employee record
 # + personalInfoId - Personal info ID
+# + employeeId - Employee ID to be inserted
 # + return - Employee insert query
-isolated function addEmployeeQuery(CreateEmployeePayload payload, string createdBy, int personalInfoId)
+isolated function addEmployeeQuery(CreateEmployeePayload payload, string createdBy, int personalInfoId, string employeeId)
     returns sql:ParameterizedQuery =>
     `INSERT INTO employee
         (
+            employee_id,
             first_name,
             last_name,
             epf,
@@ -777,11 +846,13 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             sub_team_id,
             business_unit_id,
             unit_id,
+            house_id,
             created_by,
             updated_by
         )
     VALUES
         (
+            ${employeeId},
             ${payload.firstName},
             ${payload.lastName},
             ${payload.epf},
@@ -804,6 +875,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.subTeamId},
             ${payload.businessUnitId},
             ${payload.unitId},
+            ${payload.houseId},
             ${createdBy},
             ${createdBy}
         );`;
@@ -935,44 +1007,76 @@ isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmplo
     return finalQuery;
 }
 
-# Delete emergency contacts by personal info id.
-#
-# + employeeId - Employee ID
-# + return - sql:ParameterizedQuery - Delete query for emergency contacts
-isolated function deleteEmergencyContactsByEmployeeIdQuery(string employeeId) returns sql:ParameterizedQuery =>
-    `DELETE piec
-        FROM personal_info_emergency_contacts piec
-        INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
-        WHERE e.employee_id = ${employeeId};`;
-
-# Insert an emergency contact for a personal_info id.
+# Add emergency contact query.
 #
 # + employeeId - Employee ID
 # + contact - Emergency contact details
-# + createdBy - Creator of the emergency contact record
+# + actor - User creating the emergency contact record
 # + return - sql:ParameterizedQuery - Insert query for emergency contacts
-isolated function updatePersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact,
-        string createdBy) returns sql:ParameterizedQuery => `
-        INSERT INTO personal_info_emergency_contacts
-            (
-                personal_info_id,
-                name, 
-                relationship, 
-                mobile, 
-                telephone, 
-                created_by, 
-                updated_by
-            )
-        VALUES
-            (
-                (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
-                ${contact.name},
-                ${contact.relationship},
-                ${contact.mobile},
-                ${contact.telephone},
-                ${createdBy},
-                ${createdBy}
-            );`;
+isolated function addPersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact, string actor)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO personal_info_emergency_contacts
+        (
+            personal_info_id,
+            name,
+            mobile,
+            telephone,
+            relationship,
+            is_active,
+            created_by,
+            updated_by
+        )
+    VALUES
+        (
+            (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
+            ${contact.name},
+            ${contact.mobile},
+            ${contact.telephone},
+            ${contact.relationship},
+            1,
+            ${actor},
+            ${actor}
+        )
+    ON DUPLICATE KEY UPDATE
+        is_active = 1,
+        name = ${contact.name},
+        mobile = ${contact.mobile},
+        telephone = ${contact.telephone},
+        relationship = ${contact.relationship},
+        updated_by = ${actor},
+        updated_on = CURRENT_TIMESTAMP(6);`;
+
+# Fetch active emergency contact full rows for an employee.
+#
+# + employeeId - Employee ID string
+# + return - Query to get active emergency contact rows
+isolated function getEmergencyContactRowsQuery(string employeeId)
+    returns sql:ParameterizedQuery =>
+    `SELECT piec.name,
+            piec.telephone,
+            piec.relationship,
+            piec.mobile
+     FROM personal_info_emergency_contacts piec
+     INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+     WHERE e.employee_id = ${employeeId}
+       AND piec.is_active = 1;`;
+
+# Delete emergency contact query.
+#
+# + employeeId - Employee ID string
+# + mobile - Mobile number of the contact to deactivate
+# + actor - User performing the operation
+# + return - Query to soft-delete one emergency contact
+isolated function deleteEmergencyContactQuery(string employeeId, string mobile, string actor)
+    returns sql:ParameterizedQuery =>
+    `UPDATE personal_info_emergency_contacts piec
+      INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+      SET piec.is_active = 0,
+          piec.updated_by = ${actor},
+          piec.updated_on = CURRENT_TIMESTAMP(6)
+      WHERE e.employee_id = ${employeeId}
+        AND piec.mobile = ${mobile}
+        AND piec.is_active = 1;`;
 
 # Update employee job information query.
 #
@@ -1078,6 +1182,12 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         updates.push(`unit_id = NULL`);
     }
 
+    if payload.houseId is int {
+        updates.push(`house_id = ${payload.houseId}`);
+    } else if payload.houseId is () {
+        updates.push(`house_id = NULL`);
+    }
+
     if payload.continuousServiceRecord is string {
         if payload.continuousServiceRecord == "" {
             updates.push(`continuous_service_record = NULL`);
@@ -1097,15 +1207,6 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
     return finalQuery;
 }
 
-# Delete additional managers by employee database ID.
-#
-# + employeePkId - Employee ID
-# + return - sql:ParameterizedQuery - Delete query for all additional managers
-isolated function deleteAdditionalManagersByEmployeeIdQuery(int employeePkId) returns sql:ParameterizedQuery =>
-    `DELETE FROM employee_additional_managers
-      WHERE 
-        employee_pk_id = ${employeePkId};`;
-
 # Add an additional manager for an employee.
 #
 # + id - Employee ID
@@ -1118,6 +1219,7 @@ isolated function addEmployeeAdditionalManagerQuery(int id, string email, string
         (
             employee_pk_id,
             additional_manager_email,
+            is_active,
             created_by,
             updated_by
         )
@@ -1125,9 +1227,43 @@ isolated function addEmployeeAdditionalManagerQuery(int id, string email, string
         (
             ${id}, 
             ${email}, 
+            1,
             ${actor}, 
             ${actor}
-        );`;
+        )
+    ON DUPLICATE KEY UPDATE
+        is_active = 1,
+        updated_by = ${actor},
+        updated_on = CURRENT_TIMESTAMP(6);`;
+
+# Fetch active additional manager emails for an employee.
+#
+# + employeeId - Employee ID string
+# + return - Query to get active additional manager emails
+isolated function getAdditionalManagerEmailsQuery(string employeeId)
+    returns sql:ParameterizedQuery =>
+    `SELECT eam.additional_manager_email
+     FROM employee_additional_managers eam
+     INNER JOIN employee e ON e.id = eam.employee_pk_id
+     WHERE e.employee_id = ${employeeId}
+       AND eam.is_active = 1;`;
+
+# Delete an additional manager for an employee.
+#
+# + employeeId - Employee ID string
+# + email - Additional manager email to deactivate
+# + actor - User performing the operation
+# + return - Query to soft-delete one additional manager
+isolated function deleteAdditionalManagerQuery(string employeeId, string email, string actor)
+    returns sql:ParameterizedQuery =>
+    `UPDATE employee_additional_managers eam
+      INNER JOIN employee e ON e.id = eam.employee_pk_id
+      SET eam.is_active = 0,
+          eam.updated_by = ${actor},
+          eam.updated_on = CURRENT_TIMESTAMP(6)
+      WHERE e.employee_id = ${employeeId}
+        AND LOWER(eam.additional_manager_email) = LOWER(${email})
+        AND eam.is_active = 1;`;
 
 # Build query to fetch vehicles.
 #
@@ -1273,8 +1409,10 @@ isolated function getParkingFloorsQuery() returns sql:ParameterizedQuery =>
 #
 # + floorId - Floor id
 # + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
 # + return - Query to get parking slots with isBooked
-isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) returns sql:ParameterizedQuery =>
+isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate, int pendingExpiryMinutes)
+        returns sql:ParameterizedQuery =>
     `SELECT
         ps.slot_id as 'slotId',
         ps.floor_id as 'floorId',
@@ -1284,8 +1422,12 @@ isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) r
             SELECT 1 FROM parking_reservation pr
             WHERE pr.slot_id = ps.slot_id
               AND pr.booking_date = ${bookingDate}
-              AND pr.status = ${CONFIRMED}
-        ) THEN 1 ELSE 0 END as 'isBooked'
+              AND (
+                pr.status = ${CONFIRMED}
+                OR (pr.status = ${PENDING}
+                    AND pr.created_on >= DATE_SUB(NOW(), INTERVAL ${pendingExpiryMinutes} MINUTE))
+              )
+        ) THEN 1 ELSE 0 END) as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.floor_id = ${floorId}
@@ -1311,15 +1453,36 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
 #
 # + slotId - Slot id
 # + bookingDate - Booking date (YYYY-MM-DD)
-# + return - Query to get reservation id if booked
-isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, string bookingDate)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
+# + return - Query to get reservation id if slot is unavailable
+isolated function getActiveParkingReservationForSlotDateQuery(string slotId, string bookingDate,
+        int pendingExpiryMinutes)
     returns sql:ParameterizedQuery =>
     `SELECT id
     FROM parking_reservation
     WHERE slot_id = ${slotId}
       AND booking_date = ${bookingDate}
-      AND status = ${CONFIRMED}
+      AND (
+        status = ${CONFIRMED}
+        OR (status = ${PENDING}
+            AND created_on >= DATE_SUB(NOW(), INTERVAL ${pendingExpiryMinutes} MINUTE))
+      )
     LIMIT 1`;
+
+# Expire stale pending reservations (PENDING -> EXPIRED) for slot/date.
+#
+# + slotId - Slot id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + expiryMinutes - Expiry duration in minutes
+# + return - Query to mark stale pending reservation as EXPIRED
+isolated function expireStalePendingParkingReservationForSlotDateQuery(string slotId, string bookingDate,
+        int expiryMinutes) returns sql:ParameterizedQuery =>
+    `UPDATE parking_reservation
+    SET status = ${EXPIRED}
+    WHERE slot_id = ${slotId}
+      AND booking_date = ${bookingDate}
+      AND status = ${PENDING}
+      AND created_on < DATE_SUB(NOW(), INTERVAL ${expiryMinutes} MINUTE)`;
 
 # Insert parking reservation (PENDING).
 #

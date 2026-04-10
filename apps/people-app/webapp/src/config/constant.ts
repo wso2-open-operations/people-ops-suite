@@ -32,6 +32,7 @@ export const SnackMessage = {
 };
 export const ADMIN_PRIVILEGE = 999;
 export const LEAD_PRIVILEGE = 993;
+export const SERVICE_DESK_PRIVILEGE = 991;
 export const DEFAULT_LIMIT_VALUE = 10;
 export const DEFAULT_OFFSET_VALUE = 0;
 export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
@@ -41,7 +42,7 @@ export const SEARCH_MAX_LENGTH = 100;
 
 export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
 
-export const EmployeeTitle = ["Mr.", "Mrs.", "Miss.", "Ms.", "Dr.", "Prof."];
+export const EmployeeTitle = ["Mr", "Mrs", "Miss", "Ms", "Dr", "Prof"];
 
 export const EmployeeGenders = ["Male", "Female", "Not Specified"];
 
