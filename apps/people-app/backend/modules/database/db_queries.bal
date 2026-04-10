@@ -1638,7 +1638,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                     'name', bu.name,
                     'headCount', COALESCE((
                         SELECT COUNT(*) FROM employee e
-                        WHERE e.business_unit_id = bu.id
+                        WHERE e.business_unit_id = bu.id AND e.employee_status = 'Active'
                     ), 0),
                     'head', CASE 
                         WHEN bu_head.work_email IS NOT NULL THEN JSON_OBJECT(
@@ -1659,6 +1659,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                     SELECT COUNT(*) FROM employee e
                                     WHERE e.team_id = t.id
                                       AND e.business_unit_id = bu.id
+                                      AND e.employee_status = 'Active'
                                 ), 0),
                                 'head', CASE 
                                     WHEN t_head.work_email IS NOT NULL THEN JSON_OBJECT(
@@ -1688,6 +1689,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                                 WHERE e.sub_team_id = st.id
                                                   AND e.team_id = t.id
                                                   AND e.business_unit_id = bu.id
+                                                  AND e.employee_status = 'Active'
                                             ), 0),
                                             'head', CASE 
                                                 WHEN st_head.work_email IS NOT NULL THEN JSON_OBJECT(
@@ -1719,6 +1721,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                                               AND e.sub_team_id = st.id
                                                               AND e.team_id = t.id
                                                               AND e.business_unit_id = bu.id
+                                                              AND e.employee_status = 'Active'
                                                         ), 0),
                                                         'head', CASE 
                                                             WHEN u_head.work_email IS NOT NULL THEN JSON_OBJECT(
@@ -2430,3 +2433,194 @@ isolated function retrieveBusinessUnitTeamSubTeamUnitHeadCountQuery(int business
       AND e.unit_id = ${unitId}
 `;
 
+# Insert a new Business Unit by duplicating the old one with a new name.
+# This creates a copy of the existing BU (preserving all fields including head_email).
+#
+# + payload - Payload containing the old BU ID, new name, and updated by
+# + return - Query to insert the duplicated Business Unit
+isolated function insertRenamedBusinessUnitQuery(RenameBusinessUnitName payload) returns sql:ParameterizedQuery => `
+    INSERT INTO business_unit (name, head_email, created_by, updated_by)
+    SELECT ${payload.name}, head_email, ${payload.updatedBy}, ${payload.updatedBy}
+    FROM business_unit
+    WHERE id = ${payload.businessUnitId} AND is_active = 1
+`;
+
+# Deactivate the old Business Unit.
+#
+# + payload - Payload containing the BU ID and updated by
+# + return - Query to deactivate the old Business Unit
+isolated function deactivateOldBusinessUnitQuery(RenameBusinessUnitName payload) returns sql:ParameterizedQuery => `
+    UPDATE business_unit 
+    SET is_active = 0, updated_by = ${payload.updatedBy}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE id = ${payload.businessUnitId} AND is_active = 1
+`;
+
+# Update business_unit_team mappings to use the new Business Unit ID.
+#
+# + oldBuId - The old Business Unit ID
+# + newBuId - The new Business Unit ID
+# + actor - User performing the update
+# + return - Query to update the mappings
+isolated function updateBusinessUnitTeamMappingsQuery(int oldBuId, int newBuId, string actor)
+    returns sql:ParameterizedQuery => `
+    UPDATE business_unit_team 
+    SET business_unit_id = ${newBuId}, updated_by = ${actor}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE business_unit_id = ${oldBuId}
+`;
+
+# Update active employees to use the new Business Unit ID.
+#
+# + oldBuId - The old Business Unit ID
+# + newBuId - The new Business Unit ID
+# + actor - User performing the update
+# + return - Query to update active employees
+isolated function updateEmployeesBusinessUnitQuery(int oldBuId, int newBuId, string actor)
+    returns sql:ParameterizedQuery => `
+    UPDATE employee 
+    SET business_unit_id = ${newBuId}, updated_by = ${actor}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE business_unit_id = ${oldBuId} AND employee_status = 'Active'
+`;
+
+# Insert a new Team by duplicating the old one with a new name.
+# This creates a copy of the existing Team (preserving all fields including head_email).
+#
+# + payload - Payload containing the old Team ID, new name, and updated by
+# + return - Query to insert the duplicated Team
+isolated function insertRenamedTeamQuery(RenameTeamName payload) returns sql:ParameterizedQuery => `
+    INSERT INTO team (name, head_email, created_by, updated_by)
+    SELECT ${payload.name}, head_email, ${payload.updatedBy}, ${payload.updatedBy}
+    FROM team
+    WHERE id = ${payload.teamId} AND is_active = 1
+`;
+
+# Deactivate the old Team.
+#
+# + payload - Payload containing the Team ID and updated by
+# + return - Query to deactivate the old Team
+isolated function deactivateOldTeamQuery(RenameTeamName payload) returns sql:ParameterizedQuery => `
+    UPDATE team 
+    SET is_active = 0, updated_by = ${payload.updatedBy}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE id = ${payload.teamId} AND is_active = 1
+`;
+
+# Update business_unit_team mappings to use the new Team ID.
+#
+# + oldTeamId - The old Team ID
+# + newTeamId - The new Team ID
+# + actor - User performing the update
+# + return - Query to update the mappings
+isolated function updateBusinessUnitTeamMappingsForTeamQuery(int oldTeamId, int newTeamId, string actor)
+    returns sql:ParameterizedQuery => `
+    UPDATE business_unit_team 
+    SET team_id = ${newTeamId}, updated_by = ${actor}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE team_id = ${oldTeamId}
+`;
+
+# Update active employees to use the new Team ID.
+#
+# + oldTeamId - The old Team ID
+# + newTeamId - The new Team ID
+# + actor - User performing the update
+# + return - Query to update active employees
+isolated function updateEmployeesTeamQuery(int oldTeamId, int newTeamId, string actor)
+    returns sql:ParameterizedQuery => `
+    UPDATE employee 
+    SET team_id = ${newTeamId}, updated_by = ${actor}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE team_id = ${oldTeamId} AND employee_status = 'Active'
+`;
+
+# Insert a new SubTeam by duplicating the old one with a new name.
+# This creates a copy of the existing SubTeam (preserving all fields including head_email).
+#
+# + payload - Payload containing the old SubTeam ID, new name, and updated by
+# + return - Query to insert the duplicated SubTeam
+isolated function insertRenamedSubTeamQuery(RenameSubTeamName payload) returns sql:ParameterizedQuery => `
+    INSERT INTO sub_team (name, head_email, created_by, updated_by)
+    SELECT ${payload.name}, head_email, ${payload.updatedBy}, ${payload.updatedBy}
+    FROM sub_team
+    WHERE id = ${payload.subTeamId} AND is_active = 1
+`;
+
+# Deactivate the old SubTeam.
+#
+# + payload - Payload containing the SubTeam ID and updated by
+# + return - Query to deactivate the old SubTeam
+isolated function deactivateOldSubTeamQuery(RenameSubTeamName payload) returns sql:ParameterizedQuery => `
+    UPDATE sub_team 
+    SET is_active = 0, updated_by = ${payload.updatedBy}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE id = ${payload.subTeamId} AND is_active = 1
+`;
+
+# Update business_unit_team_sub_team mappings to use the new SubTeam ID.
+#
+# + oldSubTeamId - The old SubTeam ID
+# + newSubTeamId - The new SubTeam ID
+# + actor - User performing the update
+# + return - Query to update the mappings
+isolated function updateBusinessUnitTeamSubTeamMappingsQuery(int oldSubTeamId, int newSubTeamId, string actor)
+    returns sql:ParameterizedQuery => `
+    UPDATE business_unit_team_sub_team 
+    SET sub_team_id = ${newSubTeamId}, updated_by = ${actor}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE sub_team_id = ${oldSubTeamId}
+`;
+
+# Update active employees to use the new SubTeam ID.
+#
+# + oldSubTeamId - The old SubTeam ID
+# + newSubTeamId - The new SubTeam ID
+# + actor - User performing the update
+# + return - Query to update active employees
+isolated function updateEmployeesSubTeamQuery(int oldSubTeamId, int newSubTeamId, string actor)
+    returns sql:ParameterizedQuery => `
+    UPDATE employee 
+    SET sub_team_id = ${newSubTeamId}, updated_by = ${actor}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE sub_team_id = ${oldSubTeamId} AND employee_status = 'Active'
+`;
+
+# Insert a new Unit by duplicating the old one with a new name.
+# This creates a copy of the existing Unit (preserving all fields including head_email).
+#
+# + payload - Payload containing the old Unit ID, new name, and updated by
+# + return - Query to insert the duplicated Unit
+isolated function insertRenamedUnitQuery(RenameUnitName payload) returns sql:ParameterizedQuery => `
+    INSERT INTO unit (name, head_email, created_by, updated_by)
+    SELECT ${payload.name}, head_email, ${payload.updatedBy}, ${payload.updatedBy}
+    FROM unit
+    WHERE id = ${payload.unitId} AND is_active = 1
+`;
+
+# Deactivate the old Unit.
+#
+# + payload - Payload containing the Unit ID and updated by
+# + return - Query to deactivate the old Unit
+isolated function deactivateOldUnitQuery(RenameUnitName payload) returns sql:ParameterizedQuery => `
+    UPDATE unit 
+    SET is_active = 0, updated_by = ${payload.updatedBy}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE id = ${payload.unitId} AND is_active = 1
+`;
+
+# Update business_unit_team_sub_team_unit mappings to use the new Unit ID.
+#
+# + oldUnitId - The old Unit ID
+# + newUnitId - The new Unit ID
+# + actor - User performing the update
+# + return - Query to update the mappings
+isolated function updateBusinessUnitTeamSubTeamUnitMappingsQuery(int oldUnitId, int newUnitId, string actor)
+    returns sql:ParameterizedQuery => `
+    UPDATE business_unit_team_sub_team_unit 
+    SET unit_id = ${newUnitId}, updated_by = ${actor}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE unit_id = ${oldUnitId}
+`;
+
+# Update active employees to use the new Unit ID.
+#
+# + oldUnitId - The old Unit ID
+# + newUnitId - The new Unit ID
+# + actor - User performing the update
+# + return - Query to update active employees
+isolated function updateEmployeesUnitQuery(int oldUnitId, int newUnitId, string actor)
+    returns sql:ParameterizedQuery => `
+    UPDATE employee 
+    SET unit_id = ${newUnitId}, updated_by = ${actor}, updated_on = CURRENT_TIMESTAMP(6)
+    WHERE unit_id = ${oldUnitId} AND employee_status = 'Active'
+`;
