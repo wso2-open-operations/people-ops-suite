@@ -89,7 +89,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if employeeBasicInfo is () {
             string customErr = "Employee basic information not found";
             log:printWarn(customErr, user = userInfo.email);
-            return <http:InternalServerError>{
+            return <http:NotFound>{
                 body: {
                     message: customErr
                 }
@@ -1327,7 +1327,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
-        return {publicWalletAddress: wso2_coin:masterWalletAddress};
+        return {
+            publicWalletAddress: wso2_coin:masterWalletAddress,
+            reservationWindowStartHour: wso2_coin:reservationWindowStartHour,
+            reservationWindowEndHour: wso2_coin:reservationWindowEndHour
+        };
     }
 
     # List parking floors.
@@ -1374,7 +1378,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date);
+        database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date,
+            wso2_coin:pendingReservationExpiryMinutes);
         if slots is error {
             log:printError("Error fetching parking slots", slots);
             return <http:InternalServerError>{
@@ -1453,7 +1458,18 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate);
+        // Expire stale pending reservations so the slot/date becomes reusable.
+        boolean|error cleared = database:expireStalePendingParkingReservationForSlotDate(body.slotId, body.bookingDate,
+            wso2_coin:pendingReservationExpiryMinutes);
+        if cleared is error {
+            log:printError("Error expiring stale pending reservations", cleared);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while validating slot availability."}
+            };
+        }
+
+        boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate,
+            wso2_coin:pendingReservationExpiryMinutes);
         if booked is error {
             log:printError("Error checking slot availability", booked);
             return <http:InternalServerError>{
@@ -1462,10 +1478,14 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if booked {
             return <http:BadRequest>{
-                body: {message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. It may be temporarily reserved or already booked.`}
+                body: {
+                    message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. `
+                        + "It may be temporarily reserved or already booked."
+                }
             };
         }
 
+        // Insert a new PENDING row
         int|error reservationId = database:addParkingReservation({
             slotId: body.slotId,
             bookingDate: body.bookingDate,

@@ -616,9 +616,12 @@ public isolated function getParkingFloors() returns ParkingFloor[]|error {
 #
 # + floorId - Floor id
 # + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
 # + return - Parking slots (with isBooked)
-public isolated function getParkingSlotsByFloor(int floorId, string bookingDate) returns ParkingSlot[]|error {
-    stream<ParkingSlotRow, error?> slotStream = databaseClient->query(getParkingSlotsByFloorQuery(floorId, bookingDate));
+public isolated function getParkingSlotsByFloor(int floorId, string bookingDate, int pendingExpiryMinutes)
+        returns ParkingSlot[]|error {
+    stream<ParkingSlotRow, error?> slotStream = databaseClient->query(
+        getParkingSlotsByFloorQuery(floorId, bookingDate, pendingExpiryMinutes));
     return from ParkingSlotRow r in slotStream
         select {
             slotId: r.slotId,
@@ -654,10 +657,13 @@ public isolated function getParkingSlotById(string slotId) returns ParkingSlot|e
 #
 # + slotId - Slot id
 # + bookingDate - Booking date (YYYY-MM-DD)
-# + return - True if slot has an active reservation (PENDING/CONFIRMED), false otherwise, or error
-public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate) returns boolean|error {
+# + pendingExpiryMinutes - Pending expiry duration in minutes
+# + return - True if slot has an active reservation (CONFIRMED, or PENDING within `pendingExpiryMinutes`), false
+#           otherwise, or error
+public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate, int pendingExpiryMinutes)
+        returns boolean|error {
     ReservationIdRow|error row = databaseClient->queryRow(
-        getConfirmedParkingReservationForSlotDateQuery(slotId, bookingDate));
+        getActiveParkingReservationForSlotDateQuery(slotId, bookingDate, pendingExpiryMinutes));
     if row is sql:NoRowsError {
         return false;
     }
@@ -665,6 +671,19 @@ public isolated function isParkingSlotBookedForDate(string slotId, string bookin
         return row;
     }
     return true;
+}
+
+# Expire stale PENDING reservations (PENDING -> EXPIRED) for slot/date.
+#
+# + slotId - Slot id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + expiryMinutes - Expiry duration in minutes
+# + return - True if any rows updated
+public isolated function expireStalePendingParkingReservationForSlotDate(string slotId, string bookingDate,
+        int expiryMinutes) returns boolean|error {
+    sql:ExecutionResult result = check databaseClient->execute(
+        expireStalePendingParkingReservationForSlotDateQuery(slotId, bookingDate, expiryMinutes));
+    return result.affectedRowCount > 0;
 }
 
 # Create parking reservation (PENDING).

@@ -19,10 +19,11 @@ import type { ReactNode } from "react";
 import { CircularProgress, IconButton } from "@mui/material";
 import {
   CalendarMonthSharp,
-  CancelSharp,
   CheckCircleSharp,
-  HourglassTopSharp,
+  CloseSharp,
+  DirectionsCarSharp,
   LocationOnSharp,
+  PaidSharp,
   KeyboardBackspaceSharp,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -43,6 +44,46 @@ function MyParkingBookingsPage() {
   const [reservations, setReservations] = useState<
     ParkingReservationDetails[]
   >([]);
+
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | undefined>(
+    undefined,
+  );
+  const [details, setDetails] = useState<ParkingReservationDetails | undefined>(
+    undefined,
+  );
+
+  const openReservationDetails = (reservation: ParkingReservationDetails) => {
+    setDetails(reservation);
+    setDetailsOpen(true);
+    setDetailsLoading(true);
+    setDetailsError(undefined);
+
+    executeWithTokenHandling(
+      handleRequest,
+      handleRequestWithNewToken,
+      serviceUrls.fetchParkingReservationById(reservation.id),
+      "GET",
+      null,
+      (data) => {
+        setDetails(data as ParkingReservationDetails);
+        setDetailsLoading(false);
+      },
+      (err) => {
+        setDetailsError(String(err ?? "Failed to load reservation"));
+        setDetailsLoading(false);
+      },
+      (pending) => setDetailsLoading(pending),
+    );
+  };
+
+  const closeReservationDetails = () => {
+    setDetailsOpen(false);
+    setDetailsLoading(false);
+    setDetailsError(undefined);
+    setDetails(undefined);
+  };
 
   useEffect(() => {
     executeWithTokenHandling(
@@ -74,21 +115,12 @@ function MyParkingBookingsPage() {
     );
   }, [reservations, today]);
 
-  const pendingBookings = useMemo(() => {
-    return reservations
-      .filter((r) => r.status === ("PENDING" as ParkingReservationStatus))
-      .sort((a, b) =>
-        String(b.createdOn).localeCompare(String(a.createdOn)),
-      );
-  }, [reservations]);
-
   const pastBookings = useMemo(() => {
     return reservations
       .filter(
         (r) =>
-          r.bookingDate < today &&
-          (r.status === ("CONFIRMED" as ParkingReservationStatus) ||
-            r.status === ("EXPIRED" as ParkingReservationStatus)),
+          r.status === ("CONFIRMED" as ParkingReservationStatus) &&
+          r.bookingDate < today,
       )
       .sort((a, b) =>
         String(b.bookingDate).localeCompare(String(a.bookingDate)),
@@ -98,7 +130,7 @@ function MyParkingBookingsPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative flex flex-col">
-        <header className="pt-6 px-5">
+        <header className="pt-[calc(var(--safe-top)+12px)] px-5">
           <div className="flex items-center justify-between">
             <IconButton
               onClick={() => navigate("/")}
@@ -107,14 +139,14 @@ function MyParkingBookingsPage() {
             >
               <KeyboardBackspaceSharp className="text-black" />
             </IconButton>
-            <h2 className="flex-1 text-center text-[20px] font-bold text-[#1F2A44]">
+            <h2 className="flex-1 text-center text-[18px] font-bold text-[#1F2A44]">
               My Bookings
             </h2>
             <div className="w-[40px]" />
           </div>
         </header>
 
-        <section className="px-4 mt-5 pb-28 overflow-y-auto flex-1 min-h-0">
+        <section className="px-4 mt-5 pb-[calc(7rem+var(--safe-bottom))] overflow-y-auto flex-1 min-h-0">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-red-800 text-sm font-medium">
               {error}
@@ -138,22 +170,13 @@ function MyParkingBookingsPage() {
               ) : (
                 <div className="grid gap-3">
                   {activeBookings.map((r) => (
-                    <ActiveBookingCard key={r.id} reservation={r} />
+                    <ActiveBookingCard
+                      key={r.id}
+                      reservation={r}
+                      onOpen={() => openReservationDetails(r)}
+                    />
                   ))}
                 </div>
-              )}
-
-              {pendingBookings.length > 0 && (
-                <>
-                  <div className="text-[13px] font-bold text-[#808080] mt-3 mb-3">
-                    PENDING
-                  </div>
-                  <div className="grid gap-3">
-                    {pendingBookings.map((r) => (
-                      <PendingBookingCard key={r.id} reservation={r} />
-                    ))}
-                  </div>
-                </>
               )}
 
               <div className="text-[13px] font-bold text-[#808080] mt-6 mb-3">
@@ -167,7 +190,11 @@ function MyParkingBookingsPage() {
               ) : (
                 <div className="grid gap-3">
                   {pastBookings.map((r) => (
-                    <PastBookingCard key={r.id} reservation={r} />
+                    <PastBookingCard
+                      key={r.id}
+                      reservation={r}
+                      onOpen={() => openReservationDetails(r)}
+                    />
                   ))}
                 </div>
               )}
@@ -175,19 +202,144 @@ function MyParkingBookingsPage() {
           )}
         </section>
 
+        {detailsOpen && (
+          <div
+            className="fixed inset-0 bg-black/10 backdrop-blur-[2px] z-30 grid place-items-center px-5"
+            onClick={closeReservationDetails}
+          >
+            <div
+              className="w-full max-w-[380px] bg-white border border-red-200 rounded-[1.2rem] p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-[#1F2A44] font-extrabold text-[16px]">
+                  Reservation Details
+                </div>
+                <IconButton
+                  onClick={closeReservationDetails}
+                  aria-label="Close details"
+                  size="small"
+                >
+                  <CloseSharp />
+                </IconButton>
+              </div>
+
+              {detailsLoading ? (
+                <div className="grid place-items-center py-6">
+                  <CircularProgress size={28} sx={{ color: "#ff7300" }} />
+                </div>
+              ) : detailsError ? (
+                <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-red-800 text-sm font-medium">
+                  {detailsError}
+                </div>
+              ) : details ? (
+                <div className="mt-3">
+                  <ReservationStatusBadge status={details.status} />
+
+                  <div className="mt-3 text-[22px] font-extrabold text-[#1F2A44]">
+                    {details.slotId}
+                  </div>
+                  <div className="mt-1 text-[#808080] text-[14px] font-medium flex items-center gap-2">
+                    <LocationOnSharp style={{ fontSize: 16 }} />
+                    {details.floorName}
+                  </div>
+
+                  <div className="mt-3">
+                    <InfoBox
+                      label="Date"
+                      value={formatBookingDate(details.bookingDate)}
+                      icon={<CalendarMonthSharp style={{ fontSize: 18, color: "#808080" }} />}
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <InfoBox
+                      label="Vehicle"
+                      value={details.vehicleRegistrationNumber}
+                      icon={
+                        <DirectionsCarSharp
+                          style={{ fontSize: 18, color: "#808080" }}
+                        />
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <InfoBox
+                      label="Amount"
+                      value={`${formatCoins(details.coinsAmount)} O2C`}
+                      icon={
+                        <PaidSharp
+                          style={{ fontSize: 18, color: "#808080" }}
+                        />
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <InfoBox
+                      label="Transaction Hash"
+                      value={getTransactionHashDisplay(details.transactionHash)}
+                      icon={<span className="text-[#808080] font-bold">Tx</span>}
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
+
         <BottomNav active="history" />
       </div>
     </PageTransitionWrapper>
   );
 }
 
+function ReservationStatusBadge({ status }: { status: ParkingReservationStatus | string }) {
+  const normalized = String(status);
+  const isConfirmed = normalized === ("CONFIRMED" as ParkingReservationStatus);
+
+  if (!isConfirmed) return null;
+
+  return (
+    <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#EAF9EF] text-[#2ECC71] text-[12px] font-extrabold">
+      <CheckCircleSharp style={{ fontSize: 16, marginRight: 6 }} />
+      CONFIRMED
+    </div>
+  );
+}
+
+function getTransactionHashDisplay(hash: string | null): string {
+  if (!hash) return "Not available for this reservation.";
+
+  const normalized = hash.trim();
+  if (!normalized) return "Not available for this reservation.";
+
+  const hasPrefix = normalized.startsWith("0x");
+  const prefix = hasPrefix ? "0x" : "";
+  const body = hasPrefix ? normalized.slice(2) : normalized;
+
+  if (body.length <= 12) return `${prefix}${body}`;
+  return `${prefix}${body.slice(0, 6)}...${body.slice(-6)}`;
+}
+
 function ActiveBookingCard({
   reservation,
+  onOpen,
 }: {
   reservation: ParkingReservationDetails;
+  onOpen: () => void;
 }) {
   return (
-    <div className="border border-[#ff7300] rounded-[1.2rem] px-4 py-4 bg-[#FFF2E8]">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen();
+      }}
+      className="border border-[#ff7300] rounded-[1.2rem] px-4 py-4 bg-[#FFF2E8] cursor-pointer"
+    >
       <div className="flex items-start justify-between">
         <div>
           <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#ff7300] text-white text-[12px] font-extrabold">
@@ -226,54 +378,26 @@ function ActiveBookingCard({
 
 function PastBookingCard({
   reservation,
+  onOpen,
 }: {
   reservation: ParkingReservationDetails;
+  onOpen: () => void;
 }) {
-  const isExpired = reservation.status === ("EXPIRED" as ParkingReservationStatus);
   return (
-    <div className="border border-[#E5E5E5] rounded-[1rem] px-4 py-3 bg-white flex items-center justify-between">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen();
+      }}
+      className="border border-[#E5E5E5] rounded-[1rem] px-4 py-3 bg-white flex items-center justify-between cursor-pointer"
+    >
       <div className="flex items-center gap-3">
         <div
-          className={`w-10 h-10 rounded-full grid place-items-center ${
-            isExpired ? "bg-[#FFF2F2] text-[#FF4D4D]" : "bg-[#EAF9EF] text-[#2ECC71]"
-          }`}
+          className="w-10 h-10 rounded-full grid place-items-center bg-[#EAF9EF] text-[#2ECC71]"
         >
-          {isExpired ? (
-            <CancelSharp style={{ fontSize: 22 }} />
-          ) : (
-            <CheckCircleSharp style={{ fontSize: 22 }} />
-          )}
-        </div>
-        <div>
-          <div className="text-[16px] font-extrabold text-[#1F2A44]">
-            {reservation.slotId}
-          </div>
-          <div className="text-[12.5px] text-[#808080] font-medium mt-0.5">
-            {formatBookingDate(reservation.bookingDate)}
-          </div>
-        </div>
-      </div>
-
-      <div className="text-right">
-        <div className="text-[16px] font-extrabold text-[#1F2A44]">
-          {formatCoins(reservation.coinsAmount)}{" "}
-          <span className="text-[12.5px] font-bold">O2C</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PendingBookingCard({
-  reservation,
-}: {
-  reservation: ParkingReservationDetails;
-}) {
-  return (
-    <div className="border border-[#FFD18A] rounded-[1rem] px-4 py-3 bg-white flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full grid place-items-center bg-[#FFF6EA] text-[#F59E0B]">
-          <HourglassTopSharp style={{ fontSize: 22 }} />
+          <CheckCircleSharp style={{ fontSize: 22 }} />
         </div>
         <div>
           <div className="text-[16px] font-extrabold text-[#1F2A44]">

@@ -17,6 +17,39 @@
 const TIME_ZONE = "Asia/Colombo";
 
 /**
+ * Current hour (0–23) in Asia/Colombo.
+ */
+export function getColomboHour(): number {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIME_ZONE,
+    hour: "numeric",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const hourPart = parts.find((p) => p.type === "hour")?.value;
+  return hourPart !== undefined ? parseInt(hourPart, 10) : 0;
+}
+
+/**
+ * Reservations allowed when `startHour <= hour < endHour`.
+ */
+export function isWithinParkingReservationWindow(
+  startHour: number,
+  endHour: number,
+): boolean {
+  const hour = getColomboHour();
+  return hour >= startHour && hour < endHour;
+}
+
+/** e.g. 5 → "5:00 AM", 14 → "2:00 PM" */
+export function formatHour12WithMinutes(hour: number): string {
+  const h = ((hour % 24) + 24) % 24;
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:00 ${period}`;
+}
+
+/**
  * Returns today's date in `YYYY-MM-DD` for Asia/Colombo timezone.
  * Backend validates that reservations are for same-day (Sri Lanka time).
  */

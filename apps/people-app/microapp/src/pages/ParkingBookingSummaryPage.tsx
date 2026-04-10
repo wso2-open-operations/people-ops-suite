@@ -15,7 +15,7 @@
 // under the License.
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   CalendarMonthSharp,
@@ -30,24 +30,26 @@ import { PageTransitionWrapper } from "@/components/shared";
 import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 import { serviceUrls } from "@/config/config";
 import type {
+  CarParkConfigResponse,
   CreateParkingReservationResponse,
-  ParkingReservationDetails,
   VehicleResponse,
 } from "@/types";
 import { getTodayBookingDate, formatBookingDate } from "@/utils/helpers/date";
 import { formatCoins } from "@/utils/helpers/coins";
 import {
-  clearParkingPaymentContextState,
   getParkingPaymentContextState,
   setParkingPaymentContextState,
-  setConfirmationState,
 } from "@/utils/parkingStorage";
-import { Logger } from "@/utils/logger";
 import {
-  getLocalDataAsync,
-  requestOpenMicroApp,
-  saveLocalDataAsync,
-} from "@/components/microapp-bridge";
+  PARKING_WALLET_PAYMENT_ERROR_KEY,
+  PARKING_WALLET_PAYMENT_STATUS_KEY,
+  PARKING_WALLET_PAYMENT_TX_HASH_KEY,
+  clearWalletParkingPaymentBridgeKeys,
+  confirmParkingReservation,
+  finalizeParkingConfirmationAfterSuccess,
+} from "@/utils/parkingConfirm";
+import { Logger } from "@/utils/logger";
+import { getLocalDataAsync, requestOpenMicroApp } from "@/components/microapp-bridge";
 
 type VehicleOption = {
   vehicleId: number;
@@ -56,6 +58,7 @@ type VehicleOption = {
 
 function ParkingBookingSummaryPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { handleRequest, handleRequestWithNewToken } = useHttp();
 
   const paymentContext = getParkingPaymentContextState();
@@ -73,6 +76,15 @@ function ParkingBookingSummaryPage() {
   const [busyConfirm, setBusyConfirm] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const [showPaymentFailureModal, setShowPaymentFailureModal] = useState(false);
+
+  useEffect(() => {
+    const routeState = location.state as { resumeError?: string } | null;
+    if (!routeState?.resumeError) return;
+
+    setError(routeState.resumeError);
+    setShowPaymentFailureModal(true);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   useEffect(() => {
     if (!hasPaymentContext) return;
@@ -176,25 +188,6 @@ function ParkingBookingSummaryPage() {
     });
   };
 
-  const confirmReservation = (reservationId: number, txHash: string) => {
-    const body = { reservationId, transactionHash: txHash };
-    return new Promise<ParkingReservationDetails>((resolve, reject) => {
-      executeWithTokenHandling(
-        handleRequest,
-        handleRequestWithNewToken,
-        serviceUrls.confirmParkingReservation(),
-        "POST",
-        body,
-        (data) => resolve(data as ParkingReservationDetails),
-        (err) => reject(err ?? "Failed to confirm reservation"),
-        () => {},
-      );
-    });
-  };
-
-  const PEOPLE_WALLET_PAYMENT_STATUS_KEY = "people_parking_payment_status";
-  const PEOPLE_WALLET_PAYMENT_TX_HASH_KEY = "people_parking_payment_tx_hash";
-
   const waitForWalletPaymentResult = async (): Promise<{
     status: "SUCCESS" | "FAILED";
     txHash?: string;
@@ -207,7 +200,7 @@ function ParkingBookingSummaryPage() {
     while (Date.now() - startedAt < TIMEOUT_MS) {
       try {
         const status = await getLocalDataAsync(
-          PEOPLE_WALLET_PAYMENT_STATUS_KEY,
+          PARKING_WALLET_PAYMENT_STATUS_KEY,
         );
         if (status) {
           const parsedStatus =
@@ -217,7 +210,7 @@ function ParkingBookingSummaryPage() {
 
           if (parsedStatus === "SUCCESS") {
             const txHash = await getLocalDataAsync(
-              PEOPLE_WALLET_PAYMENT_TX_HASH_KEY,
+              PARKING_WALLET_PAYMENT_TX_HASH_KEY,
             );
             if (txHash) {
               return { status: "SUCCESS", txHash: String(txHash) };
@@ -226,7 +219,9 @@ function ParkingBookingSummaryPage() {
             continue;
           }
 
-          const error = await getLocalDataAsync("people_parking_payment_error");
+          const error = await getLocalDataAsync(
+            PARKING_WALLET_PAYMENT_ERROR_KEY,
+          );
           return {
             status: "FAILED",
             error: error ? String(error) : undefined,
@@ -261,7 +256,7 @@ function ParkingBookingSummaryPage() {
       });
 
       // Stage 2: ask Wallet to transfer coins, then confirm reservation with txHash.
-      const carParkConfig = await new Promise<{ publicWalletAddress: string }>(
+      const carParkConfig = await new Promise<CarParkConfigResponse>(
         (resolve, reject) => {
           executeWithTokenHandling(
             handleRequest,
@@ -269,7 +264,7 @@ function ParkingBookingSummaryPage() {
             serviceUrls.fetchCarParkConfigs(),
             "GET",
             null,
-            (data) => resolve(data as { publicWalletAddress: string }),
+            (data) => resolve(data as CarParkConfigResponse),
             (err) => reject(err),
             () => {},
           );
@@ -277,9 +272,7 @@ function ParkingBookingSummaryPage() {
       );
 
       // Reset previous payment result
-      await saveLocalDataAsync(PEOPLE_WALLET_PAYMENT_STATUS_KEY, "");
-      await saveLocalDataAsync(PEOPLE_WALLET_PAYMENT_TX_HASH_KEY, "");
-      await saveLocalDataAsync("people_parking_payment_error", "");
+      await clearWalletParkingPaymentBridgeKeys();
 
       // Wallet will use launchData to set the "send" form and navigate to confirm.
       requestOpenMicroApp("com.wso2.superapp.microapp.wallet", {
@@ -300,16 +293,14 @@ function ParkingBookingSummaryPage() {
         );
       }
 
-      const confirmed = await confirmReservation(
+      const confirmed = await confirmParkingReservation(
+        handleRequest,
+        handleRequestWithNewToken,
         reservation.reservationId,
         paymentResult.txHash,
       );
 
-      setConfirmationState(confirmed);
-      clearParkingPaymentContextState();
-      navigate("/services/parking/confirmation", {
-        state: { reservationId: confirmed.id },
-      });
+      await finalizeParkingConfirmationAfterSuccess(confirmed, navigate);
     } catch (e) {
       const msg = String(e ?? "Payment failed");
       setError(msg);
@@ -513,9 +504,12 @@ function ParkingBookingSummaryPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative overflow-y-auto pb-12">
-        <section className="px-4 pt-6">
+        <section className="px-4 pt-[calc(var(--safe-top)+12px)]">
           <div className="flex items-center justify-between">
-            <IconButton onClick={() => navigate(-1)} aria-label="Back">
+            <IconButton
+              onClick={() => navigate("/services/parking")}
+              aria-label="Back to slot selection"
+            >
               <KeyboardBackspaceSharp className="text-black" />
             </IconButton>
             <h1 className="text-[18px] font-semibold text-[#1F2A44]">

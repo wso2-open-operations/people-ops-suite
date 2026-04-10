@@ -431,6 +431,7 @@ CREATE TABLE `companies_allowed_locations` (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Parking floor table
 CREATE TABLE `parking_floor` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(45) NOT NULL,
@@ -442,8 +443,9 @@ CREATE TABLE `parking_floor` (
   `updated_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   `updated_by` varchar(100) NOT NULL,
   PRIMARY KEY (`id`)
-);
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
+-- Parking slot table
 CREATE TABLE `parking_slot` (
   `slot_id` varchar(10) NOT NULL,
   `floor_id` int NOT NULL,
@@ -453,15 +455,16 @@ CREATE TABLE `parking_slot` (
   `updated_by` varchar(100) NOT NULL,
   PRIMARY KEY (`slot_id`),
   CONSTRAINT `fk_ps_floor` FOREIGN KEY (`floor_id`) REFERENCES `parking_floor` (`id`) ON DELETE CASCADE
-);
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
+-- Parking reservation table
 CREATE TABLE `parking_reservation` (
   `id` int NOT NULL AUTO_INCREMENT,
   `slot_id` varchar(10) NOT NULL,
   `booking_date` date NOT NULL,
   `employee_email` varchar(100) NOT NULL,
   `vehicle_id` int NOT NULL,
-  `status` enum('PENDING','CONFIRMED') NOT NULL DEFAULT 'PENDING',
+  `status` enum('PENDING','CONFIRMED','EXPIRED') NOT NULL DEFAULT 'PENDING',
   `transaction_hash` varchar(255) DEFAULT NULL,
   `coins_amount` decimal(10, 4) NOT NULL,
   `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -471,9 +474,17 @@ CREATE TABLE `parking_reservation` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_pr_slot` FOREIGN KEY (`slot_id`) REFERENCES `parking_slot` (`slot_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_pr_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicle` (`vehicle_id`) ON DELETE RESTRICT,
-  UNIQUE KEY `uk_slot_booking_date` (`slot_id`, `booking_date`),
+  KEY `idx_pr_slot_booking_date` (`slot_id`, `booking_date`),
   UNIQUE KEY `uk_parking_reservation_tx_hash` (`transaction_hash`)
-);
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+-- Functional UNIQUE index
+CREATE UNIQUE INDEX `uk_active_slot_booking_date` ON `parking_reservation` ((
+  CASE
+    WHEN `status` IN ('PENDING', 'CONFIRMED') THEN CONCAT(`slot_id`, '|', `booking_date`)
+    ELSE NULL
+  END
+));
 
 -- Personal Info Audit table
 CREATE TABLE `personal_info_audit` (

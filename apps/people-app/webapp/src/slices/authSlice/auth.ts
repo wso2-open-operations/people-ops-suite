@@ -49,6 +49,7 @@ export interface UserState {
   stateMessage: string | null;
   errorMessage: string | null;
   userInfo: UserInfoInterface | null;
+  isProfileMissing: boolean;
 }
 
 export interface UserInfoInterface {
