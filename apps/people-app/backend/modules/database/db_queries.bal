@@ -2624,3 +2624,55 @@ isolated function updateEmployeesUnitQuery(int oldUnitId, int newUnitId, string 
     SET unit_id = ${newUnitId}, updated_by = ${actor}, updated_on = CURRENT_TIMESTAMP(6)
     WHERE unit_id = ${oldUnitId} AND employee_status = 'Active'
 `;
+
+# Check if a Business Unit name already exists.
+#
+# + name - Business Unit name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function businessUnitNameExistsQuery(string name) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit
+        WHERE is_active = 1 AND LOWER(name) = LOWER(${name})
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Check if a Team name already exists.
+#
+# + name - Team name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function teamNameExistsQuery(string name) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM team
+        WHERE is_active = 1 AND LOWER(name) = LOWER(${name})
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Check if a SubTeam name already exists.
+#
+# + name - SubTeam name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function subTeamNameExistsQuery(string name) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM sub_team
+        WHERE is_active = 1 AND LOWER(name) = LOWER(${name})
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Check if a Unit name already exists.
+#
+# + name - Unit name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function unitNameExistsQuery(string name) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM unit
+        WHERE is_active = 1 AND LOWER(name) = LOWER(${name})
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
