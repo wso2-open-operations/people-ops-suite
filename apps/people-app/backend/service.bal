@@ -20,6 +20,7 @@ import people.qr;
 import people.wso2_coin;
 
 import ballerina/http;
+import ballerina/io;
 import ballerina/log;
 import ballerina/regex;
 import ballerina/time;
@@ -106,6 +107,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups) {
             privileges.push(authorization:SERVICE_DESK_PRIVILEGE);
         }
+
+        io:println("privilages : ", privileges);
+
         boolean|error isLeadUser = database:isLead(userInfo.email);
         if isLeadUser is error {
             string customErr = "Error occurred while checking lead status";
@@ -350,11 +354,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         byte[]|error imageBytes = qr:generateEmployeeQrCode({
-            employeeNumber: employee.employeeId,
-            firstName: employee.firstName,
-            lastName: employee.lastName,
-            house
-        });
+                                                                employeeNumber: employee.employeeId,
+                                                                firstName: employee.firstName,
+                                                                lastName: employee.lastName,
+                                                                house
+                                                            });
         if imageBytes is error {
             string customErr = "Error occurred while generating QR code";
             log:printError(customErr, imageBytes);
@@ -539,11 +543,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         database:EmployeesResponse|error result = database:getEmployees({
-            searchString: payload.searchString,
-            filters: {employeeStatus: payload.filters.employeeStatus},
-            pagination: payload.pagination,
-            sort: payload.sort
-        });
+                                                                            searchString: payload.searchString,
+                                                                            filters: {employeeStatus: payload.filters.employeeStatus},
+                                                                            pagination: payload.pagination,
+                                                                            sort: payload.sort
+                                                                        });
         if result is error {
             string customErr = "Error occurred while fetching employees for QR export";
             log:printError(customErr, result);
@@ -1246,12 +1250,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error vehicleResult = database:addVehicle({
-            owner: userInfo.email,
-            vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
-            vehicleType: vehicle.vehicleType,
-            vehicleStatus: database:ACTIVE,
-            createdBy: userInfo.email
-        });
+                                                          owner: userInfo.email,
+                                                          vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
+                                                          vehicleType: vehicle.vehicleType,
+                                                          vehicleStatus: database:ACTIVE,
+                                                          createdBy: userInfo.email
+                                                      });
         if vehicleResult is error {
             string customError = string `Error occurred while adding vehicle!`;
             log:printError(customError, vehicleResult);
@@ -1293,10 +1297,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updateResult = database:updateVehicle({
-            vehicleId,
-            vehicleStatus: database:INACTIVE,
-            updatedBy: userInfo.email
-        });
+                                                                vehicleId,
+                                                                vehicleStatus: database:INACTIVE,
+                                                                updatedBy: userInfo.email
+                                                            });
 
         if updateResult is error {
             string customError = string `Error occurred while updating vehicle!`;
@@ -1385,7 +1389,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date,
-            wso2_coin:pendingReservationExpiryMinutes);
+                wso2_coin:pendingReservationExpiryMinutes);
         if slots is error {
             log:printError("Error fetching parking slots", slots);
             return <http:InternalServerError>{
@@ -1466,7 +1470,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Expire stale pending reservations so the slot/date becomes reusable.
         boolean|error cleared = database:expireStalePendingParkingReservationForSlotDate(body.slotId, body.bookingDate,
-            wso2_coin:pendingReservationExpiryMinutes);
+                wso2_coin:pendingReservationExpiryMinutes);
         if cleared is error {
             log:printError("Error expiring stale pending reservations", cleared);
             return <http:InternalServerError>{
@@ -1475,7 +1479,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate,
-            wso2_coin:pendingReservationExpiryMinutes);
+                wso2_coin:pendingReservationExpiryMinutes);
         if booked is error {
             log:printError("Error checking slot availability", booked);
             return <http:InternalServerError>{
@@ -1493,13 +1497,13 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Insert a new PENDING row
         int|error reservationId = database:addParkingReservation({
-            slotId: body.slotId,
-            bookingDate: body.bookingDate,
-            employeeEmail: userInfo.email,
-            vehicleId: body.vehicleId,
-            coinsAmount: slot.coinsPerSlot,
-            createdBy: userInfo.email
-        });
+                                                                     slotId: body.slotId,
+                                                                     bookingDate: body.bookingDate,
+                                                                     employeeEmail: userInfo.email,
+                                                                     vehicleId: body.vehicleId,
+                                                                     coinsAmount: slot.coinsPerSlot,
+                                                                     createdBy: userInfo.email
+                                                                 });
         if reservationId is error {
             log:printError("Error creating parking reservation", reservationId);
             return <http:InternalServerError>{
@@ -1596,11 +1600,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
-                searchString: (),
-                filters: {employeeStatus: status, excludeFutureStartDate: excludeFutureStartDate},
-                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                sort: {sortField: "employeeId", sortOrder: "ASC"}
-            });
+                                                                                    searchString: (),
+                                                                                    filters: {employeeStatus: status, excludeFutureStartDate: excludeFutureStartDate},
+                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
+                                                                                });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
@@ -1686,11 +1690,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updated = database:updateParkingReservationStatus({
-            reservationId: reservation.id,
-            status: database:CONFIRMED,
-            transactionHash: body.transactionHash,
-            updatedBy: userInfo.email
-        });
+                                                                            reservationId: reservation.id,
+                                                                            status: database:CONFIRMED,
+                                                                            transactionHash: body.transactionHash,
+                                                                            updatedBy: userInfo.email
+                                                                        });
         if updated is error {
             log:printError("Error confirming reservation", updated);
             return <http:InternalServerError>{
@@ -2575,6 +2579,258 @@ service http:InterceptableService / on new http:Listener(9090) {
         return <http:Ok>{
             body: {
                 message: "Successfully updated the business unit"
+            }
+        };
+    }
+
+    # Rename a Business Unit by creating a new one with the updated name.
+    # This operation:
+    # 1. Inserts a new Business Unit with the new name
+    # 2. Updates all business_unit_team mappings to use the new BU
+    # 3. Updates all active employees to use the new BU
+    # 4. Deactivates the old Business Unit
+    #
+    # + buId - ID of the Business Unit to rename
+    # + payload - Payload containing the new name
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function post organization/business\-unit/[int buId]/rename(http:RequestContext ctx,
+            RenameBusinessUnitName payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        boolean|error buExists = database:businessUnitExists(buId);
+        if buExists is error {
+            log:printError("Error while validating business unit", buExists, buId = buId);
+            return <http:InternalServerError>{
+                body: {message: "Error while validating the business unit"}
+            };
+        }
+
+        if !buExists {
+            return <http:BadRequest>{
+                body: {message: string `Business unit with ID ${buId} not found`}
+            };
+        }
+
+        string trimmedName = payload.name.trim();
+        if trimmedName.length() == 0 {
+            return <http:BadRequest>{
+                body: {message: "Name cannot be empty"}
+            };
+        }
+
+        int|error newBuId = database:renameBusinessUnit({
+                                                            businessUnitId: buId,
+                                                            name: trimmedName,
+                                                            updatedBy: validatedUserInfo.email
+                                                        });
+
+        if newBuId is error {
+            log:printError("Error while renaming business unit", newBuId, buId = buId);
+            return <http:InternalServerError>{
+                body: {message: "Error while renaming the business unit"}
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: string `Successfully renamed business unit to '${trimmedName}'`,
+                newBusinessUnitId: newBuId
+            }
+        };
+    }
+
+    # Rename a Team by creating a new one with the updated name.
+    # This operation:
+    # 1. Inserts a new Team with the new name
+    # 2. Updates all business_unit_team mappings to use the new Team
+    # 3. Updates all active employees to use the new Team
+    # 4. Deactivates the old Team
+    #
+    # + teamId - ID of the Team to rename
+    # + payload - Payload containing the new name
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function post organization/team/[int teamId]/rename(http:RequestContext ctx,
+            RenameTeamName payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        boolean|error teamExists = database:teamExists(teamId);
+        if teamExists is error {
+            log:printError("Error while validating team", teamExists, teamId = teamId);
+            return <http:InternalServerError>{
+                body: {message: "Error while validating the team"}
+            };
+        }
+
+        if !teamExists {
+            return <http:BadRequest>{
+                body: {message: string `Team with ID ${teamId} not found`}
+            };
+        }
+
+        string trimmedName = payload.name.trim();
+        if trimmedName.length() == 0 {
+            return <http:BadRequest>{
+                body: {message: "Name cannot be empty"}
+            };
+        }
+
+        int|error newTeamId = database:renameTeam({
+                                                            teamId: teamId,
+                                                            name: trimmedName,
+                                                            updatedBy: validatedUserInfo.email
+                                                        });
+
+        if newTeamId is error {
+            log:printError("Error while renaming team", newTeamId, teamId = teamId);
+            return <http:InternalServerError>{
+                body: {message: "Error while renaming the team"}
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: string `Successfully renamed team to '${trimmedName}'`,
+                newTeamId: newTeamId
+            }
+        };
+    }
+
+    # Rename a SubTeam by creating a new one with the updated name.
+    # This operation:
+    # 1. Inserts a new SubTeam with the new name
+    # 2. Updates all business_unit_team_sub_team mappings to use the new SubTeam
+    # 3. Updates all active employees to use the new SubTeam
+    # 4. Deactivates the old SubTeam
+    #
+    # + subTeamId - ID of the SubTeam to rename
+    # + payload - Payload containing the new name
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function post organization/sub\-team/[int subTeamId]/rename(http:RequestContext ctx,
+            RenameSubTeamName payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        boolean|error subTeamExists = database:subTeamExists(subTeamId);
+        if subTeamExists is error {
+            log:printError("Error while validating sub-team", subTeamExists, subTeamId = subTeamId);
+            return <http:InternalServerError>{
+                body: {message: "Error while validating the sub-team"}
+            };
+        }
+
+        if !subTeamExists {
+            return <http:BadRequest>{
+                body: {message: string `Sub-team with ID ${subTeamId} not found`}
+            };
+        }
+
+        string trimmedName = payload.name.trim();
+        if trimmedName.length() == 0 {
+            return <http:BadRequest>{
+                body: {message: "Name cannot be empty"}
+            };
+        }
+
+        int|error newSubTeamId = database:renameSubTeam({
+                                                            subTeamId: subTeamId,
+                                                            name: trimmedName,
+                                                            updatedBy: validatedUserInfo.email
+                                                        });
+
+        if newSubTeamId is error {
+            log:printError("Error while renaming sub-team", newSubTeamId, subTeamId = subTeamId);
+            return <http:InternalServerError>{
+                body: {message: "Error while renaming the sub-team"}
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: string `Successfully renamed sub-team to '${trimmedName}'`,
+                newSubTeamId: newSubTeamId
+            }
+        };
+    }
+
+    # Rename a Unit by creating a new one with the updated name.
+    # This operation:
+    # 1. Inserts a new Unit with the new name
+    # 2. Updates all business_unit_team_sub_team_unit mappings to use the new Unit
+    # 3. Updates all active employees to use the new Unit
+    # 4. Deactivates the old Unit
+    #
+    # + unitId - ID of the Unit to rename
+    # + payload - Payload containing the new name
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function post organization/unit/[int unitId]/rename(http:RequestContext ctx,
+            RenameUnitName payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        boolean|error unitExists = database:unitExists(unitId);
+        if unitExists is error {
+            log:printError("Error while validating unit", unitExists, unitId = unitId);
+            return <http:InternalServerError>{
+                body: {message: "Error while validating the unit"}
+            };
+        }
+
+        if !unitExists {
+            return <http:BadRequest>{
+                body: {message: string `Unit with ID ${unitId} not found`}
+            };
+        }
+
+        string trimmedName = payload.name.trim();
+        if trimmedName.length() == 0 {
+            return <http:BadRequest>{
+                body: {message: "Name cannot be empty"}
+            };
+        }
+
+        int|error newUnitId = database:renameUnit({
+                                                            unitId: unitId,
+                                                            name: trimmedName,
+                                                            updatedBy: validatedUserInfo.email
+                                                        });
+
+        if newUnitId is error {
+            log:printError("Error while renaming unit", newUnitId, unitId = unitId);
+            return <http:InternalServerError>{
+                body: {message: "Error while renaming the unit"}
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: string `Successfully renamed unit to '${trimmedName}'`,
+                newUnitId: newUnitId
             }
         };
     }
