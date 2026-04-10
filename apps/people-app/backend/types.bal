@@ -299,3 +299,23 @@ public type CreateUnitPayload record {|
     # Business unit-team-sub-team-unit mapping details — required only when mapping to a business unit-team-sub-team
     CreateBusinessUnitTeamSubTeamUnitPayload businessUnitTeamSubTeamUnit?;
 |};
+
+public type RenameBusinessUnitName record {|
+    int businessUnitId;
+    string name;
+|};
+
+public type RenameTeamName record {|
+    int teamId;
+    string name;
+|};
+
+public type RenameSubTeamName record {|
+    int subTeamId;
+    string name;
+|};
+
+public type RenameUnitName record {|
+    int unitId;
+    string name;
+|};
