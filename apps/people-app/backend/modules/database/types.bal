@@ -1297,3 +1297,27 @@ public type CreateUnitPayload record {|
     # Business unit team sub-team details
     CreateBusinessUnitTeamSubTeamUnitPayload businessUnitTeamSubTeamUnit;
 |};
+
+public type RenameBusinessUnitName record {|
+    int businessUnitId;
+    string name;
+    string updatedBy;
+|};
+
+public type RenameTeamName record {|
+    int teamId;
+    string name;
+    string updatedBy;
+|};
+
+public type RenameSubTeamName record {|
+    int subTeamId;
+    string name;
+    string updatedBy;
+|};
+
+public type RenameUnitName record {|
+    int unitId;
+    string name;
+    string updatedBy;
+|};
