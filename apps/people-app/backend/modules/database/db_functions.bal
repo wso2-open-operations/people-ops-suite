@@ -1345,3 +1345,39 @@ public isolated function renameUnit(RenameUnitName payload) returns int|error {
         return newUnitId;
     }
 }
+
+# Checks if a Business Unit name already exists.
+#
+# + name - Business Unit name to check
+# + return - True if name exists, false otherwise, or error
+public isolated function businessUnitNameExists(string name) returns boolean|error {
+    int existsFlag = check databaseClient->queryRow(businessUnitNameExistsQuery(name));
+    return existsFlag == 1;
+}
+
+# Checks if a Team name already exists.
+#
+# + name - Team name to check
+# + return - True if name exists, false otherwise, or error
+public isolated function teamNameExists(string name) returns boolean|error {
+    int existsFlag = check databaseClient->queryRow(teamNameExistsQuery(name));
+    return existsFlag == 1;
+}
+
+# Checks if a SubTeam name already exists.
+#
+# + name - SubTeam name to check
+# + return - True if name exists, false otherwise, or error
+public isolated function subTeamNameExists(string name) returns boolean|error {
+    int existsFlag = check databaseClient->queryRow(subTeamNameExistsQuery(name));
+    return existsFlag == 1;
+}
+
+# Checks if a Unit name already exists.
+#
+# + name - Unit name to check
+# + return - True if name exists, false otherwise, or error
+public isolated function unitNameExists(string name) returns boolean|error {
+    int existsFlag = check databaseClient->queryRow(unitNameExistsQuery(name));
+    return existsFlag == 1;
+}
