@@ -121,12 +121,18 @@ public type Employee record {|
     string startDate;
     # Manager email
     string managerEmail;
+    # Manager full name (resolved from DB join)
+    string? managerName;
     # Additional manager email
     string? additionalManagerEmails;
+    # Gender (from employee personal info)
+    string? gender;
     # Employee status
     string employeeStatus;
     # Continuous service record reference (Employee ID)
     string? continuousServiceRecord;
+    # Start date of the continuous service record (resolved via DB join)
+    string? continuousServiceDate;
     # Probation end date
     string? probationEndDate;
     # Agreement end date
@@ -149,6 +155,8 @@ public type Employee record {|
     string designation;
     # Designation ID
     int designationId;
+    # Job band
+    int? jobBand;
     # Job role of the user
     string? secondaryJobTitle;
     # Office
@@ -631,6 +639,16 @@ public type EmergencyContactRow record {|
     string relationship;
     # Mobile number of the emergency contact
     string mobile;
+|};
+
+# [Database] Employee name row mapping for email-to-name lookups.
+type EmployeeNameRow record {|
+    # Work email of the employee
+    @sql:Column {name: "work_email"}
+    string workEmail;
+    # Full name of the employee
+    @sql:Column {name: "full_name"}
+    string fullName;
 |};
 
 # Additional manager email row mapping.
