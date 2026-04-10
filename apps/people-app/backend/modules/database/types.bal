@@ -156,7 +156,7 @@ public type Employee record {|
     # Designation ID
     int designationId;
     # Job band
-    int jobBand;
+    int? jobBand;
     # Job role of the user
     string? secondaryJobTitle;
     # Office
