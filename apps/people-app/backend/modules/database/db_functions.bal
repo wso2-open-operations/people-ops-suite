@@ -710,6 +710,19 @@ public isolated function updateParkingReservationStatus(UpdateParkingReservation
     return result.affectedRowCount > 0;
 }
 
+# Get a map of employee work email to full name for all employees.
+#
+# + return - Map of work_email -> full_name, or error
+public isolated function getEmployeeEmailToNameMap() returns map<string>|error {
+    stream<EmployeeNameRow, error?> resultStream = databaseClient->query(getEmployeeEmailToNameMapQuery());
+    map<string> nameMap = {};
+    check from EmployeeNameRow row in resultStream
+        do {
+            nameMap[row.workEmail] = row.fullName;
+        };
+    return nameMap;
+}
+
 # Get parking reservations by employee.
 #
 # + employeeEmail - Employee email

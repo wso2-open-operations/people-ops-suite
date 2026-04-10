@@ -633,6 +633,16 @@ public type EmergencyContactRow record {|
     string mobile;
 |};
 
+# [Database] Employee name row mapping for email-to-name lookups.
+type EmployeeNameRow record {|
+    # Work email of the employee
+    @sql:Column {name: "work_email"}
+    string workEmail;
+    # Full name of the employee
+    @sql:Column {name: "full_name"}
+    string fullName;
+|};
+
 # Additional manager email row mapping.
 public type AdditionalManagerEmailRow record {|
     # Additional manager email

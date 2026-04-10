@@ -1588,9 +1588,17 @@ service http:InterceptableService / on new http:Listener(9090) {
             offset += database:DEFAULT_LIMIT;
         }
 
+        map<string>|error nameMap = database:getEmployeeEmailToNameMap();
+        if nameMap is error {
+            log:printError("Error fetching employee name map for report", nameMap);
+            return <http:InternalServerError>{
+                body: {message: "Error generating report"}
+            };
+        }
+
         string csvContent = status == database:EMPLOYEE_LEFT
-            ? database:buildResignationCsv(allEmployees)
-            : database:buildEmployeeCsv(allEmployees);
+            ? database:buildResignationCsv(allEmployees, nameMap)
+            : database:buildEmployeeCsv(allEmployees, nameMap);
         string statusLabel = status is () ? "all" : re ` `.replaceAll(status.toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
 

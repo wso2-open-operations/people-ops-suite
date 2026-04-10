@@ -73,7 +73,9 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         e.work_location AS workLocation,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
+        COALESCE(CONCAT(mgr.first_name, ' ', mgr.last_name), '') AS managerName,
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
+        pi.gender AS gender,
         (
             SELECT COUNT(1)
             FROM employee e2
@@ -82,6 +84,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         ) AS subordinateCount,
         e.employee_status AS employeeStatus,
         e.continuous_service_record AS continuousServiceRecord,
+        csr.start_date AS continuousServiceDate,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
         et.name AS employmentType,
@@ -122,6 +125,9 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN unit u ON e.unit_id = u.id
         LEFT JOIN house h ON e.house_id = h.id
+        LEFT JOIN personal_info pi ON pi.id = e.personal_info_id
+        LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
+        LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
     WHERE
         e.employee_id = ${employeeId};`;
 
@@ -146,10 +152,12 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.work_location AS workLocation,
             e.start_date AS startDate,
             e.manager_email AS managerEmail,
+            COALESCE(CONCAT(mgr.first_name, ' ', mgr.last_name), '') AS managerName,
             COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
             COALESCE(sc.subordinateCount, 0) AS subordinateCount,
             e.employee_status AS employeeStatus,
             e.continuous_service_record AS continuousServiceRecord,
+            csr.start_date AS continuousServiceDate,
             e.probation_end_date AS probationEndDate,
             e.agreement_end_date AS agreementEndDate,
             et.name AS employmentType,
@@ -157,6 +165,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             d.career_function_id AS careerFunctionId,
             d.designation AS designation,
             e.designation_id AS designationId,
+            d.job_band AS jobBand,
             e.secondary_job_title AS secondaryJobTitle,
             o.name AS office,
             e.office_id AS officeId,
@@ -176,6 +185,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             r.final_day_in_office     AS finalDayInOffice,
             r.final_day_of_employment AS finalDayOfEmployment,
             r.reason                  AS resignationReason,
+            pi.gender AS gender,
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
@@ -208,6 +218,8 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             LEFT JOIN unit u ON u.id = e.unit_id
             LEFT JOIN house h ON h.id = e.house_id
             LEFT JOIN resignation r ON r.employee_id = e.id
+            LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
+            LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
         `;
 
     sql:ParameterizedQuery[] filters = [];
@@ -1589,3 +1601,9 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
 
     return sql:queryConcat(mainQuery, ` ORDER BY pr.booking_date DESC, pr.created_on DESC`);
 }
+
+# Fetch a mapping of work email to full name for all employees.
+#
+# + return - Parameterized query returning work_email and full_name columns
+isolated function getEmployeeEmailToNameMapQuery() returns sql:ParameterizedQuery =>
+    `SELECT work_email, CONCAT(first_name, ' ', last_name) AS full_name FROM employee;`;
