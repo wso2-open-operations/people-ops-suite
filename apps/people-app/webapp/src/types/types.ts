@@ -54,6 +54,7 @@ export interface RouteDetail {
 }
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
+  path: string;
   allowRoles: string[];
   excludeRoles?: string[];
   icon: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
