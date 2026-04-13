@@ -16,14 +16,15 @@
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { ADMIN_PRIVILEGE, EMPLOYEE_PRIVILEGE, LEAD_PRIVILEGE, SnackMessage } from "@config/constant";
+import { ADMIN_PRIVILEGE, LEAD_PRIVILEGE, SERVICE_DESK_PRIVILEGE, SnackMessage } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import type { RootState } from "@slices/store";
 
 export enum Role {
-  ADMIN = "ADMIN",
   EMPLOYEE = "EMPLOYEE",
   LEAD = "LEAD",
+  ADMIN = "ADMIN",
+  SERVICE_DESK = "SERVICE_DESK",
 }
 
 export enum State {
@@ -53,7 +54,26 @@ export interface AuthState {
 
 export interface AuthData {
   userInfo: BasicUserInfo;
-  decodedIdToken: ExtendedDecodedIDTokenPayload;
+  idToken: string;
+}
+
+export interface UserState {
+  state: State;
+  stateMessage: string | null;
+  errorMessage: string | null;
+  userInfo: UserInfoInterface | null;
+  isProfileMissing: boolean;
+}
+
+export interface UserInfoInterface {
+  id: number;                 
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  workEmail: string;
+  employeeThumbnail: string | null;
+  jobRole: string;
+  privileges: number[];
 }
 
 const initialState: AuthState = {
@@ -90,18 +110,8 @@ export const loadPrivileges = createAsyncThunk(
     if (userPrivileges.includes(ADMIN_PRIVILEGE)) {
       roles.push(Role.ADMIN);
     }
-    if (userPrivileges.includes(EMPLOYEE_PRIVILEGE)) {
-      roles.push(Role.EMPLOYEE);
-    }
-
-    if (roles.length === 0) {
-      dispatch(
-        enqueueSnackbarMessage({
-          message: SnackMessage.error.insufficientPrivileges,
-          type: "error",
-        }),
-      );
-      return rejectWithValue("No roles found");
+    if (userPrivileges.includes(SERVICE_DESK_PRIVILEGE)) {
+      roles.push(Role.SERVICE_DESK);
     }
     return { roles };
   },

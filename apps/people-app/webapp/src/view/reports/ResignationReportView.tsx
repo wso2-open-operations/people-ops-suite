@@ -32,6 +32,7 @@ export default function ResignationReportView() {
           page: (
             <EmployeeReportTable
               employeeStatus={EmployeeStatus.Left}
+              showExcludeFutureFilter={false}
               previewAlertText={
                 <>
                   Showing a preview of the first 10 resigned employees. <br />

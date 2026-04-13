@@ -200,6 +200,7 @@ export function SearchForm() {
       companyId,
       officeId,
       employeeStatus,
+      excludeFutureStartDate,
     } = filters;
 
     return Boolean(
@@ -214,7 +215,8 @@ export function SearchForm() {
       managerEmail ||
       companyId ||
       officeId ||
-      employeeStatus,
+      employeeStatus ||
+      excludeFutureStartDate,
     );
   }
 
@@ -233,6 +235,7 @@ export function SearchForm() {
       companyId,
       officeId,
       employeeStatus,
+      excludeFutureStartDate,
     } = filterPayload.filters;
     return [
       businessUnitId,
@@ -247,6 +250,7 @@ export function SearchForm() {
       companyId,
       officeId,
       employeeStatus,
+      excludeFutureStartDate,
     ].filter(Boolean).length;
   }, [filterPayload.filters]);
 

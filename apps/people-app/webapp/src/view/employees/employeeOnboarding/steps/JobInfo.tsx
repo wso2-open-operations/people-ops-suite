@@ -25,19 +25,19 @@ import {
 } from "@mui/icons-material";
 import {
   Box,
+  Grid,
+  TextField,
+  Typography,
+  MenuItem,
+  useTheme,
+  alpha,
+  Popover,
   Checkbox,
   Chip,
-  FormControlLabel,
-  Grid,
   IconButton,
   InputAdornment,
-  MenuItem,
   Stack,
-  TextField,
   Tooltip,
-  Typography,
-  alpha,
-  useTheme,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
@@ -163,7 +163,7 @@ const SectionHeader = React.memo(({ icon, title, headerBoxSx, iconBoxSx }: any) 
   );
 });
 
-const ContinuousServiceTooltip = React.memo(
+const ContinuousServicePopoverContent = React.memo(
   ({ record }: { record: ContinuousServiceRecordInfo | null | undefined }) => {
     if (!record) return null;
 
@@ -174,52 +174,149 @@ const ContinuousServiceTooltip = React.memo(
         value: `${record.firstName || ""} ${record.lastName || ""}`.trim(),
       },
       { label: "Designation", value: record.designation },
+      { label: "Company", value: record.company },
       { label: "Work Location", value: record.workLocation },
       {
         label: "Start Date",
         value: record.startDate ? dayjs(record.startDate).format("YYYY-MM-DD") : null,
       },
       { label: "Lead Email", value: record.managerEmail },
-      {
-        label: "Additional Lead Emails",
-        value: record.additionalManagerEmails,
-      },
+      { label: "Additional Leads", value: record.additionalManagerEmails },
       { label: "Business Unit", value: record.businessUnit },
       { label: "Team", value: record.team },
       ...(record.subTeam ? [{ label: "Sub Team", value: record.subTeam }] : []),
       ...(record.unit ? [{ label: "Unit", value: record.unit }] : []),
-    ];
+    ].filter((f) => f.value !== null && f.value !== undefined);
 
     return (
-      <Box sx={{ p: 1, maxWidth: 400 }}>
-        <Typography variant="caption" fontWeight={600}>
-          Continuous Service Record Details
-        </Typography>
-        {fields.map((f) => (
-          <Typography key={f.label} variant="caption" display="block">
-            <strong>{f.label}:</strong> {f.value || "N/A"}
+      <Box sx={{ minWidth: 300, maxWidth: 380 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            mb: 2,
+          }}
+        >
+          <Box
+            sx={{
+              width: 3,
+              height: 18,
+              borderRadius: 1,
+              bgcolor: "secondary.contrastText",
+              flexShrink: 0,
+            }}
+          />
+          <Typography
+            sx={{
+              fontWeight: 600,
+              color: "secondary.contrastText",
+              fontSize: "0.8rem",
+              letterSpacing: "0.03em",
+            }}
+          >
+            Continuous Service Record
           </Typography>
-        ))}
+        </Box>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+          {fields.map((f, i) => (
+            <Box
+              key={f.label}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                gap: 3,
+                px: 1.25,
+                py: 0.75,
+                borderRadius: 1,
+                bgcolor: (t) =>
+                  i % 2 === 0
+                    ? alpha(t.palette.action.hover, 0.04)
+                    : "transparent",
+              }}
+            >
+              <Typography
+                sx={{
+                  color: "text.disabled",
+                  fontSize: "0.72rem",
+                  flexShrink: 0,
+                  lineHeight: 1.5,
+                }}
+              >
+                {f.label}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  textAlign: "right",
+                  wordBreak: "break-word",
+                  lineHeight: 1.5,
+                  color: "text.primary",
+                }}
+              >
+                {f.value}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
       </Box>
     );
   },
 );
 
-const InfoTooltipAdornment = React.memo(
-  ({ record }: { record: ContinuousServiceRecordInfo | null | undefined }) => (
-    <InputAdornment position="end">
-      <Tooltip title={<ContinuousServiceTooltip record={record} />} placement="top" arrow>
+const InfoPopoverAdornment = React.memo(
+  ({ record }: { record: ContinuousServiceRecordInfo | null | undefined }) => {
+    const theme = useTheme();
+    const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+    return (
+      <InputAdornment position="end">
         <IconButton
           size="small"
-          sx={{ p: 0.5 }}
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          sx={{
+            p: 0.5,
+            color: alpha(theme.palette.secondary.contrastText, 0.7),
+            "&:hover": {
+              color: theme.palette.secondary.contrastText,
+              bgcolor: alpha(theme.palette.secondary.contrastText, 0.08),
+            },
+            transition: "color 0.15s, background-color 0.15s",
+          }}
           aria-label="Show continuous service record details"
         >
           <InfoOutlined fontSize="small" />
         </IconButton>
-      </Tooltip>
-    </InputAdornment>
-  ),
+
+        <Popover
+          open={Boolean(anchorEl)}
+          anchorEl={anchorEl}
+          onClose={() => setAnchorEl(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          slotProps={{
+            paper: {
+              sx: {
+                mt: 1,
+                p: 2,
+                bgcolor: "background.form",
+                border: `1px solid ${alpha(theme.palette.secondary.contrastText, 0.2)}`,
+                borderRadius: 2,
+                boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.15)}`,
+              },
+            },
+          }}
+        >
+          <ContinuousServicePopoverContent record={record} />
+        </Popover>
+      </InputAdornment>
+    );
+  },
 );
+
 export const AUTO_ID_EMPLOYMENT_TYPES =
   /^(permanent|internship|consultancy|advisory consultancy|part time consultancy)$/i;
 
@@ -244,7 +341,11 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     offices,
     employmentTypes,
     houses,
+    suggestedHouseId,
   } = useAppSelector((state) => state.organization);
+  const suggestedHouseName = suggestedHouseId
+    ? houses.find((h) => h.id === suggestedHouseId)?.name
+    : undefined;
 
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(null);
 
@@ -694,7 +795,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                   InputProps={{
                     endAdornment:
                       selectedRecord && !errorMessage ? (
-                        <InfoTooltipAdornment record={selectedRecord} />
+                        <InfoPopoverAdornment record={selectedRecord} />
                       ) : undefined,
                   }}
                 />
@@ -719,7 +820,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                   InputProps={{
                     endAdornment:
                       selectedRecord && !errorMessage ? (
-                        <InfoTooltipAdornment record={selectedRecord} />
+                        <InfoPopoverAdornment record={selectedRecord} />
                       ) : undefined,
                   }}
                 >
@@ -744,18 +845,21 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                   }}
                 />
               )}
-
-              <Box sx={{ mt: 1 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={!!values.isRelocation}
-                      onChange={(e) => handleRelocationChange(e.target.checked)}
-                    />
-                  }
-                  label="Relocation"
-                />
-              </Box>
+              {!errorMessage && !!continuousServiceRecord?.length && (
+                <Box sx={{ mt: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={!!values.isRelocation}
+                        onChange={(e) =>
+                          handleRelocationChange(e.target.checked)
+                        }
+                      />
+                    }
+                    label="Relocation"
+                  />
+                </Box>
+              )}
             </Box>
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
@@ -1405,7 +1509,13 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               value={values.houseId || 0}
               onChange={(e) => setFieldValue("houseId", Number(e.target.value))}
               onBlur={handleBlur}
-              helperText="Auto-assigned to the house with the fewest active employees"
+              helperText={
+                suggestedHouseName
+                  ? `Fewest active employees: ${suggestedHouseName}`
+                  : suggestedHouseId
+                  ? "Loading suggested house..."
+                  : "Assign the house for this employee"
+              }
               sx={textFieldSx}
             >
               {houses.length ? (

@@ -89,7 +89,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if employeeBasicInfo is () {
             string customErr = "Employee basic information not found";
             log:printWarn(customErr, user = userInfo.email);
-            return <http:InternalServerError>{
+            return <http:NotFound>{
                 body: {
                     message: customErr
                 }
@@ -102,6 +102,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             privileges.push(authorization:ADMIN_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups) {
+            privileges.push(authorization:SERVICE_DESK_PRIVILEGE);
         }
         boolean|error isLeadUser = database:isLead(userInfo.email);
         if isLeadUser is error {
@@ -303,8 +306,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions(
-                [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasQrExportAccess
+                = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+                || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
 
         database:Employee|error? employee = database:getEmployeeInfo(employeeId);
         if employee is error {
@@ -316,7 +320,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:NotFound>{body: {message: string `Employee not found: ${employeeId}`}};
         }
 
-        if !hasAdminAccess {
+        if !hasQrExportAccess {
             boolean isSelf = employee.workEmail == userInfo.email;
             if !isSelf {
                 boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
@@ -337,8 +341,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string? house = employee.house;
         if house is () {
-            return <http:BadRequest>{body: {
-                message: string `Employee ${employeeId} has no house assigned`}};
+            return <http:BadRequest>{
+                body: {
+                    message: string `Employee ${employeeId} has no house assigned`
+                }
+            };
         }
 
         byte[]|error imageBytes = qr:generateEmployeeQrCode({
@@ -418,9 +425,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         boolean hasAdminAccess
             = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
 
-        if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
-            string customErr = "Invalid sort field: " + payload.sort.sortField;
-            log:printWarn(customErr, sortField = payload.sort.sortField);
+        string sortField = payload.sort.sortField;
+        if !database:EmployeeSortField.hasKey(sortField) {
+            string customErr = string `Invalid sort field ${sortField}`;
+            log:printWarn(customErr, sortField = sortField);
             return <http:BadRequest>{
                 body: {
                     message: customErr
@@ -428,9 +436,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !database:SortOrder.hasKey(payload.sort.sortOrder) {
-            string customErr = "Invalid sort order: " + payload.sort.sortOrder;
-            log:printWarn(customErr, sortOrder = payload.sort.sortOrder);
+        string sortOrder = payload.sort.sortOrder;
+        if !database:SortOrder.hasKey(sortOrder) {
+            string customErr = string `Invalid sort order ${sortOrder}`;
+            log:printWarn(customErr, sortOrder = sortOrder);
             return <http:BadRequest>{
                 body: {
                     message: customErr
@@ -484,6 +493,80 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return <http:Ok>{body: employees};
+    }
+
+    # Search employees for QR code export.
+    #
+    # + payload - QR code search payload
+    # + return - Lean employee list for QR export, or HTTP errors
+    resource function post reports/qr\-codes/search(http:RequestContext ctx, database:QrCodeSearchPayload payload)
+            returns http:Ok|http:InternalServerError|http:BadRequest|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        boolean hasQrSearchAccess
+            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+            || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
+
+        if !hasQrSearchAccess {
+            log:printWarn("User is not authorized to search employees for QR export",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to search employees for QR export"}
+            };
+        }
+
+        if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
+            string customErr = "Invalid sort field: " + payload.sort.sortField;
+            log:printWarn(customErr, sortField = payload.sort.sortField);
+            return <http:BadRequest>{
+                body: {message: customErr}
+            };
+        }
+
+        if !database:SortOrder.hasKey(payload.sort.sortOrder) {
+            string customErr = "Invalid sort order: " + payload.sort.sortOrder;
+            log:printWarn(customErr, sortOrder = payload.sort.sortOrder);
+            return <http:BadRequest>{
+                body: {message: customErr}
+            };
+        }
+
+        database:EmployeesResponse|error result = database:getEmployees({
+            searchString: payload.searchString,
+            filters: {employeeStatus: payload.filters.employeeStatus},
+            pagination: payload.pagination,
+            sort: payload.sort
+        });
+        if result is error {
+            string customErr = "Error occurred while fetching employees for QR export";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {message: customErr}
+            };
+        }
+        database:EmployeeQrInfo[] qrInfoList = from database:Employee e in result.employees
+            select {
+                employeeId: e.employeeId,
+                firstName: e.firstName,
+                lastName: e.lastName,
+                workEmail: e.workEmail,
+                employeeThumbnail: e.employeeThumbnail,
+                house: e.house,
+                houseId: e.houseId,
+                employeeStatus: e.employeeStatus
+            };
+        return <http:Ok>{
+            body: {
+                employees: qrInfoList,
+                totalCount: result.totalCount
+            }
+        };
     }
 
     # Fetch continuous service record by work email.
@@ -1162,12 +1245,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error vehicleResult = database:addVehicle({
-                                                          owner: userInfo.email,
-                                                          vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
-                                                          vehicleType: vehicle.vehicleType,
-                                                          vehicleStatus: database:ACTIVE,
-                                                          createdBy: userInfo.email
-                                                      });
+            owner: userInfo.email,
+            vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
+            vehicleType: vehicle.vehicleType,
+            vehicleStatus: database:ACTIVE,
+            createdBy: userInfo.email
+        });
         if vehicleResult is error {
             string customError = string `Error occurred while adding vehicle!`;
             log:printError(customError, vehicleResult);
@@ -1204,10 +1287,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updateResult = database:updateVehicle({
-                                                                vehicleId: vehicleId,
-                                                                vehicleStatus: database:INACTIVE,
-                                                                updatedBy: userInfo.email
-                                                            });
+            vehicleId,
+            vehicleStatus: database:INACTIVE,
+            updatedBy: userInfo.email
+        });
 
         if updateResult is error {
             string customError = string `Error occurred while updating vehicle!`;
@@ -1244,7 +1327,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
-        return {publicWalletAddress: wso2_coin:masterWalletAddress};
+        return {
+            publicWalletAddress: wso2_coin:masterWalletAddress,
+            reservationWindowStartHour: wso2_coin:reservationWindowStartHour,
+            reservationWindowEndHour: wso2_coin:reservationWindowEndHour
+        };
     }
 
     # List parking floors.
@@ -1291,7 +1378,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date);
+        database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date,
+            wso2_coin:pendingReservationExpiryMinutes);
         if slots is error {
             log:printError("Error fetching parking slots", slots);
             return <http:InternalServerError>{
@@ -1370,7 +1458,18 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate);
+        // Expire stale pending reservations so the slot/date becomes reusable.
+        boolean|error cleared = database:expireStalePendingParkingReservationForSlotDate(body.slotId, body.bookingDate,
+            wso2_coin:pendingReservationExpiryMinutes);
+        if cleared is error {
+            log:printError("Error expiring stale pending reservations", cleared);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while validating slot availability."}
+            };
+        }
+
+        boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate,
+            wso2_coin:pendingReservationExpiryMinutes);
         if booked is error {
             log:printError("Error checking slot availability", booked);
             return <http:InternalServerError>{
@@ -1379,18 +1478,22 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if booked {
             return <http:BadRequest>{
-                body: {message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. It may be temporarily reserved or already booked.`}
+                body: {
+                    message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. `
+                        + "It may be temporarily reserved or already booked."
+                }
             };
         }
 
+        // Insert a new PENDING row
         int|error reservationId = database:addParkingReservation({
-                                                                     slotId: body.slotId,
-                                                                     bookingDate: body.bookingDate,
-                                                                     employeeEmail: userInfo.email,
-                                                                     vehicleId: body.vehicleId,
-                                                                     coinsAmount: slot.coinsPerSlot,
-                                                                     createdBy: userInfo.email
-                                                                 });
+            slotId: body.slotId,
+            bookingDate: body.bookingDate,
+            employeeEmail: userInfo.email,
+            vehicleId: body.vehicleId,
+            coinsAmount: slot.coinsPerSlot,
+            createdBy: userInfo.email
+        });
         if reservationId is error {
             log:printError("Error creating parking reservation", reservationId);
             return <http:InternalServerError>{
@@ -1462,8 +1565,10 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Export employees as a CSV file, optionally filtered by status.
     #
     # + status - Optional employee status query parameter (e.g. "Active", "Left"); omit to export all employees
+    # + excludeFutureStartDate - When true (default), excludes employees whose start date is in the future
     # + return - CSV file response or HTTP errors
-    resource function post reports/employees/generate(http:RequestContext ctx, database:EmployeeStatus? status = ())
+    resource function post reports/employees/generate(http:RequestContext ctx, database:EmployeeStatus? status = (),
+            boolean excludeFutureStartDate = true)
         returns http:Response|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -1485,11 +1590,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
-                                                                                    searchString: (),
-                                                                                    filters: {employeeStatus: status},
-                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
-                                                                                });
+                searchString: (),
+                filters: {employeeStatus: status, excludeFutureStartDate: excludeFutureStartDate},
+                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                sort: {sortField: "employeeId", sortOrder: "ASC"}
+            });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
@@ -1575,11 +1680,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updated = database:updateParkingReservationStatus({
-                                                                            reservationId: reservation.id,
-                                                                            status: database:CONFIRMED,
-                                                                            transactionHash: body.transactionHash,
-                                                                            updatedBy: userInfo.email
-                                                                        });
+            reservationId: reservation.id,
+            status: database:CONFIRMED,
+            transactionHash: body.transactionHash,
+            updatedBy: userInfo.email
+        });
         if updated is error {
             log:printError("Error confirming reservation", updated);
             return <http:InternalServerError>{

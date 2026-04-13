@@ -13,67 +13,105 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 import { State } from "@/types/types";
-import { UserInfoInterface, userApi } from "@services/user.api";
-
-export interface UserState {
-  state: State;
-  stateMessage: string | null;
-  errorMessage: string | null;
-  userInfo: UserInfoInterface | null;
-}
+import { AppConfig } from "@config/config";
+import { APIService } from "@utils/apiService";
+import { UserState, UserInfoInterface } from "@slices/authSlice/auth";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { HttpStatusCode, isAxiosError, isCancel } from "axios";
 
 const initialState: UserState = {
   state: State.idle,
   stateMessage: null,
   errorMessage: null,
   userInfo: null,
+  isProfileMissing: false,
 };
 
+type GetUserInfoResult = {
+  UserInfo: UserInfoInterface | null;
+  isProfileMissing: boolean;
+};
+
+type GetUserInfoReject = {
+  status?: number;
+  message: string;
+};
+
+export const getUserInfo = createAsyncThunk<
+  GetUserInfoResult,
+  void,
+  { rejectValue: GetUserInfoReject }
+>("user/getUserInfo", async (_, { rejectWithValue }) => {
+  try {
+    const resp = await APIService.getInstance().get(
+      AppConfig.serviceUrls.userInfo,
+    );
+    return {
+      UserInfo: resp.data as UserInfoInterface,
+      isProfileMissing: false,
+    };
+  } catch (error: any) {
+    if (isCancel(error)) return rejectWithValue({ message: "cancelled" });
+    if (isAxiosError(error)) {
+      const status = error.response?.status;
+
+      if (status === HttpStatusCode.NotFound) {
+        return { UserInfo: null, isProfileMissing: true };
+      }
+
+      if (
+        status === HttpStatusCode.Unauthorized ||
+        status === HttpStatusCode.Forbidden
+      ) {
+        return rejectWithValue({
+          status,
+          message:
+            "Oops! Looks like you are not authorized to access this application.",
+        });
+      }
+    }
+
+    return rejectWithValue({
+      message: "Something went wrong while authenticating the user.",
+    });
+  }
+});
+
 export const UserSlice = createSlice({
-  name: "user",
+  name: "getUserInfo",
   initialState,
   reducers: {
     updateStateMessage: (state, action: PayloadAction<string>) => {
       state.stateMessage = action.payload;
     },
-    setUserInfo: (state, action: PayloadAction<UserInfoInterface>) => {
-      state.userInfo = action.payload;
-      state.state = State.success;
-      state.errorMessage = null;
-    },
-    clearUserInfo: (state) => {
-      state.userInfo = null;
-      state.state = State.idle;
-      state.errorMessage = null;
-    },
   },
   extraReducers: (builder) => {
-    // Listen to RTK Query getUserInfo lifecycle
     builder
-      .addMatcher(userApi.endpoints.getUserInfo.matchPending, (state) => {
+      .addCase(getUserInfo.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Checking User Info...";
+        state.errorMessage = null;
+        state.isProfileMissing = false;
       })
-      .addMatcher(userApi.endpoints.getUserInfo.matchFulfilled, (state, action) => {
-        state.userInfo = action.payload;
+      .addCase(getUserInfo.fulfilled, (state, action) => {
+        state.userInfo = action.payload.UserInfo;
+        state.isProfileMissing = action.payload.isProfileMissing;
         state.state = State.success;
         state.errorMessage = null;
       })
-      .addMatcher(userApi.endpoints.getUserInfo.matchRejected, (state, action) => {
+      .addCase(getUserInfo.rejected, (state, action) => {
         state.state = State.failed;
-        if (action.error.message?.includes("401")) {
-          state.errorMessage =
-            "Oops! Looks like you are not authorized to access this application.";
-        } else {
-          state.errorMessage = "Something went wrong while authenticating the user.";
-        }
+        state.isProfileMissing = false;
+        const payload = action.payload as GetUserInfoReject | undefined;
+        state.errorMessage =
+          payload?.message ||
+          "Something went wrong while authenticating the user.";
       });
   },
 });
 
-export const { updateStateMessage, setUserInfo, clearUserInfo } = UserSlice.actions;
+export const { updateStateMessage } = UserSlice.actions;
 
 export default UserSlice.reducer;

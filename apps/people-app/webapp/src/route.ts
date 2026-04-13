@@ -82,7 +82,7 @@ export const routes: RouteObjectWithRole[] = [
     path: "/reports",
     text: "Reports",
     icon: React.createElement(AssessmentIcon),
-    allowRoles: [Role.ADMIN],
+    allowRoles: [Role.ADMIN, Role.SERVICE_DESK],
     children: [
       {
         path: "active-employees",
@@ -103,7 +103,7 @@ export const routes: RouteObjectWithRole[] = [
         text: "QR Codes",
         icon: React.createElement(QrCode2Icon),
         element: React.createElement(View.qrCodesReport),
-        allowRoles: [Role.ADMIN],
+        allowRoles: [Role.ADMIN, Role.SERVICE_DESK],
       },
     ],
   },

@@ -16,50 +16,53 @@
 
 import type { DecimalLike, ParkingReservationDetails } from "@/types/parking";
 
-export type ParkingPaymentStage2State = {
+export type ParkingPaymentContextState = {
   slotId: string;
   floorName: string;
   coinsAmount: DecimalLike;
   bookingDate: string; // YYYY-MM-DD
-  // Created on stage 1 (reservation creation)
   reservationId?: number;
-  // Set on stage 2 (wallet payment result)
+  // Set after Wallet payment returns.
   paymentStatus?: "SUCCESS" | "FAILED";
   transactionHash?: string;
   error?: string;
 };
 
-const STAGE2_KEY = "people_parking_stage2";
+const PAYMENT_CONTEXT_KEY = "people_parking_payment_context";
 const CONFIRMATION_KEY = "people_parking_confirmation";
 
-export function setPaymentStage2State(state: ParkingPaymentStage2State) {
-  sessionStorage.setItem(STAGE2_KEY, JSON.stringify(state));
+export function setParkingPaymentContextState(
+  state: ParkingPaymentContextState,
+) {
+  // Persist across WebView reloads during wallet handoff.
+  localStorage.setItem(PAYMENT_CONTEXT_KEY, JSON.stringify(state));
 }
 
-export function getPaymentStage2State():
-  | ParkingPaymentStage2State
+export function getParkingPaymentContextState():
+  | ParkingPaymentContextState
   | undefined {
-  const raw = sessionStorage.getItem(STAGE2_KEY);
+  const raw = localStorage.getItem(PAYMENT_CONTEXT_KEY);
   if (!raw) return undefined;
   try {
-    return JSON.parse(raw) as ParkingPaymentStage2State;
+    return JSON.parse(raw) as ParkingPaymentContextState;
   } catch {
     return undefined;
   }
 }
 
-export function clearPaymentStage2State() {
-  sessionStorage.removeItem(STAGE2_KEY);
+export function clearParkingPaymentContextState() {
+  localStorage.removeItem(PAYMENT_CONTEXT_KEY);
 }
 
 export function setConfirmationState(reservation: ParkingReservationDetails) {
-  sessionStorage.setItem(CONFIRMATION_KEY, JSON.stringify(reservation));
+  // Persist across WebView reloads so confirmation screen can render.
+  localStorage.setItem(CONFIRMATION_KEY, JSON.stringify(reservation));
 }
 
 export function getConfirmationState():
   | ParkingReservationDetails
   | undefined {
-  const raw = sessionStorage.getItem(CONFIRMATION_KEY);
+  const raw = localStorage.getItem(CONFIRMATION_KEY);
   if (!raw) return undefined;
   try {
     return JSON.parse(raw) as ParkingReservationDetails;
@@ -69,6 +72,6 @@ export function getConfirmationState():
 }
 
 export function clearConfirmationState() {
-  sessionStorage.removeItem(CONFIRMATION_KEY);
+  localStorage.removeItem(CONFIRMATION_KEY);
 }
 

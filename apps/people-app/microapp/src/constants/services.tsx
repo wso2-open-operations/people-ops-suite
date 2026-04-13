@@ -23,13 +23,8 @@ export const services: ServiceInfo[] = [
     description: "Reserve a secure parking spot for your vehicle.",
     route: "/services/parking",
     icon: (
-      <div className="w-full h-full grid place-items-center text-primary">
-        <div
-          className="w-[1.65rem] h-[1.65rem] rounded-full border-2 grid place-items-center"
-          style={{ borderColor: "#ff7300" }}
-        >
-          <span className="font-extrabold text-[18px]">P</span>
-        </div>
+      <div className="w-full h-full grid place-items-center text-[#ff7300]">
+        <span className="font-extrabold text-[34px] leading-none">P</span>
       </div>
     ),
   },

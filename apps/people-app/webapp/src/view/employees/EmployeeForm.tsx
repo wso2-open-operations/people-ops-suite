@@ -500,10 +500,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
   }, [dispatch, isEditMode, employeeId]);
 
   useEffect(() => {
-    if (!isEditMode) {
-      dispatch(fetchSuggestedHouse());
-    }
-  }, [dispatch, isEditMode]);
+    dispatch(fetchSuggestedHouse());
+  }, [dispatch]);
 
   const { suggestedHouseId } = useAppSelector((s) => s.organization);
 

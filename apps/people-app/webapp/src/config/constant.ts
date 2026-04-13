@@ -32,6 +32,7 @@ export const SnackMessage = {
 export const ADMIN_PRIVILEGE = 999;
 export const LEAD_PRIVILEGE = 993;
 export const EMPLOYEE_PRIVILEGE = 987;
+export const SERVICE_DESK_PRIVILEGE = 991;
 
 export const DEFAULT_LIMIT_VALUE = 10;
 export const DEFAULT_OFFSET_VALUE = 0;

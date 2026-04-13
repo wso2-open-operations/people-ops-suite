@@ -33,6 +33,7 @@ import {
   Stack,
   Switch,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
 import { toSentenceCase, sortAndFormatOptions } from "@utils/utils";
@@ -102,6 +103,7 @@ export function FilterDrawer({
   offices,
   showDirectReportsFilter = false,
 }: FilterDrawerProps) {
+  const theme = useTheme();
   const [draft, setDraft] = useState<EmployeeSearchPayload>(appliedFilter);
 
   useEffect(() => {
@@ -288,12 +290,28 @@ export function FilterDrawer({
                     <Switch
                       checked={draft.filters.directReports === true}
                       onChange={(e) => set({ directReports: e.target.checked })}
-                      color="secondary"
+                      sx={{
+                        "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
+                        "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
+                      }}
                     />
                   }
                   label="Direct Reports Only"
                 />
               )}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={draft.filters.excludeFutureStartDate === true}
+                    onChange={(e) => set({ excludeFutureStartDate: e.target.checked ? true : undefined })}
+                    sx={{
+                      "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
+                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
+                    }}
+                  />
+                }
+                label="Exclude future joiners"
+              />
             </Stack>
           </Grid>
 

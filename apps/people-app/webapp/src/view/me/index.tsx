@@ -15,13 +15,14 @@
 // under the License.
 import { BadgeOutlined, BusinessOutlined, EmailOutlined, WorkOutline } from "@mui/icons-material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
-import QrCode2Icon from "@mui/icons-material/QrCode2";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SaveIcon from "@mui/icons-material/Save";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
+import PersonOffIcon from "@mui/icons-material/PersonOff";
 import {
   Accordion,
   AccordionDetails,
@@ -45,15 +46,7 @@ import {
 import IconButton from "@mui/material/IconButton";
 import type { Theme } from "@mui/material/styles";
 import { alpha, useTheme } from "@mui/material/styles";
-import {
-  FieldArray,
-  Form,
-  Formik,
-  FormikErrors,
-  FormikHandlers,
-  FormikValues,
-  getIn,
-} from "formik";
+
 import { useLocation, useNavigate } from "react-router-dom";
 import { array, object, string } from "yup";
 
@@ -73,7 +66,22 @@ import {
   resetPersonalInfo,
   updateEmployeePersonalInfo,
 } from "@root/src/slices/employeeSlice/employeePersonalInfo";
-import { calculateAge, calculateServiceLength, formatServiceLength } from "@root/src/utils/utils";
+import {
+  calculateAge,
+  calculateServiceLength,
+  formatServiceLength,
+  formatDate,
+  isPresentOrFuture,
+} from "@root/src/utils/utils";
+import {
+  FieldArray,
+  Form,
+  Formik,
+  FormikErrors,
+  FormikHandlers,
+  FormikValues,
+  getIn,
+} from "formik";
 import { Role, selectRoles } from "@slices/authSlice/auth";
 
 import { useAppDispatch, useAppSelector } from "../../slices/store";
@@ -193,7 +201,11 @@ export default function Me({
   const location = useLocation();
   const { showConfirmation } = useConfirmationModalContext();
   const roles = useAppSelector(selectRoles);
-  const { userInfo } = useAppSelector((state) => state.user);
+  const {
+    userInfo,
+    state: userState,
+    isProfileMissing,
+  } = useAppSelector((state) => state.user);
   const targetEmployeeId = employeeId ?? userInfo?.employeeId;
   const { employee, state: employeeState } = useAppSelector((state) => state.employee);
   const { personalInfo, state: personalInfoState } = useAppSelector(
@@ -201,7 +213,9 @@ export default function Me({
   );
   const [isSavingChanges, setSavingChanges] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
-  const [qrImageNaturalSize, setQrImageNaturalSize] = useState<number | null>(null);
+  const [qrImageNaturalSize, setQrImageNaturalSize] = useState<number | null>(
+    null,
+  );
   const { qrCodeUrl, qrCodeState } = useAppSelector((state) => state.employee);
   const initialHasEmergencyContactsRef = useRef<boolean>(!!personalInfo?.emergencyContacts?.length);
 
@@ -430,6 +444,87 @@ export default function Me({
     document.body.removeChild(a);
   };
 
+  if (!employeeId && userState === State.success && isProfileMissing) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "80vh",
+        }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            p: { xs: 4, sm: 6 },
+            border: 1,
+            borderColor: "divider",
+            maxWidth: 480,
+            width: "100%",
+            textAlign: "center",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2.5,
+            }}
+          >
+            <Box
+              sx={{
+                width: 88,
+                height: 88,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: (theme) =>
+                  alpha(theme.palette.secondary.contrastText, 0.1),
+                border: (theme) =>
+                  `2px dashed ${alpha(theme.palette.secondary.contrastText, 0.35)}`,
+              }}
+            >
+              <PersonOffIcon
+                sx={{
+                  fontSize: 40,
+                  color: (theme) => theme.palette.secondary.contrastText,
+                }}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="h5" fontWeight={700} gutterBottom>
+                Profile Not Found
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ lineHeight: 1.7 }}
+              >
+                We couldn't find your employee profile yet. Please contact the{" "}
+                <Typography
+                  component="span"
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: (theme) => theme.palette.secondary.contrastText,
+                  }}
+                >
+                  People Operations
+                </Typography>{" "}
+                team to set up your profile, then try signing in again.
+              </Typography>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ mt: 1, pb: 5 }}>
       <Paper elevation={0} sx={(theme) => headerSx(theme)}>
@@ -442,14 +537,31 @@ export default function Me({
           <Stack direction="row" spacing={2.5} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
             {employeeState === "loading" ? (
               <>
-                <Skeleton variant="circular" width={72} height={72} sx={{ flexShrink: 0 }} />
+                <Skeleton
+                  variant="circular"
+                  width={72}
+                  height={72}
+                  sx={{ flexShrink: 0 }}
+                />
                 <Box sx={{ minWidth: 0 }}>
                   <Skeleton width={220} height={44} />
                   <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
                     <Skeleton width={90} height={32} sx={{ borderRadius: 4 }} />
-                    <Skeleton width={150} height={32} sx={{ borderRadius: 4 }} />
-                    <Skeleton width={200} height={32} sx={{ borderRadius: 4 }} />
-                    <Skeleton width={130} height={32} sx={{ borderRadius: 4 }} />
+                    <Skeleton
+                      width={150}
+                      height={32}
+                      sx={{ borderRadius: 4 }}
+                    />
+                    <Skeleton
+                      width={200}
+                      height={32}
+                      sx={{ borderRadius: 4 }}
+                    />
+                    <Skeleton
+                      width={130}
+                      height={32}
+                      sx={{ borderRadius: 4 }}
+                    />
                   </Stack>
                 </Box>
               </>
@@ -464,7 +576,9 @@ export default function Me({
 
                 <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h4" fontWeight={850} noWrap>
-                    {employee ? `${employee.firstName} ${employee.lastName}` : ""}
+                    {employee
+                      ? `${employee.firstName} ${employee.lastName}`
+                      : ""}
                   </Typography>
 
                   <Stack direction="row" spacing={1} sx={{ mt: 1.25, flexWrap: "wrap", rowGap: 1 }}>
@@ -510,10 +624,17 @@ export default function Me({
           </Stack>
           <Stack direction="row" spacing={2} alignItems="center" sx={{ alignSelf: "center" }}>
             {employee && (
-              <Tooltip title="View QR Code">
-                <IconButton color="secondary" onClick={handleQrOpen} sx={{ p: 0.5 }}>
-                  <QrCode2Icon sx={{ fontSize: 32 }} />
-                </IconButton>
+              <Tooltip title={employee.house ? "View QR Code" : "QR code unavailable: no house assigned"}>
+                <span>
+                  <IconButton
+                    color="secondary"
+                    onClick={handleQrOpen}
+                    disabled={!employee.house}
+                    sx={{ p: 0.5 }}
+                  >
+                    <QrCode2Icon sx={{ fontSize: 32 }} />
+                  </IconButton>
+                </span>
               </Tooltip>
             )}
             {readOnly &&
@@ -525,7 +646,9 @@ export default function Me({
                   color="secondary"
                   startIcon={<EditOutlinedIcon />}
                   sx={{ textTransform: "none", whiteSpace: "nowrap" }}
-                  onClick={() => navigate(`/employees/${targetEmployeeId}/edit`)}
+                  onClick={() =>
+                    navigate(`/employees/${targetEmployeeId}/edit`)
+                  }
                 >
                   Edit
                 </Button>
@@ -774,8 +897,8 @@ export default function Me({
                   <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
                     Start Date
                   </Typography>
-                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
-                    {employee.startDate || "-"}
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {formatDate(employee.startDate, "-")}
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
@@ -786,22 +909,26 @@ export default function Me({
                     {serviceText}
                   </Typography>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
-                    Probation End Date
-                  </Typography>
-                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
-                    {employee.probationEndDate || "N/A"}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Typography color={theme.palette.customText.primary.p3.active} variant="body1">
-                    Agreement End Date
-                  </Typography>
-                  <Typography color={theme.palette.customText.primary.p2.active} variant="h6">
-                    {employee.agreementEndDate || "N/A"}
-                  </Typography>
-                </Grid>
+                {isPresentOrFuture(employee?.probationEndDate) && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Probation End Date
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {formatDate(employee.probationEndDate, "N/A")}
+                    </Typography>
+                  </Grid>
+                )}
+                {employee.agreementEndDate ? (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Agreement End Date
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {formatDate(employee.agreementEndDate, "-")}
+                    </Typography>
+                  </Grid>
+                ) : null}
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
@@ -917,8 +1044,11 @@ export default function Me({
                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <ReadOnly label="NIC" value={values.nicOrPassport} />
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                      <ReadOnly label="Date of Birth" value={values.dob} />
+                    <Grid item xs={12} sm={6} md={3}>
+                      <ReadOnly
+                        label="Date of Birth"
+                        value={formatDate(values.dob)}
+                      />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <ReadOnly label="Age" value={age} />
@@ -1098,7 +1228,8 @@ export default function Me({
                             </Typography>
                           </Box>
 
-                          {!values.emergencyContacts || values.emergencyContacts.length === 0 ? (
+                          {!values.emergencyContacts ||
+                          values.emergencyContacts.length === 0 ? (
                             <Typography
                               variant="body2"
                               color="text.secondary"
@@ -1149,8 +1280,13 @@ export default function Me({
                               </Box>
 
                               {touched.emergencyContacts &&
-                                typeof errors.emergencyContacts === "string" && (
-                                  <Typography color="error" variant="body2" sx={{ mt: 1, mb: 2 }}>
+                                typeof errors.emergencyContacts ===
+                                  "string" && (
+                                  <Typography
+                                    color="error"
+                                    variant="body2"
+                                    sx={{ mt: 1, mb: 2 }}
+                                  >
                                     {errors.emergencyContacts}
                                   </Typography>
                                 )}
@@ -1289,7 +1425,8 @@ export default function Me({
                                   Add Contact
                                 </Button>
 
-                                {(values.emergencyContacts?.length ?? 0) >= 4 && (
+                                {(values.emergencyContacts?.length ?? 0) >=
+                                  4 && (
                                   <Typography
                                     variant="caption"
                                     color="text.secondary"
@@ -1356,7 +1493,12 @@ export default function Me({
         </AccordionDetails>
       </Accordion>
 
-      <Dialog open={qrDialogOpen} onClose={handleQrClose} maxWidth="xs" fullWidth>
+      <Dialog
+        open={qrDialogOpen}
+        onClose={handleQrClose}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>
           Employee QR Code
           {employee?.workEmail && (

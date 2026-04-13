@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { differenceInMonths, differenceInYears, isAfter, isMatch, isValid, parse } from "date-fns";
+import { differenceInMonths, differenceInYears, isAfter, isMatch, isValid, parse, format  } from "date-fns";
 
 import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
 import {
@@ -114,6 +114,26 @@ export const formatServiceLength = (length: ServiceLength | null): string => {
   return `${months} ${months === 1 ? "month" : "months"}`;
 };
 
+export const formatDate = (
+  isoDate?: string | null,
+  fallback?: string | null,
+): string | null => {
+  if (!isoDate) return fallback ?? null;
+  const parsedDate = parseStrictYyyyMmDd(isoDate);
+  if (!parsedDate) return fallback ?? null;
+  return format(parsedDate, "dd/MM/yyyy");
+};
+
+export const isPresentOrFuture = (isoDate?: string | null): boolean => {
+  if (!isoDate) return false;
+  const parsedDate = parseStrictYyyyMmDd(isoDate);
+  if (!parsedDate) return false;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  parsedDate.setHours(0, 0, 0, 0);
+  return parsedDate >= todayStart;
+};
+
 export const toSentenceCase = (value: string): string => {
   if (!value) return value;
   return value
@@ -171,20 +191,6 @@ export const markAllFieldsTouched = (errors: any) => {
   return touched;
 };
 
-// Format date function
-export const formatDate = (dateString?: string | null) => {
-  if (!dateString) return null;
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  } catch {
-    return dateString;
-  }
-};
 
 export enum UnitType {
   Company = "COMPANY",
