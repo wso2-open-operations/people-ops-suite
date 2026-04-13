@@ -13,15 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { HttpStatusCode, isCancel } from "axios";
 
 import { State } from "@/types/types";
-import { EmergencyContact } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { SnackMessage } from "@config/constant";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { HttpStatusCode, isCancel } from "axios";
 import { APIService } from "@utils/apiService";
+import { SnackMessage } from "@config/constant";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { EmergencyContact } from "@/types/types";
 
 export interface EmployeePersonalInfo {
   id: number;
@@ -169,7 +169,8 @@ const EmployeePersonalInfoSlice = createSlice({
       })
       .addCase(fetchEmployeePersonalInfo.fulfilled, (state, action) => {
         state.state = State.success;
-        state.stateMessage = "Successfully fetched employee personal information!";
+        state.stateMessage =
+          "Successfully fetched employee personal information!";
         state.personalInfo = action.payload;
         state.errorMessage = null;
       })
@@ -185,7 +186,8 @@ const EmployeePersonalInfoSlice = createSlice({
       })
       .addCase(updateEmployeePersonalInfo.fulfilled, (state, action) => {
         state.state = State.success;
-        state.stateMessage = "Successfully updated employee personal information!";
+        state.stateMessage =
+          "Successfully updated employee personal information!";
         state.errorMessage = null;
       })
       .addCase(updateEmployeePersonalInfo.rejected, (state, action) => {
@@ -196,5 +198,6 @@ const EmployeePersonalInfoSlice = createSlice({
   },
 });
 
-export const { resetSubmitState, resetPersonalInfo } = EmployeePersonalInfoSlice.actions;
+export const { resetSubmitState, resetPersonalInfo } =
+  EmployeePersonalInfoSlice.actions;
 export default EmployeePersonalInfoSlice.reducer;

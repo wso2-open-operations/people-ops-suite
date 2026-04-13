@@ -13,16 +13,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, useTheme } from "@mui/material";
-import Tooltip from "@mui/material/Tooltip";
+import { Box, Tooltip } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Link, useNavigate } from "react-router-dom";
 
 import { RouteDetail } from "@/types/types";
+import UpdatedThemeScope from "@src/theme/UpdatedThemeScope";
 
 import LinkItem from "./LinkItem";
 import SidebarSubMenu from "./SidebarSubMenu";
 
-function SidebarNavItem({
+function SidebarNavItemContent({
   route,
   isActive,
   open,
@@ -107,6 +108,14 @@ function SidebarNavItem({
         </Box>
       )}
     </Box>
+  );
+}
+
+function SidebarNavItem(props: { route: RouteDetail; isActive: boolean; open: boolean }) {
+  return (
+    <UpdatedThemeScope>
+      <SidebarNavItemContent {...props} />
+    </UpdatedThemeScope>
   );
 }
 

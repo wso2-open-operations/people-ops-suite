@@ -14,6 +14,9 @@
 // specific language governing permissions and limitations
 // under the License.
 import { type PaletteMode, alpha } from "@mui/material";
+import { createTheme, useTheme } from "@mui/material";
+
+import { useMemo } from "react";
 
 import designTokens from "../styles/design-tokens.json";
 import { muiAutocomplete } from "./components/autocomplete";
@@ -87,357 +90,357 @@ export const tokens = (mode: PaletteMode) => {
   return {
     ...(mode === "dark"
       ? {
-          // Colors - Dark mode
-          neutral: colors.neutral,
-          secondary: colors.secondary,
-          primary: colors.primary,
+        // Colors - Dark mode
+        neutral: colors.neutral,
+        secondary: colors.secondary,
+        primary: colors.primary,
 
-          // Text colors - Dark mode
-          text: {
-            primary: {
-              p1: {
-                active: colors.neutral.white,
-                hover: "#ffffff",
-                disabled: alpha(colors.neutral.white, 0.59),
-              },
-              p2: {
-                active: colors.neutral["300"],
-                hover: "#ffffff",
-                disabled: alpha(colors.neutral["300"], 0.59),
-              },
-              p3: {
-                active: colors.neutral["800"],
-                hover: "#ffffff",
-                disabled: alpha(colors.neutral["800"], 0.59),
-              },
-              p4: {
-                active: colors.neutral["1300"],
-                hover: "#ffffff",
-                disabled: alpha(colors.neutral["1300"], 0.59),
-              },
-            },
-            secondary: {
-              p1: { active: colors.secondary["900"], hover: "#FF6A0096", disabled: "#ff730096" },
-              p2: { active: colors.secondary["1000"], hover: "#FF6A0096", disabled: "#ff730096" },
-            },
-            brand: {
-              p1: {
-                active: colors.primary["800"],
-                hover: "#FF6A0096",
-                disabled: alpha(colors.primary["1200"], 0.59),
-              },
-              p2: { active: colors.primary["200"], hover: "#FF6A0096", disabled: "#ff73005c" },
-            },
-          },
-
-          // Border colors - Dark mode
-          border: {
-            primary: {
-              b1: {
-                active: colors.neutral["1300"],
-                hover: "#ffffff",
-                clicked: "#ffffff",
-                disabled: "#ffffff",
-              },
-              b2: {
-                active: colors.neutral["1600"],
-                hover: colors.neutral["1400"],
-                clicked: "#ffffff",
-                disabled: "#ffffff",
-              },
-              b3: {
-                active: "#2e3338",
-                hover: "#394046",
-                clicked: "#ffffff",
-                disabled: "#ffffff",
-              },
-            },
-            secondary: {
-              b1: {
-                active: "#0099cc",
-                hover: "#2ecbff",
-                clicked: "#06b1f4",
-                disabled: "#00bfff96",
-              },
-            },
-            brand: {
-              b1: {
-                active: colors.primary["1300"],
-                hover: "#e56000",
-                clicked: "#ffffff",
-                disabled: alpha(colors.primary[1300], 0.35),
-              },
-            },
-          },
-
-          // Navigation colors - Dark mode
-          navigation: {
-            text: colors.neutral["1000"],
-            hover: colors.neutral["400"],
-            textClicked: colors.primary["1000"],
-            hoverBg: colors.neutral["1800"],
-            clickedBg: "#2E190F",
-            border: colors.neutral["1700"],
-          },
-
-          // Surface colors - Dark mode
-          surface: {
-            primary: {
-              active: colors.neutral["1800"],
-              hover: colors.neutral["1900"],
-            },
-            secondary: {
-              active: "#171717",
-            },
-            navbar: {
-              active: colors.neutral["1900"],
-              hover: colors.secondary["1700"],
-            },
-          },
-
-          // Fill colors - Dark mode
-          fill: {
-            primary: {
-              main: {
-                active: colors.primary["1700"],
-                hover: colors.primary["1600"],
-                clicked: colors.primary["1800"],
-                disabled: alpha(colors.primary["1700"], 0.59),
-              },
-              light: {
-                active: "#2E190F",
-                hover: "#411b01",
-                clicked: "#FFFFFF",
-                disabled: alpha(colors.primary["1800"], 0.59),
-              },
-              dark: {
-                active: colors.primary["1400"],
-                hover: "#FFFFFF",
-                clicked: "#FFFFFF",
-                disabled: "#FFFFFF",
-              },
-            },
-            secondary: {
-              main: {
-                active: colors.secondary["1000"],
-                hover: colors.secondary["1100"],
-                clicked: colors.secondary["1200"],
-                disabled: "#0A475C96",
-              },
-              light: {
-                active: "#17223A",
-                hover: colors.secondary["1300"],
-                clicked: colors.secondary["1500"],
-                disabled: "#0A475C96",
-              },
-            },
-            neutral: {
-              main: {
-                active: "#FFFFFF",
-                hover: colors.neutral.black,
-                clicked: "#FFFFFF",
-                disabled: "#ffffff96",
-              },
-              light: {
-                active: colors.neutral["1800"],
-                hover: colors.neutral["1700"],
-                clicked: "#000000",
-                disabled: "#ffffff96",
-              },
-              dark: {
-                active: colors.neutral["1700"],
-                hover: "#FFFFFF",
-                clicked: "#FFFFFF",
-                disabled: "#ffffff96",
-              },
-            },
-            xmas: {
-              active: "#B8D3E0d7",
-            },
-          },
-
-          // Shadow colors - Dark mode
-          shadow: {
-            primary: {
-              active: "#000000CC",
-              hover: colors.neutral["1900"],
-            },
-          },
-        }
-      : {
-          // Light mode colors
-          neutral: colors.neutral,
-          primary: colors.primary,
-          secondary: colors.secondary,
-
-          // Text colors - Light mode
-          text: {
-            primary: {
-              p1: {
-                active: colors.neutral.black,
-                hover: "#FFFFFF",
-                disabled: alpha(colors.neutral.black, 0.59),
-              },
-              p2: {
-                active: colors.neutral["1600"],
-                hover: "#FFFFFF",
-                disabled: alpha(colors.neutral["1600"], 0.59),
-              },
-              p3: {
-                active: colors.neutral["1200"],
-                hover: "#FFFFFF",
-                disabled: alpha(colors.neutral["1200"], 0.59),
-              },
-              p4: {
-                active: colors.neutral["700"],
-                hover: "#FFFFFF",
-                disabled: alpha(colors.neutral["700"], 0.59),
-              },
-            },
-            secondary: {
-              p1: { active: colors.secondary["800"], hover: "#FFFFFF", disabled: "#FFFFFF" },
-              p2: { active: "#0099E5", hover: "#FFFFFF", disabled: "#FFFFFF" },
-            },
-            brand: {
-              p1: { active: colors.primary["1100"], hover: "#FFFFFF", disabled: "#ff730096" },
-              p2: { active: colors.neutral.white, hover: "#FF6A0096", disabled: "#ffffff96" },
-            },
-          },
-
-          // Border colors - Light mode
-          border: {
-            primary: {
-              b1: {
-                active: colors.neutral["700"],
-                hover: "#ffffff",
-                clicked: "#ffffff",
-                disabled: alpha(colors.neutral[700], 0.59),
-              },
-              b2: {
-                active: colors.neutral["200"],
-                hover: colors.neutral["400"],
-                clicked: "#ffffff",
-                disabled: "#ffffff",
-              },
-              b3: {
-                active: "#D1D9E0",
-                hover: "#C2CDD6",
-                clicked: "#ffffff",
-                disabled: "#D2D9E096",
-              },
-            },
-            secondary: {
-              b1: {
-                active: "#00BFFF",
-                hover: "#2ECBFF",
-                clicked: "#06b1f4",
-                disabled: "#00bfff96",
-              },
-            },
-            brand: {
-              b1: {
-                active: colors.primary.main,
-                hover: "#E96F0C",
-                clicked: "#ffffff",
-                disabled: alpha(colors.primary.main, 0.59),
-              },
-            },
-          },
-
-          // Surface colors - Light mode
-          surface: {
-            primary: {
-              active: colors.neutral.light_white,
-              hover: colors.neutral.white,
-            },
-            secondary: {
+        // Text colors - Dark mode
+        text: {
+          primary: {
+            p1: {
               active: colors.neutral.white,
+              hover: "#ffffff",
+              disabled: alpha(colors.neutral.white, 0.59),
             },
-            navbar: {
-              active: colors.neutral["1900"],
+            p2: {
+              active: colors.neutral["300"],
+              hover: "#ffffff",
+              disabled: alpha(colors.neutral["300"], 0.59),
+            },
+            p3: {
+              active: colors.neutral["800"],
+              hover: "#ffffff",
+              disabled: alpha(colors.neutral["800"], 0.59),
+            },
+            p4: {
+              active: colors.neutral["1300"],
+              hover: "#ffffff",
+              disabled: alpha(colors.neutral["1300"], 0.59),
+            },
+          },
+          secondary: {
+            p1: { active: colors.secondary["900"], hover: "#FF6A0096", disabled: "#ff730096" },
+            p2: { active: colors.secondary["1000"], hover: "#FF6A0096", disabled: "#ff730096" },
+          },
+          brand: {
+            p1: {
+              active: colors.primary["800"],
+              hover: "#FF6A0096",
+              disabled: alpha(colors.primary["1200"], 0.59),
+            },
+            p2: { active: colors.primary["200"], hover: "#FF6A0096", disabled: "#ff73005c" },
+          },
+        },
+
+        // Border colors - Dark mode
+        border: {
+          primary: {
+            b1: {
+              active: colors.neutral["1300"],
+              hover: "#ffffff",
+              clicked: "#ffffff",
+              disabled: "#ffffff",
+            },
+            b2: {
+              active: colors.neutral["1600"],
+              hover: colors.neutral["1400"],
+              clicked: "#ffffff",
+              disabled: "#ffffff",
+            },
+            b3: {
+              active: "#2e3338",
+              hover: "#394046",
+              clicked: "#ffffff",
+              disabled: "#ffffff",
+            },
+          },
+          secondary: {
+            b1: {
+              active: "#0099cc",
+              hover: "#2ecbff",
+              clicked: "#06b1f4",
+              disabled: "#00bfff96",
+            },
+          },
+          brand: {
+            b1: {
+              active: colors.primary["1300"],
+              hover: "#e56000",
+              clicked: "#ffffff",
+              disabled: alpha(colors.primary[1300], 0.35),
+            },
+          },
+        },
+
+        // Navigation colors - Dark mode
+        navigation: {
+          text: colors.neutral["1000"],
+          hover: colors.neutral["400"],
+          textClicked: colors.primary["1000"],
+          hoverBg: colors.neutral["1800"],
+          clickedBg: "#2E190F",
+          border: colors.neutral["1700"],
+        },
+
+        // Surface colors - Dark mode
+        surface: {
+          primary: {
+            active: colors.neutral["1800"],
+            hover: colors.neutral["1900"],
+          },
+          secondary: {
+            active: "#171717",
+          },
+          navbar: {
+            active: colors.neutral["1900"],
+            hover: colors.secondary["1700"],
+          },
+        },
+
+        // Fill colors - Dark mode
+        fill: {
+          primary: {
+            main: {
+              active: colors.primary["1700"],
+              hover: colors.primary["1600"],
+              clicked: colors.primary["1800"],
+              disabled: alpha(colors.primary["1700"], 0.59),
+            },
+            light: {
+              active: "#2E190F",
+              hover: "#411b01",
+              clicked: "#FFFFFF",
+              disabled: alpha(colors.primary["1800"], 0.59),
+            },
+            dark: {
+              active: colors.primary["1400"],
               hover: "#FFFFFF",
+              clicked: "#FFFFFF",
+              disabled: "#FFFFFF",
             },
           },
+          secondary: {
+            main: {
+              active: colors.secondary["1000"],
+              hover: colors.secondary["1100"],
+              clicked: colors.secondary["1200"],
+              disabled: "#0A475C96",
+            },
+            light: {
+              active: "#17223A",
+              hover: colors.secondary["1300"],
+              clicked: colors.secondary["1500"],
+              disabled: "#0A475C96",
+            },
+          },
+          neutral: {
+            main: {
+              active: "#FFFFFF",
+              hover: colors.neutral.black,
+              clicked: "#FFFFFF",
+              disabled: "#ffffff96",
+            },
+            light: {
+              active: colors.neutral["1800"],
+              hover: colors.neutral["1700"],
+              clicked: "#000000",
+              disabled: "#ffffff96",
+            },
+            dark: {
+              active: colors.neutral["1700"],
+              hover: "#FFFFFF",
+              clicked: "#FFFFFF",
+              disabled: "#ffffff96",
+            },
+          },
+          xmas: {
+            active: "#B8D3E0d7",
+          },
+        },
 
-          // Fill colors - Light mode
-          fill: {
-            primary: {
-              main: {
-                active: colors.primary.main,
-                hover: colors.primary["900"],
-                clicked: colors.primary["1100"],
-                disabled: "#FF730096",
-              },
-              light: {
-                active: colors.primary["100"],
-                hover: colors.primary["200"],
-                clicked: colors.primary["300"],
-                disabled: alpha(colors.primary["100"], 0.5),
-              },
-              dark: {
-                active: colors.primary["1200"],
-                hover: colors.primary["1100"],
-                clicked: colors.primary["1300"],
-                disabled: alpha(colors.primary["1200"], 0.5),
-              },
-            },
-            secondary: {
-              main: {
-                active: colors.secondary.main,
-                hover: colors.secondary["600"],
-                clicked: colors.secondary["800"],
-                disabled: "#00CEFF96",
-              },
-              light: {
-                active: colors.secondary["100"],
-                hover: colors.secondary["100"],
-                clicked: colors.secondary["200"],
-                disabled: alpha(colors.secondary["0"], 0.5),
-              },
-            },
-            neutral: {
-              main: {
-                active: colors.neutral.white,
-                hover: colors.neutral["100"],
-                clicked: colors.neutral["200"],
-                disabled: alpha(colors.neutral.white, 0.5),
-              },
-              light: {
-                active: colors.neutral["100"],
-                hover: colors.neutral.white,
-                clicked: colors.neutral["200"],
-                disabled: alpha(colors.neutral["100"], 0.5),
-              },
-              dark: {
-                active: colors.neutral["1700"],
-                hover: colors.neutral["1600"],
-                clicked: colors.neutral["1800"],
-                disabled: alpha(colors.neutral["1700"], 0.5),
-              },
-            },
-            xmas: {
-              active: "#A6C8D9",
-            },
+        // Shadow colors - Dark mode
+        shadow: {
+          primary: {
+            active: "#000000CC",
+            hover: colors.neutral["1900"],
           },
+        },
+      }
+      : {
+        // Light mode colors
+        neutral: colors.neutral,
+        primary: colors.primary,
+        secondary: colors.secondary,
 
-          // Navigation colors - Light mode
-          navigation: {
-            text: colors.neutral["800"],
-            hover: colors.neutral["400"],
-            textClicked: colors.neutral.white,
-            hoverBg: colors.neutral["1800"],
-            clickedBg: colors.primary["1200"],
-            border: colors.neutral["1700"],
-          },
-
-          // Shadow colors - Light mode
-          shadow: {
-            primary: {
-              active: "#00000014",
-              hover: colors.neutral["1900"],
+        // Text colors - Light mode
+        text: {
+          primary: {
+            p1: {
+              active: colors.neutral.black,
+              hover: "#FFFFFF",
+              disabled: alpha(colors.neutral.black, 0.59),
+            },
+            p2: {
+              active: colors.neutral["1600"],
+              hover: "#FFFFFF",
+              disabled: alpha(colors.neutral["1600"], 0.59),
+            },
+            p3: {
+              active: colors.neutral["1200"],
+              hover: "#FFFFFF",
+              disabled: alpha(colors.neutral["1200"], 0.59),
+            },
+            p4: {
+              active: colors.neutral["700"],
+              hover: "#FFFFFF",
+              disabled: alpha(colors.neutral["700"], 0.59),
             },
           },
-        }),
+          secondary: {
+            p1: { active: colors.secondary["800"], hover: "#FFFFFF", disabled: "#FFFFFF" },
+            p2: { active: "#0099E5", hover: "#FFFFFF", disabled: "#FFFFFF" },
+          },
+          brand: {
+            p1: { active: colors.primary["1100"], hover: "#FFFFFF", disabled: "#ff730096" },
+            p2: { active: colors.neutral.white, hover: "#FF6A0096", disabled: "#ffffff96" },
+          },
+        },
+
+        // Border colors - Light mode
+        border: {
+          primary: {
+            b1: {
+              active: colors.neutral["700"],
+              hover: "#ffffff",
+              clicked: "#ffffff",
+              disabled: alpha(colors.neutral[700], 0.59),
+            },
+            b2: {
+              active: colors.neutral["200"],
+              hover: colors.neutral["400"],
+              clicked: "#ffffff",
+              disabled: "#ffffff",
+            },
+            b3: {
+              active: "#D1D9E0",
+              hover: "#C2CDD6",
+              clicked: "#ffffff",
+              disabled: "#D2D9E096",
+            },
+          },
+          secondary: {
+            b1: {
+              active: "#00BFFF",
+              hover: "#2ECBFF",
+              clicked: "#06b1f4",
+              disabled: "#00bfff96",
+            },
+          },
+          brand: {
+            b1: {
+              active: colors.primary.main,
+              hover: "#E96F0C",
+              clicked: "#ffffff",
+              disabled: alpha(colors.primary.main, 0.59),
+            },
+          },
+        },
+
+        // Surface colors - Light mode
+        surface: {
+          primary: {
+            active: colors.neutral.light_white,
+            hover: colors.neutral.white,
+          },
+          secondary: {
+            active: colors.neutral.white,
+          },
+          navbar: {
+            active: colors.neutral["1900"],
+            hover: "#FFFFFF",
+          },
+        },
+
+        // Fill colors - Light mode
+        fill: {
+          primary: {
+            main: {
+              active: "#ff7300ff",
+              hover: colors.primary["900"],
+              clicked: colors.primary["1100"],
+              disabled: "#FF730096",
+            },
+            light: {
+              active: colors.primary["100"],
+              hover: colors.primary["200"],
+              clicked: colors.primary["300"],
+              disabled: alpha(colors.primary["100"], 0.5),
+            },
+            dark: {
+              active: colors.primary["1200"],
+              hover: colors.primary["1100"],
+              clicked: colors.primary["1300"],
+              disabled: alpha(colors.primary["1200"], 0.5),
+            },
+          },
+          secondary: {
+            main: {
+              active: colors.secondary.main,
+              hover: colors.secondary["600"],
+              clicked: colors.secondary["800"],
+              disabled: "#00CEFF96",
+            },
+            light: {
+              active: colors.secondary["100"],
+              hover: colors.secondary["100"],
+              clicked: colors.secondary["200"],
+              disabled: alpha(colors.secondary["0"], 0.5),
+            },
+          },
+          neutral: {
+            main: {
+              active: colors.neutral.white,
+              hover: colors.neutral["100"],
+              clicked: colors.neutral["200"],
+              disabled: alpha(colors.neutral.white, 0.5),
+            },
+            light: {
+              active: colors.neutral["100"],
+              hover: colors.neutral.white,
+              clicked: colors.neutral["200"],
+              disabled: alpha(colors.neutral["100"], 0.5),
+            },
+            dark: {
+              active: colors.neutral["1700"],
+              hover: colors.neutral["1600"],
+              clicked: colors.neutral["1800"],
+              disabled: alpha(colors.neutral["1700"], 0.5),
+            },
+          },
+          xmas: {
+            active: "#A6C8D9",
+          },
+        },
+
+        // Navigation colors - Light mode
+        navigation: {
+          text: colors.neutral["800"],
+          hover: colors.neutral["400"],
+          textClicked: colors.neutral.white,
+          hoverBg: colors.neutral["1800"],
+          clickedBg: colors.primary["1200"],
+          border: colors.neutral["1700"],
+        },
+
+        // Shadow colors - Light mode
+        shadow: {
+          primary: {
+            active: "#00000014",
+            hover: colors.neutral["1900"],
+          },
+        },
+      }),
   };
 };
 
@@ -559,7 +562,7 @@ export const themeSettings = (mode: PaletteMode) => {
       MuiButton: muiButton,
       MuiTextField: muiTextField(colors),
       MuiSwitch: muiSwitch(colors),
-      MuiTooltip: muiTooltip(colors),
+      // MuiTooltip: muiTooltip(colors),
       MuiAutocomplete: muiAutocomplete(colors),
     },
     breakpoints: {
@@ -579,3 +582,13 @@ export const themeSettings = (mode: PaletteMode) => {
 };
 
 export default themeSettings;
+
+export const getTheme = (mode: PaletteMode) => createTheme(themeSettings(mode));
+export const theme = getTheme("light");
+export const newLightTheme = getTheme("light");
+export const newDarkTheme = getTheme("dark");
+
+export const useNewTheme = () => {
+  const currentTheme = useTheme();
+  return useMemo(() => getTheme(currentTheme.palette.mode), [currentTheme.palette.mode]);
+};

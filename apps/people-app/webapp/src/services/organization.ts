@@ -15,10 +15,10 @@
 // under the License.
 import { createApi } from "@reduxjs/toolkit/query/react";
 
-import { AppConfig } from "@config/config.ts";
+import { AppConfig } from "@config/config";
 
-import { enqueueSnackbarMessage } from "../slices/commonSlice/common.ts";
-import { baseQueryWithRetry } from "./BaseQuery.ts";
+import { enqueueSnackbarMessage } from "../slices/commonSlice/common";
+import { baseQueryWithRetry } from "./BaseQuery";
 
 export interface Head {
   name: string;
@@ -86,6 +86,26 @@ export interface PayloadType {
   name: string;
   headEmail: string;
   functionalLeadEmail: string;
+}
+
+export interface RenameBusinessUnitPayload {
+  name: string;
+  businessUnitId: string;
+}
+
+export interface RenameTeamPayload {
+  name: string;
+  teamId: string;
+}
+
+export interface RenameSubTeamPayload {
+  name: string;
+  subTeamId: string;
+}
+
+export interface RenameUnitPayload {
+  name: string;
+  unitId: string;
 }
 
 export interface UpdateBusinessUnitPayload {
@@ -450,6 +470,166 @@ export const organizationApi = createApi({
         } catch (error: any) {
           const errorMessage =
             error.error?.data?.message || "An error occurred while linking unit to sub team";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
+    }),
+
+    renameBusinessUnit: builder.mutation<
+      ApiMessageOnSuccess,
+      { buId: number; payload: Partial<RenameBusinessUnitPayload> }
+    >({
+      queryFn: async ({ buId, payload }, _api, _extraoptions, baseQuery) => {
+        const result = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}/rename`,
+          method: "POST",
+          body: {
+            name: payload.name,
+            businessUnitId: buId,
+          },
+        });
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully renamed business unit",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while renaming business unit";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
+    }),
+
+    renameTeam: builder.mutation<
+      ApiMessageOnSuccess,
+      { teamId: number; payload: Partial<RenameTeamPayload> }
+    >({
+      queryFn: async ({ teamId, payload }, _api, _extraoptions, baseQuery) => {
+        const result = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/team/${teamId}/rename`,
+          method: "POST",
+          body: {
+            name: payload.name,
+            teamId,
+          },
+        });
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully renamed team",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while renaming team";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
+    }),
+
+    renameSubTeam: builder.mutation<
+      ApiMessageOnSuccess,
+      { subTeamId: number; payload: Partial<RenameSubTeamPayload> }
+    >({
+      queryFn: async ({ subTeamId, payload }, _api, _extraoptions, baseQuery) => {
+        const result = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/sub-team/${subTeamId}/rename`,
+          method: "POST",
+          body: {
+            name: payload.name,
+            subTeamId,
+          },
+        });
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully renamed sub team",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while renaming sub team";
+          dispatch(
+            enqueueSnackbarMessage({
+              message: errorMessage,
+              type: "error",
+            }),
+          );
+        }
+      },
+    }),
+
+    renameUnit: builder.mutation<
+      ApiMessageOnSuccess,
+      { unitId: number; payload: Partial<RenameUnitPayload> }
+    >({
+      queryFn: async ({ unitId, payload }, _api, _extraoptions, baseQuery) => {
+        const result = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/unit/${unitId}/rename`,
+          method: "POST",
+          body: {
+            name: payload.name,
+            unitId,
+          },
+        });
+        if (result.error) return { error: result.error };
+
+        return { data: (result.data as ApiMessageOnSuccess) ?? {} };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const response = await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message ?? "Successfully renamed unit",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          const errorMessage =
+            error.error?.data?.message || "An error occurred while renaming unit";
           dispatch(
             enqueueSnackbarMessage({
               message: errorMessage,
@@ -907,6 +1087,10 @@ export const {
   useAddBusinessUnitTeamMutation,
   useAddTeamSubTeamMutation,
   useAddSubTeamUnitMutation,
+  useRenameBusinessUnitMutation,
+  useRenameTeamMutation,
+  useRenameSubTeamMutation,
+  useRenameUnitMutation,
   useUpdateBusinessUnitMutation,
   useUpdateTeamMutation,
   useUpdateSubTeamMutation,

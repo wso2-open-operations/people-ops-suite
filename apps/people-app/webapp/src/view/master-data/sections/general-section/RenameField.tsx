@@ -13,21 +13,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Button, CircularProgress, TextField, Typography } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { Box, Button, CircularProgress, TextField, Typography, useTheme } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 
 import { useEffect, useState } from "react";
 
 import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
-import { NodeType } from "@root/src/utils/types";
+import { NodeType } from "@utils/types";
 import { UnitTypeLabel } from "@utils/utils";
 
 interface RenameFormValues {
   entityName: string;
 }
-
 interface RenameFieldProps {
   entityType: NodeType;
   currentName: string;
@@ -122,8 +120,7 @@ export const RenameField: React.FC<RenameFieldProps> = ({
               />
               {isFocused && (
                 <Button
-                  variant="outlined"
-                  color="brand"
+                  variant="outlinedBrand"
                   onClick={handleCancel}
                   sx={{ ml: 1, whiteSpace: "nowrap" }}
                 >

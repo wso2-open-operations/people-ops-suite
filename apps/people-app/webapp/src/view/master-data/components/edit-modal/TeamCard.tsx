@@ -14,12 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
-import { Avatar, Box, Typography } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { Avatar, Box, Typography, useTheme } from "@mui/material";
 
 import { FunctionalLead, Head } from "@services/organization";
-
-import { truncateName } from "../../panel/chart-view/utils";
+import { truncateName } from "@utils/utils";
 
 interface TeamCardProps {
   teamName: string;

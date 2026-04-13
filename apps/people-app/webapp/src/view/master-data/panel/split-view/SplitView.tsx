@@ -17,18 +17,18 @@ import { Box } from "@mui/material";
 
 import { useEffect, useState } from "react";
 
-import ErrorHandler from "@component/common/ErrorHandler.tsx";
-import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant.ts";
-import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility.ts";
+import ErrorHandler from "@component/common/ErrorHandler";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import {
   fetchBusinessUnits,
   fetchSubTeams,
   fetchTeams,
   fetchUnits,
-} from "@root/src/slices/organizationSlice/organization.ts";
-import { buildAddModalOptions } from "@root/src/utils/utils.ts";
+} from "@root/src/slices/organizationSlice/organization";
+import { buildAddModalOptions } from "@root/src/utils/utils";
 import { useGetOrgStructureQuery } from "@services/organization";
-import { State } from "@slices/authSlice/auth.ts";
+import { State } from "@slices/authSlice/auth";
 import {
   BusinessUnit as RawBusinessUnit,
   SubTeam as RawSubTeam,
@@ -48,11 +48,11 @@ import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { NodeType } from "@utils/types";
 import { EditModal } from "@view/master-data/components/EditModal";
 
-import AddModal from "../../components/AddModal.tsx";
-import SplitViewColumn from "./components/SplitViewColumn.tsx.tsx";
-import SplitViewSkeleton from "./components/SplitViewSkeleton.tsx";
-import { useSplitViewSearch } from "./hooks/useSplitViewSearch.ts";
-import { useSplitViewSelection } from "./hooks/useSplitViewSelection.ts";
+import AddModal from "../../components/AddModal";
+import SplitViewColumn from "./components/SplitViewColumn.tsx";
+import SplitViewSkeleton from "./components/SplitViewSkeleton";
+import { useSplitViewSearch } from "./hooks/useSplitViewSearch";
+import { useSplitViewSelection } from "./hooks/useSplitViewSelection";
 
 type OnEdit = {
   open: boolean;
@@ -285,7 +285,7 @@ export default function SplitView() {
   const orgItemState = useAppSelector((state: RootState) => state.organizationStructure);
   const orgItems = orgItemState.organizationInfo;
 
-  const { teams, subTeams, units } = useAppSelector((state) => state.organization);
+  const { teams, subTeams, units } = useAppSelector((state: RootState) => state.organization);
   const dispatch = useAppDispatch();
 
   const [editModal, setEditModal] = useState<OnEdit>({
@@ -356,7 +356,9 @@ export default function SplitView() {
   if (
     (showOrgSkeleton ||
       orgItemState.state === State.Idle ||
-      orgItemState.state === State.Loading) && !addModal.open && !editModal.open
+      orgItemState.state === State.Loading) &&
+    !addModal.open &&
+    !editModal.open
   ) {
     return <SplitViewSkeleton />;
   }

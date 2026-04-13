@@ -14,22 +14,47 @@
 // specific language governing permissions and limitations
 // under the License.
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
+import { Button, ThemeProvider, createTheme, useTheme as useMuiTheme } from "@mui/material";
+
+import { useMemo } from "react";
 
 import TabsPage from "@layout/pages/TabsPage";
+import { themeSettings as featureThemeSettings } from "@src/theme/index";
 import SplitView from "@view/master-data/panel/split-view/SplitView";
 
 export default function MasterData() {
+  const legacyTheme = useMuiTheme();
+
+  const featureTheme = useMemo(
+    () => createTheme(featureThemeSettings(legacyTheme.palette.mode)),
+    [legacyTheme.palette.mode],
+  );
+
   return (
-    <TabsPage
-      title="Master Data"
-      tabsPage={[
-        {
-          tabTitle: "Org Structure Split View",
-          tabPath: "org-structure-split-view",
-          icon: <AccountTreeOutlinedIcon />,
-          page: <SplitView />,
-        },
-      ]}
-    />
+    <ThemeProvider theme={featureTheme}>
+      <TabsPage
+        title="Master Data"
+        tabsPage={[
+          {
+            tabTitle: "Org Structure Split View",
+            tabPath: "org-structure-split-view",
+            icon: <AccountTreeOutlinedIcon />,
+            page: <SplitView />,
+          },
+          {
+            tabTitle: "Org Structure Split View",
+            tabPath: "org-structure-split-view",
+            icon: <AccountTreeOutlinedIcon />,
+            page: (
+              <>
+                <Button variant="contained" disabled={true}>
+                  Dineth
+                </Button>
+              </>
+            ),
+          },
+        ]}
+      />
+    </ThemeProvider>
   );
 }

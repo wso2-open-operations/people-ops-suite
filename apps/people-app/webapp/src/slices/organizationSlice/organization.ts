@@ -13,13 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { HttpStatusCode, isCancel } from "axios";
 
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { APIService } from "@utils/apiService";
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
+import { HttpStatusCode, isCancel } from "axios";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { APIService } from "@utils/apiService";
 
 export interface BusinessUnit {
   id: number;
@@ -62,8 +62,7 @@ export interface Company {
   name: string;
   prefix: string;
   location: string;
-  allowedLocations: { location: string; probationPeriod: number | null }[];
-}
+  allowedLocations: { location: string; probationPeriod: number | null }[];}
 
 export interface Office {
   id: number;
@@ -129,7 +128,9 @@ export const fetchBusinessUnits = createAsyncThunk(
   "organization/fetchBusinessUnits",
   async (_, { dispatch, rejectWithValue }) => {
     try {
-      const resp = await APIService.getInstance().get(`${AppConfig.serviceUrls.businessUnits}`);
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.businessUnits}`,
+      );
       if (!Array.isArray(resp.data)) {
         throw new Error("Invalid response: business units should be an array");
       }
@@ -220,7 +221,10 @@ export const fetchSubTeams = createAsyncThunk(
 // Fetch Units
 export const fetchUnits = createAsyncThunk(
   "organization/fetchUnits",
-  async ({ id: subTeamId }: FetchParams = {}, { dispatch, rejectWithValue }) => {
+  async (
+    { id: subTeamId }: FetchParams = {},
+    { dispatch, rejectWithValue },
+  ) => {
     try {
       const url = subTeamId
         ? `${AppConfig.serviceUrls.units}?subTeamId=${subTeamId}`
@@ -254,9 +258,13 @@ export const fetchCareerFunctions = createAsyncThunk(
   "organization/fetchCareerFunctions",
   async (_, { dispatch, rejectWithValue }) => {
     try {
-      const resp = await APIService.getInstance().get(`${AppConfig.serviceUrls.careerFunctions}`);
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.careerFunctions}`,
+      );
       if (!Array.isArray(resp.data)) {
-        throw new Error("Invalid response: career functions should be an array");
+        throw new Error(
+          "Invalid response: career functions should be an array",
+        );
       }
       return resp.data as CareerFunction[];
     } catch (error: any) {
@@ -280,7 +288,10 @@ export const fetchCareerFunctions = createAsyncThunk(
 // Fetch Designations
 export const fetchDesignations = createAsyncThunk(
   "organization/fetchDesignations",
-  async ({ careerFunctionId }: FetchDesignationsParams = {}, { dispatch, rejectWithValue }) => {
+  async (
+    { careerFunctionId }: FetchDesignationsParams = {},
+    { dispatch, rejectWithValue },
+  ) => {
     try {
       const url = careerFunctionId
         ? `${AppConfig.serviceUrls.designations}?careerFunctionId=${careerFunctionId}`
@@ -313,7 +324,9 @@ export const fetchCompanies = createAsyncThunk(
   "organization/fetchCompanies",
   async (_, { dispatch, rejectWithValue }) => {
     try {
-      const resp = await APIService.getInstance().get(`${AppConfig.serviceUrls.companies}`);
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.companies}`,
+      );
       if (!Array.isArray(resp.data)) {
         throw new Error("Invalid response: companies should be an array");
       }
@@ -340,7 +353,10 @@ export const fetchCompanies = createAsyncThunk(
 // Fetch Offices
 export const fetchOffices = createAsyncThunk(
   "organization/fetchOffices",
-  async ({ id: companyId }: FetchParams = {}, { dispatch, rejectWithValue }) => {
+  async (
+    { id: companyId }: FetchParams = {},
+    { dispatch, rejectWithValue },
+  ) => {
     try {
       const url = companyId
         ? `${AppConfig.serviceUrls.offices}?companyId=${companyId}`
@@ -353,7 +369,9 @@ export const fetchOffices = createAsyncThunk(
         id: office.id,
         name: office.name,
         location: office.location,
-        workingLocations: Array.isArray(office.workingLocations) ? office.workingLocations : [],
+        workingLocations: Array.isArray(office.workingLocations)
+          ? office.workingLocations
+          : [],
       }));
       return offices;
     } catch (error: any) {
@@ -361,7 +379,9 @@ export const fetchOffices = createAsyncThunk(
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching offices"
-          : error.response?.data?.message || error.message || "Failed to fetch offices.";
+          : error.response?.data?.message ||
+            error.message ||
+            "Failed to fetch offices.";
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
@@ -378,9 +398,13 @@ export const fetchEmploymentTypes = createAsyncThunk(
   "organization/fetchEmploymentTypes",
   async (_, { dispatch, rejectWithValue }) => {
     try {
-      const resp = await APIService.getInstance().get(`${AppConfig.serviceUrls.employmentTypes}`);
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.employmentTypes}`,
+      );
       if (!Array.isArray(resp.data)) {
-        throw new Error("Invalid response: employment types should be an array");
+        throw new Error(
+          "Invalid response: employment types should be an array",
+        );
       }
       return resp.data as EmploymentType[];
     } catch (error: any) {
@@ -407,7 +431,9 @@ export const fetchHouses = createAsyncThunk(
   "organization/fetchHouses",
   async (_, { dispatch, rejectWithValue }) => {
     try {
-      const resp = await APIService.getInstance().get(`${AppConfig.serviceUrls.houses}`);
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.houses}`,
+      );
       if (!Array.isArray(resp.data)) {
         throw new Error("Invalid response: houses should be an array");
       }
@@ -436,7 +462,9 @@ export const fetchSuggestedHouse = createAsyncThunk(
   "organization/fetchSuggestedHouse",
   async (_, { rejectWithValue }) => {
     try {
-      const resp = await APIService.getInstance().get(`${AppConfig.serviceUrls.houses}/suggested`);
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.houses}/suggested`,
+      );
       return (resp.data as House).id;
     } catch (error: any) {
       if (isCancel(error)) return rejectWithValue("cancelled");

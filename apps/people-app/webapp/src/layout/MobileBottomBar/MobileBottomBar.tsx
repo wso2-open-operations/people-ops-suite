@@ -15,12 +15,14 @@
 // under the License.
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import MenuIcon from "@mui/icons-material/Menu";
-import { AppBar, Box, IconButton, Typography, useTheme } from "@mui/material";
+import { AppBar, Box, IconButton, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { useActiveRoute } from "@root/src/hooks/useActiveRoute";
 import { getAllowedRoutes } from "@src/route";
+import UpdatedThemeScope from "@src/theme/UpdatedThemeScope";
 
 interface MobileBottomBarProps {
   onMenuClick: () => void;
@@ -30,7 +32,7 @@ interface MobileBottomBarProps {
   roles: string[];
 }
 
-export default function MobileBottomBar({
+function MobileBottomBarContent({
   onMenuClick,
   onThemeToggle,
   open,
@@ -77,7 +79,6 @@ export default function MobileBottomBar({
           pointerEvents: "auto",
         }}
       >
-        {/* Home Button */}
         <Box
           onClick={() => navigate("/")}
           sx={{
@@ -117,7 +118,6 @@ export default function MobileBottomBar({
           </Typography>
         </Box>
 
-        {/* Theme Toggle Button */}
         <IconButton
           color="inherit"
           aria-label="toggle theme"
@@ -130,7 +130,6 @@ export default function MobileBottomBar({
           {mode === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </IconButton>
 
-        {/* Menu Button */}
         <IconButton
           color="inherit"
           aria-label="open menu"
@@ -148,5 +147,13 @@ export default function MobileBottomBar({
         </IconButton>
       </Box>
     </AppBar>
+  );
+}
+
+export default function MobileBottomBar(props: MobileBottomBarProps) {
+  return (
+    <UpdatedThemeScope>
+      <MobileBottomBarContent {...props} />
+    </UpdatedThemeScope>
   );
 }

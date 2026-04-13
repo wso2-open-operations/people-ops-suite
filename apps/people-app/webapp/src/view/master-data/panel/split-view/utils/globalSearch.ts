@@ -32,47 +32,59 @@ export type MatchSearch = {
 
 type OrgItem = BusinessUnitState | TeamState | SubTeamState | UnitState;
 
-const itemToMatchSearchByType: Record<
-  NodeType,
-  (org: OrganizationInfo, i: OrgItem) => MatchSearch
-> = {
-  [NodeType.Company]: () => ({ type: NodeType.Company, buId: null, ...NULL_IDS }),
-  [NodeType.BusinessUnit]: (_, i) => ({
-    type: NodeType.BusinessUnit,
-    buId: i.id,
-    ...NULL_IDS,
-  }),
-  [NodeType.Team]: (_, i) => ({
-    type: NodeType.Team,
-    buId: i.parentId,
-    teamId: i.id,
-    subTeamId: null,
-    unitId: null,
-  }),
-  [NodeType.SubTeam]: (org, i) => {
-    const team = org.teams.find((t) => t.id === i.parentId);
-    return {
-      type: NodeType.SubTeam,
-      buId: team?.parentId ?? null,
-      teamId: i.parentId,
-      subTeamId: i.id,
-      unitId: null,
-    };
-  },
-  [NodeType.Unit]: (org, i) => {
-    const subTeam = org.subTeams.find((s) => s.id === i.parentId);
-    const team = subTeam ? org.teams.find((t) => t.id === subTeam.parentId) : undefined;
-    return {
-      type: NodeType.Unit,
-      buId: team?.parentId ?? null,
-      teamId: subTeam?.parentId ?? null,
-      subTeamId: i.parentId,
-      unitId: i.id,
-    };
-  },
-};
+// const itemToMatchSearchByType: Record<
+//   NodeType,
+//   (org: OrganizationInfo, i: OrgItem) => MatchSearch
+// > = {
+// [NodeType.Company]: () => ({ type: NodeType.Company, buId: null, ...NULL_IDS }),
+// [NodeType.BusinessUnit]: (_, i) => ({
+//   type: NodeType.BusinessUnit,
+//   buId: i.id,
+//   ...NULL_IDS,
+// }),
+// [NodeType.Team]: (_, i) => ({
+//   type: NodeType.Team,
+//   buId: i.parentId,
+//   teamId: i.id,
+//   subTeamId: null,
+//   unitId: null,
+// }),
+// [NodeType.SubTeam]: (org, i) => {
+//   const team = org.teams.find((t) => t.id === i.parentId);
+//   return {
+//     type: NodeType.SubTeam,
+//     buId: team?.parentId ?? null,
+//     teamId: i.parentId,
+//     subTeamId: i.id,
+//     unitId: null,
+//   };
+// },
+// [NodeType.Unit]: (org, i) => {
+//   const subTeam = org.subTeams.find((s) => s.id === i.parentId);
+//   const team = subTeam ? org.teams.find((t) => t.id === subTeam.parentId) : undefined;
+//   return {
+//     type: NodeType.Unit,
+//     buId: team?.parentId ?? null,
+//     teamId: subTeam?.parentId ?? null,
+//     subTeamId: i.parentId,
+//     unitId: i.id,
+//   };
+// },
+// };
 
 /** Maps an org item (BU, Team, SubTeam, Unit) to a MatchSearch. O(1) dispatch via strategy map. */
-export function itemToMatchSearch(orgItems: OrganizationInfo, item: OrgItem): MatchSearch {
-  return itemToMatchSearchByType[item.type](orgItems, item);
+export function itemToMatchSearch(
+  orgItems: OrganizationInfo,
+  item: OrgItem,
+): MatchSearch {
+  // return itemToMatchSearchByType[item.type](orgItems, item);
+  const tempMatchSearch: MatchSearch = {
+    type: item.type,
+    buId: null,
+    teamId: null,
+    subTeamId: null,
+    unitId: null,
+  };
+
+  return tempMatchSearch;
 }

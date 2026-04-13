@@ -13,7 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import "@mui/material/Button";
 import type { Components, Theme } from "@mui/material/styles";
+
+declare module "@mui/material/Button" {
+  interface ButtonPropsVariantOverrides {
+    outlinedBrand: true;
+    outlinedNeutral: true;
+  }
+}
 
 export const muiButton: Components<Theme>["MuiButton"] = {
   defaultProps: {
@@ -53,6 +61,24 @@ export const muiButton: Components<Theme>["MuiButton"] = {
       }),
     },
 
+    // Outlined variant with filled brand background (crash-safe custom variant)
+    {
+      props: { variant: "outlinedFilled" },
+      style: ({ theme }) => ({
+        backgroundColor: theme.palette.fill.primary.main.active,
+        border: `1px solid ${theme.palette.customBorder.brand.b1.active}`,
+        color: theme.palette.customNavigation.textClicked,
+        "&:hover": {
+          backgroundColor: theme.palette.fill.primary.light.active,
+        },
+        "&.Mui-disabled": {
+          backgroundColor: "transparent",
+          color: theme.palette.customText.brand.p1.disabled,
+          borderColor: theme.palette.customBorder.brand.b1.disabled,
+        },
+      }),
+    },
+
     // Outlined variant with primary/brand colors (default)
     {
       props: { variant: "outlined" },
@@ -73,7 +99,7 @@ export const muiButton: Components<Theme>["MuiButton"] = {
 
     // Outlined variant with neutral colors
     {
-      props: { variant: "outlined", color: "neutral" },
+      props: { variant: "outlinedNeutral" },
       style: ({ theme }) => ({
         backgroundColor: "transparent",
         border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
@@ -92,7 +118,7 @@ export const muiButton: Components<Theme>["MuiButton"] = {
 
     // Outlined variant with neutral-to-brand transition on hover
     {
-      props: { variant: "outlined", color: "brand" },
+      props: { variant: "outlinedBrand" },
       style: ({ theme }) => ({
         backgroundColor: "transparent",
         border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,

@@ -13,27 +13,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import {
-  BadgeOutlined,
-  CakeOutlined,
-  ContactPhoneOutlined,
-  EventOutlined,
-  HomeOutlined,
-  LocationOnOutlined,
-  PersonOutline,
-  PhoneOutlined,
-  SupervisorAccountOutlined,
-  WidgetsOutlined,
-  WorkOutline,
-} from "@mui/icons-material";
-import { Box, Grid, Typography, alpha, useTheme } from "@mui/material";
-import dayjs from "dayjs";
-import { useFormikContext } from "formik";
 
 import React, { useMemo } from "react";
-
-import { CreateEmployeeFormValues } from "@root/src/types/types";
+import { Box, Grid, Typography, useTheme, alpha } from "@mui/material";
+import { useFormikContext } from "formik";
+import dayjs from "dayjs";
 import { useAppSelector } from "@slices/store";
+import { CreateEmployeeFormValues } from "@root/src/types/types";
+import {
+  PersonOutline,
+  CakeOutlined,
+  ContactPhoneOutlined,
+  HomeOutlined,
+  BadgeOutlined,
+  WorkOutline,
+  LocationOnOutlined,
+  EventOutlined,
+  SupervisorAccountOutlined,
+  PhoneOutlined,
+  WidgetsOutlined,
+} from "@mui/icons-material";
 
 const REVIEW_ICONS = {
   person: <PersonOutline fontSize="small" />,
@@ -49,38 +48,40 @@ const REVIEW_ICONS = {
   other: <WidgetsOutlined fontSize="small" />,
 };
 
-const SectionHeader = React.memo(({ icon, title }: { icon: React.ReactNode; title: string }) => {
-  const theme = useTheme();
-  return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 36,
-          height: 36,
-          borderRadius: 1.5,
-          background: `linear-gradient(135deg, ${alpha(
-            theme.palette.secondary.contrastText,
-            0.15,
-          )}, ${alpha(theme.palette.secondary.contrastText, 0.08)})`,
-          color: theme.palette.secondary.contrastText,
-        }}
-      >
-        {icon}
+const SectionHeader = React.memo(
+  ({ icon, title }: { icon: React.ReactNode; title: string }) => {
+    const theme = useTheme();
+    return (
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 36,
+            height: 36,
+            borderRadius: 1.5,
+            background: `linear-gradient(135deg, ${alpha(
+              theme.palette.secondary.contrastText,
+              0.15,
+            )}, ${alpha(theme.palette.secondary.contrastText, 0.08)})`,
+            color: theme.palette.secondary.contrastText,
+          }}
+        >
+          {icon}
+        </Box>
+        <Typography
+          variant="h6"
+          fontWeight={600}
+          fontSize="1rem"
+          sx={{ color: alpha(theme.palette.text.primary, 0.6) }}
+        >
+          {title}
+        </Typography>
       </Box>
-      <Typography
-        variant="h6"
-        fontWeight={600}
-        fontSize="1rem"
-        sx={{ color: alpha(theme.palette.text.primary, 0.6) }}
-      >
-        {title}
-      </Typography>
-    </Box>
-  );
-});
+    );
+  },
+);
 
 const ReviewField = React.memo(
   ({ label, value }: { label: string; value: string | null | undefined }) => {
@@ -189,16 +190,22 @@ export default function ReviewStep() {
   // Map IDs to Names for display
   const mappedNames = useMemo(
     () => ({
-      businessUnit: businessUnits.find((b) => b.id === values.businessUnitId)?.name || null,
+      businessUnit:
+        businessUnits.find((b) => b.id === values.businessUnitId)?.name || null,
       team: teams.find((t) => t.id === values.teamId)?.name || null,
       subTeam: subTeams.find((st) => st.id === values.subTeamId)?.name || null,
       unit: units.find((u) => u.id === values.unitId)?.name || null,
-      designation: designations.find((cf) => cf.id === values.designationId)?.designation || null,
+      designation:
+        designations.find((cf) => cf.id === values.designationId)
+          ?.designation || null,
       careerFunction:
-        careerFunctions.find((cf) => cf.id === values.careerFunctionId)?.careerFunction || null,
+        careerFunctions.find((cf) => cf.id === values.careerFunctionId)
+          ?.careerFunction || null,
       company: companies.find((c) => c.id === values.companyId)?.name || null,
       office: offices.find((o) => o.id === values.officeId)?.name || null,
-      employmentType: employmentTypes.find((o) => o.id === values.employmentTypeId)?.name || null,
+      employmentType:
+        employmentTypes.find((o) => o.id === values.employmentTypeId)?.name ||
+        null,
       house: houses.find((h) => h.id === values.houseId)?.name || null,
     }),
     [
@@ -233,20 +240,19 @@ export default function ReviewStep() {
       <Box sx={sectionBoxSx}>
         <SectionHeader icon={REVIEW_ICONS.person} title="Identity" />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Title" value={p.title} />
           </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="First Name" value={p.firstName} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Last Name" value={p.lastName} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Full Name" value={p.fullName} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="NIC" value={p.nicOrPassport} />
           </Grid>
         </Grid>
@@ -256,16 +262,16 @@ export default function ReviewStep() {
       <Box sx={sectionBoxSx}>
         <SectionHeader icon={REVIEW_ICONS.cake} title="Birth & Nationality" />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Date of Birth"
               value={p.dob ? dayjs(p.dob).format("MMMM D, YYYY") : null}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Gender" value={p.gender} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Nationality" value={p.nationality} />
           </Grid>
         </Grid>
@@ -275,13 +281,13 @@ export default function ReviewStep() {
       <Box sx={sectionBoxSx}>
         <SectionHeader icon={REVIEW_ICONS.contact} title="Contact" />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Personal Email" value={p.personalEmail} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Personal Phone" value={p.personalPhone} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Home Phone" value={p.residentNumber} />
           </Grid>
         </Grid>
@@ -291,22 +297,22 @@ export default function ReviewStep() {
       <Box sx={sectionBoxSx}>
         <SectionHeader icon={REVIEW_ICONS.home} title="Address" />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Address Line 1" value={p.addressLine1} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Address Line 2" value={p.addressLine2} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="City" value={p.city} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="State / Province" value={p.stateOrProvince} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Postal Code" value={p.postalCode} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Country" value={p.country} />
           </Grid>
         </Grid>
@@ -315,7 +321,10 @@ export default function ReviewStep() {
       {/* Emergency Contacts */}
       {p.emergencyContacts && p.emergencyContacts.length > 0 && (
         <Box sx={sectionBoxSx}>
-          <SectionHeader icon={REVIEW_ICONS.contact} title="Emergency Contacts" />
+          <SectionHeader
+            icon={REVIEW_ICONS.contact}
+            title="Emergency Contacts"
+          />
           {p.emergencyContacts.map((contact, index) => (
             <Box
               key={index}
@@ -338,16 +347,19 @@ export default function ReviewStep() {
                 Contact {index + 1}
               </Typography>
               <Grid container spacing={3}>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid item xs={12} sm={6} md={3}>
                   <ReviewField label="Name" value={contact.name} />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <ReviewField label="Relationship" value={contact.relationship} />
+                <Grid item xs={12} sm={6} md={3}>
+                  <ReviewField
+                    label="Relationship"
+                    value={contact.relationship}
+                  />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid item xs={12} sm={6} md={3}>
                   <ReviewField label="Telephone" value={contact.telephone} />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid item xs={12} sm={6} md={3}>
                   <ReviewField label="Mobile" value={contact.mobile} />
                 </Grid>
               </Grid>
@@ -362,14 +374,17 @@ export default function ReviewStep() {
       <Box sx={sectionBoxSx}>
         <SectionHeader icon={REVIEW_ICONS.badge} title="Identity" />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Work Email" value={values.workEmail} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="EPF" value={values.epf} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <ReviewField label="Secondary Job Title" value={values.secondaryJobTitle} />
+          <Grid item xs={12} sm={6} md={4}>
+            <ReviewField
+              label="Secondary Job Title"
+              value={values.secondaryJobTitle}
+            />
           </Grid>
         </Grid>
       </Box>
@@ -378,22 +393,28 @@ export default function ReviewStep() {
       <Box sx={sectionBoxSx}>
         <SectionHeader icon={REVIEW_ICONS.work} title="Job & Team" />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <ReviewField label="Business Unit" value={mappedNames.businessUnit} />
+          <Grid item xs={12} sm={6} md={4}>
+            <ReviewField
+              label="Business Unit"
+              value={mappedNames.businessUnit}
+            />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Team" value={mappedNames.team} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Sub Team" value={mappedNames.subTeam} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Unit" value={mappedNames.unit} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <ReviewField label="Career Function" value={mappedNames.careerFunction} />
+          <Grid item xs={12} sm={6} md={4}>
+            <ReviewField
+              label="Career Function"
+              value={mappedNames.careerFunction}
+            />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Designation" value={mappedNames.designation} />
           </Grid>
         </Grid>
@@ -403,13 +424,13 @@ export default function ReviewStep() {
       <Box sx={sectionBoxSx}>
         <SectionHeader icon={REVIEW_ICONS.location} title="Location & Office" />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Company" value={mappedNames.company} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Office" value={mappedNames.office} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Work Location" value={values.workLocation} />
           </Grid>
         </Grid>
@@ -419,16 +440,23 @@ export default function ReviewStep() {
       <Box sx={sectionBoxSx}>
         <SectionHeader icon={REVIEW_ICONS.event} title="Dates & Status" />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <ReviewField label="Employment Type" value={mappedNames.employmentType} />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField
-              label="Start Date"
-              value={values.startDate ? dayjs(values.startDate).format("MMMM D, YYYY") : null}
+              label="Employment Type"
+              value={mappedNames.employmentType}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
+            <ReviewField
+              label="Start Date"
+              value={
+                values.startDate
+                  ? dayjs(values.startDate).format("MMMM D, YYYY")
+                  : null
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Probation End Date"
               value={
@@ -438,7 +466,7 @@ export default function ReviewStep() {
               }
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Agreement End Date"
               value={
@@ -453,13 +481,16 @@ export default function ReviewStep() {
 
       {/* Lead & Reports */}
       <Box sx={sectionBoxSx}>
-        <SectionHeader icon={REVIEW_ICONS.supervisor} title="Lead & Reports" />
+        <SectionHeader
+          icon={REVIEW_ICONS.supervisor}
+          title="Lead & Reports"
+        />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Lead Email" value={values.managerEmail} />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Additional Lead Emails"
               value={
@@ -476,7 +507,7 @@ export default function ReviewStep() {
       <Box sx={sectionBoxSx}>
         <SectionHeader icon={REVIEW_ICONS.other} title="Other" />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="House" value={mappedNames.house} />
           </Grid>
         </Grid>

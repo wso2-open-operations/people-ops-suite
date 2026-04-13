@@ -23,12 +23,12 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
 import { useForm } from "react-hook-form";
 
 import { useEffect } from "react";
 
 import InfoIcon from "@assets/icons/InfoIcon";
+import { useNewTheme as useTheme } from "@src/theme/index";
 
 interface ConfirmationDialogProps {
   open: boolean;
@@ -88,16 +88,14 @@ function ConfirmationDialog({
       open={open}
       onClose={handleCancel}
       maxWidth={false}
-      slotProps={{
-        paper: {
-          sx: {
-            width: "400px",
-            borderRadius: "12px",
-            border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-            boxShadow: "0px 2px 6px 0px rgba(0,0,0,0.12)",
-            backgroundColor: theme.palette.surface.secondary.active,
-            p: "12px",
-          },
+      PaperProps={{
+        sx: {
+          width: 400,
+          borderRadius: "12px",
+          border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
+          boxShadow: "0px 2px 6px 0px rgba(0,0,0,0.12)",
+          backgroundColor: theme.palette.surface.secondary.active,
+          p: 1.5,
         },
       }}
     >
@@ -124,7 +122,12 @@ function ConfirmationDialog({
           onClick={handleCancel}
           disabled={isSubmitting}
           size="small"
-          sx={{ p: 0, width: 16, height: 16, color: theme.palette.customText.primary.p2.active }}
+          sx={{
+            p: 0,
+            width: 16,
+            height: 16,
+            color: theme.palette.customText.primary.p2.active,
+          }}
         >
           <CloseIcon sx={{ width: 18, height: 18 }} />
         </IconButton>
@@ -140,15 +143,23 @@ function ConfirmationDialog({
           fullWidth
           placeholder="Reason for this action ?"
           disabled={isSubmitting}
-          slotProps={{
-            input: {
-              sx: { padding: "4px !important", mb: 2 },
+          sx={{
+            mb: 2,
+            "& .MuiInputBase-inputMultiline": {
+              padding: "4px !important",
             },
           }}
         />
 
         {/* ── Info / warning message ── */}
-        <Box sx={{ display: "flex", gap: "5px", alignItems: "flex-start", mb: "16px" }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: "5px",
+            alignItems: "flex-start",
+            mb: "16px",
+          }}
+        >
           <Box sx={{ mt: "1px", flexShrink: 0 }}>
             <InfoIcon width={16} height={16} />
           </Box>
@@ -169,7 +180,6 @@ function ConfirmationDialog({
           <Button
             fullWidth
             variant="outlined"
-            color="brand"
             onClick={handleCancel}
             disabled={isSubmitting}
             type="button"

@@ -13,10 +13,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import CommonPage from "@layout/pages/CommonPage";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
+import DownloadIcon from "@mui/icons-material/Download";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
-import DownloadIcon from "@mui/icons-material/Download";
-import QrCode2Icon from "@mui/icons-material/QrCode2";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   Alert,
@@ -34,12 +36,8 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-
-import { useEffect, useRef, useState } from "react";
-
 import { AppConfig } from "@config/config";
 import { SEARCH_MAX_LENGTH, SEARCH_REGEX } from "@config/constant";
-import TabsPage from "@layout/pages/TabsPage";
 import {
   EmployeeQrInfo,
   EmployeeStatus,
@@ -48,6 +46,7 @@ import {
 import { useAppDispatch } from "@slices/store";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
+import { useEffect, useRef, useState } from "react";
 
 const QR_EXPORT_LIMIT = 50;
 const SEARCH_LIMIT = 20;
@@ -386,16 +385,11 @@ function QrCodesReportContent() {
 
 export default function QrCodesReport() {
   return (
-    <TabsPage
+    <CommonPage
       title="QR Codes"
-      tabsPage={[
-        {
-          tabTitle: "QR Codes",
-          tabPath: "qr-codes",
-          icon: <QrCode2Icon />,
-          page: <QrCodesReportContent />,
-        },
-      ]}
+      icon={<QrCode2Icon />}
+      commonPageTabs={[]}
+      page={<QrCodesReportContent />}
     />
   );
 }

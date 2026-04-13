@@ -95,35 +95,33 @@ export default function SplitViewColumn<T extends OrgStructureState>(
           }}
         >
           <TextField
-            value={searchTerm}
+            value={searchTerm ?? ""}
             onChange={(e) => onSearch(e.target.value)}
             placeholder={placeholder}
             disabled={isSearchDisabled}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start" sx={{ margin: 0 }}>
-                    <SearchIcon size={18} />
-                  </InputAdornment>
-                ),
-                endAdornment: searchTerm ? (
-                  <InputAdornment position="end">
-                    <IconButton
-                      size="small"
-                      onClick={() => onSearch("")}
-                      sx={{
-                        padding: 0,
-                        color: theme.palette.customText.primary.p3.active,
-                        "&:hover": {
-                          color: theme.palette.customText.primary.p2.active,
-                        },
-                      }}
-                    >
-                      <ClearIcon sx={{ fontSize: "16px" }} />
-                    </IconButton>
-                  </InputAdornment>
-                ) : null,
-              },
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start" sx={{ margin: 0 }}>
+                  <SearchIcon size={18} />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm ? (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => onSearch("")}
+                    sx={{
+                      padding: 0,
+                      color: theme.palette.customText.primary.p3.active,
+                      "&:hover": {
+                        color: theme.palette.customText.primary.p2.active,
+                      },
+                    }}
+                  >
+                    <ClearIcon sx={{ fontSize: "16px" }} />
+                  </IconButton>
+                </InputAdornment>
+              ) : null,
             }}
             sx={{
               width: "100%",

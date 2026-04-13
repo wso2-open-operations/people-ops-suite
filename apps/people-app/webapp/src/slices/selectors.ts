@@ -38,7 +38,7 @@ function rtkApiHasPending(api: RtkQueryRootSlice | undefined): boolean {
 
 /** True when any slice `State` / auth status or RTK Query request is in a loading/pending state. */
 export const isGlobalLoadingSelector = createSelector(
-  (s: RootState) => s.auth.status === AuthSliceState.Loading,
+  (s: RootState) => s.auth.status === State.loading,
   (s: RootState) => s.user.state === State.loading,
   (s: RootState) => s.employee.state === State.loading,
   (s: RootState) => s.employee.employeeBasicInfoState === State.loading,

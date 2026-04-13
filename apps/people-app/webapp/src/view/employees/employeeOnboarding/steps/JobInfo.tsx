@@ -13,16 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import {
-  BadgeOutlined,
-  Close,
-  EventOutlined,
-  InfoOutlined,
-  LocationOnOutlined,
-  SupervisorAccountOutlined,
-  WidgetsOutlined,
-  WorkOutline,
-} from "@mui/icons-material";
+
+import React, {
+  useEffect,
+  useCallback,
+  useMemo,
+  useState,
+  useRef,
+} from "react";
 import {
   Box,
   Grid,
@@ -32,41 +30,48 @@ import {
   useTheme,
   alpha,
   Popover,
+  FormControlLabel,
   Checkbox,
   Chip,
-  IconButton,
-  InputAdornment,
   Stack,
-  Tooltip,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import dayjs from "dayjs";
 import { useFormikContext } from "formik";
 import * as Yup from "yup";
-
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-import { CreateEmployeeFormValues } from "@root/src/types/types";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
-  type ContinuousServiceRecordInfo,
-  fetchContinuousServiceRecord,
   fetchEmployeesBasicInfo,
+  fetchContinuousServiceRecord,
   resetContinuousService,
   validateEpf,
+  type ContinuousServiceRecordInfo,
 } from "@slices/employeeSlice/employee";
 import {
   fetchBusinessUnits,
+  fetchTeams,
+  fetchSubTeams,
+  fetchUnits,
   fetchCareerFunctions,
-  fetchCompanies,
   fetchDesignations,
+  fetchCompanies,
+  fetchOffices,
   fetchEmploymentTypes,
   fetchHouses,
-  fetchOffices,
-  fetchSubTeams,
-  fetchTeams,
-  fetchUnits,
 } from "@slices/organizationSlice/organization";
-import { useAppDispatch, useAppSelector } from "@slices/store";
+import { CreateEmployeeFormValues } from "@root/src/types/types";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import {
+  BadgeOutlined,
+  WorkOutline,
+  LocationOnOutlined,
+  EventOutlined,
+  SupervisorAccountOutlined,
+  InfoOutlined,
+  Close,
+  WidgetsOutlined,
+} from "@mui/icons-material";
+import dayjs from "dayjs";
 
 const SECTION_ICONS = {
   badge: <BadgeOutlined />,
@@ -85,7 +90,9 @@ const SECTION_HEADER_BOX_SX = {
   mt: 4,
 } as const;
 
-export const createJobInfoValidationSchema = (employmentTypes?: { id: number; name: string }[]) =>
+export const createJobInfoValidationSchema = (
+  employmentTypes?: { id: number; name: string }[],
+) =>
   Yup.object().shape({
     workEmail: Yup.string()
       .required("Work email is required")
@@ -98,8 +105,12 @@ export const createJobInfoValidationSchema = (employmentTypes?: { id: number; na
     businessUnitId: Yup.number()
       .required("Business unit is required")
       .min(1, "Select a valid business unit"),
-    teamId: Yup.number().required("Team is required").min(1, "Select a valid team"),
-    subTeamId: Yup.number().required("Sub Team is required").min(1, "Select a valid sub team"),
+    teamId: Yup.number()
+      .required("Team is required")
+      .min(1, "Select a valid team"),
+    subTeamId: Yup.number()
+      .required("Sub Team is required")
+      .min(1, "Select a valid sub team"),
     unitId: Yup.number().optional(),
     careerFunctionId: Yup.number()
       .required("Career function is required")
@@ -111,7 +122,9 @@ export const createJobInfoValidationSchema = (employmentTypes?: { id: number; na
       .max(20, "Secondary job title must be at most 20 characters")
       .transform((value) => (value === "" ? null : value))
       .nullable(),
-    companyId: Yup.number().required("Company is required").min(1, "Select a valid company"),
+    companyId: Yup.number()
+      .required("Company is required")
+      .min(1, "Select a valid company"),
     officeId: Yup.number().optional(),
     workLocation: Yup.string()
       .required("Work location is required")
@@ -127,7 +140,9 @@ export const createJobInfoValidationSchema = (employmentTypes?: { id: number; na
       .transform((value) => (value === "" ? null : value))
       .nullable(),
     managerEmail: Yup.string().required("Lead email is required"),
-    additionalManagerEmail: Yup.array().of(Yup.string().email("Invalid email format")).nullable(),
+    additionalManagerEmail: Yup.array()
+      .of(Yup.string().email("Invalid email format"))
+      .nullable(),
     employeeId: Yup.string()
       .trim()
       .transform((value) => (value === "" ? null : value))
@@ -135,7 +150,9 @@ export const createJobInfoValidationSchema = (employmentTypes?: { id: number; na
       .when("employmentTypeId", (employmentTypeId: number, schema: any) => {
         if (!employmentTypeId) return schema;
         if (!employmentTypes || employmentTypes.length === 0) return schema;
-        const selected = employmentTypes.find((et) => et.id === employmentTypeId);
+        const selected = employmentTypes.find(
+          (et) => et.id === employmentTypeId,
+        );
         const isFixed = selected
           ? FIXED_TERM_EMPLOYMENT_TYPE.test((selected.name || "").trim())
           : false;
@@ -145,23 +162,25 @@ export const createJobInfoValidationSchema = (employmentTypes?: { id: number; na
       }),
   });
 
-const SectionHeader = React.memo(({ icon, title, headerBoxSx, iconBoxSx }: any) => {
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 1.5,
-        ...headerBoxSx,
-      }}
-    >
-      <Box sx={iconBoxSx}>{icon}</Box>
-      <Typography variant="h6" fontWeight={600}>
-        {title}
-      </Typography>
-    </Box>
-  );
-});
+const SectionHeader = React.memo(
+  ({ icon, title, headerBoxSx, iconBoxSx }: any) => {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          ...headerBoxSx,
+        }}
+      >
+        <Box sx={iconBoxSx}>{icon}</Box>
+        <Typography variant="h6" fontWeight={600}>
+          {title}
+        </Typography>
+      </Box>
+    );
+  },
+);
 
 const ContinuousServicePopoverContent = React.memo(
   ({ record }: { record: ContinuousServiceRecordInfo | null | undefined }) => {
@@ -178,7 +197,9 @@ const ContinuousServicePopoverContent = React.memo(
       { label: "Work Location", value: record.workLocation },
       {
         label: "Start Date",
-        value: record.startDate ? dayjs(record.startDate).format("YYYY-MM-DD") : null,
+        value: record.startDate
+          ? dayjs(record.startDate).format("YYYY-MM-DD")
+          : null,
       },
       { label: "Lead Email", value: record.managerEmail },
       { label: "Additional Leads", value: record.additionalManagerEmails },
@@ -325,10 +346,21 @@ export const FIXED_TERM_EMPLOYMENT_TYPE = /^fixed\s+term\s+contract$/i;
 export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const { values, handleChange, handleBlur, touched, errors, setFieldValue, setFieldError } =
-    useFormikContext<CreateEmployeeFormValues>();
-  const { employeesBasicInfo, employeeBasicInfoState, continuousServiceRecord, errorMessage } =
-    useAppSelector((s) => s.employee);
+  const {
+    values,
+    handleChange,
+    handleBlur,
+    touched,
+    errors,
+    setFieldValue,
+    setFieldError,
+  } = useFormikContext<CreateEmployeeFormValues>();
+  const {
+    employeesBasicInfo,
+    employeeBasicInfoState,
+    continuousServiceRecord,
+    errorMessage,
+  } = useAppSelector((s) => s.employee);
   const {
     state: organizationState,
     businessUnits,
@@ -347,7 +379,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     ? houses.find((h) => h.id === suggestedHouseId)?.name
     : undefined;
 
-  const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(null);
+  const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
+    null,
+  );
 
   const initialLoadRef = useRef({
     teams: false,
@@ -432,7 +466,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
 
   useEffect(() => {
     const hasInitialValues =
-      values.businessUnitId > 0 || values.careerFunctionId > 0 || values.companyId > 0;
+      values.businessUnitId > 0 ||
+      values.careerFunctionId > 0 ||
+      values.companyId > 0;
 
     if (!hasInitialValues) return;
 
@@ -449,7 +485,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       initialLoadRef.current.units = true;
     }
     if (values.careerFunctionId > 0 && !initialLoadRef.current.designations) {
-      dispatch(fetchDesignations({ careerFunctionId: values.careerFunctionId }));
+      dispatch(
+        fetchDesignations({ careerFunctionId: values.careerFunctionId }),
+      );
       initialLoadRef.current.designations = true;
     }
     if (values.companyId > 0 && !initialLoadRef.current.offices) {
@@ -470,7 +508,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
 
     if (recordCount === 0) {
       setSelectedRecordIndex(null);
-    } else if (selectedRecordIndex === null || selectedRecordIndex >= recordCount) {
+    } else if (
+      selectedRecordIndex === null ||
+      selectedRecordIndex >= recordCount
+    ) {
       setSelectedRecordIndex(0);
     }
   }, [continuousServiceRecord, selectedRecordIndex]);
@@ -486,27 +527,37 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     return t?.id ?? null;
   }, [employmentTypes]);
 
-  const [internshipDurationMonths, setInternshipDurationMonths] = useState<number>(0);
+  const [internshipDurationMonths, setInternshipDurationMonths] =
+    useState<number>(0);
 
-  const computeAgreementEndDate = useCallback((startDate: string | null, months: number) => {
-    if (!startDate || !months) return null;
-    try {
-      return dayjs(startDate).add(months, "month").format("YYYY-MM-DD");
-    } catch {
-      return null;
-    }
-  }, []);
+  const computeAgreementEndDate = useCallback(
+    (startDate: string | null, months: number) => {
+      if (!startDate || !months) return null;
+      try {
+        return dayjs(startDate).add(months, "month").format("YYYY-MM-DD");
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
   const isPermanent = useMemo(() => {
-    const selectedType = employmentTypes.find((et) => et.id === values.employmentTypeId);
+    const selectedType = employmentTypes.find(
+      (et) => et.id === values.employmentTypeId,
+    );
     return /^permanent$/i.test(selectedType?.name?.trim() ?? "");
   }, [employmentTypes, values.employmentTypeId]);
 
   const isInternship = useMemo(() => {
-    return internshipTypeId !== null && values.employmentTypeId === internshipTypeId;
+    return (
+      internshipTypeId !== null && values.employmentTypeId === internshipTypeId
+    );
   }, [internshipTypeId, values.employmentTypeId]);
 
   const isFixedTerm = useMemo(() => {
-    const selectedType = employmentTypes.find((et) => et.id === values.employmentTypeId);
+    const selectedType = employmentTypes.find(
+      (et) => et.id === values.employmentTypeId,
+    );
     if (!selectedType) return false;
     return FIXED_TERM_EMPLOYMENT_TYPE.test(selectedType.name.trim());
   }, [employmentTypes, values.employmentTypeId]);
@@ -522,16 +573,27 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
 
   const computedAgreementDate = useMemo(() => {
     if (!isInternship || !internshipDurationMonths) return null;
-    return computeAgreementEndDate(values.startDate ?? null, internshipDurationMonths);
-  }, [isInternship, values.startDate, internshipDurationMonths, computeAgreementEndDate]);
+    return computeAgreementEndDate(
+      values.startDate ?? null,
+      internshipDurationMonths,
+    );
+  }, [
+    isInternship,
+    values.startDate,
+    internshipDurationMonths,
+    computeAgreementEndDate,
+  ]);
 
   const matchedProbationLocation = useMemo(() => {
-    if (!values.companyId || !values.workLocation || !companies.length) return null;
+    if (!values.companyId || !values.workLocation || !companies.length)
+      return null;
 
     const company = companies.find((c) => c.id === values.companyId);
     return (
       company?.allowedLocations?.find(
-        (item) => item.location.trim().toUpperCase() === values.workLocation.trim().toUpperCase(),
+        (item) =>
+          item.location.trim().toUpperCase() ===
+          values.workLocation.trim().toUpperCase(),
       ) ?? null
     );
   }, [values.companyId, values.workLocation, companies]);
@@ -561,7 +623,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       setFieldValue("probationEndDate", null);
       return;
     }
-    const computed = startDate.add(probationMonths, "month").format("YYYY-MM-DD");
+    const computed = startDate
+      .add(probationMonths, "month")
+      .format("YYYY-MM-DD");
     setFieldValue("probationEndDate", computed);
   }, [
     isPermanent,
@@ -576,7 +640,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     (newEmploymentTypeId: number) => {
       setFieldValue("employmentTypeId", newEmploymentTypeId);
 
-      const selectedType = employmentTypes.find((e) => e.id === newEmploymentTypeId);
+      const selectedType = employmentTypes.find(
+        (e) => e.id === newEmploymentTypeId,
+      );
       const typeName = selectedType?.name?.trim() ?? "";
       const isNewInternship = /^internship$/i.test(typeName);
       const isNewPermanent = /^permanent$/i.test(typeName);
@@ -592,7 +658,8 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       } else {
         setInternshipDurationMonths(0);
         if (isNewPermanent) setFieldValue("agreementEndDate", null);
-        if (isNewConsultancy || isNewFixedTerm) setFieldValue("agreementEndDate", null);
+        if (isNewConsultancy || isNewFixedTerm)
+          setFieldValue("agreementEndDate", null);
         if (isAutoIdType) setFieldValue("employeeId", "");
       }
     },
@@ -602,7 +669,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   const handleInternshipDurationChange = useCallback(
     (months: number) => {
       setInternshipDurationMonths(months);
-      const computed = computeAgreementEndDate(values.startDate ?? null, months);
+      const computed = computeAgreementEndDate(
+        values.startDate ?? null,
+        months,
+      );
       if (computed) {
         setFieldValue("agreementEndDate", computed);
       }
@@ -616,13 +686,21 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       setFieldValue("startDate", newStartDate);
 
       if (isInternship && internshipDurationMonths && newStartDate) {
-        const computed = computeAgreementEndDate(newStartDate, internshipDurationMonths);
+        const computed = computeAgreementEndDate(
+          newStartDate,
+          internshipDurationMonths,
+        );
         if (computed) {
           setFieldValue("agreementEndDate", computed);
         }
       }
     },
-    [setFieldValue, isInternship, internshipDurationMonths, computeAgreementEndDate],
+    [
+      setFieldValue,
+      isInternship,
+      internshipDurationMonths,
+      computeAgreementEndDate,
+    ],
   );
 
   const handleCareerFunctionChange = useCallback(
@@ -757,7 +835,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               fullWidth
               required
@@ -780,7 +858,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               sx={textFieldSx}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <Box>
               {continuousServiceRecord?.length === 1 ? (
                 <TextField
@@ -815,7 +893,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                   }}
                   disabled={!!errorMessage}
                   sx={{ ...textFieldSx }}
-                  helperText={errorMessage ? "Failed to fetch record" : undefined}
+                  helperText={
+                    errorMessage ? "Failed to fetch record" : undefined
+                  }
                   error={!!errorMessage}
                   InputProps={{
                     endAdornment:
@@ -827,7 +907,8 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                   {continuousServiceRecord.map((rec, idx) => (
                     <MenuItem key={idx} value={idx}>
                       {rec.employeeId} -{" "}
-                      {`${rec.firstName || ""} ${rec.lastName || ""}`.trim() || "N/A"}
+                      {`${rec.firstName || ""} ${rec.lastName || ""}`.trim() ||
+                        "N/A"}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -862,7 +943,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               )}
             </Box>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               fullWidth
               label="EPF"
@@ -906,7 +987,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               select
               fullWidth
@@ -935,7 +1016,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               )}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               select
               fullWidth
@@ -968,7 +1049,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               )}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               select
               fullWidth
@@ -1001,7 +1082,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               )}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               select
               fullWidth
@@ -1036,7 +1117,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               )}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               select
               fullWidth
@@ -1044,9 +1125,13 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               label="Career Function"
               name="careerFunctionId"
               value={values.careerFunctionId || ""}
-              onChange={(e) => handleCareerFunctionChange(Number(e.target.value))}
+              onChange={(e) =>
+                handleCareerFunctionChange(Number(e.target.value))
+              }
               onBlur={handleBlur}
-              error={Boolean(touched.careerFunctionId && errors.careerFunctionId)}
+              error={Boolean(
+                touched.careerFunctionId && errors.careerFunctionId,
+              )}
               helperText={touched.careerFunctionId && errors.careerFunctionId}
               sx={textFieldSx}
             >
@@ -1065,7 +1150,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               )}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               select
               fullWidth
@@ -1073,11 +1158,15 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               label="Designation"
               name="designationId"
               value={values.designationId || ""}
-              onChange={(e) => setFieldValue("designationId", Number(e.target.value))}
+              onChange={(e) =>
+                setFieldValue("designationId", Number(e.target.value))
+              }
               onBlur={handleBlur}
               error={Boolean(touched.designationId && errors.designationId)}
               helperText={touched.designationId && errors.designationId}
-              disabled={!values.careerFunctionId || values.careerFunctionId === 0}
+              disabled={
+                !values.careerFunctionId || values.careerFunctionId === 0
+              }
               sx={{
                 ...textFieldSx,
                 ...disabledSx,
@@ -1100,7 +1189,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               )}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               fullWidth
               label="Secondary Job Title"
@@ -1108,7 +1197,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               value={values.secondaryJobTitle ?? ""}
               onChange={handleChange}
               onBlur={handleBlur}
-              error={Boolean(touched.secondaryJobTitle && errors.secondaryJobTitle)}
+              error={Boolean(
+                touched.secondaryJobTitle && errors.secondaryJobTitle,
+              )}
               helperText={touched.secondaryJobTitle && errors.secondaryJobTitle}
               sx={textFieldSx}
             />
@@ -1124,7 +1215,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -1146,12 +1237,14 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 ))
               ) : (
                 <MenuItem disabled>
-                  {organizationState === "loading" ? "Loading companies..." : "No companies found"}
+                  {organizationState === "loading"
+                    ? "Loading companies..."
+                    : "No companies found"}
                 </MenuItem>
               )}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -1175,12 +1268,14 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 ))
               ) : (
                 <MenuItem disabled>
-                  {organizationState === "loading" ? "Loading offices..." : "No offices found"}
+                  {organizationState === "loading"
+                    ? "Loading offices..."
+                    : "No offices found"}
                 </MenuItem>
               )}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -1202,7 +1297,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
 
                   return allowedLocations.length ? (
                     allowedLocations.map((locationItem) => (
-                      <MenuItem key={locationItem.location} value={locationItem.location}>
+                      <MenuItem
+                        key={locationItem.location}
+                        value={locationItem.location}
+                      >
                         {locationItem.location}
                       </MenuItem>
                     ))
@@ -1232,7 +1330,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -1240,9 +1338,13 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               label="Employment Type"
               name="employmentTypeId"
               value={values.employmentTypeId || ""}
-              onChange={(e) => handleEmploymentTypeChange(Number(e.target.value))}
+              onChange={(e) =>
+                handleEmploymentTypeChange(Number(e.target.value))
+              }
               onBlur={handleBlur}
-              error={Boolean(touched.employmentTypeId && errors.employmentTypeId)}
+              error={Boolean(
+                touched.employmentTypeId && errors.employmentTypeId,
+              )}
               helperText={touched.employmentTypeId && errors.employmentTypeId}
               disabled={organizationState === "loading"}
               sx={textFieldSx}
@@ -1263,13 +1365,15 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             </TextField>
           </Grid>
           {isInternship ? (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
                 select
                 fullWidth
                 label="Internship Duration"
                 value={internshipDurationMonths || ""}
-                onChange={(e) => handleInternshipDurationChange(Number(e.target.value))}
+                onChange={(e) =>
+                  handleInternshipDurationChange(Number(e.target.value))
+                }
                 sx={textFieldSx}
                 helperText={
                   isInternship && internshipDurationMonths
@@ -1286,7 +1390,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             </Grid>
           ) : null}
           {isFixedTerm ? (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
                 fullWidth
                 required
@@ -1302,7 +1406,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               />
             </Grid>
           ) : null}
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <DatePicker
               label="Start Date"
               value={values.startDate ? dayjs(values.startDate) : null}
@@ -1319,25 +1423,35 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             />
           </Grid>
           {isPermanent ? (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid item xs={12} sm={6} md={4}>
               <DatePicker
                 label="Probation End Date"
-                value={values.probationEndDate ? dayjs(values.probationEndDate) : null}
+                value={
+                  values.probationEndDate
+                    ? dayjs(values.probationEndDate)
+                    : null
+                }
                 onChange={(val) =>
-                  setFieldValue("probationEndDate", val ? val.format("YYYY-MM-DD") : null)
+                  setFieldValue(
+                    "probationEndDate",
+                    val ? val.format("YYYY-MM-DD") : null,
+                  )
                 }
                 slotProps={{
                   field: { clearable: true },
                   textField: {
                     fullWidth: true,
-                    error: Boolean(touched.probationEndDate && errors.probationEndDate),
+                    error: Boolean(
+                      touched.probationEndDate && errors.probationEndDate,
+                    ),
                     helperText: (() => {
                       if (touched.probationEndDate && errors.probationEndDate) {
                         return errors.probationEndDate;
                       }
                       if (!matchedProbationLocation) return undefined;
 
-                      const probationMonths = matchedProbationLocation.probationPeriod ?? null;
+                      const probationMonths =
+                        matchedProbationLocation.probationPeriod ?? null;
                       return probationMonths === null
                         ? "N/A — No probation for this location"
                         : `Auto-calculated: ${probationMonths} months from start date`;
@@ -1349,20 +1463,29 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             </Grid>
           ) : null}
           {showAgreementEndDate ? (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid item xs={12} sm={6} md={4}>
               <DatePicker
                 label="Agreement End Date"
-                value={values.agreementEndDate ? dayjs(values.agreementEndDate) : null}
+                value={
+                  values.agreementEndDate
+                    ? dayjs(values.agreementEndDate)
+                    : null
+                }
                 onChange={(val) => {
                   if (isInternship && internshipDurationMonths) return;
-                  setFieldValue("agreementEndDate", val ? val.format("YYYY-MM-DD") : null);
+                  setFieldValue(
+                    "agreementEndDate",
+                    val ? val.format("YYYY-MM-DD") : null,
+                  );
                 }}
                 disabled={isInternship && !!internshipDurationMonths}
                 slotProps={{
                   field: { clearable: true },
                   textField: {
                     fullWidth: true,
-                    error: Boolean(touched.agreementEndDate && errors.agreementEndDate),
+                    error: Boolean(
+                      touched.agreementEndDate && errors.agreementEndDate,
+                    ),
                     helperText:
                       isInternship && internshipDurationMonths
                         ? computedAgreementDate
@@ -1386,7 +1509,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -1397,7 +1520,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               onChange={(e) => setFieldValue("managerEmail", e.target.value)}
               onBlur={handleBlur}
               error={Boolean(touched.managerEmail && errors.managerEmail)}
-              helperText={touched.managerEmail ? (errors.managerEmail ?? "") : ""}
+              helperText={
+                touched.managerEmail ? (errors.managerEmail ?? "") : ""
+              }
               sx={textFieldSx}
             >
               {managerEmailOptions.length ? (
@@ -1415,7 +1540,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               )}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -1430,12 +1555,20 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 );
               }}
               onBlur={handleBlur}
-              error={Boolean(touched.additionalManagerEmail && errors.additionalManagerEmail)}
-              helperText={touched.additionalManagerEmail && errors.additionalManagerEmail}
+              error={Boolean(
+                touched.additionalManagerEmail && errors.additionalManagerEmail,
+              )}
+              helperText={
+                touched.additionalManagerEmail && errors.additionalManagerEmail
+              }
               SelectProps={{
                 multiple: true,
                 renderValue: (selected) => (
-                  <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5 }}>
+                  <Stack
+                    direction="row"
+                    spacing={0.5}
+                    sx={{ flexWrap: "wrap", gap: 0.5 }}
+                  >
                     {(selected as string[]).map((email) => (
                       <Chip
                         key={email}
@@ -1444,9 +1577,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                         onMouseDown={(e) => e.stopPropagation()}
                         onDelete={(e) => {
                           e.stopPropagation();
-                          const updated = (values.additionalManagerEmail || []).filter(
-                            (em) => em !== email,
-                          );
+                          const updated = (
+                            values.additionalManagerEmail || []
+                          ).filter((em) => em !== email);
                           setFieldValue("additionalManagerEmail", updated);
                         }}
                         deleteIcon={
@@ -1500,7 +1633,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -1526,7 +1659,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 ))
               ) : (
                 <MenuItem disabled>
-                  {organizationState === "loading" ? "Loading houses..." : "No houses found"}
+                  {organizationState === "loading"
+                    ? "Loading houses..."
+                    : "No houses found"}
                 </MenuItem>
               )}
             </TextField>

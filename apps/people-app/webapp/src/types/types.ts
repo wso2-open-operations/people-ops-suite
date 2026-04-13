@@ -15,22 +15,11 @@
 // under the License.
 import type { NonIndexRouteObject } from "react-router-dom";
 
-export type NavState = {
-  hovered: number | null;
-  active: number | null;
-  expanded: number | null;
-};
-
-export enum AppState {
-  Maintenance = "MAINTENANCE",
-  Failed = "FAILED",
-  Success = "SUCCESS",
-  Loading = "LOADING",
-}
-
-export enum Role {
-  ADMIN = "ADMIN",
-  EMPLOYEE = "EMPLOYEE",
+export enum State {
+  failed = "failed",
+  success = "success",
+  loading = "loading",
+  idle = "idle",
 }
 
 export enum ConfirmationType {
@@ -41,35 +30,16 @@ export enum ConfirmationType {
   discard = "discard",
 }
 
-export interface RouteDetail {
-  path: string;
-  allowRoles: string[];
-  excludeRoles?: string[];
-  icon: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
-  text: string;
-  children?: RouteObjectWithRole[];
-  bottomNav?: boolean;
-  element?: React.ReactNode;
-  hideFromSidebar?: boolean;
+export enum AppState {
+  Maintenance = "MAINTENANCE",
+  Failed = "FAILED",
+  Success = "SUCCESS",
+  Loading = "LOADING",
 }
 
-export interface RouteObjectWithRole extends NonIndexRouteObject {
-  path: string;
-  allowRoles: string[];
-  excludeRoles?: string[];
-  icon: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
-  text: string;
-  children?: RouteObjectWithRole[];
-  bottomNav?: boolean;
-  element?: React.ReactNode;
-  hideFromSidebar?: boolean;
-}
-
-export enum State {
-  failed = "failed",
-  success = "success",
-  loading = "loading",
-  idle = "idle",
+export interface CommonCardProps {
+  actions: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
+  dataCardIndex: number;
 }
 
 export interface EmergencyContact {
@@ -172,4 +142,28 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
 export interface ServiceLength {
   years: number;
   months: number;
+}
+
+export interface RouteDetail {
+  path: string;
+  allowRoles: string[];
+  excludeRoles?: string[];
+  icon: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
+  text: string;
+  children?: RouteObjectWithRole[];
+  bottomNav?: boolean;
+  element?: React.ReactNode;
+  hideFromSidebar?: boolean;
+}
+
+export interface RouteObjectWithRole extends NonIndexRouteObject {
+  path: string;
+  allowRoles: string[];
+  excludeRoles?: string[];
+  icon: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
+  text: string;
+  children?: RouteObjectWithRole[];
+  bottomNav?: boolean;
+  element?: React.ReactNode;
+  hideFromSidebar?: boolean;
 }

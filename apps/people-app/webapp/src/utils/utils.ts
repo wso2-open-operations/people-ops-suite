@@ -13,9 +13,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { differenceInMonths, differenceInYears, isAfter, isMatch, isValid, parse, format  } from "date-fns";
 
-import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
+import {
+  differenceInMonths,
+  differenceInYears,
+  isAfter,
+  isMatch,
+  isValid,
+  parse,
+} from "date-fns";
+import {
+  BusinessUnit,
+  Company,
+  SubTeam,
+  Team,
+  Unit,
+} from "@services/organization";
 import {
   BusinessUnit as RawBusinessUnit,
   SubTeam as RawSubTeam,
@@ -32,70 +45,50 @@ import type {
   UnitState,
 } from "@slices/organizationSlice/organizationStructure";
 
+import { format } from "date-fns";
+import { NodeType, UnitType } from "./types";
+
 import { DATE_FMT } from "../config/constant";
-import { RouteObjectWithRole, ServiceLength } from "../types/types";
+import { RouteObjectWithRole, ServiceLength } from "@/types/types";
 import { AddOption } from "../view/master-data/panel/split-view/SplitView";
-import { NodeType } from "./types";
 
-export function isIncludedRole(roles: string[], allowedRoles: string[]) {
-  return roles.some((role) => allowedRoles.includes(role));
-}
-
-/**
- * Checks whether a route is active for the given user roles.
- *
- * A route is active when at least one role matches `allowRoles`
- * and none of the roles match `excludeRoles`.
- */
-export function isRouteActive(routeObj: RouteObjectWithRole, roles: string[]): boolean {
-  return (
-    isIncludedRole(roles, routeObj.allowRoles) &&
-    !(routeObj.excludeRoles && isIncludedRole(roles, routeObj.excludeRoles))
-  );
-}
-
-/**
- * Joins a parent and child route path into a normalized absolute path.
- *
- * If `childPath` is already absolute, it is returned as-is.
- */
-export function joinRoutePaths(parentPath: string, childPath: string): string {
-  if (!childPath) return parentPath;
-  if (childPath.startsWith("/")) return childPath;
-
-  const normalizedParent = parentPath.endsWith("/") ? parentPath.slice(0, -1) : parentPath;
-  const normalizedChild = childPath.startsWith("/") ? childPath.slice(1) : childPath;
-
-  return `${normalizedParent}/${normalizedChild}`;
-}
-
-const parseStrictYyyyMmDd = (s: string): Date | null => {
-  const v = s.trim();
-  if (!isMatch(v, DATE_FMT)) return null;
-
-  const d = parse(v, DATE_FMT, new Date());
-  return isValid(d) ? d : null;
+export const isIncludedRole = (a: string[], b: string[]): boolean => {
+  return [...getCrossItems(a, b), ...getCrossItems(b, a)].length > 0;
 };
 
-export const calculateAge = (dob: string, now: Date = new Date()): number | null => {
-  const d = parseStrictYyyyMmDd(dob);
-  if (!d || isAfter(d, now)) return null;
-  return differenceInYears(now, d);
-};
+function getCrossItems<Role>(a: Role[], b: Role[]): Role[] {
+  return a.filter((element) => {
+    return b.includes(element);
+  });
+}
 
-export const calculateServiceLength = (
-  startDate: string,
-  now: Date = new Date(),
-): ServiceLength | null => {
-  const start = parseStrictYyyyMmDd(startDate);
-  if (!start || isAfter(start, now)) return null;
-
-  const totalMonths = differenceInMonths(now, start);
-
-  return {
-    years: Math.floor(totalMonths / 12),
-    months: totalMonths % 12,
+export const markAllFieldsTouched = (errors: any) => {
+  const touched: any = {};
+  const markTouched = (obj: any, touchedObj: any) => {
+    Object.keys(obj).forEach((key) => {
+      if (
+        typeof obj[key] === "object" &&
+        obj[key] !== null &&
+        !Array.isArray(obj[key])
+      ) {
+        touchedObj[key] = {};
+        markTouched(obj[key], touchedObj[key]);
+      } else if (Array.isArray(obj[key])) {
+        touchedObj[key] = obj[key].map((item: any) =>
+          typeof item === "object" && item !== null ? {} : true,
+        );
+        obj[key].forEach((item: any, index: number) => {
+          if (typeof item === "object" && item !== null) {
+            markTouched(item, touchedObj[key][index]);
+          }
+        });
+      } else {
+        touchedObj[key] = true;
+      }
+    });
   };
+  markTouched(errors, touched);
+  return touched;
 };
 
 export const formatServiceLength = (length: ServiceLength | null): string => {
@@ -143,7 +136,10 @@ export const toSentenceCase = (value: string): string => {
     .join(" ");
 };
 
-export const sortAndFormatOptions = <T>(options: T[], getLabel: (option: T) => string): T[] => {
+export const sortAndFormatOptions = <T>(
+  options: T[],
+  getLabel: (option: T) => string,
+): T[] => {
   return [...options].sort((a, b) => {
     const aLabel = getLabel(a);
     const bLabel = getLabel(b);
@@ -166,39 +162,72 @@ export function getEmployeeStatusColor(
   }
 }
 
-export const markAllFieldsTouched = (errors: any) => {
-  const touched: any = {};
-  const markTouched = (obj: any, touchedObj: any) => {
-    Object.keys(obj).forEach((key) => {
-      if (typeof obj[key] === "object" && obj[key] !== null && !Array.isArray(obj[key])) {
-        touchedObj[key] = {};
-        markTouched(obj[key], touchedObj[key]);
-      } else if (Array.isArray(obj[key])) {
-        touchedObj[key] = obj[key].map((item: any) =>
-          typeof item === "object" && item !== null ? {} : true,
-        );
-        obj[key].forEach((item: any, index: number) => {
-          if (typeof item === "object" && item !== null) {
-            markTouched(item, touchedObj[key][index]);
-          }
-        });
-      } else {
-        touchedObj[key] = true;
-      }
-    });
-  };
-  markTouched(errors, touched);
-  return touched;
+/**
+ * Checks whether a route is active for the given user roles.
+ *
+ * A route is active when at least one role matches `allowRoles`
+ * and none of the roles match `excludeRoles`.
+ */
+export function isRouteActive(
+  routeObj: RouteObjectWithRole,
+  roles: string[],
+): boolean {
+  return (
+    isIncludedRole(roles, routeObj.allowRoles) &&
+    !(routeObj.excludeRoles && isIncludedRole(roles, routeObj.excludeRoles))
+  );
+}
+
+/**
+ * Joins a parent and child route path into a normalized absolute path.
+ *
+ * If `childPath` is already absolute, it is returned as-is.
+ */
+export function joinRoutePaths(parentPath: string, childPath: string): string {
+  if (!childPath) return parentPath;
+  if (childPath.startsWith("/")) return childPath;
+
+  const normalizedParent = parentPath.endsWith("/")
+    ? parentPath.slice(0, -1)
+    : parentPath;
+  const normalizedChild = childPath.startsWith("/")
+    ? childPath.slice(1)
+    : childPath;
+
+  return `${normalizedParent}/${normalizedChild}`;
+}
+
+const parseStrictYyyyMmDd = (s: string): Date | null => {
+  const v = s.trim();
+  if (!isMatch(v, DATE_FMT)) return null;
+
+  const d = parse(v, DATE_FMT, new Date());
+  return isValid(d) ? d : null;
 };
 
+export const calculateAge = (
+  dob: string,
+  now: Date = new Date(),
+): number | null => {
+  const d = parseStrictYyyyMmDd(dob);
+  if (!d || isAfter(d, now)) return null;
+  return differenceInYears(now, d);
+};
 
-export enum UnitType {
-  Company = "COMPANY",
-  BusinessUnit = "BUSINESS_UNIT",
-  Team = "TEAM",
-  SubTeam = "SUB_TEAM",
-  Unit = "UNIT",
-}
+export const calculateServiceLength = (
+  startDate: string,
+  now: Date = new Date(),
+): ServiceLength | null => {
+  const start = parseStrictYyyyMmDd(startDate);
+  if (!start || isAfter(start, now)) return null;
+
+  const totalMonths = differenceInMonths(now, start);
+
+  return {
+    years: Math.floor(totalMonths / 12),
+    months: totalMonths % 12,
+  };
+};
 
 export const UnitTypeLabel: Record<UnitType, string> = {
   [UnitType.Company]: "Company",
@@ -217,15 +246,21 @@ export type ChildItem = BusinessUnit | Team | SubTeam | Unit;
 // Child type labels
 export type ChildTypeLabel = "Business Units" | "Teams" | "Sub-Teams" | "Units";
 
-export const generateOrgNodeUniqueId = (nodeType: NodeType, segments: Array<string | number>) =>
-  [nodeType, ...segments].join(":");
+export const generateOrgNodeUniqueId = (
+  nodeType: NodeType,
+  segments: Array<string | number>,
+) => [nodeType, ...segments].join(":");
 
-export function normalizeCompanyToOrganizationState(companyDto: Company): OrganizationInfo {
+export function normalizeCompanyToOrganizationState(
+  companyDto: Company,
+): OrganizationInfo {
   const businessUnits: BusinessUnitState[] = [];
   const teams: TeamState[] = [];
   const subTeams: SubTeamState[] = [];
   const units: UnitState[] = [];
-  const companyUniqueId = generateOrgNodeUniqueId(NodeType.Company, [companyDto.id]);
+  const companyUniqueId = generateOrgNodeUniqueId(NodeType.Company, [
+    companyDto.id,
+  ]);
   const company: CompanyState = {
     ...companyDto,
     uniqueId: companyUniqueId,
@@ -238,7 +273,10 @@ export function normalizeCompanyToOrganizationState(companyDto: Company): Organi
 
     for (const team of bu.teams) {
       const transformedSubTeams: SubTeamState[] = [];
-      const teamUniqueId = generateOrgNodeUniqueId(NodeType.Team, [bu.id, team.id]);
+      const teamUniqueId = generateOrgNodeUniqueId(NodeType.Team, [
+        bu.id,
+        team.id,
+      ]);
 
       for (const subTeam of team.subTeams) {
         const transformedUnits: UnitState[] = [];
@@ -345,13 +383,16 @@ export function buildAddModalOptions(
 
   switch (type) {
     case NodeType.Team:
-      existingIds = (selectedNode as BusinessUnitState).teams?.map((t) => t.id) ?? [];
+      existingIds =
+        (selectedNode as BusinessUnitState).teams?.map((t) => t.id) ?? [];
       break;
     case NodeType.SubTeam:
-      existingIds = (selectedNode as TeamState).subTeams?.map((st) => st.id) ?? [];
+      existingIds =
+        (selectedNode as TeamState).subTeams?.map((st) => st.id) ?? [];
       break;
     case NodeType.Unit:
-      existingIds = (selectedNode as SubTeamState).units?.map((u) => u.id) ?? [];
+      existingIds =
+        (selectedNode as SubTeamState).units?.map((u) => u.id) ?? [];
       break;
     case NodeType.BusinessUnit:
     default:

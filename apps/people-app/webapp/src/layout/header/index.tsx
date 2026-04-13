@@ -14,9 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 import { UserDropdown } from "@asgardeo/react";
-import { Box, LinearProgress, Stack, useMediaQuery, useTheme } from "@mui/material";
+import { Box, LinearProgress, Stack, useMediaQuery } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
 
 import { APP_NAME } from "@config/config";
 import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
@@ -24,10 +25,11 @@ import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVi
 import { useWso2Logo } from "@root/src/hooks/useWso2Logo";
 import { isGlobalLoadingSelector } from "@root/src/slices/selectors";
 import { useAppSelector } from "@slices/store";
+import UpdatedThemeScope from "@src/theme/UpdatedThemeScope";
 
 const MIN_GLOBAL_LOADING_INDICATOR_MS = 2000;
 
-const Header = () => {
+const HeaderContent = () => {
   const theme = useTheme();
   const wso2Logo = useWso2Logo();
 
@@ -162,5 +164,11 @@ const Header = () => {
     </Box>
   );
 };
+
+const Header = () => (
+  <UpdatedThemeScope>
+    <HeaderContent />
+  </UpdatedThemeScope>
+);
 
 export default Header;

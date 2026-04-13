@@ -13,24 +13,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import GroupsIcon from "@mui/icons-material/Groups";
 
-import TabsPage from "@layout/pages/TabsPage";
-
+import CommonPage from "@layout/pages/CommonPage";
+import GroupsIcon from '@mui/icons-material/Groups';
 import EmployeesTable from "./employeesTable/EmployeesTable";
 
 export default function EmployeesView() {
   return (
-    <TabsPage
+    <CommonPage
       title="Employees"
-      tabsPage={[
-        {
-          tabTitle: "Employees",
-          tabPath: "employees",
-          icon: <GroupsIcon />,
-          page: <EmployeesTable />,
-        },
-      ]}
+      icon={<GroupsIcon />}
+      commonPageTabs={[]}
+      page={<EmployeesTable />}
     />
   );
 }

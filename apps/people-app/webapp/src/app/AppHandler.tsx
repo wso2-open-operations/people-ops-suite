@@ -35,7 +35,9 @@ const getAppState = (authStatus: string, authMode: string): AppState => {
 };
 
 const AppHandler: FC = () => {
-  const { status, mode, roles, statusMessage } = useAppSelector((state: RootState) => state.auth);
+  const { status, mode, roles, statusMessage } = useAppSelector(
+    (state: RootState) => state.auth,
+  );
 
   const appState = useMemo(() => getAppState(status, mode), [status, mode]);
 
@@ -54,7 +56,9 @@ const AppHandler: FC = () => {
 
   const renderApp = () => {
     if (appState === AppState.Loading) {
-      return <PreLoader isLoading={true} message="We are getting things ready..." />;
+      return (
+        <PreLoader isLoading={true} message="We are getting things ready..." />
+      );
     }
 
     if (appState === AppState.Maintenance) {

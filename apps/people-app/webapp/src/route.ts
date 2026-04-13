@@ -82,7 +82,7 @@ export const routes: RouteObjectWithRole[] = [
     path: "/reports",
     text: "Reports",
     icon: React.createElement(AssessmentIcon),
-    allowRoles: [Role.ADMIN, Role.SERVICE_DESK],
+    allowRoles: [Role.ADMIN],
     children: [
       {
         path: "active-employees",
@@ -103,7 +103,7 @@ export const routes: RouteObjectWithRole[] = [
         text: "QR Codes",
         icon: React.createElement(QrCode2Icon),
         element: React.createElement(View.qrCodesReport),
-        allowRoles: [Role.ADMIN, Role.SERVICE_DESK],
+        allowRoles: [Role.ADMIN],
       },
     ],
   },
@@ -113,7 +113,7 @@ export const routes: RouteObjectWithRole[] = [
     text: "Master Data",
     icon: React.createElement(AccountTreeOutlinedIcon),
     element: React.createElement(View.masterData),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.ADMIN],
   },
   // Temporarily remove the help route
   // {

@@ -53,7 +53,11 @@ export interface UnitState extends Unit {
   type: NodeType;
 }
 
-export type OrgStructureState = BusinessUnitState | TeamState | SubTeamState | UnitState;
+export type OrgStructureState =
+  | BusinessUnitState
+  | TeamState
+  | SubTeamState
+  | UnitState;
 
 export interface OrganizationInfo {
   units: UnitState[];
@@ -82,7 +86,9 @@ const organizationStructureSlice = createSlice({
   initialState: initialState,
   reducers: {
     setOrganizationStructure(state, action: PayloadAction<Company>) {
-      state.organizationInfo = normalizeCompanyToOrganizationState(action.payload);
+      state.organizationInfo = normalizeCompanyToOrganizationState(
+        action.payload,
+      );
       state.state = State.Success;
       state.stateMessage = "Successfully fetched organization data";
       state.errorMessage = null;
@@ -96,22 +102,33 @@ const organizationStructureSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addMatcher(organizationApi.endpoints.getOrgStructure.matchPending, (state) => {
-        state.state = State.Loading;
-        state.stateMessage = "Fetching organization data...";
-        state.errorMessage = null;
-      })
-      .addMatcher(organizationApi.endpoints.getOrgStructure.matchFulfilled, (state, action) => {
-        state.organizationInfo = normalizeCompanyToOrganizationState(action.payload);
-        state.state = State.Success;
-        state.stateMessage = "Successfully fetched organization data";
-        state.errorMessage = null;
-      })
-      .addMatcher(organizationApi.endpoints.getOrgStructure.matchRejected, (state, action) => {
-        state.state = State.Failed;
-        state.errorMessage = action.error.message as string;
-        state.stateMessage = null;
-      });
+      .addMatcher(
+        organizationApi.endpoints.getOrgStructure.matchPending,
+        (state) => {
+          state.state = State.Loading;
+          state.stateMessage = "Fetching organization data...";
+          state.errorMessage = null;
+        },
+      )
+      .addMatcher(
+        organizationApi.endpoints.getOrgStructure.matchFulfilled,
+        (state, action) => {
+          state.organizationInfo = normalizeCompanyToOrganizationState(
+            action.payload,
+          );
+          state.state = State.Success;
+          state.stateMessage = "Successfully fetched organization data";
+          state.errorMessage = null;
+        },
+      )
+      .addMatcher(
+        organizationApi.endpoints.getOrgStructure.matchRejected,
+        (state, action) => {
+          state.state = State.Failed;
+          state.errorMessage = action.error.message as string;
+          state.stateMessage = null;
+        },
+      );
   },
 });
 

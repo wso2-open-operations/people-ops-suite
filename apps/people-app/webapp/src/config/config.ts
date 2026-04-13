@@ -44,25 +44,26 @@ export const SERVICE_BASE_URL = window.config?.REACT_APP_BACKEND_BASE_URL ?? "";
 export const AppConfig = {
   serviceUrls: {
     userInfo: SERVICE_BASE_URL + "/user-info",
+    appConfig: SERVICE_BASE_URL + "/app-config",
+
     employees: SERVICE_BASE_URL + "/employees",
     employeesBasicInfo: SERVICE_BASE_URL + "/employees/basic-info",
     searchEmployees: SERVICE_BASE_URL + "/employees/search",
     managers: SERVICE_BASE_URL + "/employees/managers",
     continuousServiceRecord: SERVICE_BASE_URL + "/continuous-service-records",
     validateEpf: SERVICE_BASE_URL + "/employees/validate-epf",
-    employee: (employeeId: string) =>
-      SERVICE_BASE_URL + `/employees/${employeeId}`,
+    employee: (employeeId: string) => SERVICE_BASE_URL + `/employees/${employeeId}`,
     employeePersonalInfo: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/personal-info`,
-    jobInfo: (employeeId: string) =>
-      SERVICE_BASE_URL + `/employees/${employeeId}/job-info`,
+    jobInfo: (employeeId: string) => SERVICE_BASE_URL + `/employees/${employeeId}/job-info`,
     employeeQrCode: (employeeId: string) => `${SERVICE_BASE_URL}/employees/${employeeId}/qr-code`,
     qrCodesSearch: SERVICE_BASE_URL + "/reports/qr-codes/search",
 
     reportsEmployees: (status?: string, excludeFutureStartDate?: boolean) => {
       const params = new URLSearchParams();
       if (status) params.set("status", status);
-      if (excludeFutureStartDate !== undefined) params.set("excludeFutureStartDate", String(excludeFutureStartDate));
+      if (excludeFutureStartDate !== undefined)
+        params.set("excludeFutureStartDate", String(excludeFutureStartDate));
       const qs = params.toString();
       return SERVICE_BASE_URL + `/reports/employees/generate` + (qs ? `?${qs}` : "");
     },
@@ -76,7 +77,7 @@ export const AppConfig = {
     subTeams: SERVICE_BASE_URL + "/sub-teams",
     units: SERVICE_BASE_URL + "/units",
     offices: SERVICE_BASE_URL + "/offices",
-    organization: SERVICE_BASE_URL + "/organization",
     houses: SERVICE_BASE_URL + "/houses",
+    organization: SERVICE_BASE_URL + "/organization",
   },
 };

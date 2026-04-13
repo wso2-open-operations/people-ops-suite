@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Divider, Stack, Tooltip, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Stack, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
 
 import { useMemo } from "react";
@@ -22,6 +22,7 @@ import SidebarNavItem from "@component/layout/SidebarNavItem";
 import pJson from "@root/package.json";
 import { useActiveRoute } from "@root/src/hooks/useActiveRoute";
 import { getAllowedRoutes } from "@src/route";
+import { useNewTheme as useTheme } from "@src/theme/index";
 
 interface SidebarProps {
   open: boolean;

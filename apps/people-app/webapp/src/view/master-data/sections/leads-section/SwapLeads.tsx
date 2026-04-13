@@ -25,8 +25,8 @@ import {
   IconButton,
   TextField,
   Typography,
+  useTheme,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
 
 import { useEffect, useState } from "react";
 
@@ -71,7 +71,12 @@ const EmployeeOption: React.FC<EmployeeOptionProps> = ({ listItemProps, employee
     >
       <Avatar
         src={employee.employeeThumbnail ?? undefined}
-        sx={{ borderRadius: "8px", fontSize: 12, height: "40px", width: "40px" }}
+        sx={{
+          borderRadius: "8px",
+          fontSize: 12,
+          height: "40px",
+          width: "40px",
+        }}
       >
         {employee.firstName.charAt(0)}
       </Avatar>
@@ -159,17 +164,19 @@ const SelectLeadPanel: React.FC<SelectLeadPanelProps> = ({ onRequestConfirm, isA
             <TextField
               {...params}
               placeholder={isAddMode ? "Search employee to add..." : "Search employee..."}
-              slotProps={{
-                input: {
-                  ...params.InputProps,
-                  sx: { padding: "4px !important" },
-                  endAdornment: (
-                    <>
-                      {isLoading && <CircularProgress size={14} />}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
+              sx={{
+                "& .MuiInputBase-root": {
+                  p: "4px !important",
                 },
+              }}
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {isLoading && <CircularProgress size={14} />}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
               }}
             />
           )}
@@ -216,10 +223,20 @@ const AddLeadPanel: React.FC<AddLeadPanelProps> = ({
         gap: 1.5,
       }}
     >
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1, minWidth: "200px" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+          minWidth: "200px",
+        }}
+      >
         <Typography
           variant="body2"
-          sx={{ color: theme.palette.customText.primary.p3.active, fontWeight: 500 }}
+          sx={{
+            color: theme.palette.customText.primary.p3.active,
+            fontWeight: 500,
+          }}
         >
           {label}
         </Typography>
@@ -263,10 +280,20 @@ const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle }) 
   const theme = useTheme();
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1, minWidth: "200px" }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 1,
+        minWidth: "200px",
+      }}
+    >
       <Typography
         variant="body2"
-        sx={{ color: theme.palette.customText.primary.p3.active, fontWeight: 500 }}
+        sx={{
+          color: theme.palette.customText.primary.p3.active,
+          fontWeight: 500,
+        }}
       >
         {label}
       </Typography>
@@ -278,7 +305,13 @@ const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle }) 
             {lead.name.charAt(0)}
           </Avatar>
 
-          <Box sx={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
             <Typography
               variant="body1"
               sx={{
@@ -320,11 +353,19 @@ const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle }) 
         >
           {isExpanded ? (
             <CloseIcon
-              sx={{ width: 16, height: 16, color: theme.palette.customText.primary.p2.active }}
+              sx={{
+                width: 16,
+                height: 16,
+                color: theme.palette.customText.primary.p2.active,
+              }}
             />
           ) : (
             <SwapHorizIcon
-              sx={{ width: 16, height: 16, color: theme.palette.customText.primary.p2.active }}
+              sx={{
+                width: 16,
+                height: 16,
+                color: theme.palette.customText.primary.p2.active,
+              }}
             />
           )}
         </IconButton>
@@ -434,7 +475,15 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
         isSubmitting={dialogSubmitting}
       />
 
-      <Box sx={{ display: "flex", flexDirection: "column", width: "100%", px: 0.5, gap: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+          px: 0.5,
+          gap: 2,
+        }}
+      >
         {head ? (
           <SwappableLead
             label={`${convertDataTypeToLabel(nodeType)} Head`}

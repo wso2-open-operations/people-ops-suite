@@ -16,9 +16,15 @@
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { ADMIN_PRIVILEGE, LEAD_PRIVILEGE, SERVICE_DESK_PRIVILEGE, SnackMessage } from "@config/constant";
+import { State as LegacyState } from "@/types/types";
+import {
+  ADMIN_PRIVILEGE,
+  LEAD_PRIVILEGE,
+  SERVICE_DESK_PRIVILEGE,
+  SnackMessage,
+} from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import type { RootState } from "@slices/store";
+import { RootState } from "@slices/store";
 
 export enum Role {
   EMPLOYEE = "EMPLOYEE",
@@ -26,39 +32,8 @@ export enum Role {
   ADMIN = "ADMIN",
   SERVICE_DESK = "SERVICE_DESK",
 }
-
-export enum State {
-  Failed = "FAILED",
-  Success = "SUCCESS",
-  Loading = "LOADING",
-  Idle = "IDLE",
-}
-
-enum AuthMode {
-  Active = "ACTIVE",
-  Maintenance = "MAINTENANCE",
-}
-
-export interface ExtendedDecodedIDTokenPayload extends DecodedIDTokenPayload {
-  groups?: string[];
-}
-
-export interface AuthState {
-  status: State;
-  mode: AuthMode;
-  statusMessage: string | null;
-  userInfo: BasicUserInfo | null;
-  decodedIdToken: ExtendedDecodedIDTokenPayload | null;
-  roles: Role[];
-}
-
-export interface AuthData {
-  userInfo: BasicUserInfo;
-  idToken: string;
-}
-
 export interface UserState {
-  state: State;
+  state: LegacyState;
   stateMessage: string | null;
   errorMessage: string | null;
   userInfo: UserInfoInterface | null;
@@ -66,7 +41,7 @@ export interface UserState {
 }
 
 export interface UserInfoInterface {
-  id: number;                 
+  id: number;
   employeeId: string;
   firstName: string;
   lastName: string;
@@ -76,8 +51,38 @@ export interface UserInfoInterface {
   privileges: number[];
 }
 
+enum AuthMode {
+  Active = "ACTIVE",
+  Maintenance = "MAINTENANCE",
+}
+
+export enum State {
+  Failed = "FAILED",
+  Success = "SUCCESS",
+  Loading = "LOADING",
+  Idle = "IDLE",
+}
+
+export interface ExtendedDecodedIDTokenPayload extends DecodedIDTokenPayload {
+  groups?: string[];
+}
+
+export interface AuthState {
+  status: LegacyState;
+  mode: AuthMode;
+  statusMessage: string | null;
+  userInfo: BasicUserInfo | null;
+  decodedIdToken: ExtendedDecodedIDTokenPayload | null;
+  roles: Role[];
+}
+
+export interface AuthData {
+  userInfo: BasicUserInfo;
+  decodedIdToken: ExtendedDecodedIDTokenPayload;
+}
+
 const initialState: AuthState = {
-  status: State.Idle,
+  status: LegacyState.idle,
   mode: AuthMode.Active,
   statusMessage: null,
   userInfo: null,
@@ -88,21 +93,19 @@ const initialState: AuthState = {
 export const loadPrivileges = createAsyncThunk(
   "auth/loadPrivileges",
   (_, { getState, dispatch, rejectWithValue }) => {
-    const state = getState() as RootState;
+    const { userInfo, state, errorMessage } = (getState() as { user: UserState }).user;
 
-    const userInfo = state.user.userInfo;
-    if (!userInfo) {
+    if (state === LegacyState.failed) {
       dispatch(
         enqueueSnackbarMessage({
           message: SnackMessage.error.fetchPrivileges,
           type: "error",
         }),
       );
-      return rejectWithValue("User info not available");
+      return rejectWithValue(errorMessage);
     }
-
-    const userPrivileges = userInfo.privileges || [];
-    const roles: Role[] = [];
+    const userPrivileges = userInfo?.privileges || [];
+    const roles: Role[] = [Role.EMPLOYEE];
 
     if (userPrivileges.includes(LEAD_PRIVILEGE)) {
       roles.push(Role.LEAD);
@@ -124,10 +127,10 @@ export const authSlice = createSlice({
     setUserAuthData: (state, action: PayloadAction<AuthData>) => {
       state.userInfo = action.payload.userInfo;
       state.decodedIdToken = action.payload.decodedIdToken;
-      state.status = State.Success;
+      state.status = LegacyState.success;
     },
     setAuthError: (state) => {
-      state.status = State.Failed;
+      state.status = LegacyState.failed;
       state.userInfo = null;
       state.decodedIdToken = null;
       state.roles = [];
@@ -136,14 +139,14 @@ export const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(loadPrivileges.pending, (state) => {
-        state.status = State.Loading;
+        state.status = LegacyState.loading;
       })
       .addCase(loadPrivileges.fulfilled, (state, action) => {
-        state.status = State.Success;
+        state.status = LegacyState.success;
         state.roles = action.payload.roles;
       })
       .addCase(loadPrivileges.rejected, (state, action) => {
-        state.status = State.Failed;
+        state.status = LegacyState.failed;
         state.statusMessage = action.payload as string;
       });
   },

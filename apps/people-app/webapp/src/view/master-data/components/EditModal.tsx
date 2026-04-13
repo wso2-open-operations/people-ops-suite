@@ -14,12 +14,18 @@
 // specific language governing permissions and limitations
 // under the License.
 import CloseIcon from "@mui/icons-material/Close";
-import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import {
+  Box,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Typography,
+  useTheme,
+} from "@mui/material";
 
 import { useRef } from "react";
 
-import BackdropProgress from "@root/src/component/ui/BackdropProgress";
 import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import {
@@ -31,6 +37,7 @@ import {
 import { RootState, useAppSelector } from "@root/src/slices/store";
 import { NodeType } from "@root/src/utils/types";
 import { convertDataTypeToLabel } from "@root/src/utils/utils";
+import BackdropProgress from "@src/component/ui/BackdropProgress";
 
 import { useOrgEntityActions } from "../hooks/useOrgEntityActions";
 import { DeleteCurrent } from "../sections/danger-section/DeleteCurrent";
@@ -46,7 +53,13 @@ interface EditModalProps {
   onClose: () => void;
 }
 
-export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, nodeType, parentLoading }) => {
+export const EditModal: React.FC<EditModalProps> = ({
+  open,
+  onClose,
+  uniqueId,
+  nodeType,
+  parentLoading,
+}) => {
   const theme = useTheme();
   const orgInfo = useAppSelector((state: RootState) => state.organizationStructure);
   const orgData = orgInfo.organizationInfo;
@@ -99,18 +112,16 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, uniqueId, n
       open={open}
       onClose={onClose}
       maxWidth={false}
-      slotProps={{
-        paper: {
-          sx: {
-            position: "relative",
-            width: "700px",
-            maxHeight: "600px",
-            borderRadius: 1.5,
-            boxShadow: "0px 4px 24px rgba(0, 0, 0, 0.1)",
-            backgroundColor: theme.palette.fill.secondary.light.active,
-            backgroundImage: "none",
-            padding: "4px",
-          },
+      PaperProps={{
+        sx: {
+          position: "relative",
+          width: "700px",
+          maxHeight: "600px",
+          borderRadius: 1.5,
+          boxShadow: "0px 4px 24px rgba(0, 0, 0, 0.1)",
+          backgroundColor: theme.palette.fill.secondary.light.active,
+          backgroundImage: "none",
+          padding: "4px",
         },
       }}
     >

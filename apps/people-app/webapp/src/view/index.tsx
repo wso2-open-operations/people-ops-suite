@@ -22,12 +22,22 @@ const masterData = lazy(() => import("@view/master-data/MasterData"));
 const employeeOnboarding = lazy(
   () => import("@view/employees/employeeOnboarding/employeeOnboarding"),
 );
-const employeesList = lazy(() => import("@view/employees/employeesView/EmployeesView"));
-const employeeDetails = lazy(() => import("@view/employees/employeeDetail/employeeDetail"));
-const employeeEdit = lazy(() => import("@view/employees/employeeEdit/employeeEdit"));
+const employeesList = lazy(
+  () => import("@view/employees/employeesView/EmployeesView"),
+);
+const employeeDetails = lazy(
+  () => import("@view/employees/employeeDetail/employeeDetail"),
+);
+const employeeEdit = lazy(
+  () => import("@view/employees/employeeEdit/employeeEdit"),
+);
 const myTeamView = lazy(() => import("@view/employees/myTeam/MyTeamView"));
-const activeEmployeesReport = lazy(() => import("@view/reports/ActiveEmployeesReportView"));
-const resignationReport = lazy(() => import("@view/reports/ResignationReportView"));
+const activeEmployeesReport = lazy(
+  () => import("@view/reports/ActiveEmployeesReportView"),
+);
+const resignationReport = lazy(
+  () => import("@view/reports/ResignationReportView"),
+);
 const qrCodesReport = lazy(() => import("@view/reports/QrCodesReport"));
 
 export const View = {

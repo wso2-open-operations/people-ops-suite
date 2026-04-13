@@ -13,13 +13,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Breadcrumbs, Tooltip, Typography, useTheme } from "@mui/material";
+import { Box, Breadcrumbs, Tooltip, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Link, useLocation } from "react-router-dom";
+
+import UpdatedThemeScope from "@src/theme/UpdatedThemeScope";
 
 const MAX_LENGTH = 10;
 const TRUNCATE_LENGTH = 4;
 
-export default function BasicBreadcrumbs() {
+function BasicBreadcrumbsContent() {
   const location = useLocation();
   const theme = useTheme();
 
@@ -97,5 +100,13 @@ export default function BasicBreadcrumbs() {
         {pathnames.map(renderBreadcrumbItem)}
       </Breadcrumbs>
     </Box>
+  );
+}
+
+export default function BasicBreadcrumbs() {
+  return (
+    <UpdatedThemeScope>
+      <BasicBreadcrumbsContent />
+    </UpdatedThemeScope>
   );
 }

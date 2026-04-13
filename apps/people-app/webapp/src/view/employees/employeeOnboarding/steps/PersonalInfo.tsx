@@ -13,34 +13,43 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import {
-  AddCircleOutline,
-  CakeOutlined,
-  ContactEmergencyOutlined,
-  ContactPhoneOutlined,
-  HomeOutlined,
-  PersonOutline,
-  RemoveCircleOutline,
-} from "@mui/icons-material";
+
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  ChangeEvent,
+} from "react";
 import {
   Box,
   Grid,
-  IconButton,
-  MenuItem,
   TextField,
+  MenuItem,
   Typography,
-  alpha,
   useTheme,
+  alpha,
+  IconButton,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import dayjs from "dayjs";
-import { Field, FieldArray, getIn, useFormikContext } from "formik";
+import { useFormikContext, FieldArray, Field, getIn } from "formik";
 import * as Yup from "yup";
-
-import React, { ChangeEvent, useCallback, useEffect, useMemo, useRef } from "react";
-
-import { Countries, EmployeeGenders, EmployeeTitle } from "@root/src/config/constant";
+import {
+  PersonOutline,
+  CakeOutlined,
+  ContactPhoneOutlined,
+  HomeOutlined,
+  ContactEmergencyOutlined,
+  AddCircleOutline,
+  RemoveCircleOutline,
+} from "@mui/icons-material";
+import {
+  EmployeeTitle,
+  Countries,
+  EmployeeGenders,
+} from "@root/src/config/constant";
 import { CreateEmployeeFormValues } from "@root/src/types/types";
+import dayjs from "dayjs";
 
 const PERSONAL_INFO_ICONS = {
   person: <PersonOutline />,
@@ -73,7 +82,9 @@ export const personalInfoValidationSchema = Yup.object().shape({
       .required("Gender is required")
       .oneOf(EmployeeGenders, "Invalid gender selected"),
     dob: Yup.string()
-      .transform((value, originalValue) => (originalValue === null ? "" : value))
+      .transform((value, originalValue) =>
+        originalValue === null ? "" : value,
+      )
       .required("Date of birth is required"),
     personalEmail: Yup.string()
       .email("Invalid email format")
@@ -81,11 +92,17 @@ export const personalInfoValidationSchema = Yup.object().shape({
       .transform((value) => (value === "" ? null : value))
       .nullable(),
     personalPhone: Yup.string()
-      .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid personal phone number format")
+      .matches(
+        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+        "Invalid personal phone number format",
+      )
       .transform((value) => (value === "" ? null : value))
       .nullable(),
     residentNumber: Yup.string()
-      .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid resident number format")
+      .matches(
+        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+        "Invalid resident number format",
+      )
       .transform((value) => (value === "" ? null : value))
       .nullable(),
     addressLine1: Yup.string()
@@ -127,9 +144,15 @@ export const personalInfoValidationSchema = Yup.object().shape({
           telephone: Yup.string()
             .transform((value) => (value === "" ? null : value))
             .nullable()
-            .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid telephone number format"),
+            .matches(
+              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+              "Invalid telephone number format",
+            ),
           mobile: Yup.string()
-            .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid mobile number format")
+            .matches(
+              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+              "Invalid mobile number format",
+            )
             .required("Mobile is required"),
         }),
       )
@@ -139,7 +162,17 @@ export const personalInfoValidationSchema = Yup.object().shape({
 });
 
 const MemoizedTextField = React.memo(
-  ({ name, label, required, value, onChange, onBlur, error, helperText, textFieldSx }: any) => (
+  ({
+    name,
+    label,
+    required,
+    value,
+    onChange,
+    onBlur,
+    error,
+    helperText,
+    textFieldSx,
+  }: any) => (
     <TextField
       fullWidth
       required={required}
@@ -197,7 +230,11 @@ export default function PersonalInfoStep() {
     isFullNameManuallyEdited.current =
       (values.personalInfo.fullName ?? "").trim() !== derived &&
       (values.personalInfo.fullName ?? "").trim() !== "";
-  }, [values.personalInfo.firstName, values.personalInfo.lastName, values.personalInfo.fullName]);
+  }, [
+    values.personalInfo.firstName,
+    values.personalInfo.lastName,
+    values.personalInfo.fullName,
+  ]);
 
   const handleFirstNameChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -257,7 +294,11 @@ export default function PersonalInfoStep() {
   );
 
   const renderField = useCallback(
-    (field: keyof CreateEmployeeFormValues["personalInfo"], label: string, required = false) => (
+    (
+      field: keyof CreateEmployeeFormValues["personalInfo"],
+      label: string,
+      required = false,
+    ) => (
       <MemoizedTextField
         name={`personalInfo.${field}`}
         label={label}
@@ -265,8 +306,12 @@ export default function PersonalInfoStep() {
         value={values.personalInfo[field] ?? ""}
         onChange={handleChange}
         onBlur={handleBlur}
-        error={Boolean(touched.personalInfo?.[field] && errors.personalInfo?.[field])}
-        helperText={touched.personalInfo?.[field] && errors.personalInfo?.[field]}
+        error={Boolean(
+          touched.personalInfo?.[field] && errors.personalInfo?.[field],
+        )}
+        helperText={
+          touched.personalInfo?.[field] && errors.personalInfo?.[field]
+        }
         textFieldSx={textFieldSx}
       />
     ),
@@ -302,7 +347,7 @@ export default function PersonalInfoStep() {
       <Box sx={{ mt: 1 }}>
         <SectionHeader icon={PERSONAL_INFO_ICONS.person} title="Identity" />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 2, md: 1 }}>
+          <Grid item xs={12} sm={2} md={1}>
             <TextField
               select
               fullWidth
@@ -312,8 +357,12 @@ export default function PersonalInfoStep() {
               value={values.personalInfo.title}
               onChange={handleChange}
               onBlur={handleBlur}
-              error={Boolean(touched.personalInfo?.title && errors.personalInfo?.title)}
-              helperText={touched.personalInfo?.title && errors.personalInfo?.title}
+              error={Boolean(
+                touched.personalInfo?.title && errors.personalInfo?.title,
+              )}
+              helperText={
+                touched.personalInfo?.title && errors.personalInfo?.title
+              }
               sx={textFieldSx}
             >
               {EmployeeTitle.map((title) => (
@@ -325,7 +374,7 @@ export default function PersonalInfoStep() {
           </Grid>
 
           {nameFields.map(({ field, label, sm, md, required }) => (
-            <Grid size={{ xs: 12, sm: sm, md: md }} key={field}>
+            <Grid item xs={12} sm={sm} md={md} key={field}>
               {field === "firstName" ? (
                 <MemoizedTextField
                   name="personalInfo.firstName"
@@ -334,8 +383,14 @@ export default function PersonalInfoStep() {
                   value={values.personalInfo.firstName ?? ""}
                   onChange={handleFirstNameChange}
                   onBlur={handleBlur}
-                  error={Boolean(touched.personalInfo?.firstName && errors.personalInfo?.firstName)}
-                  helperText={touched.personalInfo?.firstName && errors.personalInfo?.firstName}
+                  error={Boolean(
+                    touched.personalInfo?.firstName &&
+                    errors.personalInfo?.firstName,
+                  )}
+                  helperText={
+                    touched.personalInfo?.firstName &&
+                    errors.personalInfo?.firstName
+                  }
                   textFieldSx={textFieldSx}
                 />
               ) : field === "lastName" ? (
@@ -346,8 +401,14 @@ export default function PersonalInfoStep() {
                   value={values.personalInfo.lastName ?? ""}
                   onChange={handleLastNameChange}
                   onBlur={handleBlur}
-                  error={Boolean(touched.personalInfo?.lastName && errors.personalInfo?.lastName)}
-                  helperText={touched.personalInfo?.lastName && errors.personalInfo?.lastName}
+                  error={Boolean(
+                    touched.personalInfo?.lastName &&
+                    errors.personalInfo?.lastName,
+                  )}
+                  helperText={
+                    touched.personalInfo?.lastName &&
+                    errors.personalInfo?.lastName
+                  }
                   textFieldSx={textFieldSx}
                 />
               ) : (
@@ -360,7 +421,7 @@ export default function PersonalInfoStep() {
             </Grid>
           ))}
 
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               fullWidth
               required
@@ -369,8 +430,12 @@ export default function PersonalInfoStep() {
               value={values.personalInfo.fullName ?? ""}
               onChange={handleFullNameChange}
               onBlur={handleBlur}
-              error={Boolean(touched.personalInfo?.fullName && errors.personalInfo?.fullName)}
-              helperText={touched.personalInfo?.fullName && errors.personalInfo?.fullName}
+              error={Boolean(
+                touched.personalInfo?.fullName && errors.personalInfo?.fullName,
+              )}
+              helperText={
+                touched.personalInfo?.fullName && errors.personalInfo?.fullName
+              }
               sx={textFieldSx}
             />
           </Grid>
@@ -378,14 +443,22 @@ export default function PersonalInfoStep() {
       </Box>
 
       <Box sx={{ mt: 5 }}>
-        <SectionHeader icon={PERSONAL_INFO_ICONS.cake} title="Birth & Nationality" />
+        <SectionHeader
+          icon={PERSONAL_INFO_ICONS.cake}
+          title="Birth & Nationality"
+        />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <DatePicker
               label="Date of Birth"
-              value={values.personalInfo.dob ? dayjs(values.personalInfo.dob) : null}
+              value={
+                values.personalInfo.dob ? dayjs(values.personalInfo.dob) : null
+              }
               onChange={(val) =>
-                setFieldValue("personalInfo.dob", val ? val.format("YYYY-MM-DD") : null)
+                setFieldValue(
+                  "personalInfo.dob",
+                  val ? val.format("YYYY-MM-DD") : null,
+                )
               }
               format="YYYY-MM-DD"
               slotProps={{
@@ -393,13 +466,16 @@ export default function PersonalInfoStep() {
                   fullWidth: true,
                   sx: textFieldSx,
                   required: true,
-                  error: Boolean(touched.personalInfo?.dob && errors.personalInfo?.dob),
-                  helperText: touched.personalInfo?.dob && errors.personalInfo?.dob,
+                  error: Boolean(
+                    touched.personalInfo?.dob && errors.personalInfo?.dob,
+                  ),
+                  helperText:
+                    touched.personalInfo?.dob && errors.personalInfo?.dob,
                 },
               }}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -409,8 +485,12 @@ export default function PersonalInfoStep() {
               value={values.personalInfo.gender}
               onChange={handleChange}
               onBlur={handleBlur}
-              error={Boolean(touched.personalInfo?.gender && errors.personalInfo?.gender)}
-              helperText={touched.personalInfo?.gender && errors.personalInfo?.gender}
+              error={Boolean(
+                touched.personalInfo?.gender && errors.personalInfo?.gender,
+              )}
+              helperText={
+                touched.personalInfo?.gender && errors.personalInfo?.gender
+              }
               sx={textFieldSx}
             >
               {EmployeeGenders.map((gender) => (
@@ -420,7 +500,7 @@ export default function PersonalInfoStep() {
               ))}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             {renderField("nationality", "Nationality", true)}
           </Grid>
         </Grid>
@@ -430,8 +510,11 @@ export default function PersonalInfoStep() {
         <SectionHeader icon={PERSONAL_INFO_ICONS.contact} title="Contact" />
         <Grid container spacing={3}>
           {contactFields.map(({ field, label }) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={field}>
-              {renderField(field as keyof CreateEmployeeFormValues["personalInfo"], label)}
+            <Grid item xs={12} sm={6} md={4} key={field}>
+              {renderField(
+                field as keyof CreateEmployeeFormValues["personalInfo"],
+                label,
+              )}
             </Grid>
           ))}
         </Grid>
@@ -440,18 +523,22 @@ export default function PersonalInfoStep() {
       <Box sx={{ mt: 5 }}>
         <SectionHeader icon={PERSONAL_INFO_ICONS.home} title="Address" />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             {renderField("addressLine1", "Address Line 1")}
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
             {renderField("addressLine2", "Address Line 2")}
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>{renderField("city", "City")}</Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderField("city", "City")}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
             {renderField("stateOrProvince", "State/Province")}
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>{renderField("postalCode", "Postal Code")}</Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderField("postalCode", "Postal Code")}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -460,8 +547,12 @@ export default function PersonalInfoStep() {
               value={values.personalInfo.country || ""}
               onChange={handleChange}
               onBlur={handleBlur}
-              error={Boolean(touched.personalInfo?.country && errors.personalInfo?.country)}
-              helperText={touched.personalInfo?.country && errors.personalInfo?.country}
+              error={Boolean(
+                touched.personalInfo?.country && errors.personalInfo?.country,
+              )}
+              helperText={
+                touched.personalInfo?.country && errors.personalInfo?.country
+              }
               sx={textFieldSx}
             >
               {Countries.map((c) => (
@@ -474,7 +565,10 @@ export default function PersonalInfoStep() {
         </Grid>
       </Box>
       <Box sx={{ mt: 5 }}>
-        <SectionHeader icon={PERSONAL_INFO_ICONS.emergency} title="Emergency Contacts" />
+        <SectionHeader
+          icon={PERSONAL_INFO_ICONS.emergency}
+          title="Emergency Contacts"
+        />
         <FieldArray name="personalInfo.emergencyContacts">
           {({ push, remove }) => (
             <>
@@ -491,25 +585,29 @@ export default function PersonalInfoStep() {
                     }}
                   >
                     <Grid container spacing={3}>
-                      {["name", "relationship", "telephone", "mobile"].map((field) => {
-                        const fieldName = `personalInfo.emergencyContacts.${index}.${field}`;
-                        const fieldError = getIn(errors, fieldName);
-                        const fieldTouched = getIn(touched, fieldName);
-                        return (
-                          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={field}>
-                            <Field
-                              as={TextField}
-                              fullWidth
-                              required={field !== "telephone"}
-                              name={fieldName}
-                              label={field.charAt(0).toUpperCase() + field.slice(1)}
-                              sx={textFieldSx}
-                              error={fieldTouched && Boolean(fieldError)}
-                              helperText={fieldTouched && fieldError}
-                            />
-                          </Grid>
-                        );
-                      })}
+                      {["name", "relationship", "telephone", "mobile"].map(
+                        (field) => {
+                          const fieldName = `personalInfo.emergencyContacts.${index}.${field}`;
+                          const fieldError = getIn(errors, fieldName);
+                          const fieldTouched = getIn(touched, fieldName);
+                          return (
+                            <Grid item xs={12} sm={6} md={3} key={field}>
+                              <Field
+                                as={TextField}
+                                fullWidth
+                                required={field !== "telephone"}
+                                name={fieldName}
+                                label={
+                                  field.charAt(0).toUpperCase() + field.slice(1)
+                                }
+                                sx={textFieldSx}
+                                error={fieldTouched && Boolean(fieldError)}
+                                helperText={fieldTouched && fieldError}
+                              />
+                            </Grid>
+                          );
+                        },
+                      )}
                     </Grid>
                     <Box
                       sx={{
@@ -541,7 +639,9 @@ export default function PersonalInfoStep() {
                       mobile: "",
                     })
                   }
-                  disabled={(values.personalInfo.emergencyContacts?.length ?? 0) >= 4}
+                  disabled={
+                    (values.personalInfo.emergencyContacts?.length ?? 0) >= 4
+                  }
                   sx={{
                     color: theme.palette.secondary.contrastText,
                     display: "flex",
@@ -552,17 +652,26 @@ export default function PersonalInfoStep() {
                     borderRadius: 2,
                     transition: "all 0.2s ease",
                     "&:hover": {
-                      backgroundColor: alpha(theme.palette.secondary.contrastText, 0.1),
+                      backgroundColor: alpha(
+                        theme.palette.secondary.contrastText,
+                        0.1,
+                      ),
                     },
                   }}
                 >
                   <AddCircleOutline />
-                  <Typography fontWeight={500}>Add Emergency Contact</Typography>
+                  <Typography fontWeight={500}>
+                    Add Emergency Contact
+                  </Typography>
                 </IconButton>
               </Box>
               {touched.personalInfo?.emergencyContacts &&
                 typeof errors.personalInfo?.emergencyContacts === "string" && (
-                  <Typography color="error" variant="body2" sx={{ mt: 1, ml: 2 }}>
+                  <Typography
+                    color="error"
+                    variant="body2"
+                    sx={{ mt: 1, ml: 2 }}
+                  >
                     {errors.personalInfo?.emergencyContacts}
                   </Typography>
                 )}

@@ -89,14 +89,14 @@ export const baseQueryWithRetry = retry(
 
     if (result.error) {
       if (result.error.status !== 400 && result.error.status !== 404) {
-        retry.fail(result.error, result.meta);
+        retry.fail(result.error);
       }
     }
 
     return result;
   },
   {
-    maxRetries: 3,
+    maxRetries: 2,
     backoff: async (attempt: number = 0, maxRetries: number = 3) => {
       const delay = Math.min(1000 * 2 ** attempt, 10000);
       await new Promise((resolve) => setTimeout(resolve, delay));

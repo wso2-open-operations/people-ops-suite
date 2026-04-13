@@ -16,13 +16,14 @@
 
 export const SnackMessage = {
   success: {
-    addCollections: "Successfully added the Collection",
+    addEmployee: "Successfully created the employee",
   },
   error: {
     fetchEmployee: "Error while fetching employee",
     fetchEmployees: "Error while fetching employees",
     fetchPrivileges: "Error while fetching user privileges",
-    insufficientPrivileges: "You don't have sufficient privileges to access this resource",
+    insufficientPrivileges:
+      "You don't have sufficient privileges to access this resource",
     fetchAppConfigMessage: "Error while fetching app config",
     updateEmployeePersonalInfo: "Error while updating personal info",
     addEmployee: "Unable to add employee",
@@ -31,12 +32,19 @@ export const SnackMessage = {
 };
 export const ADMIN_PRIVILEGE = 999;
 export const LEAD_PRIVILEGE = 993;
-export const EMPLOYEE_PRIVILEGE = 987;
 export const SERVICE_DESK_PRIVILEGE = 991;
-
 export const DEFAULT_LIMIT_VALUE = 10;
 export const DEFAULT_OFFSET_VALUE = 0;
 export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
+
+export const SEARCH_REGEX = /^[\p{L}\p{M}0-9\s@._'+-]*$/u;
+export const SEARCH_MAX_LENGTH = 100;
+
+export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
+
+export const EmployeeTitle = ["Mr", "Mrs", "Miss", "Ms", "Dr", "Prof"];
+
+export const EmployeeGenders = ["Male", "Female", "Not Specified"];
 
 export const APP_DESC = "People app";
 
@@ -51,17 +59,6 @@ export const EmployeeTypes = [
 ];
 
 export const SPLIT_VIEW_SKELETON_DELAY_MS = 2000;
-
-export const SEARCH_REGEX = /^[\p{L}\p{M}0-9\s@._'+-]*$/u;
-export const SEARCH_MAX_LENGTH = 100;
-
-export const EXPANDED_NODES_KEY = "expanded node key";
-
-export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
-
-export const EmployeeTitle = ["Mr", "Mrs", "Miss", "Ms", "Dr", "Prof"];
-
-export const EmployeeGenders = ["Male", "Female", "Not Specified"];
 
 export const Countries = [
   "Afghanistan",

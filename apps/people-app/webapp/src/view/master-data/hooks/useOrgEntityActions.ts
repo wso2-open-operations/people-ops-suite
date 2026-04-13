@@ -31,6 +31,10 @@ interface UseOrgEntityActionsParams {
 
 export function useOrgEntityActions({ data }: UseOrgEntityActionsParams) {
   const {
+    renameBusinessUnit,
+    renameTeam,
+    renameSubTeam,
+    renameUnit,
     updateBusinessUnit,
     updateTeam,
     updateSubTeam,
@@ -53,13 +57,13 @@ export function useOrgEntityActions({ data }: UseOrgEntityActionsParams) {
 
     switch (data.type) {
       case NodeType.BusinessUnit:
-        return status.isUpdatingBU;
+        return status.isRenamingBusinessUnit;
       case NodeType.Team:
-        return status.isUpdatingTeam;
+        return status.isRenamingTeam;
       case NodeType.SubTeam:
-        return status.isUpdatingSubTeam;
+        return status.isRenamingSubTeam;
       case NodeType.Unit:
-        return status.isUpdatingUnit;
+        return status.isRenamingUnit;
       default:
         return false;
     }
@@ -70,13 +74,13 @@ export function useOrgEntityActions({ data }: UseOrgEntityActionsParams) {
 
     switch (data.type) {
       case NodeType.BusinessUnit:
-        return status.isUpdatingBU;
+        return status.isUpdatingBU || status.isRenamingBusinessUnit;
       case NodeType.Team:
-        return status.isUpdatingTeam || status.isUpdatingBUTeam;
+        return status.isUpdatingTeam || status.isUpdatingBUTeam || status.isRenamingTeam;
       case NodeType.SubTeam:
-        return status.isUpdatingSubTeam || status.isUpdatingTeamSubTeam;
+        return status.isUpdatingSubTeam || status.isUpdatingTeamSubTeam || status.isRenamingSubTeam;
       case NodeType.Unit:
-        return status.isUpdatingUnit || status.isUpdatingSubTeamUnit;
+        return status.isUpdatingUnit || status.isUpdatingSubTeamUnit || status.isRenamingUnit;
       default:
         return false;
     }
@@ -185,16 +189,16 @@ export function useOrgEntityActions({ data }: UseOrgEntityActionsParams) {
 
     switch (data.type) {
       case NodeType.BusinessUnit:
-        await updateBusinessUnit({ buId: data.id, payload });
+        await renameBusinessUnit({ buId: data.id, payload }).unwrap();
         break;
       case NodeType.Team:
-        await updateTeam({ teamId: data.id, payload });
+        await renameTeam({ teamId: data.id, payload }).unwrap();
         break;
       case NodeType.SubTeam:
-        await updateSubTeam({ subTeamId: data.id, payload });
+        await renameSubTeam({ subTeamId: data.id, payload }).unwrap();
         break;
       case NodeType.Unit:
-        await updateUnit({ unitId: data.id, payload });
+        await renameUnit({ unitId: data.id, payload }).unwrap();
         break;
     }
   };

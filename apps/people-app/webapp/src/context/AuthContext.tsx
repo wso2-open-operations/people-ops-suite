@@ -27,6 +27,8 @@ import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice
 import { useAppDispatch } from "@slices/store";
 import { APIService } from "@utils/apiService";
 
+import { getUserInfo } from "../slices/userSlice/user";
+
 type AuthContextType = {
   appSignIn: () => void;
   appSignOut: () => void;
@@ -94,22 +96,24 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       getAccessToken(),
     ]);
 
+    new APIService(accessToken, refreshIdToken);
+    setTokens(accessToken, refreshToken, appSignOut);
+
+    const userInfoResult = await triggerGetUserInfo();
+    await dispatch(getUserInfo()).unwrap();
+
+    if (userInfoResult?.isError) {
+      console.error("Failed to fetch user info:", userInfoResult.error);
+      dispatch(setAuthError());
+      return;
+    }
+
     dispatch(
       setUserAuthData({
         userInfo: user,
         decodedIdToken: decodedIdToken,
       }),
     );
-
-    new APIService(accessToken, refreshIdToken);
-    setTokens(accessToken, refreshToken, appSignOut);
-
-    const userInfoResult = await triggerGetUserInfo();
-    if (userInfoResult?.isError) {
-      console.error("Failed to fetch user info:", userInfoResult.error);
-      dispatch(setAuthError());
-      return;
-    }
 
     await dispatch(loadPrivileges());
   };

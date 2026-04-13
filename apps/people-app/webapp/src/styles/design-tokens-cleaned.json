@@ -440,7 +440,7 @@
           "value": "#000000ff",
           "blendMode": "normal"
         },
-        "brand": {
+        "main": {
           "type": "color",
           "value": "#ff7300ff",
           "blendMode": "normal"
