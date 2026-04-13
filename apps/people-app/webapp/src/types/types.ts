@@ -32,9 +32,9 @@ export enum ConfirmationType {
 
 export enum AppState {
   Maintenance = "MAINTENANCE",
-  Failed = "FAILED",
-  Success = "SUCCESS",
-  Loading = "LOADING",
+  Failed = "failed",
+  Success = "success",
+  Loading = "loading",
 }
 
 export interface CommonCardProps {
