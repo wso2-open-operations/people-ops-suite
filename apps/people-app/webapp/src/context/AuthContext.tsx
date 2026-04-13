@@ -21,7 +21,6 @@ import React, { useContext, useEffect, useState } from "react";
 import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import { redirectUrl } from "@config/constant";
-import { useLazyGetUserInfoQuery } from "@root/src/services/user.api";
 import { setTokens } from "@services/BaseQuery";
 import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
 import { useAppDispatch } from "@slices/store";
@@ -53,9 +52,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const [appState, setAppState] = useState<AppState>(AppState.Loading);
 
   const dispatch = useAppDispatch();
-
-  // useLazyGetUserInfoQuery returns a trigger function that can be called manually
-  const [triggerGetUserInfo] = useLazyGetUserInfoQuery();
 
   const onPrompt = () => {
     appState === AppState.Authenticated && setSessionWarningOpen(true);
@@ -99,11 +95,9 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     new APIService(accessToken, refreshIdToken);
     setTokens(accessToken, refreshToken, appSignOut);
 
-    const userInfoResult = await triggerGetUserInfo();
-    await dispatch(getUserInfo()).unwrap();
+    const userInfoResult = await dispatch(getUserInfo());
 
-    if (userInfoResult?.isError) {
-      console.error("Failed to fetch user info:", userInfoResult.error);
+    if (getUserInfo.rejected.match(userInfoResult)) {
       dispatch(setAuthError());
       return;
     }
