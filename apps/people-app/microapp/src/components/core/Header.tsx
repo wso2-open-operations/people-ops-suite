@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { SearchInput } from "@/components/ui";
 import { goToMyAppsScreen } from "@/components/microapp-bridge";
 import { AppsSharp } from "@mui/icons-material";
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack } from "@mui/material";
@@ -25,10 +24,10 @@ function Header() {
 
   return (
     <>
-      <header className="w-full bg-white px-4 sticky top-0 z-20">
-        <div className="pt-[var(--safe-top)] pb-4 border-b border-[#E5E5E5]">
-          <div className="relative h-10 mb-4">
-            <h1 className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 text-[1.125rem] font-semibold text-[#1F2A44] whitespace-nowrap">
+      <header className="w-full bg-[#F2F2EF] px-4 sticky top-0 z-20">
+        <div className="pt-[var(--safe-top)] pb-3">
+          <div className="relative h-11">
+            <h1 className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 text-xl font-bold text-[#1F2A44] whitespace-nowrap">
               People
             </h1>
             <IconButton
@@ -40,7 +39,6 @@ function Header() {
               <AppsSharp className="text-[#1F2A44]" />
             </IconButton>
           </div>
-          <SearchInput />
         </div>
       </header>
 
