@@ -237,6 +237,41 @@ export const getLocalDataAsync = async <T = unknown>(key: string) => {
   });
 };
 
+const BRIDGE_NOT_READY_CODE = "BRIDGE_NOT_READY";
+
+export const isBridgeNotReadyError = (e: unknown): boolean =>
+  e instanceof Error && (e as Error & { code?: string }).code === BRIDGE_NOT_READY_CODE;
+
+/**
+ * Wait until both window.nativebridge and window.ReactNativeWebView are injected
+ * by the native shell. Polls every 50 ms up to timeoutMs (default 3 s).
+ * Rejects with a coded Error if the bridge is not ready within the timeout.
+ */
+export const waitForBridgeReady = (timeoutMs = 3000): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (window.nativebridge && window.ReactNativeWebView) {
+      resolve();
+      return;
+    }
+    const intervalMs = 50;
+    let elapsed = 0;
+    const id = setInterval(() => {
+      if (window.nativebridge && window.ReactNativeWebView) {
+        clearInterval(id);
+        resolve();
+        return;
+      }
+      elapsed += intervalMs;
+      if (elapsed >= timeoutMs) {
+        clearInterval(id);
+        const err = new Error("Native bridge not ready after timeout") as Error & { code: string };
+        err.code = BRIDGE_NOT_READY_CODE;
+        reject(err);
+      }
+    }, intervalMs);
+  });
+};
+
 /**
  * Request the super app to open another micro app.
  * Used for switching to the Wallet microapp for payment.

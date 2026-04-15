@@ -17,7 +17,11 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import useHttp from "@/utils/http";
-import { getLocalDataAsync } from "@/components/microapp-bridge";
+import {
+  getLocalDataAsync,
+  waitForBridgeReady,
+  isBridgeNotReadyError,
+} from "@/components/microapp-bridge";
 import {
   getParkingPaymentContextState,
 } from "@/utils/parkingStorage";
@@ -78,6 +82,8 @@ export function ParkingWalletReturnResume({
       let lockKey: string | null = null;
 
       try {
+        await waitForBridgeReady();
+
         for (let attempt = 0; attempt < BOOT_RETRY_COUNT; attempt += 1) {
           const status = await getLocalDataAsync(PARKING_WALLET_PAYMENT_STATUS_KEY);
           if (!status) {
@@ -183,6 +189,10 @@ export function ParkingWalletReturnResume({
           } catch (fetchErr) {
             Logger.error("ParkingWalletReturnResume.fetchConfirmed", fetchErr);
           }
+        } else if (isBridgeNotReadyError(e)) {
+          // Bridge was not available in time — reload for a clean restart.
+          Logger.error("ParkingWalletReturnResume: bridge not ready, reloading", e);
+          if (!cancelled) window.location.reload();
         } else {
           Logger.error("ParkingWalletReturnResume", e);
           if (!cancelled) {
