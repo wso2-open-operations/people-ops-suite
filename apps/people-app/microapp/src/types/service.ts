@@ -30,4 +30,5 @@ export interface ServiceInfo {
   description: string;
   route: string;
   icon: ReactNode;
+  iconBg: string;
 }
