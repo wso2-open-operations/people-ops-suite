@@ -23,7 +23,8 @@ import type { ReactNode } from "react";
  * - name: the display name of the service.
  * - description: a brief summary of what the service offers.
  * - route: the navigation path associated with the service.
- * - icon: a React element used as a visual representation of the service.
+ * - icon: a React node used as a visual representation of the service.
+ * - iconBg: a CSS color string (e.g. "#FFE1C9") applied as the icon container background.
  */
 export interface ServiceInfo {
   name: string;

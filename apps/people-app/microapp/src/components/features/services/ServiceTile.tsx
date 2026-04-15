@@ -29,7 +29,8 @@ import type { ServiceInfo } from "@/types";
  * Props (from ServiceInfo type):
  * - name: string – name/title of the service
  * - description: string – brief info or summary of the service
- * - icon: JSX.Element – visual icon representing the service
+ * - icon: ReactNode – visual icon representing the service
+ * - iconBg: string – CSS color string applied as the icon container background (e.g. "#FFE1C9")
  * - route: string – path to navigate to when the tile is clicked
  */
 function ServiceTile(props: ServiceInfo) {
@@ -44,12 +45,12 @@ function ServiceTile(props: ServiceInfo) {
         </div>
         <div className="flex-1">
           <h3 className="font-bold text-[1rem] text-[#1A2340] leading-snug">{props.name}</h3>
-          <p className="font-normal text-[0.82rem] text-[#9A9A9A] mt-1 leading-snug">
+          <p className="font-normal text-[0.82rem] text-[#6B7280] mt-1 leading-snug">
             {props.description}
           </p>
         </div>
         <div className="w-[2rem] h-[2rem] rounded-full border border-[#DEDEDE] grid place-items-center shrink-0 text-[#ADADAD] text-base">
-          ›
+          <span aria-hidden="true">›</span>
         </div>
       </div>
     </Link>
