@@ -131,21 +131,38 @@ export default function EmployeeReportTable({
     dispatch(fetchOffices({}));
   }, [dispatch, showFilterDrawer]);
 
-  const activeFilterCount = useMemo(
-    () =>
-      Object.entries(appliedFilters).filter(
-        ([key, value]) =>
-          value !== undefined && !BASELINE_FILTER_KEYS.includes(key as keyof Filters),
-      ).length,
-    [appliedFilters],
-  );
-
   const baselineFilters = useMemo<Filters>(() => {
     const base: Filters = { employeeStatus };
     if (showExcludeFutureFilter) base.excludeFutureStartDate = true;
     if (showIncludeMarkedLeaversFilter) base.includeMarkedLeavers = true;
     return base;
   }, [employeeStatus, showExcludeFutureFilter, showIncludeMarkedLeaversFilter]);
+
+  // Sync appliedFilters when props change (e.g. employeeStatus or show* flags).
+  useEffect(() => {
+    setAppliedFilters((prev) => ({ ...baselineFilters, ...prev, employeeStatus }));
+  }, [baselineFilters, employeeStatus]);
+
+  // Count only keys that differ from the baseline — represents user-applied changes.
+  const activeFilterCount = useMemo(
+    () =>
+      (Object.keys({ ...appliedFilters, ...baselineFilters }) as (keyof Filters)[]).filter(
+        (key) =>
+          !BASELINE_FILTER_KEYS.includes(key) &&
+          appliedFilters[key] !== baselineFilters[key],
+      ).length,
+    [appliedFilters, baselineFilters],
+  );
+
+  // Stable object for FilterDrawer — prevents draft reset on every parent re-render.
+  const drawerAppliedFilter = useMemo(
+    () => ({
+      filters: appliedFilters,
+      pagination: { limit: PREVIEW_LIMIT, offset: 0 },
+      sort: { sortField: "employeeId", sortOrder: "ASC" as const },
+    }),
+    [appliedFilters],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -603,11 +620,12 @@ export default function EmployeeReportTable({
             <FilterDrawer
               drawerOpen={drawerOpen}
               setDrawerOpen={setDrawerOpen}
-              appliedFilter={{ filters: appliedFilters, pagination: { limit: PREVIEW_LIMIT, offset: 0 }, sort: { sortField: "employeeId", sortOrder: "ASC" } }}
+              appliedFilter={drawerAppliedFilter}
               onApply={(next) => setAppliedFilters({ ...baselineFilters, ...next.filters })}
               clearAll={() => { setAppliedFilters(baselineFilters); setDrawerOpen(false); }}
               setFiltersAppliedOnce={() => {}}
               showEmployeeStatusFilter={false}
+              showExcludeFutureFilter={showExcludeFutureFilter}
               showIncludeMarkedLeaversFilter={showIncludeMarkedLeaversFilter}
               businessUnits={businessUnits}
               teams={teams}

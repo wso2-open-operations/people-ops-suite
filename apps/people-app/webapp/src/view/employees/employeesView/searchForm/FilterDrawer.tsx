@@ -84,6 +84,8 @@ type FilterDrawerProps = {
   showDirectReportsFilter?: boolean;
   /** When false, hides the Employee Status autocomplete (report views where status is fixed). Default true. */
   showEmployeeStatusFilter?: boolean;
+  /** When false, hides the "Exclude future joiners" toggle. Default true. */
+  showExcludeFutureFilter?: boolean;
   /** When true, renders an "Include marked leavers" toggle (Active Employees report). Default false. */
   showIncludeMarkedLeaversFilter?: boolean;
 };
@@ -107,6 +109,7 @@ export function FilterDrawer({
   offices,
   showDirectReportsFilter = false,
   showEmployeeStatusFilter = true,
+  showExcludeFutureFilter = true,
   showIncludeMarkedLeaversFilter = false,
 }: FilterDrawerProps) {
   const theme = useTheme();
@@ -307,19 +310,21 @@ export function FilterDrawer({
                   label="Direct Reports Only"
                 />
               )}
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={draft.filters.excludeFutureStartDate === true}
-                    onChange={(e) => set({ excludeFutureStartDate: e.target.checked ? true : undefined })}
-                    sx={{
-                      "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
-                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
-                    }}
-                  />
-                }
-                label="Exclude future joiners"
-              />
+              {showExcludeFutureFilter && (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={draft.filters.excludeFutureStartDate === true}
+                      onChange={(e) => set({ excludeFutureStartDate: e.target.checked ? true : undefined })}
+                      sx={{
+                        "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
+                        "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
+                      }}
+                    />
+                  }
+                  label="Exclude future joiners"
+                />
+              )}
               {showIncludeMarkedLeaversFilter && (
                 <FormControlLabel
                   control={
