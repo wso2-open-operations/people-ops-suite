@@ -143,15 +143,16 @@ export default function EmployeeReportTable({
     setAppliedFilters((prev) => ({ ...baselineFilters, ...prev, employeeStatus }));
   }, [baselineFilters, employeeStatus]);
 
-  // Count only keys that differ from the baseline — represents user-applied changes.
+  // Count all active filters except permanently hidden ones (employeeStatus, directReports).
+  // Baseline defaults like excludeFutureStartDate intentionally count — toggling them off
+  // decrements the badge, reflecting that the user has deviated from the default state.
   const activeFilterCount = useMemo(
     () =>
-      (Object.keys({ ...appliedFilters, ...baselineFilters }) as (keyof Filters)[]).filter(
-        (key) =>
-          !BASELINE_FILTER_KEYS.includes(key) &&
-          appliedFilters[key] !== baselineFilters[key],
+      Object.entries(appliedFilters).filter(
+        ([key, value]) =>
+          value !== undefined && !BASELINE_FILTER_KEYS.includes(key as keyof Filters),
       ).length,
-    [appliedFilters, baselineFilters],
+    [appliedFilters],
   );
 
   // Stable object for FilterDrawer — prevents draft reset on every parent re-render.
