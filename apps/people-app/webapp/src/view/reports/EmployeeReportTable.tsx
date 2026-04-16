@@ -25,9 +25,11 @@ import {
   Skeleton,
   Switch,
   Tooltip,
+  Typography,
   useTheme,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
+import InboxIcon from "@mui/icons-material/Inbox";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import {
   downloadEmployeeReportByStatus,
@@ -48,6 +50,7 @@ interface EmployeeReportTableProps {
   countChipLabel: string;
   downloadFilename: string;
   showExcludeFutureFilter?: boolean;
+  showIncludeMarkedLeaversFilter?: boolean;
 }
 
 export default function EmployeeReportTable({
@@ -56,6 +59,7 @@ export default function EmployeeReportTable({
   countChipLabel,
   downloadFilename,
   showExcludeFutureFilter = true,
+  showIncludeMarkedLeaversFilter = false,
 }: EmployeeReportTableProps) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
@@ -64,6 +68,7 @@ export default function EmployeeReportTable({
   const [rows, setRows] = useState<Employee[]>([]);
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [excludeFutureStartDate, setExcludeFutureStartDate] = useState(true);
+  const [includeMarkedLeavers, setIncludeMarkedLeavers] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,7 +77,11 @@ export default function EmployeeReportTable({
     setTotalCount(null);
     dispatch(
       fetchFilteredEmployees({
-        filters: { employeeStatus, excludeFutureStartDate: showExcludeFutureFilter ? excludeFutureStartDate : undefined },
+        filters: {
+          employeeStatus,
+          excludeFutureStartDate: showExcludeFutureFilter ? excludeFutureStartDate : undefined,
+          includeMarkedLeavers: showIncludeMarkedLeaversFilter ? includeMarkedLeavers : undefined,
+        },
         pagination: { limit: PREVIEW_LIMIT, offset: 0 },
         sort: { sortField: "employeeId", sortOrder: "ASC" },
         leadOnly: false,
@@ -88,7 +97,7 @@ export default function EmployeeReportTable({
     return () => {
       cancelled = true;
     };
-  }, [dispatch, employeeStatus, excludeFutureStartDate, showExcludeFutureFilter]);
+  }, [dispatch, employeeStatus, excludeFutureStartDate, showExcludeFutureFilter, includeMarkedLeavers, showIncludeMarkedLeaversFilter]);
 
   function getFullName(firstName: string, lastName: string) {
     return `${firstName || ""} ${lastName || ""}`.trim();
@@ -237,6 +246,30 @@ export default function EmployeeReportTable({
     [theme],
   );
 
+  const NoRowsOverlay = useMemo(() => {
+    return function Overlay() {
+      return (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            py: 6,
+            gap: 1.5,
+            color: theme.palette.text.disabled,
+          }}
+        >
+          <InboxIcon sx={{ fontSize: 48, opacity: 0.4 }} />
+          <Typography variant="body2" sx={{ fontWeight: 500, opacity: 0.6 }}>
+            No employees found
+          </Typography>
+        </Box>
+      );
+    };
+  }, [theme]);
+
   const SkeletonRowsOverlay = useMemo(() => {
     return function Overlay() {
       return (
@@ -300,7 +333,11 @@ export default function EmployeeReportTable({
     setDownloading(true);
     try {
       const csvText = unwrapResult(
-        await dispatch(downloadEmployeeReportByStatus({ status: employeeStatus, excludeFutureStartDate: showExcludeFutureFilter ? excludeFutureStartDate : undefined })),
+        await dispatch(downloadEmployeeReportByStatus({
+          status: employeeStatus,
+          excludeFutureStartDate: showExcludeFutureFilter ? excludeFutureStartDate : undefined,
+          includeMarkedLeavers: showIncludeMarkedLeaversFilter ? includeMarkedLeavers : undefined,
+        })),
       );
       const blob = new Blob([csvText], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
@@ -341,6 +378,23 @@ export default function EmployeeReportTable({
         >
           {previewAlertText}
         </Alert>
+        {showIncludeMarkedLeaversFilter && (
+          <FormControlLabel
+            control={
+              <Switch
+                checked={includeMarkedLeavers}
+                onChange={(e) => setIncludeMarkedLeavers(e.target.checked)}
+                size="small"
+                sx={{
+                  "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
+                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
+                }}
+              />
+            }
+            label="Include marked leavers"
+            sx={{ flexShrink: 0, mr: 0, ml: 1 }}
+          />
+        )}
         {showExcludeFutureFilter && (
           <FormControlLabel
             control={
@@ -442,7 +496,7 @@ export default function EmployeeReportTable({
           disableColumnFilter
           disableColumnSelector
           disableColumnSorting
-          slots={{ loadingOverlay: SkeletonRowsOverlay }}
+          slots={{ loadingOverlay: SkeletonRowsOverlay, noRowsOverlay: NoRowsOverlay }}
           sx={{
             width: "100%",
             "& .MuiDataGrid-columnHeaders": {
@@ -466,6 +520,9 @@ export default function EmployeeReportTable({
             "& .MuiDataGrid-virtualScroller": {
               ...(isLoading && {
                 minHeight: `${PREVIEW_LIMIT * 52}px !important`,
+              }),
+              ...(!isLoading && rows.length === 0 && {
+                minHeight: "200px !important",
               }),
             },
             "& .MuiDataGrid-cell": {

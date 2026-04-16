@@ -1564,11 +1564,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Export employees as a CSV file, optionally filtered by status.
     #
-    # + status - Optional employee status query parameter (e.g. "Active", "Left"); omit to export all employees
-    # + excludeFutureStartDate - When true (default), excludes employees whose start date is in the future
+    # + payload - Report generation options (status filter, future-joiner exclusion, marked-leaver inclusion)
     # + return - CSV file response or HTTP errors
-    resource function post reports/employees/generate(http:RequestContext ctx, database:EmployeeStatus? status = (),
-            boolean excludeFutureStartDate = true)
+    resource function post reports/employees/generate(http:RequestContext ctx,
+        @http:Payload database:EmployeeReportPayload payload)
         returns http:Response|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -1591,7 +1590,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
                 searchString: (),
-                filters: {employeeStatus: status, excludeFutureStartDate: excludeFutureStartDate},
+                filters: {employeeStatus: payload.status, excludeFutureStartDate: payload.excludeFutureStartDate, includeMarkedLeavers: payload.includeMarkedLeavers},
                 pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
                 sort: {sortField: "employeeId", sortOrder: "ASC"}
             });
@@ -1616,10 +1615,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string csvContent = status == database:EMPLOYEE_LEFT
+        string csvContent = payload.status == database:EMPLOYEE_LEFT
             ? database:buildResignationCsv(allEmployees, nameMap)
             : database:buildEmployeeCsv(allEmployees, nameMap);
-        string statusLabel = status is () ? "all" : re ` `.replaceAll(status.toLowerAscii(), "_");
+        string statusLabel = payload.status is () ? "all" : re ` `.replaceAll((<database:EmployeeStatus>payload.status).toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
 
         http:Response response = new;

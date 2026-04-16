@@ -276,7 +276,14 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     appendStringFilter(filters, payload.filters.residentNumber, `pi.resident_number = ${payload.filters.residentNumber}`);
     appendStringFilter(filters, payload.filters.city, `LOWER(pi.city) = LOWER(${payload.filters.city})`);
     appendStringFilter(filters, payload.filters.country, `LOWER(pi.country) = LOWER(${payload.filters.country})`);
-    appendStringFilter(filters, payload.filters.employeeStatus, `LOWER(e.employee_status) = LOWER(${payload.filters.employeeStatus})`);
+    string? statusFilter = payload.filters.employeeStatus;
+    if statusFilter is string {
+        if payload.filters.includeMarkedLeavers == true {
+            filters.push(`(LOWER(e.employee_status) = LOWER(${statusFilter}) OR e.employee_status = 'Marked leaver')`);
+        } else {
+            filters.push(`LOWER(e.employee_status) = LOWER(${statusFilter})`);
+        }
+    }
 
     if payload.filters.managerEmail is string {
         filters.push(`LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${payload.filters.managerEmail}, '%'))`);
