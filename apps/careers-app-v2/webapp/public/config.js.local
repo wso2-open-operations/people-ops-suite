@@ -6,5 +6,5 @@ window.config = {
   ASGARDEO_REVOKE_ENDPOINT: "https://api.asgardeo.io/t/<org>/oauth2/revoke",
   AUTH_SIGN_IN_REDIRECT_URL: "http://localhost:3000",
   AUTH_SIGN_OUT_REDIRECT_URL: "http://localhost:3000",
-  REACT_APP_BACKEND_BASE_URL: "http://localhost:9090",
+  CAREERS_BACKEND_BASE_URL: "http://localhost:9090",
 };
