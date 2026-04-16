@@ -26,7 +26,7 @@ declare global {
       ASGARDEO_REVOKE_ENDPOINT: string;
       AUTH_SIGN_IN_REDIRECT_URL: string;
       AUTH_SIGN_OUT_REDIRECT_URL: string;
-      REACT_APP_BACKEND_BASE_URL: string;
+      CAREERS_BACKEND_BASE_URL: string;
     };
   }
 }
@@ -41,7 +41,7 @@ export const AsgardeoConfig: BaseURLAuthClientConfig = {
 
 export const APP_NAME = window.config?.APP_NAME ?? "WSO2 Careers";
 export const APP_DOMAIN = window.config?.APP_DOMAIN ?? "";
-export const ServiceBaseUrl = window.config?.REACT_APP_BACKEND_BASE_URL ?? "";
+export const ServiceBaseUrl = window.config?.CAREERS_BACKEND_BASE_URL ?? "";
 
 export const AppConfig = {
   serviceUrls: {
