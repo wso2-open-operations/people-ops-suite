@@ -150,6 +150,7 @@ export type Filters = {
   employeeStatus?: EmployeeStatus;
   directReports?: boolean;
   excludeFutureStartDate?: boolean;
+  includeMarkedLeavers?: boolean;
 };
 
 export type Pagination = {
@@ -520,13 +521,13 @@ export const updateEmployeeJobInfo = createAsyncThunk(
 export const downloadEmployeeReportByStatus = createAsyncThunk(
   "employee/downloadEmployeeReportByStatus",
   async (
-    { status, excludeFutureStartDate }: { status: EmployeeStatus | undefined; excludeFutureStartDate?: boolean },
+    { status, excludeFutureStartDate, includeMarkedLeavers }: { status: EmployeeStatus | undefined; excludeFutureStartDate?: boolean; includeMarkedLeavers?: boolean },
     { dispatch, rejectWithValue },
   ) => {
     try {
       const response = await APIService.getInstance().post(
-        AppConfig.serviceUrls.reportsEmployees(status, excludeFutureStartDate),
-        {},
+        AppConfig.serviceUrls.reportsEmployees,
+        { status, excludeFutureStartDate, includeMarkedLeavers },
         { responseType: "text" },
       );
       return response.data as string;

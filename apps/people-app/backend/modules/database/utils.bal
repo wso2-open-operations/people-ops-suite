@@ -15,6 +15,7 @@
 // under the License. 
 
 import ballerina/sql;
+import ballerina/time;
 
 # Build the database select query with dynamic filter attributes.
 #
@@ -163,58 +164,131 @@ isolated function csvEscape(string? value) returns string {
     return v;
 }
 
-# Build a CSV string from a list of employees.
+# Calculate the length of service from a start date string to today.
+#
+# + startDateStr - Start date in YYYY-MM-DD format
+# + return - Human-readable string like "2 Year(s) 3 Month(s)"
+isolated function calculateLengthOfService(string startDateStr) returns string {
+    time:Utc now = time:utcNow();
+    time:Civil civil = time:utcToCivil(now);
+    int todayYear = civil.year;
+    int todayMonth = civil.month;
+    int todayDay = civil.day;
+
+    string[] parts = re`-`.split(startDateStr);
+    if parts.length() != 3 {
+        return "";
+    }
+    int|error startYear = int:fromString(parts[0]);
+    int|error startMonth = int:fromString(parts[1]);
+    int|error startDay = int:fromString(parts[2]);
+    if startYear is error || startMonth is error || startDay is error {
+        return "";
+    }
+
+    // Return empty string if start date is in the future
+    if startYear > todayYear
+        || (startYear == todayYear && startMonth > todayMonth)
+        || (startYear == todayYear && startMonth == todayMonth && startDay > todayDay) {
+        return "";
+    }
+
+    int years = todayYear - startYear;
+    int months = todayMonth - startMonth;
+    // If the anniversary day hasn't been reached yet this month, subtract one month
+    if todayDay < startDay {
+        months -= 1;
+    }
+    if months < 0 {
+        years -= 1;
+        months += 12;
+    }
+    return string `${years} Year(s) ${months} Month(s)`;
+}
+
+# Resolve a comma-separated list of additional manager emails to full names using the name map.
+# Falls back to the original email if a name is not found.
+#
+# + emails - Comma-separated emails string (may be null/empty)
+# + nameMap - Map of email -> full name
+# + return - Comma-separated full names string
+isolated function resolveAdditionalManagerNames(string? emails, map<string> nameMap) returns string {
+    if emails is () || emails.trim() == "" {
+        return "";
+    }
+    string[] emailList = re`,`.split(emails);
+    string[] names = from string email in emailList
+        let string trimmed = email.trim()
+        select nameMap[trimmed.toLowerAscii()] ?: trimmed;
+    return string:'join(", ", ...names);
+}
+
+# Build a CSV string from a list of employees aligned with the People HR report format.
 #
 # + employees - List of employees
+# + nameMap - Map of work_email -> full name for resolving additional manager names
 # + return - CSV string
-public isolated function buildEmployeeCsv(Employee[] employees) returns string {
+public isolated function buildEmployeeCsv(Employee[] employees, map<string> nameMap) returns string {
     string[] headers = [
-        "Employee ID",
+        "Employee Id",
         "First Name",
         "Last Name",
+        "Gender",
         "Work Email",
-        "EPF",
         "Company",
-        "Work Location",
-        "House",
-        "Start Date",
-        "Lead's Email",
-        "Additional Leads' Emails",
-        "Employee Status",
+        "Location",
         "Employment Type",
-        "Designation",
-        "Business Unit",
-        "Team",
-        "Sub Team",
+        "Job Role",
+        "Job Band",
+        "Start Date",
+        "Continuous Service Date",
+        "Length Of Service",
+        "Reports To",
+        "Additional Manager",
+        "Employee Status",
+        "Team (Team and Sub Team)",
+        "Sub Team (Team and Sub Team)",
+        "EPF Number (EPF)",
+        "Email (Lead Email ID)",
+        "BU (Business Unit)",
+        "House",
         "Unit",
         "Office",
-        "Secondary Job Title",
         "Probation End Date",
         "Agreement End Date"
     ];
     string[] lines = [string:'join(",", ...headers)];
     foreach Employee e in employees {
+        string? secTitle = e.secondaryJobTitle;
+        string jobRole = secTitle is string && secTitle.trim() != ""
+            ? e.designation + " / " + secTitle
+            : e.designation;
+        string effectiveStartDate = e.continuousServiceDate ?: e.startDate;
         string[] row = [
             csvEscape(e.employeeId),
             csvEscape(e.firstName),
             csvEscape(e.lastName),
+            csvEscape(e.gender),
             csvEscape(e.workEmail),
-            csvEscape(e.epf),
             csvEscape(e.company),
             csvEscape(e.workLocation),
-            csvEscape(e.house),
-            csvEscape(e.startDate),
-            csvEscape(e.managerEmail),
-            csvEscape(e.additionalManagerEmails),
-            csvEscape(e.employeeStatus),
             csvEscape(e.employmentType),
-            csvEscape(e.designation),
-            csvEscape(e.businessUnit),
+            csvEscape(jobRole),
+            csvEscape(e.jobBand != () ? e.jobBand.toString() : ()),
+            csvEscape(e.startDate),
+            csvEscape(e.continuousServiceDate),
+            csvEscape(calculateLengthOfService(effectiveStartDate)),
+            csvEscape(e.managerName),
+            csvEscape(resolveAdditionalManagerNames(e.additionalManagerEmails, nameMap)),
+            csvEscape(e.employeeStatus),
             csvEscape(e.team),
             csvEscape(e.subTeam),
+            csvEscape(e.epf),
+            csvEscape(e.managerEmail),
+            csvEscape(e.businessUnit),
+            csvEscape(e.house),
             csvEscape(e.unit),
             csvEscape(e.office),
-            csvEscape(e.secondaryJobTitle),
             csvEscape(e.probationEndDate),
             csvEscape(e.agreementEndDate)
         ];
@@ -223,32 +297,37 @@ public isolated function buildEmployeeCsv(Employee[] employees) returns string {
     return string:'join("\n", ...lines);
 }
 
-# Build a CSV string from a list of resigned employees.
+# Build a CSV string from a list of resigned employees aligned with the People HR report format.
 #
 # + employees - List of resigned employees
+# + nameMap - Map of work_email -> full name for resolving additional manager names
 # + return - CSV string
-public isolated function buildResignationCsv(Employee[] employees) returns string {
+public isolated function buildResignationCsv(Employee[] employees, map<string> nameMap) returns string {
     string[] headers = [
-        "Employee ID",
+        "Employee Id",
         "First Name",
         "Last Name",
+        "Gender",
         "Work Email",
-        "EPF",
         "Company",
-        "Work Location",
-        "House",
-        "Start Date",
-        "Lead's Email",
-        "Additional Leads' Emails",
-        "Employee Status",
+        "Location",
         "Employment Type",
-        "Designation",
-        "Business Unit",
-        "Team",
-        "Sub Team",
+        "Job Role",
+        "Job Band",
+        "Start Date",
+        "Continuous Service Date",
+        "Length Of Service",
+        "Reports To",
+        "Additional Manager",
+        "Employee Status",
+        "Team (Team and Sub Team)",
+        "Sub Team (Team and Sub Team)",
+        "EPF Number (EPF)",
+        "Email (Lead Email ID)",
+        "BU (Business Unit)",
+        "House",
         "Unit",
         "Office",
-        "Secondary Job Title",
         "Probation End Date",
         "Agreement End Date",
         "Resignation Date",
@@ -258,27 +337,36 @@ public isolated function buildResignationCsv(Employee[] employees) returns strin
     ];
     string[] lines = [string:'join(",", ...headers)];
     foreach Employee e in employees {
+        string? secTitle = e.secondaryJobTitle;
+        string jobRole = secTitle is string && secTitle.trim() != ""
+            ? e.designation + " / " + secTitle
+            : e.designation;
+        string effectiveStartDate = e.continuousServiceDate ?: e.startDate;
         string[] row = [
             csvEscape(e.employeeId),
             csvEscape(e.firstName),
             csvEscape(e.lastName),
+            csvEscape(e.gender),
             csvEscape(e.workEmail),
-            csvEscape(e.epf),
             csvEscape(e.company),
             csvEscape(e.workLocation),
-            csvEscape(e.house),
-            csvEscape(e.startDate),
-            csvEscape(e.managerEmail),
-            csvEscape(e.additionalManagerEmails),
-            csvEscape(e.employeeStatus),
             csvEscape(e.employmentType),
-            csvEscape(e.designation),
-            csvEscape(e.businessUnit),
+            csvEscape(jobRole),
+            csvEscape(e.jobBand != () ? e.jobBand.toString() : ()),
+            csvEscape(e.startDate),
+            csvEscape(e.continuousServiceDate),
+            csvEscape(calculateLengthOfService(effectiveStartDate)),
+            csvEscape(e.managerName),
+            csvEscape(resolveAdditionalManagerNames(e.additionalManagerEmails, nameMap)),
+            csvEscape(e.employeeStatus),
             csvEscape(e.team),
             csvEscape(e.subTeam),
+            csvEscape(e.epf),
+            csvEscape(e.managerEmail),
+            csvEscape(e.businessUnit),
+            csvEscape(e.house),
             csvEscape(e.unit),
             csvEscape(e.office),
-            csvEscape(e.secondaryJobTitle),
             csvEscape(e.probationEndDate),
             csvEscape(e.agreementEndDate),
             csvEscape(e.resignationDate),
