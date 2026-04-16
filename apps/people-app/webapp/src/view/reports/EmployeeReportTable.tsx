@@ -21,7 +21,9 @@ import {
   Button,
   Chip,
   CircularProgress,
+  FormControlLabel,
   Skeleton,
+  Switch,
   Tooltip,
   useTheme,
 } from "@mui/material";
@@ -45,6 +47,7 @@ interface EmployeeReportTableProps {
   previewAlertText: ReactNode;
   countChipLabel: string;
   downloadFilename: string;
+  showExcludeFutureFilter?: boolean;
 }
 
 export default function EmployeeReportTable({
@@ -52,6 +55,7 @@ export default function EmployeeReportTable({
   previewAlertText,
   countChipLabel,
   downloadFilename,
+  showExcludeFutureFilter = true,
 }: EmployeeReportTableProps) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
@@ -59,6 +63,7 @@ export default function EmployeeReportTable({
   const [isLoading, setIsLoading] = useState(true);
   const [rows, setRows] = useState<Employee[]>([]);
   const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [excludeFutureStartDate, setExcludeFutureStartDate] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +72,7 @@ export default function EmployeeReportTable({
     setTotalCount(null);
     dispatch(
       fetchFilteredEmployees({
-        filters: { employeeStatus },
+        filters: { employeeStatus, excludeFutureStartDate: showExcludeFutureFilter ? excludeFutureStartDate : undefined },
         pagination: { limit: PREVIEW_LIMIT, offset: 0 },
         sort: { sortField: "employeeId", sortOrder: "ASC" },
         leadOnly: false,
@@ -83,7 +88,7 @@ export default function EmployeeReportTable({
     return () => {
       cancelled = true;
     };
-  }, [dispatch, employeeStatus]);
+  }, [dispatch, employeeStatus, excludeFutureStartDate, showExcludeFutureFilter]);
 
   function getFullName(firstName: string, lastName: string) {
     return `${firstName || ""} ${lastName || ""}`.trim();
@@ -295,7 +300,7 @@ export default function EmployeeReportTable({
     setDownloading(true);
     try {
       const csvText = unwrapResult(
-        await dispatch(downloadEmployeeReportByStatus(employeeStatus)),
+        await dispatch(downloadEmployeeReportByStatus({ status: employeeStatus, excludeFutureStartDate: showExcludeFutureFilter ? excludeFutureStartDate : undefined })),
       );
       const blob = new Blob([csvText], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
@@ -336,6 +341,23 @@ export default function EmployeeReportTable({
         >
           {previewAlertText}
         </Alert>
+        {showExcludeFutureFilter && (
+          <FormControlLabel
+            control={
+              <Switch
+                checked={excludeFutureStartDate}
+                onChange={(e) => setExcludeFutureStartDate(e.target.checked)}
+                size="small"
+                sx={{
+                  "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
+                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
+                }}
+              />
+            }
+            label="Exclude future joiners"
+            sx={{ flexShrink: 0, mr: 0, ml: 1 }}
+          />
+        )}
         <Chip
           size="small"
           label={

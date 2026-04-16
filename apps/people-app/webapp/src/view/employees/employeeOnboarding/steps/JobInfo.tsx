@@ -29,7 +29,7 @@ import {
   MenuItem,
   useTheme,
   alpha,
-  Tooltip,
+  Popover,
   FormControlLabel,
   Checkbox,
   Chip,
@@ -57,6 +57,7 @@ import {
   fetchCompanies,
   fetchOffices,
   fetchEmploymentTypes,
+  fetchHouses,
 } from "@slices/organizationSlice/organization";
 import { CreateEmployeeFormValues } from "@root/src/types/types";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -68,6 +69,7 @@ import {
   SupervisorAccountOutlined,
   InfoOutlined,
   Close,
+  WidgetsOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
 
@@ -77,6 +79,7 @@ const SECTION_ICONS = {
   location: <LocationOnOutlined />,
   event: <EventOutlined />,
   supervisor: <SupervisorAccountOutlined />,
+  other: <WidgetsOutlined />,
 };
 
 const SECTION_HEADER_BOX_SX = {
@@ -87,57 +90,77 @@ const SECTION_HEADER_BOX_SX = {
   mt: 4,
 } as const;
 
-export const jobInfoValidationSchema = Yup.object().shape({
-  workEmail: Yup.string()
-    .required("Work email is required")
-    .email("Invalid email format")
-    .max(254, "Email must be at most 254 characters"),
-  epf: Yup.string()
-    .max(45, "EPF must be at most 45 characters")
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  businessUnitId: Yup.number()
-    .required("Business unit is required")
-    .min(1, "Select a valid business unit"),
-  teamId: Yup.number()
-    .required("Team is required")
-    .min(1, "Select a valid team"),
-  subTeamId: Yup.number()
-    .required("Sub Team is required")
-    .min(1, "Select a valid sub team"),
-  unitId: Yup.number().optional(),
-  careerFunctionId: Yup.number()
-    .required("Career function is required")
-    .min(1, "Select a valid career function"),
-  designationId: Yup.number()
-    .required("Designation is required")
-    .min(1, "Select a valid designation"),
-  secondaryJobTitle: Yup.string()
-    .max(20, "Secondary job title must be at most 20 characters")
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  companyId: Yup.number()
-    .required("Company is required")
-    .min(1, "Select a valid company"),
-  officeId: Yup.number().optional(),
-  workLocation: Yup.string()
-    .required("Work location is required")
-    .min(1, "Select a valid work location"),
-  employmentTypeId: Yup.number()
-    .required("Employment type is required")
-    .min(1, "Select a valid employment type"),
-  startDate: Yup.string().required("Start date is required"),
-  probationEndDate: Yup.string()
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  agreementEndDate: Yup.string()
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  managerEmail: Yup.string().required("Manager email is required"),
-  additionalManagerEmail: Yup.array()
-    .of(Yup.string().email("Invalid email format"))
-    .nullable(),
-});
+export const createJobInfoValidationSchema = (
+  employmentTypes?: { id: number; name: string }[],
+) =>
+  Yup.object().shape({
+    workEmail: Yup.string()
+      .required("Work email is required")
+      .email("Invalid email format")
+      .max(254, "Email must be at most 254 characters"),
+    epf: Yup.string()
+      .max(45, "EPF must be at most 45 characters")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    businessUnitId: Yup.number()
+      .required("Business unit is required")
+      .min(1, "Select a valid business unit"),
+    teamId: Yup.number()
+      .required("Team is required")
+      .min(1, "Select a valid team"),
+    subTeamId: Yup.number()
+      .required("Sub Team is required")
+      .min(1, "Select a valid sub team"),
+    unitId: Yup.number().optional(),
+    careerFunctionId: Yup.number()
+      .required("Career function is required")
+      .min(1, "Select a valid career function"),
+    designationId: Yup.number()
+      .required("Designation is required")
+      .min(1, "Select a valid designation"),
+    secondaryJobTitle: Yup.string()
+      .max(20, "Secondary job title must be at most 20 characters")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    companyId: Yup.number()
+      .required("Company is required")
+      .min(1, "Select a valid company"),
+    officeId: Yup.number().optional(),
+    workLocation: Yup.string()
+      .required("Work location is required")
+      .min(1, "Select a valid work location"),
+    employmentTypeId: Yup.number()
+      .required("Employment type is required")
+      .min(1, "Select a valid employment type"),
+    startDate: Yup.string().required("Start date is required"),
+    probationEndDate: Yup.string()
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    agreementEndDate: Yup.string()
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    managerEmail: Yup.string().required("Lead email is required"),
+    additionalManagerEmail: Yup.array()
+      .of(Yup.string().email("Invalid email format"))
+      .nullable(),
+    employeeId: Yup.string()
+      .trim()
+      .transform((value) => (value === "" ? null : value))
+      .nullable()
+      .when("employmentTypeId", (employmentTypeId: number, schema: any) => {
+        if (!employmentTypeId) return schema;
+        if (!employmentTypes || employmentTypes.length === 0) return schema;
+        const selected = employmentTypes.find(
+          (et) => et.id === employmentTypeId,
+        );
+        const isFixed = selected
+          ? FIXED_TERM_EMPLOYMENT_TYPE.test((selected.name || "").trim())
+          : false;
+        return isFixed
+          ? schema.required("Employee ID is required for fixed-term employment")
+          : schema;
+      }),
+  });
 
 const SectionHeader = React.memo(
   ({ icon, title, headerBoxSx, iconBoxSx }: any) => {
@@ -159,7 +182,7 @@ const SectionHeader = React.memo(
   },
 );
 
-const ContinuousServiceTooltip = React.memo(
+const ContinuousServicePopoverContent = React.memo(
   ({ record }: { record: ContinuousServiceRecordInfo | null | undefined }) => {
     if (!record) return null;
 
@@ -170,6 +193,7 @@ const ContinuousServiceTooltip = React.memo(
         value: `${record.firstName || ""} ${record.lastName || ""}`.trim(),
       },
       { label: "Designation", value: record.designation },
+      { label: "Company", value: record.company },
       { label: "Work Location", value: record.workLocation },
       {
         label: "Start Date",
@@ -177,50 +201,149 @@ const ContinuousServiceTooltip = React.memo(
           ? dayjs(record.startDate).format("YYYY-MM-DD")
           : null,
       },
-      { label: "Manager Email", value: record.managerEmail },
-      { label: "Additional Managers", value: record.additionalManagerEmails },
+      { label: "Lead Email", value: record.managerEmail },
+      { label: "Additional Leads", value: record.additionalManagerEmails },
       { label: "Business Unit", value: record.businessUnit },
       { label: "Team", value: record.team },
       ...(record.subTeam ? [{ label: "Sub Team", value: record.subTeam }] : []),
       ...(record.unit ? [{ label: "Unit", value: record.unit }] : []),
-    ];
+    ].filter((f) => f.value !== null && f.value !== undefined);
 
     return (
-      <Box sx={{ p: 1, maxWidth: 400 }}>
-        <Typography variant="caption" fontWeight={600}>
-          Continuous Service Record Details
-        </Typography>
-        {fields.map((f) => (
-          <Typography key={f.label} variant="caption" display="block">
-            <strong>{f.label}:</strong> {f.value || "N/A"}
+      <Box sx={{ minWidth: 300, maxWidth: 380 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            mb: 2,
+          }}
+        >
+          <Box
+            sx={{
+              width: 3,
+              height: 18,
+              borderRadius: 1,
+              bgcolor: "secondary.contrastText",
+              flexShrink: 0,
+            }}
+          />
+          <Typography
+            sx={{
+              fontWeight: 600,
+              color: "secondary.contrastText",
+              fontSize: "0.8rem",
+              letterSpacing: "0.03em",
+            }}
+          >
+            Continuous Service Record
           </Typography>
-        ))}
+        </Box>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+          {fields.map((f, i) => (
+            <Box
+              key={f.label}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                gap: 3,
+                px: 1.25,
+                py: 0.75,
+                borderRadius: 1,
+                bgcolor: (t) =>
+                  i % 2 === 0
+                    ? alpha(t.palette.action.hover, 0.04)
+                    : "transparent",
+              }}
+            >
+              <Typography
+                sx={{
+                  color: "text.disabled",
+                  fontSize: "0.72rem",
+                  flexShrink: 0,
+                  lineHeight: 1.5,
+                }}
+              >
+                {f.label}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  textAlign: "right",
+                  wordBreak: "break-word",
+                  lineHeight: 1.5,
+                  color: "text.primary",
+                }}
+              >
+                {f.value}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
       </Box>
     );
   },
 );
 
-const InfoTooltipAdornment = React.memo(
-  ({ record }: { record: ContinuousServiceRecordInfo | null | undefined }) => (
-    <InputAdornment position="end">
-      <Tooltip
-        title={<ContinuousServiceTooltip record={record} />}
-        placement="top"
-        arrow
-      >
+const InfoPopoverAdornment = React.memo(
+  ({ record }: { record: ContinuousServiceRecordInfo | null | undefined }) => {
+    const theme = useTheme();
+    const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+    return (
+      <InputAdornment position="end">
         <IconButton
           size="small"
-          sx={{ p: 0.5 }}
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          sx={{
+            p: 0.5,
+            color: alpha(theme.palette.secondary.contrastText, 0.7),
+            "&:hover": {
+              color: theme.palette.secondary.contrastText,
+              bgcolor: alpha(theme.palette.secondary.contrastText, 0.08),
+            },
+            transition: "color 0.15s, background-color 0.15s",
+          }}
           aria-label="Show continuous service record details"
         >
           <InfoOutlined fontSize="small" />
         </IconButton>
-      </Tooltip>
-    </InputAdornment>
-  ),
+
+        <Popover
+          open={Boolean(anchorEl)}
+          anchorEl={anchorEl}
+          onClose={() => setAnchorEl(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          slotProps={{
+            paper: {
+              sx: {
+                mt: 1,
+                p: 2,
+                bgcolor: "background.form",
+                border: `1px solid ${alpha(theme.palette.secondary.contrastText, 0.2)}`,
+                borderRadius: 2,
+                boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.15)}`,
+              },
+            },
+          }}
+        >
+          <ContinuousServicePopoverContent record={record} />
+        </Popover>
+      </InputAdornment>
+    );
+  },
 );
 
-export default function JobInfoStep() {
+export const AUTO_ID_EMPLOYMENT_TYPES =
+  /^(permanent|internship|consultancy|advisory consultancy|part time consultancy)$/i;
+
+export const FIXED_TERM_EMPLOYMENT_TYPE = /^fixed\s+term\s+contract$/i;
+
+export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const {
@@ -249,7 +372,12 @@ export default function JobInfoStep() {
     companies,
     offices,
     employmentTypes,
+    houses,
+    suggestedHouseId,
   } = useAppSelector((state) => state.organization);
+  const suggestedHouseName = suggestedHouseId
+    ? houses.find((h) => h.id === suggestedHouseId)?.name
+    : undefined;
 
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
     null,
@@ -262,7 +390,7 @@ export default function JobInfoStep() {
     designations: false,
     offices: false,
   });
-  
+
   const latestEpfRef = useRef<string>("");
 
   const textFieldSx = useMemo(
@@ -329,6 +457,7 @@ export default function JobInfoStep() {
     dispatch(fetchCareerFunctions());
     dispatch(fetchEmployeesBasicInfo());
     dispatch(fetchEmploymentTypes());
+    dispatch(fetchHouses());
 
     return () => {
       dispatch(resetContinuousService());
@@ -412,6 +541,12 @@ export default function JobInfoStep() {
     },
     [],
   );
+  const isPermanent = useMemo(() => {
+    const selectedType = employmentTypes.find(
+      (et) => et.id === values.employmentTypeId,
+    );
+    return /^permanent$/i.test(selectedType?.name?.trim() ?? "");
+  }, [employmentTypes, values.employmentTypeId]);
 
   const isInternship = useMemo(() => {
     return (
@@ -419,12 +554,21 @@ export default function JobInfoStep() {
     );
   }, [internshipTypeId, values.employmentTypeId]);
 
+  const isFixedTerm = useMemo(() => {
+    const selectedType = employmentTypes.find(
+      (et) => et.id === values.employmentTypeId,
+    );
+    if (!selectedType) return false;
+    return FIXED_TERM_EMPLOYMENT_TYPE.test(selectedType.name.trim());
+  }, [employmentTypes, values.employmentTypeId]);
+
   const showAgreementEndDate = useMemo(() => {
-  const normalized = employmentTypes
+    const normalized = employmentTypes
       .find((e) => e.id === values.employmentTypeId)
       ?.name?.trim()
       .toLowerCase();
-    return normalized === "internship" || normalized === "consultancy";
+    if (!normalized) return false;
+    return /internship|consultancy|fixed\s+term/.test(normalized);
   }, [employmentTypes, values.employmentTypeId]);
 
   const computedAgreementDate = useMemo(() => {
@@ -440,37 +584,86 @@ export default function JobInfoStep() {
     computeAgreementEndDate,
   ]);
 
+  const matchedProbationLocation = useMemo(() => {
+    if (!values.companyId || !values.workLocation || !companies.length)
+      return null;
+
+    const company = companies.find((c) => c.id === values.companyId);
+    return (
+      company?.allowedLocations?.find(
+        (item) =>
+          item.location.trim().toUpperCase() ===
+          values.workLocation.trim().toUpperCase(),
+      ) ?? null
+    );
+  }, [values.companyId, values.workLocation, companies]);
+
+  useEffect(() => {
+    if (!isPermanent) {
+      setFieldValue("probationEndDate", null);
+      return;
+    }
+
+    if (isEditMode && values.probationEndDate) return;
+
+    if (!values.startDate || !matchedProbationLocation) {
+      setFieldValue("probationEndDate", null);
+      return;
+    }
+
+    const probationMonths = matchedProbationLocation.probationPeriod ?? null;
+
+    if (probationMonths === null) {
+      setFieldValue("probationEndDate", null);
+      return;
+    }
+
+    const startDate = dayjs(values.startDate);
+    if (!startDate.isValid()) {
+      setFieldValue("probationEndDate", null);
+      return;
+    }
+    const computed = startDate
+      .add(probationMonths, "month")
+      .format("YYYY-MM-DD");
+    setFieldValue("probationEndDate", computed);
+  }, [
+    isPermanent,
+    isEditMode,
+    values.startDate,
+    values.probationEndDate,
+    matchedProbationLocation,
+    setFieldValue,
+  ]);
+
   const handleEmploymentTypeChange = useCallback(
     (newEmploymentTypeId: number) => {
       setFieldValue("employmentTypeId", newEmploymentTypeId);
 
-      const isNewInternship =
-        internshipTypeId !== null && newEmploymentTypeId === internshipTypeId;
-
-      const isPermanent = employmentTypes
-        .find((e) => e.id === newEmploymentTypeId)
-        ?.name?.match(/^permanent$/i);
+      const selectedType = employmentTypes.find(
+        (e) => e.id === newEmploymentTypeId,
+      );
+      const typeName = selectedType?.name?.trim() ?? "";
+      const isNewInternship = /^internship$/i.test(typeName);
+      const isNewPermanent = /^permanent$/i.test(typeName);
+      const isNewFixedTerm = FIXED_TERM_EMPLOYMENT_TYPE.test(typeName);
+      const isNewConsultancy = /consultancy/i.test(typeName);
+      const isAutoIdType = AUTO_ID_EMPLOYMENT_TYPES.test(typeName);
 
       if (isNewInternship) {
         setInternshipDurationMonths(6);
+        setFieldValue("employeeId", "");
         const computed = computeAgreementEndDate(values.startDate ?? null, 6);
-        if (computed) {
-          setFieldValue("agreementEndDate", computed);
-        }
+        if (computed) setFieldValue("agreementEndDate", computed);
       } else {
         setInternshipDurationMonths(0);
-        if (isPermanent) {
+        if (isNewPermanent) setFieldValue("agreementEndDate", null);
+        if (isNewConsultancy || isNewFixedTerm)
           setFieldValue("agreementEndDate", null);
-        }
+        if (isAutoIdType) setFieldValue("employeeId", "");
       }
     },
-    [
-      setFieldValue,
-      internshipTypeId,
-      employmentTypes,
-      values.startDate,
-      computeAgreementEndDate,
-    ],
+    [setFieldValue, employmentTypes, computeAgreementEndDate, values.startDate],
   );
 
   const handleInternshipDurationChange = useCallback(
@@ -680,7 +873,7 @@ export default function JobInfoStep() {
                   InputProps={{
                     endAdornment:
                       selectedRecord && !errorMessage ? (
-                        <InfoTooltipAdornment record={selectedRecord} />
+                        <InfoPopoverAdornment record={selectedRecord} />
                       ) : undefined,
                   }}
                 />
@@ -707,7 +900,7 @@ export default function JobInfoStep() {
                   InputProps={{
                     endAdornment:
                       selectedRecord && !errorMessage ? (
-                        <InfoTooltipAdornment record={selectedRecord} />
+                        <InfoPopoverAdornment record={selectedRecord} />
                       ) : undefined,
                   }}
                 >
@@ -733,18 +926,21 @@ export default function JobInfoStep() {
                   }}
                 />
               )}
-
-              <Box sx={{ mt: 1 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={!!values.isRelocation}
-                      onChange={(e) => handleRelocationChange(e.target.checked)}
-                    />
-                  }
-                  label="Relocation"
-                />
-              </Box>
+              {!errorMessage && !!continuousServiceRecord?.length && (
+                <Box sx={{ mt: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={!!values.isRelocation}
+                        onChange={(e) =>
+                          handleRelocationChange(e.target.checked)
+                        }
+                      />
+                    }
+                    label="Relocation"
+                  />
+                </Box>
+              )}
             </Box>
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
@@ -1094,13 +1290,24 @@ export default function JobInfoStep() {
               sx={textFieldSx}
             >
               {values.companyId && companies.length ? (
-                companies
-                  .find((company) => company.id === values.companyId)
-                  ?.allowedLocations?.map((location) => (
-                    <MenuItem key={location} value={location}>
-                      {location}
-                    </MenuItem>
-                  )) || <MenuItem disabled>No locations available</MenuItem>
+                (() => {
+                  const allowedLocations =
+                    companies.find((company) => company.id === values.companyId)
+                      ?.allowedLocations ?? [];
+
+                  return allowedLocations.length ? (
+                    allowedLocations.map((locationItem) => (
+                      <MenuItem
+                        key={locationItem.location}
+                        value={locationItem.location}
+                      >
+                        {locationItem.location}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>No locations available</MenuItem>
+                  );
+                })()
               ) : (
                 <MenuItem disabled>
                   {!values.companyId || values.companyId === 0
@@ -1123,7 +1330,7 @@ export default function JobInfoStep() {
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -1158,7 +1365,7 @@ export default function JobInfoStep() {
             </TextField>
           </Grid>
           {isInternship ? (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
                 select
                 fullWidth
@@ -1182,7 +1389,24 @@ export default function JobInfoStep() {
               </TextField>
             </Grid>
           ) : null}
-          <Grid item xs={12} sm={6} md={3}>
+          {isFixedTerm ? (
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                fullWidth
+                required
+                label="Employee ID"
+                name="employeeId"
+                value={values.employeeId ?? ""}
+                onChange={(e) => setFieldValue("employeeId", e.target.value)}
+                onBlur={handleBlur}
+                error={Boolean(touched.employeeId && errors.employeeId)}
+                helperText={touched.employeeId && (errors.employeeId as string)}
+                sx={textFieldSx}
+                InputProps={{ readOnly: Boolean(isEditMode) }}
+              />
+            </Grid>
+          ) : null}
+          <Grid item xs={12} sm={6} md={4}>
             <DatePicker
               label="Start Date"
               value={values.startDate ? dayjs(values.startDate) : null}
@@ -1198,34 +1422,48 @@ export default function JobInfoStep() {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <DatePicker
-              label="Probation End Date"
-              value={
-                values.probationEndDate ? dayjs(values.probationEndDate) : null
-              }
-              onChange={(val) =>
-                setFieldValue(
-                  "probationEndDate",
-                  val ? val.format("YYYY-MM-DD") : null,
-                )
-              }
-              slotProps={{
-                field: { clearable: true },
-                textField: {
-                  fullWidth: true,
-                  error: Boolean(
-                    touched.probationEndDate && errors.probationEndDate,
-                  ),
-                  helperText:
-                    touched.probationEndDate && errors.probationEndDate,
-                  sx: textFieldSx,
-                },
-              }}
-            />
-          </Grid>
+          {isPermanent ? (
+            <Grid item xs={12} sm={6} md={4}>
+              <DatePicker
+                label="Probation End Date"
+                value={
+                  values.probationEndDate
+                    ? dayjs(values.probationEndDate)
+                    : null
+                }
+                onChange={(val) =>
+                  setFieldValue(
+                    "probationEndDate",
+                    val ? val.format("YYYY-MM-DD") : null,
+                  )
+                }
+                slotProps={{
+                  field: { clearable: true },
+                  textField: {
+                    fullWidth: true,
+                    error: Boolean(
+                      touched.probationEndDate && errors.probationEndDate,
+                    ),
+                    helperText: (() => {
+                      if (touched.probationEndDate && errors.probationEndDate) {
+                        return errors.probationEndDate;
+                      }
+                      if (!matchedProbationLocation) return undefined;
+
+                      const probationMonths =
+                        matchedProbationLocation.probationPeriod ?? null;
+                      return probationMonths === null
+                        ? "N/A — No probation for this location"
+                        : `Auto-calculated: ${probationMonths} months from start date`;
+                    })(),
+                    sx: textFieldSx,
+                  },
+                }}
+              />
+            </Grid>
+          ) : null}
           {showAgreementEndDate ? (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <DatePicker
                 label="Agreement End Date"
                 value={
@@ -1266,7 +1504,7 @@ export default function JobInfoStep() {
       <Box>
         <SectionHeader
           icon={SECTION_ICONS.supervisor}
-          title="Manager & Reports"
+          title="Lead & Reports"
           headerBoxSx={SECTION_HEADER_BOX_SX}
           iconBoxSx={iconBoxSx}
         />
@@ -1276,8 +1514,8 @@ export default function JobInfoStep() {
               select
               fullWidth
               required
-              label="Manager Email"
-              name="managerEmail"
+              label="Lead Email"
+              name="leadEmail"
               value={values.managerEmail || ""}
               onChange={(e) => setFieldValue("managerEmail", e.target.value)}
               onBlur={handleBlur}
@@ -1306,8 +1544,8 @@ export default function JobInfoStep() {
             <TextField
               select
               fullWidth
-              label="Additional Manager Email"
-              name="additionalManagerEmail"
+              label="Additional Lead Emails"
+              name="additionalLeadEmail"
               value={values.additionalManagerEmail || []}
               onChange={(e) => {
                 const value = e.target.value;
@@ -1378,8 +1616,52 @@ export default function JobInfoStep() {
                   {employeeBasicInfoState === "loading"
                     ? "Loading employees..."
                     : values.managerEmail
-                      ? "No other managers available"
-                      : "Select primary manager first"}
+                      ? "No other leads available"
+                      : "Select primary lead first"}
+                </MenuItem>
+              )}
+            </TextField>
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Box>
+        <SectionHeader
+          icon={SECTION_ICONS.other}
+          title="Other"
+          headerBoxSx={SECTION_HEADER_BOX_SX}
+          iconBoxSx={iconBoxSx}
+        />
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              select
+              fullWidth
+              label="House"
+              name="houseId"
+              value={values.houseId || 0}
+              onChange={(e) => setFieldValue("houseId", Number(e.target.value))}
+              onBlur={handleBlur}
+              helperText={
+                suggestedHouseName
+                  ? `Fewest active employees: ${suggestedHouseName}`
+                  : suggestedHouseId
+                  ? "Loading suggested house..."
+                  : "Assign the house for this employee"
+              }
+              sx={textFieldSx}
+            >
+              {houses.length ? (
+                houses.map((h) => (
+                  <MenuItem key={h.id} value={h.id}>
+                    {h.name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  {organizationState === "loading"
+                    ? "Loading houses..."
+                    : "No houses found"}
                 </MenuItem>
               )}
             </TextField>

@@ -29,7 +29,8 @@ public enum VehicleStatus {
 # [Database] Enum for parking reservation status.
 public enum ParkingReservationStatus {
     PENDING,
-    CONFIRMED
+    CONFIRMED,
+    EXPIRED
 }
 
 # [Database] Enum for employee statuses.
@@ -37,4 +38,14 @@ public enum EmployeeStatus {
     EMPLOYEE_ACTIVE = "Active",
     EMPLOYEE_LEFT = "Left",
     EMPLOYEE_MARKED_LEAVER = "Marked leaver"
+}
+
+# [Database] Enum for employment types.
+public enum EmploymentTypeName {
+    PERMANENT = "PERMANENT",
+    INTERNSHIP = "INTERNSHIP",
+    CONSULTANCY = "CONSULTANCY",
+    ADVISORY_CONSULTANCY = "ADVISORY CONSULTANCY",
+    PART_TIME_CONSULTANCY = "PART TIME CONSULTANCY",
+    FIXED_TERM = "FIXED TERM CONTRACT"
 }

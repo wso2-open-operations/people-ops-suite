@@ -17,3 +17,4 @@
 export { default as PageTransitionWrapper } from "@/components/shared/PageTransitionWrapper";
 export { default as BottomSheet } from "@/components/shared/BottomSheet";
 export { default as RequireUserInit } from "@/components/shared/RequireUserInit";
+export { default as BottomNav } from "@/components/shared/BottomNav";

@@ -51,7 +51,7 @@ export default function MyTeamTable() {
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
   const [filterState, setFilterState] = useState<Pick<EmployeeSearchPayload, "filters" | "searchString">>({
-    filters: { employeeStatus: EmployeeStatus.Active, directReports: false },
+    filters: { employeeStatus: EmployeeStatus.Active, directReports: false, excludeFutureStartDate: true },
     searchString: undefined,
   });
 
@@ -100,7 +100,7 @@ export default function MyTeamTable() {
   // Capture team active count when only the baseline Active filter is applied.
   // directReports is intentionally excluded: toggling it should still refresh the count.
   const isBaselineFilter = useMemo(() => {
-    const { employeeStatus, directReports: _dr, ...rest } = filterState.filters;
+    const { employeeStatus, directReports: _dr, excludeFutureStartDate: _efd, ...rest } = filterState.filters;
     return (
       employeeStatus === EmployeeStatus.Active &&
       !Object.values(rest).some(Boolean) &&

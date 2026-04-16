@@ -15,10 +15,13 @@
 // under the License.
 
 import { ErrorMessages } from "@/utils/constants";
-import { TOPIC, type LogLevel, type TopicType } from "./types";
+import { TOPIC, type EdgeInsets, type LogLevel, type TopicType } from "./types";
 import { Logger } from "@/utils/logger";
 
 type Callback<T> = (data?: T) => void;
+
+let isNativeTokenRequestInProgress = false;
+let nativeTokenCallbackQueue: Callback<string>[] = [];
 
 declare global {
   interface Window {
@@ -29,6 +32,13 @@ declare global {
       resolveQR: (qrString: string) => void;
       resolveQRCode: (qrData: string) => void;
       rejectQRCode: (error: string) => void;
+      resolveSaveLocalData: () => void;
+      rejectSaveLocalData: (error: string) => void;
+      resolveGetLocalData: (data: { value: string | null }) => void;
+      rejectGetLocalData: (error: string) => void;
+      // Cross-microapp bridge API (provided by SuperApp).
+      requestOpenMicroApp: (targetAppId: string, launchData?: unknown) => void;
+      resolveDeviceSafeAreaInsets?: (data: { insets: EdgeInsets }) => void;
     };
     ReactNativeWebView?: {
       postMessage: (message: string) => void;
@@ -38,14 +48,49 @@ declare global {
 
 // Function to get token from React Native
 export const getToken = (callback: Callback<string>): void => {
-  if (window.nativebridge) {
-    window.nativebridge.requestToken();
-    window.nativebridge.resolveToken = (token: string) => {
-      callback(token);
-    };
-  } else {
+
+  if (!window.nativebridge) {
     Logger.error("Native bridge is not available");
     callback();
+    return;
+  }
+
+  nativeTokenCallbackQueue.push(callback);
+  if (isNativeTokenRequestInProgress) return;
+
+  isNativeTokenRequestInProgress = true;
+  window.nativebridge.resolveToken = (token: string) => {
+    const queue = nativeTokenCallbackQueue;
+    nativeTokenCallbackQueue = [];
+    isNativeTokenRequestInProgress = false;
+
+    queue.forEach((cb) => {
+      try {
+        cb(token);
+      } catch (error) {
+        Logger.error("Error while executing native token callback", error);
+      }
+    });
+  };
+
+  try {
+    window.nativebridge.requestToken();
+  } catch (error) {
+    Logger.error("Failed to request token from native bridge", error);
+    const queue = nativeTokenCallbackQueue;
+    nativeTokenCallbackQueue = [];
+    isNativeTokenRequestInProgress = false;
+    window.nativebridge.resolveToken = () => {};
+    queue.forEach((cb) => {
+      try {
+        cb();
+      } catch (callbackError) {
+        Logger.error(
+          "Error while executing native token callback after request failure",
+          callbackError,
+        );
+      }
+    });
   }
 };
 
@@ -88,6 +133,28 @@ export const sendNativeLog = (
   }
 };
 
+export const goToMyAppsScreen = (): void => {
+  if (window.nativebridge) {
+    triggerSuperAppAction(TOPIC.NAVIGATE_TO_MY_APPS);
+  }
+};
+
+export const requestDeviceSafeAreaInsets = (
+  callback: Callback<{ insets: EdgeInsets }>,
+): void => {
+  if (window.nativebridge) {
+    triggerSuperAppAction(TOPIC.DEVICE_SAFE_AREA_INSETS);
+    window.nativebridge.resolveDeviceSafeAreaInsets = (data) => {
+      callback(data);
+    };
+  } else {
+    Logger.error(
+      ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE + " to fetch device safe area insets",
+    );
+    callback();
+  }
+};
+
 // Scan QR Code
 export const scanQRCode = (
   successCallback: (qrData: string) => void,
@@ -105,4 +172,94 @@ export const scanQRCode = (
   } else {
     Logger.error("Native bridge is not available");
   }
+};
+
+function normalizeKey(key: string): string {
+  // Keep the same normalization logic as the wallet microapp bridge.
+  return key.toString().replace(" ", "-").toLowerCase();
+}
+
+function encodeValue(value: unknown): string {
+  return btoa(JSON.stringify(value));
+}
+
+function decodeValue<T>(value: string): T {
+  return JSON.parse(atob(value)) as T;
+}
+
+export const saveLocalDataAsync = async (key: string, value: unknown) => {
+  const normalizedKey = normalizeKey(key);
+  const encodedValue = encodeValue(value);
+
+  return new Promise<void>((resolve, reject) => {
+    if (!window.nativebridge || !window.ReactNativeWebView) {
+      Logger.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
+      reject(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
+      return;
+    }
+
+    window.nativebridge.resolveSaveLocalData = () => resolve();
+    window.nativebridge.rejectSaveLocalData = (error: string) => reject(error);
+
+    triggerSuperAppAction(TOPIC.SAVE_LOCAL_DATA, {
+      key: normalizedKey,
+      value: encodedValue,
+    });
+  });
+};
+
+export const getLocalDataAsync = async <T = unknown>(key: string) => {
+  const normalizedKey = normalizeKey(key);
+
+  return new Promise<T | null>((resolve, reject) => {
+    if (!window.nativebridge || !window.ReactNativeWebView) {
+      Logger.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
+      reject(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
+      return;
+    }
+
+    window.nativebridge.resolveGetLocalData = ({ value }) => {
+      if (!value) {
+        resolve(null);
+        return;
+      }
+      try {
+        resolve(decodeValue<T>(value));
+      } catch {
+        resolve(null);
+      }
+    };
+    window.nativebridge.rejectGetLocalData = (error: string) => reject(error);
+
+    triggerSuperAppAction(TOPIC.GET_LOCAL_DATA, {
+      key: normalizedKey,
+    });
+  });
+};
+
+/**
+ * Request the super app to open another micro app.
+ * Used for switching to the Wallet microapp for payment.
+ */
+export const requestOpenMicroApp = (
+  targetAppId: string,
+  launchData?: unknown,
+): void => {
+  if (window.nativebridge?.requestOpenMicroApp) {
+    window.nativebridge.requestOpenMicroApp(targetAppId, launchData);
+    return;
+  }
+
+  // Fallback: direct postMessage in case the injected bridge method isn't typed.
+  if (window.ReactNativeWebView) {
+    window.ReactNativeWebView.postMessage(
+      JSON.stringify({
+        topic: "open_micro_app",
+        data: { targetAppId, launchData },
+      }),
+    );
+    return;
+  }
+
+  Logger.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
 };

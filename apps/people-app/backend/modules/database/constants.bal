@@ -24,7 +24,10 @@ const ERROR_NO_ROWS_UPDATED = "No rows were updated";
 const MAX_TOKEN_COUNT = 10;
 
 # A constant default page number
-const int DEFAULT_PAGE_NUMBER = 1;
+const DEFAULT_PAGE_NUMBER = 1;
 
 # A constant default records per page
-const int DEFAULT_RECORDS_PER_PAGE = 20;
+const DEFAULT_RECORDS_PER_PAGE = 20;
+
+# Prefix shared by all consultancy-type employee IDs 
+public const CONSULTANCY_ID_PREFIX = "CON";

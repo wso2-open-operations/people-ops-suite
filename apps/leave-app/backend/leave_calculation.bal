@@ -276,7 +276,7 @@ isolated function getLegallyEntitledLeave(readonly & Employee employee) returns 
         ES => {
             // Spain: 23 working days annual leave (calendar year) + open sick + open casual
             return {
-                spainAnnual: 23.0
+                annual: 23.0
             };
         }
         _ => {
@@ -311,7 +311,7 @@ isolated function getLeaveReportContent(database:Leave[] leaves) returns ReportC
                 processedLeaveType = database:CASUAL_LEAVE;
             }
         }
-        // France/Spain leave types are tracked as-is (conges_payes, rtt, spain_annual, spain_casual)
+        // France/Spain leave types are tracked as-is (conges_payes, rtt, annual, casual)
         map<float>? employeeLeaveMap = reportContent[email];
         if employeeLeaveMap is map<float> {
             float? leaveTypeCount = employeeLeaveMap[processedLeaveType];
@@ -467,28 +467,28 @@ isolated function getPolicyAdjustedLeaveCounts(readonly & Employee employee, str
 
     // Spain: track annual, casual, and sick independently
     if location is ES {
-        float spainAnnualTaken = 0.0;
-        float spainCasualTaken = 0.0;
+        float annualTaken = 0.0;
+        float casualTaken = 0.0;
         float sickTaken = 0.0;
 
-        [string, string] [esStart, esEnd] = getLeavePeriodBounds(location, database:SPAIN_ANNUAL_LEAVE, effectiveYear);
+        [string, string] [esStart, esEnd] = getLeavePeriodBounds(location, database:ANNUAL_LEAVE, effectiveYear);
         database:Leave[]|error esLeaves = database:getLeaves({emails: [email], statuses: [APPROVED], startDate: esStart, endDate: esEnd});
         if esLeaves is error {
             return error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, esLeaves);
         }
         foreach database:Leave leave in esLeaves {
-            if leave.leaveType is database:SPAIN_ANNUAL_LEAVE && leave.numberOfDays is float {
-                spainAnnualTaken += <float>leave.numberOfDays;
-            } else if leave.leaveType is database:SPAIN_CASUAL_LEAVE && leave.numberOfDays is float {
-                spainCasualTaken += <float>leave.numberOfDays;
+            if leave.leaveType is database:ANNUAL_LEAVE && leave.numberOfDays is float {
+                annualTaken += <float>leave.numberOfDays;
+            } else if leave.leaveType is database:CASUAL_LEAVE && leave.numberOfDays is float {
+                casualTaken += <float>leave.numberOfDays;
             } else if leave.leaveType is database:SICK_LEAVE && leave.numberOfDays is float {
                 sickTaken += <float>leave.numberOfDays;
             }
         }
 
         return {
-            spainAnnual: spainAnnualTaken,
-            spainCasual: spainCasualTaken,
+            annual: annualTaken,
+            casual: casualTaken,
             sick: sickTaken
         };
     }

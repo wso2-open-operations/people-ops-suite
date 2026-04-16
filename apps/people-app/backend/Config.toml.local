@@ -1,6 +1,7 @@
 [people.authorization.authorizedRoles]
 EMPLOYEE_ROLE = ""
 ADMIN_ROLE = ""
+SERVICE_DESK_ROLE = ""
 
 [people.database.dbConfig]
     host = ""
@@ -21,6 +22,7 @@ ADMIN_ROLE = ""
     masterWalletAddress = ""
     reservationWindowStartHour = 
     reservationWindowEndHour = 
+    pendingReservationExpiryMinutes = 
     transactionEndpoint = ""
 
 [people.wso2_coin.clientAuthConfig]
@@ -35,4 +37,11 @@ ADMIN_ROLE = ""
     clientSecret = ""
     sheetId = ""
     sheetName = ""
-    
+
+[people.qr]
+    qrGenerationServiceEndpoint = ""
+
+[people.qr.qrClientAuthConfig]
+    tokenUrl = ""
+    clientId = ""
+    clientSecret = ""

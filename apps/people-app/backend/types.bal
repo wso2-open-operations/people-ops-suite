@@ -90,6 +90,10 @@ type ConfirmParkingReservationRequest record {|
 type CarParkConfigResponse record {|
     # Master wallet address for O2C car park payments (0x-prefixed).
     string publicWalletAddress;
+    # First hour (Asia/Colombo) when same-day reservations are allowed.
+    int reservationWindowStartHour;
+    # Hour after which same-day reservations are no longer allowed.
+    int reservationWindowEndHour;
 |};
 
 # Internal payload for inserting a row into any org-node mapping table.
@@ -117,7 +121,7 @@ public type OrgNodeMappingPayload record {|
             message: string `Functional lead ${ERROR_INVALID_EMAIL} `
         }
     }
-    string functionalLeadEmail;
+    string functionalLeadEmail?;
 |};
 
 # Payload for updating a standalone organization unit.
@@ -185,7 +189,7 @@ public type CreateBusinessUnitPayload record {|
             message: string `Head ${ERROR_INVALID_EMAIL} `
         }
     }
-    string headEmail;
+    string headEmail?;
 |};
 
 public type CreateBusinessUnitTeamPayload record {|
@@ -200,7 +204,7 @@ public type CreateBusinessUnitTeamPayload record {|
             message: string `Functional lead ${ERROR_INVALID_EMAIL} `
         }
     }
-    string functionalLeadEmail;
+    string functionalLeadEmail?;
 |};
 
 public type CreateTeamPayload record {|
@@ -219,7 +223,7 @@ public type CreateTeamPayload record {|
             message: string `Head ${ERROR_INVALID_EMAIL} `
         }
     }
-    string headEmail;
+    string headEmail?;
     # Business unit-team mapping details — required only when mapping to a business unit
     CreateBusinessUnitTeamPayload businessUnit?;
 |};
@@ -236,7 +240,7 @@ public type CreateBusinessUnitTeamSubTeamPayload record {|
             message: string `Functional lead ${ERROR_INVALID_EMAIL} `
         }
     }
-    string functionalLeadEmail;
+    string functionalLeadEmail?;
 |};
 
 public type CreateSubTeamPayload record {|
@@ -255,7 +259,7 @@ public type CreateSubTeamPayload record {|
             message: string `Head ${ERROR_INVALID_EMAIL} `
         }
     }
-    string headEmail;
+    string headEmail?;
     # Business unit-team-sub-team mapping details — required only when mapping to a business unit-team
     CreateBusinessUnitTeamSubTeamPayload businessUnitTeam?;
 |};
@@ -272,7 +276,7 @@ public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
             message: string `Functional lead ${ERROR_INVALID_EMAIL} `
         }
     }
-    string functionalLeadEmail;
+    string functionalLeadEmail?;
 |};
 
 public type CreateUnitPayload record {|
@@ -291,7 +295,27 @@ public type CreateUnitPayload record {|
             message: string `Head ${ERROR_INVALID_EMAIL} `
         }
     }
-    string headEmail;
+    string headEmail?;
     # Business unit-team-sub-team-unit mapping details — required only when mapping to a business unit-team-sub-team
     CreateBusinessUnitTeamSubTeamUnitPayload businessUnitTeamSubTeamUnit?;
+|};
+
+public type RenameBusinessUnitName record {|
+    int businessUnitId;
+    string name;
+|};
+
+public type RenameTeamName record {|
+    int teamId;
+    string name;
+|};
+
+public type RenameSubTeamName record {|
+    int subTeamId;
+    string name;
+|};
+
+public type RenameUnitName record {|
+    int unitId;
+    string name;
 |};

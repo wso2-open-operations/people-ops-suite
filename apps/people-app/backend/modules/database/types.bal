@@ -98,6 +98,20 @@ public type EpfValidationResponse record {|
     boolean epfExists;
 |};
 
+# Context record returned by the employee ID generation query.
+public type EmployeeIdContext record {|
+    # Company prefix
+    string companyPrefix;
+    # Employment type
+    EmploymentTypeName employmentType;
+|};
+
+# Result record for the last numeric suffix query used in employee ID generation.
+public type EmployeeIdSequence record {|
+    # Last numeric ID used for the given prefix and employment type sequence
+    decimal lastNumericId;
+|};
+
 # TODO: Add structured types for org structure fields and company details
 # Employee information.
 public type Employee record {|
@@ -164,6 +178,10 @@ public type Employee record {|
     string? unit;
     # Unit ID
     int? unitId;
+    # House
+    string? house;
+    # House ID
+    int? houseId;
     # Computed field: number of subordinates this employee manages
     int subordinateCount;
 |};
@@ -216,6 +234,8 @@ public type EmployeeFilters record {|
     string? employeeStatus = ();
     # Direct reports only (true = direct only, false = all subordinates recursively)
     boolean? directReports = ();
+    # When true, excludes employees whose start date is in the future
+    boolean? excludeFutureStartDate = ();
 |};
 
 # Pagination information.
@@ -294,6 +314,47 @@ public type EmployeesResponse record {|
     Employee[] employees;
     # Total count of matching employees
     int totalCount;
+|};
+
+# Employee record for QR code export — extends EmployeeBasicInfo with house and status fields.
+public type EmployeeQrInfo record {|
+    *EmployeeBasicInfo;
+    # House
+    string? house;
+    # House ID
+    int? houseId;
+    # Employee status
+    string employeeStatus;
+|};
+
+# QR code export response.
+public type EmployeeQrInfoResponse record {|
+    # List of employees
+    EmployeeQrInfo[] employees;
+    # Total count of matching employees
+    int totalCount;
+|};
+
+# Filters relevant to the QR code employee search.
+public type QrCodeSearchFilters record {|
+    # Employee status
+    string? employeeStatus = ();
+|};
+
+# Search payload for the QR code export endpoint.
+public type QrCodeSearchPayload record {|
+    # Search query
+    @constraint:String {
+        maxLength: 100,
+        pattern: re `^[\p{L}\p{M}0-9\s@._'+-]*$`
+    }
+    string? searchString = ();
+    # Filters
+    QrCodeSearchFilters filters;
+    # Pagination
+    Pagination pagination;
+    # Sort configuration
+    Sort sort;
 |};
 
 # Personal information of an employee.
@@ -444,7 +505,7 @@ public type OrgStructureBusinessUnit record {|
     OrgStructureTeam[] teams = [];
 |};
 
-# Raw database result with JSON teams that needs to be parsed
+# [Database] Organization structure business unit row with teams as a JSON string.
 type OrgStructureBusinessUnitRow record {|
     # Business unit ID
     int id;
@@ -474,8 +535,8 @@ public type Designation record {|
     int jobBand;
 |};
 
-# Company.
-public type Company record {|
+# [Database] Company record with allowed locations as a JSON string.
+public type CompanyRow record {|
     # Company ID
     int id;
     # Company name
@@ -486,6 +547,28 @@ public type Company record {|
     string location;
     # Allowed locations
     string? allowedLocations;
+|};
+
+# Allowed location with probation period.
+public type AllowedLocation record {|
+    # Work location name
+    string location;
+    # Probation period in months
+    int? probationPeriod;
+|};
+
+# Company with parsed allowed locations.
+public type CompanyResponse record {|
+    # Company ID
+    int id;
+    # Company name
+    string name;
+    # Company prefix
+    string prefix;
+    # Company location
+    string location;
+    # Allowed work locations with probation periods
+    AllowedLocation[] allowedLocations;
 |};
 
 # Office.
@@ -506,6 +589,14 @@ public type EmploymentType record {|
     # ID of the employment type
     int id;
     # Name of the employment type
+    string name;
+|};
+
+# House.
+public type House record {|
+    # House ID
+    int id;
+    # House name
     string name;
 |};
 
@@ -532,9 +623,28 @@ public type EmergencyContact record {|
     # Relationship with the employee
     string relationship;
     # Telephone number of the emergency contact
-    string telephone;
+    string? telephone;
     # Mobile number of the emergency contact
     string mobile;
+|};
+
+# Emergency contact row mapping.
+public type EmergencyContactRow record {|
+    # Name of the emergency contact
+    string name;
+    # Telephone number of the emergency contact
+    string? telephone;
+    # Relationship with the employee
+    string relationship;
+    # Mobile number of the emergency contact
+    string mobile;
+|};
+
+# Additional manager email row mapping.
+public type AdditionalManagerEmailRow record {|
+    # Additional manager email
+    @sql:Column {name: "additional_manager_email"}
+    string additionalManagerEmail;
 |};
 
 # Create personal info payload.
@@ -646,11 +756,16 @@ public type CreateEmployeePayload record {|
     int businessUnitId;
     # Unit ID
     int? unitId = ();
+    # House ID
+    int? houseId = ();
     # Continuous service record
     @constraint:String {maxLength: 99}
     string? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus employeeStatus = EMPLOYEE_ACTIVE;
+    # Employee ID (required for fixed-term employment type)
+    @constraint:String {maxLength: 50}
+    string? employeeId = ();
     # Employee personal information
     CreatePersonalInfoPayload personalInfo;
 |};
@@ -759,6 +874,8 @@ public type UpdateEmployeeJobInfoPayload record {|
     int? businessUnitId = ();
     # Unit ID
     int? unitId = ();
+    # House ID
+    int? houseId = ();
     # Continuous service record
     @constraint:String {maxLength: 99}
     string? continuousServiceRecord = ();
@@ -982,10 +1099,6 @@ public type OrgUnit record {|
     int businessUnitTeamSubTeamUnitId;
     # Parent mapping: business_unit_team_sub_team.id
     int businessUnitTeamSubTeamId;
-    # Parent mapping: business_unit_team.id
-    int businessUnitTeamId;
-    # Parent: business_unit.id
-    int businessUnitId;
     # Display name of the unit
     string name;
     # Total number of employees or members in the unit
@@ -1004,8 +1117,6 @@ public type OrgSubTeam record {|
     int businessUnitTeamSubTeamId;
     # Parent mapping: business_unit_team.id
     int businessUnitTeamId;
-    # Parent: business_unit.id
-    int businessUnitId;
     # Display name of the sub-team
     string name;
     # Total number of employees or members in the sub-team
@@ -1123,14 +1234,14 @@ public type OrgNodeInfo record {|
     # Name of the node
     string name;
     # Email of the head of the node
-    string headEmail;
+    string headEmail?;
 |};
 
 public type CreateBusinessUnitPayload record {|
     # Name of the business unit
     string name;
     # Email of the head of the business unit
-    string headEmail;
+    string headEmail?;
 |};
 
 public type CreateBusinessUnitTeamPayload record {|
@@ -1139,14 +1250,14 @@ public type CreateBusinessUnitTeamPayload record {|
     # ID of the team
     int teamId?;
     # Email of the functional lead for the mapping
-    string functionalLeadEmail;
+    string functionalLeadEmail?;
 |};
 
 public type CreateTeamPayload record {|
     # Name of the team
     string name;
     # Email of the head of the team
-    string headEmail;
+    string headEmail?;
     # Business unit-team mapping details
     CreateBusinessUnitTeamPayload businessUnit;
 |};
@@ -1157,14 +1268,14 @@ public type CreateBusinessUnitTeamSubTeamPayload record {|
     # ID of the sub-team
     int subTeamId?;
     # Email of the functional lead for the mapping
-    string functionalLeadEmail;
+    string functionalLeadEmail?;
 |};
 
 public type CreateSubTeamPayload record {|
     # Name of the sub-team
     string name;
     # Email of the head of the sub-team
-    string headEmail;
+    string headEmail?;
     # Business unit-team-sub-team mapping details
     CreateBusinessUnitTeamSubTeamPayload businessUnitTeam;
 |};
@@ -1175,14 +1286,38 @@ public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
     # ID of the unit
     int unitId?;
     # Email of the functional lead for the mapping
-    string functionalLeadEmail;
+    string functionalLeadEmail?;
 |};
 
 public type CreateUnitPayload record {|
     # Name of the unit
     string name;
     # Email of the head of the unit
-    string headEmail;
+    string headEmail?;
     # Business unit team sub-team details
     CreateBusinessUnitTeamSubTeamUnitPayload businessUnitTeamSubTeamUnit;
+|};
+
+public type RenameBusinessUnitName record {|
+    int businessUnitId;
+    string name;
+    string updatedBy;
+|};
+
+public type RenameTeamName record {|
+    int teamId;
+    string name;
+    string updatedBy;
+|};
+
+public type RenameSubTeamName record {|
+    int subTeamId;
+    string name;
+    string updatedBy;
+|};
+
+public type RenameUnitName record {|
+    int unitId;
+    string name;
+    string updatedBy;
 |};

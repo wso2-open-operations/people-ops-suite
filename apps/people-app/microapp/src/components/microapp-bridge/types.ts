@@ -23,8 +23,17 @@ export const TOPIC = {
   CONFIRM_ALERT: "confirm_alert",
   TOTP: "totp",
   NATIVE_LOG: "native_log",
+  NAVIGATE_TO_MY_APPS: "close_webview",
+  DEVICE_SAFE_AREA_INSETS: "device_safe_area_insets",
 };
 
 export type TopicType = (typeof TOPIC)[keyof typeof TOPIC];
 
 export type LogLevel = "error" | "warn" | "info" | "debug";
+
+export interface EdgeInsets {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
