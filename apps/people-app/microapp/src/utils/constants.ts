@@ -16,4 +16,5 @@
 
 export const ErrorMessages = {
   NATIVE_BRIDGE_NOT_AVAILABLE: "Native bridge is not available",
+  ERROR_MSG: "Something went wrong. Please try again.",
 };

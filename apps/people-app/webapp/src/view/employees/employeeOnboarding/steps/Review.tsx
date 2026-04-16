@@ -31,6 +31,7 @@ import {
   EventOutlined,
   SupervisorAccountOutlined,
   PhoneOutlined,
+  WidgetsOutlined,
 } from "@mui/icons-material";
 
 const REVIEW_ICONS = {
@@ -44,6 +45,7 @@ const REVIEW_ICONS = {
   event: <EventOutlined fontSize="small" />,
   supervisor: <SupervisorAccountOutlined fontSize="small" />,
   phone: <PhoneOutlined fontSize="small" />,
+  other: <WidgetsOutlined fontSize="small" />,
 };
 
 const SectionHeader = React.memo(
@@ -163,6 +165,7 @@ export default function ReviewStep() {
     companies,
     offices,
     employmentTypes,
+    houses,
   } = useAppSelector((s) => s.organization);
 
   const p = values.personalInfo ?? {};
@@ -203,6 +206,7 @@ export default function ReviewStep() {
       employmentType:
         employmentTypes.find((o) => o.id === values.employmentTypeId)?.name ||
         null,
+      house: houses.find((h) => h.id === values.houseId)?.name || null,
     }),
     [
       businessUnits,
@@ -214,6 +218,7 @@ export default function ReviewStep() {
       companies,
       offices,
       employmentTypes,
+      houses,
       values.businessUnitId,
       values.teamId,
       values.subTeamId,
@@ -223,6 +228,7 @@ export default function ReviewStep() {
       values.companyId,
       values.officeId,
       values.employmentTypeId,
+      values.houseId,
     ],
   );
 
@@ -473,26 +479,36 @@ export default function ReviewStep() {
         </Grid>
       </Box>
 
-      {/* Manager & Reports */}
+      {/* Lead & Reports */}
       <Box sx={sectionBoxSx}>
         <SectionHeader
           icon={REVIEW_ICONS.supervisor}
-          title="Manager & Reports"
+          title="Lead & Reports"
         />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Manager Email" value={values.managerEmail} />
+            <ReviewField label="Lead Email" value={values.managerEmail} />
           </Grid>
 
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
-              label="Additional Manager Emails"
+              label="Additional Lead Emails"
               value={
                 values.additionalManagerEmail?.length
                   ? values.additionalManagerEmail.join(", ")
                   : "—"
               }
             />
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* House */}
+      <Box sx={sectionBoxSx}>
+        <SectionHeader icon={REVIEW_ICONS.other} title="Other" />
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={4}>
+            <ReviewField label="House" value={mappedNames.house} />
           </Grid>
         </Grid>
       </Box>

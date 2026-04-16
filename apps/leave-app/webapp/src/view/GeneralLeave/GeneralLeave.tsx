@@ -56,7 +56,9 @@ export default function GeneralLeave() {
       case EmployeeLocation.FR:
         return LeaveType.CONGES_PAYES;
       case EmployeeLocation.ES:
-        return LeaveType.SPAIN_ANNUAL;
+        return LeaveType.ANNUAL;
+      case EmployeeLocation.IN:
+        return LeaveType.ANNUAL;
       default:
         return LeaveType.CASUAL;
     }
@@ -65,8 +67,6 @@ export default function GeneralLeave() {
   const LEAVE_TYPE_KEY_MAP: Record<string, string> = {
     [LeaveType.CONGES_PAYES]: "congesPayes",
     [LeaveType.RTT]: "rtt",
-    [LeaveType.SPAIN_ANNUAL]: "spainAnnual",
-    [LeaveType.SPAIN_CASUAL]: "spainCasual",
     [LeaveType.SICK]: "sick",
     [LeaveType.CASUAL]: "casual",
     [LeaveType.ANNUAL]: "annual",
@@ -75,8 +75,6 @@ export default function GeneralLeave() {
   const LEAVE_TYPE_LABEL_MAP: Record<string, string> = {
     [LeaveType.CONGES_PAYES]: LeaveLabel.CONGES_PAYES,
     [LeaveType.RTT]: LeaveLabel.RTT,
-    [LeaveType.SPAIN_ANNUAL]: LeaveLabel.SPAIN_ANNUAL,
-    [LeaveType.SPAIN_CASUAL]: LeaveLabel.SPAIN_CASUAL,
     [LeaveType.SICK]: LeaveLabel.SICK,
     [LeaveType.CASUAL]: LeaveLabel.CASUAL,
     [LeaveType.ANNUAL]: LeaveLabel.CASUAL,
@@ -97,6 +95,7 @@ export default function GeneralLeave() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDateValidating, setIsDateValidating] = useState(false);
   const [dateError, setDateError] = useState(false);
+  const [balanceKey, setBalanceKey] = useState(0);
 
   useEffect(() => {
     setSelectedLeaveType(getDefaultLeaveType(userLocation));
@@ -146,6 +145,7 @@ export default function GeneralLeave() {
       await submitLeaveRequest(payload);
 
       enqueueSnackbar("Leave request submitted successfully!", { variant: "success" });
+      setBalanceKey((k) => k + 1);
 
       setStartDate(null);
       setEndDate(null);
@@ -261,7 +261,7 @@ export default function GeneralLeave() {
       </Box>
 
       {/* Leave Balance (France/Spain only) */}
-      <LeaveBalanceSummary />
+      <LeaveBalanceSummary key={balanceKey} />
 
       {/* Date & Leave Type Section */}
       <Box sx={sectionCard}>

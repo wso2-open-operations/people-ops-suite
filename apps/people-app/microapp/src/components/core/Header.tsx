@@ -14,15 +14,115 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { SearchInput } from "@/components/ui";
+import { goToMyAppsScreen } from "@/components/microapp-bridge";
+import { AppsSharp } from "@mui/icons-material";
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack } from "@mui/material";
+import { useState } from "react";
 
 function Header() {
+  const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
+
   return (
-    <header className="w-full bg-white px-4 sticky top-0">
-      <div className="pb-[1.2rem] border-b-[1px] border-[#E5E5E5] mt-5">
-        <SearchInput />
-      </div>
-    </header>
+    <>
+      <header className="w-full bg-[#F2F2EF] px-4 sticky top-0 z-20">
+        <div className="pt-[var(--safe-top)] pb-3">
+          <div className="relative h-11">
+            <h1 className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 text-xl font-bold text-[#1F2A44] whitespace-nowrap">
+              People
+            </h1>
+            <IconButton
+              onClick={() => setIsExitDialogOpen(true)}
+              aria-label="Back to Super App"
+              size="small"
+              className="!absolute !left-0 !top-1/2 !-translate-y-1/2"
+            >
+              <AppsSharp className="text-[#1F2A44]" />
+            </IconButton>
+          </div>
+        </div>
+      </header>
+
+      <Dialog
+        open={isExitDialogOpen}
+        onClose={() => setIsExitDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            p: 1.75,
+            m: 2,
+          },
+        }}
+      >
+        <Stack spacing={2.5}>
+          <Box>
+            <DialogTitle sx={{ p: 0, fontSize: "1rem", fontWeight: 700, lineHeight: 1.5, color: "#1F2A44" }}>
+              Return to Apps
+            </DialogTitle>
+            <DialogContent
+              sx={{
+                p: 0,
+                pt: 1,
+                fontSize: "0.875rem",
+                lineHeight: 1.2,
+                color: "#5F6368",
+                whiteSpace: "normal",
+              }}
+            >
+              Are you sure you want to leave this application?
+            </DialogContent>
+          </Box>
+
+          <DialogActions sx={{ p: 0, justifyContent: "flex-end", gap: 1.25 }}>
+            <Button
+              variant="outlined"
+              onClick={() => setIsExitDialogOpen(false)}
+              sx={{
+                minWidth: 98,
+                borderRadius: 999,
+                px: 2.25,
+                py: 0.75,
+                borderColor: "#ff7300",
+                color: "#ff7300",
+                fontWeight: 600,
+                textTransform: "none",
+                "&:hover": {
+                  borderColor: "#e86800",
+                  backgroundColor: "rgba(255, 115, 0, 0.06)",
+                },
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                setIsExitDialogOpen(false);
+                goToMyAppsScreen();
+              }}
+              sx={{
+                minWidth: 98,
+                borderRadius: 999,
+                px: 2.25,
+                py: 0.75,
+                backgroundColor: "#ff7300",
+                color: "#fff",
+                fontWeight: 600,
+                textTransform: "none",
+                boxShadow: "none",
+                "&:hover": {
+                  backgroundColor: "#e86800",
+                  boxShadow: "none",
+                },
+              }}
+            >
+              Leave
+            </Button>
+          </DialogActions>
+        </Stack>
+      </Dialog>
+    </>
   );
 }
 

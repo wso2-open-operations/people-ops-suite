@@ -59,6 +59,8 @@ export interface Employee {
   teamId: number;
   subTeamId: number;
   unitId: number | null;
+  house: string | null;
+  houseId: number | null;
 }
 
 export enum EmployeeStatus {
@@ -106,6 +108,33 @@ export type FilteredEmployeesResponse = {
   totalCount: number;
 };
 
+export interface EmployeeQrInfo {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  workEmail: string;
+  employeeThumbnail: string | null;
+  house: string | null;
+  houseId: number | null;
+  employeeStatus: string;
+}
+
+export type QrEmployeesResponse = {
+  employees: EmployeeQrInfo[];
+  totalCount: number;
+};
+
+export type QrCodeSearchFilters = {
+  employeeStatus?: string;
+};
+
+export type QrCodeSearchPayload = {
+  searchString?: string;
+  filters: QrCodeSearchFilters;
+  pagination: { limit: number; offset: number };
+  sort: { sortField: string; sortOrder: string };
+};
+
 export type Filters = {
   businessUnitId?: number;
   teamId?: number;
@@ -120,6 +149,7 @@ export type Filters = {
   gender?: string;
   employeeStatus?: EmployeeStatus;
   directReports?: boolean;
+  excludeFutureStartDate?: boolean;
 };
 
 export type Pagination = {
@@ -163,6 +193,7 @@ export type CreateEmployeePayload = {
   subTeamId: number;
   businessUnitId: number;
   unitId?: number;
+  houseId?: number;
   continuousServiceRecord?: string | null;
   personalInfo: CreatePersonalInfoPayload;
 };
@@ -186,6 +217,7 @@ export type UpdateEmployeeJobInfoPayload = {
   subTeamId?: number | null;
   businessUnitId?: number | null;
   unitId?: number | null;
+  houseId?: number | null;
   continuousServiceRecord?: string | null;
 };
 
@@ -224,6 +256,8 @@ interface EmployeesState {
   updateJobInfoState: State;
   updateJobInfoMessage: string | null;
   totalActiveEmployeeCount: number | null;
+  qrCodeUrl: string | null;
+  qrCodeState: State;
 }
 
 const initialState: EmployeesState = {
@@ -234,6 +268,7 @@ const initialState: EmployeesState = {
   employeeFilter: {
     filters: {
       employeeStatus: EmployeeStatus.Active,
+      excludeFutureStartDate: true,
     },
     pagination: {
       limit: DEFAULT_LIMIT_VALUE,
@@ -258,6 +293,8 @@ const initialState: EmployeesState = {
   updateJobInfoState: State.idle,
   updateJobInfoMessage: null,
   totalActiveEmployeeCount: null,
+  qrCodeUrl: null,
+  qrCodeState: State.idle,
 };
 
 export const fetchEmployee = createAsyncThunk(
@@ -376,6 +413,36 @@ export const fetchFilteredEmployees = createAsyncThunk<
   },
 );
 
+export const fetchQrCodeEmployees = createAsyncThunk<
+  QrEmployeesResponse,
+  QrCodeSearchPayload
+>(
+  "employees/fetchQrCodeEmployees",
+  async (filterAttributes, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().post(
+        AppConfig.serviceUrls.qrCodesSearch,
+        filterAttributes,
+      );
+      return response.data as QrEmployeesResponse;
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? SnackMessage.error.fetchEmployees
+          : error.response?.data?.message ||
+            "An unknown error occurred while fetching employees.";
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 export const createEmployee = createAsyncThunk(
   "employees/createEmployee",
   async (payload: CreateEmployeePayload, { dispatch, rejectWithValue }) => {
@@ -452,10 +519,13 @@ export const updateEmployeeJobInfo = createAsyncThunk(
 
 export const downloadEmployeeReportByStatus = createAsyncThunk(
   "employee/downloadEmployeeReportByStatus",
-  async (status: EmployeeStatus | undefined, { dispatch, rejectWithValue }) => {
+  async (
+    { status, excludeFutureStartDate }: { status: EmployeeStatus | undefined; excludeFutureStartDate?: boolean },
+    { dispatch, rejectWithValue },
+  ) => {
     try {
       const response = await APIService.getInstance().post(
-        AppConfig.serviceUrls.reportsEmployees(status),
+        AppConfig.serviceUrls.reportsEmployees(status, excludeFutureStartDate),
         {},
         { responseType: "text" },
       );
@@ -530,6 +600,25 @@ export const validateEpf = createAsyncThunk(
   },
 );
 
+export const fetchEmployeeQrCode = createAsyncThunk(
+  "employee/fetchEmployeeQrCode",
+  async (employeeId: string, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().get(
+        AppConfig.serviceUrls.employeeQrCode(employeeId),
+        { responseType: "blob" },
+      );
+      return URL.createObjectURL(response.data as Blob);
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.data?.message ?? "Failed to generate QR code";
+      dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 const EmployeeSlice = createSlice({
   name: "employee",
   initialState,
@@ -571,6 +660,11 @@ const EmployeeSlice = createSlice({
     clearFilteredEmployees(state) {
       state.filteredEmployeesResponse = { employees: [], totalCount: 0 };
       state.filteredEmployeesResponseState = State.idle;
+    },
+    resetQrCode(state) {
+      if (state.qrCodeUrl) URL.revokeObjectURL(state.qrCodeUrl);
+      state.qrCodeUrl = null;
+      state.qrCodeState = State.idle;
     },
   },
   extraReducers: (builder) => {
@@ -623,7 +717,7 @@ const EmployeeSlice = createSlice({
           !searchString &&
           filters.employeeStatus === EmployeeStatus.Active &&
           Object.entries(filters).every(([key, value]) => {
-            return key === "employeeStatus" || value === undefined;
+            return key === "employeeStatus" || key === "excludeFutureStartDate" || value === undefined;
           });
         if (isTotalActiveQuery) {
           state.totalActiveEmployeeCount = action.payload.totalCount;
@@ -697,6 +791,20 @@ const EmployeeSlice = createSlice({
         state.stateMessage = "Failed to fetch continuous service record!";
         state.errorMessage = action.payload as string;
         state.continuousServiceRecord = [];
+      })
+      .addCase(fetchEmployeeQrCode.pending, (state) => {
+        if (state.qrCodeUrl) URL.revokeObjectURL(state.qrCodeUrl);
+        state.qrCodeUrl = null;
+        state.qrCodeState = State.loading;
+      })
+      .addCase(fetchEmployeeQrCode.fulfilled, (state, action) => {
+        state.qrCodeState = State.success;
+        state.qrCodeUrl = action.payload as string;
+      })
+      .addCase(fetchEmployeeQrCode.rejected, (state) => {
+        if (state.qrCodeUrl) URL.revokeObjectURL(state.qrCodeUrl);
+        state.qrCodeState = State.failed;
+        state.qrCodeUrl = null;
       });
   },
 });
@@ -710,5 +818,6 @@ export const {
   resetUpdateEmployeeJobInfoState,
   resetContinuousService,
   clearFilteredEmployees,
+  resetQrCode,
 } = EmployeeSlice.actions;
 export default EmployeeSlice.reducer;

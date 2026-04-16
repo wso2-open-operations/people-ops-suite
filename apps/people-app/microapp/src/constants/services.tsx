@@ -19,11 +19,23 @@ import { VehicleServiceIcon } from "@/components/shared/Icons";
 
 export const services: ServiceInfo[] = [
   {
+    name: "Book Parking Slot",
+    description: "Reserve a secure parking spot for your vehicle.",
+    route: "/services/parking",
+    iconBg: "#FFE1C9",
+    icon: (
+      <div className="w-full h-full grid place-items-center text-[#ff7300]">
+        <span className="font-extrabold text-[34px] leading-none">P</span>
+      </div>
+    ),
+  },
+  {
     name: "Manage Personal Vehicles",
     description: "Register and manage your personal vehicles.",
     route: "/services/vehicles",
+    iconBg: "#DBEAFE",
     icon: (
-      <VehicleServiceIcon width="100%" height="100%" className="scale-[1.16]" />
+      <VehicleServiceIcon width="100%" height="100%" className="scale-[0.72] text-[#4A90D9]" />
     ),
   },
 ];

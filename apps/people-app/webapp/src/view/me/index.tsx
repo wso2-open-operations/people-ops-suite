@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { ConfirmationType } from "@/types/types";
+import { ConfirmationType, State } from "@/types/types";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import {
   BadgeOutlined,
@@ -28,6 +28,9 @@ import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SaveIcon from "@mui/icons-material/Save";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
+import PersonOffIcon from "@mui/icons-material/PersonOff";
 import {
   Accordion,
   AccordionDetails,
@@ -36,6 +39,10 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   Paper,
   Skeleton,
@@ -49,7 +56,9 @@ import type { Theme } from "@mui/material/styles";
 import { alpha } from "@mui/material/styles";
 import {
   fetchEmployee,
+  fetchEmployeeQrCode,
   resetEmployee,
+  resetQrCode,
 } from "@root/src/slices/employeeSlice/employee";
 import {
   EmployeePersonalInfo,
@@ -61,6 +70,8 @@ import {
   calculateAge,
   calculateServiceLength,
   formatServiceLength,
+  formatDate,
+  isPresentOrFuture,
 } from "@root/src/utils/utils";
 import {
   FieldArray,
@@ -186,7 +197,7 @@ const emergencyContactItemSchema = object().shape({
     .required("Relationship is required")
     .max(50, "Relationship must be at most 50 characters"),
   telephone: string()
-    .required("Telephone is required")
+    .nullable()
     .matches(
       /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
       "Invalid telephone number format",
@@ -208,7 +219,11 @@ export default function Me({
   const location = useLocation();
   const { showConfirmation } = useConfirmationModalContext();
   const roles = useAppSelector(selectRoles);
-  const { userInfo } = useAppSelector((state) => state.user);
+  const {
+    userInfo,
+    state: userState,
+    isProfileMissing,
+  } = useAppSelector((state) => state.user);
   const targetEmployeeId = employeeId ?? userInfo?.employeeId;
   const { employee, state: employeeState } = useAppSelector(
     (state) => state.employee,
@@ -217,6 +232,11 @@ export default function Me({
     (state) => state.employeePersonalInfo,
   );
   const [isSavingChanges, setSavingChanges] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [qrImageNaturalSize, setQrImageNaturalSize] = useState<number | null>(
+    null,
+  );
+  const { qrCodeUrl, qrCodeState } = useAppSelector((state) => state.employee);
   const initialHasEmergencyContactsRef = useRef<boolean>(
     !!personalInfo?.emergencyContacts?.length,
   );
@@ -237,7 +257,7 @@ export default function Me({
     const parts = [employee.designation, employee.secondaryJobTitle].filter(
       Boolean,
     );
-    return parts.length > 0 ? parts.join(" — ") : "-";
+    return parts.length > 0 ? parts.join(" ") : "-";
   }, [employee]);
 
   useEffect(() => {
@@ -299,6 +319,12 @@ export default function Me({
     dispatch(fetchEmployee(targetEmployeeId));
     dispatch(fetchEmployeePersonalInfo(targetEmployeeId));
   }, [targetEmployeeId, dispatch]);
+
+  useEffect(() => {
+    return () => {
+      dispatch(resetQrCode());
+    };
+  }, [dispatch]);
 
   const handleSaveChanges = async (values: EmployeePersonalInfo) => {
     showConfirmation(
@@ -441,6 +467,107 @@ export default function Me({
     };
   };
 
+  const handleQrOpen = () => {
+    setQrDialogOpen(true);
+    if (targetEmployeeId) dispatch(fetchEmployeeQrCode(targetEmployeeId));
+  };
+
+  const handleQrClose = () => {
+    setQrDialogOpen(false);
+    dispatch(resetQrCode());
+  };
+
+  const handleQrDownload = () => {
+    if (!qrCodeUrl || !targetEmployeeId) return;
+    const a = document.createElement("a");
+    a.href = qrCodeUrl;
+    a.download = `qr-${targetEmployeeId}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  if (!employeeId && userState === State.success && isProfileMissing) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "80vh",
+        }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            p: { xs: 4, sm: 6 },
+            border: 1,
+            borderColor: "divider",
+            maxWidth: 480,
+            width: "100%",
+            textAlign: "center",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2.5,
+            }}
+          >
+            <Box
+              sx={{
+                width: 88,
+                height: 88,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: (theme) =>
+                  alpha(theme.palette.secondary.contrastText, 0.1),
+                border: (theme) =>
+                  `2px dashed ${alpha(theme.palette.secondary.contrastText, 0.35)}`,
+              }}
+            >
+              <PersonOffIcon
+                sx={{
+                  fontSize: 40,
+                  color: (theme) => theme.palette.secondary.contrastText,
+                }}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="h5" fontWeight={700} gutterBottom>
+                Profile Not Found
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ lineHeight: 1.7 }}
+              >
+                We couldn't find your employee profile yet. Please contact the{" "}
+                <Typography
+                  component="span"
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: (theme) => theme.palette.secondary.contrastText,
+                  }}
+                >
+                  People Operations
+                </Typography>{" "}
+                team to set up your profile, then try signing in again.
+              </Typography>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ mt: 1, pb: 5 }}>
       <Paper elevation={0} sx={(theme) => headerSx(theme)}>
@@ -458,14 +585,31 @@ export default function Me({
           >
             {employeeState === "loading" ? (
               <>
-                <Skeleton variant="circular" width={72} height={72} sx={{ flexShrink: 0 }} />
+                <Skeleton
+                  variant="circular"
+                  width={72}
+                  height={72}
+                  sx={{ flexShrink: 0 }}
+                />
                 <Box sx={{ minWidth: 0 }}>
                   <Skeleton width={220} height={44} />
                   <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
                     <Skeleton width={90} height={32} sx={{ borderRadius: 4 }} />
-                    <Skeleton width={150} height={32} sx={{ borderRadius: 4 }} />
-                    <Skeleton width={200} height={32} sx={{ borderRadius: 4 }} />
-                    <Skeleton width={130} height={32} sx={{ borderRadius: 4 }} />
+                    <Skeleton
+                      width={150}
+                      height={32}
+                      sx={{ borderRadius: 4 }}
+                    />
+                    <Skeleton
+                      width={200}
+                      height={32}
+                      sx={{ borderRadius: 4 }}
+                    />
+                    <Skeleton
+                      width={130}
+                      height={32}
+                      sx={{ borderRadius: 4 }}
+                    />
                   </Stack>
                 </Box>
               </>
@@ -480,7 +624,9 @@ export default function Me({
 
                 <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h4" fontWeight={850} noWrap>
-                    {employee ? `${employee.firstName} ${employee.lastName}` : ""}
+                    {employee
+                      ? `${employee.firstName} ${employee.lastName}`
+                      : ""}
                   </Typography>
 
                   <Stack
@@ -528,19 +674,43 @@ export default function Me({
               </>
             )}
           </Stack>
-          {readOnly && targetEmployeeId && roles.includes(Role.ADMIN) && !location.state?.fromMyTeam && (
-            <Box sx={{ alignSelf: { xs: "flex-start", sm: "flex-start" } }}>
-              <Button
-                variant="contained"
-                color="secondary"
-                startIcon={<EditOutlinedIcon />}
-                sx={{ textTransform: "none", whiteSpace: "nowrap" }}
-                onClick={() => navigate(`/employees/${targetEmployeeId}/edit`)}
-              >
-                Edit
-              </Button>
-            </Box>
-          )}
+          <Stack
+            direction="row"
+            spacing={2}
+            alignItems="center"
+            sx={{ alignSelf: "center" }}
+          >
+            {employee && (
+              <Tooltip title={employee.house ? "View QR Code" : "QR code unavailable: no house assigned"}>
+                <span>
+                  <IconButton
+                    color="secondary"
+                    onClick={handleQrOpen}
+                    disabled={!employee.house}
+                    sx={{ p: 0.5 }}
+                  >
+                    <QrCode2Icon sx={{ fontSize: 32 }} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
+            {readOnly &&
+              targetEmployeeId &&
+              roles.includes(Role.ADMIN) &&
+              !location.state?.fromMyTeam && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<EditOutlinedIcon />}
+                  sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+                  onClick={() =>
+                    navigate(`/employees/${targetEmployeeId}/edit`)
+                  }
+                >
+                  Edit
+                </Button>
+              )}
+          </Stack>
         </Stack>
       </Paper>
       <Accordion
@@ -726,6 +896,45 @@ export default function Me({
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                    House
+                  </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    {employee.house ? (
+                      <Chip
+                        label={employee.house}
+                        size="small"
+                        variant="outlined"
+                        sx={(theme) => ({
+                          borderRadius: 999,
+                          height: 24,
+                          fontWeight: 600,
+                          px: 0,
+                          color: theme.palette.secondary.contrastText,
+                          borderColor: alpha(
+                            theme.palette.secondary.contrastText,
+                            0.45,
+                          ),
+                          backgroundColor: alpha(
+                            theme.palette.secondary.contrastText,
+                            theme.palette.mode === "dark" ? 0.14 : 0.1,
+                          ),
+                          "& .MuiChip-label": {
+                            px: 0.75,
+                            py: 0,
+                            fontSize: 12,
+                            lineHeight: 1,
+                          },
+                        })}
+                      />
+                    ) : (
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        -
+                      </Typography>
+                    )}
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Employee Status
                   </Typography>
 
@@ -753,7 +962,7 @@ export default function Me({
                     Start Date
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.startDate || "-"}
+                    {formatDate(employee.startDate, "-")}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
@@ -764,27 +973,31 @@ export default function Me({
                     {serviceText}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Probation End Date
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.probationEndDate || "N/A"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Agreement End Date
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.agreementEndDate || "N/A"}
-                  </Typography>
-                </Grid>
+                {isPresentOrFuture(employee?.probationEndDate) && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Probation End Date
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {formatDate(employee.probationEndDate, "N/A")}
+                    </Typography>
+                  </Grid>
+                )}
+                {employee.agreementEndDate ? (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Agreement End Date
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {formatDate(employee.agreementEndDate, "-")}
+                    </Typography>
+                  </Grid>
+                ) : null}
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Manager Email
+                    Lead Email
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
                     {employee.managerEmail || "-"}
@@ -795,7 +1008,7 @@ export default function Me({
                     color="text.secondary"
                     sx={{ fontWeight: 500, mb: 0.75 }}
                   >
-                    Additional Manager Emails
+                    Additional Lead Emails
                   </Typography>
 
                   {employee.additionalManagerEmails ? (
@@ -909,7 +1122,10 @@ export default function Me({
                       <ReadOnly label="NIC" value={values.nicOrPassport} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <ReadOnly label="Date of Birth" value={values.dob} />
+                      <ReadOnly
+                        label="Date of Birth"
+                        value={formatDate(values.dob)}
+                      />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Age" value={age} />
@@ -1241,7 +1457,6 @@ export default function Me({
                                         errors={errors}
                                         touched={touched}
                                         isSavingChanges={isSavingChanges}
-                                        isRequired
                                       />
                                     </Grid>
 
@@ -1392,6 +1607,65 @@ export default function Me({
           )}
         </AccordionDetails>
       </Accordion>
+
+      <Dialog
+        open={qrDialogOpen}
+        onClose={handleQrClose}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          Employee QR Code
+          {employee?.workEmail && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {employee.workEmail}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          {qrCodeState === State.loading && (
+            <Skeleton
+              variant="rectangular"
+              width={qrImageNaturalSize ?? 256}
+              height={qrImageNaturalSize ?? 256}
+            />
+          )}
+          {qrCodeState === State.success && qrCodeUrl && (
+            <img
+              src={qrCodeUrl}
+              alt="Employee QR Code"
+              style={{ maxWidth: "100%", display: "block", borderRadius: 12 }}
+              onLoad={(e) => {
+                const img = e.target as HTMLImageElement;
+                if (img.naturalWidth) setQrImageNaturalSize(img.naturalWidth);
+              }}
+            />
+          )}
+          {qrCodeState === State.failed && (
+            <Typography color="error">Failed to load QR code.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          {qrCodeState === State.success && qrCodeUrl && (
+            <Button
+              startIcon={<FileDownloadOutlinedIcon />}
+              onClick={handleQrDownload}
+              sx={{ textTransform: "none" }}
+            >
+              Download
+            </Button>
+          )}
+          <Button onClick={handleQrClose} sx={{ textTransform: "none" }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

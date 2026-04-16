@@ -44,7 +44,7 @@ import JobInfoStep from "./employeeOnboarding/steps/JobInfo";
 import ReviewStep from "./employeeOnboarding/steps/Review";
 import { Check, ArrowBack, ArrowForward } from "@mui/icons-material";
 import { personalInfoValidationSchema } from "./employeeOnboarding/steps/PersonalInfo";
-import { jobInfoValidationSchema } from "./employeeOnboarding/steps/JobInfo";
+import { createJobInfoValidationSchema } from "./employeeOnboarding/steps/JobInfo";
 import {
   CreateEmployeeFormValues,
   emptyCreateEmployeeValues,
@@ -70,6 +70,7 @@ import {
 } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 import { resetEmployee } from "@slices/employeeSlice/employee";
 import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
+import { fetchSuggestedHouse } from "@slices/organizationSlice/organization";
 
 const deriveFullName = (
   full: string | null | undefined,
@@ -109,6 +110,8 @@ const toFormValues = (
     base.careerFunctionId = employee.careerFunctionId ?? 0;
     base.designationId = employee.designationId ?? 0;
     base.secondaryJobTitle = employee.secondaryJobTitle ?? "";
+    base.houseId = employee.houseId ?? 0;
+    base.employeeId = employee.employeeId ?? "";
   }
 
   if (personal) {
@@ -170,6 +173,7 @@ const toJobUpdatePayload = (
   subTeamId: values.subTeamId > 0 ? values.subTeamId : null,
   businessUnitId: values.businessUnitId > 0 ? values.businessUnitId : null,
   unitId: values.unitId > 0 ? values.unitId : null,
+  houseId: values.houseId > 0 ? values.houseId : null,
   continuousServiceRecord: values.isRelocation
     ? (values.continuousServiceRecord ?? null)
     : null,
@@ -470,6 +474,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
 
   const personalSlice = useAppSelector((s) => s.employeePersonalInfo);
   const personalInfo = personalSlice.personalInfo;
+  const employmentTypes = useAppSelector((s) => s.organization.employmentTypes);
 
   const [activeStep, setActiveStep] = useState(0);
   const [formKey, setFormKey] = useState(0);
@@ -494,22 +499,36 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
     dispatch(fetchEmployeePersonalInfo(employeeId));
   }, [dispatch, isEditMode, employeeId]);
 
+  useEffect(() => {
+    dispatch(fetchSuggestedHouse());
+  }, [dispatch]);
+
+  const { suggestedHouseId } = useAppSelector((s) => s.organization);
+
   const initialEditValues = useMemo(() => {
     if (!isEditMode || !employee || !personalInfo) return null;
     return toFormValues(employee, personalInfo);
   }, [isEditMode, employee, personalInfo]);
 
-  const initialValues = initialEditValues ?? emptyCreateEmployeeValues;
-
-  const isLoadingEditData =
-    isEditMode &&
-    (employeeSlice.state === State.loading ||
-      personalSlice.state === State.loading);
+  const initialValues = useMemo(() => {
+    if (initialEditValues) return initialEditValues;
+    return suggestedHouseId
+      ? { ...emptyCreateEmployeeValues, houseId: suggestedHouseId }
+      : emptyCreateEmployeeValues;
+  }, [initialEditValues, suggestedHouseId]);
 
   const isFailedEditData =
     isEditMode &&
     (employeeSlice.state === State.failed ||
       personalSlice.state === State.failed);
+
+  const isLoadingEditData =
+    isEditMode &&
+    !isFailedEditData &&
+    (employeeSlice.state === State.loading ||
+      personalSlice.state === State.loading ||
+      !employee ||
+      !personalInfo);
 
   const handleCreateEmployeeWithConfirm = async (
     payload: CreateEmployeePayload,
@@ -541,7 +560,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
       case 0:
         return <PersonalInfoStep />;
       case 1:
-        return <JobInfoStep />;
+        return <JobInfoStep isEditMode={isEditMode} />;
       case 2:
         return <ReviewStep />;
       default:
@@ -549,20 +568,20 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
     }
   };
 
-  if (isEditMode && isLoadingEditData) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Typography>Loading employee data...</Typography>
-      </Box>
-    );
-  }
-
   if (isEditMode && isFailedEditData) {
     return (
       <Box sx={{ p: 3 }}>
         <Typography color="error">
           Failed to load employee data. Please try again.
         </Typography>
+      </Box>
+    );
+  }
+
+  if (isEditMode && isLoadingEditData) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography>Loading employee data...</Typography>
       </Box>
     );
   }
@@ -641,7 +660,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
             activeStep === 0
               ? personalInfoValidationSchema
               : activeStep === 1
-                ? jobInfoValidationSchema
+                ? createJobInfoValidationSchema(employmentTypes)
                 : undefined
           }
           onSubmit={async (values, actions) => {
@@ -680,6 +699,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 subTeamId: values.subTeamId,
                 businessUnitId: values.businessUnitId,
                 unitId: values.unitId > 0 ? values.unitId : undefined,
+                houseId: values.houseId > 0 ? values.houseId : undefined,
+                employeeId: values.employeeId?.trim() || undefined,
                 ...(values.isRelocation && values.continuousServiceRecord
                   ? { continuousServiceRecord: values.continuousServiceRecord }
                   : {}),
