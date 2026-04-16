@@ -17,6 +17,7 @@
 import {
   Alert,
   alpha,
+  Badge,
   Box,
   Button,
   Chip,
@@ -29,20 +30,41 @@ import {
   useTheme,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
+import { FilterAltOutlined } from "@mui/icons-material";
 import InboxIcon from "@mui/icons-material/Inbox";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import {
   downloadEmployeeReportByStatus,
   Employee,
   EmployeeStatus,
+  Filters,
   fetchFilteredEmployees,
+  fetchManagers,
 } from "@slices/employeeSlice/employee";
-import { useAppDispatch } from "@slices/store";
+import {
+  fetchBusinessUnits,
+  fetchCareerFunctions,
+  fetchCompanies,
+  fetchDesignations,
+  fetchEmploymentTypes,
+  fetchOffices,
+  fetchSubTeams,
+  fetchTeams,
+  fetchUnits,
+} from "@slices/organizationSlice/organization";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 import { unwrapResult } from "@reduxjs/toolkit";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { getEmployeeStatusColor } from "@utils/utils";
+import { FilterDrawer } from "@view/employees/employeesView/searchForm/FilterDrawer";
 
 const PREVIEW_LIMIT = 10;
+
+// Filter keys that are always fixed and never counted in the active filter badge.
+const BASELINE_FILTER_KEYS: (keyof Filters)[] = [
+  "employeeStatus",
+  "directReports",
+];
 
 interface EmployeeReportTableProps {
   employeeStatus: EmployeeStatus;
@@ -51,6 +73,8 @@ interface EmployeeReportTableProps {
   downloadFilename: string;
   showExcludeFutureFilter?: boolean;
   showIncludeMarkedLeaversFilter?: boolean;
+  /** When true, shows a Filters button that opens the full filter drawer. Toggles move into the drawer. */
+  showFilterDrawer?: boolean;
 }
 
 export default function EmployeeReportTable({
@@ -60,6 +84,7 @@ export default function EmployeeReportTable({
   downloadFilename,
   showExcludeFutureFilter = true,
   showIncludeMarkedLeaversFilter = false,
+  showFilterDrawer = false,
 }: EmployeeReportTableProps) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
@@ -67,8 +92,60 @@ export default function EmployeeReportTable({
   const [isLoading, setIsLoading] = useState(true);
   const [rows, setRows] = useState<Employee[]>([]);
   const [totalCount, setTotalCount] = useState<number | null>(null);
-  const [excludeFutureStartDate, setExcludeFutureStartDate] = useState(true);
-  const [includeMarkedLeavers, setIncludeMarkedLeavers] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Unified filter state — covers both the legacy switches and the full drawer.
+  const [appliedFilters, setAppliedFilters] = useState<Filters>(() => {
+    const base: Filters = { employeeStatus };
+    if (showExcludeFutureFilter) base.excludeFutureStartDate = true;
+    if (showIncludeMarkedLeaversFilter) base.includeMarkedLeavers = true;
+    return base;
+  });
+
+  // Org data for the filter drawer (only needed when showFilterDrawer is true).
+  const {
+    businessUnits,
+    teams,
+    subTeams,
+    units,
+    careerFunctions,
+    designations,
+    employmentTypes,
+    companies,
+    offices,
+  } = useAppSelector((state) => state.organization);
+  const managers = useAppSelector((state) => state.employee.managers);
+  const managerEmails = useMemo(() => managers.map((m) => m.workEmail), [managers]);
+
+  useEffect(() => {
+    if (!showFilterDrawer) return;
+    dispatch(fetchManagers());
+    dispatch(fetchBusinessUnits());
+    dispatch(fetchTeams({}));
+    dispatch(fetchSubTeams({}));
+    dispatch(fetchUnits({}));
+    dispatch(fetchCareerFunctions());
+    dispatch(fetchDesignations({}));
+    dispatch(fetchCompanies());
+    dispatch(fetchEmploymentTypes());
+    dispatch(fetchOffices({}));
+  }, [dispatch, showFilterDrawer]);
+
+  const activeFilterCount = useMemo(
+    () =>
+      Object.entries(appliedFilters).filter(
+        ([key, value]) =>
+          value !== undefined && !BASELINE_FILTER_KEYS.includes(key as keyof Filters),
+      ).length,
+    [appliedFilters],
+  );
+
+  const baselineFilters = useMemo<Filters>(() => {
+    const base: Filters = { employeeStatus };
+    if (showExcludeFutureFilter) base.excludeFutureStartDate = true;
+    if (showIncludeMarkedLeaversFilter) base.includeMarkedLeavers = true;
+    return base;
+  }, [employeeStatus, showExcludeFutureFilter, showIncludeMarkedLeaversFilter]);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,11 +154,7 @@ export default function EmployeeReportTable({
     setTotalCount(null);
     dispatch(
       fetchFilteredEmployees({
-        filters: {
-          employeeStatus,
-          excludeFutureStartDate: showExcludeFutureFilter ? excludeFutureStartDate : undefined,
-          includeMarkedLeavers: showIncludeMarkedLeaversFilter ? includeMarkedLeavers : undefined,
-        },
+        filters: appliedFilters,
         pagination: { limit: PREVIEW_LIMIT, offset: 0 },
         sort: { sortField: "employeeId", sortOrder: "ASC" },
         leadOnly: false,
@@ -97,7 +170,7 @@ export default function EmployeeReportTable({
     return () => {
       cancelled = true;
     };
-  }, [dispatch, employeeStatus, excludeFutureStartDate, showExcludeFutureFilter, includeMarkedLeavers, showIncludeMarkedLeaversFilter]);
+  }, [dispatch, appliedFilters]);
 
   function getFullName(firstName: string, lastName: string) {
     return `${firstName || ""} ${lastName || ""}`.trim();
@@ -333,11 +406,7 @@ export default function EmployeeReportTable({
     setDownloading(true);
     try {
       const csvText = unwrapResult(
-        await dispatch(downloadEmployeeReportByStatus({
-          status: employeeStatus,
-          excludeFutureStartDate: showExcludeFutureFilter ? excludeFutureStartDate : undefined,
-          includeMarkedLeavers: showIncludeMarkedLeaversFilter ? includeMarkedLeavers : undefined,
-        })),
+        await dispatch(downloadEmployeeReportByStatus({ filters: appliedFilters })),
       );
       const blob = new Blob([csvText], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
@@ -378,39 +447,47 @@ export default function EmployeeReportTable({
         >
           {previewAlertText}
         </Alert>
-        {showIncludeMarkedLeaversFilter && (
-          <FormControlLabel
-            control={
-              <Switch
-                checked={includeMarkedLeavers}
-                onChange={(e) => setIncludeMarkedLeavers(e.target.checked)}
-                size="small"
-                sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
-                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
-                }}
+        {!showFilterDrawer && (
+          <>
+            {showIncludeMarkedLeaversFilter && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={appliedFilters.includeMarkedLeavers !== false}
+                    onChange={(e) =>
+                      setAppliedFilters((p) => ({ ...p, includeMarkedLeavers: e.target.checked }))
+                    }
+                    size="small"
+                    sx={{
+                      "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
+                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
+                    }}
+                  />
+                }
+                label="Include marked leavers"
+                sx={{ flexShrink: 0, mr: 0, ml: 1 }}
               />
-            }
-            label="Include marked leavers"
-            sx={{ flexShrink: 0, mr: 0, ml: 1 }}
-          />
-        )}
-        {showExcludeFutureFilter && (
-          <FormControlLabel
-            control={
-              <Switch
-                checked={excludeFutureStartDate}
-                onChange={(e) => setExcludeFutureStartDate(e.target.checked)}
-                size="small"
-                sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
-                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
-                }}
+            )}
+            {showExcludeFutureFilter && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={appliedFilters.excludeFutureStartDate === true}
+                    onChange={(e) =>
+                      setAppliedFilters((p) => ({ ...p, excludeFutureStartDate: e.target.checked ? true : undefined }))
+                    }
+                    size="small"
+                    sx={{
+                      "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
+                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
+                    }}
+                  />
+                }
+                label="Exclude future joiners"
+                sx={{ flexShrink: 0, mr: 0, ml: 1 }}
               />
-            }
-            label="Exclude future joiners"
-            sx={{ flexShrink: 0, mr: 0, ml: 1 }}
-          />
+            )}
+          </>
         )}
         <Chip
           size="small"
@@ -466,6 +543,85 @@ export default function EmployeeReportTable({
             },
           }}
         />
+        {showFilterDrawer && (
+          <>
+            <Tooltip
+              title={
+                activeFilterCount > 0
+                  ? `${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} active`
+                  : "Open filters"
+              }
+            >
+              <Badge
+                badgeContent={activeFilterCount}
+                overlap="circular"
+                sx={{
+                  flexShrink: 0,
+                  "& .MuiBadge-badge": {
+                    backgroundColor: theme.palette.secondary.contrastText,
+                    color: "#fff",
+                    fontSize: "0.65rem",
+                    height: 18,
+                    minWidth: 18,
+                    padding: "0 4px",
+                    fontWeight: 700,
+                    top: 3,
+                    right: 3,
+                  },
+                }}
+              >
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={() => setDrawerOpen(true)}
+                  startIcon={
+                    <FilterAltOutlined sx={{ fontSize: "18px !important" }} />
+                  }
+                  sx={{
+                    textTransform: "none",
+                    height: "40px",
+                    px: 2,
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    letterSpacing: 0.3,
+                    backgroundColor:
+                      activeFilterCount > 0
+                        ? alpha(theme.palette.secondary.contrastText, 0.06)
+                        : "transparent",
+                    "&:hover": {
+                      backgroundColor: alpha(
+                        theme.palette.secondary.contrastText,
+                        0.1,
+                      ),
+                    },
+                  }}
+                >
+                  Filters
+                </Button>
+              </Badge>
+            </Tooltip>
+            <FilterDrawer
+              drawerOpen={drawerOpen}
+              setDrawerOpen={setDrawerOpen}
+              appliedFilter={{ filters: appliedFilters, pagination: { limit: PREVIEW_LIMIT, offset: 0 }, sort: { sortField: "employeeId", sortOrder: "ASC" } }}
+              onApply={(next) => setAppliedFilters({ ...baselineFilters, ...next.filters })}
+              clearAll={() => { setAppliedFilters(baselineFilters); setDrawerOpen(false); }}
+              setFiltersAppliedOnce={() => {}}
+              showEmployeeStatusFilter={false}
+              showIncludeMarkedLeaversFilter={showIncludeMarkedLeaversFilter}
+              businessUnits={businessUnits}
+              teams={teams}
+              subTeams={subTeams}
+              units={units}
+              careerFunctions={careerFunctions}
+              designations={designations}
+              employmentTypes={employmentTypes}
+              managerEmails={managerEmails}
+              companies={companies}
+              offices={offices}
+            />
+          </>
+        )}
         <Button
           variant="contained"
           color="secondary"
