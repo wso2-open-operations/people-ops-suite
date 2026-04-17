@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
-import { Button, ThemeProvider, createTheme, useTheme as useMuiTheme } from "@mui/material";
+import { ThemeProvider, createTheme, useTheme as useMuiTheme } from "@mui/material";
 
 import { useMemo } from "react";
 
@@ -40,18 +40,6 @@ export default function MasterData() {
             tabPath: "org-structure-split-view",
             icon: <AccountTreeOutlinedIcon />,
             page: <SplitView />,
-          },
-          {
-            tabTitle: "Org Structure Split View",
-            tabPath: "org-structure-split-view",
-            icon: <AccountTreeOutlinedIcon />,
-            page: (
-              <>
-                <Button variant="contained" disabled={true}>
-                  Dineth
-                </Button>
-              </>
-            ),
           },
         ]}
       />
