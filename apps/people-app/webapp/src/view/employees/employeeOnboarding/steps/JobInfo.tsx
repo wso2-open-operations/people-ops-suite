@@ -1691,7 +1691,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 onChange={(val) =>
                   setFieldValue(
                     "resignationDate",
-                    val ? val.format("YYYY-MM-DD") : "",
+                    val ? val.format("YYYY-MM-DD") : null,
                   )
                 }
                 slotProps={{
@@ -1715,7 +1715,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 onChange={(val) =>
                   setFieldValue(
                     "finalWorkingDate",
-                    val ? val.format("YYYY-MM-DD") : "",
+                    val ? val.format("YYYY-MM-DD") : null,
                   )
                 }
                 slotProps={{
@@ -1739,7 +1739,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 onChange={(val) =>
                   setFieldValue(
                     "finalEmploymentDate",
-                    val ? val.format("YYYY-MM-DD") : "",
+                    val ? val.format("YYYY-MM-DD") : null,
                   )
                 }
                 slotProps={{

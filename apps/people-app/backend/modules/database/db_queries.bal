@@ -1242,11 +1242,15 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         }
     }
 
-    boolean hasLeaverDate = (payload.resignationDate is string && payload.resignationDate != "") ||
-                            (payload.finalWorkingDate is string && payload.finalWorkingDate != "") ||
-                            (payload.finalEmploymentDate is string && payload.finalEmploymentDate != "");
-    if hasLeaverDate {
-        updates.push(`employee_status = 'Left'`);
+    if payload.employeeStatus is EmployeeStatus {
+        updates.push(`employee_status = ${payload.employeeStatus}`);
+    } else {
+        boolean hasLeaverDate = (payload.resignationDate is string && payload.resignationDate != "") ||
+                                (payload.finalWorkingDate is string && payload.finalWorkingDate != "") ||
+                                (payload.finalEmploymentDate is string && payload.finalEmploymentDate != "");
+        if hasLeaverDate {
+            updates.push(`employee_status = ${EMPLOYEE_LEFT}`);
+        }
     }
 
     updates.push(`updated_by = ${updatedBy}`);
