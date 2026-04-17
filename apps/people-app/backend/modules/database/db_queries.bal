@@ -87,9 +87,9 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         csr.start_date AS continuousServiceDate,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
-        e.resignation_date AS resignationDate,
-        e.final_working_date AS finalWorkingDate,
-        e.final_employment_date AS finalEmploymentDate,
+        e.last_working_date AS lastWorkingDate,
+        e.employment_end_date AS employmentEndDate,
+        e.reason_for_leaving AS reasonForLeaving,
         et.name AS employmentType,
         e.employment_type_id AS employmentTypeId,
         d.career_function_id AS careerFunctionId,
@@ -184,10 +184,9 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.company_id AS companyId,
             h.name AS house,
             e.house_id AS houseId,
-            COALESCE(e.resignation_date, r.date)                    AS resignationDate,
-            COALESCE(e.final_working_date, r.final_day_in_office)   AS finalWorkingDate,
-            COALESCE(e.final_employment_date, r.final_day_of_employment) AS finalEmploymentDate,
-            r.reason                  AS resignationReason,
+            e.last_working_date AS lastWorkingDate,
+            e.employment_end_date AS employmentEndDate,
+            e.reason_for_leaving AS reasonForLeaving,
             pi.gender AS gender,
             COUNT(*) OVER() AS totalCount
         FROM
@@ -221,7 +220,6 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             INNER JOIN sub_team st ON st.id = e.sub_team_id
             LEFT JOIN unit u ON u.id = e.unit_id
             LEFT JOIN house h ON h.id = e.house_id
-            LEFT JOIN resignation r ON r.employee_id = e.id
             LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
             LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
         `;
@@ -1218,36 +1216,35 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         }
     }
 
-    if payload.resignationDate is string {
-        if payload.resignationDate == "" {
-            updates.push(`resignation_date = NULL`);
+    if payload.lastWorkingDate is string {
+        if payload.lastWorkingDate == "" {
+            updates.push(`last_working_date = NULL`);
         } else {
-            updates.push(`resignation_date = ${payload.resignationDate}`);
+            updates.push(`last_working_date = ${payload.lastWorkingDate}`);
         }
     }
 
-    if payload.finalWorkingDate is string {
-        if payload.finalWorkingDate == "" {
-            updates.push(`final_working_date = NULL`);
+    if payload.employmentEndDate is string {
+        if payload.employmentEndDate == "" {
+            updates.push(`employment_end_date = NULL`);
         } else {
-            updates.push(`final_working_date = ${payload.finalWorkingDate}`);
+            updates.push(`employment_end_date = ${payload.employmentEndDate}`);
         }
     }
 
-    if payload.finalEmploymentDate is string {
-        if payload.finalEmploymentDate == "" {
-            updates.push(`final_employment_date = NULL`);
+    if payload.reasonForLeaving is string {
+        if payload.reasonForLeaving == "" {
+            updates.push(`reason_for_leaving = NULL`);
         } else {
-            updates.push(`final_employment_date = ${payload.finalEmploymentDate}`);
+            updates.push(`reason_for_leaving = ${payload.reasonForLeaving}`);
         }
     }
 
     if payload.employeeStatus is EmployeeStatus {
         updates.push(`employee_status = ${payload.employeeStatus}`);
     } else {
-        boolean hasLeaverDate = (payload.resignationDate is string && payload.resignationDate != "") ||
-                                (payload.finalWorkingDate is string && payload.finalWorkingDate != "") ||
-                                (payload.finalEmploymentDate is string && payload.finalEmploymentDate != "");
+        boolean hasLeaverDate = (payload.lastWorkingDate is string && payload.lastWorkingDate != "") ||
+                                (payload.employmentEndDate is string && payload.employmentEndDate != "");
         if hasLeaverDate {
             updates.push(`employee_status = ${EMPLOYEE_LEFT}`);
         }

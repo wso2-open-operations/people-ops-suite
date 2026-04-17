@@ -1,7 +1,7 @@
 ALTER TABLE `employee`
-    ADD COLUMN `resignation_date`     DATE NULL AFTER `agreement_end_date`,
-    ADD COLUMN `final_working_date`   DATE NULL AFTER `resignation_date`,
-    ADD COLUMN `final_employment_date` DATE NULL AFTER `final_working_date`;
+    ADD COLUMN `last_working_date`    DATE         NULL AFTER `agreement_end_date`,
+    ADD COLUMN `employment_end_date`  DATE         NULL AFTER `last_working_date`,
+    ADD COLUMN `reason_for_leaving`   VARCHAR(300) NULL AFTER `employment_end_date`;
 
 DROP PROCEDURE IF EXISTS `prc_employee_audit`;
 DROP TRIGGER IF EXISTS `trg_employee_audit_insert`;
@@ -29,9 +29,9 @@ CREATE PROCEDURE `prc_employee_audit`(
   IN p_probation_end_date        DATE,
   IN p_last_promoted_date        DATE,
   IN p_agreement_end_date        DATE,
-  IN p_resignation_date          DATE,
-  IN p_final_working_date        DATE,
-  IN p_final_employment_date     DATE,
+  IN p_last_working_date         DATE,
+  IN p_employment_end_date       DATE,
+  IN p_reason_for_leaving        VARCHAR(300),
   IN p_employment_type_id        BIGINT,
   IN p_designation_id            BIGINT,
   IN p_company_id                BIGINT,
@@ -74,9 +74,9 @@ BEGIN
       'probation_end_date',        p_probation_end_date,
       'last_promoted_date',        p_last_promoted_date,
       'agreement_end_date',        p_agreement_end_date,
-      'resignation_date',          p_resignation_date,
-      'final_working_date',        p_final_working_date,
-      'final_employment_date',     p_final_employment_date,
+      'last_working_date',         p_last_working_date,
+      'employment_end_date',       p_employment_end_date,
+      'reason_for_leaving',        p_reason_for_leaving,
       'employment_type_id',        p_employment_type_id,
       'designation_id',            p_designation_id,
       'company_id',                p_company_id,
@@ -109,7 +109,7 @@ BEGIN
     NEW.secondary_job_title,       NEW.manager_email,        NEW.employee_status,
     NEW.continuous_service_record, NEW.employee_thumbnail,
     NEW.probation_end_date,        NEW.last_promoted_date,   NEW.agreement_end_date,
-    NEW.resignation_date,          NEW.final_working_date,   NEW.final_employment_date,
+    NEW.last_working_date,         NEW.employment_end_date,  NEW.reason_for_leaving,
     NEW.employment_type_id,        NEW.designation_id,       NEW.company_id,
     NEW.office_id,                 NEW.team_id,              NEW.sub_team_id,
     NEW.business_unit_id,          NEW.unit_id,              NEW.house_id,
@@ -133,7 +133,7 @@ BEGIN
     NEW.secondary_job_title,       NEW.manager_email,        NEW.employee_status,
     NEW.continuous_service_record, NEW.employee_thumbnail,
     NEW.probation_end_date,        NEW.last_promoted_date,   NEW.agreement_end_date,
-    NEW.resignation_date,          NEW.final_working_date,   NEW.final_employment_date,
+    NEW.last_working_date,         NEW.employment_end_date,  NEW.reason_for_leaving,
     NEW.employment_type_id,        NEW.designation_id,       NEW.company_id,
     NEW.office_id,                 NEW.team_id,              NEW.sub_team_id,
     NEW.business_unit_id,          NEW.unit_id,              NEW.house_id,

@@ -69,9 +69,9 @@ export interface Employee {
   unitId: number | null;
   house: string | null;
   houseId: number | null;
-  resignationDate: string | null;
-  finalWorkingDate: string | null;
-  finalEmploymentDate: string | null;
+  lastWorkingDate: string | null;
+  employmentEndDate: string | null;
+  reasonForLeaving: string | null;
 }
 
 export enum EmployeeStatus {
@@ -231,9 +231,10 @@ export type UpdateEmployeeJobInfoPayload = {
   unitId?: number | null;
   houseId?: number | null;
   continuousServiceRecord?: string | null;
-  resignationDate?: string | null;
-  finalWorkingDate?: string | null;
-  finalEmploymentDate?: string | null;
+  employeeStatus?: string | null;
+  lastWorkingDate?: string | null;
+  employmentEndDate?: string | null;
+  reasonForLeaving?: string | null;
 };
 
 export interface ContinuousServiceRecordInfo {
