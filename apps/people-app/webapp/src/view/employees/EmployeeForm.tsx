@@ -113,8 +113,8 @@ const toFormValues = (
     base.houseId = employee.houseId ?? 0;
     base.employeeId = employee.employeeId ?? "";
     base.resignationDate = employee.resignationDate ?? null;
-    base.finalWorkingDate = employee.finalDayInOffice ?? null;
-    base.finalEmploymentDate = employee.finalDayOfEmployment ?? null;
+    base.finalWorkingDate = employee.finalWorkingDate ?? null;
+    base.finalEmploymentDate = employee.finalEmploymentDate ?? null;
   }
 
   if (personal) {

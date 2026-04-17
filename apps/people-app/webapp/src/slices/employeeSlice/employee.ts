@@ -70,8 +70,8 @@ export interface Employee {
   house: string | null;
   houseId: number | null;
   resignationDate: string | null;
-  finalDayInOffice: string | null;
-  finalDayOfEmployment: string | null;
+  finalWorkingDate: string | null;
+  finalEmploymentDate: string | null;
 }
 
 export enum EmployeeStatus {

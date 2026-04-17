@@ -140,9 +140,9 @@ public type Employee record {|
     # Resignation date
     string? resignationDate;
     # Final day in office
-    string? finalDayInOffice;
+    string? finalWorkingDate;
     # Final day of employment
-    string? finalDayOfEmployment;
+    string? finalEmploymentDate;
     # Resignation reason
     string? resignationReason;
     # Employment type
