@@ -112,6 +112,9 @@ const toFormValues = (
     base.secondaryJobTitle = employee.secondaryJobTitle ?? "";
     base.houseId = employee.houseId ?? 0;
     base.employeeId = employee.employeeId ?? "";
+    base.resignationDate = employee.resignationDate ?? null;
+    base.finalWorkingDate = employee.finalDayInOffice ?? null;
+    base.finalEmploymentDate = employee.finalDayOfEmployment ?? null;
   }
 
   if (personal) {
@@ -177,6 +180,9 @@ const toJobUpdatePayload = (
   continuousServiceRecord: values.isRelocation
     ? (values.continuousServiceRecord ?? null)
     : null,
+  resignationDate: values.resignationDate ?? null,
+  finalWorkingDate: values.finalWorkingDate ?? null,
+  finalEmploymentDate: values.finalEmploymentDate ?? null,
 });
 
 const toPersonalUpdatePayload = (

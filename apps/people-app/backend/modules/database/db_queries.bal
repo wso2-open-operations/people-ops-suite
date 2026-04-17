@@ -87,6 +87,9 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         csr.start_date AS continuousServiceDate,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
+        e.resignation_date AS resignationDate,
+        e.final_working_date AS finalDayInOffice,
+        e.final_employment_date AS finalDayOfEmployment,
         et.name AS employmentType,
         e.employment_type_id AS employmentTypeId,
         d.career_function_id AS careerFunctionId,
@@ -181,9 +184,9 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.company_id AS companyId,
             h.name AS house,
             e.house_id AS houseId,
-            r.date                    AS resignationDate,
-            r.final_day_in_office     AS finalDayInOffice,
-            r.final_day_of_employment AS finalDayOfEmployment,
+            COALESCE(e.resignation_date, r.date)                    AS resignationDate,
+            COALESCE(e.final_working_date, r.final_day_in_office)   AS finalDayInOffice,
+            COALESCE(e.final_employment_date, r.final_day_of_employment) AS finalDayOfEmployment,
             r.reason                  AS resignationReason,
             pi.gender AS gender,
             COUNT(*) OVER() AS totalCount
@@ -1213,6 +1216,37 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         } else {
             updates.push(`continuous_service_record = ${payload.continuousServiceRecord}`);
         }
+    }
+
+    if payload.resignationDate is string {
+        if payload.resignationDate == "" {
+            updates.push(`resignation_date = NULL`);
+        } else {
+            updates.push(`resignation_date = ${payload.resignationDate}`);
+        }
+    }
+
+    if payload.finalWorkingDate is string {
+        if payload.finalWorkingDate == "" {
+            updates.push(`final_working_date = NULL`);
+        } else {
+            updates.push(`final_working_date = ${payload.finalWorkingDate}`);
+        }
+    }
+
+    if payload.finalEmploymentDate is string {
+        if payload.finalEmploymentDate == "" {
+            updates.push(`final_employment_date = NULL`);
+        } else {
+            updates.push(`final_employment_date = ${payload.finalEmploymentDate}`);
+        }
+    }
+
+    boolean hasLeaverDate = (payload.resignationDate is string && payload.resignationDate != "") ||
+                            (payload.finalWorkingDate is string && payload.finalWorkingDate != "") ||
+                            (payload.finalEmploymentDate is string && payload.finalEmploymentDate != "");
+    if hasLeaverDate {
+        updates.push(`employee_status = 'Left'`);
     }
 
     updates.push(`updated_by = ${updatedBy}`);

@@ -70,6 +70,7 @@ import {
   InfoOutlined,
   Close,
   WidgetsOutlined,
+  LogoutOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
 
@@ -78,6 +79,7 @@ const SECTION_ICONS = {
   work: <WorkOutline />,
   location: <LocationOnOutlined />,
   event: <EventOutlined />,
+  leaver: <LogoutOutlined />,
   supervisor: <SupervisorAccountOutlined />,
   other: <WidgetsOutlined />,
 };
@@ -1668,6 +1670,91 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           </Grid>
         </Grid>
       </Box>
+
+      {isEditMode ? (
+        <Box>
+          <SectionHeader
+            icon={SECTION_ICONS.leaver}
+            title="Leaver Information"
+            headerBoxSx={SECTION_HEADER_BOX_SX}
+            iconBoxSx={iconBoxSx}
+          />
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={4}>
+              <DatePicker
+                label="Resignation Date"
+                value={
+                  values.resignationDate
+                    ? dayjs(values.resignationDate)
+                    : null
+                }
+                onChange={(val) =>
+                  setFieldValue(
+                    "resignationDate",
+                    val ? val.format("YYYY-MM-DD") : null,
+                  )
+                }
+                slotProps={{
+                  field: { clearable: true },
+                  textField: {
+                    fullWidth: true,
+                    helperText: "Optional – date employee submitted resignation",
+                    sx: textFieldSx,
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <DatePicker
+                label="Final Working Date"
+                value={
+                  values.finalWorkingDate
+                    ? dayjs(values.finalWorkingDate)
+                    : null
+                }
+                onChange={(val) =>
+                  setFieldValue(
+                    "finalWorkingDate",
+                    val ? val.format("YYYY-MM-DD") : null,
+                  )
+                }
+                slotProps={{
+                  field: { clearable: true },
+                  textField: {
+                    fullWidth: true,
+                    helperText: "Optional – last day in office",
+                    sx: textFieldSx,
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <DatePicker
+                label="Final Employment Date"
+                value={
+                  values.finalEmploymentDate
+                    ? dayjs(values.finalEmploymentDate)
+                    : null
+                }
+                onChange={(val) =>
+                  setFieldValue(
+                    "finalEmploymentDate",
+                    val ? val.format("YYYY-MM-DD") : null,
+                  )
+                }
+                slotProps={{
+                  field: { clearable: true },
+                  textField: {
+                    fullWidth: true,
+                    helperText: "Optional – last day of employment",
+                    sx: textFieldSx,
+                  },
+                }}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+      ) : null}
     </Box>
   );
 }

@@ -84,6 +84,9 @@ export interface CreateEmployeeFormValues {
   secondaryJobTitle: string;
   houseId: number;
   employeeId?: string;
+  resignationDate: string | null;
+  finalWorkingDate: string | null;
+  finalEmploymentDate: string | null;
 }
 
 export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
@@ -129,6 +132,9 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   secondaryJobTitle: "",
   houseId: 0,
   employeeId: "",
+  resignationDate: null,
+  finalWorkingDate: null,
+  finalEmploymentDate: null,
 };
 
 export interface ServiceLength {
