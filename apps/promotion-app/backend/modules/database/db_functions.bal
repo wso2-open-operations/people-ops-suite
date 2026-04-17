@@ -135,11 +135,8 @@ public isolated function getPromotionCyclesByStatus(PromotionCyclesStatus[]? sta
 
     stream<PromotionCycle, error?> resultStream = databaseClient->query(getPromotionCyclesByStatusQuery(statusArray));
 
-    PromotionCycle[] cycles = [];
-    _ = check from PromotionCycle promotionCycle in resultStream
-        do {
-            cycles.push(promotionCycle);
-        };
+    PromotionCycle[] cycles = check from PromotionCycle promotionCycle in resultStream
+        select promotionCycle;
     return cycles;
 }
 
