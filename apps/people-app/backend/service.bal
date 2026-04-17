@@ -1616,8 +1616,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string csvContent = payload.filters.employeeStatus == database:EMPLOYEE_LEFT
-            ? database:buildResignationCsv(allEmployees, nameMap)
-            : database:buildEmployeeCsv(allEmployees, nameMap);
+            ? database:buildResignationCsv(allEmployees, nameMap, payload.columns)
+            : database:buildEmployeeCsv(allEmployees, nameMap, payload.columns);
         string? filterStatus = payload.filters.employeeStatus;
         string statusLabel = filterStatus is () ? "all" : re ` `.replaceAll(filterStatus.toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";

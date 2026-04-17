@@ -37,10 +37,18 @@ export interface Employee {
   workLocation: string;
   startDate: string;
   managerEmail: string;
+  managerName: string | null;
   additionalManagerEmails: string | null;
+  gender: string | null;
+  continuousServiceDate: string | null;
+  jobBand: number | null;
   employeeStatus: string;
   probationEndDate: string | null;
   agreementEndDate: string | null;
+  resignationDate: string | null;
+  finalDayInOffice: string | null;
+  finalDayOfEmployment: string | null;
+  resignationReason: string | null;
   employmentType: string;
   designation: string;
   company: string;
@@ -521,13 +529,13 @@ export const updateEmployeeJobInfo = createAsyncThunk(
 export const downloadEmployeeReportByStatus = createAsyncThunk(
   "employee/downloadEmployeeReportByStatus",
   async (
-    { filters }: { filters: Filters },
+    { filters, columns }: { filters: Filters; columns?: string[] },
     { dispatch, rejectWithValue },
   ) => {
     try {
       const response = await APIService.getInstance().post(
         AppConfig.serviceUrls.reportsEmployees,
-        { filters },
+        { filters, ...(columns && columns.length > 0 ? { columns } : {}) },
         { responseType: "text" },
       );
       return response.data as string;

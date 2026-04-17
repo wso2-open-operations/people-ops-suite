@@ -245,6 +245,8 @@ public type EmployeeFilters record {|
 public type EmployeeReportPayload record {|
     # Filters to apply to the employee export; mirrors EmployeeFilters used by /employees/search
     EmployeeFilters filters = {};
+    # Optional column allowlist (canonical key strings). nil or empty = all columns for the report type.
+    string[]? columns = ();
 |};
 
 # Pagination information.
