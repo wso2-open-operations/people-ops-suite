@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-import ballerina/log;
 
 # Retrieves basic employee details by work email.
 #
@@ -74,7 +73,6 @@ public isolated function getEmployee(string workEmail) returns Employee|error {
 
     // Null Check.
     if employee is () {
-        log:printError("No matching employee found for " + workEmail);
         return error("No matching employee found for " + workEmail);
     }
 
@@ -125,11 +123,7 @@ public isolated function getEmployees(boolean? filterLeads = (), int[]? jobBandA
         jobBand: jobBandArray is int[] ? jobBandArray : []
     };
 
-    EmployeeInfoResult|error employeeData = hrClient->execute(document, {filter});
-
-    if employeeData is error {
-        return error((filterLeads is boolean && filterLeads == true) ? "Error while retrieving lead list!" : "Error while retrieving employee list!");
-    }
+    EmployeeInfoResult employeeData = check hrClient->execute(document, {filter});
 
     if employeeData.data.employees.length() <= 0 {
         return error((filterLeads is boolean && filterLeads == true) ? "No active leads found!" : "No active employees found!");
