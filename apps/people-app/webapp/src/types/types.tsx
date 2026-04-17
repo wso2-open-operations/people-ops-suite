@@ -14,6 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
+export enum EmployeeStatus {
+  Active = "Active",
+  Left = "Left",
+  MarkedLeaver = "Marked leaver",
+}
+
 export enum State {
   failed = "failed",
   success = "success",
@@ -84,7 +90,7 @@ export interface CreateEmployeeFormValues {
   secondaryJobTitle: string;
   houseId: number;
   employeeId?: string;
-  employeeStatus: string | null;
+  employeeStatus: EmployeeStatus | null;
   lastWorkingDate: string | null;
   employmentEndDate: string | null;
   reasonForLeaving: string | null;
