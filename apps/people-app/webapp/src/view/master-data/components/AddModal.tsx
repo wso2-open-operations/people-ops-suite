@@ -79,7 +79,8 @@ type OrgOptionTest =
 
 const filter = createFilterOptions<OrgOption>();
 
-type ParentNode = BusinessUnitState | TeamState | SubTeamState | UnitState;
+type ParentNode = CompanyState | BusinessUnitState | TeamState | SubTeamState;
+type MappableParentNode = BusinessUnitState | TeamState | SubTeamState;
 interface AddPageProps {
   open: boolean;
   orgInfo: OrgOptionTest[];
@@ -140,14 +141,29 @@ export default function AddPage(props: AddPageProps) {
 
   const selectedOrgNode = watch("orgNode");
 
-  const isParentNode = (
+  const isValidParentForNodeType = (
     node: CompanyState | BusinessUnitState | TeamState | SubTeamState | UnitState,
-  ): node is ParentNode => node.type === NodeType.Company || node.type === NodeType.BusinessUnit;
+  ): node is ParentNode => {
+    switch (nodeType) {
+      case NodeType.BusinessUnit:
+        return node.type === NodeType.Company;
+      case NodeType.Team:
+        return node.type === NodeType.BusinessUnit;
+      case NodeType.SubTeam:
+        return node.type === NodeType.Team;
+      case NodeType.Unit:
+        return node.type === NodeType.SubTeam;
+      default:
+        return false;
+    }
+  };
 
-  const createNewMapping = async (
-    data: AddOrgItemFormValues,
-    parent: BusinessUnitState | TeamState | SubTeamState | UnitState,
-  ) => {
+  const isMappableParentNode = (node: ParentNode): node is MappableParentNode =>
+    node.type === NodeType.BusinessUnit ||
+    node.type === NodeType.Team ||
+    node.type === NodeType.SubTeam;
+
+  const createNewMapping = async (data: AddOrgItemFormValues, parent: MappableParentNode) => {
     const { orgNode, functionalLead } = data;
 
     if (!parent || !orgNode?.id) {
@@ -196,18 +212,12 @@ export default function AddPage(props: AddPageProps) {
     }
   };
 
-  const createNewOrgItem = async (
-    data: AddOrgItemFormValues,
-    parent: BusinessUnitState | TeamState | SubTeamState | UnitState,
-  ) => {
+  const createNewOrgItem = async (data: AddOrgItemFormValues, parent: ParentNode) => {
     const { orgNode, orgNodeHead, functionalLead } = data;
 
-    console.log("ts");
     if (!nodeType || !orgNode?.name) {
       throw new Error("Missing required org item fields");
     }
-
-    console.log("Create new org item : ");
 
     switch (nodeType) {
       case NodeType.BusinessUnit: {
@@ -286,21 +296,15 @@ export default function AddPage(props: AddPageProps) {
   }
 
   const onSubmit = async (data: AddOrgItemFormValues) => {
-    if (!isParentNode(selectedNode)) return;
+    if (!isValidParentForNodeType(selectedNode)) return;
 
     const parent = selectedNode;
-
-    if (nodeType !== NodeType.BusinessUnit && !parent) {
-      return;
-    }
-
-    console.log("submit");
 
     try {
       if (isNewItem) {
         await createNewOrgItem(data, parent);
       } else {
-        if (parent.type === NodeType.Company) return;
+        if (!isMappableParentNode(parent)) return;
         await createNewMapping(data, parent);
       }
     } catch (e) {
