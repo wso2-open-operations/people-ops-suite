@@ -20,17 +20,21 @@ import { useEffect, useState } from "react";
 import ConfirmationDialog from "@component/common/ConfirmationDialog";
 import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
+import { NodeType } from "@root/src/utils/types";
+import { convertDataTypeToLabel } from "@root/src/utils/utils";
 
 interface DeleteCurrentProps {
   onDelete: (reason: string) => Promise<void>;
   isDeleting: boolean;
   onDeleteSuccessComplete?: () => void;
+  nodeType: NodeType;
 }
 
 export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
   onDelete,
   isDeleting,
   onDeleteSuccessComplete,
+  nodeType
 }) => {
   const theme = useTheme();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -66,6 +70,8 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
     setConfirmOpen(false);
   };
 
+  const nodeTypeLabel = convertDataTypeToLabel(nodeType);
+
   return (
     <>
       <Box
@@ -84,7 +90,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
             flexDirection: "column",
             gap: "4px",
             justifyContent: "center",
-            maxWidth: "320px",
+            maxWidth: "360px",
           }}
         >
           <Typography
@@ -94,7 +100,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
               fontWeight: 500,
             }}
           >
-            Delete this business unit
+            Delete this {nodeTypeLabel}
           </Typography>
 
           <Typography
@@ -108,7 +114,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
               whiteSpace: "pre-wrap",
             }}
           >
-            Once you delete a business unit, there is no going back. Please be certain.
+            Once you delete a {nodeTypeLabel}, there is no going back. Please be certain.
           </Typography>
         </Box>
 
@@ -119,7 +125,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
 
       <ConfirmationDialog
         open={confirmOpen}
-        title="Delete Business Unit"
+        title={`Delete ${nodeTypeLabel}`}
         message="This action is irreversible. All associated data will be permanently removed."
         confirmLabel="Delete"
         cancelLabel="Cancel"

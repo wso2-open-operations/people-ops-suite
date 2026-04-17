@@ -242,6 +242,7 @@ export const EditModal: React.FC<EditModalProps> = ({
               onDelete={handleDeleteCurrent}
               isDeleting={isDeleting}
               onDeleteSuccessComplete={onClose}
+              nodeType={nodeType}
             />
           </Box>
         </Box>
