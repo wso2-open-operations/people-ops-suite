@@ -34,7 +34,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
   onDelete,
   isDeleting,
   onDeleteSuccessComplete,
-  nodeType
+  nodeType,
 }) => {
   const theme = useTheme();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -44,6 +44,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
   const isDeleteInProgress = isDeleting || confirming;
   const showSpinner = useMinimumLoadingVisibility(isDeleteInProgress, SPLIT_VIEW_SKELETON_DELAY_MS);
   const dialogSubmitting = isDeleteInProgress || (pendingCloseAfterSpinner && showSpinner);
+  const nodeTypeLabel = convertDataTypeToLabel(nodeType);
 
   useEffect(() => {
     if (!pendingCloseAfterSpinner || showSpinner) return;
@@ -59,7 +60,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
       await onDelete(reason);
       setPendingCloseAfterSpinner(true);
     } catch (e) {
-      console.error("Delete business unit failed", e);
+      console.error(`Delete ${nodeTypeLabel} failed`, e);
     } finally {
       setConfirming(false);
     }
@@ -69,8 +70,6 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
     if (dialogSubmitting) return;
     setConfirmOpen(false);
   };
-
-  const nodeTypeLabel = convertDataTypeToLabel(nodeType);
 
   return (
     <>
