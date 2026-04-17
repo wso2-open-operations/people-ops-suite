@@ -56,10 +56,12 @@ export function useSplitViewSelection({ orgItems }: UseSplitViewSelectionProps) 
       setSelectedBusinessUnitId(null);
       setSelectedTeamId(null);
       setSelectedSubTeamId(null);
+      setSelectedUnitId(null);
     } else {
       setSelectedBusinessUnitId(bu.id);
       setSelectedTeamId(null);
       setSelectedSubTeamId(null);
+      setSelectedUnitId(null);
     }
   };
 
@@ -67,9 +69,11 @@ export function useSplitViewSelection({ orgItems }: UseSplitViewSelectionProps) 
     if (selectedTeamId === team.id) {
       setSelectedTeamId(null);
       setSelectedSubTeamId(null);
+      setSelectedUnitId(null);
     } else {
       setSelectedTeamId(team.id);
       setSelectedSubTeamId(null);
+      setSelectedUnitId(null);
     }
   };
 
