@@ -76,8 +76,10 @@ export function useSplitViewSelection({ orgItems }: UseSplitViewSelectionProps) 
   const handleSubTeamClick = (subTeam: SubTeamState) => {
     if (selectedSubTeamId === subTeam.id) {
       setSelectedSubTeamId(null);
+      setSelectedUnitId(null);
     } else {
       setSelectedSubTeamId(subTeam.id);
+      setSelectedUnitId(null);
     }
   };
 
