@@ -187,10 +187,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         people:EmployeeInfo[]|error employees = people:getEmployees();
 
         if employees is error {
-            log:printError(employees.message(), employees);
+            string customError = (filterLeads is boolean && filterLeads == true) ? "Error while retrieving lead list!" : "Error while retrieving employee list!";
+            log:printError(customError, employees);
             return <http:InternalServerError>{
                 body: {
-                    message: employees.message()
+                    message: customError
                 }
             };
         }
