@@ -135,9 +135,8 @@ public isolated function getPromotionCyclesByStatus(PromotionCyclesStatus[]? sta
 
     stream<PromotionCycle, error?> resultStream = databaseClient->query(getPromotionCyclesByStatusQuery(statusArray));
 
-    PromotionCycle[] cycles = check from PromotionCycle promotionCycle in resultStream
+    return from PromotionCycle promotionCycle in resultStream
         select promotionCycle;
-    return cycles;
 }
 
 # Is Duplicate Promotion Request.
