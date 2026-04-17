@@ -317,11 +317,18 @@ export default function EmployeeReportTable({
   const [selectedColumns, setSelectedColumns] = useState<string[]>(() =>
     getAllKeys(isResignation),
   );
+
+  // Reset selection when the report type changes (defensive guard — routes normally
+  // mount separate instances, but this prevents stale keys if ever re-used).
+  useEffect(() => {
+    setSelectedColumns(getAllKeys(isResignation));
+  }, [isResignation]);
+
   const deselectedCount = allColumnsForStatus.length - selectedColumns.length;
-  // Badge shows how many columns are selected for export when the selection
-  // differs from the default (all selected). Mirrors the Filters badge pattern:
-  // deviating from default = non-zero badge.
+  // Badge: selected count when deviating from default (all selected), else 0.
   const columnBadgeCount = deselectedCount > 0 ? selectedColumns.length : 0;
+  // Separate count for tooltip: columns hidden from the preview table.
+  const hiddenInPreviewCount = Math.max(0, selectedColumns.length - PREVIEW_COL_LIMIT);
 
   // Unified filter state — covers both the legacy switches and the full drawer.
   const [appliedFilters, setAppliedFilters] = useState<Filters>(() => {
@@ -569,10 +576,7 @@ export default function EmployeeReportTable({
         await dispatch(
           downloadEmployeeReportByStatus({
             filters: appliedFilters,
-            columns:
-              selectedColumns.length === allColumnsForStatus.length
-                ? undefined
-                : selectedColumns,
+            columns: selectedColumns,
           }),
         ),
       );
@@ -716,7 +720,7 @@ export default function EmployeeReportTable({
             <Tooltip
               title={
                 columnBadgeCount > 0
-                  ? `${selectedColumns.length} of ${allColumnsForStatus.length} columns selected · ${columnBadgeCount} hidden in preview`
+                  ? `${selectedColumns.length} of ${allColumnsForStatus.length} columns selected${hiddenInPreviewCount > 0 ? ` · ${hiddenInPreviewCount} hidden in preview` : ""}`
                   : "Select columns to export"
               }
             >

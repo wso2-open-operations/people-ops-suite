@@ -283,11 +283,6 @@ final map<string> & readonly COLUMN_HEADER_MAP = {
 # + nameMap - Map of email -> full name (used for additionalManager)
 # + return - The escaped CSV cell string
 isolated function resolveColumnValue(Employee e, string key, map<string> nameMap) returns string {
-    string? secTitle = e.secondaryJobTitle;
-    string jobRole = secTitle is string && secTitle.trim() != ""
-        ? e.designation + " / " + secTitle
-        : e.designation;
-    string effectiveStartDate = e.continuousServiceDate ?: e.startDate;
     match key {
         "employeeId"            => { return csvEscape(e.employeeId); }
         "firstName"             => { return csvEscape(e.firstName); }
@@ -297,11 +292,20 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
         "company"               => { return csvEscape(e.company); }
         "location"              => { return csvEscape(e.workLocation); }
         "employmentType"        => { return csvEscape(e.employmentType); }
-        "jobRole"               => { return csvEscape(jobRole); }
+        "jobRole"               => {
+            string? secTitle = e.secondaryJobTitle;
+            string jobRole = secTitle is string && secTitle.trim() != ""
+                ? e.designation + " / " + secTitle
+                : e.designation;
+            return csvEscape(jobRole);
+        }
         "jobBand"               => { return csvEscape(e.jobBand != () ? e.jobBand.toString() : ()); }
         "startDate"             => { return csvEscape(e.startDate); }
         "continuousServiceDate" => { return csvEscape(e.continuousServiceDate); }
-        "lengthOfService"       => { return csvEscape(calculateLengthOfService(effectiveStartDate)); }
+        "lengthOfService"       => {
+            string effectiveStartDate = e.continuousServiceDate ?: e.startDate;
+            return csvEscape(calculateLengthOfService(effectiveStartDate));
+        }
         "reportsTo"             => { return csvEscape(e.managerName); }
         "additionalManager"     => { return csvEscape(resolveAdditionalManagerNames(e.additionalManagerEmails, nameMap)); }
         "employeeStatus"        => { return csvEscape(e.employeeStatus); }
@@ -336,11 +340,22 @@ isolated function buildCsvWithColumns(
         map<string> nameMap,
         string[] defaultCols,
         string[]? requestedCols) returns string {
-    string[] effectiveCols = requestedCols is () || requestedCols.length() == 0
-        ? defaultCols
-        : from string key in requestedCols
-          where defaultCols.indexOf(key) != ()
-          select key;
+    string[] effectiveCols;
+    if requestedCols is () || requestedCols.length() == 0 {
+        effectiveCols = defaultCols;
+    } else {
+        // Deduplicate while preserving first-seen order; ignore unknown keys.
+        map<boolean> seen = {};
+        string[] filtered = [];
+        foreach string key in requestedCols {
+            if defaultCols.indexOf(key) != () && !seen.hasKey(key) {
+                filtered.push(key);
+                seen[key] = true;
+            }
+        }
+        // Fall back to the full default set if every requested key was unknown.
+        effectiveCols = filtered.length() > 0 ? filtered : defaultCols;
+    }
     string[] headers = from string key in effectiveCols
         select COLUMN_HEADER_MAP[key] ?: key;
     string[] lines = [string:'join(",", ...headers)];
