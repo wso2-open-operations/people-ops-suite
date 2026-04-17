@@ -15,7 +15,7 @@
 // under the License.
 import { Box, Button, Typography, useTheme } from "@mui/material";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import ConfirmationDialog from "@component/common/ConfirmationDialog";
 import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
@@ -40,6 +40,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingCloseAfterSpinner, setPendingCloseAfterSpinner] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const isMountedRef = useRef(true);
 
   const isDeleteInProgress = isDeleting || confirming;
   const showSpinner = useMinimumLoadingVisibility(isDeleteInProgress, SPLIT_VIEW_SKELETON_DELAY_MS);
@@ -47,27 +48,36 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({
   const nodeTypeLabel = convertDataTypeToLabel(nodeType);
 
   useEffect(() => {
-    if (!pendingCloseAfterSpinner || showSpinner) return;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!confirmOpen || !pendingCloseAfterSpinner || showSpinner) return;
 
     setConfirmOpen(false);
     setPendingCloseAfterSpinner(false);
     onDeleteSuccessComplete?.();
-  }, [pendingCloseAfterSpinner, showSpinner, onDeleteSuccessComplete]);
+  }, [confirmOpen, pendingCloseAfterSpinner, showSpinner, onDeleteSuccessComplete]);
 
   const handleConfirm = async (reason: string) => {
     setConfirming(true);
     try {
       await onDelete(reason);
+      if (!isMountedRef.current) return;
       setPendingCloseAfterSpinner(true);
     } catch (e) {
       console.error(`Delete ${nodeTypeLabel} failed`, e);
     } finally {
+      if (!isMountedRef.current) return;
       setConfirming(false);
     }
   };
 
   const handleCancel = () => {
     if (dialogSubmitting) return;
+    setPendingCloseAfterSpinner(false);
     setConfirmOpen(false);
   };
 
