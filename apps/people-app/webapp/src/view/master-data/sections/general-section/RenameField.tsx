@@ -21,20 +21,20 @@ import { useEffect, useState } from "react";
 import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import { NodeType } from "@utils/types";
-import { UnitTypeLabel } from "@utils/utils";
+import { convertDataTypeToLabel, UnitTypeLabel } from "@utils/utils";
 
 interface RenameFormValues {
   entityName: string;
 }
 interface RenameFieldProps {
-  entityType: NodeType;
+  nodeType: NodeType;
   currentName: string;
   onRenameSuccess: (entityName: string) => Promise<void> | void;
   isSubmitting?: boolean;
 }
 
 export const RenameField: React.FC<RenameFieldProps> = ({
-  entityType,
+  nodeType,
   currentName,
   onRenameSuccess,
   isSubmitting = false,
@@ -69,6 +69,8 @@ export const RenameField: React.FC<RenameFieldProps> = ({
     setIsFocused(false);
   };
 
+  const unitTypeLabel = convertDataTypeToLabel(nodeType)
+
   return (
     <Box
       component="form"
@@ -89,7 +91,7 @@ export const RenameField: React.FC<RenameFieldProps> = ({
           textTransform: "capitalize",
         }}
       >
-        {UnitTypeLabel[entityType]} Name
+        {unitTypeLabel} Name
       </Typography>
 
       <Box
@@ -111,7 +113,7 @@ export const RenameField: React.FC<RenameFieldProps> = ({
             <>
               <TextField
                 {...field}
-                placeholder={`Enter ${entityType} name`}
+                placeholder={`Enter ${unitTypeLabel} name`}
                 variant="outlined"
                 fullWidth
                 error={!!error}
