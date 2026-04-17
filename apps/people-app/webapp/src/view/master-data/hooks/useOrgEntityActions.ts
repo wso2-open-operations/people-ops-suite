@@ -175,7 +175,7 @@ export function useOrgEntityActions({ data }: UseOrgEntityActionsParams) {
         break;
       case NodeType.Unit:
         await deleteSubTeamUnit({
-          businessUnitTeamSubTeamId: (data as UnitState).businessUnitTeamSubTeamUnitId,
+          businessUnitTeamSubTeamId: (data as UnitState).businessUnitTeamSubTeamId,
           unitId: data.id,
         }).unwrap();
         break;
