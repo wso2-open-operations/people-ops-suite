@@ -16,15 +16,15 @@
 import { useState } from "react";
 
 import { MatchSearch } from "../utils/globalSearch";
-  
+
 export function useSplitViewSearch() {
   const [searchMatches, setSearchMatches] = useState<MatchSearch[]>([]);
   const [activeMatchIndex, setActiveMatchIndex] = useState<number>(-1);
 
-  const [searchTerm, setSearchTerm] = useState<string | null>();
-  const [teamSearchTerm, setTeamSearchTerm] = useState<string | null>();
-  const [subTeamSearchTerm, setSubTeamSearchTerm] = useState<string | null>();
-  const [unitSearchTerm, setUnitSearchTerm] = useState<string | null>();
+  const [searchTerm, setSearchTerm] = useState<string | null>(null);
+  const [teamSearchTerm, setTeamSearchTerm] = useState<string | null>(null);
+  const [subTeamSearchTerm, setSubTeamSearchTerm] = useState<string | null>(null);
+  const [unitSearchTerm, setUnitSearchTerm] = useState<string | null>(null);
 
   const currentMatch = activeMatchIndex >= 0 ? searchMatches[activeMatchIndex] : null;
 
