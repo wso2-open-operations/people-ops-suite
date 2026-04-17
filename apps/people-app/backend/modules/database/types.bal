@@ -243,12 +243,8 @@ public type EmployeeFilters record {|
 
 # Payload for the employee report generation endpoint.
 public type EmployeeReportPayload record {|
-    # Optional employee status filter (e.g. "Active", "Left"); omit to export all employees
-    EmployeeStatus? status = ();
-    # When true (default), excludes employees whose start date is in the future
-    boolean excludeFutureStartDate = true;
-    # When true (default), includes employees with "Marked leaver" status alongside the primary status filter
-    boolean includeMarkedLeavers = true;
+    # Filters to apply to the employee export; mirrors EmployeeFilters used by /employees/search
+    EmployeeFilters filters = {};
 |};
 
 # Pagination information.

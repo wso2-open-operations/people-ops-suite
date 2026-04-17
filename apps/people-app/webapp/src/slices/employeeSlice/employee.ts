@@ -521,13 +521,13 @@ export const updateEmployeeJobInfo = createAsyncThunk(
 export const downloadEmployeeReportByStatus = createAsyncThunk(
   "employee/downloadEmployeeReportByStatus",
   async (
-    { status, excludeFutureStartDate, includeMarkedLeavers }: { status: EmployeeStatus | undefined; excludeFutureStartDate?: boolean; includeMarkedLeavers?: boolean },
+    { filters }: { filters: Filters },
     { dispatch, rejectWithValue },
   ) => {
     try {
       const response = await APIService.getInstance().post(
         AppConfig.serviceUrls.reportsEmployees,
-        { status, excludeFutureStartDate, includeMarkedLeavers },
+        { filters },
         { responseType: "text" },
       );
       return response.data as string;

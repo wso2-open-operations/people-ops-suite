@@ -1590,11 +1590,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
                 searchString: (),
-                filters: {
-                    employeeStatus: payload.status,
-                    excludeFutureStartDate: payload.excludeFutureStartDate,
-                    includeMarkedLeavers: payload.includeMarkedLeavers
-                },
+                filters: payload.filters,
                 pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
                 sort: {sortField: "employeeId", sortOrder: "ASC"}
             });
@@ -1619,10 +1615,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string csvContent = payload.status == database:EMPLOYEE_LEFT
+        string csvContent = payload.filters.employeeStatus == database:EMPLOYEE_LEFT
             ? database:buildResignationCsv(allEmployees, nameMap)
             : database:buildEmployeeCsv(allEmployees, nameMap);
-        string statusLabel = payload.status is () ? "all" : re ` `.replaceAll((<database:EmployeeStatus>payload.status).toLowerAscii(), "_");
+        string? filterStatus = payload.filters.employeeStatus;
+        string statusLabel = filterStatus is () ? "all" : re ` `.replaceAll(filterStatus.toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
 
         http:Response response = new;
