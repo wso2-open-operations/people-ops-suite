@@ -549,6 +549,68 @@ isolated function getSubTeamsQuery(int? teamId = ()) returns sql:ParameterizedQu
     return sql:queryConcat(query, `;`);
 }
 
+# Fetch existing work emails.
+#
+# + emails - Work email list
+# + return - Query to fetch existing work emails
+isolated function getExistingWorkEmailsQuery(string[] emails) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = ``;
+    foreach int i in 0 ..< emails.length() {
+        if i == 0 {
+            inClause = sql:queryConcat(inClause, `${emails[i]}`);
+        } else {
+            inClause = sql:queryConcat(inClause, `, `, `${emails[i]}`);
+        }
+    }
+
+    return sql:queryConcat(
+            `SELECT LOWER(work_email) AS work_email FROM employee WHERE LOWER(work_email) IN (`,
+            inClause,
+            `);`
+    );
+}
+
+# Fetch existing NIC or passport values.
+#
+# + nics - NIC or passport list
+# + return - Query to fetch existing NIC or passport values
+isolated function getExistingNicOrPassportQuery(string[] nics) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = ``;
+    foreach int i in 0 ..< nics.length() {
+        if i == 0 {
+            inClause = sql:queryConcat(inClause, `${nics[i]}`);
+        } else {
+            inClause = sql:queryConcat(inClause, `, `, `${nics[i]}`);
+        }
+    }
+
+    return sql:queryConcat(
+            `SELECT nic_or_passport FROM personal_info WHERE nic_or_passport IN (`,
+            inClause,
+            `);`
+    );
+}
+
+# Fetch existing EPF values.
+#
+# + epfs - EPF number list
+# + return - Query to fetch existing EPF values
+isolated function getExistingEpfsQuery(string[] epfs) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = ``;
+    foreach int i in 0 ..< epfs.length() {
+        if i == 0 {
+            inClause = sql:queryConcat(inClause, `${epfs[i]}`);
+        } else {
+            inClause = sql:queryConcat(inClause, `, `, `${epfs[i]}`);
+        }
+    }
+    return sql:queryConcat(
+            `SELECT epf FROM employee WHERE epf IN (`,
+            inClause,
+            `);`
+    );
+}
+
 # Get units query.
 #
 # + subTeamId - Sub team ID (optional)
@@ -727,6 +789,17 @@ isolated function getHouseWithLeastActiveEmployeesQuery() returns sql:Parameteri
      GROUP BY h.id, h.name
      ORDER BY COUNT(e.id) ASC
      LIMIT 1`;
+
+# Get all active houses with their active employee counts query.
+#
+# + return - Query to get all active houses ordered by active employee count ascending
+isolated function getHousesWithActiveEmployeeCountsQuery() returns sql:ParameterizedQuery =>
+    `SELECT h.id, h.name, COUNT(e.id) AS active_count
+     FROM house h
+     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
+     WHERE h.is_active = 1
+     GROUP BY h.id, h.name
+     ORDER BY active_count ASC`;
 
 # Add employee personal information query.
 #
