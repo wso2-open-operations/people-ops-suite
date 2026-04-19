@@ -1375,7 +1375,15 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 label="Employee Status"
                 name="employeeStatus"
                 value={values.employeeStatus ?? ""}
-                onChange={(e) => setFieldValue("employeeStatus", e.target.value)}
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  setFieldValue("employeeStatus", newStatus);
+                  if (newStatus !== EmployeeStatus.Left) {
+                    setFieldValue("lastWorkingDate", null);
+                    setFieldValue("employmentEndDate", null);
+                    setFieldValue("reasonForLeaving", null);
+                  }
+                }}
                 onBlur={handleBlur}
                 sx={textFieldSx}
               >

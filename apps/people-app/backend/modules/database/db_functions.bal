@@ -524,7 +524,39 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
         if additionalManagerEmails is Email[] {
             check syncAdditionalManagers(employeeId, additionalManagerEmails, updatedBy);
         }
+        check syncResignationRecord(employeeId, payload, updatedBy);
         check commit;
+    }
+}
+
+# Check whether the job-info update payload contains any leaver-specific fields.
+#
+# + payload - Job information update payload
+# + return - True if any resignation field is present
+public isolated function hasLeaverFields(UpdateEmployeeJobInfoPayload payload) returns boolean =>
+    payload.lastWorkingDate is string
+    || payload.employmentEndDate is string
+    || payload.reasonForLeaving is string;
+
+# Sync the resignation table row for an employee based on the job-info update payload.
+# Deletes the row when status is explicitly set to a non-Left value.
+#
+# + employeeId - Employee ID
+# + payload - Job information update payload
+# + updatedBy - User performing the operation
+# + return - Nil or error
+isolated function syncResignationRecord(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns error? {
+
+    EmployeeStatus? newStatus = payload.employeeStatus;
+
+    if newStatus is EmployeeStatus && newStatus != EMPLOYEE_LEFT {
+        _ = check databaseClient->execute(deleteResignationQuery(employeeId));
+        return;
+    }
+
+    if hasLeaverFields(payload) {
+        _ = check databaseClient->execute(upsertResignationQuery(employeeId, payload, updatedBy));
     }
 }
 

@@ -87,9 +87,9 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         csr.start_date AS continuousServiceDate,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
-        e.last_working_date AS lastWorkingDate,
-        e.employment_end_date AS employmentEndDate,
-        e.reason_for_leaving AS reasonForLeaving,
+        r.final_day_in_office AS lastWorkingDate,
+        r.final_day_of_employment AS employmentEndDate,
+        r.reason AS reasonForLeaving,
         et.name AS employmentType,
         e.employment_type_id AS employmentTypeId,
         d.career_function_id AS careerFunctionId,
@@ -131,6 +131,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         LEFT JOIN personal_info pi ON pi.id = e.personal_info_id
         LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
         LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
+        LEFT JOIN resignation r ON r.employee_id = e.id
     WHERE
         e.employee_id = ${employeeId};`;
 
@@ -184,9 +185,6 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.company_id AS companyId,
             h.name AS house,
             e.house_id AS houseId,
-            e.last_working_date AS lastWorkingDate,
-            e.employment_end_date AS employmentEndDate,
-            e.reason_for_leaving AS reasonForLeaving,
             pi.gender AS gender,
             COUNT(*) OVER() AS totalCount
         FROM
@@ -1216,38 +1214,8 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         }
     }
 
-    if payload.lastWorkingDate is string {
-        if payload.lastWorkingDate == "" {
-            updates.push(`last_working_date = NULL`);
-        } else {
-            updates.push(`last_working_date = ${payload.lastWorkingDate}`);
-        }
-    }
-
-    if payload.employmentEndDate is string {
-        if payload.employmentEndDate == "" {
-            updates.push(`employment_end_date = NULL`);
-        } else {
-            updates.push(`employment_end_date = ${payload.employmentEndDate}`);
-        }
-    }
-
-    if payload.reasonForLeaving is string {
-        if payload.reasonForLeaving == "" {
-            updates.push(`reason_for_leaving = NULL`);
-        } else {
-            updates.push(`reason_for_leaving = ${payload.reasonForLeaving}`);
-        }
-    }
-
     if payload.employeeStatus is EmployeeStatus {
         updates.push(`employee_status = ${payload.employeeStatus}`);
-    } else {
-        boolean hasLeaverDate = (payload.lastWorkingDate is string && payload.lastWorkingDate != "") ||
-                                (payload.employmentEndDate is string && payload.employmentEndDate != "");
-        if hasLeaverDate {
-            updates.push(`employee_status = ${EMPLOYEE_LEFT}`);
-        }
     }
 
     updates.push(`updated_by = ${updatedBy}`);
@@ -1260,6 +1228,41 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
 
     return finalQuery;
 }
+
+# Upsert the resignation record for an employee.
+# Fields not provided in the payload (null) preserve the existing DB value.
+#
+# + employeeId - Employee ID string
+# + payload - Job information update payload containing leaver fields
+# + updatedBy - User performing the update
+# + return - sql:ParameterizedQuery - Upsert query for the resignation table
+isolated function upsertResignationQuery(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns sql:ParameterizedQuery {
+
+    string? lastWorkingDate = payload.lastWorkingDate;
+    string? employmentEndDate = payload.employmentEndDate;
+    string? reasonForLeaving = payload.reasonForLeaving;
+
+    return `INSERT INTO resignation (employee_id, final_day_in_office, final_day_of_employment, reason, created_by, updated_by)
+        SELECT e.id, ${lastWorkingDate}, ${employmentEndDate}, ${reasonForLeaving}, ${updatedBy}, ${updatedBy}
+        FROM employee e
+        WHERE e.employee_id = ${employeeId}
+        ON DUPLICATE KEY UPDATE
+            final_day_in_office     = IF(VALUES(final_day_in_office) IS NOT NULL, VALUES(final_day_in_office), final_day_in_office),
+            final_day_of_employment = IF(VALUES(final_day_of_employment) IS NOT NULL, VALUES(final_day_of_employment), final_day_of_employment),
+            reason                  = IF(VALUES(reason) IS NOT NULL, VALUES(reason), reason),
+            updated_by              = ${updatedBy},
+            updated_on              = CURRENT_TIMESTAMP(6)`;
+}
+
+# Delete the resignation record for an employee.
+# Called when employee status is explicitly set to a non-Left value.
+#
+# + employeeId - Employee ID string
+# + return - sql:ParameterizedQuery - Delete query for the resignation table
+isolated function deleteResignationQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `DELETE FROM resignation
+     WHERE employee_id = (SELECT id FROM employee WHERE employee_id = ${employeeId})`;
 
 # Add an additional manager for an employee.
 #
