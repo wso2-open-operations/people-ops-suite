@@ -45,9 +45,9 @@ import {
   fetchContinuousServiceRecord,
   resetContinuousService,
   validateEpf,
-  EmployeeStatus,
   type ContinuousServiceRecordInfo,
 } from "@slices/employeeSlice/employee";
+import { EmployeeStatus } from "@/types/types";
 import {
   fetchBusinessUnits,
   fetchTeams,

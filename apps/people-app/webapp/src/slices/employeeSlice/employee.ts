@@ -26,7 +26,6 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
 import { HttpStatusCode, isCancel } from "axios";
 
-export { EmployeeStatus } from "@/types/types";
 
 export interface Employee {
   employeeId: string;

@@ -38,9 +38,9 @@ import {
 } from "@mui/material";
 import { AppConfig } from "@config/config";
 import { SEARCH_MAX_LENGTH, SEARCH_REGEX } from "@config/constant";
+import { EmployeeStatus } from "@/types/types";
 import {
   EmployeeQrInfo,
-  EmployeeStatus,
   fetchQrCodeEmployees,
 } from "@slices/employeeSlice/employee";
 import { useAppDispatch } from "@slices/store";
