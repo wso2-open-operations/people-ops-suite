@@ -87,6 +87,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         csr.start_date AS continuousServiceDate,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
+        r.date AS resignationDate,
         r.final_day_in_office AS finalDayInOffice,
         r.final_day_of_employment AS finalDayOfEmployment,
         r.reason AS resignationReason,
@@ -164,6 +165,10 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             csr.start_date AS continuousServiceDate,
             e.probation_end_date AS probationEndDate,
             e.agreement_end_date AS agreementEndDate,
+            r.date AS resignationDate,
+            r.final_day_in_office AS finalDayInOffice,
+            r.final_day_of_employment AS finalDayOfEmployment,
+            r.reason AS resignationReason,
             et.name AS employmentType,
             e.employment_type_id AS employmentTypeId,
             d.career_function_id AS careerFunctionId,
@@ -220,6 +225,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             LEFT JOIN house h ON h.id = e.house_id
             LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
             LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
+            LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 
     sql:ParameterizedQuery[] filters = [];

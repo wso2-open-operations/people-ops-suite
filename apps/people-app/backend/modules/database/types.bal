@@ -903,10 +903,13 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Employee Status
     EmployeeStatus? employeeStatus = ();
     # Final day in office
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
     string? finalDayInOffice = ();
     # Final day of employment 
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
     string? finalDayOfEmployment = ();
     # Resignation reason
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
     string? resignationReason = ();
 |};
 

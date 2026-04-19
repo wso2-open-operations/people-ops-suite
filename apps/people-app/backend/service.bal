@@ -1154,7 +1154,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        if database:hasLeaverFields(payload) && payload.employeeStatus != database:EMPLOYEE_LEFT {
+        if database:hasLeaverFields(payload) && payload.employeeStatus != database:EMPLOYEE_LEFT
+                && employeeInfo.employeeStatus != database:EMPLOYEE_LEFT {
             log:printWarn("Attempt to set resignation fields on a non-Left employee",
                 employeeId = employeeId);
             return <http:BadRequest>{
