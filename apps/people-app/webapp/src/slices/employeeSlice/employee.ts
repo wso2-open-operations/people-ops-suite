@@ -70,9 +70,6 @@ export interface Employee {
   unitId: number | null;
   house: string | null;
   houseId: number | null;
-  lastWorkingDate: string | null;
-  employmentEndDate: string | null;
-  reasonForLeaving: string | null;
 }
 
 export interface EmployeeBasicInfo {
@@ -227,9 +224,9 @@ export type UpdateEmployeeJobInfoPayload = {
   houseId?: number | null;
   continuousServiceRecord?: string | null;
   employeeStatus?: EmployeeStatus | null;
-  lastWorkingDate?: string | null;
-  employmentEndDate?: string | null;
-  reasonForLeaving?: string | null;
+  finalDayInOffice?: string | null;
+  finalDayOfEmployment?: string | null;
+  resignationReason?: string | null;
 };
 
 export interface ContinuousServiceRecordInfo {

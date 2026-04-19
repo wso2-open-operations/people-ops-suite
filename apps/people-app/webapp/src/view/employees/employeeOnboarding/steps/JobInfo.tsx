@@ -1379,9 +1379,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                   const newStatus = e.target.value;
                   setFieldValue("employeeStatus", newStatus);
                   if (newStatus !== EmployeeStatus.Left) {
-                    setFieldValue("lastWorkingDate", null);
-                    setFieldValue("employmentEndDate", null);
-                    setFieldValue("reasonForLeaving", null);
+                    setFieldValue("finalDayInOffice", null);
+                    setFieldValue("finalDayOfEmployment", null);
+                    setFieldValue("resignationReason", null);
                   }
                 }}
                 onBlur={handleBlur}
@@ -1714,13 +1714,13 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 label="Last Working Date"
                 disabled={values.employeeStatus !== EmployeeStatus.Left}
                 value={
-                  values.lastWorkingDate
-                    ? dayjs(values.lastWorkingDate)
+                  values.finalDayInOffice
+                    ? dayjs(values.finalDayInOffice)
                     : null
                 }
                 onChange={(val) =>
                   setFieldValue(
-                    "lastWorkingDate",
+                    "finalDayInOffice",
                     val ? val.format("YYYY-MM-DD") : null,
                   )
                 }
@@ -1739,13 +1739,13 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 label="Employment End Date"
                 disabled={values.employeeStatus !== EmployeeStatus.Left}
                 value={
-                  values.employmentEndDate
-                    ? dayjs(values.employmentEndDate)
+                  values.finalDayOfEmployment
+                    ? dayjs(values.finalDayOfEmployment)
                     : null
                 }
                 onChange={(val) =>
                   setFieldValue(
-                    "employmentEndDate",
+                    "finalDayOfEmployment",
                     val ? val.format("YYYY-MM-DD") : null,
                   )
                 }
@@ -1763,12 +1763,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               <TextField
                 fullWidth
                 label="Reason for Leaving"
-                name="reasonForLeaving"
+                name="resignationReason"
                 disabled={values.employeeStatus !== EmployeeStatus.Left}
-                value={values.reasonForLeaving ?? ""}
+                value={values.resignationReason ?? ""}
                 onChange={(e) =>
                   setFieldValue(
-                    "reasonForLeaving",
+                    "resignationReason",
                     e.target.value || null,
                   )
                 }

@@ -91,9 +91,9 @@ export interface CreateEmployeeFormValues {
   houseId: number;
   employeeId?: string;
   employeeStatus: EmployeeStatus | null;
-  lastWorkingDate: string | null;
-  employmentEndDate: string | null;
-  reasonForLeaving: string | null;
+  finalDayInOffice: string | null;
+  finalDayOfEmployment: string | null;
+  resignationReason: string | null;
 }
 
 export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
@@ -140,9 +140,9 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   houseId: 0,
   employeeId: "",
   employeeStatus: null,
-  lastWorkingDate: null,
-  employmentEndDate: null,
-  reasonForLeaving: null,
+  finalDayInOffice: null,
+  finalDayOfEmployment: null,
+  resignationReason: null,
 };
 
 export interface ServiceLength {

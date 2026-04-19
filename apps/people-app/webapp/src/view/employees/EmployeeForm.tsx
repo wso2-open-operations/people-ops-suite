@@ -113,9 +113,9 @@ const toFormValues = (
     base.houseId = employee.houseId ?? 0;
     base.employeeId = employee.employeeId ?? "";
     base.employeeStatus = employee.employeeStatus ?? null;
-    base.lastWorkingDate = employee.lastWorkingDate ?? null;
-    base.employmentEndDate = employee.employmentEndDate ?? null;
-    base.reasonForLeaving = employee.reasonForLeaving ?? null;
+    base.finalDayInOffice = employee.finalDayInOffice ?? null;
+    base.finalDayOfEmployment = employee.finalDayOfEmployment ?? null;
+    base.resignationReason = employee.resignationReason ?? null;
   }
 
   if (personal) {
@@ -182,9 +182,9 @@ const toJobUpdatePayload = (
     ? (values.continuousServiceRecord ?? null)
     : null,
   employeeStatus: values.employeeStatus ?? null,
-  lastWorkingDate: values.lastWorkingDate ?? null,
-  employmentEndDate: values.employmentEndDate ?? null,
-  reasonForLeaving: values.reasonForLeaving ?? null,
+  finalDayInOffice: values.finalDayInOffice ?? null,
+  finalDayOfEmployment: values.finalDayOfEmployment ?? null,
+  resignationReason: values.resignationReason ?? null,
 });
 
 const toPersonalUpdatePayload = (
