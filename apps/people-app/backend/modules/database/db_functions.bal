@@ -534,9 +534,9 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
 # + payload - Job information update payload
 # + return - True if any resignation field is present
 public isolated function hasLeaverFields(UpdateEmployeeJobInfoPayload payload) returns boolean =>
-    payload.lastWorkingDate is string
-    || payload.employmentEndDate is string
-    || payload.reasonForLeaving is string;
+    payload.finalDayInOffice is string
+    || payload.finalDayOfEmployment is string
+    || payload.resignationReason is string;
 
 # Sync the resignation table row for an employee based on the job-info update payload.
 # Deletes the row when status is explicitly set to a non-Left value.

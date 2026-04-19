@@ -44,7 +44,7 @@ export interface Employee {
   gender: string | null;
   continuousServiceDate: string | null;
   jobBand: number | null;
-  employeeStatus: string;
+  employeeStatus: EmployeeStatus;
   probationEndDate: string | null;
   agreementEndDate: string | null;
   resignationDate: string | null;

@@ -87,9 +87,9 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         csr.start_date AS continuousServiceDate,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
-        r.final_day_in_office AS lastWorkingDate,
-        r.final_day_of_employment AS employmentEndDate,
-        r.reason AS reasonForLeaving,
+        r.final_day_in_office AS finalDayInOffice,
+        r.final_day_of_employment AS finalDayOfEmployment,
+        r.reason AS resignationReason,
         et.name AS employmentType,
         e.employment_type_id AS employmentTypeId,
         d.career_function_id AS careerFunctionId,
@@ -1239,12 +1239,12 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
 isolated function upsertResignationQuery(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
     returns sql:ParameterizedQuery {
 
-    string? lastWorkingDate = payload.lastWorkingDate;
-    string? employmentEndDate = payload.employmentEndDate;
-    string? reasonForLeaving = payload.reasonForLeaving;
+    string? finalDayInOffice = payload.finalDayInOffice;
+    string? finalDayOfEmployment = payload.finalDayOfEmployment;
+    string? resignationReason = payload.resignationReason;
 
     return `INSERT INTO resignation (employee_id, final_day_in_office, final_day_of_employment, reason, created_by, updated_by)
-        SELECT e.id, ${lastWorkingDate}, ${employmentEndDate}, ${reasonForLeaving}, ${updatedBy}, ${updatedBy}
+        SELECT e.id, ${finalDayInOffice}, ${finalDayOfEmployment}, ${resignationReason}, ${updatedBy}, ${updatedBy}
         FROM employee e
         WHERE e.employee_id = ${employeeId}
         ON DUPLICATE KEY UPDATE

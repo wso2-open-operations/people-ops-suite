@@ -137,12 +137,14 @@ public type Employee record {|
     string? probationEndDate;
     # Agreement end date
     string? agreementEndDate;
-    # Last working date
-    string? lastWorkingDate;
-    # Employment end date
-    string? employmentEndDate;
-    # Reason for leaving
-    string? reasonForLeaving;
+    # Resignation date
+    string? resignationDate;
+    # Final day in office
+    string? finalDayInOffice;
+    # Final day of employment
+    string? finalDayOfEmployment;
+    # Resignation reason
+    string? resignationReason;
     # Employment type
     string employmentType;
     # Employment type ID
@@ -900,15 +902,12 @@ public type UpdateEmployeeJobInfoPayload record {|
     string? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus? employeeStatus = ();
-    # Last working date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
-    string? lastWorkingDate = ();
-    # Employment end date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
-    string? employmentEndDate = ();
-    # Reason for leaving
-    @constraint:String {maxLength: 300}
-    string? reasonForLeaving = ();
+    # Final day in office
+    string? finalDayInOffice = ();
+    # Final day of employment 
+    string? finalDayOfEmployment = ();
+    # Resignation reason
+    string? resignationReason = ();
 |};
 
 # [Database] Insert type for vehicle.
