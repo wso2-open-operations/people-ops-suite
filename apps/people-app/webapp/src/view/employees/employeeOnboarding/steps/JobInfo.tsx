@@ -1723,7 +1723,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6} md={4}>
               <DatePicker
-                label="Last Working Date"
+                label="Final Day in Office"
                 disabled={values.employeeStatus !== EmployeeStatus.Left}
                 value={
                   values.finalDayInOffice
@@ -1748,7 +1748,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <DatePicker
-                label="Employment End Date"
+                label="Final Day of Employment"
                 disabled={values.employeeStatus !== EmployeeStatus.Left}
                 value={
                   values.finalDayOfEmployment
