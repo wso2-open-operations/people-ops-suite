@@ -35,10 +35,10 @@ import { FilterAltOutlined, ChevronRightOutlined } from "@mui/icons-material";
 import InboxIcon from "@mui/icons-material/Inbox";
 import ViewColumnOutlinedIcon from "@mui/icons-material/ViewColumnOutlined";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import { EmployeeStatus } from "@/types/types";
 import {
   downloadEmployeeReportByStatus,
   Employee,
-  EmployeeStatus,
   Filters,
   fetchFilteredEmployees,
   fetchManagers,

@@ -47,6 +47,7 @@ import {
   validateEpf,
   type ContinuousServiceRecordInfo,
 } from "@slices/employeeSlice/employee";
+import { EmployeeStatus } from "@/types/types";
 import {
   fetchBusinessUnits,
   fetchTeams,
@@ -70,6 +71,7 @@ import {
   InfoOutlined,
   Close,
   WidgetsOutlined,
+  LogoutOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
 
@@ -78,6 +80,7 @@ const SECTION_ICONS = {
   work: <WorkOutline />,
   location: <LocationOnOutlined />,
   event: <EventOutlined />,
+  leaver: <LogoutOutlined />,
   supervisor: <SupervisorAccountOutlined />,
   other: <WidgetsOutlined />,
 };
@@ -142,6 +145,18 @@ export const createJobInfoValidationSchema = (
     managerEmail: Yup.string().required("Lead email is required"),
     additionalManagerEmail: Yup.array()
       .of(Yup.string().email("Invalid email format"))
+      .nullable(),
+    finalDayInOffice: Yup.string()
+      .matches(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    finalDayOfEmployment: Yup.string()
+      .matches(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    resignationReason: Yup.string()
+      .max(300, "Resignation reason must be at most 300 characters")
+      .transform((value) => (value === "" ? null : value))
       .nullable(),
     employeeId: Yup.string()
       .trim()
@@ -1330,7 +1345,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               select
               fullWidth
@@ -1364,8 +1379,36 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               )}
             </TextField>
           </Grid>
+          {isEditMode ? (
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                select
+                fullWidth
+                label="Employee Status"
+                name="employeeStatus"
+                value={values.employeeStatus ?? ""}
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  setFieldValue("employeeStatus", newStatus);
+                  if (newStatus !== EmployeeStatus.Left) {
+                    setFieldValue("finalDayInOffice", null);
+                    setFieldValue("finalDayOfEmployment", null);
+                    setFieldValue("resignationReason", null);
+                  }
+                }}
+                onBlur={handleBlur}
+                sx={textFieldSx}
+              >
+                {Object.values(EmployeeStatus).map((s) => (
+                  <MenuItem key={s} value={s}>
+                    {s}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          ) : null}
           {isInternship ? (
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={3}>
               <TextField
                 select
                 fullWidth
@@ -1390,7 +1433,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             </Grid>
           ) : null}
           {isFixedTerm ? (
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={3}>
               <TextField
                 fullWidth
                 required
@@ -1406,7 +1449,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               />
             </Grid>
           ) : null}
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <DatePicker
               label="Start Date"
               value={values.startDate ? dayjs(values.startDate) : null}
@@ -1423,7 +1466,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             />
           </Grid>
           {isPermanent ? (
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={3}>
               <DatePicker
                 label="Probation End Date"
                 value={
@@ -1463,7 +1506,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             </Grid>
           ) : null}
           {showAgreementEndDate ? (
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={3}>
               <DatePicker
                 label="Agreement End Date"
                 value={
@@ -1668,6 +1711,87 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           </Grid>
         </Grid>
       </Box>
+
+      {isEditMode ? (
+        <Box>
+          <SectionHeader
+            icon={SECTION_ICONS.leaver}
+            title="Resignation Details"
+            headerBoxSx={SECTION_HEADER_BOX_SX}
+            iconBoxSx={iconBoxSx}
+          />
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={4}>
+              <DatePicker
+                label="Last Working Date"
+                disabled={values.employeeStatus !== EmployeeStatus.Left}
+                value={
+                  values.finalDayInOffice
+                    ? dayjs(values.finalDayInOffice)
+                    : null
+                }
+                onChange={(val) =>
+                  setFieldValue(
+                    "finalDayInOffice",
+                    val ? val.format("YYYY-MM-DD") : null,
+                  )
+                }
+                slotProps={{
+                  field: { clearable: true },
+                  textField: {
+                    fullWidth: true,
+                    helperText: "Last day the employee was in office",
+                    sx: textFieldSx,
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <DatePicker
+                label="Employment End Date"
+                disabled={values.employeeStatus !== EmployeeStatus.Left}
+                value={
+                  values.finalDayOfEmployment
+                    ? dayjs(values.finalDayOfEmployment)
+                    : null
+                }
+                onChange={(val) =>
+                  setFieldValue(
+                    "finalDayOfEmployment",
+                    val ? val.format("YYYY-MM-DD") : null,
+                  )
+                }
+                slotProps={{
+                  field: { clearable: true },
+                  textField: {
+                    fullWidth: true,
+                    helperText: "Official last day of employment",
+                    sx: textFieldSx,
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                fullWidth
+                label="Reason for Leaving"
+                name="resignationReason"
+                disabled={values.employeeStatus !== EmployeeStatus.Left}
+                value={values.resignationReason ?? ""}
+                onChange={(e) =>
+                  setFieldValue(
+                    "resignationReason",
+                    e.target.value || null,
+                  )
+                }
+                onBlur={handleBlur}
+                inputProps={{ maxLength: 300 }}
+                sx={textFieldSx}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+      ) : null}
     </Box>
   );
 }
