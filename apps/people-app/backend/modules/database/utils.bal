@@ -15,6 +15,7 @@
 // under the License. 
 
 import ballerina/sql;
+import ballerina/time;
 
 # Build the database select query with dynamic filter attributes.
 #
@@ -214,130 +215,231 @@ isolated function csvEscape(string? value) returns string {
     return v;
 }
 
-# Build a CSV string from a list of employees.
+# Calculate the length of service from a start date string to today.
 #
-# + employees - List of employees
+# + startDateStr - Start date in YYYY-MM-DD format
+# + return - Human-readable string like "2 Year(s) 3 Month(s)"
+isolated function calculateLengthOfService(string startDateStr) returns string {
+    time:Utc now = time:utcNow();
+    time:Civil civil = time:utcToCivil(now);
+    int todayYear = civil.year;
+    int todayMonth = civil.month;
+    int todayDay = civil.day;
+
+    string[] parts = re`-`.split(startDateStr);
+    if parts.length() != 3 {
+        return "";
+    }
+    int|error startYear = int:fromString(parts[0]);
+    int|error startMonth = int:fromString(parts[1]);
+    int|error startDay = int:fromString(parts[2]);
+    if startYear is error || startMonth is error || startDay is error {
+        return "";
+    }
+
+    // Return empty string if start date is in the future
+    if startYear > todayYear
+        || (startYear == todayYear && startMonth > todayMonth)
+        || (startYear == todayYear && startMonth == todayMonth && startDay > todayDay) {
+        return "";
+    }
+
+    int years = todayYear - startYear;
+    int months = todayMonth - startMonth;
+    // If the anniversary day hasn't been reached yet this month, subtract one month
+    if todayDay < startDay {
+        months -= 1;
+    }
+    if months < 0 {
+        years -= 1;
+        months += 12;
+    }
+    return string `${years} Year(s) ${months} Month(s)`;
+}
+
+# Resolve a comma-separated list of additional manager emails to full names using the name map.
+# Falls back to the original email if a name is not found.
+#
+# + emails - Comma-separated emails string (may be null/empty)
+# + nameMap - Map of email -> full name
+# + return - Comma-separated full names string
+isolated function resolveAdditionalManagerNames(string? emails, map<string> nameMap) returns string {
+    if emails is () || emails.trim() == "" {
+        return "";
+    }
+    string[] emailList = re`,`.split(emails);
+    string[] names = from string email in emailList
+        let string trimmed = email.trim()
+        select nameMap[trimmed.toLowerAscii()] ?: trimmed;
+    return string:'join(", ", ...names);
+}
+
+# Ordered canonical column keys for the active-employee CSV (26 columns).
+final string[] & readonly EMPLOYEE_CSV_COLUMNS = [
+    "employeeId", "firstName", "lastName", "gender", "workEmail", "company",
+    "location", "employmentType", "jobRole", "jobBand", "startDate",
+    "continuousServiceDate", "lengthOfService", "reportsTo", "additionalManager",
+    "employeeStatus", "team", "subTeam", "epfNumber", "leadEmail", "businessUnit",
+    "house", "unit", "office", "probationEndDate", "agreementEndDate"
+];
+
+# Ordered canonical column keys for the resignation CSV (26 shared + 4 resignation-specific).
+final string[] & readonly RESIGNATION_CSV_COLUMNS = [
+    "employeeId", "firstName", "lastName", "gender", "workEmail", "company",
+    "location", "employmentType", "jobRole", "jobBand", "startDate",
+    "continuousServiceDate", "lengthOfService", "reportsTo", "additionalManager",
+    "employeeStatus", "team", "subTeam", "epfNumber", "leadEmail", "businessUnit",
+    "house", "unit", "office", "probationEndDate", "agreementEndDate",
+    "resignationDate", "finalDayInOffice", "finalDayOfEmployment", "resignationReason"
+];
+
+# Map from canonical column key to its CSV header label.
+final map<string> & readonly COLUMN_HEADER_MAP = {
+    "employeeId":            "Employee Id",
+    "firstName":             "First Name",
+    "lastName":              "Last Name",
+    "gender":                "Gender",
+    "workEmail":             "Work Email",
+    "company":               "Company",
+    "location":              "Location",
+    "employmentType":        "Employment Type",
+    "jobRole":               "Job Role",
+    "jobBand":               "Job Band",
+    "startDate":             "Start Date",
+    "continuousServiceDate": "Continuous Service Date",
+    "lengthOfService":       "Length Of Service",
+    "reportsTo":             "Reports To",
+    "additionalManager":     "Additional Manager",
+    "employeeStatus":        "Employee Status",
+    "team":                  "Team (Team and Sub Team)",
+    "subTeam":               "Sub Team (Team and Sub Team)",
+    "epfNumber":             "EPF Number (EPF)",
+    "leadEmail":             "Email (Lead Email ID)",
+    "businessUnit":          "BU (Business Unit)",
+    "house":                 "House",
+    "unit":                  "Unit",
+    "office":                "Office",
+    "probationEndDate":      "Probation End Date",
+    "agreementEndDate":      "Agreement End Date",
+    "resignationDate":       "Resignation Date",
+    "finalDayInOffice":      "Final Day in Office",
+    "finalDayOfEmployment":  "Final Day of Employment",
+    "resignationReason":     "Resignation Reason"
+};
+
+# Resolve the CSV cell value for a single column key on one employee.
+#
+# + e - The employee record
+# + key - The canonical column key
+# + nameMap - Map of email -> full name (used for additionalManager)
+# + return - The escaped CSV cell string
+isolated function resolveColumnValue(Employee e, string key, map<string> nameMap) returns string {
+    match key {
+        "employeeId"            => { return csvEscape(e.employeeId); }
+        "firstName"             => { return csvEscape(e.firstName); }
+        "lastName"              => { return csvEscape(e.lastName); }
+        "gender"                => { return csvEscape(e.gender); }
+        "workEmail"             => { return csvEscape(e.workEmail); }
+        "company"               => { return csvEscape(e.company); }
+        "location"              => { return csvEscape(e.workLocation); }
+        "employmentType"        => { return csvEscape(e.employmentType); }
+        "jobRole"               => {
+            string? secTitle = e.secondaryJobTitle;
+            string jobRole = secTitle is string && secTitle.trim() != ""
+                ? e.designation + " / " + secTitle
+                : e.designation;
+            return csvEscape(jobRole);
+        }
+        "jobBand"               => { return csvEscape(e.jobBand != () ? e.jobBand.toString() : ()); }
+        "startDate"             => { return csvEscape(e.startDate); }
+        "continuousServiceDate" => { return csvEscape(e.continuousServiceDate); }
+        "lengthOfService"       => {
+            string effectiveStartDate = e.continuousServiceDate ?: e.startDate;
+            return csvEscape(calculateLengthOfService(effectiveStartDate));
+        }
+        "reportsTo"             => { return csvEscape(e.managerName); }
+        "additionalManager"     => { return csvEscape(resolveAdditionalManagerNames(e.additionalManagerEmails, nameMap)); }
+        "employeeStatus"        => { return csvEscape(e.employeeStatus); }
+        "team"                  => { return csvEscape(e.team); }
+        "subTeam"               => { return csvEscape(e.subTeam); }
+        "epfNumber"             => { return csvEscape(e.epf); }
+        "leadEmail"             => { return csvEscape(e.managerEmail); }
+        "businessUnit"          => { return csvEscape(e.businessUnit); }
+        "house"                 => { return csvEscape(e.house); }
+        "unit"                  => { return csvEscape(e.unit); }
+        "office"                => { return csvEscape(e.office); }
+        "probationEndDate"      => { return csvEscape(e.probationEndDate); }
+        "agreementEndDate"      => { return csvEscape(e.agreementEndDate); }
+        "resignationDate"       => { return csvEscape(e.resignationDate); }
+        "finalDayInOffice"      => { return csvEscape(e.finalDayInOffice); }
+        "finalDayOfEmployment"  => { return csvEscape(e.finalDayOfEmployment); }
+        "resignationReason"     => { return csvEscape(e.resignationReason); }
+        _                       => { return ""; }
+    }
+}
+
+# Shared CSV builder — used by both buildEmployeeCsv and buildResignationCsv.
+# Filters the effective column list to only keys present in defaultCols (ignores unknown keys).
+#
+# + employees - Employees to export
+# + nameMap - email->name resolution map
+# + defaultCols - Full ordered column list for this report type
+# + requestedCols - Optional subset requested by the caller; nil or empty means use defaultCols
 # + return - CSV string
-public isolated function buildEmployeeCsv(Employee[] employees) returns string {
-    string[] headers = [
-        "Employee ID",
-        "First Name",
-        "Last Name",
-        "Work Email",
-        "EPF",
-        "Company",
-        "Work Location",
-        "House",
-        "Start Date",
-        "Lead's Email",
-        "Additional Leads' Emails",
-        "Employee Status",
-        "Employment Type",
-        "Designation",
-        "Business Unit",
-        "Team",
-        "Sub Team",
-        "Unit",
-        "Office",
-        "Secondary Job Title",
-        "Probation End Date",
-        "Agreement End Date"
-    ];
+isolated function buildCsvWithColumns(
+        Employee[] employees,
+        map<string> nameMap,
+        string[] defaultCols,
+        string[]? requestedCols) returns string {
+    string[] effectiveCols;
+    if requestedCols is () || requestedCols.length() == 0 {
+        effectiveCols = defaultCols;
+    } else {
+        // Deduplicate while preserving first-seen order; ignore unknown keys.
+        map<boolean> seen = {};
+        string[] filtered = [];
+        foreach string key in requestedCols {
+            if defaultCols.indexOf(key) != () && !seen.hasKey(key) {
+                filtered.push(key);
+                seen[key] = true;
+            }
+        }
+        // Fall back to the full default set if every requested key was unknown.
+        effectiveCols = filtered.length() > 0 ? filtered : defaultCols;
+    }
+    string[] headers = from string key in effectiveCols
+        select COLUMN_HEADER_MAP[key] ?: key;
     string[] lines = [string:'join(",", ...headers)];
     foreach Employee e in employees {
-        string[] row = [
-            csvEscape(e.employeeId),
-            csvEscape(e.firstName),
-            csvEscape(e.lastName),
-            csvEscape(e.workEmail),
-            csvEscape(e.epf),
-            csvEscape(e.company),
-            csvEscape(e.workLocation),
-            csvEscape(e.house),
-            csvEscape(e.startDate),
-            csvEscape(e.managerEmail),
-            csvEscape(e.additionalManagerEmails),
-            csvEscape(e.employeeStatus),
-            csvEscape(e.employmentType),
-            csvEscape(e.designation),
-            csvEscape(e.businessUnit),
-            csvEscape(e.team),
-            csvEscape(e.subTeam),
-            csvEscape(e.unit),
-            csvEscape(e.office),
-            csvEscape(e.secondaryJobTitle),
-            csvEscape(e.probationEndDate),
-            csvEscape(e.agreementEndDate)
-        ];
+        string[] row = from string key in effectiveCols
+            select resolveColumnValue(e, key, nameMap);
         lines.push(string:'join(",", ...row));
     }
     return string:'join("\n", ...lines);
 }
 
-# Build a CSV string from a list of resigned employees.
+# Build a CSV string from a list of employees aligned with the People HR report format.
+#
+# + employees - List of employees
+# + nameMap - Map of work_email -> full name for resolving additional manager names
+# + columns - Optional column allowlist (canonical keys). nil or empty = all 26 columns.
+# + return - CSV string
+public isolated function buildEmployeeCsv(
+        Employee[] employees,
+        map<string> nameMap,
+        string[]? columns = ()) returns string {
+    return buildCsvWithColumns(employees, nameMap, EMPLOYEE_CSV_COLUMNS, columns);
+}
+
+# Build a CSV string from a list of resigned employees aligned with the People HR report format.
 #
 # + employees - List of resigned employees
+# + nameMap - Map of work_email -> full name for resolving additional manager names
+# + columns - Optional column allowlist (canonical keys). nil or empty = all 30 columns.
 # + return - CSV string
-public isolated function buildResignationCsv(Employee[] employees) returns string {
-    string[] headers = [
-        "Employee ID",
-        "First Name",
-        "Last Name",
-        "Work Email",
-        "EPF",
-        "Company",
-        "Work Location",
-        "House",
-        "Start Date",
-        "Lead's Email",
-        "Additional Leads' Emails",
-        "Employee Status",
-        "Employment Type",
-        "Designation",
-        "Business Unit",
-        "Team",
-        "Sub Team",
-        "Unit",
-        "Office",
-        "Secondary Job Title",
-        "Probation End Date",
-        "Agreement End Date",
-        "Resignation Date",
-        "Final Day in Office",
-        "Final Day of Employment",
-        "Resignation Reason"
-    ];
-    string[] lines = [string:'join(",", ...headers)];
-    foreach Employee e in employees {
-        string[] row = [
-            csvEscape(e.employeeId),
-            csvEscape(e.firstName),
-            csvEscape(e.lastName),
-            csvEscape(e.workEmail),
-            csvEscape(e.epf),
-            csvEscape(e.company),
-            csvEscape(e.workLocation),
-            csvEscape(e.house),
-            csvEscape(e.startDate),
-            csvEscape(e.managerEmail),
-            csvEscape(e.additionalManagerEmails),
-            csvEscape(e.employeeStatus),
-            csvEscape(e.employmentType),
-            csvEscape(e.designation),
-            csvEscape(e.businessUnit),
-            csvEscape(e.team),
-            csvEscape(e.subTeam),
-            csvEscape(e.unit),
-            csvEscape(e.office),
-            csvEscape(e.secondaryJobTitle),
-            csvEscape(e.probationEndDate),
-            csvEscape(e.agreementEndDate),
-            csvEscape(e.resignationDate),
-            csvEscape(e.finalDayInOffice),
-            csvEscape(e.finalDayOfEmployment),
-            csvEscape(e.resignationReason)
-        ];
-        lines.push(string:'join(",", ...row));
-    }
-    return string:'join("\n", ...lines);
+public isolated function buildResignationCsv(
+        Employee[] employees,
+        map<string> nameMap,
+        string[]? columns = ()) returns string {
+    return buildCsvWithColumns(employees, nameMap, RESIGNATION_CSV_COLUMNS, columns);
 }

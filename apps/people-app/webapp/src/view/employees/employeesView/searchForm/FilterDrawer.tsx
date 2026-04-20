@@ -82,6 +82,12 @@ type FilterDrawerProps = {
   offices: Office[];
   /** When true, renders a "Direct Reports Only" toggle inside the drawer (My Team view). */
   showDirectReportsFilter?: boolean;
+  /** When false, hides the Employee Status autocomplete (report views where status is fixed). Default true. */
+  showEmployeeStatusFilter?: boolean;
+  /** When false, hides the "Exclude future joiners" toggle. Default true. */
+  showExcludeFutureFilter?: boolean;
+  /** When true, renders an "Include marked leavers" toggle (Active Employees report). Default false. */
+  showIncludeMarkedLeaversFilter?: boolean;
 };
 
 export function FilterDrawer({
@@ -102,6 +108,9 @@ export function FilterDrawer({
   companies,
   offices,
   showDirectReportsFilter = false,
+  showEmployeeStatusFilter = true,
+  showExcludeFutureFilter = true,
+  showIncludeMarkedLeaversFilter = false,
 }: FilterDrawerProps) {
   const theme = useTheme();
   const [draft, setDraft] = useState<EmployeeSearchPayload>(appliedFilter);
@@ -271,19 +280,21 @@ export function FilterDrawer({
                   <BaseTextField {...params} size="small" label="Gender" />
                 )}
               />
-              <Autocomplete<EmployeeStatus, false, false, false>
-                options={sortAndFormatOptions(Object.values(EmployeeStatus), (s) => s)}
-                getOptionLabel={(o) => toSentenceCase(o)}
-                value={Object.values(EmployeeStatus).find((es) => es === draft.filters.employeeStatus) ?? null}
-                autoHighlight
-                autoSelect
-                onChange={(_, selected) =>
-                  set({ employeeStatus: selected || undefined })
-                }
-                renderInput={(params) => (
-                  <BaseTextField {...params} size="small" label="Employee Status" />
-                )}
-              />
+              {showEmployeeStatusFilter && (
+                <Autocomplete<EmployeeStatus, false, false, false>
+                  options={sortAndFormatOptions(Object.values(EmployeeStatus), (s) => s)}
+                  getOptionLabel={(o) => toSentenceCase(o)}
+                  value={Object.values(EmployeeStatus).find((es) => es === draft.filters.employeeStatus) ?? null}
+                  autoHighlight
+                  autoSelect
+                  onChange={(_, selected) =>
+                    set({ employeeStatus: selected || undefined })
+                  }
+                  renderInput={(params) => (
+                    <BaseTextField {...params} size="small" label="Employee Status" />
+                  )}
+                />
+              )}
               {showDirectReportsFilter && (
                 <FormControlLabel
                   control={
@@ -299,19 +310,36 @@ export function FilterDrawer({
                   label="Direct Reports Only"
                 />
               )}
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={draft.filters.excludeFutureStartDate === true}
-                    onChange={(e) => set({ excludeFutureStartDate: e.target.checked ? true : undefined })}
-                    sx={{
-                      "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
-                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
-                    }}
-                  />
-                }
-                label="Exclude future joiners"
-              />
+              {showExcludeFutureFilter && (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={draft.filters.excludeFutureStartDate === true}
+                      onChange={(e) => set({ excludeFutureStartDate: e.target.checked ? true : undefined })}
+                      sx={{
+                        "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
+                        "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
+                      }}
+                    />
+                  }
+                  label="Exclude future joiners"
+                />
+              )}
+              {showIncludeMarkedLeaversFilter && (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={draft.filters.includeMarkedLeavers !== false}
+                      onChange={(e) => set({ includeMarkedLeavers: e.target.checked })}
+                      sx={{
+                        "& .MuiSwitch-switchBase.Mui-checked": { color: theme.palette.secondary.contrastText },
+                        "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: theme.palette.secondary.contrastText, opacity: 0.7 },
+                      }}
+                    />
+                  }
+                  label="Include marked leavers"
+                />
+              )}
             </Stack>
           </Grid>
 
@@ -319,6 +347,14 @@ export function FilterDrawer({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+        <Button
+          variant="text"
+          color="inherit"
+          sx={{ textTransform: "none" }}
+          onClick={() => setDrawerOpen(false)}
+        >
+          Close
+        </Button>
         <Button
           variant="outlined"
           color="primary"
@@ -328,7 +364,7 @@ export function FilterDrawer({
           Clear all
         </Button>
         <Button
-          variant="outlined"
+          variant="contained"
           color="secondary"
           sx={{ textTransform: "none" }}
           onClick={() => {
