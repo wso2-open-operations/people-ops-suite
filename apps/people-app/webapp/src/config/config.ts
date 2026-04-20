@@ -63,13 +63,7 @@ export const AppConfig = {
     employeeQrCode: (employeeId: string) => `${SERVICE_BASE_URL}/employees/${employeeId}/qr-code`,
     qrCodesSearch: SERVICE_BASE_URL + "/reports/qr-codes/search",
 
-    reportsEmployees: (status?: string, excludeFutureStartDate?: boolean) => {
-      const params = new URLSearchParams();
-      if (status) params.set("status", status);
-      if (excludeFutureStartDate !== undefined) params.set("excludeFutureStartDate", String(excludeFutureStartDate));
-      const qs = params.toString();
-      return SERVICE_BASE_URL + `/reports/employees/generate` + (qs ? `?${qs}` : "");
-    },
+    reportsEmployees: SERVICE_BASE_URL + "/reports/employees/generate",
 
     businessUnits: SERVICE_BASE_URL + "/business-units",
     careerFunctions: SERVICE_BASE_URL + "/career-functions",

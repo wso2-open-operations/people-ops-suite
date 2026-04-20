@@ -28,6 +28,8 @@ export default function ActiveEmployeesReportView() {
       page={
         <EmployeeReportTable
           employeeStatus={EmployeeStatus.Active}
+          showFilterDrawer
+          showIncludeMarkedLeaversFilter
           previewAlertText={
             <>
               Showing a preview of the first 10 active employees. <br />

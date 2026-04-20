@@ -28,6 +28,7 @@ export default function ResignationReportView() {
       page={
         <EmployeeReportTable
           employeeStatus={EmployeeStatus.Left}
+          showFilterDrawer
           showExcludeFutureFilter={false}
           previewAlertText={
             <>
