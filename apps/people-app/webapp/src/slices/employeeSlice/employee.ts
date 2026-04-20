@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { EmergencyContact, State } from "@/types/types";
+import { EmergencyContact, EmployeeStatus, State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import {
   DEFAULT_LIMIT_VALUE,
@@ -25,6 +25,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
 import { HttpStatusCode, isCancel } from "axios";
+
 
 export interface Employee {
   employeeId: string;
@@ -37,10 +38,18 @@ export interface Employee {
   workLocation: string;
   startDate: string;
   managerEmail: string;
+  managerName: string | null;
   additionalManagerEmails: string | null;
-  employeeStatus: string;
+  gender: string | null;
+  continuousServiceDate: string | null;
+  jobBand: number | null;
+  employeeStatus: EmployeeStatus;
   probationEndDate: string | null;
   agreementEndDate: string | null;
+  resignationDate: string | null;
+  finalDayInOffice: string | null;
+  finalDayOfEmployment: string | null;
+  resignationReason: string | null;
   employmentType: string;
   designation: string;
   company: string;
@@ -61,12 +70,6 @@ export interface Employee {
   unitId: number | null;
   house: string | null;
   houseId: number | null;
-}
-
-export enum EmployeeStatus {
-  Active = "Active",
-  Left = "Left",
-  MarkedLeaver = "Marked leaver",
 }
 
 export interface EmployeeBasicInfo {
@@ -116,7 +119,7 @@ export interface EmployeeQrInfo {
   employeeThumbnail: string | null;
   house: string | null;
   houseId: number | null;
-  employeeStatus: string;
+  employeeStatus: EmployeeStatus;
 }
 
 export type QrEmployeesResponse = {
@@ -125,7 +128,7 @@ export type QrEmployeesResponse = {
 };
 
 export type QrCodeSearchFilters = {
-  employeeStatus?: string;
+  employeeStatus?: EmployeeStatus;
 };
 
 export type QrCodeSearchPayload = {
@@ -150,6 +153,7 @@ export type Filters = {
   employeeStatus?: EmployeeStatus;
   directReports?: boolean;
   excludeFutureStartDate?: boolean;
+  includeMarkedLeavers?: boolean;
 };
 
 export type Pagination = {
@@ -219,6 +223,10 @@ export type UpdateEmployeeJobInfoPayload = {
   unitId?: number | null;
   houseId?: number | null;
   continuousServiceRecord?: string | null;
+  employeeStatus?: EmployeeStatus | null;
+  finalDayInOffice?: string | null;
+  finalDayOfEmployment?: string | null;
+  resignationReason?: string | null;
 };
 
 export interface ContinuousServiceRecordInfo {
@@ -520,13 +528,13 @@ export const updateEmployeeJobInfo = createAsyncThunk(
 export const downloadEmployeeReportByStatus = createAsyncThunk(
   "employee/downloadEmployeeReportByStatus",
   async (
-    { status, excludeFutureStartDate }: { status: EmployeeStatus | undefined; excludeFutureStartDate?: boolean },
+    { filters, columns }: { filters: Filters; columns?: string[] },
     { dispatch, rejectWithValue },
   ) => {
     try {
       const response = await APIService.getInstance().post(
-        AppConfig.serviceUrls.reportsEmployees(status, excludeFutureStartDate),
-        {},
+        AppConfig.serviceUrls.reportsEmployees,
+        { filters, ...(columns && columns.length > 0 ? { columns } : {}) },
         { responseType: "text" },
       );
       return response.data as string;

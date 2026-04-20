@@ -16,7 +16,7 @@
 
 import CommonPage from "@layout/pages/CommonPage";
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import { EmployeeStatus } from "@slices/employeeSlice/employee";
+import { EmployeeStatus } from "@/types/types";
 import EmployeeReportTable from "./EmployeeReportTable";
 
 export default function ActiveEmployeesReportView() {
@@ -28,6 +28,8 @@ export default function ActiveEmployeesReportView() {
       page={
         <EmployeeReportTable
           employeeStatus={EmployeeStatus.Active}
+          showFilterDrawer
+          showIncludeMarkedLeaversFilter
           previewAlertText={
             <>
               Showing a preview of the first 10 active employees. <br />

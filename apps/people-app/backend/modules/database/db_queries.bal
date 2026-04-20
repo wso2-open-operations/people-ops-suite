@@ -73,7 +73,9 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         e.work_location AS workLocation,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
+        COALESCE(CONCAT(mgr.first_name, ' ', mgr.last_name), '') AS managerName,
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
+        pi.gender AS gender,
         (
             SELECT COUNT(1)
             FROM employee e2
@@ -82,8 +84,13 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         ) AS subordinateCount,
         e.employee_status AS employeeStatus,
         e.continuous_service_record AS continuousServiceRecord,
+        csr.start_date AS continuousServiceDate,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
+        r.date AS resignationDate,
+        r.final_day_in_office AS finalDayInOffice,
+        r.final_day_of_employment AS finalDayOfEmployment,
+        r.reason AS resignationReason,
         et.name AS employmentType,
         e.employment_type_id AS employmentTypeId,
         d.career_function_id AS careerFunctionId,
@@ -122,6 +129,10 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN unit u ON e.unit_id = u.id
         LEFT JOIN house h ON e.house_id = h.id
+        LEFT JOIN personal_info pi ON pi.id = e.personal_info_id
+        LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
+        LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
+        LEFT JOIN resignation r ON r.employee_id = e.id
     WHERE
         e.employee_id = ${employeeId};`;
 
@@ -146,17 +157,24 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.work_location AS workLocation,
             e.start_date AS startDate,
             e.manager_email AS managerEmail,
+            COALESCE(CONCAT(mgr.first_name, ' ', mgr.last_name), '') AS managerName,
             COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
             COALESCE(sc.subordinateCount, 0) AS subordinateCount,
             e.employee_status AS employeeStatus,
             e.continuous_service_record AS continuousServiceRecord,
+            csr.start_date AS continuousServiceDate,
             e.probation_end_date AS probationEndDate,
             e.agreement_end_date AS agreementEndDate,
+            r.date AS resignationDate,
+            r.final_day_in_office AS finalDayInOffice,
+            r.final_day_of_employment AS finalDayOfEmployment,
+            r.reason AS resignationReason,
             et.name AS employmentType,
             e.employment_type_id AS employmentTypeId,
             d.career_function_id AS careerFunctionId,
             d.designation AS designation,
             e.designation_id AS designationId,
+            d.job_band AS jobBand,
             e.secondary_job_title AS secondaryJobTitle,
             o.name AS office,
             e.office_id AS officeId,
@@ -172,10 +190,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.company_id AS companyId,
             h.name AS house,
             e.house_id AS houseId,
-            r.date                    AS resignationDate,
-            r.final_day_in_office     AS finalDayInOffice,
-            r.final_day_of_employment AS finalDayOfEmployment,
-            r.reason                  AS resignationReason,
+            pi.gender AS gender,
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
@@ -185,6 +200,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
                     GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',')
                     AS additionalManagerEmails
                 FROM employee_additional_managers
+                WHERE is_active = 1
                 GROUP BY employee_pk_id
             ) eam ON eam.employee_pk_id = e.id
 
@@ -207,6 +223,8 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             INNER JOIN sub_team st ON st.id = e.sub_team_id
             LEFT JOIN unit u ON u.id = e.unit_id
             LEFT JOIN house h ON h.id = e.house_id
+            LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
+            LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
             LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 
@@ -263,7 +281,14 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     appendStringFilter(filters, payload.filters.residentNumber, `pi.resident_number = ${payload.filters.residentNumber}`);
     appendStringFilter(filters, payload.filters.city, `LOWER(pi.city) = LOWER(${payload.filters.city})`);
     appendStringFilter(filters, payload.filters.country, `LOWER(pi.country) = LOWER(${payload.filters.country})`);
-    appendStringFilter(filters, payload.filters.employeeStatus, `LOWER(e.employee_status) = LOWER(${payload.filters.employeeStatus})`);
+    string? statusFilter = payload.filters.employeeStatus;
+    if statusFilter is string {
+        if payload.filters.includeMarkedLeavers == true {
+            filters.push(`(LOWER(e.employee_status) = LOWER(${statusFilter}) OR e.employee_status = 'Marked leaver')`);
+        } else {
+            filters.push(`LOWER(e.employee_status) = LOWER(${statusFilter})`);
+        }
+    }
 
     if payload.filters.managerEmail is string {
         filters.push(`LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${payload.filters.managerEmail}, '%'))`);
@@ -1195,6 +1220,10 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         }
     }
 
+    if payload.employeeStatus is EmployeeStatus {
+        updates.push(`employee_status = ${payload.employeeStatus}`);
+    }
+
     updates.push(`updated_by = ${updatedBy}`);
 
     sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
@@ -1204,6 +1233,49 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
     `);
 
     return finalQuery;
+}
+
+# Upsert the resignation record for an employee.
+# Fields not provided in the payload (null) preserve the existing DB value.
+#
+# + employeeId - Employee ID string
+# + payload - Job information update payload containing leaver fields
+# + updatedBy - User performing the update
+# + return - sql:ParameterizedQuery - Upsert query for the resignation table
+isolated function upsertResignationQuery(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns sql:ParameterizedQuery {
+
+    string? finalDayInOffice = payload.finalDayInOffice;
+    string? finalDayOfEmployment = payload.finalDayOfEmployment;
+    string? resignationReason = payload.resignationReason;
+
+    return `INSERT INTO resignation
+        (
+            employee_id,
+            date,
+            final_day_in_office,
+            final_day_of_employment,
+            reason,
+            created_by,
+            updated_by
+        )
+    SELECT
+        e.id,
+        CURRENT_TIMESTAMP(6),
+        ${finalDayInOffice},
+        ${finalDayOfEmployment},
+        ${resignationReason},
+        ${updatedBy},
+        ${updatedBy}
+    FROM employee e
+    WHERE e.employee_id = ${employeeId}
+    ON DUPLICATE KEY UPDATE
+        date                    = IF(date IS NULL, CURRENT_TIMESTAMP(6), date),
+        final_day_in_office     = IF(VALUES(final_day_in_office) IS NOT NULL, VALUES(final_day_in_office), final_day_in_office),
+        final_day_of_employment = IF(VALUES(final_day_of_employment) IS NOT NULL, VALUES(final_day_of_employment), final_day_of_employment),
+        reason                  = IF(VALUES(reason) IS NOT NULL, VALUES(reason), reason),
+        updated_by              = ${updatedBy},
+        updated_on              = CURRENT_TIMESTAMP(6)`;
 }
 
 # Add an additional manager for an employee.
@@ -1616,3 +1688,9 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
 
     return sql:queryConcat(mainQuery, ` ORDER BY pr.booking_date DESC, pr.created_on DESC`);
 }
+
+# Fetch a mapping of work email to full name for all employees.
+#
+# + return - Parameterized query returning work_email and full_name columns
+isolated function getEmployeeEmailToNameMapQuery() returns sql:ParameterizedQuery =>
+    `SELECT work_email, CONCAT(first_name, ' ', last_name) AS full_name FROM employee;`;

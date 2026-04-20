@@ -121,12 +121,18 @@ public type Employee record {|
     string startDate;
     # Manager email
     string managerEmail;
+    # Manager full name (resolved from DB join)
+    string? managerName;
     # Additional manager email
     string? additionalManagerEmails;
+    # Gender (from employee personal info)
+    string? gender;
     # Employee status
     string employeeStatus;
     # Continuous service record reference (Employee ID)
     string? continuousServiceRecord;
+    # Start date of the continuous service record (resolved via DB join)
+    string? continuousServiceDate;
     # Probation end date
     string? probationEndDate;
     # Agreement end date
@@ -149,6 +155,8 @@ public type Employee record {|
     string designation;
     # Designation ID
     int designationId;
+    # Job band
+    int? jobBand;
     # Job role of the user
     string? secondaryJobTitle;
     # Office
@@ -229,6 +237,16 @@ public type EmployeeFilters record {|
     boolean? directReports = ();
     # When true, excludes employees whose start date is in the future
     boolean? excludeFutureStartDate = ();
+    # When true, includes employees with "Marked leaver" status alongside the primary employeeStatus filter
+    boolean? includeMarkedLeavers = ();
+|};
+
+# Payload for the employee report generation endpoint.
+public type EmployeeReportPayload record {|
+    # Filters to apply to the employee export; mirrors EmployeeFilters used by /employees/search
+    EmployeeFilters filters = {};
+    # Optional column allowlist (canonical key strings). nil or empty = all columns for the report type.
+    string[]? columns = ();
 |};
 
 # Pagination information.
@@ -633,6 +651,16 @@ public type EmergencyContactRow record {|
     string mobile;
 |};
 
+# [Database] Employee name row mapping for email-to-name lookups.
+type EmployeeNameRow record {|
+    # Work email of the employee
+    @sql:Column {name: "work_email"}
+    string workEmail;
+    # Full name of the employee
+    @sql:Column {name: "full_name"}
+    string fullName;
+|};
+
 # Additional manager email row mapping.
 public type AdditionalManagerEmailRow record {|
     # Additional manager email
@@ -874,6 +902,14 @@ public type UpdateEmployeeJobInfoPayload record {|
     string? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus? employeeStatus = ();
+    # Final day in office
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? finalDayInOffice = ();
+    # Final day of employment 
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? finalDayOfEmployment = ();
+    # Resignation reason
+    string? resignationReason = ();
 |};
 
 # [Database] Insert type for vehicle.
