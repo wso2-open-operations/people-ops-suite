@@ -1156,6 +1156,17 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        if database:hasLeaverFields(payload) && payload.employeeStatus != database:EMPLOYEE_LEFT
+                && employeeInfo.employeeStatus != database:EMPLOYEE_LEFT {
+            log:printWarn("Attempt to set resignation fields on a non-Left employee",
+                employeeId = employeeId);
+            return <http:BadRequest>{
+                body: {
+                    message: "Resignation details can only be set when employee status is 'Left'"
+                }
+            };
+        }
+
         error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);
         if updateResult is error {
             string customErr = string `Error occurred while updating employee job information for ID: ${employeeId}`;

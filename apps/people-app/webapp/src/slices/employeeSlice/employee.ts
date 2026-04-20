@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { EmergencyContact, State } from "@/types/types";
+import { EmergencyContact, EmployeeStatus, State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import {
   DEFAULT_LIMIT_VALUE,
@@ -25,6 +25,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
 import { HttpStatusCode, isCancel } from "axios";
+
 
 export interface Employee {
   employeeId: string;
@@ -42,7 +43,7 @@ export interface Employee {
   gender: string | null;
   continuousServiceDate: string | null;
   jobBand: number | null;
-  employeeStatus: string;
+  employeeStatus: EmployeeStatus;
   probationEndDate: string | null;
   agreementEndDate: string | null;
   resignationDate: string | null;
@@ -69,12 +70,6 @@ export interface Employee {
   unitId: number | null;
   house: string | null;
   houseId: number | null;
-}
-
-export enum EmployeeStatus {
-  Active = "Active",
-  Left = "Left",
-  MarkedLeaver = "Marked leaver",
 }
 
 export interface EmployeeBasicInfo {
@@ -124,7 +119,7 @@ export interface EmployeeQrInfo {
   employeeThumbnail: string | null;
   house: string | null;
   houseId: number | null;
-  employeeStatus: string;
+  employeeStatus: EmployeeStatus;
 }
 
 export type QrEmployeesResponse = {
@@ -133,7 +128,7 @@ export type QrEmployeesResponse = {
 };
 
 export type QrCodeSearchFilters = {
-  employeeStatus?: string;
+  employeeStatus?: EmployeeStatus;
 };
 
 export type QrCodeSearchPayload = {
@@ -228,6 +223,10 @@ export type UpdateEmployeeJobInfoPayload = {
   unitId?: number | null;
   houseId?: number | null;
   continuousServiceRecord?: string | null;
+  employeeStatus?: EmployeeStatus | null;
+  finalDayInOffice?: string | null;
+  finalDayOfEmployment?: string | null;
+  resignationReason?: string | null;
 };
 
 export interface ContinuousServiceRecordInfo {

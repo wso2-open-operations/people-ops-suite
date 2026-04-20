@@ -16,7 +16,7 @@
 
 import CommonPage from "@layout/pages/CommonPage";
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import { EmployeeStatus } from "@slices/employeeSlice/employee";
+import { EmployeeStatus } from "@/types/types";
 import EmployeeReportTable from "./EmployeeReportTable";
 
 export default function ActiveEmployeesReportView() {

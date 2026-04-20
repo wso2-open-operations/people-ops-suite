@@ -909,6 +909,14 @@ public type UpdateEmployeeJobInfoPayload record {|
     string? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus? employeeStatus = ();
+    # Final day in office
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? finalDayInOffice = ();
+    # Final day of employment 
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? finalDayOfEmployment = ();
+    # Resignation reason
+    string? resignationReason = ();
 |};
 
 # [Database] Insert type for vehicle.

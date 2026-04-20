@@ -16,7 +16,7 @@
 
 import CommonPage from "@layout/pages/CommonPage";
 import PersonOffIcon from "@mui/icons-material/PersonOff";
-import { EmployeeStatus } from "@slices/employeeSlice/employee";
+import { EmployeeStatus } from "@/types/types";
 import EmployeeReportTable from "./EmployeeReportTable";
 
 export default function ResignationReportView() {
