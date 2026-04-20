@@ -146,6 +146,18 @@ export const createJobInfoValidationSchema = (
     additionalManagerEmail: Yup.array()
       .of(Yup.string().email("Invalid email format"))
       .nullable(),
+    finalDayInOffice: Yup.string()
+      .matches(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    finalDayOfEmployment: Yup.string()
+      .matches(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    resignationReason: Yup.string()
+      .max(300, "Resignation reason must be at most 300 characters")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
     employeeId: Yup.string()
       .trim()
       .transform((value) => (value === "" ? null : value))

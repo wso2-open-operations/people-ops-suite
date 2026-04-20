@@ -909,7 +909,6 @@ public type UpdateEmployeeJobInfoPayload record {|
     @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
     string? finalDayOfEmployment = ();
     # Resignation reason
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
     string? resignationReason = ();
 |};
 

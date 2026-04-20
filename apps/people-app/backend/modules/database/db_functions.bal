@@ -539,7 +539,7 @@ public isolated function hasLeaverFields(UpdateEmployeeJobInfoPayload payload) r
     || payload.resignationReason is string;
 
 # Sync the resignation table row for an employee based on the job-info update payload.
-# Deletes the row when status is explicitly set to a non-Left value.
+# Retains any existing resignation record when the employee is reactivated, so historical details are preserved.
 #
 # + employeeId - Employee ID
 # + payload - Job information update payload
@@ -547,13 +547,6 @@ public isolated function hasLeaverFields(UpdateEmployeeJobInfoPayload payload) r
 # + return - Nil or error
 isolated function syncResignationRecord(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
     returns error? {
-
-    EmployeeStatus? newStatus = payload.employeeStatus;
-
-    if newStatus is EmployeeStatus && newStatus != EMPLOYEE_LEFT {
-        _ = check databaseClient->execute(deleteResignationQuery(employeeId));
-        return;
-    }
 
     if hasLeaverFields(payload) {
         _ = check databaseClient->execute(upsertResignationQuery(employeeId, payload, updatedBy));

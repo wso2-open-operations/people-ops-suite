@@ -1249,26 +1249,34 @@ isolated function upsertResignationQuery(string employeeId, UpdateEmployeeJobInf
     string? finalDayOfEmployment = payload.finalDayOfEmployment;
     string? resignationReason = payload.resignationReason;
 
-    return `INSERT INTO resignation (employee_id, final_day_in_office, final_day_of_employment, reason, created_by, updated_by)
-        SELECT e.id, ${finalDayInOffice}, ${finalDayOfEmployment}, ${resignationReason}, ${updatedBy}, ${updatedBy}
-        FROM employee e
-        WHERE e.employee_id = ${employeeId}
-        ON DUPLICATE KEY UPDATE
-            final_day_in_office     = IF(VALUES(final_day_in_office) IS NOT NULL, VALUES(final_day_in_office), final_day_in_office),
-            final_day_of_employment = IF(VALUES(final_day_of_employment) IS NOT NULL, VALUES(final_day_of_employment), final_day_of_employment),
-            reason                  = IF(VALUES(reason) IS NOT NULL, VALUES(reason), reason),
-            updated_by              = ${updatedBy},
-            updated_on              = CURRENT_TIMESTAMP(6)`;
+    return `INSERT INTO resignation
+        (
+            employee_id,
+            date,
+            final_day_in_office,
+            final_day_of_employment,
+            reason,
+            created_by,
+            updated_by
+        )
+    SELECT
+        e.id,
+        CURRENT_TIMESTAMP(6),
+        ${finalDayInOffice},
+        ${finalDayOfEmployment},
+        ${resignationReason},
+        ${updatedBy},
+        ${updatedBy}
+    FROM employee e
+    WHERE e.employee_id = ${employeeId}
+    ON DUPLICATE KEY UPDATE
+        date                    = IF(date IS NULL, CURRENT_TIMESTAMP(6), date),
+        final_day_in_office     = IF(VALUES(final_day_in_office) IS NOT NULL, VALUES(final_day_in_office), final_day_in_office),
+        final_day_of_employment = IF(VALUES(final_day_of_employment) IS NOT NULL, VALUES(final_day_of_employment), final_day_of_employment),
+        reason                  = IF(VALUES(reason) IS NOT NULL, VALUES(reason), reason),
+        updated_by              = ${updatedBy},
+        updated_on              = CURRENT_TIMESTAMP(6)`;
 }
-
-# Delete the resignation record for an employee.
-# Called when employee status is explicitly set to a non-Left value.
-#
-# + employeeId - Employee ID string
-# + return - sql:ParameterizedQuery - Delete query for the resignation table
-isolated function deleteResignationQuery(string employeeId) returns sql:ParameterizedQuery =>
-    `DELETE FROM resignation
-     WHERE employee_id = (SELECT id FROM employee WHERE employee_id = ${employeeId})`;
 
 # Add an additional manager for an employee.
 #
