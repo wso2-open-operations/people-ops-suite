@@ -20,7 +20,6 @@ import people.qr;
 import people.wso2_coin;
 
 import ballerina/http;
-import ballerina/io;
 import ballerina/log;
 import ballerina/regex;
 import ballerina/time;
@@ -107,8 +106,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups) {
             privileges.push(authorization:SERVICE_DESK_PRIVILEGE);
         }
-
-        io:println("privilages : ", privileges);
 
         boolean|error isLeadUser = database:isLead(userInfo.email);
         if isLeadUser is error {
