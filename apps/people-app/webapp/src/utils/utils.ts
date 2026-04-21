@@ -398,3 +398,12 @@ export function buildAddModalOptions(
     canAdd: !existingIds.includes(item.id),
   }));
 }
+
+export function capitalizeWords(str: string) {
+  return str
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(" ");
+}
