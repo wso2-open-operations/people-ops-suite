@@ -375,7 +375,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/business-unit/team`,
+          url: `${AppConfig.serviceUrls.organization}/business-units/teams`,
           method: "POST",
           body: payload,
         });
@@ -412,7 +412,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/team/sub-team`,
+          url: `${AppConfig.serviceUrls.organization}/teams/sub-teams`,
           method: "POST",
           body: payload,
         });
@@ -449,7 +449,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ payload }, _api, _extraOptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/sub-team/unit`,
+          url: `${AppConfig.serviceUrls.organization}/sub-teams/units`,
           method: "POST",
           body: payload,
         });
@@ -486,7 +486,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ buId, payload }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}/rename`,
+          url: `${AppConfig.serviceUrls.organization}/business-units/${buId}/rename`,
           method: "POST",
           body: {
             name: payload.name,
@@ -526,7 +526,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ teamId, payload }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/team/${teamId}/rename`,
+          url: `${AppConfig.serviceUrls.organization}/teams/${teamId}/rename`,
           method: "POST",
           body: {
             name: payload.name,
@@ -566,7 +566,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ subTeamId, payload }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/sub-team/${subTeamId}/rename`,
+          url: `${AppConfig.serviceUrls.organization}/sub-teams/${subTeamId}/rename`,
           method: "POST",
           body: {
             name: payload.name,
@@ -606,7 +606,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ unitId, payload }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/unit/${unitId}/rename`,
+          url: `${AppConfig.serviceUrls.organization}/units/${unitId}/rename`,
           method: "POST",
           body: {
             name: payload.name,
@@ -646,7 +646,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ buId, payload }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}`,
+          url: `${AppConfig.serviceUrls.organization}/business-units/${buId}`,
           method: "PATCH",
           body: {
             ...payload,
@@ -685,7 +685,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ teamId, payload }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/team/${teamId}`,
+          url: `${AppConfig.serviceUrls.organization}/teams/${teamId}`,
           method: "PATCH",
           body: {
             ...payload,
@@ -724,7 +724,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ subTeamId, payload }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/sub-team/${subTeamId}`,
+          url: `${AppConfig.serviceUrls.organization}/sub-teams/${subTeamId}`,
           method: "PATCH",
           body: {
             ...payload,
@@ -763,7 +763,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ unitId, payload }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/unit/${unitId}`,
+          url: `${AppConfig.serviceUrls.organization}/units/${unitId}`,
           method: "PATCH",
           body: {
             ...payload,
@@ -806,7 +806,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ buId, teamId, payload }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}/team/${teamId}`,
+          url: `${AppConfig.serviceUrls.organization}/business-units/${buId}/teams/${teamId}`,
           method: "PATCH",
           body: {
             ...payload,
@@ -854,7 +854,7 @@ export const organizationApi = createApi({
         baseQuery,
       ) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/team/${businessUnitTeamId}/sub-team/${subTeamId}`,
+          url: `${AppConfig.serviceUrls.organization}/teams/${businessUnitTeamId}/sub-teams/${subTeamId}`,
           method: "PATCH",
           body: {
             ...payload,
@@ -902,7 +902,7 @@ export const organizationApi = createApi({
         baseQuery,
       ) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/sub-team/${businessUnitTeamSubTeamId}/unit/${unitId}`,
+          url: `${AppConfig.serviceUrls.organization}/sub-teams/${businessUnitTeamSubTeamId}/units/${unitId}`,
           method: "PATCH",
           body: {
             ...payload,
@@ -938,7 +938,7 @@ export const organizationApi = createApi({
     deleteBusinessUnit: builder.mutation<ApiMessageOnSuccess, { buId: number }>({
       queryFn: async ({ buId }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}`,
+          url: `${AppConfig.serviceUrls.organization}/business-units/${buId}`,
           method: "DELETE",
         });
 
@@ -973,7 +973,7 @@ export const organizationApi = createApi({
       {
         queryFn: async ({ buId, teamId }, _api, _extraoptions, baseQuery) => {
           const result = await baseQuery({
-            url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}/team/${teamId}`,
+            url: `${AppConfig.serviceUrls.organization}/business-units/${buId}/teams/${teamId}`,
             method: "DELETE",
           });
           if (result.error) return { error: result.error };
@@ -1010,7 +1010,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ businessUnitTeamId, subTeamId }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/team/${businessUnitTeamId}/sub-team/${subTeamId}`,
+          url: `${AppConfig.serviceUrls.organization}/teams/${businessUnitTeamId}/sub-teams/${subTeamId}`,
           method: "DELETE",
         });
         if (result.error) return { error: result.error };
@@ -1046,7 +1046,7 @@ export const organizationApi = createApi({
     >({
       queryFn: async ({ businessUnitTeamSubTeamId, unitId }, _api, _extraoptions, baseQuery) => {
         const result = await baseQuery({
-          url: `${AppConfig.serviceUrls.organization}/sub-team/${businessUnitTeamSubTeamId}/unit/${unitId}`,
+          url: `${AppConfig.serviceUrls.organization}/sub-teams/${businessUnitTeamSubTeamId}/units/${unitId}`,
           method: "DELETE",
         });
         if (result.error) return { error: result.error };
