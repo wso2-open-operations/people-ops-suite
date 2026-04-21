@@ -39,6 +39,7 @@ import {
 } from "@mui/material";
 import { useFormikContext } from "formik";
 import * as Yup from "yup";
+import { toSentenceCase } from "@utils/utils";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
   fetchEmployeesBasicInfo,
@@ -207,9 +208,18 @@ const ContinuousServicePopoverContent = React.memo(
         label: "Name",
         value: `${record.firstName || ""} ${record.lastName || ""}`.trim(),
       },
-      { label: "Designation", value: record.designation },
-      { label: "Company", value: record.company },
-      { label: "Work Location", value: record.workLocation },
+      {
+        label: "Designation",
+        value: record.designation ? toSentenceCase(record.designation) : null,
+      },
+      {
+        label: "Company",
+        value: record.company ? toSentenceCase(record.company) : null,
+      },
+      {
+        label: "Work Location",
+        value: record.workLocation ? toSentenceCase(record.workLocation) : null,
+      },
       {
         label: "Start Date",
         value: record.startDate
@@ -218,10 +228,20 @@ const ContinuousServicePopoverContent = React.memo(
       },
       { label: "Lead Email", value: record.managerEmail },
       { label: "Additional Leads", value: record.additionalManagerEmails },
-      { label: "Business Unit", value: record.businessUnit },
-      { label: "Team", value: record.team },
-      ...(record.subTeam ? [{ label: "Sub Team", value: record.subTeam }] : []),
-      ...(record.unit ? [{ label: "Unit", value: record.unit }] : []),
+      {
+        label: "Business Unit",
+        value: record.businessUnit ? toSentenceCase(record.businessUnit) : null,
+      },
+      {
+        label: "Team",
+        value: record.team ? toSentenceCase(record.team) : null,
+      },
+      ...(record.subTeam
+        ? [{ label: "Sub Team", value: toSentenceCase(record.subTeam) }]
+        : []),
+      ...(record.unit
+        ? [{ label: "Unit", value: toSentenceCase(record.unit) }]
+        : []),
     ].filter((f) => f.value !== null && f.value !== undefined);
 
     return (
@@ -1019,7 +1039,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               {businessUnits.length ? (
                 businessUnits.map((b) => (
                   <MenuItem key={b.id} value={b.id}>
-                    {b.name}
+                    {toSentenceCase(b.name)}
                   </MenuItem>
                 ))
               ) : (
@@ -1052,7 +1072,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               {teams.length ? (
                 teams.map((t) => (
                   <MenuItem key={t.id} value={t.id}>
-                    {t.name}
+                    {toSentenceCase(t.name)}
                   </MenuItem>
                 ))
               ) : (
@@ -1085,7 +1105,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               {subTeams.length ? (
                 subTeams.map((st) => (
                   <MenuItem key={st.id} value={st.id}>
-                    {st.name}
+                    {toSentenceCase(st.name)}
                   </MenuItem>
                 ))
               ) : (
@@ -1120,7 +1140,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               {units.length ? (
                 units.map((u) => (
                   <MenuItem key={u.id} value={u.id}>
-                    {u.name}
+                    {toSentenceCase(u.name)}
                   </MenuItem>
                 ))
               ) : (
@@ -1153,7 +1173,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               {careerFunctions.length ? (
                 careerFunctions.map((cf) => (
                   <MenuItem key={cf.id} value={cf.id}>
-                    {cf.careerFunction}
+                    {toSentenceCase(cf.careerFunction)}
                   </MenuItem>
                 ))
               ) : (
@@ -1190,7 +1210,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               {designations.length ? (
                 designations.map((d) => (
                   <MenuItem key={d.id} value={d.id}>
-                    {d.designation}
+                    {toSentenceCase(d.designation)}
                   </MenuItem>
                 ))
               ) : (
@@ -1247,7 +1267,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               {companies.length ? (
                 companies.map((company) => (
                   <MenuItem key={company.id} value={company.id}>
-                    {company.name}
+                    {toSentenceCase(company.name)}
                   </MenuItem>
                 ))
               ) : (
@@ -1278,7 +1298,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               {offices.length ? (
                 offices.map((office) => (
                   <MenuItem key={office.id} value={office.id}>
-                    {office.name}
+                    {toSentenceCase(office.name)}
                   </MenuItem>
                 ))
               ) : (
@@ -1316,7 +1336,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                         key={locationItem.location}
                         value={locationItem.location}
                       >
-                        {locationItem.location}
+                        {toSentenceCase(locationItem.location)}
                       </MenuItem>
                     ))
                   ) : (
@@ -1367,7 +1387,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               {employmentTypes.length > 0 ? (
                 employmentTypes.map((type) => (
                   <MenuItem key={type.id} value={type.id}>
-                    {type.name}
+                    {toSentenceCase(type.name)}
                   </MenuItem>
                 ))
               ) : (
@@ -1687,17 +1707,17 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               onBlur={handleBlur}
               helperText={
                 suggestedHouseName
-                  ? `Fewest active employees: ${suggestedHouseName}`
+                  ? `Fewest active employees: ${toSentenceCase(suggestedHouseName)}`
                   : suggestedHouseId
-                  ? "Loading suggested house..."
-                  : "Assign the house for this employee"
+                    ? "Loading suggested house..."
+                    : "Assign the house for this employee"
               }
               sx={textFieldSx}
             >
               {houses.length ? (
                 houses.map((h) => (
                   <MenuItem key={h.id} value={h.id}>
-                    {h.name}
+                    {toSentenceCase(h.name)}
                   </MenuItem>
                 ))
               ) : (
@@ -1779,10 +1799,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 disabled={values.employeeStatus !== EmployeeStatus.Left}
                 value={values.resignationReason ?? ""}
                 onChange={(e) =>
-                  setFieldValue(
-                    "resignationReason",
-                    e.target.value || null,
-                  )
+                  setFieldValue("resignationReason", e.target.value || null)
                 }
                 onBlur={handleBlur}
                 inputProps={{ maxLength: 300 }}

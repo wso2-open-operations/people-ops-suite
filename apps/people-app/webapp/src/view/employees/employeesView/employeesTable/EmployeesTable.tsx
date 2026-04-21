@@ -29,7 +29,7 @@ import { State } from "@src/types/types";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SearchForm } from "../searchForm/SearchForm";
-import { getEmployeeStatusColor } from "@utils/utils";
+import { getEmployeeStatusColor, toSentenceCase } from "@utils/utils";
 
 export default function EmployeesTable() {
   const theme = useTheme();
@@ -174,7 +174,7 @@ export default function EmployeesTable() {
       minWidth: 140,
       resizable: false,
       renderCell: (params: GridRenderCellParams<Employee>) => (
-        <Tooltip title={params.value || "N/A"} arrow>
+        <Tooltip title={params.value ? toSentenceCase(params.value) : "N/A"} arrow>
           <Box
             sx={{
               display: "flex",
@@ -191,7 +191,7 @@ export default function EmployeesTable() {
                 color: theme.palette.text.primary,
               }}
             >
-              {params.value || "N/A"}
+              {params.value ? toSentenceCase(params.value) : "N/A"}
             </Box>
           </Box>
         </Tooltip>
@@ -204,7 +204,7 @@ export default function EmployeesTable() {
       minWidth: 120,
       resizable: false,
       renderCell: (params: GridRenderCellParams<Employee>) => (
-        <Tooltip title={params.value || "N/A"} arrow>
+        <Tooltip title={params.value ? toSentenceCase(params.value) : "N/A"} arrow>
           <Box
             sx={{
               overflow: "hidden",
@@ -213,7 +213,7 @@ export default function EmployeesTable() {
               color: theme.palette.text.primary,
             }}
           >
-            {params.value || "N/A"}
+            {params.value ? toSentenceCase(params.value) : "N/A"}
           </Box>
         </Tooltip>
       ),
@@ -224,6 +224,11 @@ export default function EmployeesTable() {
       flex: 0.7,
       minWidth: 130,
       resizable: false,
+      renderCell: (params: GridRenderCellParams<Employee>) => (
+        <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {params.value ? toSentenceCase(params.value) : "N/A"}
+        </Box>
+      ),
     },
     {
       field: "employeeStatus",
