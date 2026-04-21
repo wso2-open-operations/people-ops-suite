@@ -49,18 +49,20 @@ interface PendingSwap {
 }
 
 interface EmployeeOptionProps {
-  listItemProps: React.HTMLAttributes<HTMLLIElement>;
+  listItemProps: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key };
   employee: EmployeeBasicInfo;
 }
 
 const EmployeeOption: React.FC<EmployeeOptionProps> = ({ listItemProps, employee }) => {
   const theme = useTheme();
   const label = employee.designation ?? employee.workEmail;
+  const { key: optionKey, ...itemProps } = listItemProps;
 
   return (
     <Box
+      key={optionKey}
       component="li"
-      {...listItemProps}
+      {...itemProps}
       sx={{
         display: "flex",
         gap: 1.5,
@@ -285,7 +287,7 @@ const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle }) 
         display: "flex",
         flexDirection: "column",
         gap: 1,
-        minWidth: "200px",
+        width: "350px",
       }}
     >
       <Typography
