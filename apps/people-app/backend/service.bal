@@ -2241,7 +2241,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - BusinessUnit ID, team ID, and functional lead email
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/business\-unit/team
+    resource function post organization/business\-units/teams
             (http:RequestContext ctx, CreateBusinessUnitTeamPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
@@ -2332,7 +2332,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - BusinessUnit-team ID, sub-team ID, and functional lead email
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/team/sub\-team
+    resource function post organization/teams/sub\-teams
             (http:RequestContext ctx, CreateBusinessUnitTeamSubTeamPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
@@ -2426,7 +2426,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - BusinessUnit-team-subTeam ID, unit ID, and functional lead email
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/sub\-team/unit
+    resource function post organization/sub\-teams/units
             (http:RequestContext ctx, CreateBusinessUnitTeamSubTeamUnitPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
@@ -2523,7 +2523,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + buId - ID of the BusinessUnit to update
     # + payload - name or headEmail to update in the BusinessUnit
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/business\-unit/[int buId](http:RequestContext ctx, UnitPayload payload)
+    resource function patch organization/business\-units/[int buId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -2609,7 +2609,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + buId - ID of the Business Unit to rename
     # + payload - Payload containing the new name
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function post organization/business\-unit/[int buId]/rename(http:RequestContext ctx,
+    resource function post organization/business\-units/[int buId]/rename(http:RequestContext ctx,
             RenameBusinessUnitName payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
@@ -2686,7 +2686,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + teamId - ID of the Team to rename
     # + payload - Payload containing the new name
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function post organization/team/[int teamId]/rename(http:RequestContext ctx,
+    resource function post organization/teams/[int teamId]/rename(http:RequestContext ctx,
             RenameTeamName payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
@@ -2763,7 +2763,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + subTeamId - ID of the SubTeam to rename
     # + payload - Payload containing the new name
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function post organization/sub\-team/[int subTeamId]/rename(http:RequestContext ctx,
+    resource function post organization/sub\-teams/[int subTeamId]/rename(http:RequestContext ctx,
             RenameSubTeamName payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
@@ -2840,7 +2840,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + unitId - ID of the Unit to rename
     # + payload - Payload containing the new name
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function post organization/unit/[int unitId]/rename(http:RequestContext ctx,
+    resource function post organization/units/[int unitId]/rename(http:RequestContext ctx,
             RenameUnitName payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
@@ -2912,7 +2912,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + teamId - ID of the Team to update
     # + payload - name or headEmail to update in the Team
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/team/[int teamId](http:RequestContext ctx, UnitPayload payload)
+    resource function patch organization/teams/[int teamId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -2992,7 +2992,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + subTeamId - ID of the SubTeam to update
     # + payload - name or headEmail to update in the SubTeam
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/sub\-team/[int subTeamId](http:RequestContext ctx, UnitPayload payload)
+    resource function patch organization/sub\-teams/[int subTeamId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -3072,7 +3072,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + unitId - ID of the Unit to update
     # + payload - name or headEmail to update in the Unit
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/unit/[int unitId](http:RequestContext ctx, UnitPayload payload)
+    resource function patch organization/units/[int unitId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -3153,7 +3153,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + teamId - ID of the Team
     # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/business\-unit/[int buId]/team/[int teamId]
+    resource function patch organization/business\-units/[int buId]/teams/[int teamId]
             (http:RequestContext ctx, UpdateOrgUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
@@ -3255,7 +3255,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + subTeamId - ID of the SubTeam
     # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/team/[int businessUnitTeamId]/sub\-team/[int subTeamId]
+    resource function patch organization/teams/[int businessUnitTeamId]/sub\-teams/[int subTeamId]
             (http:RequestContext ctx, UpdateOrgUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
@@ -3369,7 +3369,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + unitId - ID of the Unit
     # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/sub\-team/[int businessUnitTeamSubTeamId]/unit/[int unitId]
+    resource function patch organization/sub\-teams/[int businessUnitTeamSubTeamId]/units/[int unitId]
             (http:RequestContext ctx, UpdateOrgUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
@@ -3472,7 +3472,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + buId - ID of the BusinessUnit
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function delete organization/business\-unit/[int buId](http:RequestContext ctx)
+    resource function delete organization/business\-units/[int buId](http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -3566,7 +3566,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + businessUnitId - ID of the BusinessUnit
     # + teamId - ID of the Team
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function delete organization/business\-unit/[int businessUnitId]/team/[int teamId]
+    resource function delete organization/business\-units/[int businessUnitId]/teams/[int teamId]
             (http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
@@ -3669,7 +3669,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + businessUnitTeamId - ID of the BusinessUnit-Team
     # + subTeamId - ID of the SubTeam
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function delete organization/team/[int businessUnitTeamId]/sub\-team/[int subTeamId]
+    resource function delete organization/teams/[int businessUnitTeamId]/sub\-teams/[int subTeamId]
             (http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
@@ -3772,7 +3772,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + businessUnitTeamSubTeamId - ID of the BusinessUnit-Team-SubTeam
     # + unitId - ID of the Unit
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function delete organization/sub\-team/[int businessUnitTeamSubTeamId]/unit/[int unitId]
+    resource function delete organization/sub\-teams/[int businessUnitTeamSubTeamId]/units/[int unitId]
             (http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
