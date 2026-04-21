@@ -202,17 +202,17 @@ export const organizationApi = createApi({
       query: () => AppConfig.serviceUrls.organization,
       transformResponse: (response: Company) => {
         response.businessUnits.forEach((bu) => {
-          const buHeadTitle = `${bu.name} Head`;
+          const buHeadTitle = `${bu.name}`;
           if (bu.head) bu.head.title = buHeadTitle;
 
           bu.teams.forEach((team) => {
             const teamHeadTitle = `${team.name}`;
-            const teamLeadTitle = `${bu.name} Bu - ${team.name}`;
+            const teamLeadTitle = `${bu.name} Bu - ${team.name} Team`;
             if (team.head) team.head.title = teamHeadTitle;
             if (team.functionalLead) team.functionalLead.title = teamLeadTitle;
 
             team.subTeams.forEach((subTeam) => {
-              const subTeamHeadTitle = `${subTeam.name}`;
+              const subTeamHeadTitle = `${subTeam.name} Head`;
               const subTeamLeadTitle = `${teamLeadTitle} - ${subTeam.name} Sub Team`;
               if (subTeam.head) subTeam.head.title = subTeamHeadTitle;
               if (subTeam.functionalLead) subTeam.functionalLead.title = subTeamLeadTitle;
