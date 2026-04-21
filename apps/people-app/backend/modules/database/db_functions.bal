@@ -177,7 +177,6 @@ public isolated function getFullOrganizationStructure() returns OrgStructureBusi
 }
 
 # Get career functions.
-#
 # + return - Career functions
 public isolated function getCareerFunctions() returns CareerFunction[]|error {
     stream<CareerFunction, error?> careerFunctionStream = databaseClient->query(getCareerFunctionsQuery());
@@ -779,4 +778,644 @@ public isolated function getParkingReservationsByEmployee(string employeeEmail, 
         getParkingReservationsByEmployeeQuery(employeeEmail, fromDate, toDate));
     return from ParkingReservationDetails r in resStream
         select r;
+}
+
+# Get organization details with business units, teams, sub-teams, units,
+#
+# + return - Organization details
+public isolated function getOrganizationDetails() returns OrgCompany|error {
+    CompanyRaw|error companyRow = databaseClient->queryRow(getOrganizationStructureQuery());
+    if companyRow is sql:NoRowsError {
+        return error("Organization details not found");
+    }
+    if companyRow is error {
+        return companyRow;
+    }
+
+    OrgBusinessUnit[] businessUnits = check companyRow.businessUnits.fromJsonWithType();
+
+    return {
+        id: companyRow.id,
+        name: companyRow.name,
+        headCount: companyRow.headCount,
+        businessUnits
+    };
+}
+
+# Add new business unit.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Node details (name and head email)
+# + return - Created business unit ID or error
+public isolated function addBusinessUnit(string userEmail, OrgNodeInfo payload) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitQuery(userEmail, payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+# Add new team.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Node details (name and head email)
+# + return - Created team ID or error
+public isolated function addTeam(string userEmail, OrgNodeInfo payload) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addTeamQuery(userEmail, payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+# Add new sub team.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Node details (name and head email)
+# + return - Created sub-team ID or error
+public isolated function addSubTeam(string userEmail, OrgNodeInfo payload) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addSubTeamQuery(userEmail, payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+# Add new unit.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Node details (name and head email)
+# + return - Created unit ID or error
+public isolated function addUnit(string userEmail, OrgNodeInfo payload) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addUnitQuery(userEmail, payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+# Create a new team and map it to a business unit atomically.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Team details
+# + return - Created mapping ID or error
+public isolated function addTeamWithMapping(string userEmail, CreateTeamPayload payload) returns int|error {
+    transaction {
+        sql:ExecutionResult executionResult = check databaseClient->execute(
+            addTeamQuery(userEmail, {name: payload.name, headEmail: payload.headEmail}));
+        int teamId = check executionResult.lastInsertId.ensureType(int);
+
+        sql:ExecutionResult executionResultTwo = check databaseClient->execute(
+            addBusinessUnitTeamQuery(userEmail, {
+                                                    businessUnitId: payload.businessUnit.businessUnitId,
+                                                    teamId,
+                                                    functionalLeadEmail: payload.businessUnit.functionalLeadEmail
+                                                }));
+        int id = check executionResultTwo.lastInsertId.ensureType(int);
+
+        check commit;
+        return id;
+    }
+}
+
+# Create a new sub-team and map it to a business unit-team atomically.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Sub-team details
+# + return - Created mapping ID or error
+public isolated function addSubTeamWithMapping(string userEmail, CreateSubTeamPayload payload) returns int|error {
+    transaction {
+        sql:ExecutionResult executionResult = check databaseClient->execute(
+            addSubTeamQuery(userEmail, {name: payload.name, headEmail: payload.headEmail}));
+        int subTeamId = check executionResult.lastInsertId.ensureType(int);
+
+        sql:ExecutionResult executionResultTwo = check databaseClient->execute(
+            addBusinessUnitTeamSubTeamQuery(userEmail, {
+                                                           businessUnitTeamId: payload.businessUnitTeam.businessUnitTeamId,
+                                                           subTeamId,
+                                                           functionalLeadEmail: payload.businessUnitTeam.functionalLeadEmail
+                                                       }));
+        int id = check executionResultTwo.lastInsertId.ensureType(int);
+
+        check commit;
+        return id;
+    }
+}
+
+# Create a new unit and map it to a business unit-team-sub-team atomically.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Unit details 
+# + return - Created mapping ID or error
+public isolated function addUnitWithMapping(string userEmail, CreateUnitPayload payload) returns int|error {
+    transaction {
+        sql:ExecutionResult executionResult = check databaseClient->execute(
+            addUnitQuery(userEmail, {name: payload.name, headEmail: payload.headEmail}));
+        int unitId = check executionResult.lastInsertId.ensureType(int);
+
+        sql:ExecutionResult executionResultTwo = check databaseClient->execute(
+            addBusinessUnitTeamSubTeamUnitQuery(userEmail, {
+                                                               businessUnitTeamSubTeamId: payload.businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId,
+                                                               unitId,
+                                                               functionalLeadEmail: payload.businessUnitTeamSubTeamUnit.functionalLeadEmail
+                                                           }));
+        int id = check executionResultTwo.lastInsertId.ensureType(int);
+
+        check commit;
+        return id;
+    }
+}
+
+# Map an existing team to a business unit.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Business unit ID, team ID, and functional lead email
+# + return - Created mapping ID or error
+public isolated function addBusinessUnitTeam(string userEmail, CreateBusinessUnitTeamPayload payload)
+    returns int|error {
+
+    sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamQuery(userEmail, payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+# Map an existing sub-team to a business unit-team.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Business unit-team ID, sub-team ID, and functional lead email
+# + return - Created mapping ID or error
+public isolated function addBusinessUnitTeamSubTeam(string userEmail, CreateBusinessUnitTeamSubTeamPayload payload)
+    returns int|error {
+
+    sql:ExecutionResult executionResult =
+        check databaseClient->execute(addBusinessUnitTeamSubTeamQuery(userEmail, payload));
+
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+# Map an existing unit to a business unit-team-sub-team.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Business unit-team-sub-team ID, unit ID, and functional lead email
+# + return - Created mapping ID or error
+public isolated function addBusinessUnitTeamSubTeamUnit
+        (string userEmail, CreateBusinessUnitTeamSubTeamUnitPayload payload) returns int|error {
+
+    sql:ExecutionResult executionResult =
+        check databaseClient->execute(addBusinessUnitTeamSubTeamUnitQuery(userEmail, payload));
+
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+# Update business unit.
+#
+# + payload - Update payload  
+# + buId - Business unit ID
+# + return - Error when update fails
+public isolated function updateBusinessUnit(UpdateOrgUnitPayload payload, int buId) returns error? {
+    _ = check databaseClient->execute(updateBusinessUnitQuery(payload, buId));
+}
+
+# Update team.
+#
+# + payload - Update payload
+# + teamId - Team ID
+# + return - Error when update fails
+public isolated function updateTeam(UpdateOrgUnitPayload payload, int teamId) returns error? {
+    _ = check databaseClient->execute(updateTeamQuery(payload, teamId));
+}
+
+# Update sub team.
+#
+# + payload - Update payload
+# + subTeamId - Sub team ID
+# + return - Error when update fails
+public isolated function updateSubTeam(UpdateOrgUnitPayload payload, int subTeamId) returns error? {
+    _ = check databaseClient->execute(updateSubTeamQuery(payload, subTeamId));
+}
+
+# Update unit.
+#
+# + payload - Update payload
+# + unitId - Unit ID
+# + return - Error when update fails
+public isolated function updateUnit(UpdateOrgUnitPayload payload, int unitId) returns error? {
+    _ = check databaseClient->execute(updateUnitQuery(payload, unitId));
+}
+
+# Update the functional lead of a business unit-team mapping.
+#
+# + payload - Fields to update in the business unit-team mapping
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - True if updated, false if not found, error if the update fails
+public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload payload, int buId, int teamId)
+    returns boolean|error {
+
+    sql:ExecutionResult executionResults =
+        check databaseClient->execute(updateBusinessUnitTeamQuery(payload, buId, teamId));
+
+    return executionResults.affectedRowCount > 0;
+}
+
+# Update the functional lead of a team-sub team mapping.
+#
+# + payload - Fields to update in the team-sub team mapping
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - True if updated, false if not found, error if the update fails
+public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId)
+    returns boolean|error {
+
+    sql:ExecutionResult executionResults =
+        check databaseClient->execute(updateTeamSubTeamQuery(payload, teamId, subTeamId));
+
+    return executionResults.affectedRowCount > 0;
+}
+
+# Update the functional lead of a sub team-unit mapping.
+#
+# + payload - Fields to update in the sub team-unit mapping
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - True if updated, false if not found, error if the update fails
+public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId)
+    returns boolean|error {
+
+    sql:ExecutionResult executionResults =
+        check databaseClient->execute(updateSubTeamUnitQuery(payload, subTeamId, unitId));
+
+    return executionResults.affectedRowCount > 0;
+}
+
+# Delete a business unit.
+#
+# + userEmail - Email of the user performing the deletion
+# + buId - ID of the business unit to delete
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteBusinessUnit(string userEmail, int buId) returns boolean|error {
+    sql:ExecutionResult executionResult =
+        check databaseClient->execute(deleteBusinessUnitQuery(userEmail, buId));
+
+    return executionResult.affectedRowCount > 0;
+}
+
+# Delete a business unit-team mapping.
+#
+# + userEmail - Email of the user performing the deletion
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteBusinessUnitTeam(string userEmail, int buId, int teamId)
+    returns boolean|error {
+    sql:ExecutionResult executionResult =
+        check databaseClient->execute(deleteBusinessUnitTeamQuery(userEmail, buId, teamId));
+
+    return executionResult.affectedRowCount > 0;
+}
+
+# Delete a team-sub team mapping.
+#
+# + userEmail - Email of the user performing the deletion
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteTeamSubTeam(string userEmail, int teamId, int subTeamId) returns boolean|error {
+    sql:ExecutionResult executionResult =
+        check databaseClient->execute(deleteTeamSubTeamQuery(userEmail, teamId, subTeamId));
+
+    return executionResult.affectedRowCount > 0;
+}
+
+# Delete a sub team-unit mapping.
+#
+# + userEmail - Email of the user performing the deletion
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteSubTeamUnit(string userEmail, int subTeamId, int unitId) returns boolean|error {
+    sql:ExecutionResult executionResult =
+        check databaseClient->execute(deleteSubTeamUnitQuery(userEmail, subTeamId, unitId));
+
+    return executionResult.affectedRowCount > 0;
+}
+
+# Check whether a business unit name is unique among active rows.
+#
+# + businessUnitName - Business unit name to check
+# + return - True if unique, false if already exists (or error on failure)
+public isolated function validateBusinessUnitNameUniqueness(string businessUnitName) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(validateBusinessUnitNameUniquenessQuery(businessUnitName));
+
+    return result.existsFlag == 0;
+}
+
+# Check whether a team name is unique among active rows.
+#
+# + teamName - Team name to check
+# + return - True if unique, false if already exists (or error on failure)
+public isolated function validateTeamNameUniqueness(string teamName) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(validateTeamNameUniquenessQuery(teamName));
+
+    return result.existsFlag == 0;
+}
+
+# Check whether a sub-team name is unique among active rows.
+#
+# + subTeamName - Sub-team name to check
+# + return - True if unique, false if already exists (or error on failure)
+public isolated function validateSubTeamNameUniqueness(string subTeamName) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(validateSubTeamNameUniquenessQuery(subTeamName));
+
+    return result.existsFlag == 0;
+}
+
+# Check whether a unit name is unique among active rows.
+#
+# + unitName - Unit name to check
+# + return - True if unique, false if already exists (or error on failure)
+public isolated function validateUnitNameUniqueness(string unitName) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(validateUnitNameUniquenessQuery(unitName));
+
+    return result.existsFlag == 0;
+}
+
+# Check whether a BusinessUnit exists by ID.
+#
+# + buId - Business unit ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function businessUnitExists(int buId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(businessUnitExistsQuery(buId));
+
+    return result.existsFlag == 1;
+}
+
+# Check whether a Team exists by ID.
+#
+# + teamId - Team ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function teamExists(int teamId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(teamExistsQuery(teamId));
+
+    return result.existsFlag == 1;
+}
+
+# Check whether a SubTeam exists by ID.
+#
+# + subTeamId - Sub-team ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function subTeamExists(int subTeamId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(subTeamExistsQuery(subTeamId));
+
+    return result.existsFlag == 1;
+}
+
+# Check whether a unit exists by ID.
+#
+# + unitId - Unit ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function unitExists(int unitId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(unitExistsQuery(unitId));
+
+    return result.existsFlag == 1;
+}
+
+# Check whether a BusinessUnit-Team mapping exists by ID.
+#
+# + id - business_unit_team mapping ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function businessUnitTeamMappingExists(int id) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(businessUnitTeamMappingExistsQuery(id));
+
+    return result.existsFlag == 1;
+}
+
+# Check whether a BusinessUnit-Team-SubTeam mapping exists by ID.
+#
+# + id - business_unit_team_sub_team mapping ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function businessUnitTeamSubTeamMappingExists(int id) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(businessUnitTeamSubTeamMappingExistsQuery(id));
+
+    return result.existsFlag == 1;
+}
+
+# Check whether a business unit has child teams (active mappings).
+#
+# + buId - Business unit ID
+# + return - True if it has child teams, false otherwise (or error on failure)
+public isolated function businessUnitHasChildren(int buId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(businessUnitHasChildrenQuery(buId));
+
+    return result.existsFlag == 1;
+}
+
+# Check whether a business unit-team mapping has child sub-teams (active mappings).
+#
+# + businessUnitId - Business unit ID
+# + teamId - Team ID
+# + return - True if it has child sub-teams, false otherwise (or error on failure)
+public isolated function businessUnitTeamHasChildren(int businessUnitId, int teamId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(businessUnitTeamHasChildrenQuery(businessUnitId, teamId));
+
+    return result.existsFlag == 1;
+}
+
+# Check whether a team-sub-team mapping has child units (active mappings).
+#
+# + teamId - Team ID
+# + subTeamId - Sub-team ID
+# + return - True if it has child units, false otherwise (or error on failure)
+public isolated function teamSubTeamHasChildren(int teamId, int subTeamId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(teamSubTeamHasChildrenQuery(teamId, subTeamId));
+
+    return result.existsFlag == 1;
+}
+
+# Retrieve the count of employees assigned to a specific Business Unit.
+#
+# + buId - Business Unit ID
+# + return - Number of employees in the Business Unit, or error
+public isolated function retreiveBusinessUnitHeadCount(int buId) returns int|error {
+    return databaseClient->queryRow(retrieveBusinessUnitHeadCountQuery(buId));
+}
+
+# Retrieve the count of employees assigned to a specific Team-SubTeam combination.
+# The Team ID is derived from the businessUnitTeamId mapping.
+#
+# + businessUnitTeamId - Business Unit-Team mapping ID
+# + subTeamId - Sub Team ID
+# + return - Number of employees in the Team-SubTeam, or error
+public isolated function retreiveBusinessUnitTeamSubTeamHeadCount(int businessUnitTeamId, int subTeamId)
+    returns int|error {
+    return databaseClient->queryRow(retrieveBusinessUnitTeamSubTeamHeadCountQuery(businessUnitTeamId, subTeamId));
+}
+
+# Retrieve the count of employees assigned to a specific SubTeam-Unit combination.
+# The Team and SubTeam IDs are derived from the businessUnitTeamSubTeamId mapping.
+#
+# + businessUnitTeamSubTeamId - Business Unit-Team-SubTeam mapping ID
+# + unitId - Unit ID
+# + return - Number of employees in the SubTeam-Unit, or error
+public isolated function retreiveBusinessUnitTeamSubTeamUnitHeadCount(int businessUnitTeamSubTeamId, int unitId)
+    returns int|error {
+    return databaseClient->queryRow(retrieveBusinessUnitTeamSubTeamUnitHeadCountQuery(businessUnitTeamSubTeamId, unitId));
+}
+
+# Retrieve the count of employees assigned to a specific Business Unit-Team combination.
+#
+# + businessUnitId - Business Unit ID
+# + teamId - Team ID
+# + return - Number of employees in the Business Unit-Team, or error
+public isolated function retreiveBusinessUnitTeamHeadCount(int businessUnitId, int teamId)
+    returns int|error {
+    return databaseClient->queryRow(retrieveBusinessUnitTeamHeadCountQuery(businessUnitId, teamId));
+}
+
+# Rename a Business Unit by creating a new one with the updated name.
+# This operation:
+# 1. Inserts a new Business Unit with the new name
+# 2. Updates all business_unit_team mappings to use the new BU
+# 3. Updates all active employees to use the new BU
+# 4. Deactivates the old Business Unit
+#
+# + payload - Payload containing the BU ID, new name, and updated by
+# + return - The new Business Unit ID, or error
+public isolated function renameBusinessUnit(RenameBusinessUnitName payload) returns int|error {
+    transaction {
+        sql:ExecutionResult insertResult = check databaseClient->execute(
+            insertRenamedBusinessUnitQuery(payload));
+        int newBuId = check insertResult.lastInsertId.ensureType(int);
+
+        _ = check databaseClient->execute(
+            updateBusinessUnitTeamMappingsQuery(payload.businessUnitId, newBuId, payload.updatedBy));
+
+        _ = check databaseClient->execute(
+            updateEmployeesBusinessUnitQuery(payload.businessUnitId, newBuId, payload.updatedBy));
+
+        _ = check databaseClient->execute(deactivateOldBusinessUnitQuery(payload));
+
+        check commit;
+        return newBuId;
+    }
+}
+
+# Renames a Team by creating a new one with the updated name.
+# This operation:
+# 1. Inserts a new Team with the new name (copying head_email from old)
+# 2. Updates all business_unit_team mappings to use the new Team
+# 3. Updates all active employees to use the new Team
+# 4. Deactivates the old Team
+#
+# + payload - Payload containing the Team ID, new name, and updated by
+# + return - The new Team ID, or error
+public isolated function renameTeam(RenameTeamName payload) returns int|error {
+    transaction {
+        sql:ExecutionResult insertResult = check databaseClient->execute(
+            insertRenamedTeamQuery(payload));
+        int newTeamId = check insertResult.lastInsertId.ensureType(int);
+
+        _ = check databaseClient->execute(
+            updateBusinessUnitTeamMappingsForTeamQuery(payload.teamId, newTeamId, payload.updatedBy));
+
+        _ = check databaseClient->execute(
+            updateEmployeesTeamQuery(payload.teamId, newTeamId, payload.updatedBy));
+
+        _ = check databaseClient->execute(deactivateOldTeamQuery(payload));
+
+        check commit;
+        return newTeamId;
+    }
+}
+
+# Renames a SubTeam by creating a new one with the updated name.
+# This operation:
+# 1. Inserts a new SubTeam with the new name (copying head_email from old)
+# 2. Updates all business_unit_team_sub_team mappings to use the new SubTeam
+# 3. Updates all active employees to use the new SubTeam
+# 4. Deactivates the old SubTeam
+#
+# + payload - Payload containing the SubTeam ID, new name, and updated by
+# + return - The new SubTeam ID, or error
+public isolated function renameSubTeam(RenameSubTeamName payload) returns int|error {
+    transaction {
+        sql:ExecutionResult insertResult = check databaseClient->execute(
+            insertRenamedSubTeamQuery(payload));
+        int newSubTeamId = check insertResult.lastInsertId.ensureType(int);
+
+        _ = check databaseClient->execute(
+            updateBusinessUnitTeamSubTeamMappingsQuery(payload.subTeamId, newSubTeamId, payload.updatedBy));
+
+        _ = check databaseClient->execute(
+            updateEmployeesSubTeamQuery(payload.subTeamId, newSubTeamId, payload.updatedBy));
+
+        _ = check databaseClient->execute(deactivateOldSubTeamQuery(payload));
+
+        check commit;
+        return newSubTeamId;
+    }
+}
+
+# Renames a Unit by creating a new one with the updated name.
+# This operation:
+# 1. Inserts a new Unit with the new name (copying head_email from old)
+# 2. Updates all business_unit_team_sub_team_unit mappings to use the new Unit
+# 3. Updates all active employees to use the new Unit
+# 4. Deactivates the old Unit
+#
+# + payload - Payload containing the Unit ID, new name, and updated by
+# + return - The new Unit ID, or error
+public isolated function renameUnit(RenameUnitName payload) returns int|error {
+    transaction {
+        sql:ExecutionResult insertResult = check databaseClient->execute(
+            insertRenamedUnitQuery(payload));
+        int newUnitId = check insertResult.lastInsertId.ensureType(int);
+
+        _ = check databaseClient->execute(
+            updateBusinessUnitTeamSubTeamUnitMappingsQuery(payload.unitId, newUnitId, payload.updatedBy));
+
+        _ = check databaseClient->execute(
+            updateEmployeesUnitQuery(payload.unitId, newUnitId, payload.updatedBy));
+
+        _ = check databaseClient->execute(deactivateOldUnitQuery(payload));
+
+        check commit;
+        return newUnitId;
+    }
+}
+
+# Checks if a Business Unit name already exists.
+#
+# + name - Business Unit name to check
+# + return - True if name exists, false otherwise, or error
+public isolated function businessUnitNameExists(string name) returns boolean|error {
+    int existsFlag = check databaseClient->queryRow(businessUnitNameExistsQuery(name));
+    return existsFlag == 1;
+}
+
+# Checks if a Team name already exists.
+#
+# + name - Team name to check
+# + return - True if name exists, false otherwise, or error
+public isolated function teamNameExists(string name) returns boolean|error {
+    int existsFlag = check databaseClient->queryRow(teamNameExistsQuery(name));
+    return existsFlag == 1;
+}
+
+# Checks if a SubTeam name already exists.
+#
+# + name - SubTeam name to check
+# + return - True if name exists, false otherwise, or error
+public isolated function subTeamNameExists(string name) returns boolean|error {
+    int existsFlag = check databaseClient->queryRow(subTeamNameExistsQuery(name));
+    return existsFlag == 1;
+}
+
+# Checks if a Unit name already exists.
+#
+# + name - Unit name to check
+# + return - True if name exists, false otherwise, or error
+public isolated function unitNameExists(string name) returns boolean|error {
+    int existsFlag = check databaseClient->queryRow(unitNameExistsQuery(name));
+    return existsFlag == 1;
 }

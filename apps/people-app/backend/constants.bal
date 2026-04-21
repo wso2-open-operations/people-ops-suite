@@ -18,3 +18,7 @@ const ERROR_USER_INFORMATION_HEADER_NOT_FOUND = "User information header not fou
 const ERROR_PERSONAL_INFO_UPDATE_FAILED = "Failed to update personal information";
 const ERROR_EMPLOYEE_INFO_UPDATE_FAILED = "Failed to update employee job information";
 const ERROR_EMPLOYEE_CREATION_FAILED = "Error occurred while creating a new employee";
+const ERROR_INVALID_EMAIL = "email should be a valid WSO2 email";
+
+public final string:RegExp WSO2_EMAIL = re `^[a-zA-Z0-9._%+-]+@wso2\.com$`;
+public final string:RegExp PRINTABLE_CHARACTERS_FORMAT = re `^[ \p{L}\p{N}_.\-@]+$`;

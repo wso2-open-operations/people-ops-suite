@@ -65,6 +65,57 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
     return updatedQuery;
 }
 
+# Build a parameterized UPDATE query for an organization hierarchy table.
+#
+# + mainQuery - Base UPDATE query with the target table name
+# + payload - Fields to update (name, head email, updated by)
+# + id - ID of the record to update
+# + return - Complete parameterized UPDATE query with SET clauses and WHERE condition
+isolated function buildOrganizationUnitUpdateQuery(sql:ParameterizedQuery mainQuery, UpdateOrgUnitPayload payload, int id)
+    returns sql:ParameterizedQuery {
+
+    UpdateOrgUnitPayload {name, headEmail, updatedBy} = payload;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if name is string {
+        filters.push(` name = ${name}`);
+    }
+
+    if headEmail is string {
+        filters.push(` head_email = ${headEmail}`);
+    }
+
+    filters.push(` updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery updatedQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(updatedQuery, ` WHERE id = ${id}`);
+}
+
+# Build a parameterized INSERT query using SET syntax (MySQL).
+#
+# + mainQuery - Base INSERT query (e.g., `INSERT INTO business_unit SET`)
+# + columnValuePairs - Array of column=value pairs (only non-empty pairs included)
+# + return - Complete parameterized INSERT query
+isolated function buildSqlInsertQuery(sql:ParameterizedQuery mainQuery, sql:ParameterizedQuery[] columnValuePairs)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery query = mainQuery;
+
+    boolean isFirst = true;
+    foreach sql:ParameterizedQuery pair in columnValuePairs {
+        if isFirst {
+            query = sql:queryConcat(query, pair);
+            isFirst = false;
+        } else {
+            query = sql:queryConcat(query, `, `, pair);
+        }
+    }
+
+    return query;
+}
+
 # Append a string filter to the filters array if the value is not null or empty.
 #
 # + filters - Array of sub queries to be added to the main query
@@ -159,7 +210,7 @@ public isolated function checkAffectedCount(int? affectedRowCount) returns error
 isolated function csvEscape(string? value) returns string {
     string v = value ?: "";
     if v.includes(",") || v.includes("\"") || v.includes("\n") || v.includes("\r") {
-        return "\"" + re`"`.replaceAll(v, "\"\"") + "\"";
+        return "\"" + re `"`.replaceAll(v, "\"\"") + "\"";
     }
     return v;
 }
