@@ -21,7 +21,7 @@ import { useEffect, useState } from "react";
 import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import { NodeType } from "@utils/types";
-import { convertDataTypeToLabel, UnitTypeLabel } from "@utils/utils";
+import { convertDataTypeToLabel } from "@utils/utils";
 
 interface RenameFormValues {
   entityName: string;

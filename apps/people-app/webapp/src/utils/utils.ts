@@ -46,7 +46,7 @@ import type {
 } from "@slices/organizationSlice/organizationStructure";
 
 import { format } from "date-fns";
-import { NodeType, UnitType } from "./types";
+import { NodeType } from "./types";
 
 import { DATE_FMT } from "../config/constant";
 import { RouteObjectWithRole, ServiceLength } from "@/types/types";
@@ -227,14 +227,6 @@ export const calculateServiceLength = (
     years: Math.floor(totalMonths / 12),
     months: totalMonths % 12,
   };
-};
-
-export const UnitTypeLabel: Record<UnitType, string> = {
-  [UnitType.Company]: "Company",
-  [UnitType.BusinessUnit]: "Business Unit",
-  [UnitType.Team]: "Team",
-  [UnitType.SubTeam]: "Sub Team",
-  [UnitType.Unit]: "Unit",
 };
 
 // Union type for all organization items
