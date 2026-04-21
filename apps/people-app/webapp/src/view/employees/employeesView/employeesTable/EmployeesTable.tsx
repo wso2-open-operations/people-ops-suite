@@ -173,16 +173,43 @@ export default function EmployeesTable() {
       flex: 0.8,
       minWidth: 140,
       resizable: false,
-      renderCell: (params: GridRenderCellParams<Employee>) => (
-        <Tooltip title={params.value ? toSentenceCase(params.value) : "N/A"} arrow>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5,
-              overflow: "hidden",
-            }}
-          >
+      renderCell: (params: GridRenderCellParams<Employee>) => {
+        const formatted = params.value ? toSentenceCase(params.value) : "N/A";
+        return (
+          <Tooltip title={formatted} arrow>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                overflow: "hidden",
+              }}
+            >
+              <Box
+                sx={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  color: theme.palette.text.primary,
+                }}
+              >
+                {formatted}
+              </Box>
+            </Box>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      field: "team",
+      headerName: "Team",
+      flex: 0.8,
+      minWidth: 120,
+      resizable: false,
+      renderCell: (params: GridRenderCellParams<Employee>) => {
+        const formatted = params.value ? toSentenceCase(params.value) : "N/A";
+        return (
+          <Tooltip title={formatted} arrow>
             <Box
               sx={{
                 overflow: "hidden",
@@ -191,32 +218,11 @@ export default function EmployeesTable() {
                 color: theme.palette.text.primary,
               }}
             >
-              {params.value ? toSentenceCase(params.value) : "N/A"}
+              {formatted}
             </Box>
-          </Box>
-        </Tooltip>
-      ),
-    },
-    {
-      field: "team",
-      headerName: "Team",
-      flex: 0.8,
-      minWidth: 120,
-      resizable: false,
-      renderCell: (params: GridRenderCellParams<Employee>) => (
-        <Tooltip title={params.value ? toSentenceCase(params.value) : "N/A"} arrow>
-          <Box
-            sx={{
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              color: theme.palette.text.primary,
-            }}
-          >
-            {params.value ? toSentenceCase(params.value) : "N/A"}
-          </Box>
-        </Tooltip>
-      ),
+          </Tooltip>
+        );
+      },
     },
     {
       field: "employmentType",
