@@ -24,6 +24,7 @@ import {
   CircularProgress,
   IconButton,
   TextField,
+  Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -35,7 +36,7 @@ import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import { Head } from "@root/src/services/organization";
 import { NodeType } from "@root/src/utils/types";
-import { convertDataTypeToLabel, truncateName } from "@root/src/utils/utils";
+import { capitalizeWords, convertDataTypeToLabel, truncateName } from "@root/src/utils/utils";
 import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@services/employee";
 
 const NAME_TRUNCATE_LENGTH = 16;
@@ -274,11 +275,12 @@ const AddLeadPanel: React.FC<AddLeadPanelProps> = ({
 interface LeadRowProps {
   label: string;
   lead: Head;
+  title: string;
   isExpanded: boolean;
   onToggle: () => void;
 }
 
-const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle }) => {
+const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle, title }) => {
   const theme = useTheme();
 
   return (
@@ -324,16 +326,18 @@ const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle }) 
               {truncateName(lead.name, NAME_TRUNCATE_LENGTH)}
             </Typography>
 
-            <Typography
-              variant="caption"
-              sx={{
-                color: theme.palette.customText.primary.p4.active,
-                textTransform: "capitalize",
-                fontWeight: 400,
-              }}
-            >
-              {truncateName(lead.title, DESIGNATION_TRUNCATE_LENGTH)}
-            </Typography>
+            <Tooltip title={title}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: theme.palette.customText.primary.p4.active,
+                  textTransform: "capitalize",
+                  fontWeight: 400,
+                }}
+              >
+                {truncateName(title, DESIGNATION_TRUNCATE_LENGTH)}
+              </Typography>
+            </Tooltip>
           </Box>
         </Box>
 
@@ -378,6 +382,7 @@ const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle }) 
 
 interface UpdatableLeadProps {
   label: string;
+  title: string;
   lead: Head;
   isExpanded: boolean;
   onToggle: () => void;
@@ -387,6 +392,7 @@ interface UpdatableLeadProps {
 const UpdatableLead: React.FC<UpdatableLeadProps> = ({
   label,
   lead,
+  title,
   isExpanded,
   onToggle,
   onRequestConfirm,
@@ -400,7 +406,7 @@ const UpdatableLead: React.FC<UpdatableLeadProps> = ({
       gap: 1.5,
     }}
   >
-    <LeadRow label={label} lead={lead} isExpanded={isExpanded} onToggle={onToggle} />
+    <LeadRow label={label} lead={lead} title={title} isExpanded={isExpanded} onToggle={onToggle} />
     {isExpanded && <SelectLeadPanel onRequestConfirm={onRequestConfirm} />}
   </Box>
 );
@@ -490,6 +496,7 @@ export const UpdateLeads: React.FC<UpdateLeadsProps> = ({
           <UpdatableLead
             label={`${convertDataTypeToLabel(nodeType)} Head`}
             lead={head}
+            title={`${capitalizeWords(head.title)} Head`}
             isExpanded={activePanel === "head"}
             onToggle={() => togglePanel("head")}
             onRequestConfirm={handleRequestConfirm("head")}
@@ -507,6 +514,7 @@ export const UpdateLeads: React.FC<UpdateLeadsProps> = ({
           (functionalLead ? (
             <UpdatableLead
               label={`${convertDataTypeToLabel(nodeType)} Functional Lead`}
+              title={`${capitalizeWords(functionalLead.title)} Functional Lead`}
               lead={functionalLead}
               isExpanded={activePanel === "functionalLead"}
               onToggle={() => togglePanel("functionalLead")}
