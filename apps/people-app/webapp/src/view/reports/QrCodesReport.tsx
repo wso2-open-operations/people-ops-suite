@@ -170,8 +170,8 @@ function QrCodesReportContent() {
           }}
         >
           Search for employees and add them to the list. Click <strong>Export QR Codes</strong> to
-          save each QR as an individual PNG file. <br />A maximum of{" "}
-          <strong>{QR_EXPORT_LIMIT} employees</strong> can be exported at a time.
+          save each QR as an individual PNG file. <br />
+          A maximum of <strong>{QR_EXPORT_LIMIT} employees</strong> can be exported at a time.
         </Alert>
       </Box>
 
@@ -183,7 +183,9 @@ function QrCodesReportContent() {
           getOptionLabel={(option) =>
             `${option.firstName} ${option.lastName} (${option.employeeId})`
           }
-          filterOptions={(options) => options.filter((o) => !selectedIds.has(o.employeeId))}
+          filterOptions={(options) =>
+            options.filter((o) => !selectedIds.has(o.employeeId))
+          }
           onChange={handleSelect}
           onInputChange={handleInputChange}
           disabled={atLimit}
@@ -255,7 +257,9 @@ function QrCodesReportContent() {
                 alignItems: "center",
                 justifyContent: "space-between",
                 bgcolor:
-                  theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[100],
+                  theme.palette.mode === "dark"
+                    ? theme.palette.grey[900]
+                    : theme.palette.grey[100],
               }}
             >
               <Typography variant="body2" fontWeight={700}>
