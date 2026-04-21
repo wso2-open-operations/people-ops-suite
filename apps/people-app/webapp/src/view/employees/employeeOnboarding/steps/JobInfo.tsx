@@ -414,6 +414,11 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     ? houses.find((h) => h.id === suggestedHouseId)?.name
     : undefined;
 
+  const businessUnitOptions = useMemo(
+    () => businessUnits.map((b) => ({ id: b.id, label: toSentenceCase(b.name) })),
+    [businessUnits],
+  );
+
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
     null,
   );
@@ -1036,10 +1041,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               helperText={touched.businessUnitId && errors.businessUnitId}
               sx={textFieldSx}
             >
-              {businessUnits.length ? (
-                businessUnits.map((b) => (
+              {businessUnitOptions.length ? (
+                businessUnitOptions.map((b) => (
                   <MenuItem key={b.id} value={b.id}>
-                    {toSentenceCase(b.name)}
+                    {b.label}
                   </MenuItem>
                 ))
               ) : (

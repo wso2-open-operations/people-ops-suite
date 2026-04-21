@@ -137,12 +137,22 @@ export const toSentenceCase = (value: string): string => {
   if (!value) return value;
   return value
     .replace(/_/g, " ")
-    .replace(/\s*-\s*/g, " - ")
+    .replace(/\s*-\s*/g, "-")
     .split(" ")
     .map((word) => {
-      if (!word || word === "-") return word;
+      if (!word) return word;
+      if (word.includes("-")) {
+        return word
+          .split("-")
+          .map((part) => {
+            if (!part || /\d/.test(part)) return part;
+            if (/^[A-Z]{2,6}$/.test(part)) return part;
+            return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+          })
+          .join("-");
+      }
       if (/\d/.test(word)) return word;
-      if (/^[A-Z]{1,3}$/.test(word)) return word;
+      if (/^[A-Z]{2,6}$/.test(word)) return word;
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     })
     .join(" ")
