@@ -42,7 +42,7 @@ import BackdropProgress from "@src/component/ui/BackdropProgress";
 import { useOrgUpdateActions } from "../hooks/useOrgUpdateActions";
 import { DeleteCurrent } from "../sections/danger-section/DeleteCurrent";
 import { RenameField } from "../sections/general-section/RenameField";
-import { SwapLeads } from "../sections/leads-section/SwapLeads";
+import { UpdateLeads } from "../sections/leads-section/UpdateLeads";
 import { SectionHeader } from "./edit-modal/SectionHeader";
 
 interface EditModalProps {
@@ -207,7 +207,7 @@ export const EditModal: React.FC<EditModalProps> = ({
         >
           <SectionHeader title="Manage Leads" />
 
-          <SwapLeads
+          <UpdateLeads
             head={displayData.head ?? null}
             functionalLead={
               "functionalLead" in displayData ? (displayData.functionalLead ?? null) : null

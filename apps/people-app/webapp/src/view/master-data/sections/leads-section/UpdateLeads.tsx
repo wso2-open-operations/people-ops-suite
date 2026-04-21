@@ -374,7 +374,7 @@ const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle }) 
   );
 };
 
-interface SwappableLeadProps {
+interface UpdatableLeadProps {
   label: string;
   lead: Head;
   isExpanded: boolean;
@@ -382,7 +382,7 @@ interface SwappableLeadProps {
   onRequestConfirm: (employee: EmployeeBasicInfo) => void;
 }
 
-const SwappableLead: React.FC<SwappableLeadProps> = ({
+const UpdatableLead: React.FC<UpdatableLeadProps> = ({
   label,
   lead,
   isExpanded,
@@ -403,7 +403,7 @@ const SwappableLead: React.FC<SwappableLeadProps> = ({
   </Box>
 );
 
-export interface SwapLeadsProps {
+export interface UpdateLeadsProps {
   head: Head | null;
   functionalLead?: Head | null;
   isUpdating: boolean;
@@ -412,7 +412,7 @@ export interface SwapLeadsProps {
   onSwapFunctionalLead: (employee: EmployeeBasicInfo, reason: string) => Promise<void>;
 }
 
-export const SwapLeads: React.FC<SwapLeadsProps> = ({
+export const UpdateLeads: React.FC<UpdateLeadsProps> = ({
   head,
   functionalLead,
   onSwapHead,
@@ -485,7 +485,7 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
         }}
       >
         {head ? (
-          <SwappableLead
+          <UpdatableLead
             label={`${convertDataTypeToLabel(nodeType)} Head`}
             lead={head}
             isExpanded={activePanel === "head"}
@@ -503,7 +503,7 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
 
         {nodeType !== NodeType.BusinessUnit &&
           (functionalLead ? (
-            <SwappableLead
+            <UpdatableLead
               label={`${convertDataTypeToLabel(nodeType)} Functional Lead`}
               lead={functionalLead}
               isExpanded={activePanel === "functionalLead"}
