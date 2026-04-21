@@ -39,7 +39,7 @@ import { NodeType } from "@root/src/utils/types";
 import { convertDataTypeToLabel } from "@root/src/utils/utils";
 import BackdropProgress from "@src/component/ui/BackdropProgress";
 
-import { useOrgEntityActions } from "../hooks/useOrgEntityActions";
+import { useOrgUpdateActions } from "../hooks/useOrgUpdateActions";
 import { DeleteCurrent } from "../sections/danger-section/DeleteCurrent";
 import { RenameField } from "../sections/general-section/RenameField";
 import { SwapLeads } from "../sections/leads-section/SwapLeads";
@@ -98,7 +98,7 @@ export const EditModal: React.FC<EditModalProps> = ({
     handleRenameCurrent,
     isUpdating,
     isDeleting,
-  } = useOrgEntityActions({ data: displayData });
+  } = useOrgUpdateActions({ data: displayData });
 
   const showSpinner = useMinimumLoadingVisibility(
     isUpdating || isDeleting || parentLoading,
@@ -190,7 +190,7 @@ export const EditModal: React.FC<EditModalProps> = ({
           <SectionHeader title="General" />
 
           <RenameField
-            entityType={displayData.type}
+            nodeType={displayData.type}
             currentName={displayData.name}
             onRenameSuccess={handleRenameCurrent}
             isSubmitting={isUpdating}
