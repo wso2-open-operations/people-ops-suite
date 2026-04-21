@@ -33,9 +33,14 @@ export function useOrgAddMutations() {
   const [addUnits, { isLoading: isAddingUnit }] = useAddUnitsMutation();
   const [addSubTeamUnit, { isLoading: isAddingSubTeamUnit }] = useAddSubTeamUnitMutation();
 
-  const isAdding = isAddingBusinessUnit || isAddingBusinessUnitTeam || isAddingTeam || isAddingSubTeam || isAddingTeamSubTeam ||
-    isAddingUnit || isAddingSubTeamUnit
-
+  const isAdding =
+    isAddingBusinessUnit ||
+    isAddingBusinessUnitTeam ||
+    isAddingTeam ||
+    isAddingSubTeam ||
+    isAddingTeamSubTeam ||
+    isAddingUnit ||
+    isAddingSubTeamUnit;
 
   return {
     isAdding,
@@ -57,7 +62,7 @@ export function useOrgAddMutations() {
       isAddingSubTeam,
       isAddingTeamSubTeam,
       isAddingUnit,
-      isAddingSubTeamUnit
-    }
-  }
+      isAddingSubTeamUnit,
+    },
+  };
 }

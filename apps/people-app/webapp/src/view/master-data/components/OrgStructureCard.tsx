@@ -21,7 +21,7 @@ import { Box, IconButton, Typography, useTheme } from "@mui/material";
 
 import { useState } from "react";
 
-import { FunctionalLead, Head } from "@root/src/services/organization";
+import { FunctionalLead, Head } from "@services/organization";
 import { NodeType } from "@utils/types";
 import PersonCard from "@view/master-data/components/edit-modal/PersonCard";
 

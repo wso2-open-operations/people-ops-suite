@@ -18,10 +18,10 @@ import { Box, Button, Typography, useTheme } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 
 import ConfirmationDialog from "@component/common/ConfirmationDialog";
-import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
-import { NodeType } from "@root/src/utils/types";
-import { convertDataTypeToLabel } from "@root/src/utils/utils";
+import { NodeType } from "@utils/types";
+import { convertDataTypeToLabel } from "@utils/utils";
 
 interface DeleteCurrentProps {
   onDelete: (reason: string) => Promise<void>;

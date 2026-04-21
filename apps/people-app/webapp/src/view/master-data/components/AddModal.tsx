@@ -32,26 +32,26 @@ import { Controller, useForm } from "react-hook-form";
 
 import { useEffect, useState } from "react";
 
-import ErrorHandler from "@root/src/component/common/ErrorHandler";
-import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import ErrorHandler from "@component/common/ErrorHandler";
+import BackdropProgress from "@component/ui/BackdropProgress";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
-import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@root/src/services/employee";
-import {
-  BusinessUnitState,
-  CompanyState,
-  SubTeamState,
-  TeamState,
-  UnitState,
-} from "@root/src/slices/organizationSlice/organizationStructure";
-import { NodeType } from "@root/src/utils/types";
-import { convertDataTypeToLabel } from "@root/src/utils/utils";
+import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@services/employee";
 import {
   BusinessUnit as RawBusinessUnit,
   SubTeam as RawSubTeam,
   Team as RawTeam,
   Unit as RawUnit,
 } from "@slices/organizationSlice/organization";
-import BackdropProgress from "@src/component/ui/BackdropProgress";
+import {
+  BusinessUnitState,
+  CompanyState,
+  SubTeamState,
+  TeamState,
+  UnitState,
+} from "@slices/organizationSlice/organizationStructure";
+import { NodeType } from "@utils/types";
+import { convertDataTypeToLabel } from "@utils/utils";
 
 import { useOrgAddActions } from "../hooks/useOrgAddActions";
 import EmployeeOption from "./EmployeeOption";

@@ -3,8 +3,8 @@ import ClearIcon from "@mui/icons-material/Clear";
 import { Box, IconButton, InputAdornment, TextField, Typography, useTheme } from "@mui/material";
 import { SearchIcon } from "lucide-react";
 
-import { OrgStructureState } from "@root/src/slices/organizationSlice/organizationStructure";
-import { NodeType } from "@root/src/utils/types";
+import { OrgStructureState } from "@slices/organizationSlice/organizationStructure";
+import { NodeType } from "@utils/types";
 
 import OrgStructureCard from "../../../components/OrgStructureCard";
 

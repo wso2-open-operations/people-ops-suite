@@ -16,8 +16,8 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 
 import { AppConfig } from "@config/config";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
-import { enqueueSnackbarMessage } from "../slices/commonSlice/common";
 import { baseQueryWithRetry } from "./BaseQuery";
 
 export interface Head {

@@ -15,7 +15,7 @@
 // under the License.
 import { Avatar, Box, Typography, useTheme } from "@mui/material";
 
-import { EmployeeBasicInfo } from "@root/src/services/employee";
+import { EmployeeBasicInfo } from "@services/employee";
 
 interface EmployeeOptionProps {
   listItemProps: React.HTMLAttributes<HTMLLIElement>;

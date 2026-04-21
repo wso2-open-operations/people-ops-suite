@@ -18,7 +18,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { useEffect, useState } from "react";
 
-import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import { NodeType } from "@utils/types";
 import { convertDataTypeToLabel } from "@utils/utils";
@@ -69,7 +69,7 @@ export const RenameField: React.FC<RenameFieldProps> = ({
     setIsFocused(false);
   };
 
-  const unitTypeLabel = convertDataTypeToLabel(nodeType)
+  const unitTypeLabel = convertDataTypeToLabel(nodeType);
 
   return (
     <Box

@@ -26,18 +26,18 @@ import {
 
 import { useRef } from "react";
 
-import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
 import {
   BusinessUnitState,
   SubTeamState,
   TeamState,
   UnitState,
-} from "@root/src/slices/organizationSlice/organizationStructure";
-import { RootState, useAppSelector } from "@root/src/slices/store";
-import { NodeType } from "@root/src/utils/types";
-import { convertDataTypeToLabel } from "@root/src/utils/utils";
+} from "@slices/organizationSlice/organizationStructure";
+import { RootState, useAppSelector } from "@slices/store";
 import BackdropProgress from "@src/component/ui/BackdropProgress";
+import { NodeType } from "@utils/types";
+import { convertDataTypeToLabel } from "@utils/utils";
 
 import { useOrgUpdateActions } from "../hooks/useOrgUpdateActions";
 import { DeleteCurrent } from "../sections/danger-section/DeleteCurrent";

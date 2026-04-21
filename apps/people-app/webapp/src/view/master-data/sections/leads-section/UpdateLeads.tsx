@@ -31,13 +31,13 @@ import {
 
 import { useEffect, useState } from "react";
 
-import ConfirmationDialog from "@root/src/component/common/ConfirmationDialog";
-import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import ConfirmationDialog from "@component/common/ConfirmationDialog";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
-import { Head } from "@root/src/services/organization";
-import { NodeType } from "@root/src/utils/types";
-import { capitalizeWords, convertDataTypeToLabel, truncateName } from "@root/src/utils/utils";
 import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@services/employee";
+import { Head } from "@services/organization";
+import { NodeType } from "@utils/types";
+import { capitalizeWords, convertDataTypeToLabel, truncateName } from "@utils/utils";
 
 const NAME_TRUNCATE_LENGTH = 16;
 const DESIGNATION_TRUNCATE_LENGTH = 30;

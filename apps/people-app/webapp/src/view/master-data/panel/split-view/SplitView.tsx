@@ -18,17 +18,16 @@ import { Box } from "@mui/material";
 import { useEffect, useState } from "react";
 
 import ErrorHandler from "@component/common/ErrorHandler";
-import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@root/src/config/constant";
+import { SPLIT_VIEW_SKELETON_DELAY_MS } from "@config/constant";
 import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
+import { useGetOrgStructureQuery } from "@services/organization";
+import { State } from "@slices/authSlice/auth";
 import {
   fetchBusinessUnits,
   fetchSubTeams,
   fetchTeams,
   fetchUnits,
-} from "@root/src/slices/organizationSlice/organization";
-import { buildAddModalOptions } from "@root/src/utils/utils";
-import { useGetOrgStructureQuery } from "@services/organization";
-import { State } from "@slices/authSlice/auth";
+} from "@slices/organizationSlice/organization";
 import {
   BusinessUnit as RawBusinessUnit,
   SubTeam as RawSubTeam,
@@ -46,6 +45,7 @@ import {
 } from "@slices/organizationSlice/organizationStructure";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { NodeType } from "@utils/types";
+import { buildAddModalOptions } from "@utils/utils";
 import { EditModal } from "@view/master-data/components/EditModal";
 
 import AddModal from "../../components/AddModal";

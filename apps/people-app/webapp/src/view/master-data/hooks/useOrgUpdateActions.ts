@@ -13,15 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { EmployeeBasicInfo } from "@services/employee";
 import {
   BusinessUnitState,
   CompanyState,
   SubTeamState,
   TeamState,
   UnitState,
-} from "@root/src/slices/organizationSlice/organizationStructure";
-import { NodeType } from "@root/src/utils/types";
-import { EmployeeBasicInfo } from "@services/employee";
+} from "@slices/organizationSlice/organizationStructure";
+import { NodeType } from "@utils/types";
 
 import { useOrgUpdateMutations } from "./useOrgUpdateMutations";
 
