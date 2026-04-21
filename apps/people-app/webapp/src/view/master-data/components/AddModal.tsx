@@ -46,15 +46,6 @@ import {
 import { NodeType } from "@root/src/utils/types";
 import { convertDataTypeToLabel } from "@root/src/utils/utils";
 import {
-  useAddBusinessUnitTeamMutation,
-  useAddBusinessUnitsMutation,
-  useAddSubTeamUnitMutation,
-  useAddSubTeamsMutation,
-  useAddTeamSubTeamMutation,
-  useAddTeamsMutation,
-  useAddUnitsMutation,
-} from "@services/organization";
-import {
   BusinessUnit as RawBusinessUnit,
   SubTeam as RawSubTeam,
   Team as RawTeam,
@@ -62,6 +53,7 @@ import {
 } from "@slices/organizationSlice/organization";
 import BackdropProgress from "@src/component/ui/BackdropProgress";
 
+import { useOrgAddActions } from "../hooks/useOrgAddActions";
 import EmployeeOption from "./EmployeeOption";
 import { SectionHeader } from "./edit-modal/SectionHeader";
 
@@ -81,6 +73,7 @@ const filter = createFilterOptions<OrgOption>();
 
 type ParentNode = CompanyState | BusinessUnitState | TeamState | SubTeamState;
 type MappableParentNode = BusinessUnitState | TeamState | SubTeamState;
+
 interface AddPageProps {
   open: boolean;
   orgInfo: OrgOptionTest[];
@@ -102,23 +95,8 @@ export default function AddPage(props: AddPageProps) {
   const [isNewItem, setIsNewItem] = useState<boolean>(false);
 
   const { data: employees = [], isLoading } = useGetEmployeesBasicInfoQuery();
-  const [addBusinessUnits, { isLoading: isAddingBusinessUnit }] = useAddBusinessUnitsMutation();
-  const [addBusinessUnitTeam, { isLoading: isAddingBusinessUnitTeam }] =
-    useAddBusinessUnitTeamMutation();
-  const [addTeams, { isLoading: isAddingTeam }] = useAddTeamsMutation();
-  const [addSubTeams, { isLoading: isAddingSubTeam }] = useAddSubTeamsMutation();
-  const [addTeamSubTeam, { isLoading: isAddingTeamSubTeam }] = useAddTeamSubTeamMutation();
-  const [addUnits, { isLoading: isAddingUnit }] = useAddUnitsMutation();
-  const [addSubTeamUnit, { isLoading: isAddingSubTeamUnit }] = useAddSubTeamUnitMutation();
 
-  const isAdding =
-    isAddingBusinessUnit ||
-    isAddingBusinessUnitTeam ||
-    isAddingTeam ||
-    isAddingSubTeam ||
-    isAddingTeamSubTeam ||
-    isAddingUnit ||
-    isAddingSubTeamUnit;
+  const { isAdding, createNewMapping, createNewOrgItem } = useOrgAddActions({ nodeType });
 
   const showSpinner = useMinimumLoadingVisibility(isAdding, SPLIT_VIEW_SKELETON_DELAY_MS);
   const showBackdrop = isAdding || isLoading || isParentLoading;
@@ -163,126 +141,126 @@ export default function AddPage(props: AddPageProps) {
     node.type === NodeType.Team ||
     node.type === NodeType.SubTeam;
 
-  const createNewMapping = async (data: AddOrgItemFormValues, parent: MappableParentNode) => {
-    const { orgNode, functionalLead } = data;
-
-    if (!parent || !orgNode?.id) {
-      throw new Error("Missing org node for mapping");
-    }
-
-    switch (nodeType) {
-      case NodeType.Team: {
-        await addBusinessUnitTeam({
-          payload: {
-            businessUnitId: (parent as BusinessUnitState).id,
-            teamId: orgNode.id,
-            ...(functionalLead?.workEmail && {
-              functionalLeadEmail: functionalLead.workEmail,
-            }),
-          },
-        }).unwrap();
-        break;
-      }
-      case NodeType.SubTeam: {
-        await addTeamSubTeam({
-          payload: {
-            businessUnitTeamId: (parent as TeamState).businessUnitTeamId,
-            subTeamId: orgNode.id,
-            ...(functionalLead?.workEmail && {
-              functionalLeadEmail: functionalLead.workEmail,
-            }),
-          },
-        }).unwrap();
-        break;
-      }
-      case NodeType.Unit: {
-        await addSubTeamUnit({
-          payload: {
-            businessUnitTeamSubTeamId: (parent as SubTeamState).businessUnitTeamSubTeamId,
-            unitId: orgNode.id,
-            ...(functionalLead?.workEmail && {
-              functionalLeadEmail: functionalLead.workEmail,
-            }),
-          },
-        }).unwrap();
-        break;
-      }
-      default:
-        throw new Error(`Mapping is not supported for node type: ${nodeType}`);
-    }
-  };
-
-  const createNewOrgItem = async (data: AddOrgItemFormValues, parent: ParentNode) => {
-    const { orgNode, orgNodeHead, functionalLead } = data;
-
-    if (!nodeType || !orgNode?.name) {
-      throw new Error("Missing required org item fields");
-    }
-
-    switch (nodeType) {
-      case NodeType.BusinessUnit: {
-        await addBusinessUnits({
-          name: orgNode.name,
-          ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
-        }).unwrap();
-        break;
-      }
-
-      case NodeType.Team: {
-        if (!parent) throw new Error("Parent business unit is required");
-        await addTeams({
-          payload: {
-            name: orgNode.name,
-            ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
-            businessUnit: {
-              businessUnitId: (parent as BusinessUnitState).id,
-              ...(functionalLead?.workEmail && {
-                functionalLeadEmail: functionalLead.workEmail,
-              }),
-            },
-          },
-        }).unwrap();
-        break;
-      }
-
-      case NodeType.SubTeam: {
-        if (!parent) throw new Error("Parent team is required");
-        await addSubTeams({
-          payload: {
-            name: orgNode.name,
-            ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
-            businessUnitTeam: {
-              businessUnitTeamId: (parent as TeamState).businessUnitTeamId,
-              ...(functionalLead?.workEmail && {
-                functionalLeadEmail: functionalLead.workEmail,
-              }),
-            },
-          },
-        }).unwrap();
-        break;
-      }
-
-      case NodeType.Unit: {
-        if (!parent) throw new Error("Parent sub-team is required");
-        await addUnits({
-          payload: {
-            name: orgNode.name,
-            ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
-            businessUnitTeamSubTeamUnit: {
-              businessUnitTeamSubTeamId: (parent as SubTeamState).businessUnitTeamSubTeamId,
-              ...(functionalLead?.workEmail && {
-                functionalLeadEmail: functionalLead.workEmail,
-              }),
-            },
-          },
-        }).unwrap();
-        break;
-      }
-
-      default:
-        throw new Error(`Create is not supported for node type: ${nodeType}`);
-    }
-  };
+  // const createNewMapping = async (data: AddOrgItemFormValues, parent: MappableParentNode) => {
+  //   const { orgNode, functionalLead } = data;
+  //
+  //   if (!parent || !orgNode?.id) {
+  //     throw new Error("Missing org node for mapping");
+  //   }
+  //
+  //   switch (nodeType) {
+  //     case NodeType.Team: {
+  //       await addBusinessUnitTeam({
+  //         payload: {
+  //           businessUnitId: (parent as BusinessUnitState).id,
+  //           teamId: orgNode.id,
+  //           ...(functionalLead?.workEmail && {
+  //             functionalLeadEmail: functionalLead.workEmail,
+  //           }),
+  //         },
+  //       }).unwrap();
+  //       break;
+  //     }
+  //     case NodeType.SubTeam: {
+  //       await addTeamSubTeam({
+  //         payload: {
+  //           businessUnitTeamId: (parent as TeamState).businessUnitTeamId,
+  //           subTeamId: orgNode.id,
+  //           ...(functionalLead?.workEmail && {
+  //             functionalLeadEmail: functionalLead.workEmail,
+  //           }),
+  //         },
+  //       }).unwrap();
+  //       break;
+  //     }
+  //     case NodeType.Unit: {
+  //       await addSubTeamUnit({
+  //         payload: {
+  //           businessUnitTeamSubTeamId: (parent as SubTeamState).businessUnitTeamSubTeamId,
+  //           unitId: orgNode.id,
+  //           ...(functionalLead?.workEmail && {
+  //             functionalLeadEmail: functionalLead.workEmail,
+  //           }),
+  //         },
+  //       }).unwrap();
+  //       break;
+  //     }
+  //     default:
+  //       throw new Error(`Mapping is not supported for node type: ${nodeType}`);
+  //   }
+  // };
+  //
+  // const createNewOrgItem = async (data: AddOrgItemFormValues, parent: ParentNode) => {
+  //   const { orgNode, orgNodeHead, functionalLead } = data;
+  //
+  //   if (!nodeType || !orgNode?.name) {
+  //     throw new Error("Missing required org item fields");
+  //   }
+  //
+  //   switch (nodeType) {
+  //     case NodeType.BusinessUnit: {
+  //       await addBusinessUnits({
+  //         name: orgNode.name,
+  //         ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
+  //       }).unwrap();
+  //       break;
+  //     }
+  //
+  //     case NodeType.Team: {
+  //       if (!parent) throw new Error("Parent business unit is required");
+  //       await addTeams({
+  //         payload: {
+  //           name: orgNode.name,
+  //           ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
+  //           businessUnit: {
+  //             businessUnitId: (parent as BusinessUnitState).id,
+  //             ...(functionalLead?.workEmail && {
+  //               functionalLeadEmail: functionalLead.workEmail,
+  //             }),
+  //           },
+  //         },
+  //       }).unwrap();
+  //       break;
+  //     }
+  //
+  //     case NodeType.SubTeam: {
+  //       if (!parent) throw new Error("Parent team is required");
+  //       await addSubTeams({
+  //         payload: {
+  //           name: orgNode.name,
+  //           ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
+  //           businessUnitTeam: {
+  //             businessUnitTeamId: (parent as TeamState).businessUnitTeamId,
+  //             ...(functionalLead?.workEmail && {
+  //               functionalLeadEmail: functionalLead.workEmail,
+  //             }),
+  //           },
+  //         },
+  //       }).unwrap();
+  //       break;
+  //     }
+  //
+  //     case NodeType.Unit: {
+  //       if (!parent) throw new Error("Parent sub-team is required");
+  //       await addUnits({
+  //         payload: {
+  //           name: orgNode.name,
+  //           ...(orgNodeHead?.workEmail && { headEmail: orgNodeHead.workEmail }),
+  //           businessUnitTeamSubTeamUnit: {
+  //             businessUnitTeamSubTeamId: (parent as SubTeamState).businessUnitTeamSubTeamId,
+  //             ...(functionalLead?.workEmail && {
+  //               functionalLeadEmail: functionalLead.workEmail,
+  //             }),
+  //           },
+  //         },
+  //       }).unwrap();
+  //       break;
+  //     }
+  //
+  //     default:
+  //       throw new Error(`Create is not supported for node type: ${nodeType}`);
+  //   }
+  // };
 
   useEffect(() => {
     if (showSpinner) return;
