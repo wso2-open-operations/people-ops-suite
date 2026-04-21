@@ -5,8 +5,7 @@ import { SearchIcon } from "lucide-react";
 
 import { OrgStructureState } from "@slices/organizationSlice/organizationStructure";
 import { NodeType } from "@utils/types";
-
-import OrgStructureCard from "../../../components/OrgStructureCard";
+import OrgStructureCard from "@view/master-data/components/OrgStructureCard";
 
 interface SplitViewColumnProps<T extends OrgStructureState> {
   title: string;
