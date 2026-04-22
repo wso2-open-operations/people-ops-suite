@@ -136,28 +136,10 @@ export const isPresentOrFuture = (isoDate?: string | null): boolean => {
 export const toSentenceCase = (value: string): string => {
   if (!value) return value;
   return value
-    .replace(/_/g, " ")
-    .replace(/\s*-\s*/g, "-")
+    .replace(/[_-]/g, " ")
     .split(" ")
-    .map((word) => {
-      if (!word) return word;
-      if (word.includes("-")) {
-        return word
-          .split("-")
-          .map((part) => {
-            if (!part || /\d/.test(part)) return part;
-            if (/^[A-Z]{2,6}$/.test(part)) return part;
-            return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
-          })
-          .join("-");
-      }
-      if (/\d/.test(word)) return word;
-      if (/^[A-Z]{2,6}$/.test(word)) return word;
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    })
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 };
 
 export const sortAndFormatOptions = <T>(

@@ -35,7 +35,7 @@ import { State } from "@src/types/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MyTeamSearchForm } from "./MyTeamSearchForm";
-import { getEmployeeStatusColor, toSentenceCase } from "@utils/utils";
+import { getEmployeeStatusColor } from "@utils/utils";
 
 export default function MyTeamTable() {
   const theme = useTheme();
@@ -140,14 +140,7 @@ export default function MyTeamTable() {
         valueGetter: (_value, row) => getFullName(row.firstName, row.lastName),
         resizable: false,
         renderCell: (params: GridRenderCellParams<Employee>) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              width: "100%",
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
             {params.row.employeeThumbnail ? (
               <Avatar
                 src={params.row.employeeThumbnail}
@@ -155,13 +148,7 @@ export default function MyTeamTable() {
                 sx={{ width: 32, height: 32 }}
               />
             ) : (
-              <Avatar
-                sx={{
-                  width: 32,
-                  height: 32,
-                  bgcolor: theme.palette.primary.main,
-                }}
-              >
+              <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main }}>
                 {params.row.firstName?.[0]?.toUpperCase() || "E"}
               </Avatar>
             )}
@@ -187,14 +174,7 @@ export default function MyTeamTable() {
         resizable: false,
         renderCell: (params: GridRenderCellParams<Employee>) => (
           <Tooltip title={params.value || ""} arrow>
-            <Box
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                color: theme.palette.text.primary,
-              }}
-            >
+            <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: theme.palette.text.primary }}>
               {params.value}
             </Box>
           </Tooltip>
@@ -206,23 +186,13 @@ export default function MyTeamTable() {
         flex: 0.8,
         minWidth: 140,
         resizable: false,
-        renderCell: (params: GridRenderCellParams<Employee>) => {
-          const formatted = params.value ? toSentenceCase(params.value) : "N/A";
-          return (
-            <Tooltip title={formatted} arrow>
-              <Box
-                sx={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  color: theme.palette.text.primary,
-                }}
-              >
-                {formatted}
-              </Box>
-            </Tooltip>
-          );
-        },
+        renderCell: (params: GridRenderCellParams<Employee>) => (
+          <Tooltip title={params.value || "N/A"} arrow>
+            <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: theme.palette.text.primary }}>
+              {params.value || "N/A"}
+            </Box>
+          </Tooltip>
+        ),
       },
       {
         field: "employmentType",
@@ -230,23 +200,13 @@ export default function MyTeamTable() {
         flex: 0.8,
         minWidth: 120,
         resizable: false,
-        renderCell: (params: GridRenderCellParams<Employee>) => {
-          const formatted = params.value ? toSentenceCase(params.value) : "N/A";
-          return (
-            <Tooltip title={formatted} arrow>
-              <Box
-                sx={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  color: theme.palette.text.primary,
-                }}
-              >
-                {formatted}
-              </Box>
-            </Tooltip>
-          );
-        },
+        renderCell: (params: GridRenderCellParams<Employee>) => (
+          <Tooltip title={params.value || "N/A"} arrow>
+            <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: theme.palette.text.primary }}>
+              {params.value || "N/A"}
+            </Box>
+          </Tooltip>
+        ),
       },
       {
         field: "employeeStatus",
@@ -261,13 +221,7 @@ export default function MyTeamTable() {
             variant="outlined"
             size="small"
             color={getEmployeeStatusColor(params.value)}
-            sx={{
-              fontWeight: 700,
-              fontSize: "0.7rem",
-              height: 24,
-              borderRadius: 2,
-              border: 1,
-            }}
+            sx={{ fontWeight: 700, fontSize: "0.7rem", height: 24, borderRadius: 2, border: 1 }}
           />
         ),
       },

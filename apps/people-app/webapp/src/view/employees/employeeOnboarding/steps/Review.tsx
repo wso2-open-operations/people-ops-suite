@@ -19,7 +19,6 @@ import { Box, Grid, Typography, useTheme, alpha } from "@mui/material";
 import { useFormikContext } from "formik";
 import dayjs from "dayjs";
 import { useAppSelector } from "@slices/store";
-import { toSentenceCase } from "@utils/utils";
 import { CreateEmployeeFormValues } from "@root/src/types/types";
 import {
   PersonOutline,
@@ -152,9 +151,6 @@ const MainSectionTitle = React.memo(({ title }: { title: string }) => {
   );
 });
 
-const formatDisplayValue = (value: string | null | undefined): string | null =>
-  value ? toSentenceCase(value) : null;
-
 export default function ReviewStep() {
   const theme = useTheme();
   const { values } = useFormikContext<CreateEmployeeFormValues>();
@@ -194,33 +190,23 @@ export default function ReviewStep() {
   // Map IDs to Names for display
   const mappedNames = useMemo(
     () => ({
-      businessUnit: formatDisplayValue(
-        businessUnits.find((b) => b.id === values.businessUnitId)?.name,
-      ),
-      team: formatDisplayValue(teams.find((t) => t.id === values.teamId)?.name),
-      subTeam: formatDisplayValue(
-        subTeams.find((st) => st.id === values.subTeamId)?.name,
-      ),
-      unit: formatDisplayValue(units.find((u) => u.id === values.unitId)?.name),
-      designation: formatDisplayValue(
-        designations.find((cf) => cf.id === values.designationId)?.designation,
-      ),
-      careerFunction: formatDisplayValue(
+      businessUnit:
+        businessUnits.find((b) => b.id === values.businessUnitId)?.name || null,
+      team: teams.find((t) => t.id === values.teamId)?.name || null,
+      subTeam: subTeams.find((st) => st.id === values.subTeamId)?.name || null,
+      unit: units.find((u) => u.id === values.unitId)?.name || null,
+      designation:
+        designations.find((cf) => cf.id === values.designationId)
+          ?.designation || null,
+      careerFunction:
         careerFunctions.find((cf) => cf.id === values.careerFunctionId)
-          ?.careerFunction,
-      ),
-      company: formatDisplayValue(
-        companies.find((c) => c.id === values.companyId)?.name,
-      ),
-      office: formatDisplayValue(
-        offices.find((o) => o.id === values.officeId)?.name,
-      ),
-      employmentType: formatDisplayValue(
-        employmentTypes.find((o) => o.id === values.employmentTypeId)?.name,
-      ),
-      house: formatDisplayValue(
-        houses.find((h) => h.id === values.houseId)?.name,
-      ),
+          ?.careerFunction || null,
+      company: companies.find((c) => c.id === values.companyId)?.name || null,
+      office: offices.find((o) => o.id === values.officeId)?.name || null,
+      employmentType:
+        employmentTypes.find((o) => o.id === values.employmentTypeId)?.name ||
+        null,
+      house: houses.find((h) => h.id === values.houseId)?.name || null,
     }),
     [
       businessUnits,
@@ -445,10 +431,7 @@ export default function ReviewStep() {
             <ReviewField label="Office" value={mappedNames.office} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField
-              label="Work Location"
-              value={formatDisplayValue(values.workLocation)}
-            />
+            <ReviewField label="Work Location" value={values.workLocation} />
           </Grid>
         </Grid>
       </Box>
@@ -498,7 +481,10 @@ export default function ReviewStep() {
 
       {/* Lead & Reports */}
       <Box sx={sectionBoxSx}>
-        <SectionHeader icon={REVIEW_ICONS.supervisor} title="Lead & Reports" />
+        <SectionHeader
+          icon={REVIEW_ICONS.supervisor}
+          title="Lead & Reports"
+        />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Lead Email" value={values.managerEmail} />
