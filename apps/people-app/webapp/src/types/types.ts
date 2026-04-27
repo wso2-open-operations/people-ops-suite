@@ -15,6 +15,12 @@
 // under the License.
 import type { NonIndexRouteObject } from "react-router-dom";
 
+export enum EmployeeStatus {
+  Active = "Active",
+  Left = "Left",
+  MarkedLeaver = "Marked leaver",
+}
+
 export enum State {
   failed = "failed",
   success = "success",
@@ -92,6 +98,10 @@ export interface CreateEmployeeFormValues {
   secondaryJobTitle: string;
   houseId: number;
   employeeId?: string;
+  employeeStatus: EmployeeStatus | null;
+  finalDayInOffice: string | null;
+  finalDayOfEmployment: string | null;
+  resignationReason: string | null;
 }
 
 export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
@@ -137,6 +147,10 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   secondaryJobTitle: "",
   houseId: 0,
   employeeId: "",
+  employeeStatus: null,
+  finalDayInOffice: null,
+  finalDayOfEmployment: null,
+  resignationReason: null,
 };
 
 export interface ServiceLength {

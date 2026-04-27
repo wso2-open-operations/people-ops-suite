@@ -23,14 +23,14 @@ import { ServiceTile } from "@/components/features/services";
 function HomePage({ user: _user }: PageProps) {
   return (
     <PageTransitionWrapper type="main">
-      <Header />
-      <main className="px-4">
-        <div className="flex flex-col">
+      <div className="min-h-screen bg-[#F2F2EF]">
+        <Header />
+        <main className="px-4 pt-3 flex flex-col gap-4">
           {services.map((service, index) => (
             <ServiceTile key={index} {...service} />
           ))}
-        </div>
-      </main>
+        </main>
+      </div>
     </PageTransitionWrapper>
   );
 }

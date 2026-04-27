@@ -524,7 +524,32 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
         if additionalManagerEmails is Email[] {
             check syncAdditionalManagers(employeeId, additionalManagerEmails, updatedBy);
         }
+        check syncResignationRecord(employeeId, payload, updatedBy);
         check commit;
+    }
+}
+
+# Check whether the job-info update payload contains any leaver-specific fields.
+#
+# + payload - Job information update payload
+# + return - True if any resignation field is present
+public isolated function hasLeaverFields(UpdateEmployeeJobInfoPayload payload) returns boolean =>
+    payload.finalDayInOffice is string
+    || payload.finalDayOfEmployment is string
+    || payload.resignationReason is string;
+
+# Sync the resignation table row for an employee based on the job-info update payload.
+# Retains any existing resignation record when the employee is reactivated, so historical details are preserved.
+#
+# + employeeId - Employee ID
+# + payload - Job information update payload
+# + updatedBy - User performing the operation
+# + return - Nil or error
+isolated function syncResignationRecord(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns error? {
+
+    if hasLeaverFields(payload) {
+        _ = check databaseClient->execute(upsertResignationQuery(employeeId, payload, updatedBy));
     }
 }
 
@@ -727,6 +752,19 @@ public isolated function updateParkingReservationStatus(UpdateParkingReservation
     sql:ExecutionResult result = check databaseClient->execute(
         updateParkingReservationStatusQuery(payload));
     return result.affectedRowCount > 0;
+}
+
+# Get a map of employee work email to full name for all employees.
+#
+# + return - Map of work_email -> full_name, or error
+public isolated function getEmployeeEmailToNameMap() returns map<string>|error {
+    stream<EmployeeNameRow, error?> resultStream = databaseClient->query(getEmployeeEmailToNameMapQuery());
+    map<string> nameMap = {};
+    check from EmployeeNameRow row in resultStream
+        do {
+            nameMap[row.workEmail.toLowerAscii()] = row.fullName;
+        };
+    return nameMap;
 }
 
 # Get parking reservations by employee.

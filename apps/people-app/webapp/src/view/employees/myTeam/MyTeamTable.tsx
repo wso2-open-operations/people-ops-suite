@@ -24,10 +24,10 @@ import {
   GridSortItem,
   GridSortModel,
 } from "@mui/x-data-grid";
+import { EmployeeStatus } from "@/types/types";
 import {
   Employee,
   EmployeeSearchPayload,
-  EmployeeStatus,
   fetchFilteredEmployees,
 } from "@slices/employeeSlice/employee";
 import { useAppDispatch, useAppSelector } from "@slices/store";
