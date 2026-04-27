@@ -22,8 +22,7 @@ export const SnackMessage = {
     fetchEmployee: "Error while fetching employee",
     fetchEmployees: "Error while fetching employees",
     fetchPrivileges: "Error while fetching user privileges",
-    insufficientPrivileges:
-      "You don't have sufficient privileges to access this resource",
+    insufficientPrivileges: "You don't have sufficient privileges to access this resource",
     fetchAppConfigMessage: "Error while fetching app config",
     updateEmployeePersonalInfo: "Error while updating personal info",
     addEmployee: "Unable to add employee",
@@ -45,6 +44,14 @@ export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
 export const EmployeeTitle = ["Mr", "Mrs", "Miss", "Ms", "Dr", "Prof"];
 
 export const EmployeeGenders = ["Male", "Female", "Not Specified"];
+
+export const APP_DESC = "People app";
+
+export const APP_THEME = "people-app-theme";
+
+export const redirectUrl = "people-app-redirect-url";
+
+export const SPLIT_VIEW_SKELETON_DELAY_MS = 2000;
 
 export const Countries = [
   "Afghanistan",

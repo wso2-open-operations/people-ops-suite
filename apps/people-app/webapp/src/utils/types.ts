@@ -26,3 +26,11 @@ export enum ThemeMode {
   Light = "light",
   Dark = "dark",
 }
+
+export enum NodeType {
+  Company = "COMPANY",
+  BusinessUnit = "BUSINESS_UNIT",
+  Team = "TEAM",
+  SubTeam = "SUB_TEAM",
+  Unit = "UNIT",
+}

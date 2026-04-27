@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,157 +13,162 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import React from "react";
-import { APP_NAME } from "@config/config";
-import logoBlack from "@assets/images/WSO2-Logo-Black.png";
-import logoWhite from "@assets/images/WSO2-Logo-White.png";
+import { UserDropdown } from "@asgardeo/react";
+import { Box, LinearProgress, Stack, useMediaQuery } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import { useAppAuthContext } from "@context/AuthContext";
-import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
-import {
-  AppBar,
-  Avatar,
-  Box,
-  Menu,
-  MenuItem,
-  Stack,
-  Tooltip,
-  useTheme,
-} from "@mui/material";
-import { resetEmployee } from "@root/src/slices/employeeSlice/employee";
-import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
+import { useTheme } from "@mui/material/styles";
 
-const Header = () => {
+import { APP_NAME } from "@config/config";
+import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
+import { useMinimumLoadingVisibility } from "@root/src/hooks/useMinimumLoadingVisibility";
+import { useWso2Logo } from "@root/src/hooks/useWso2Logo";
+import { isGlobalLoadingSelector } from "@root/src/slices/selectors";
+import { useAppSelector } from "@slices/store";
+import UpdatedThemeScope from "@src/theme/UpdatedThemeScope";
+
+const MIN_GLOBAL_LOADING_INDICATOR_MS = 2000;
+
+const HeaderContent = () => {
   const theme = useTheme();
-  const authContext = useAppAuthContext();
-  const dispatch = useAppDispatch();
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
-    null
+  const wso2Logo = useWso2Logo();
+
+  const user = useAppSelector((state) => state.user.userInfo);
+  const isGlobalLoading = useAppSelector(isGlobalLoadingSelector);
+  const showGlobalLoadingBar = useMinimumLoadingVisibility(
+    isGlobalLoading,
+    MIN_GLOBAL_LOADING_INDICATOR_MS,
   );
-  const user = useAppSelector((state: RootState) => state.user);
 
-  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElUser(event.currentTarget);
-  };
-
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
-
-  const handleLogout = () => {
-    dispatch(resetEmployee());
-    dispatch(resetPersonalInfo());
-    setAnchorElUser(null);
-    authContext.appSignOut();
-  };
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
-    <AppBar
-      position="fixed"
+    <Box
       sx={{
-        zIndex: (theme) => theme.zIndex.drawer + 1,
-        color: (theme) =>
-          theme.palette.mode === "light"
-            ? theme.palette.primary.main
-            : theme.palette.common.white,
-
-        background: (theme) =>
-          theme.palette.mode === "light"
-            ? theme.palette.common.white
-            : theme.palette.primary.dark,
-        boxShadow: 2,
+        position: "relative",
+        zIndex: 10,
+        backgroundColor: theme.palette.surface.secondary.active,
+        boxShadow: theme.shadows[4],
+        display: "flex",
+        flexDirection: "column",
+        gap: 1,
       }}
     >
       <Toolbar
         variant="dense"
         sx={{
           paddingY: 0.3,
+          display: "flex",
+          gap: 2,
           "&.MuiToolbar-root": {
-            pl: 0.3,
+            px: 1.5,
           },
         }}
       >
         <img
           alt="wso2"
           style={{
-            height: "20px",
-            width: "auto",
-            cursor: "pointer",
-            paddingLeft: "5px",
-            paddingRight: "2px"
+            maxWidth: "100px",
           }}
           onClick={() => (window.location.href = "/")}
-          src={theme.palette.mode === "dark" ? logoWhite : logoBlack}
+          src={wso2Logo}
         ></img>
-        <Typography
-          variant="h5"
+
+        <Box
           sx={{
-            ml: 1,
-            flexGrow: 1,
-            fontWeight: 600,
-            cursor: "pointer",
+            display: "flex",
+            flexDirection: "row",
+            gap: theme.spacing(0.5),
+            width: "100%",
+            alignItems: "center",
+            height: "100%",
           }}
-          onClick={() => (window.location.href = "/")}
         >
-          {APP_NAME}
-        </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              color: theme.palette.customText.primary.p1.active,
+            }}
+          >
+            {APP_NAME}
+          </Typography>
+
+          <BasicBreadcrumbs />
+        </Box>
 
         <Box sx={{ flexGrow: 0 }}>
-          {user.userInfo && (
+          {user && (
             <>
-              <Stack flexDirection={"row"} alignItems={"center"} gap={2}>
-                <Box>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {user.userInfo?.firstName + " " + user.userInfo.lastName}
-                  </Typography>
-                  <Typography variant="body2">
-                    {user.userInfo?.jobRole}
-                  </Typography>
-                </Box>
-                <Tooltip title="Open settings">
-                  <Avatar
-                    onClick={handleOpenUserMenu}
+              <Stack flexDirection={"row"} gap={1}>
+                {!isMobile && (
+                  <Box
                     sx={{
-                      border: 1,
-                      borderColor: "primary.main",
-                      cursor: "pointer",
+                      width: "fit-content",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      justifyContent: "center",
+                      p: 0,
                     }}
-                    src={user.userInfo?.employeeThumbnail || ""}
-                    alt={user.userInfo?.firstName || "Avatar"}
                   >
-                    {user.userInfo?.firstName?.charAt(0)}
-                  </Avatar>
-                </Tooltip>
-              </Stack>
+                    <Typography
+                      noWrap
+                      variant="body1"
+                      sx={{
+                        color: theme.palette.customText.primary.p2.active,
+                      }}
+                    >
+                      {[user.firstName, user.lastName].filter(Boolean).join(" ")}
+                    </Typography>
 
-              <Menu
-                sx={{ mt: "45px" }}
-                id="menu-appbar"
-                anchorEl={anchorElUser}
-                anchorOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
-                }}
-                keepMounted
-                transformOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
-                }}
-                open={Boolean(anchorElUser)}
-                onClose={handleCloseUserMenu}
-              >
-                <MenuItem key={"logout"} onClick={handleLogout}>
-                  <Typography textAlign="center">Logout</Typography>
-                </MenuItem>
-              </Menu>
+                    <Typography
+                      noWrap
+                      variant="body2"
+                      sx={{
+                        color: theme.palette.customText.primary.p3.active,
+                        width: "fit-content",
+                      }}
+                    >
+                      {user.jobRole}
+                    </Typography>
+                  </Box>
+                )}
+
+                <UserDropdown avatarSize={44} />
+              </Stack>
             </>
           )}
         </Box>
       </Toolbar>
-    </AppBar>
+
+      {showGlobalLoadingBar && (
+        <LinearProgress
+          sx={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 2,
+            borderRadius: 0,
+            transition: "opacity 200ms ease-in-out",
+            pointerEvents: "none",
+            "& .MuiLinearProgress-bar1": {
+              animationDuration: "1s",
+            },
+            "& .MuiLinearProgress-bar2": {
+              animationDuration: "1s",
+            },
+          }}
+        />
+      )}
+    </Box>
   );
 };
+
+const Header = () => (
+  <UpdatedThemeScope>
+    <HeaderContent />
+  </UpdatedThemeScope>
+);
 
 export default Header;

@@ -13,22 +13,38 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { lazy } from "react";
 
-const me = lazy(() => import("@view/me"));
-const employeeOnboarding = lazy(() => import("@view/employees/employeeOnboarding/employeeOnboarding"));
-const employeesList = lazy(() => import("@view/employees/employeesView/EmployeesView"));
 const help = lazy(() => import("@view/help/help"));
-const employeeDetails = lazy(() => import("@view/employees/employeeDetail/employeeDetail"));
-const employeeEdit = lazy(() => import("@view/employees/employeeEdit/employeeEdit"));
+const me = lazy(() => import("@view/me"));
+const employees = lazy(() => import("@view/employees/EmployeeForm"));
+const masterData = lazy(() => import("@view/master-data/MasterData"));
+const employeeOnboarding = lazy(
+  () => import("@view/employees/employeeOnboarding/employeeOnboarding"),
+);
+const employeesList = lazy(
+  () => import("@view/employees/employeesView/EmployeesView"),
+);
+const employeeDetails = lazy(
+  () => import("@view/employees/employeeDetail/employeeDetail"),
+);
+const employeeEdit = lazy(
+  () => import("@view/employees/employeeEdit/employeeEdit"),
+);
 const myTeamView = lazy(() => import("@view/employees/myTeam/MyTeamView"));
-const activeEmployeesReport = lazy(() => import("@view/reports/ActiveEmployeesReportView"));
-const resignationReport = lazy(() => import("@view/reports/ResignationReportView"));
+const activeEmployeesReport = lazy(
+  () => import("@view/reports/ActiveEmployeesReportView"),
+);
+const resignationReport = lazy(
+  () => import("@view/reports/ResignationReportView"),
+);
 const qrCodesReport = lazy(() => import("@view/reports/QrCodesReport"));
 
 export const View = {
+  help,
   me,
+  employees,
+  masterData,
   employeeOnboarding,
   employeesList,
   myTeamView,
@@ -37,5 +53,4 @@ export const View = {
   activeEmployeesReport,
   resignationReport,
   qrCodesReport,
-  help,
 };

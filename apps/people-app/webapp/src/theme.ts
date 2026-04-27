@@ -13,8 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { alpha, PaletteMode } from "@mui/material";
+import { PaletteMode, alpha } from "@mui/material";
 
 // Color Design Tokens
 export const tokens = (mode: PaletteMode) => ({
@@ -157,9 +156,7 @@ export const themeSettings = (mode: PaletteMode) => {
         styleOverrides: {
           columnHeader: {
             backgroundColor:
-              mode === "dark"
-                ? alpha(colors.primary[300], 0.9)
-                : alpha(colors.primary[300], 0.2),
+              mode === "dark" ? alpha(colors.primary[300], 0.9) : alpha(colors.primary[300], 0.2),
             fontWeight: 1000,
           },
           columnHeaderTitle: {

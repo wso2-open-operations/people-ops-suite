@@ -14,8 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { ServiceLength } from "../types/types";
-import { DATE_FMT } from "../config/constant";
 import {
   differenceInMonths,
   differenceInYears,
@@ -23,8 +21,36 @@ import {
   isMatch,
   isValid,
   parse,
-  format,
 } from "date-fns";
+import {
+  BusinessUnit,
+  Company,
+  SubTeam,
+  Team,
+  Unit,
+} from "@services/organization";
+import {
+  BusinessUnit as RawBusinessUnit,
+  SubTeam as RawSubTeam,
+  Team as RawTeam,
+  Unit as RawUnit,
+} from "@slices/organizationSlice/organization";
+import type {
+  BusinessUnitState,
+  CompanyState,
+  OrgStructureState,
+  OrganizationInfo,
+  SubTeamState,
+  TeamState,
+  UnitState,
+} from "@slices/organizationSlice/organizationStructure";
+
+import { format } from "date-fns";
+import { NodeType } from "./types";
+
+import { DATE_FMT } from "../config/constant";
+import { RouteObjectWithRole, ServiceLength } from "@/types/types";
+import { AddOption } from "../view/master-data/panel/split-view/SplitView";
 
 export const isIncludedRole = (a: string[], b: string[]): boolean => {
   return [...getCrossItems(a, b), ...getCrossItems(b, a)].length > 0;
@@ -63,38 +89,6 @@ export const markAllFieldsTouched = (errors: any) => {
   };
   markTouched(errors, touched);
   return touched;
-};
-
-const parseStrictYyyyMmDd = (s: string): Date | null => {
-  const v = s.trim();
-  if (!isMatch(v, DATE_FMT)) return null;
-
-  const d = parse(v, DATE_FMT, new Date());
-  return isValid(d) ? d : null;
-};
-
-export const calculateAge = (
-  dob: string,
-  now: Date = new Date(),
-): number | null => {
-  const d = parseStrictYyyyMmDd(dob);
-  if (!d || isAfter(d, now)) return null;
-  return differenceInYears(now, d);
-};
-
-export const calculateServiceLength = (
-  startDate: string,
-  now: Date = new Date(),
-): ServiceLength | null => {
-  const start = parseStrictYyyyMmDd(startDate);
-  if (!start || isAfter(start, now)) return null;
-
-  const totalMonths = differenceInMonths(now, start);
-
-  return {
-    years: Math.floor(totalMonths / 12),
-    months: totalMonths % 12,
-  };
 };
 
 export const formatServiceLength = (length: ServiceLength | null): string => {
@@ -166,4 +160,250 @@ export function getEmployeeStatusColor(
     default:
       return "default";
   }
+}
+
+/**
+ * Checks whether a route is active for the given user roles.
+ *
+ * A route is active when at least one role matches `allowRoles`
+ * and none of the roles match `excludeRoles`.
+ */
+export function isRouteActive(
+  routeObj: RouteObjectWithRole,
+  roles: string[],
+): boolean {
+  return (
+    isIncludedRole(roles, routeObj.allowRoles) &&
+    !(routeObj.excludeRoles && isIncludedRole(roles, routeObj.excludeRoles))
+  );
+}
+
+/**
+ * Joins a parent and child route path into a normalized absolute path.
+ *
+ * If `childPath` is already absolute, it is returned as-is.
+ */
+export function joinRoutePaths(parentPath: string, childPath: string): string {
+  if (!childPath) return parentPath;
+  if (childPath.startsWith("/")) return childPath;
+
+  const normalizedParent = parentPath.endsWith("/")
+    ? parentPath.slice(0, -1)
+    : parentPath;
+  const normalizedChild = childPath.startsWith("/")
+    ? childPath.slice(1)
+    : childPath;
+
+  return `${normalizedParent}/${normalizedChild}`;
+}
+
+const parseStrictYyyyMmDd = (s: string): Date | null => {
+  const v = s.trim();
+  if (!isMatch(v, DATE_FMT)) return null;
+
+  const d = parse(v, DATE_FMT, new Date());
+  return isValid(d) ? d : null;
+};
+
+export const calculateAge = (
+  dob: string,
+  now: Date = new Date(),
+): number | null => {
+  const d = parseStrictYyyyMmDd(dob);
+  if (!d || isAfter(d, now)) return null;
+  return differenceInYears(now, d);
+};
+
+export const calculateServiceLength = (
+  startDate: string,
+  now: Date = new Date(),
+): ServiceLength | null => {
+  const start = parseStrictYyyyMmDd(startDate);
+  if (!start || isAfter(start, now)) return null;
+
+  const totalMonths = differenceInMonths(now, start);
+
+  return {
+    years: Math.floor(totalMonths / 12),
+    months: totalMonths % 12,
+  };
+};
+
+// Union type for all organization items
+export type OrganizationItem = Company | BusinessUnit | Team | SubTeam | Unit;
+
+// Union type for child items
+export type ChildItem = BusinessUnit | Team | SubTeam | Unit;
+
+// Child type labels
+export type ChildTypeLabel = "Business Units" | "Teams" | "Sub-Teams" | "Units";
+
+export const generateOrgNodeUniqueId = (
+  nodeType: NodeType,
+  segments: Array<string | number>,
+) => [nodeType, ...segments].join(":");
+
+export function normalizeCompanyToOrganizationState(
+  companyDto: Company,
+): OrganizationInfo {
+  const businessUnits: BusinessUnitState[] = [];
+  const teams: TeamState[] = [];
+  const subTeams: SubTeamState[] = [];
+  const units: UnitState[] = [];
+  const companyUniqueId = generateOrgNodeUniqueId(NodeType.Company, [
+    companyDto.id,
+  ]);
+  const company: CompanyState = {
+    ...companyDto,
+    uniqueId: companyUniqueId,
+    type: NodeType.Company,
+  };
+
+  for (const bu of companyDto.businessUnits) {
+    const transformedTeams: TeamState[] = [];
+    const buUniqueId = generateOrgNodeUniqueId(NodeType.BusinessUnit, [bu.id]);
+
+    for (const team of bu.teams) {
+      const transformedSubTeams: SubTeamState[] = [];
+      const teamUniqueId = generateOrgNodeUniqueId(NodeType.Team, [
+        bu.id,
+        team.id,
+      ]);
+
+      for (const subTeam of team.subTeams) {
+        const transformedUnits: UnitState[] = [];
+        const subTeamUniqueId = generateOrgNodeUniqueId(NodeType.SubTeam, [
+          bu.id,
+          team.id,
+          subTeam.id,
+        ]);
+
+        for (const unit of subTeam.units) {
+          const unitUniqueId = generateOrgNodeUniqueId(NodeType.Unit, [
+            bu.id,
+            team.id,
+            subTeam.id,
+            unit.id,
+          ]);
+          const transformedUnit: UnitState = {
+            ...unit,
+            uniqueId: unitUniqueId,
+            parentId: subTeamUniqueId,
+            type: NodeType.Unit,
+          };
+          transformedUnits.push(transformedUnit);
+          units.push(transformedUnit);
+        }
+
+        const transformedSubTeam: SubTeamState = {
+          ...subTeam,
+          uniqueId: subTeamUniqueId,
+          parentId: teamUniqueId,
+          type: NodeType.SubTeam,
+          units: transformedUnits,
+        };
+        transformedSubTeams.push(transformedSubTeam);
+        subTeams.push(transformedSubTeam);
+      }
+
+      const transformedTeam: TeamState = {
+        ...team,
+        uniqueId: teamUniqueId,
+        parentId: buUniqueId,
+        type: NodeType.Team,
+        subTeams: transformedSubTeams,
+      };
+      transformedTeams.push(transformedTeam);
+      teams.push(transformedTeam);
+    }
+
+    const transformedBU: BusinessUnitState = {
+      ...bu,
+      uniqueId: buUniqueId,
+      parentId: companyUniqueId,
+      type: NodeType.BusinessUnit,
+      teams: transformedTeams,
+    };
+    businessUnits.push(transformedBU);
+  }
+
+  return {
+    company,
+    businessUnits,
+    teams,
+    subTeams,
+    units,
+  };
+}
+
+export const convertDataTypeToLabel = (dataType: NodeType) => {
+  switch (dataType) {
+    case NodeType.BusinessUnit:
+      return "Business Unit";
+    case NodeType.Team:
+      return "Team";
+    case NodeType.SubTeam:
+      return "Sub Team";
+    case NodeType.Unit:
+      return "Unit";
+    default:
+      return "";
+  }
+};
+
+// Helper function to truncate name if too long
+export const truncateName = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + " ...";
+};
+
+/**
+ * Build add modal options by marking which items can be added.
+ * Items that already exist as children are marked with canAdd: false.
+ *
+ * @param type - The node type being added
+ * @param selectedNode - The parent node
+ * @param orgItems - Available items to choose from
+ * @returns Items with canAdd flag indicating if they can be added
+ */
+export function buildAddModalOptions(
+  type: NodeType,
+  selectedNode: OrgStructureState,
+  orgItems: RawBusinessUnit[] | RawTeam[] | RawSubTeam[] | RawUnit[],
+): AddOption[] {
+  let existingIds: number[] = [];
+
+  switch (type) {
+    case NodeType.Team:
+      existingIds =
+        (selectedNode as BusinessUnitState).teams?.map((t) => t.id) ?? [];
+      break;
+    case NodeType.SubTeam:
+      existingIds =
+        (selectedNode as TeamState).subTeams?.map((st) => st.id) ?? [];
+      break;
+    case NodeType.Unit:
+      existingIds =
+        (selectedNode as SubTeamState).units?.map((u) => u.id) ?? [];
+      break;
+    case NodeType.BusinessUnit:
+    default:
+      existingIds = [];
+      break;
+  }
+
+  // Mark items that already exist as canAdd: false
+  return orgItems.map((item) => ({
+    ...item,
+    canAdd: !existingIds.includes(item.id),
+  }));
+}
+
+export function capitalizeWords(str: string) {
+  return str
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(" ");
 }

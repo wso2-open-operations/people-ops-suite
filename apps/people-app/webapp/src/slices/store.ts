@@ -25,6 +25,11 @@ import employeeReducer from "@slices/employeeSlice/employee";
 import employeePersonalInfoReducer from "@slices/employeeSlice/employeePersonalInfo";
 import userReducer from "@slices/userSlice/user";
 import organizationReducer from "@slices/organizationSlice/organization";
+import { organizationApi } from "@services/organization";
+import { configApi } from "@services/config.api";
+import { employeeApi } from "@services/employee";
+import { userApi } from "@services/user.api";
+import organizationStructureReducer from "@slices/organizationSlice/organizationStructure";
 
 enableMapSet();
 
@@ -37,9 +42,19 @@ export const store = configureStore({
     employeePersonalInfo: employeePersonalInfoReducer,
     appConfig: appConfigReducer,
     organization: organizationReducer,
+    organizationStructure: organizationStructureReducer,
+
+    [userApi.reducerPath]: userApi.reducer,
+    [configApi.reducerPath]: configApi.reducer,
+    [employeeApi.reducerPath]: employeeApi.reducer,
+    [organizationApi.reducerPath]: organizationApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware(),
+    getDefaultMiddleware()
+      .concat(userApi.middleware)
+      .concat(configApi.middleware)
+      .concat(employeeApi.middleware)
+      .concat(organizationApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

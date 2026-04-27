@@ -66,7 +66,7 @@ type ConfirmationDialogContextType = {
     action: () => void,
     okText?: string,
     cancelText?: string,
-    inputObj?: InputObj
+    inputObj?: InputObj,
   ) => void;
 };
 
@@ -106,7 +106,7 @@ const ConfirmationDialogContextProvider: React.FC<
     action: (value?: string) => void,
     okText?: string,
     cancelText?: string,
-    inputObj?: InputObj
+    inputObj?: InputObj,
   ) => {
     setContent({
       title,
@@ -149,7 +149,7 @@ const ConfirmationDialogContextProvider: React.FC<
   };
 
   const onChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setComment(event.target.value);
   };
@@ -270,7 +270,7 @@ const useConfirmationModalContext = (): ConfirmationDialogContextType => {
   const context = useContext(ConfirmationModalContext);
   if (!context) {
     throw new Error(
-      "useConfirmationModalContext must be used within a ConfirmationDialogContextProvider"
+      "useConfirmationModalContext must be used within a ConfirmationDialogContextProvider",
     );
   }
   return context;

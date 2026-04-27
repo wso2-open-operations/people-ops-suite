@@ -13,53 +13,44 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Box, Container, ThemeProvider, createTheme, useTheme as useMuiTheme } from "@mui/material";
+
+import { useMemo } from "react";
 
 import StateWithImage from "@component/ui/StateWithImage";
-import logoBlack from "@assets/images/WSO2-Logo-Black.png";
-import logoWhite from "@assets/images/WSO2-Logo-White.png";
-import { Box, Container, useTheme } from "@mui/material";
-import Grid from "@mui/material/Grid";
+import Wso2Logo from "@src/assets/images/WSO2-Logo-Black.png";
+import ErrorSvg from "@src/assets/images/error.svg";
+import { themeSettings as updatedThemeSettings } from "@src/theme/index";
 
-interface ErrorHandlerProps {
+export interface ErrorHandlerProps {
   message: string | null;
 }
 
 const ErrorHandler = (props: ErrorHandlerProps) => {
-  const theme = useTheme();
+  const legacyTheme = useMuiTheme();
+  const updatedTheme = useMemo(
+    () => createTheme(updatedThemeSettings(legacyTheme.palette.mode)),
+    [legacyTheme.palette.mode],
+  );
   return (
-    <Box
-      sx={{
-        paddingX: 2,
-        paddingY: 5,
-      }}
-    >
-      <Container maxWidth="md">
-        <Grid
-          container
-          direction="column"
-          justifyContent="center"
-          alignItems="center"
-          gap={2}
-        >
-          <Grid item xs={12}>
-            <img
-              alt="logo"
-              width="150"
-              height="auto"
-              src={theme.palette.mode === "dark" ? logoWhite : logoBlack}
-            />
-          </Grid>
-          <Grid item xs={12}>
+    <ThemeProvider theme={updatedTheme}>
+      <Box
+        sx={{
+          paddingX: 2,
+          paddingY: 5,
+        }}
+      >
+        <Container maxWidth="md">
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <img alt="logo" width="150" height="auto" src={Wso2Logo} />
             <StateWithImage
-              message={
-                props.message || "Something went wrong! Please try again later."
-              }
-              imageUrl={require("@assets/images/error.svg").default}
+              message={props.message || "Something went wrong! Please try again later."}
+              imageUrl={ErrorSvg}
             />
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
+          </Box>
+        </Container>
+      </Box>
+    </ThemeProvider>
   );
 };
 

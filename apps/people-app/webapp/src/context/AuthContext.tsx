@@ -13,221 +13,212 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { useAsgardeo } from "@asgardeo/react";
+import { useIdleTimer } from "react-idle-timer";
 
 import React, { useContext, useEffect, useState } from "react";
 
-import { useIdleTimer } from "react-idle-timer";
-
-import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
-import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
-import StatusWithAction from "@component/ui/StatusWithAction";
-import { Button } from "@mui/material";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import { loadPrivileges, setUserAuthData } from "@slices/authSlice/auth";
-import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
-import { getUserInfo } from "@slices/userSlice/user";
+import SessionWarningDialog from "@component/common/SessionWarningDialog";
+import { redirectUrl } from "@config/constant";
+import { setTokens } from "@services/BaseQuery";
+import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
+import { useAppDispatch } from "@slices/store";
 import { APIService } from "@utils/apiService";
+
+import { getUserInfo } from "../slices/userSlice/user";
 
 type AuthContextType = {
   appSignIn: () => void;
   appSignOut: () => void;
 };
+
+enum AppState {
+  Loading = "loading",
+  Unauthenticated = "unauthenticated",
+  Authenticating = "authenticating",
+  Authenticated = "authenticated",
+}
+
 const AuthContext = React.createContext<AuthContextType>({} as AuthContextType);
 
-const timeout = 1800_000;
+// Session timeout: 15 minutes in milliseconds
+const timeout = 15 * 60 * 1000;
+// Show warning 4 seconds before session timeout
 const promptBeforeIdle = 4_000;
 
-const AppAuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [idlePromptOpen, setIdlePromptOpen] = useState(false);
-  const [ui, setUI] = useState<"loading" | "active" | "logout" | "error">(
-    "loading"
-  );
+const AppAuthProvider = (props: { children: React.ReactNode }) => {
+  const [sessionWarningOpen, setSessionWarningOpen] = useState<boolean>(false);
+  const [appState, setAppState] = useState<AppState>(AppState.Loading);
 
   const dispatch = useAppDispatch();
-  const auth = useAppSelector((state: RootState) => state.auth);
-  const userInfo = useAppSelector((state: RootState) => state.user);
+
+  const onPrompt = () => {
+    appState === AppState.Authenticated && setSessionWarningOpen(true);
+  };
+
+  useEffect(() => {
+    if (!localStorage.getItem(redirectUrl)) {
+      localStorage.setItem(redirectUrl, window.location.href.replace(window.location.origin, ""));
+    }
+  }, []);
+
+  const { activate } = useIdleTimer({
+    onPrompt,
+    timeout,
+    promptBeforeIdle,
+    throttle: 500,
+  });
+
+  const handleContinue = () => {
+    setSessionWarningOpen(false);
+    activate();
+  };
 
   const {
     signIn,
     signOut,
-    getDecodedIDToken,
-    getBasicUserInfo,
-    refreshAccessToken,
-    isAuthenticated,
-    getIDToken,
-    state: asg,
-  } = useAuthContext();
+    getDecodedIdToken,
+    user,
+    signInSilently,
+    getAccessToken,
+    isLoading,
+    isSignedIn,
+  } = useAsgardeo();
 
-  useIdleTimer({
-    timeout,
-    promptBeforeIdle,
-    throttle: 500,
-    onPrompt: () => ui === "active" && setIdlePromptOpen(true),
-  });
+  const setupAuthenticatedUser = async () => {
+    const [decodedIdToken, accessToken] = await Promise.all([
+      getDecodedIdToken(),
+      getAccessToken(),
+    ]);
 
-  const handleContinue = () => setIdlePromptOpen(false);
+    new APIService(accessToken, refreshIdToken);
+    setTokens(accessToken, refreshToken, appSignOut);
 
-  const refreshToken = async (): Promise<{ idToken: string }> => {
-    try {
-      if (await isAuthenticated()) {
-        return { idToken: await getIDToken() };
-      }
-      await refreshAccessToken();
-      return { idToken: await getIDToken() };
-    } catch (e) {
-      await appSignOut();
-      throw e;
+    const userInfoResult = await dispatch(getUserInfo());
+
+    if (getUserInfo.rejected.match(userInfoResult)) {
+      dispatch(setAuthError());
+      return;
     }
+
+    dispatch(
+      setUserAuthData({
+        userInfo: user,
+        decodedIdToken: decodedIdToken,
+      }),
+    );
+
+    await dispatch(loadPrivileges());
   };
 
   useEffect(() => {
-    let cancelled = false;
+    let mounted = true;
 
-    const bootstrap = async () => {
-      if (asg.isLoading) return;
-      if (localStorage.getItem("people-app-state") === "logout") {
-        setUI("logout");
-        return;
-      }
-
-      if (!localStorage.getItem("people-app-redirect-url")) {
-        localStorage.setItem(
-          "people-app-redirect-url",
-          window.location.href.replace(window.location.origin, "")
-        );
-      }
-
-      if (!asg.isAuthenticated) {
-        await signIn();
-        return;
-      }
-
+    const initializeAuth = async () => {
       try {
-        const [basic, idToken, decoded] = await Promise.all([
-          getBasicUserInfo(),
-          getIDToken(),
-          getDecodedIDToken(),
-        ]);
-        if (cancelled) return;
+        setAppState(AppState.Loading);
 
-        dispatch(
-          setUserAuthData({ userInfo: basic, idToken, decodedIdToken: decoded })
-        );
-        new APIService(idToken, refreshToken);
-        await dispatch(getUserInfo()).unwrap();
-        await dispatch(loadPrivileges()).unwrap();
+        if (isLoading) return;
 
-        if (!cancelled) setUI("active");
-      } catch (err: unknown) {
-        console.error("Failed to logging in :", err);
+        if (isSignedIn) {
+          setAppState(AppState.Authenticating);
+          await setupAuthenticatedUser();
 
-        const status = (err as any)?.response?.status ?? (err as any)?.status;
-        if (status === 401 || status === 403) {
-          if (!cancelled) {
-            localStorage.removeItem("people-app-state");
-            await signIn();
-          }
-          return;
+          if (mounted) setAppState(AppState.Authenticated);
+        } else {
+          const silentSignInSuccess = await signInSilently();
+
+          if (mounted)
+            setAppState(silentSignInSuccess ? AppState.Authenticating : AppState.Unauthenticated);
         }
-
-        try {
-          const stillAuth = await isAuthenticated();
-          if (!stillAuth) {
-            await signIn();
-            return;
-          }
-        } catch {
-          await signIn();
-          return;
+      } catch (err) {
+        if (mounted) {
+          dispatch(setAuthError());
         }
-
-        if (!cancelled) setUI("error");
       }
     };
 
-    bootstrap();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    asg.isAuthenticated,
-    asg.isLoading,
-    signIn,
-    dispatch,
-    getBasicUserInfo,
-    getIDToken,
-    getDecodedIDToken,
-    isAuthenticated,
-  ]);
+    initializeAuth();
 
-  useEffect(() => {
-    if (ui === "active" && !asg.isAuthenticated) {
-      signIn();
+    return () => {
+      mounted = false;
+    };
+  }, [isSignedIn, isLoading]);
+
+  const refreshToken = async (): Promise<{ accessToken: string }> => {
+    try {
+      const accessToken = await getAccessToken();
+      return { accessToken };
+    } catch (error) {
+      console.error("Token refresh failed: ", error);
+      await appSignOut();
+      throw error;
     }
-  }, [ui, asg.isAuthenticated, signIn]);
+  };
+
+  const refreshIdToken = async (): Promise<{ idToken: string }> => {
+    try {
+      const idToken = await getAccessToken();
+      return { idToken };
+    } catch (error) {
+      console.error("Token refresh failed: ", error);
+      await appSignOut();
+      throw error;
+    }
+  };
 
   const appSignOut = async () => {
-    setUI("loading");
-    localStorage.setItem("people-app-state", "logout");
+    setAppState(AppState.Loading);
     await signOut();
-    setUI("logout");
+    setAppState(AppState.Unauthenticated);
   };
 
-  const appSignIn = () => {
-    localStorage.setItem("people-app-state", "active");
-    window.location.reload();
+  const appSignIn = async () => {
+    await signIn();
+    setAppState(AppState.Loading);
   };
 
-  if (ui === "loading") {
-    if (!asg.isAuthenticated && !asg.isLoading) {
-      return null;
+  const authContext: AuthContextType = {
+    appSignIn: appSignIn,
+    appSignOut: appSignOut,
+  };
+
+  useEffect(() => {
+    if (appState !== AppState.Unauthenticated) return;
+    void appSignIn();
+  }, [appState]);
+
+  const renderContent = () => {
+    switch (appState) {
+      case AppState.Loading:
+        return <PreLoader isLoading marqueeOn={true} hideImage={false} message="Authenticating" />;
+
+      case AppState.Authenticating:
+        return (
+          <PreLoader isLoading marqueeOn={true} hideImage={false} message="Loading User Info" />
+        );
+
+      case AppState.Authenticated:
+        return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
+
+      case AppState.Unauthenticated:
+        return <PreLoader isLoading marqueeOn={true} hideImage={false} message="Signing Out" />;
+
+      default:
+        return null;
     }
-    return <PreLoader isLoading={true} message={auth.statusMessage || ""} />;
-  }
-
-  if (ui === "logout") {
-    return <StatusWithAction action={appSignIn} />;
-  }
-
-  if (ui === "error") {
-    const msg =
-      userInfo.errorMessage ||
-      auth.statusMessage ||
-      "You are not authorized to access this application.";
-    return <ErrorHandler message={msg} />;
-  }
+  };
 
   return (
     <>
-      <Dialog
-        open={idlePromptOpen}
-        onClose={handleContinue}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">
-          {"Are you still there?"}
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            It looks like you've been inactive for a while. Would you like to
-            continue?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleContinue}>Continue</Button>
-          <Button onClick={() => appSignOut()}>Logout</Button>
-        </DialogActions>
-      </Dialog>
+      <SessionWarningDialog
+        open={sessionWarningOpen}
+        handleContinue={handleContinue}
+        appSignOut={appSignOut}
+      />
 
-      <AuthContext.Provider value={{ appSignIn, appSignOut }}>
-        <SecureApp>{children}</SecureApp>
-      </AuthContext.Provider>
+      {renderContent()}
     </>
   );
 };

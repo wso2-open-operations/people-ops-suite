@@ -16,9 +16,10 @@
 
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { Box, Container, Button, useTheme } from "@mui/material";
+import { Box, Container, Button } from "@mui/material";
 import logoBlack from "@assets/images/WSO2-Logo-Black.png";
 import logoWhite from "@assets/images/WSO2-Logo-White.png";
+import { useNewTheme as useTheme } from "@src/theme/index";
 
 interface PreLoaderProps {
   message?: string | null;

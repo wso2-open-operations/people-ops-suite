@@ -14,8 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { BaseURLAuthClientConfig } from "@asgardeo/auth-react";
-
 declare global {
   interface Window {
     config: {
@@ -31,12 +29,12 @@ declare global {
   }
 }
 
-export const AsgardeoConfig: BaseURLAuthClientConfig = {
+export const AsgardeoConfig = {
   scope: ["openid", "email", "groups"],
   baseUrl: window.config?.ASGARDEO_BASE_URL ?? "",
-  clientID: window.config?.ASGARDEO_CLIENT_ID ?? "",
-  signInRedirectURL: window.config?.AUTH_SIGN_IN_REDIRECT_URL ?? "",
-  signOutRedirectURL: window.config?.AUTH_SIGN_OUT_REDIRECT_URL ?? "",
+  clientId: window.config?.ASGARDEO_CLIENT_ID ?? "",
+  afterSignInUrl: window.config?.AUTH_SIGN_IN_REDIRECT_URL ?? "",
+  afterSignOutUrl: window.config?.AUTH_SIGN_OUT_REDIRECT_URL ?? "",
 };
 
 export const APP_NAME = window.config?.APP_NAME ?? "";
@@ -54,16 +52,21 @@ export const AppConfig = {
     managers: SERVICE_BASE_URL + "/employees/managers",
     continuousServiceRecord: SERVICE_BASE_URL + "/continuous-service-records",
     validateEpf: SERVICE_BASE_URL + "/employees/validate-epf",
-    employee: (employeeId: string) =>
-      SERVICE_BASE_URL + `/employees/${employeeId}`,
+    employee: (employeeId: string) => SERVICE_BASE_URL + `/employees/${employeeId}`,
     employeePersonalInfo: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/personal-info`,
-    jobInfo: (employeeId: string) =>
-      SERVICE_BASE_URL + `/employees/${employeeId}/job-info`,
+    jobInfo: (employeeId: string) => SERVICE_BASE_URL + `/employees/${employeeId}/job-info`,
     employeeQrCode: (employeeId: string) => `${SERVICE_BASE_URL}/employees/${employeeId}/qr-code`,
     qrCodesSearch: SERVICE_BASE_URL + "/reports/qr-codes/search",
 
-    reportsEmployees: SERVICE_BASE_URL + "/reports/employees/generate",
+    reportsEmployees: (status?: string, excludeFutureStartDate?: boolean) => {
+      const params = new URLSearchParams();
+      if (status) params.set("status", status);
+      if (excludeFutureStartDate !== undefined)
+        params.set("excludeFutureStartDate", String(excludeFutureStartDate));
+      const qs = params.toString();
+      return SERVICE_BASE_URL + `/reports/employees/generate` + (qs ? `?${qs}` : "");
+    },
 
     businessUnits: SERVICE_BASE_URL + "/business-units",
     careerFunctions: SERVICE_BASE_URL + "/career-functions",
@@ -75,5 +78,6 @@ export const AppConfig = {
     units: SERVICE_BASE_URL + "/units",
     offices: SERVICE_BASE_URL + "/offices",
     houses: SERVICE_BASE_URL + "/houses",
+    organization: SERVICE_BASE_URL + "/organization",
   },
 };
