@@ -596,6 +596,7 @@ CREATE TABLE `hris_par_special_rating_group` (
   `par_cycle_id` int NOT NULL,
   `par_business_unit` varchar(100) NOT NULL,
   `par_department` varchar(100) NOT NULL,
+  `par_team` varchar(100) NOT NULL,
   `par_special_quota_id` int DEFAULT NULL,
   `par_sr_group_created_by` varchar(60) NOT NULL,
   `par_sr_group_created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),

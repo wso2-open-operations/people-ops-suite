@@ -455,6 +455,9 @@ public type ParSpecialRatingGroup record {|
     # The name of the Department
     @sql:Column {name: "par_department"}
     string parDepartment;
+    # The name of the Team
+    @sql:Column {name: "par_team"}
+    string parTeam;
     # The unique identifier for the special rating quota
     @sql:Column {name: "par_special_quota_id"}
     int parSpecialQuotaId?;
@@ -486,6 +489,9 @@ public type ParSpecialRatingGroupWithHeadCount record {|
     # The name of the Department
     @sql:Column {name: "par_department"}
     string parDepartment;
+    # The name of the Team
+    @sql:Column {name: "par_team"}
+    string parTeam;
     # The par group head count
     @sql:Column {name: "group_head_count"}
     int parGroupHeadCount;
@@ -721,6 +727,9 @@ public type BasicParTeam record {|
     # The name of the department
     @sql:Column {name: "par_department"}
     string parDepartment;
+    # The name of the team
+    @sql:Column {name: "par_team"}
+    string parTeam;
     # The email of the lead
     @sql:Column {name: "par_lead_email"}
     string parLeadEmail;
@@ -768,6 +777,9 @@ public type SpecialRatingAllocation record {|
     # Name of the department
     @sql:Column {name: "par_department"}
     string parDepartment;
+    # Name of the team
+    @sql:Column {name: "par_team"}
+    string parTeam;
     # The par quota id
     @sql:Column {name: "par_quota_id"}
     int parQuotaId;

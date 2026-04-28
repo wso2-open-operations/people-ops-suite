@@ -516,6 +516,10 @@ public type BasicEmployeeInfo record {|
     string workEmail;
     # The thumbnail of the employee
     string employeeThumbnail?;
+    # Whether the employee is a lead
+    boolean isLead?;
+    # The email of the manager
+    string managerEmail?;
 |};
 
 # The EmployeeTeam record represents the details of an employee team.
@@ -652,6 +656,8 @@ public type ParSpecialRatingGroupWithHeadCount record {|
     string businessUnit;
     # The name of the department
     string department;
+    # The name of the team
+    string team;
     # The number of people in the group
     int headCount;
     # The the special rating quota for the group
@@ -676,6 +682,8 @@ public type ParSpecialRatingGroup record {|
     string businessUnit;
     # The name of the department
     string department;
+    # The name of the team
+    string team;
     # The the special rating quota for the group
     int specialRatingQuotaId;
 |};
@@ -1144,6 +1152,8 @@ public type ParTeamBasic record {|
     string parDepartment;
     # Business unit  of the employee
     string parBusinessUnit;
+    # Team of the employee
+    string parTeam;
 |};
 
 # The client config type for the google calendar.
@@ -1188,6 +1198,8 @@ public type SpecialRatingAllocation record {|
     string parBusinessUnit;
     # Name of the department
     string parDepartment;
+    # Name of the team
+    string parTeam;
     # The par quota id
     int parQuotaId;
     # The quota name

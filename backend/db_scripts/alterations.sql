@@ -1,3 +1,6 @@
+ALTER TABLE hris_par_special_rating_group
+ADD COLUMN par_team VARCHAR(100) AFTER par_department;
+
 ALTER TABLE hris_par_rating
 ADD COLUMN par_rating_shared_by VARCHAR(60) AFTER par_rating_updated_by;
 

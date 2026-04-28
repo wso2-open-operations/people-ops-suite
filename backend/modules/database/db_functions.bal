@@ -544,20 +544,21 @@ public isolated function getTeamDetailsOfEmployee(string employeeEmail, int parC
 # + parCycleId - The ParCycle ID
 # + parDepartment - The department which employee belongs to
 # + parBusinessUnit - The business uni which employee belongs to
+# + parTeam - The team which employee belongs to
 # + return - ParTeam object or an error if the operation failed
 public isolated function getTeamDetailsOfLead(string leadEmail, int parCycleId, string parDepartment,
-        string parBusinessUnit) returns BasicParTeam|error {
+        string parBusinessUnit, string parTeam) returns BasicParTeam|error {
 
-    BasicParTeam|sql:Error parTeam = dbClient->queryRow(getParTeamDetailsOfLeadQuery(leadEmail, parCycleId,
-            parDepartment, parBusinessUnit));
+    BasicParTeam|sql:Error parTeamDetails = dbClient->queryRow(getParTeamDetailsOfLeadQuery(leadEmail, parCycleId,
+            parDepartment, parBusinessUnit, parTeam));
 
-    if parTeam is sql:NoRowsError {
+    if parTeamDetails is sql:NoRowsError {
         return error("No team found for the given lead");
     }
-    if parTeam is sql:Error {
+    if parTeamDetails is sql:Error {
         return error("An sql error occurred while retrieving team of the lead with given data ");
     }
-    return parTeam;
+    return parTeamDetails;
 }
 
 # Update a par team id of a employee

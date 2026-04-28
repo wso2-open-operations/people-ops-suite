@@ -590,6 +590,7 @@ function getParSpecialRatingGroupQuota_One() returns ParSpecialRatingGroupQuota 
             specialRatingGroupId: 1,
             businessUnit: "1",
             department: "1",
+            team: "",
             specialRatingQuotaId: 1
         }
     ],
