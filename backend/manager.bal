@@ -22,6 +22,7 @@ configurable boolean enableAutoReminderScheduler = false;
 configurable int emailBatchSize = 10;
 configurable string[] specialRatingEligibilityList = [];
 configurable string eligibilityEvaluationDate = ?;
+configurable int reportingChainMaxDepth = ?;
 
 const SEND_REMINDERS_INTERVAL = 60.0d;
 const SCHEDULE_AUTO_REMINDERS_INTERVAL = 86400.0d;
@@ -132,13 +133,14 @@ isolated function prepareParCycleForEvaluation(types:InvokerDetails invokerDetai
 isolated function createAndGetSpecialRatingGroups(types:InvokerDetails invokerDetails, int parCycleId,
         entity:Employee[] employees) returns database:ParSpecialRatingGroup[]|error {
     string invokerEmail = invokerDetails.email;
-    database:ParSpecialRatingGroup[] parSpecialRatingGroups = from entity:Employee {businessUnit, department}
+    database:ParSpecialRatingGroup[] parSpecialRatingGroups = from entity:Employee {businessUnit, department, team}
         in employees
-        group by businessUnit, department
+        group by businessUnit, department, team
         select {
             parCycleId,
             parBusinessUnit: businessUnit,
             parDepartment: department,
+            parTeam: team ?: "",
             parSrGroupCreatedBy: invokerEmail,
             parSrGroupUpdatedBy: invokerEmail
         };
@@ -164,11 +166,11 @@ isolated function createAndGetParTeams(types:InvokerDetails invokerDetails, int 
             parCycleId,
             parBusinessUnit: businessUnit,
             parDepartment: department,
-            parTeam: team ?: "",
-            parSubTeam: subTeam ?: "",
-            parLeadEmail: managerEmail ?: "",
+            parTeam: team,
+            parSubTeam: subTeam,
+            parLeadEmail: managerEmail,
             parSpecialRatingGroupId: check getParSpecialRatingGroupId(parSpecialRatingGroups, businessUnit,
-                    department),
+                    department, team ?: ""),
             parTeamCreatedBy: invokerEmail,
             parTeamUpdatedBy: invokerEmail
         };
@@ -177,15 +179,16 @@ isolated function createAndGetParTeams(types:InvokerDetails invokerDetails, int 
 }
 
 isolated function getParSpecialRatingGroupId(database:ParSpecialRatingGroup[] parSpecialRatingGroups,
-        string businessUnit, string department) returns int|error {
+        string businessUnit, string department, string team) returns int|error {
     foreach var parSpecialRatingGroup in parSpecialRatingGroups {
         if parSpecialRatingGroup.parBusinessUnit == businessUnit &&
-            parSpecialRatingGroup.parDepartment == department {
+            parSpecialRatingGroup.parDepartment == department &&
+            (parSpecialRatingGroup.parTeam) == team {
             return parSpecialRatingGroup.parSpecialRatingGroupId.ensureType();
         }
     }
-    return error(string `Special rating group not found for the given business unit: '${businessUnit}' and ` +
-            string `department: ${department}`,
+    return error(string `Special rating group not found for the given business unit: '${businessUnit}', ` +
+            string `department: '${department}', and team: '${team}'`,
         code = types:ERR_PAR_SPECIAL_RATING_GROUP_NOT_FOUND);
 }
 
@@ -481,12 +484,13 @@ isolated function getParSpecialRatingGroupWithHeadCountFrom(
         database:ParSpecialRatingGroupWithHeadCount parSpecialRatingGroupWithHeadCount)
         returns types:ParSpecialRatingGroupWithHeadCount|error =>
     let database:ParSpecialRatingGroupWithHeadCount {parSpecialRatingGroupId, parCycleId, parBusinessUnit,
-        parDepartment, parGroupHeadCount} = parSpecialRatingGroupWithHeadCount
+        parDepartment, parTeam, parGroupHeadCount} = parSpecialRatingGroupWithHeadCount
     in {
         parCycleId: parCycleId,
         specialRatingGroupId: check parSpecialRatingGroupId.ensureType(),
         businessUnit: parBusinessUnit,
         department: parDepartment,
+        team: parTeam,
         headCount: parGroupHeadCount
     };
 
@@ -1364,11 +1368,13 @@ public isolated function getEmployeeName(string email) returns string? {
 # + employee - The Employee record
 # + return - The converted EmployeeInfo record or an error if the operation failed
 public isolated function getBasicEmployeeInfoFrom(entity:Employee employee) returns types:BasicEmployeeInfo =>
-    let entity:Employee {firstName, lastName, workEmail, employeeThumbnail} = employee
+    let entity:Employee {firstName, lastName, workEmail, employeeThumbnail, lead, managerEmail} = employee
     in {
         employeeName: string `${firstName} ${lastName}`,
         workEmail,
-        employeeThumbnail
+        employeeThumbnail,
+        isLead: lead,
+        managerEmail
     };
 
 # Check if the given email is a valid employee email.
@@ -2188,14 +2194,16 @@ public isolated function validateAndSyncEmployeeInformation(string employeeEmail
     // Check wether the system and the entity records are matches or not
     if latestEmployeeInfo.managerEmail !== existingTeamDetails.parLeadEmail ||
         latestEmployeeInfo.businessUnit !== existingTeamDetails.parBusinessUnit ||
-        latestEmployeeInfo.department !== existingTeamDetails.parDepartment {
+        latestEmployeeInfo.department !== existingTeamDetails.parDepartment ||
+        latestEmployeeInfo.team !== existingTeamDetails.parTeam {
         string employeeNewLead = check latestEmployeeInfo.managerEmail.ensureType();
         string employeeNewDepartment = check latestEmployeeInfo.department.ensureType();
         string employeeNewBU = check latestEmployeeInfo.businessUnit.ensureType();
 
-        // Check is a team exists in the system with the combination of updated lead, BU and department
+        // Check is a team exists in the system with the combination of updated lead, BU, department and team
         database:BasicParTeam|error teamToBeAssigned =
-            database:getTeamDetailsOfLead(employeeNewLead, cycleId, employeeNewDepartment, employeeNewBU);
+            database:getTeamDetailsOfLead(employeeNewLead, cycleId, employeeNewDepartment, employeeNewBU,
+                    latestEmployeeInfo.team ?: "");
         if teamToBeAssigned is error {
 
             //If no teams found under that combination, get the info of employees lead
@@ -2209,7 +2217,8 @@ public isolated function validateAndSyncEmployeeInformation(string employeeEmail
 
             // Ge the special rating group ID for that BU and department combination
             int|error parSpecialRatingGroupId = getParSpecialRatingGroupId(
-                    check database:getParSpecialRatingGroups(cycleId), updatedLeadInfo.businessUnit, updatedLeadInfo.department);
+                    check database:getParSpecialRatingGroups(cycleId), updatedLeadInfo.businessUnit, updatedLeadInfo.department,
+                    updatedLeadInfo.team ?: "");
             if parSpecialRatingGroupId is error {
                 return parSpecialRatingGroupId;
             }
@@ -2246,7 +2255,8 @@ public isolated function validateAndSyncEmployeeInformation(string employeeEmail
             }
             // Get the newly created employee team
             database:BasicParTeam|error newTeamOfEmployee =
-            database:getTeamDetailsOfLead(employeeNewLead, cycleId, employeeNewDepartment, employeeNewBU);
+            database:getTeamDetailsOfLead(employeeNewLead, cycleId, employeeNewDepartment, employeeNewBU,
+                    latestEmployeeInfo.team ?: "");
             if newTeamOfEmployee is error {
                 return newTeamOfEmployee;
             }
@@ -2259,7 +2269,7 @@ public isolated function validateAndSyncEmployeeInformation(string employeeEmail
             // Get the newly created lead team
             database:BasicParTeam|error newTeamOfLead =
             database:getTeamDetailsOfLead(<string>updatedLeadInfo.managerEmail, cycleId, updatedLeadInfo.department,
-                    updatedLeadInfo.businessUnit);
+                    updatedLeadInfo.businessUnit, updatedLeadInfo.team ?: "");
             if newTeamOfLead is error {
                 return newTeamOfLead;
             }
@@ -2303,8 +2313,8 @@ public isolated function validateAndSyncEmployeeInformation(string employeeEmail
 # + BasicTeamInfo - The database BasicTeamInfo record to be converted
 # + return - The converted BasicTeamInfo record
 public isolated function convertFromDbParTeam(database:BasicParTeam BasicTeamInfo) returns types:ParTeamBasic =>
-    let database:BasicParTeam {parTeamId, parLeadEmail, parDepartment, parBusinessUnit, parCycleId} = BasicTeamInfo
-    in {parTeamId, parCycleId, parLeadEmail, parDepartment, parBusinessUnit};
+    let database:BasicParTeam {parTeamId, parLeadEmail, parDepartment, parBusinessUnit, parTeam, parCycleId} = BasicTeamInfo
+    in {parTeamId, parCycleId, parLeadEmail, parDepartment, parBusinessUnit, parTeam};
 
 # Function to get PAR summaries of an employee.
 #
@@ -2321,5 +2331,49 @@ public isolated function getParSummariesOfEmployee(string employeeEmail) returns
 # + return - The execution result
 public isolated function getSpecialRatingAllocations(int parCycleId, string? leadEmail)
     returns types:SpecialRatingAllocation[]|error {
-    return check database:getSpecialRatingAllocations(parCycleId, leadEmail);
+    database:SpecialRatingAllocation[] dbAllocations = check database:getSpecialRatingAllocations(parCycleId, leadEmail);
+    return from database:SpecialRatingAllocation allocation in dbAllocations
+        select {
+            parBusinessUnit: allocation.parBusinessUnit,
+            parDepartment: allocation.parDepartment,
+            parTeam: allocation.parTeam,
+            parQuotaId: allocation.parQuotaId,
+            parSpecialQuotaName: allocation.parSpecialQuotaName,
+            parTop5Quota: allocation.parTop5Quota,
+            parTop20Quota: allocation.parTop20Quota
+        };
+}
+
+# Checks if the invoker is in the upward reporting chain of the given employee.
+#
+# + invokerEmail - The email of the invoker
+# + employeeEmail - The email of the target employee
+# + return - Returns true if the invoker is found in the management chain, false otherwise
+public isolated function isEmployeeInReportingChain(string invokerEmail, string employeeEmail) returns boolean {
+    string currentEmail = employeeEmail;
+    int currentDepth = 0;
+
+    while currentDepth < reportingChainMaxDepth {
+        entity:Employee|error employee = entity:getEmployee(currentEmail);
+
+        if employee is error {
+            log:printWarn("Failed to fetch employee details.");
+            return false;
+        }
+        string? managerEmail = employee.managerEmail;
+
+        if managerEmail is () || managerEmail == "" {
+            log:printInfo("Reporting chain validation reached top of hierarchy.");
+            return false;
+        }
+
+        if managerEmail == invokerEmail {
+            return true;
+        }
+
+        currentEmail = managerEmail;
+        currentDepth += 1;
+    }
+
+    return false;
 }

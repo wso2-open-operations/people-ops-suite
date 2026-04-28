@@ -22,7 +22,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "avro"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
 ]
@@ -116,7 +116,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "http"
-version = "2.14.9"
+version = "2.14.10"
 dependencies = [
 	{org = "ballerina", name = "auth"},
 	{org = "ballerina", name = "cache"},
@@ -478,7 +478,7 @@ modules = [
 [[package]]
 org = "ballerinax"
 name = "cdc"
-version = "1.1.0"
+version = "1.2.1"
 dependencies = [
 	{org = "ballerina", name = "crypto"},
 	{org = "ballerina", name = "data.jsondata"},
@@ -492,7 +492,7 @@ dependencies = [
 [[package]]
 org = "ballerinax"
 name = "confluent.cavroserdes"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
 	{org = "ballerina", name = "avro"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -503,7 +503,7 @@ dependencies = [
 [[package]]
 org = "ballerinax"
 name = "confluent.cregistry"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
 ]
@@ -527,7 +527,7 @@ modules = [
 [[package]]
 org = "ballerinax"
 name = "h2.driver"
-version = "1.2.0"
+version = "1.2.1"
 scope = "testOnly"
 modules = [
 	{org = "ballerinax", packageName = "h2.driver", moduleName = "h2.driver"}
@@ -551,7 +551,7 @@ modules = [
 [[package]]
 org = "ballerinax"
 name = "kafka"
-version = "4.6.3"
+version = "4.6.5"
 dependencies = [
 	{org = "ballerina", name = "crypto"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -565,7 +565,7 @@ dependencies = [
 [[package]]
 org = "ballerinax"
 name = "mysql"
-version = "1.16.1"
+version = "1.16.4"
 dependencies = [
 	{org = "ballerina", name = "crypto"},
 	{org = "ballerina", name = "io"},
@@ -582,7 +582,7 @@ modules = [
 [[package]]
 org = "ballerinax"
 name = "mysql.driver"
-version = "1.8.0"
+version = "1.8.1"
 modules = [
 	{org = "ballerinax", packageName = "mysql.driver", moduleName = "mysql.driver"}
 ]

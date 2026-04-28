@@ -366,13 +366,14 @@ isolated function getBlobFieldQuery(sql:ParameterizedQuery fieldName) returns sq
 
 isolated function insertParSpecialRatingGroupsQuery(ParSpecialRatingGroup[] parSpecialRatingGroups)
     returns sql:ParameterizedQuery[] => from ParSpecialRatingGroup parSpecialRatingGroup in parSpecialRatingGroups
-    let ParSpecialRatingGroup {parCycleId, parBusinessUnit, parDepartment,
+    let ParSpecialRatingGroup {parCycleId, parBusinessUnit, parDepartment, parTeam,
             parSrGroupCreatedBy, parSrGroupUpdatedBy} = parSpecialRatingGroup
     select `
         INSERT INTO hris_par_special_rating_group (
             par_cycle_id,
             par_business_unit,
             par_department,
+            par_team,
             par_sr_group_created_by,
             par_sr_group_updated_by
         )
@@ -380,6 +381,7 @@ isolated function insertParSpecialRatingGroupsQuery(ParSpecialRatingGroup[] parS
             ${parCycleId},
             ${parBusinessUnit},
             ${parDepartment},
+            ${parTeam},
             ${parSrGroupCreatedBy},
             ${parSrGroupUpdatedBy}
         )
@@ -391,6 +393,7 @@ isolated function getParSpecialRatingGroupsQuery(int parCycleId) returns sql:Par
         par_cycle_id,
         par_business_unit,
         par_department,
+        par_team,
         par_special_quota_id,
         par_sr_group_created_by,
         par_sr_group_created_on,
@@ -533,8 +536,9 @@ isolated function getParSpecialRatingGroupsWithHeadCountQuery(int parCycleId) re
     SELECT
         hris_par_special_rating_group.par_special_rating_group_id AS par_special_rating_group_id,
         hris_par_rating.par_cycle_id AS par_cycle_id,
-        hris_par_team.par_business_unit AS par_business_unit,
-        hris_par_team.par_department AS par_department,
+        hris_par_special_rating_group.par_business_unit AS par_business_unit,
+        hris_par_special_rating_group.par_department AS par_department,
+        hris_par_special_rating_group.par_team AS par_team,
         COUNT(par_employee_email) AS group_head_count
     FROM
         hris_par_rating
@@ -546,12 +550,14 @@ isolated function getParSpecialRatingGroupsWithHeadCountQuery(int parCycleId) re
         hris_par_rating.par_cycle_id=${parCycleId} AND
         hris_par_team.par_business_unit = hris_par_special_rating_group.par_business_unit AND
 		hris_par_team.par_department = hris_par_special_rating_group.par_department AND
+        hris_par_team.par_team = hris_par_special_rating_group.par_team AND
         hris_par_rating.par_special_rating_eligibility is TRUE
     GROUP BY
         par_special_rating_group_id,
         par_cycle_id,
-        par_business_unit,
-        par_department
+        hris_par_special_rating_group.par_business_unit,
+        hris_par_special_rating_group.par_department,
+        hris_par_special_rating_group.par_team
 `;
 
 isolated function getParRatingsOfTeamQuery(int parCycleId, int parTeamId) returns sql:ParameterizedQuery =>
@@ -1071,6 +1077,7 @@ isolated function getParTeamOfEmployeeQuery(string employeeEmail, int parCycleId
         pt.par_team_id,
         pt.par_business_unit,
         pt.par_department,
+        pt.par_team,
         pt.par_lead_email,
         pt.par_cycle_id
     FROM
@@ -1092,13 +1099,15 @@ isolated function getParTeamOfEmployeeQuery(string employeeEmail, int parCycleId
 # + leadEmail - The email of the lead
 # + parDepartment - The department of the employee
 # + parBusinessUnit - The business unit of the employee
+# + parTeam - The team of the employee
 # + return - The basic team info or sql error if the operation failed
 isolated function getParTeamDetailsOfLeadQuery(string leadEmail, int parCycleId, string parDepartment,
-        string parBusinessUnit) returns sql:ParameterizedQuery => `
+        string parBusinessUnit, string parTeam) returns sql:ParameterizedQuery => `
     SELECT
         par_team_id,
         par_business_unit,
         par_department,
+        par_team,
         par_lead_email,
         par_cycle_id
     FROM
@@ -1107,6 +1116,7 @@ isolated function getParTeamDetailsOfLeadQuery(string leadEmail, int parCycleId,
         par_lead_email = ${leadEmail}
         AND par_department = ${parDepartment}
         AND par_business_unit = ${parBusinessUnit}
+        AND par_team = ${parTeam}
         AND par_cycle_id = ${parCycleId};
 `;
 
@@ -1162,6 +1172,7 @@ isolated function getSpecialRatingAllocationsQuery(int parCycleId, string? leadE
     SELECT
         g.par_business_unit,
         g.par_department,
+        g.par_team,
         q.par_quota_id,
         q.par_special_quota_name,
         q.par_top5_quota,
@@ -1188,6 +1199,7 @@ isolated function getSpecialRatingAllocationsQuery(int parCycleId, string? leadE
                 AND r.par_cycle_id = g.par_cycle_id
                 AND t.par_business_unit = g.par_business_unit
                 AND t.par_department = g.par_department
+                AND t.par_team = g.par_team
         );
     `);
 };

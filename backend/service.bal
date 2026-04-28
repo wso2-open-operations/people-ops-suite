@@ -198,7 +198,9 @@ service http:InterceptableService / on new http:Listener(9093) {
         boolean isSelf = email == invokerDetails.email;
         boolean isAdmin = invokerDetails.isAdmin && !isSelf && !isLead;
         boolean isInvokerLead = isLeadInActiveParCycle(invokerDetails.email);
-        if isAdmin || isLead || isSelf || (email == () && isInvokerLead) {
+        if isAdmin || isLead || isSelf || 
+                (email == () && isInvokerLead) || 
+                (email != () && isEmployeeInReportingChain(invokerDetails.email, email)) {
             parCycles = getParCycles(status, email);
         } else {
             return utils:createForbiddenResponse("You are not authorized to get par cycles.");
@@ -439,34 +441,34 @@ service http:InterceptableService / on new http:Listener(9093) {
         return parTeamDetails;
     }
 
-    // # The resource function to get employee information.
-    // #
-    // # + workEmail - The work email of the employee
-    // # + ctx - The request context
-    // # + return - The employee information or an error
-    // resource function get employees/[string workEmail](http:RequestContext ctx)
-    //     returns types:EmployeeInfo|http:InternalServerError|http:BadRequest|http:Forbidden {
+    # The resource function to get employee information.
+    #
+    # + workEmail - The work email of the employee
+    # + ctx - The request context
+    # + return - The employee information or an error
+    resource function get employees/[string workEmail](http:RequestContext ctx)
+        returns types:EmployeeInfo|http:InternalServerError|http:BadRequest|http:Forbidden {
 
-    //     types:InvokerDetails|error invokerDetails = utils:getInvokerDetails(ctx);
-    //     if invokerDetails is error {
-    //         return utils:createInternalServerErrorResponse(invokerDetails,
-    //                 "An error occurred while retrieving invoker details.");
-    //     }
+        types:InvokerDetails|error invokerDetails = utils:getInvokerDetails(ctx);
+        if invokerDetails is error {
+            return utils:createInternalServerErrorResponse(invokerDetails,
+                    "An error occurred while retrieving invoker details.");
+        }
 
-    //     boolean isLead = isLeadOfEmployeeInActiveParCycle(invokerDetails.email, workEmail);
-    //     boolean isSelf = workEmail == invokerDetails.email;
-    //     boolean isAdmin = invokerDetails.isAdmin && !isSelf && !isLead;
-    //     if !isAdmin && !isLead && !isSelf {
-    //         return utils:createForbiddenResponse("You are not authorized to get employee information.");
-    //     }
+        boolean isLead = isLeadOfEmployeeInActiveParCycle(invokerDetails.email, workEmail);
+        boolean isSelf = workEmail == invokerDetails.email;
+        boolean isAdmin = invokerDetails.isAdmin && !isSelf && !isLead;
+        if !isAdmin && !isLead && !isSelf {
+            return utils:createForbiddenResponse("You are not authorized to get employee information.");
+        }
 
-    //     types:EmployeeInfo|error employeeInfo = getEmployeeInfo(workEmail);
-    //     if employeeInfo is error {
-    //         return utils:createInternalServerErrorResponse(employeeInfo,
-    //                 "An error occurred while retrieving employee information.");
-    //     }
-    //     return employeeInfo;
-    // }
+        types:EmployeeInfo|error employeeInfo = getEmployeeInfo(workEmail);
+        if employeeInfo is error {
+            return utils:createInternalServerErrorResponse(employeeInfo,
+                    "An error occurred while retrieving employee information.");
+        }
+        return employeeInfo;
+    }
 
     # The resource function to get 360 reviewers of a given employee in a given par cycle.
     #
@@ -1187,8 +1189,9 @@ service http:InterceptableService / on new http:Listener(9093) {
                     "An error occurred while retrieving invoker details.");
         }
         boolean isAdmin = invokerDetails.isAdmin;
-        if !isAdmin {
-            return utils:createForbiddenResponse("You are not authorized to get  employee PAR summaries.");
+        boolean isInReportingChain = isEmployeeInReportingChain(invokerDetails.email, employeeEmail);
+        if !isAdmin && !isInReportingChain {
+            return utils:createForbiddenResponse("You are not authorized to get employee PAR summaries.");
         }
         types:EmployeeParSummary[]|error parSummariesOfEmployee = getParSummariesOfEmployee(employeeEmail);
         if parSummariesOfEmployee is error {
@@ -1243,8 +1246,10 @@ service http:InterceptableService / on new http:Listener(9093) {
         }
         if !invokerDetails.isAdmin {
             if leadEmail != invokerDetails.email {
-                return utils:createForbiddenResponse(
-                    "You are not authorized to retrieve subordinates of this employee.");
+                if !isEmployeeInReportingChain(invokerDetails.email, leadEmail ?: "") {
+                    return utils:createForbiddenResponse(
+                        "You are not authorized to retrieve subordinates of this employee.");
+                }
             }
         }
         types:BasicEmployeeInfo[]|error employees = getBasicEmployeesInfo(leadEmail);
