@@ -13,13 +13,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-import ballerina/log;
 
 # Retrieves basic employee details by work email.
 #
 # + workEmail - WSO2 email address
 # + return - Employee | Error
-public isolated function fetchEmployeesBasicInfo(string workEmail) returns EmployeesBasicInfo|error {
+public isolated function fetchEmployeesBasicInfo(string workEmail) returns EmployeeBasicInfo|error {
     string document = string `
         query employeeQuery ($workEmail: String!) {
             employee(email: $workEmail) {
@@ -74,7 +73,6 @@ public isolated function getEmployee(string workEmail) returns Employee|error {
 
     // Null Check.
     if employee is () {
-        log:printError("No matching employee found for " + workEmail);
         return error("No matching employee found for " + workEmail);
     }
 
@@ -84,6 +82,54 @@ public isolated function getEmployee(string workEmail) returns Employee|error {
     }
 
     return employee;
+}
+
+# Retrieve the employee list.
+#
+# + filterLeads - Leads are filtered or not  
+# + jobBandArray - Array of job bands  
+# + employmentTypesArray - Array of employment types
+# + return - Array of employees
+public isolated function getEmployees(boolean? filterLeads = (), int[]? jobBandArray = (),
+        EmploymentType[]? employmentTypesArray = ()) returns EmployeeInfo[]|error {
+
+    string document = string `
+        query employeeQuery ($filter: EmployeeFilter!) {
+            employees(filter: $filter) {
+            employeeId,
+            firstName,
+            lastName,
+            workEmail,
+            jobBand,
+            jobRole,
+            lastPromotedDate,
+            startDate,
+            managerEmail,
+            employmentType,
+            businessUnit,
+            department,
+            team,
+            subTeam,
+            employeeThumbnail
+            }
+        }
+    `;
+
+    EmployeeFilter filter = {
+        employeeStatus: [Active, Marked\ leaver],
+        employmentType: employmentTypesArray is EmploymentType[] ? employmentTypesArray :
+            [PERMANENT, CONSULTANCY, PART\ TIME\ CONSULTANCY],
+        lead: (filterLeads is boolean && filterLeads == false) ? () : filterLeads,
+        jobBand: jobBandArray is int[] ? jobBandArray : []
+    };
+
+    EmployeeInfoResult employeeData = check hrClient->execute(document, {filter});
+
+    if employeeData.data.employees.length() <= 0 {
+        return error((filterLeads is boolean && filterLeads == true) ? "No active leads found!" : "No active employees found!");
+    }
+
+    return employeeData.data.employees;
 }
 
 # Retrieve the Employee name by work email.

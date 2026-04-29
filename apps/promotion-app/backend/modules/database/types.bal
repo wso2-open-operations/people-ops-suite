@@ -269,3 +269,54 @@ public type Promotion record {|
     # Notification email sent or not
     boolean isNotificationEmailSent;
 |};
+
+# Insert record for hris_promotion_request table.
+public type PromotionRequestInsertPayload record {
+    # Employee Email
+    string employeeEmail;
+    # Promotion Job Band 
+    int requestedJobBand;
+    # Current Job Band
+    int currentJobBand;
+    # NORMAL | SPECIAL
+    string promotionType;
+    # Promotion Request Status 
+    PromotionRequestStatus status;
+    # Applying Promotion Cycle ID
+    int promotionCycleId;
+};
+
+# Insert record for hris_promotion_request table.
+public type PromotionRequestDbInsertPayload record {
+    *PromotionRequestInsertPayload;
+    # Business Unit
+    string businessUnit;
+    # Department of the employee
+    string? department = ();
+    # Team of the employee 
+    string? team = ();
+    # Sub team of the of the employee
+    string? subTeam = ();
+    # Current Job Role
+    string jobRole;
+    # Employee
+    string createdBy;
+};
+
+# Insert record for hris_promotion_recommendation table.
+public type PromotionRecommendationInsertPayload record {
+    # Promotion Request ID
+    int promotionRequestID;
+    # Lead Email
+    string leadEmail;
+    # Reporting lead or not
+    boolean isReportingLead;
+    # Recommendation statement
+    string? statement = ();
+    # Recommendation comment
+    string? comment = ();
+    # Recommendation Status
+    PromotionRecommendationStatus status;
+    # Person who created the record
+    string createdBy;
+};

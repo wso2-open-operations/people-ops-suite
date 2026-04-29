@@ -299,3 +299,102 @@ isolated function getFullPromotionRecommendationsQuery(int? id, string? employee
 
     return updatedQuery;
 }
+
+# Get Duplicate Promotion Request Count Query.
+#
+# + employeeEmail - WSO2 Email  
+# + promotionCycleId - Promotion Cycle ID
+# + return - sql:ParameterizedQuery - Retrieve duplicate promotion requests count
+isolated function getDuplicatePromotionRequestCountQuery(string employeeEmail, int promotionCycleId)
+        returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `
+        SELECT 
+            COUNT(promotion_request_id) 
+        FROM 
+            hris_promotion_request
+        WHERE 
+            promotion_request_employee_email = ${employeeEmail} 
+        AND 
+            promotion_cycle_id = ${promotionCycleId} 
+    `;
+
+    return sql:queryConcat(
+        mainQuery, ` AND  promotion_request_status NOT IN (`,
+        sql:arrayFlattenQuery([WITHDRAW, EXPIRED, REMOVED]), `) `
+    );
+}
+
+# Insert Promotion Request Query.
+#
+# + payload - Promotion Request Insert Payload  
+# + return - sql:ParameterizedQuery - Inset query for the promotion request table
+isolated function insertPromotionRequestQuery(PromotionRequestDbInsertPayload payload)
+    returns sql:ParameterizedQuery 
+    => `
+        INSERT INTO 
+            hris_promotion_request 
+            ( 
+              promotion_cycle_id,
+              promotion_request_employee_email,
+              promotion_request_requested_job_band,
+              promotion_request_current_job_band,
+              promotion_request_current_job_role,
+              promotion_request_type,
+              promotion_request_status,
+              promotion_request_business_unit,
+              promotion_request_department,
+              promotion_request_team,
+              promotion_request_sub_team,
+              promotion_request_created_by,
+              promotion_request_updated_by
+
+            )
+        VALUES 
+            (
+                ${payload.promotionCycleId},
+                ${payload.employeeEmail},
+                ${payload.requestedJobBand},
+                ${payload.currentJobBand},
+                ${payload.jobRole},
+                ${payload.promotionType},
+                ${payload.status},
+                ${payload.businessUnit},
+                ${payload.department},
+                ${payload.team},
+                ${payload.subTeam},
+                ${payload.createdBy},
+                ${payload.createdBy}
+            )`;
+
+# Insert Promotion Recommendation Query.
+#
+# + payload - Promotion Recommendation Data
+# + return - sql:ParameterizedQuery - Insert query for the promotion recommendation table
+isolated function insertPromotionRecommendationQuery(PromotionRecommendationInsertPayload payload)
+    returns sql:ParameterizedQuery 
+    
+    => `
+        INSERT INTO 
+            hris_promotion_recommendation 
+            ( 
+                promotion_request_id,
+                promotion_recommendation_lead_email,
+                promotion_recommendation_is_reporting_lead,
+                promotion_recommendation_statement,
+                promotion_recommendation_comments,
+                promotion_recommendation_status,
+                promotion_recommendation_created_by,
+                promotion_recommendation_updated_by
+            )
+        VALUES 
+            (
+                ${payload.promotionRequestID},
+                ${payload.leadEmail},
+                ${payload.isReportingLead},
+                ${payload.statement},
+                ${payload.comment},
+                ${payload.status},
+                ${payload.createdBy},
+                ${payload.createdBy}
+            )`;

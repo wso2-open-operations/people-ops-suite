@@ -19,4 +19,5 @@ public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
 public const HEADER_USER_INFO = "user-info";
 
 # Privileges.
-public const EMPLOYEE = 987;
+public const EMPLOYEE_PRIVILEGE = 987;
+public const LEAD_PRIVILEGE = 624;

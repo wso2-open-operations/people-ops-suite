@@ -1,3 +1,4 @@
+import { StdioNull } from "child_process";
 import { ApplicationState, RecommendationState } from "../types/types";
 import type { BasicUserInfo } from "@asgardeo/auth-spa";
 
@@ -20,6 +21,33 @@ export interface TimeLineData{
   SubTeam: string;
   Lead: string
 }
+
+export interface Employee {
+  firstName : string;
+  lastName: string;
+  workEmail : string;
+  jobBand  : number | null;
+  jobRole  : string;
+  employeeThumbnail : string | null;
+  lastPromotedDate : string | null;
+  managerEmail : string | null;
+  startDate : string | null;
+  employmentType : string;
+  businessUnit : string;
+  department : string;
+  team  : string | null;
+  subTeam : string | null;
+}
+
+export interface ActivePromotionCycleInterface {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: PromotionCycleStatus;
+}
+
+export type PromotionCycleStatus = "OPEN" | "CLOSED" | "END";
 
 export interface PromotionRequest {
   currentJobBand: number;
