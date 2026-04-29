@@ -36,3 +36,4 @@ node_modules
 apps/leave-app/.claude/settings.local.json
 apps/leave-app/skills.md
 apps/leave-app/backend/Dependencies.toml
+apps/leave-app/webapp/.claude/settings.local.json
