@@ -99,13 +99,22 @@ const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationVie
 
     specialRatingAllocation.forEach((item) => {
       // Create combined search text for more comprehensive matching
-      const combinedText = `${item.parBusinessUnit} ${item.parDepartment}`.toLowerCase();
-      const businessUnitMatch = item.parBusinessUnit?.toLowerCase().includes(searchTerm);
-      const departmentMatch = item.parDepartment?.toLowerCase().includes(searchTerm);
+      const combinedText =
+        `${item.parBusinessUnit} ${item.parDepartment} ${item.parTeam}`.toLowerCase();
+      const businessUnitMatch = item.parBusinessUnit
+        ?.toLowerCase()
+        .includes(searchTerm);
+      const departmentMatch = item.parDepartment
+        ?.toLowerCase()
+        .includes(searchTerm);
+      const teamMatch = item.parTeam
+        ?.toLowerCase()
+        .includes(searchTerm);
       const combinedMatch = combinedText.includes(searchTerm);
 
       // Highlight if any part matches
-      const shouldHighlight = searchTerm && (businessUnitMatch || departmentMatch || combinedMatch);
+      const shouldHighlight =
+        searchTerm && (businessUnitMatch || departmentMatch || teamMatch || combinedMatch);
 
       if (!groups.has(item.parQuotaId)) {
         groups.set(item.parQuotaId, {
@@ -173,7 +182,7 @@ const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationVie
                 <TextField
                   fullWidth
                   variant="outlined"
-                  placeholder="Search by business unit or unit..."
+                  placeholder="Search by business unit, department or team..."
                   value={searchQuery}
                   onChange={handleSearchChange}
                   InputProps={{
@@ -272,7 +281,7 @@ const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationVie
                       <TableBody>
                         {group.departments.map((dept, index) => (
                           <TableRow
-                            key={`${dept.parQuotaId}-${dept.parDepartment}-${index}`}
+                            key={`${dept.parQuotaId}-${dept.parDepartment}-${dept.parTeam}-${index}`}
                             sx={{
                               "&:last-child td, &:last-child th": { border: 0 },
                               backgroundColor: dept.highlight
@@ -280,14 +289,46 @@ const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationVie
                                 : "transparent",
                             }}
                           >
-                            <TableCell sx={{ width: "40%", wordWrap: "break-word" }}>
-                              <Typography variant="body2" noWrap title={dept.parBusinessUnit}>
-                                {highlightText(dept.parBusinessUnit, searchQuery.trim())}
+                            <TableCell
+                              sx={{ width: "30%", wordWrap: "break-word" }}
+                            >
+                              <Typography
+                                variant="body2"
+                                noWrap
+                                title={dept.parBusinessUnit}
+                              >
+                                {highlightText(
+                                  dept.parBusinessUnit,
+                                  searchQuery.trim()
+                                )}
                               </Typography>
                             </TableCell>
-                            <TableCell sx={{ width: "60%", wordWrap: "break-word" }}>
-                              <Typography variant="body2" noWrap title={dept.parDepartment}>
-                                {highlightText(dept.parDepartment, searchQuery.trim())}
+                            <TableCell
+                              sx={{ width: "35%", wordWrap: "break-word" }}
+                            >
+                              <Typography
+                                variant="body2"
+                                noWrap
+                                title={dept.parDepartment}
+                              >
+                                {highlightText(
+                                  dept.parDepartment,
+                                  searchQuery.trim()
+                                )}
+                              </Typography>
+                            </TableCell>
+                            <TableCell
+                              sx={{ width: "35%", wordWrap: "break-word" }}
+                            >
+                              <Typography
+                                variant="body2"
+                                noWrap
+                                title={dept.parTeam}
+                              >
+                                {highlightText(
+                                  dept.parTeam,
+                                  searchQuery.trim()
+                                )}
                               </Typography>
                             </TableCell>
                           </TableRow>

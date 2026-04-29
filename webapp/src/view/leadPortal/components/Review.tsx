@@ -345,13 +345,13 @@ export const Review = ({
               <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: "40%", fontWeight: "bold", color: "grey" }}>
+                    <TableCell sx={{ width: "40%", fontWeight: 600, fontSize: "0.75rem", color: theme.palette.text.secondary }}>
                       Name
                     </TableCell>
-                    <TableCell sx={{ width: "20%", fontWeight: "bold", color: "grey" }}>
+                    <TableCell sx={{ width: "20%", fontWeight: 600, fontSize: "0.75rem", color: theme.palette.text.secondary }}>
                       Status
                     </TableCell>
-                    <TableCell sx={{ width: "30%", fontWeight: "bold", color: "grey" }}>
+                    <TableCell sx={{ width: "30%", fontWeight: 600, fontSize: "0.75rem", color: theme.palette.text.secondary }}>
                       Requested by
                     </TableCell>
                     <TableCell sx={{ width: "10%" }}></TableCell>
@@ -385,17 +385,22 @@ export const Review = ({
                                   reviewer.reviewerEmail
                                 }
                                 sx={{
-                                  marginRight: 2,
-                                  height: 60,
-                                  width: 60,
+                                  marginRight: 1,
+                                  height: "1.6rem",
+                                  width: "1.6rem",
+                                  fontSize: "0.65rem",
                                 }}
-                              />
-
+                              >
+                                {(
+                                  employeeMap[reviewer.reviewerEmail]?.employeeName ||
+                                  reviewer.reviewerEmail
+                                )?.charAt(0)}
+                              </Avatar>
                               <Box>
-                                <Typography variant="h5">
+                                <Typography variant="body2" fontWeight={500}>
                                   {employeeMap[reviewer.reviewerEmail]?.employeeName}
                                 </Typography>
-                                <Typography display={"block"} color="GrayText" mt={-0.5}>
+                                <Typography variant="caption" color={theme.palette.text.secondary}>
                                   {reviewer.reviewerEmail}
                                 </Typography>
                               </Box>
@@ -439,6 +444,7 @@ export const Review = ({
                                 enterNextDelay={tooltipVisibilityDelay}
                               >
                                 <IconButton
+                                  size="small"
                                   onClick={() => openReviewViewModal(reviewer.reviewerEmail)}
                                   sx={{
                                     color: "primary.main",
@@ -448,7 +454,7 @@ export const Review = ({
                                     },
                                   }}
                                 >
-                                  <VisibilityIcon />
+                                  <VisibilityIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             )}

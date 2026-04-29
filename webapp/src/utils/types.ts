@@ -97,6 +97,7 @@ export interface SpecialQuotaTeam {
   specialRatingGroupId: number;
   businessUnit: string;
   department: string;
+  team: string;
   headCount: number | null;
   groupNumber: number | null;
   specialRatingQuotaId: number | null;
@@ -105,6 +106,7 @@ export interface SpecialQuotaTeam {
 export enum Role {
   EMPLOYEE = "EMPLOYEE",
   ADMIN = "ADMIN",
+  LEAD = "LEAD",
   TEAM_LEAD = "TEAM_LEAD",
 }
 

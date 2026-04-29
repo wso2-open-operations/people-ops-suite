@@ -42,13 +42,7 @@ import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Chip from "@mui/material/Chip";
-import {
-  DataGrid,
-  GridRowId,
-  GridRowSelectionModel,
-  GridToolbar,
-  GridToolbarExportContainer,
-} from "@mui/x-data-grid";
+import { DataGrid, GridRowSelectionModel, GridToolbar } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 import { array, number, object, string } from "yup";
 
@@ -82,6 +76,7 @@ import { useAppDispatch, useAppSelector } from "@slices/store";
 import { GroupedTeams, RequestState, SpecialQuotaTeam } from "@utils/types";
 
 import { useConfirmationModalContext } from "../../../context/DialogContext";
+import { ConfirmationType } from "@/types/types";
 
 export const AssignQuota = () => {
   const dispatch = useAppDispatch();
@@ -113,13 +108,7 @@ export const AssignQuota = () => {
   const [isQuotaDialogOpen, setIsQuotaDialogOpen] = useState(false);
   const [groupMappings, setGroupMappings] = useState<GroupedTeams[]>([]);
   const [filteredTeams, setFilteredTeams] = useState<SpecialQuotaTeam[]>([]);
-
-  // FIX: Explicitly type as GridRowId[] array
-  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({
-    type: "include",
-    ids: new Set(),
-  });
-
+  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({ type: "include", ids: new Set() });
   const [isGroupExpanded, setIsGroupExpanded] = useState<number | false>(false);
   const [groupToAssignSlots, setGroupToAssignSlots] = useState<GroupedTeams | null>(null);
   const [menuState, setMenuState] = useState<{
@@ -132,7 +121,8 @@ export const AssignQuota = () => {
 
   const columns = [
     { field: "businessUnit", headerName: "BU", flex: 0.12 },
-    { field: "department", headerName: "Team", flex: 0.17 },
+    { field: "department", headerName: "Department", flex: 0.14 },
+    { field: "team", headerName: "Team", flex: 0.14 },
     { field: "headCount", headerName: "Head Count", flex: 0.07 },
   ];
 
@@ -146,7 +136,7 @@ export const AssignQuota = () => {
       .test(
         "is-valid-number",
         "Allocated 5% Slots must be a valid number",
-        (value) => isValidNumber(value) && value >= 0,
+        (value) => isValidNumber(value) && value >= 0
       )
       .test(
         "max-allocated5Slots",
@@ -154,7 +144,7 @@ export const AssignQuota = () => {
         function (value) {
           const { default5Slots } = this.parent;
           return isValidNumber(value) && value <= default5Slots;
-        },
+        }
       )
       .integer(),
     allocated20Slots: number()
@@ -162,7 +152,7 @@ export const AssignQuota = () => {
       .test(
         "is-valid-number",
         "Allocated 20% Slots must be a valid number",
-        (value) => isValidNumber(value) && value >= 0,
+        (value) => isValidNumber(value) && value >= 0
       )
       .test(
         "max-allocated20Slots",
@@ -170,42 +160,27 @@ export const AssignQuota = () => {
         function (value) {
           const { default20Slots } = this.parent;
           return isValidNumber(value) && value <= default20Slots;
-        },
+        }
       )
       .integer(),
     default5Slots: number()
       .required("Default 5% Slots is required")
-      .test(
-        "is-valid-number",
-        "Default 5% Slots must be a valid number",
-        (value) => isValidNumber(value) && value >= 0,
-      )
-      .test(
-        "correct-default5Slots",
-        "Default 5% Slots must match 5% of the total headcount",
-        function (value) {
-          const { totalHeadCount } = this.parent;
-          const calculatedValues = calculateDefaultQuotaValues(totalHeadCount);
-          return value === calculatedValues.default5Slots;
-        },
-      )
+      .test("is-valid-number", "Default 5% Slots must be a valid number", (value) => isValidNumber(value) && value >= 0)
+      .test("correct-default5Slots", "Default 5% Slots must match 5% of the total headcount", function (value) {
+        const { totalHeadCount } = this.parent;
+        const calculatedValues = calculateDefaultQuotaValues(totalHeadCount);
+        return value === calculatedValues.default5Slots;
+      })
       .positive()
       .integer(),
     default20Slots: number()
       .required("Default 20% Slots is required")
-      .test(
-        "Default 20% Slots must be a valid number",
-        (value) => isValidNumber(value) && value >= 0,
-      )
-      .test(
-        "correct-default5Slots",
-        "Default 20% Slots must match 20% of the total headcount",
-        function (value) {
-          const { totalHeadCount } = this.parent;
-          const calculatedValues = calculateDefaultQuotaValues(totalHeadCount);
-          return value === calculatedValues.default20Slots;
-        },
-      )
+      .test("Default 20% Slots must be a valid number", (value) => isValidNumber(value) && value >= 0)
+      .test("correct-default5Slots", "Default 20% Slots must match 20% of the total headcount", function (value) {
+        const { totalHeadCount } = this.parent;
+        const calculatedValues = calculateDefaultQuotaValues(totalHeadCount);
+        return value === calculatedValues.default20Slots;
+      })
       .min(0)
       .integer(),
     totalHeadCount: number()
@@ -228,12 +203,10 @@ export const AssignQuota = () => {
 
   const postSpecialQuotaGroupSchema = object().shape({
     parCycleId: number().required("PAR Cycle ID is required").positive().integer(),
-    specialRatingGroupId: number()
-      .required("Special Rating Group ID is required")
-      .positive()
-      .integer(),
+    specialRatingGroupId: number().required("Special Rating Group ID is required").positive().integer(),
     businessUnit: string().required("Business Unit is required"),
     department: string().required("Department is required"),
+    team: string().defined(),
     specialRatingQuotaId: number().required("Special Rating Quota ID is required").min(0).integer(),
   });
 
@@ -279,18 +252,15 @@ export const AssignQuota = () => {
     setSelectionModel(newSelectionModel);
   };
 
-  const handleGroupExpand =
-    (panel: number) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-      setIsGroupExpanded(isExpanded ? panel : false);
-    };
+  const handleGroupExpand = (panel: number) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
+    setIsGroupExpanded(isExpanded ? panel : false);
+  };
 
-  const isValidNumber = (value: any): value is number =>
-    value !== null && value !== undefined && !isNaN(value);
+  const isValidNumber = (value: any): value is number => value !== null && value !== undefined && !isNaN(value);
 
   useEffect(() => {
-    const calculateSlotTotals = (
-      key: "default5Slots" | "default20Slots" | "allocated5Slots" | "allocated20Slots",
-    ) => groupMappings.reduce((sum, group) => sum + (group[key] as number), 0);
+    const calculateSlotTotals = (key: "default5Slots" | "default20Slots" | "allocated5Slots" | "allocated20Slots") =>
+      groupMappings.reduce((sum, group) => sum + (group[key] as number), 0);
 
     const totalTop5Available = calculateSlotTotals("default5Slots");
     const totalTop20Available = calculateSlotTotals("default20Slots");
@@ -312,7 +282,7 @@ export const AssignQuota = () => {
         fetchQuotaGroups({
           parCycleId: currentCycle.parCycleId,
           signal: apiController.current.signal,
-        }),
+        })
       );
     }
     dispatch(fetchConfigurations());
@@ -349,16 +319,12 @@ export const AssignQuota = () => {
 
   useEffect(() => {
     if (!isGroupMapEmpty || groupMappings.length > 0) {
-      const groupedTeamIds = groupMappings.flatMap((group) =>
-        group.teams.map((team) => team.specialRatingGroupId),
-      );
+      const groupedTeamIds = groupMappings.flatMap((group) => group.teams.map((team) => team.specialRatingGroupId));
 
       const names = groupMappings.map((group) => group.name);
       groupNamesRef.current = names;
 
-      setFilteredTeams((prevTeams) =>
-        prevTeams.filter((team) => !groupedTeamIds.includes(team.specialRatingGroupId)),
-      );
+      setFilteredTeams((prevTeams) => prevTeams.filter((team) => !groupedTeamIds.includes(team.specialRatingGroupId)));
     }
   }, [groupMappings]);
 
@@ -366,26 +332,24 @@ export const AssignQuota = () => {
     dialogContext.showConfirmation(
       uiMessages.dialog.confirmTeamRemove.title,
       uiMessages.dialog.confirmTeamRemove.message,
-      "warning" as any,
+      ConfirmationType.accept,
       handleRemoveTeam,
       uiMessages.dialog.confirmTeamRemove.okText,
-      "Cancel",
+      "Cancel"
     );
   };
 
   const openConfirmChoiceDialog = () => {
     const message = `${uiMessages.dialog.confirmQuotaAssign.message}${
-      groupsWithIssuesRef.current.length > 0
-        ? ` Under Served Groups : ${groupsWithIssuesRef.current.join(", ")}`
-        : ""
+      groupsWithIssuesRef.current.length > 0 ? ` Under Served Groups : ${groupsWithIssuesRef.current.join(", ")}` : ""
     }`;
     dialogContext.showConfirmation(
       uiMessages.dialog.confirmQuotaAssign.title,
       message,
-      "info" as any,
+      ConfirmationType.accept,
       confirmAndProceed,
       uiMessages.dialog.confirmQuotaAssign.okText,
-      "Cancel",
+      "Cancel"
     );
   };
 
@@ -393,10 +357,10 @@ export const AssignQuota = () => {
     dialogContext.showConfirmation(
       uiMessages.dialog.confirmGroupRemove.title,
       uiMessages.dialog.confirmGroupRemove.message,
-      "warning" as any,
+      ConfirmationType.accept,
       removeGroupFromGroupMap,
       uiMessages.dialog.confirmGroupRemove.okText,
-      "Cancel",
+      "Cancel"
     );
   };
 
@@ -429,7 +393,7 @@ export const AssignQuota = () => {
   const handleGroupCreation = (name: string) => {
     if (selectionModel.ids.size > 0) {
       const selectedTeams = Array.from(selectionModel.ids).map((id) =>
-        filteredTeams.find((team) => team.specialRatingGroupId === id),
+        filteredTeams.find((team) => team.specialRatingGroupId === id)
       ) as SpecialQuotaTeam[];
 
       const totalHeadCount = calculateTotalHeads(selectedTeams);
@@ -453,7 +417,6 @@ export const AssignQuota = () => {
       };
 
       setGroupMappings((prevGroups) => [...prevGroups, newGroup]);
-      // 3. Reset the state using the new object format
       setSelectionModel({ type: "include", ids: new Set() });
       setGroupIdCounter((prevCounter) => prevCounter + 1);
       dispatch(ShowSnackBarMessage(SnackMessage.success.groupCreated, "success"));
@@ -509,9 +472,7 @@ export const AssignQuota = () => {
     if (groupToRemove) {
       const updatedTeams = updateTeamsGroupNumber(groupToBeRemovedRef.current);
       setFilteredTeams(updatedTeams);
-      const updatedGroupMappings = groupMappings.filter(
-        (group) => group.id !== groupToBeRemovedRef.current,
-      );
+      const updatedGroupMappings = groupMappings.filter((group) => group.id !== groupToBeRemovedRef.current);
       setGroupMappings(updatedGroupMappings);
       dispatch(ShowSnackBarMessage(SnackMessage.success.groupRemoved, "success"));
     }
@@ -527,12 +488,9 @@ export const AssignQuota = () => {
   const removeTeamFromGroup = () => {
     const updatedGroups = groupMappings.map((group) => {
       if (group.id === parentGroupIdRef.current) {
-        const updatedTeams = group.teams.filter(
-          (team) => team.specialRatingGroupId !== teamToBeRemovedRef.current,
-        );
+        const updatedTeams = group.teams.filter((team) => team.specialRatingGroupId !== teamToBeRemovedRef.current);
         const updatedTotalHeadCount = calculateTotalHeads(updatedTeams);
-        const { default5Slots, default20Slots } =
-          calculateDefaultQuotaValues(updatedTotalHeadCount);
+        const { default5Slots, default20Slots } = calculateDefaultQuotaValues(updatedTotalHeadCount);
         return {
           ...group,
           teams: updatedTeams,
@@ -640,6 +598,7 @@ export const AssignQuota = () => {
         specialRatingGroupId: rest.specialRatingGroupId,
         businessUnit: rest.businessUnit,
         department: rest.department,
+        team: rest.team,
         specialRatingQuotaId: specialRatingQuotaId,
       }));
 
@@ -654,7 +613,7 @@ export const AssignQuota = () => {
 
   const validateQuotaData = async (
     specialRatingQuotas: SpecialRatingQuota[],
-    parSpecialRatingGroups: PostSpecialQuotaTeam[],
+    parSpecialRatingGroups: PostSpecialQuotaTeam[]
   ): Promise<{
     isValid: boolean;
     validatedSpecialRatingQuotas: SpecialRatingQuota[];
@@ -663,14 +622,10 @@ export const AssignQuota = () => {
   }> => {
     try {
       const validatedSpecialRatingQuotas =
-        (await array()
-          .of(specialRatingQuotaSchema)
-          .validate(specialRatingQuotas, { abortEarly: false })) || [];
+        (await array().of(specialRatingQuotaSchema).validate(specialRatingQuotas, { abortEarly: false })) || [];
 
       const validatedParSpecialRatingGroups =
-        (await array()
-          .of(postSpecialQuotaGroupSchema)
-          .validate(parSpecialRatingGroups, { abortEarly: false })) || [];
+        (await array().of(postSpecialQuotaGroupSchema).validate(parSpecialRatingGroups, { abortEarly: false })) || [];
 
       return {
         isValid: true,
@@ -679,12 +634,7 @@ export const AssignQuota = () => {
       };
     } catch (error) {
       const errorMessages: string[] = [];
-      if (
-        error &&
-        typeof error === "object" &&
-        "inner" in error &&
-        Array.isArray((error as any).inner)
-      ) {
+      if (error && typeof error === "object" && "inner" in error && Array.isArray((error as any).inner)) {
         (error as any).inner.forEach((err: any) => {
           errorMessages.push(err.message);
         });
@@ -748,9 +698,7 @@ export const AssignQuota = () => {
     <Stack sx={{ height: "100%" }}>
       {parCyclesLoadingState === RequestState.SUCCEEDED && (
         <>
-          {quotaGroupStatus === RequestState.LOADING && (
-            <LoadingEffect message={uiMessages.loading.pageLoading} />
-          )}
+          {quotaGroupStatus === RequestState.LOADING && <LoadingEffect message={uiMessages.loading.pageLoading} />}
           {quotaGroupStatus === RequestState.IDLE && isDataSubmitting && (
             <LoadingEffect message={uiMessages.loading.parCycleCreation} />
           )}
@@ -1068,6 +1016,7 @@ export const AssignQuota = () => {
                                       <TableRow>
                                         <TableCell>BU</TableCell>
                                         <TableCell>Department</TableCell>
+                                        <TableCell>Team</TableCell>
                                         <TableCell align="center">Head Count</TableCell>
                                         <TableCell
                                           align="center"
@@ -1084,9 +1033,9 @@ export const AssignQuota = () => {
                                       {group.teams.map((team) => (
                                         <TableRow key={team.specialRatingGroupId}>
                                           <TableCell>
-                                            {team.businessUnit ? team.businessUnit : "No Data"}
-                                          </TableCell>
+                                            {team.businessUnit ? team.businessUnit : "No Data"}</TableCell>
                                           <TableCell>{team.department}</TableCell>
+                                          <TableCell>{team.team}</TableCell>
                                           <TableCell align="center">{team.headCount}</TableCell>
                                           <TableCell
                                             align="center"
@@ -1191,39 +1140,29 @@ export const AssignQuota = () => {
                       columns={columns}
                       autoHeight={true}
                       rowHeight={60}
-                      // FIX: Updated props for v6+
                       pageSizeOptions={[10]}
                       checkboxSelection={true}
                       onRowSelectionModelChange={handleSelectionChange}
                       rowSelectionModel={selectionModel}
-                      slots={{
-                        toolbar: GridToolbar,
-                      }}
+                      slots={{ toolbar: GridToolbar }}
                       disableDensitySelector
                       disableColumnSelector
                       slotProps={{
                         toolbar: {
                           showQuickFilter: true,
-                          quickFilterProps: {
-                            debounceMs: 500,
-                          },
-                          // Note: If you are using a custom search box, binding `value` and `onChange`
-                          // to the toolbar slot directly is deprecated. Usually, you just let the
-                          // QuickFilter handle it internally now, but I left your logic if you have custom needs.
+                          quickFilterProps: { debounceMs: 500 },
                         },
                       }}
                       initialState={{
-                        pagination: {
-                          paginationModel: { pageSize: 10, page: 0 },
-                        },
+                        pagination: { paginationModel: { pageSize: 10 } },
                         filter: {
                           filterModel: {
                             items: [
                               {
                                 id: "searchText",
                                 value: searchText,
-                                field: "searchText", // Changed from columnField
-                                operator: "contains", // Changed from operatorValue
+                                field: "searchText",
+                                operator: "contains",
                               },
                             ],
                           },
@@ -1251,9 +1190,7 @@ export const AssignQuota = () => {
           )}
         </>
       )}
-      {parCyclesLoadingState === RequestState.LOADING && (
-        <LoadingEffect message={uiMessages.loading.pageLoading} />
-      )}
+      {parCyclesLoadingState === RequestState.LOADING && <LoadingEffect message={uiMessages.loading.pageLoading} />}
     </Stack>
   );
 };

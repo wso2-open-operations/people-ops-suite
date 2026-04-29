@@ -44,6 +44,7 @@ export interface PostSpecialQuotaTeam {
   specialRatingGroupId: number;
   businessUnit: string;
   department: string;
+  team: string;
   specialRatingQuotaId: number;
 }
 
@@ -52,6 +53,7 @@ export interface SpecialQuotaTeam {
   specialRatingGroupId: number;
   businessUnit: string;
   department: string;
+  team: string;
   headCount: number | null;
   groupNumber: number | null;
   specialRatingQuotaId: number | null;
@@ -64,6 +66,7 @@ export interface SpecialRatingAllocation {
   parSpecialQuotaName: string;
   parDepartment: string;
   parBusinessUnit: string;
+  parTeam: string;
   highlight?: boolean;
 }
 

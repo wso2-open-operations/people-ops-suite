@@ -19,6 +19,8 @@ export interface Employee {
   workEmail: string;
   employeeName: string;
   employeeThumbnail?: string;
+  isLead?: boolean;
+  managerEmail?: string;
 }
 interface ConfigState {
   globalConfig: ParConfigurations;
@@ -171,6 +173,8 @@ export const fetchEntityEmployees = createAsyncThunk(
         const list = (resp.data as any[]).map((e) => ({
           workEmail: e.workEmail,
           employeeName: e.employeeName,
+          employeeThumbnail: e.employeeThumbnail,
+          isLead: e.isLead,
         })) as Employee[];
         return list;
       }
@@ -194,6 +198,10 @@ const metaSlice = createSlice({
     resetParticipants(state) {
       state.participantState = RequestState.IDLE;
       state.participantsArray = [];
+    },
+    resetSubordinates(state) {
+      state.subordinatesArray = [];
+      state.subordinatesState = RequestState.IDLE;
     },
   },
   extraReducers: (builder) => {
@@ -245,12 +253,8 @@ const metaSlice = createSlice({
         state.subordinatesState = RequestState.LOADING;
       })
       .addCase(fetchEntityEmployees.fulfilled, (state, action) => {
-        const employees = (action.payload as Employee[]).map((e) => ({
-          workEmail: e.workEmail,
-          employeeName: e.employeeName,
-        }));
-        state.subordinatesArray = employees.sort((a, b) =>
-          a.workEmail.toLowerCase().localeCompare(b.workEmail.toLowerCase()),
+        state.subordinatesArray = (action.payload as Employee[]).sort((a, b) =>
+          a.workEmail.toLowerCase().localeCompare(b.workEmail.toLowerCase())
         );
         state.subordinatesState = RequestState.SUCCEEDED;
       })
@@ -282,6 +286,8 @@ export const selectParticipantsStatus = (state: RootState) => state.meta.partici
 export const selectParticipants = (state: RootState) => state.meta.participantsArray;
 export const selectSubordinatesArray = (state: RootState) => state.meta.subordinatesArray;
 export const selectSubordinates = (state: RootState) => state.meta.subordinatesState;
+export const selectManagerEmailSet = (state: RootState): Set<string> =>
+  new Set(state.meta.employeeArray.map((e) => e.managerEmail).filter(Boolean) as string[]);
 
-export const { resetParticipants } = metaSlice.actions;
+export const { resetParticipants, resetSubordinates } = metaSlice.actions;
 export default metaSlice.reducer;

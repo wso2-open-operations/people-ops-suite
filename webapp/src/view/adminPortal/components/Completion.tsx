@@ -66,7 +66,7 @@ export const Completion = ({
       field: "employeePARCompletion",
       headerName: "Employee PAR (%)",
       flex: 0.15,
-      renderCell: (params: GridRenderCellParams<Team>) => (
+      renderCell: (params: GridRenderCellParams) => (
         <Chip size="small" label={params.row.employeePARCompletion} />
       ),
     },
@@ -74,7 +74,7 @@ export const Completion = ({
       field: "leadReviewCompletion",
       headerName: "Lead's Feedback (%)",
       flex: 0.15,
-      renderCell: (params: GridRenderCellParams<Team>) => (
+      renderCell: (params: GridRenderCellParams) => (
         <Chip size="small" label={params.row.leadReviewCompletion} />
       ),
     },
@@ -82,7 +82,7 @@ export const Completion = ({
       field: "f2fCompletion",
       headerName: "F2F",
       flex: 0.1,
-      renderCell: (params: GridRenderCellParams<Team>) => (
+      renderCell: (params: GridRenderCellParams) => (
         <Chip size="small" label={params.row.f2fCompletion} />
       ),
       // 1. Removed hide: true from here
