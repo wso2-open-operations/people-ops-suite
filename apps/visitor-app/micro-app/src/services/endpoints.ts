@@ -40,11 +40,9 @@ const buildPathWithParams = (
 
   const searchParams = new URLSearchParams();
   for (const key in params) {
-    if (key in params) {
-      const value = params[key];
-      if (value !== undefined && value !== null) {
-        searchParams.append(key, String(value));
-      }
+    const value = params[key];
+    if (value !== undefined && value !== null) {
+      searchParams.append(key, String(value));
     }
   }
 
