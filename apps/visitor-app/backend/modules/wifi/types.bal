@@ -1,0 +1,32 @@
+// Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+//
+// This software is the property of WSO2 LLC. and its suppliers, if any.
+// Dissemination of any information or reproduction of any material contained
+// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
+// You may not alter or remove any copyright or other notice from copies of this content.
+
+# Wifi creation payload.
+public type CreateWifiAccountPayload record {|
+    # wifi username
+    string username;
+    # wifi password
+    string password?;
+    # owner email
+    string email?;
+|};
+
+public type CreateWifiAccountResponse record {|
+    # Status Code of the response
+    int statusCode?;
+    # Response message
+    string message;
+    # Guest wifi account username
+    string guestAccount;    
+|};
+
+
+type ResponseBody record {|
+    string message?;
+    string guestAccount?;
+    json...;
+|};
