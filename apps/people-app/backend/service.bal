@@ -17,6 +17,7 @@
 import people.authorization;
 import people.database;
 import people.qr;
+import people.scim_operations;
 import people.wso2_coin;
 
 import ballerina/http;
@@ -965,17 +966,54 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         string employeeId = generatedEmployeeId;
 
-        int|error newEmployeeId = database:addEmployee(payload, userInfo.email, employeeId);
-        if newEmployeeId is error {
-            log:printError(ERROR_EMPLOYEE_CREATION_FAILED, newEmployeeId);
+        error? scimUserResult = scim_operations:createUser({
+            userName: string `${scim_operations:asgardeoUserStoreDomain}/${payload.workEmail}`,
+            emails: [payload.workEmail],
+            name: {givenName: payload.firstName, familyName: payload.lastName},
+            urn\:scim\:wso2\:schema: {askPassword: true}
+        });
+        if scimUserResult is error {
+            log:printError("Failed to provision user in Asgardeo; aborting employee creation",
+                    scimUserResult, workEmail = payload.workEmail);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_EMPLOYEE_CREATION_FAILED
                 }
             };
         }
-        return newEmployeeId;
 
+        int|error newEmployeeId = database:addEmployee(payload, userInfo.email, employeeId);
+        if newEmployeeId is error {
+            log:printError(ERROR_EMPLOYEE_CREATION_FAILED + "; Asgardeo user requires manual cleanup",
+                    newEmployeeId, workEmail = payload.workEmail);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                }
+            };
+        }
+        string[]|error groupNames = database:getAsgardeoGroupsForEmploymentType(payload.employmentTypeId);
+        if groupNames is error {
+            log:printError("Failed to fetch Asgardeo groups for employment type; user created without group assignment",
+                    groupNames, workEmail = payload.workEmail, employmentTypeId = payload.employmentTypeId);
+        } else {
+            foreach string groupName in groupNames {
+                scim_operations:AddUsersToGroupResponse|error addResult =
+                    scim_operations:addUserToGroup(groupName, payload.workEmail);
+                if addResult is error {
+                    log:printError("Failed to add user to Asgardeo group", addResult,
+                            workEmail = payload.workEmail, group = groupName);
+                    continue;
+                }
+                if addResult.failedUsers.length() > 0 {
+                    log:printWarn("Asgardeo reported failure adding user to group",
+                            workEmail = payload.workEmail, group = groupName,
+                            failedUsers = addResult.failedUsers);
+                }
+            }
+        }
+
+        return newEmployeeId;
     }
 
     # Update employee personal information.

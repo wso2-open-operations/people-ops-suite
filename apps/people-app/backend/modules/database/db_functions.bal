@@ -245,6 +245,17 @@ public isolated function getEmploymentTypes() returns EmploymentType[]|error {
         select employmentType;
 }
 
+# Fetch IDP group names mapped to an employment type.
+#
+# + employmentTypeId - Employment type ID
+# + return - Group names, or error
+public isolated function getAsgardeoGroupsForEmploymentType(int employmentTypeId) returns string[]|error {
+    stream<record {|string groupName;|}, error?> rows =
+        databaseClient->query(getAsgardeoGroupsForEmploymentTypeQuery(employmentTypeId));
+    return from var row in rows
+        select row.groupName;
+}
+
 # Get houses.
 #
 # + return - Houses

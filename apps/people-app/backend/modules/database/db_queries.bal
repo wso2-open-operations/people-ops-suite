@@ -715,6 +715,15 @@ isolated function getEmploymentTypesQuery() returns sql:ParameterizedQuery =>
         name
     FROM employment_type;`;
 
+# Fetch IDP group names mapped to a given employment type.
+#
+# + employmentTypeId - Employment type ID
+# + return - Parameterized query returning group_name rows
+isolated function getAsgardeoGroupsForEmploymentTypeQuery(int employmentTypeId) returns sql:ParameterizedQuery =>
+    `SELECT group_name AS groupName
+     FROM employment_type_idp_group
+     WHERE employment_type_id = ${employmentTypeId};`;
+
 # Get houses query.
 #
 # + return - Houses query
