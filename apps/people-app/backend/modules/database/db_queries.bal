@@ -1703,3 +1703,61 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
 # + return - Parameterized query returning work_email and full_name columns
 isolated function getEmployeeEmailToNameMapQuery() returns sql:ParameterizedQuery =>
     `SELECT work_email, CONCAT(first_name, ' ', last_name) AS full_name FROM employee;`;
+
+# Delete additional managers for an employee.
+#
+# + employeeId - Employee ID string
+# + return - Parameterized query to delete additional managers
+isolated function deleteEmployeeAdditionalManagersQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_additional_managers
+     WHERE employee_pk_id = (SELECT id FROM employee WHERE employee_id = ${employeeId});`;
+
+# Delete emergency contacts linked to an employee's personal info.
+#
+# + employeeId - Employee ID string
+# + return - Parameterized query to delete emergency contacts
+isolated function deleteEmployeeEmergencyContactsQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `DELETE FROM personal_info_emergency_contacts
+     WHERE personal_info_id = (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId});`;
+
+# Delete an employee record.
+#
+# + employeeId - Employee ID string
+# + return - Parameterized query to delete an employee
+isolated function deleteEmployeeQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee WHERE employee_id = ${employeeId};`;
+
+# Delete a personal info record.
+#
+# + personalInfoId - Primary key of the personal_info row
+# + return - Parameterized query to delete a personal info record
+isolated function deletePersonalInfoQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `DELETE FROM personal_info WHERE id = ${personalInfoId};`;
+
+# Delete employee audit rows for an employee.
+#
+# + employeePkId - Primary key of the employee row
+# + return - Parameterized query to delete employee audit rows
+isolated function deleteEmployeeAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_audit WHERE employee_pk_id = ${employeePkId};`;
+
+# Delete additional managers audit rows for an employee.
+#
+# + employeePkId - Primary key of the employee row
+# + return - Parameterized query to delete additional managers audit rows
+isolated function deleteEmployeeAdditionalManagersAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_additional_managers_audit WHERE employee_pk_id = ${employeePkId};`;
+
+# Delete emergency contacts audit rows for a personal info record.
+#
+# + personalInfoId - Primary key of the personal_info row
+# + return - Parameterized query to delete emergency contacts audit rows
+isolated function deleteEmployeeEmergencyContactsAuditQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `DELETE FROM personal_info_emergency_contacts_audit WHERE personal_info_id = ${personalInfoId};`;
+
+# Delete personal info audit rows for a personal info record.
+#
+# + personalInfoId - Primary key of the personal_info row
+# + return - Parameterized query to delete personal info audit rows
+isolated function deletePersonalInfoAuditQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `DELETE FROM personal_info_audit WHERE personal_info_pk_id = ${personalInfoId};`;

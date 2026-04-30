@@ -332,6 +332,28 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
     return lastInsertedId;
 }
 
+# Compensating delete used to roll back `addEmployee` when downstream provisioning fails.
+#
+# + employeeId - Employee ID string
+# + return - Nil on success or error
+public isolated function deleteEmployeeById(string employeeId) returns error? {
+    retry transaction {
+        int personalInfoId = check databaseClient->queryRow(
+            `SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}`);
+        int employeePkId = check databaseClient->queryRow(
+            `SELECT id FROM employee WHERE employee_id = ${employeeId}`);
+        _ = check databaseClient->execute(deleteEmployeeAdditionalManagersQuery(employeeId));
+        _ = check databaseClient->execute(deleteEmployeeEmergencyContactsQuery(employeeId));
+        _ = check databaseClient->execute(deleteEmployeeAdditionalManagersAuditQuery(employeePkId));
+        _ = check databaseClient->execute(deleteEmployeeEmergencyContactsAuditQuery(personalInfoId));
+        _ = check databaseClient->execute(deleteEmployeeQuery(employeeId));
+        _ = check databaseClient->execute(deleteEmployeeAuditQuery(employeePkId));
+        _ = check databaseClient->execute(deletePersonalInfoAuditQuery(personalInfoId));
+        _ = check databaseClient->execute(deletePersonalInfoQuery(personalInfoId));
+        check commit;
+    }
+}
+
 # Fetch employee ID generation context.
 #
 # + companyId - Company ID of the new employee
