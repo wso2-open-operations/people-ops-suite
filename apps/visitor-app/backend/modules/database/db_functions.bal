@@ -161,6 +161,7 @@ public isolated function fetchVisit(int? visitId = (), string? uuid = (), int? s
     string? timeOfDeparture = visit.timeOfDeparture;
     string? accessibleLocations = visit.accessibleLocations;
     string? email = visit.email;
+    string? watchList = visit.watchList;
 
     return {
         id: visit.id,
@@ -168,9 +169,10 @@ public isolated function fetchVisit(int? visitId = (), string? uuid = (), int? s
         companyName: visit.companyName,
         passNumber: visit.passNumber,
         whomTheyMeet: visit.whomTheyMeet,
+        watchList: watchList is string ? check watchList.fromJsonStringWithType() : (),
         purposeOfVisit: visit.purposeOfVisit,
         accessibleLocations: accessibleLocations is string ?
-            check accessibleLocations.fromJsonStringWithType() : null,
+            check accessibleLocations.fromJsonStringWithType() : (),
         visitDate: visit.visitDate,
         timeOfEntry: timeOfEntry is string ?
                 timeOfEntry.endsWith(".0") ? timeOfEntry.substring(0, timeOfEntry.length() - 2) : timeOfEntry : (),
@@ -224,7 +226,7 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
                 whomTheyMeet: visit.whomTheyMeet,
                 purposeOfVisit: visit.purposeOfVisit,
                 accessibleLocations: accessibleLocations is string ?
-                    check accessibleLocations.fromJsonStringWithType() : null,
+                    check accessibleLocations.fromJsonStringWithType() : (),
                 visitDate: visit.visitDate,
                 invitationId: visit.invitationId,
                 status: visit.status,

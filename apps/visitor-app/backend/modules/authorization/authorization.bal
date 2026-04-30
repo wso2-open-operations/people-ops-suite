@@ -69,7 +69,7 @@ public isolated service class JwtInterceptor {
             };
         }
 
-        foreach anydata role in authorizedRoles.toArray() {
+        foreach anydata role in [...authorizedRoles.EMPLOYEE_ROLE, authorizedRoles.ADMIN_ROLE] {
             if userInfo.groups.some(r => r === role) {
                 ctx.set(HEADER_USER_INFO, userInfo);
                 return ctx.next();

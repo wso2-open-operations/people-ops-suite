@@ -25,6 +25,14 @@ type UserInfo record {
     int[] privileges;
 };
 
+@constraint:String {
+    pattern: {
+        value: database:EMAIL_REGEX,
+        message: "The email should be a valid email address."
+    }
+}
+public type Email string;
+
 # Payload for adding a new visit.
 public type AddVisitPayload record {|
     # Visitor ID Hash
@@ -109,6 +117,14 @@ public type AddVisitPayload record {|
     string uuid;
     # QR code in byte array format
     byte[] qrCode;
+    # List of email addresses to be notified about the visit
+    @constraint:Array {
+        minLength: {
+            value: 1,
+            message: "At least one email should be provided in the watch list."
+        }
+    }
+    Email[] watchList?;
 |};
 
 # Payload for updating an existing visit.
@@ -126,13 +142,7 @@ public type AddInvitationPayload record {|
     # Invitations count
     int noOfVisitors;
     # Invitee email
-    @constraint:String {
-        pattern: {
-            value: database:EMAIL_REGEX,
-            message: "The invitee email should be a valid email address."
-        }
-    }
-    string inviteeEmail;
+    Email inviteeEmail;
 |};
 
 # Payload for filling an existing visit invitation.
@@ -170,7 +180,7 @@ public type FillInvitationPayload record {|
     }
     string contactNumber;
     # Email of the visitor
-    string email;
+    Email email;
     # Company name of visitor
     string? companyName;
     # The person the visitor is supposed to meet
