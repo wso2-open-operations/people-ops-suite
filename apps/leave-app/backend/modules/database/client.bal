@@ -27,7 +27,7 @@ public isolated function initializeLeaveClient() returns mysql:Client|error {
         ...databaseConfig,
         options: {
             ssl: {
-                mode: mysql:SSL_REQUIRED
+                mode: mysql:SSL_PREFERRED
             },
             connectTimeout: 10
         }

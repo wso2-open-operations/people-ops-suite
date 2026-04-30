@@ -28,6 +28,14 @@ import ballerina/time;
     id: "people-ops/leave-application"
 }
 
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["http://localhost:3000"],
+        allowCredentials: true,
+        allowHeaders: ["Authorization", "Content-Type"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+    }
+}
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
@@ -933,9 +941,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             UserCalendarInformation|http:InternalServerError|error userCalendarInformation =
                 getUserCalendarInformation(email, startDate, endDate, jwt);
             if userCalendarInformation is error {
+                string errMsg = "Error occurred while fetching user calendar";
+                log:printError(errMsg, userCalendarInformation);
                 return <http:InternalServerError>{
                     body: {
-                        message: userCalendarInformation.message()
+                        message: errMsg
                     }
                 };
             }
