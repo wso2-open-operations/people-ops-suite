@@ -346,8 +346,8 @@ public isolated function deleteEmployeeById(string employeeId) returns error? {
         _ = check databaseClient->execute(deleteEmployeeEmergencyContactsQuery(employeeId));
         _ = check databaseClient->execute(deleteEmployeeAdditionalManagersAuditQuery(employeePkId));
         _ = check databaseClient->execute(deleteEmployeeEmergencyContactsAuditQuery(personalInfoId));
-        _ = check databaseClient->execute(deleteEmployeeQuery(employeeId));
         _ = check databaseClient->execute(deleteEmployeeAuditQuery(employeePkId));
+        _ = check databaseClient->execute(deleteEmployeeQuery(employeeId));
         _ = check databaseClient->execute(deletePersonalInfoAuditQuery(personalInfoId));
         _ = check databaseClient->execute(deletePersonalInfoQuery(personalInfoId));
         check commit;
