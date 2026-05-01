@@ -194,62 +194,59 @@ export const ParInputForm = ({
   ]);
 
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      justifyContent="start"
-      alignItems="left"
-      sx={{ minHeight: "calc(100vh - 22rem)" }}
-    >
+    <Box sx={{ display: "flex", flexDirection: "column", flex: 1, overflow: "auto" }}>
       <form
         onSubmit={handleSubmit}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          flex: 1,
-        }}
+        style={{ display: "flex", flexDirection: "column", flex: 1, gap: "8px" }}
       >
-        <Box paddingY={2}>
-          <Grid container spacing={1}>
-            <Grid size={{ xs: 12, sm: 12 }} maxHeight={65} overflow={"auto"}>
-              <Typography paddingTop={1} fontWeight={"bold"}>
-                {currentCycle.parCycleConfigurations?.employeeParQuestion
-                  ? currentCycle.parCycleConfigurations?.employeeParQuestion
-                  : parUiText.EmptyEmployeeQuestionText}
-              </Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 12 }}>
-              {isDeadlinePassed ? (
-                <CommentPaper comment={values.parEmployeeComment} />
-              ) : (
-                <CustomRichTextField
-                  name="parEmployeeComment"
-                  value={values.parEmployeeComment}
-                  onChange={(value) => {
-                    if (value !== values.parEmployeeComment) {
-                      setFieldValue("parEmployeeComment", value);
-                    }
-                  }}
-                  onBlur={handleBlur}
-                  error={Boolean(touched.parEmployeeComment && errors.parEmployeeComment)}
-                  helperText={
-                    touched.parEmployeeComment && errors.parEmployeeComment
-                      ? errors.parEmployeeComment.toString()
-                      : ""
-                  }
-                  placeholder="Enter your comment here"
-                  setFieldTouched={setFieldTouched}
-                />
-              )}
-            </Grid>
+        <Grid container spacing={1}>
+          <Grid size={{ xs: 12 }} sx={{ overflowX: "auto", mt: 1 }}>
+            <Typography
+              sx={{
+                fontSize: { xs: "0.75rem", sm: "1rem" },
+                fontWeight: { xs: 300, sm: 400 },
+                lineHeight: 1.5,
+              }}
+            >
+              {currentCycle.parCycleConfigurations?.employeeParQuestion
+                ? currentCycle.parCycleConfigurations?.employeeParQuestion
+                : parUiText.EmptyEmployeeQuestionText}
+            </Typography>
           </Grid>
-        </Box>
-        <Box display="flex" justifyContent="space-between">
-          <Box mt={-1}>
-            {isDraftSaved && <Typography color={"GrayText"}>Draft Saved</Typography>}
+          <Grid size={{ xs: 12 }} sx={{ overflowX: "auto" }}>
+            {isDeadlinePassed ? (
+              <CommentPaper comment={values.parEmployeeComment} />
+            ) : (
+              <CustomRichTextField
+                name="parEmployeeComment"
+                value={values.parEmployeeComment}
+                onChange={(value) => {
+                  if (value !== values.parEmployeeComment) {
+                    setFieldValue("parEmployeeComment", value);
+                  }
+                }}
+                onBlur={handleBlur}
+                error={Boolean(touched.parEmployeeComment && errors.parEmployeeComment)}
+                helperText={
+                  touched.parEmployeeComment && errors.parEmployeeComment
+                    ? errors.parEmployeeComment.toString()
+                    : ""
+                }
+                placeholder="Enter your comment here"
+                setFieldTouched={setFieldTouched}
+              />
+            )}
+          </Grid>
+        </Grid>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box>
+            {isDraftSaved && (
+              <Typography variant="caption" color="text.secondary">
+                Draft Saved
+              </Typography>
+            )}
           </Box>
-          <Box display={"flex"} gap={1}>
+          <Box display="flex" gap={1}>
             <Button
               variant="outlined"
               type="submit"

@@ -53,16 +53,16 @@ export const ParStatusView = ({ currentCycle }: ParStatusViewProps) => {
   return (
     <>
       {employeeRatings?.parEmployeeStatus === ParEmployeeStatus.PENDING && (
-        <Box>
+        <Box sx={{ flex: isParInputViewOpen ? "none" : 1, display: "flex", flexDirection: "column" }}>
           {!isDeadlinePassed && (
-            <Alert severity="info">
+            <Alert severity="info" sx={{ py: 0.5 }}>
               {`Please share your PAR before the deadline: ${dayjs
                 .utc(currentCycle.parEmployeeDeadline)
                 .format("D MMM 'YY")}`}
             </Alert>
           )}
           {isDeadlinePassed && (
-            <Alert severity="error" sx={{ mt: 2 }}>
+            <Alert severity="error" sx={{ py: 0.5 }}>
               {`The deadline for submitting the PAR has passed on ${dayjs
                 .utc(currentCycle.parEmployeeDeadline)
                 .format("D MMM 'YY")}`}
@@ -71,22 +71,21 @@ export const ParStatusView = ({ currentCycle }: ParStatusViewProps) => {
 
           {!isParInputViewOpen && (
             <Box
-              display="flex"
-              flexDirection="column"
-              justifyContent="center"
-              alignItems="center"
-              sx={{ minHeight: "calc(100vh - 450px)" }}
+              sx={{
+                flex: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
             >
-              <Box>
-                <Button
-                  disabled={isDeadlinePassed}
-                  onClick={openParInputView}
-                  variant="contained"
-                  endIcon={<PlayCircleOutlineIcon sx={{ mb: "0.1rem" }} />}
-                >
-                  Start
-                </Button>
-              </Box>
+              <Button
+                disabled={isDeadlinePassed}
+                onClick={openParInputView}
+                variant="contained"
+                endIcon={<PlayCircleOutlineIcon sx={{ mb: "0.1rem" }} />}
+              >
+                Start
+              </Button>
             </Box>
           )}
         </Box>

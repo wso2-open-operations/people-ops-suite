@@ -23,15 +23,16 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import { useFormik } from "formik";
 import * as yup from "yup";
 
 import { useEffect, useState } from "react";
 
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import FormDatePicker from "@view/adminPortal/components/FormDatePicker";
 import { SnackMessage, uiMessages } from "@config/constant";
 import {
   fetchOpenParCycle,
@@ -129,7 +130,9 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
     initialValues: {
       parCycleStartDate: currentCycle.parCycleStartDate || "",
       parCycleEndDate: currentCycle.parCycleEndDate || "",
-      parEvaluationStartDate: currentCycle.parEvaluationStartDate || "",
+      parEvaluationStartDate: currentCycle.parEvaluationStartDate
+        ? dayjs(currentCycle.parEvaluationStartDate)
+        : null,
       parEvaluationEndDate: currentCycle.parEvaluationEndDate || "",
       parEmployeeDeadline: currentCycle.parEmployeeDeadline || "",
       parThreeSixtyRatingDeadline: currentCycle.parThreeSixtyRatingDeadline || "",
@@ -214,7 +217,7 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
   }, [values, currentCycle]);
 
   return (
-    <Box alignItems="center" overflow={"auto"} height={"100%"}>
+    <Box>
       <Breadcrumbs aria-label="breadcrumb" sx={{ paddingBottom: 2 }}>
         <Link underline="hover" color="inherit" onClick={closeParCycleSettings}>
           Home
@@ -234,23 +237,13 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
               <Typography paddingTop={1}>PAR cycle starts from:</Typography>
             </Grid>
             <Grid size={{ xs: 12, sm: 2 }}>
-              <DatePicker
-                value={values.parCycleStartDate ? dayjs(values.parCycleStartDate) : null}
-                onChange={(newValue: Dayjs | null) => {
-                  setFieldValue("parCycleStartDate", newValue ? newValue.format("YYYY-MM-DD") : "");
-                }}
-                slots={{ textField: TextField }}
-                slotProps={{
-                  textField: {
-                    "aria-label": "par cycle start date",
-                    size: "small",
-                    fullWidth: true,
-                    name: "parCycleStartDate",
-                    onBlur: handleBlur,
-                    error: touched.parCycleStartDate && Boolean(errors.parCycleStartDate),
-                    helperText: touched.parCycleStartDate && (errors.parCycleStartDate as string),
-                  },
-                }}
+              <FormDatePicker
+                name="parCycleStartDate"
+                value={values.parCycleStartDate}
+                onChange={setFieldValue}
+                onBlur={handleBlur}
+                error={touched.parCycleStartDate && errors.parCycleStartDate}
+                helperText={touched.parCycleStartDate && (errors.parCycleStartDate as string)}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 1 }}>
@@ -259,25 +252,15 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
               </Typography>
             </Grid>
             <Grid size={{ xs: 12, sm: 2 }}>
-              <DatePicker
+              <FormDatePicker
+                name="parCycleEndDate"
+                value={values.parCycleEndDate}
+                onChange={setFieldValue}
+                onBlur={handleBlur}
                 disabled={!Boolean(values.parCycleStartDate)}
-                value={values.parCycleEndDate ? dayjs(values.parCycleEndDate) : null}
-                onChange={(newValue: Dayjs | null) => {
-                  setFieldValue("parCycleEndDate", newValue ? newValue.format("YYYY-MM-DD") : "");
-                }}
-                minDate={values.parCycleStartDate ? dayjs(values.parCycleStartDate) : undefined}
-                slots={{ textField: TextField }}
-                slotProps={{
-                  textField: {
-                    "aria-label": "par cycle end date",
-                    name: "parCycleEndDate",
-                    size: "small",
-                    fullWidth: true,
-                    onBlur: handleBlur,
-                    error: touched.parCycleEndDate && Boolean(errors.parCycleEndDate),
-                    helperText: touched.parCycleEndDate && (errors.parCycleEndDate as string),
-                  },
-                }}
+                minDate={values.parCycleStartDate || undefined}
+                error={touched.parCycleEndDate && errors.parCycleEndDate}
+                helperText={touched.parCycleEndDate && (errors.parCycleEndDate as string)}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }} />
@@ -286,21 +269,11 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
               <Typography paddingTop={1}>PAR creation date:</Typography>
             </Grid>
             <Grid size={{ xs: 12, sm: 2 }}>
-              <DatePicker
-                disabled
-                value={values.parEvaluationStartDate ? dayjs(values.parEvaluationStartDate) : null}
+              <FormDatePicker
+                name="parEvaluationStartDate"
+                value={values.parEvaluationStartDate}
                 onChange={() => {}}
-                slots={{ textField: TextField }}
-                slotProps={{
-                  textField: {
-                    disabled: true,
-                    "aria-label": "par creation date",
-                    size: "small",
-                    fullWidth: true,
-                    name: "parEvaluationStartDate",
-                    error: touched.parEvaluationStartDate && Boolean(errors.parEvaluationStartDate),
-                  },
-                }}
+                disabled
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 7 }} />
@@ -309,33 +282,19 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
               <Typography paddingTop={1}>PAR evaluation closing date:</Typography>
             </Grid>
             <Grid size={{ xs: 12, sm: 2 }}>
-              <DatePicker
+              <FormDatePicker
+                name="parEvaluationEndDate"
+                value={values.parEvaluationEndDate}
+                onChange={setFieldValue}
+                onBlur={handleBlur}
                 disabled={!Boolean(values.parCycleStartDate)}
-                value={values.parEvaluationEndDate ? dayjs(values.parEvaluationEndDate) : null}
-                onChange={(newValue: Dayjs | null) => {
-                  setFieldValue(
-                    "parEvaluationEndDate",
-                    newValue ? newValue.format("YYYY-MM-DD") : "",
-                  );
-                }}
                 minDate={
                   values.parEvaluationStartDate
-                    ? dayjs(values.parEvaluationStartDate).add(1, "day")
+                    ? dayjs(values.parEvaluationStartDate).add(1, "day").format("YYYY-MM-DD")
                     : undefined
                 }
-                slots={{ textField: TextField }}
-                slotProps={{
-                  textField: {
-                    "aria-label": "par evaluation closing date",
-                    size: "small",
-                    fullWidth: true,
-                    name: "parEvaluationEndDate",
-                    onBlur: handleBlur,
-                    error: touched.parEvaluationEndDate && Boolean(errors.parEvaluationEndDate),
-                    helperText:
-                      touched.parEvaluationEndDate && (errors.parEvaluationEndDate as string),
-                  },
-                }}
+                error={touched.parEvaluationEndDate && errors.parEvaluationEndDate}
+                helperText={touched.parEvaluationEndDate && (errors.parEvaluationEndDate as string)}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 7 }} />
@@ -344,36 +303,20 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
               <Typography paddingTop={1}>Deadline for employee PAR:</Typography>
             </Grid>
             <Grid size={{ xs: 12, sm: 2 }}>
-              <DatePicker
+              <FormDatePicker
+                name="parEmployeeDeadline"
+                value={values.parEmployeeDeadline}
+                onChange={setFieldValue}
+                onBlur={handleBlur}
                 disabled={!Boolean(values.parEvaluationEndDate)}
-                value={values.parEmployeeDeadline ? dayjs(values.parEmployeeDeadline) : null}
-                onChange={(newValue: Dayjs | null) => {
-                  setFieldValue(
-                    "parEmployeeDeadline",
-                    newValue ? newValue.format("YYYY-MM-DD") : "",
-                  );
-                }}
                 minDate={
                   values.parEvaluationStartDate
-                    ? dayjs(values.parEvaluationStartDate).add(1, "day")
+                    ? dayjs(values.parEvaluationStartDate).add(1, "day").format("YYYY-MM-DD")
                     : undefined
                 }
-                maxDate={
-                  values.parEvaluationEndDate ? dayjs(values.parEvaluationEndDate) : undefined
-                }
-                slots={{ textField: TextField }}
-                slotProps={{
-                  textField: {
-                    "aria-label": "deadline for employee PAR",
-                    size: "small",
-                    fullWidth: true,
-                    name: "parEmployeeDeadline",
-                    onBlur: handleBlur,
-                    error: touched.parEmployeeDeadline && Boolean(errors.parEmployeeDeadline),
-                    helperText:
-                      touched.parEmployeeDeadline && (errors.parEmployeeDeadline as string),
-                  },
-                }}
+                maxDate={values.parEvaluationEndDate || undefined}
+                error={touched.parEmployeeDeadline && errors.parEmployeeDeadline}
+                helperText={touched.parEmployeeDeadline && (errors.parEmployeeDeadline as string)}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 7 }} />
@@ -382,43 +325,23 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
               <Typography paddingTop={1}>Deadline for 360° feedback:</Typography>
             </Grid>
             <Grid size={{ xs: 12, sm: 2 }}>
-              <DatePicker
+              <FormDatePicker
+                name="parThreeSixtyRatingDeadline"
+                value={values.parThreeSixtyRatingDeadline}
+                onChange={setFieldValue}
+                onBlur={handleBlur}
                 disabled={!Boolean(values.parEvaluationEndDate)}
-                value={
-                  values.parThreeSixtyRatingDeadline
-                    ? dayjs(values.parThreeSixtyRatingDeadline)
-                    : null
-                }
-                onChange={(newValue: Dayjs | null) => {
-                  setFieldValue(
-                    "parThreeSixtyRatingDeadline",
-                    newValue ? newValue.format("YYYY-MM-DD") : "",
-                  );
-                }}
                 minDate={
                   values.parEvaluationStartDate
-                    ? dayjs(values.parEvaluationStartDate).add(1, "day")
+                    ? dayjs(values.parEvaluationStartDate).add(1, "day").format("YYYY-MM-DD")
                     : undefined
                 }
-                maxDate={
-                  values.parEvaluationEndDate ? dayjs(values.parEvaluationEndDate) : undefined
+                maxDate={values.parEvaluationEndDate || undefined}
+                error={touched.parThreeSixtyRatingDeadline && errors.parThreeSixtyRatingDeadline}
+                helperText={
+                  touched.parThreeSixtyRatingDeadline &&
+                  (errors.parThreeSixtyRatingDeadline as string)
                 }
-                slots={{ textField: TextField }}
-                slotProps={{
-                  textField: {
-                    "aria-label": "deadline for 360° feedback",
-                    size: "small",
-                    fullWidth: true,
-                    name: "parThreeSixtyRatingDeadline",
-                    onBlur: handleBlur,
-                    error:
-                      touched.parThreeSixtyRatingDeadline &&
-                      Boolean(errors.parThreeSixtyRatingDeadline),
-                    helperText:
-                      touched.parThreeSixtyRatingDeadline &&
-                      (errors.parThreeSixtyRatingDeadline as string),
-                  },
-                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 7 }} />
@@ -427,32 +350,20 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
               <Typography paddingTop={1}>Deadline for lead's feedback:</Typography>
             </Grid>
             <Grid size={{ xs: 12, sm: 2 }}>
-              <DatePicker
+              <FormDatePicker
+                name="parLeadDeadline"
+                value={values.parLeadDeadline}
+                onChange={setFieldValue}
+                onBlur={handleBlur}
                 disabled={!Boolean(values.parEvaluationEndDate)}
-                value={values.parLeadDeadline ? dayjs(values.parLeadDeadline) : null}
-                onChange={(newValue: Dayjs | null) => {
-                  setFieldValue("parLeadDeadline", newValue ? newValue.format("YYYY-MM-DD") : "");
-                }}
                 minDate={
                   values.parEvaluationStartDate
-                    ? dayjs(values.parEvaluationStartDate).add(1, "day")
+                    ? dayjs(values.parEvaluationStartDate).add(1, "day").format("YYYY-MM-DD")
                     : undefined
                 }
-                maxDate={
-                  values.parEvaluationEndDate ? dayjs(values.parEvaluationEndDate) : undefined
-                }
-                slots={{ textField: TextField }}
-                slotProps={{
-                  textField: {
-                    "aria-label": "deadline for lead's feedback",
-                    size: "small",
-                    fullWidth: true,
-                    name: "parLeadDeadline",
-                    onBlur: handleBlur,
-                    error: touched.parLeadDeadline && Boolean(errors.parLeadDeadline),
-                    helperText: touched.parLeadDeadline && (errors.parLeadDeadline as string),
-                  },
-                }}
+                maxDate={values.parEvaluationEndDate || undefined}
+                error={touched.parLeadDeadline && errors.parLeadDeadline}
+                helperText={touched.parLeadDeadline && (errors.parLeadDeadline as string)}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 7 }} />
@@ -461,40 +372,22 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
               <Typography paddingTop={1}>Top 5%/20% rating submission:</Typography>
             </Grid>
             <Grid size={{ xs: 12, sm: 2 }}>
-              <DatePicker
+              <FormDatePicker
+                name="parSpecialRatingDeadline"
+                value={values.parSpecialRatingDeadline}
+                onChange={setFieldValue}
+                onBlur={handleBlur}
                 disabled={!Boolean(values.parEvaluationEndDate)}
-                value={
-                  values.parSpecialRatingDeadline ? dayjs(values.parSpecialRatingDeadline) : null
-                }
-                onChange={(newValue: Dayjs | null) => {
-                  setFieldValue(
-                    "parSpecialRatingDeadline",
-                    newValue ? newValue.format("YYYY-MM-DD") : "",
-                  );
-                }}
                 minDate={
                   values.parEvaluationStartDate
-                    ? dayjs(values.parEvaluationStartDate).add(1, "day")
+                    ? dayjs(values.parEvaluationStartDate).add(1, "day").format("YYYY-MM-DD")
                     : undefined
                 }
-                maxDate={
-                  values.parEvaluationEndDate ? dayjs(values.parEvaluationEndDate) : undefined
+                maxDate={values.parEvaluationEndDate || undefined}
+                error={touched.parSpecialRatingDeadline && errors.parSpecialRatingDeadline}
+                helperText={
+                  touched.parSpecialRatingDeadline && (errors.parSpecialRatingDeadline as string)
                 }
-                slots={{ textField: TextField }}
-                slotProps={{
-                  textField: {
-                    "aria-label": "top 5%/20% rating submission",
-                    size: "small",
-                    fullWidth: true,
-                    name: "parSpecialRatingDeadline",
-                    onBlur: handleBlur,
-                    error:
-                      touched.parSpecialRatingDeadline && Boolean(errors.parSpecialRatingDeadline),
-                    helperText:
-                      touched.parSpecialRatingDeadline &&
-                      (errors.parSpecialRatingDeadline as string),
-                  },
-                }}
               />
             </Grid>
 
@@ -504,28 +397,16 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
               <Typography paddingTop={1}>PAR F2F deadline:</Typography>
             </Grid>
             <Grid size={{ xs: 12, sm: 2 }}>
-              <DatePicker
+              <FormDatePicker
+                name="parF2FDeadline"
+                value={values.parF2FDeadline}
+                onChange={setFieldValue}
+                onBlur={handleBlur}
                 disabled={!Boolean(values.parEvaluationEndDate)}
-                value={values.parF2FDeadline ? dayjs(values.parF2FDeadline) : null}
-                onChange={(newValue: Dayjs | null) => {
-                  setFieldValue("parF2FDeadline", newValue ? newValue.format("YYYY-MM-DD") : "");
-                }}
-                minDate={dayjs().add(1, "day")}
-                maxDate={
-                  values.parEvaluationEndDate ? dayjs(values.parEvaluationEndDate) : undefined
-                }
-                slots={{ textField: TextField }}
-                slotProps={{
-                  textField: {
-                    "aria-label": "PAR F2F Deadline",
-                    size: "small",
-                    fullWidth: true,
-                    name: "parF2FDeadline",
-                    onBlur: handleBlur,
-                    error: touched.parF2FDeadline && Boolean(errors.parF2FDeadline),
-                    helperText: touched.parF2FDeadline && (errors.parF2FDeadline as string),
-                  },
-                }}
+                minDate={dayjs().add(1, "day").format("YYYY-MM-DD")}
+                maxDate={values.parEvaluationEndDate || undefined}
+                error={touched.parF2FDeadline && errors.parF2FDeadline}
+                helperText={touched.parF2FDeadline && (errors.parF2FDeadline as string)}
               />
             </Grid>
           </LocalizationProvider>

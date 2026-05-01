@@ -9,13 +9,11 @@ import GroupIcon from "@mui/icons-material/Group";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import PersonIcon from "@mui/icons-material/Person";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
-import { Box, Fade, Stack, Step, StepLabel, Stepper, Tab, Tabs, Typography } from "@mui/material";
-import dayjs from "dayjs";
+import { Box, Fade, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
 
 import { SyntheticEvent, useEffect, useState } from "react";
 
-import { StepperIcon } from "@component/common/StepperIcon";
 import { F2fPanel } from "@component/common/F2fPanel";
 import { FormContainer } from "@component/common/FormContainer";
 import NoDataView from "@component/common/NoDataView";
@@ -23,14 +21,13 @@ import { ProvideFeedbackTab } from "@component/common/ProvideFeedbackTab";
 import { RequestFeedbackTab } from "@component/common/RequestFeedbackTab";
 import Title from "@component/common/Title";
 import { LoadingEffect } from "@component/ui/Loading";
-import { defaultTabWidth, shortDateFormat, uiMessages } from "@config/constant";
+import { defaultTabWidth, uiMessages } from "@config/constant";
 import { selectEmployeeInfo, selectUserEmail } from "@slices/authSlice/auth";
 import {
   fetchCurrentParCycleOfEmployee,
   selectCurrentParCycleOfEmployee,
   selectEmployeeStatus,
 } from "@slices/employeeSlice/employee";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { RequestState } from "@utils/types";
 
@@ -39,15 +36,12 @@ import EmployeePanel from "./panels/EmployeePanel";
 const OngoingCycleView = () => {
   const userEmail = useAppSelector(selectUserEmail);
   const currentCycle = useAppSelector(selectCurrentParCycleOfEmployee);
-  const fullCurrentCycle = useAppSelector(selectCurrentCycle);
   const employeeStatus = useAppSelector(selectEmployeeStatus);
   const employeeInfo = useAppSelector(selectEmployeeInfo);
   const dispatch = useAppDispatch();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [value, setValue] = useState<number>(0);
-  const [activeStep, setActiveStep] = useState(0);
-
   enum ParCycleViewTabs {
     EMPLOYEE = "employee",
     PROVIDETHREESIXTYREVIEWS = "provideThreeSixtyReviews",
@@ -109,15 +103,6 @@ const OngoingCycleView = () => {
         ];
 
   useEffect(() => {
-    if (!fullCurrentCycle?.parCycleId) return;
-    setActiveStep(0);
-    if (dayjs().diff(fullCurrentCycle.parEmployeeDeadline, "day", true) >= 0) setActiveStep(1);
-    if (dayjs().diff(fullCurrentCycle.parThreeSixtyRatingDeadline, "day", true) >= 0) setActiveStep(2);
-    if (dayjs().diff(fullCurrentCycle.parF2FDeadline, "day", true) >= 0) setActiveStep(3);
-    if (dayjs().diff(fullCurrentCycle.parEvaluationEndDate, "day", true) >= 0) setActiveStep(4);
-  }, [fullCurrentCycle]);
-
-  useEffect(() => {
     const currentTab = searchParams.get("tab");
 
     if (currentTab && Object.values(ParCycleViewTabs).includes(currentTab as ParCycleViewTabs)) {
@@ -146,66 +131,25 @@ const OngoingCycleView = () => {
             icon={<DataUsageIcon fontSize="medium" />}
           />
 
-          {fullCurrentCycle?.parCycleId && (
-            <Box sx={{ px: 2, pt: 1.5, pb: 0.5, borderBottom: 1, borderColor: "divider" }}>
-              <Stepper activeStep={activeStep} alternativeLabel>
-                <Step>
-                  <StepLabel StepIconComponent={StepperIcon}>
-                    <Typography variant="caption" display="block" fontWeight={500}>
-                      Deadline for employee PAR
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {dayjs(fullCurrentCycle.parEmployeeDeadline).format(shortDateFormat)}
-                    </Typography>
-                  </StepLabel>
-                </Step>
-                <Step>
-                  <StepLabel StepIconComponent={StepperIcon}>
-                    <Typography variant="caption" display="block" fontWeight={500}>
-                      Deadline for 360° feedback
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {dayjs(fullCurrentCycle.parThreeSixtyRatingDeadline).format(shortDateFormat)}
-                    </Typography>
-                  </StepLabel>
-                </Step>
-                <Step>
-                  <StepLabel StepIconComponent={StepperIcon}>
-                    <Typography variant="caption" display="block" fontWeight={500}>
-                      PAR F2F deadline
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {dayjs(fullCurrentCycle.parF2FDeadline).format(shortDateFormat)}
-                    </Typography>
-                  </StepLabel>
-                </Step>
-                <Step>
-                  <StepLabel StepIconComponent={StepperIcon}>
-                    <Typography variant="caption" display="block" fontWeight={500}>
-                      PAR end date
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {dayjs(fullCurrentCycle.parEvaluationEndDate).format(shortDateFormat)}
-                    </Typography>
-                  </StepLabel>
-                </Step>
-              </Stepper>
-            </Box>
-          )}
-
-          <Box sx={{ borderBottom: 1, borderColor: "divider", px: "20px" }}>
+          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
             <Tabs
               value={value}
               onChange={handleTabChange}
               aria-label="icon label tabs"
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
               sx={{
-                "&.MuiTabs-root": {
-                  height: "3rem",
-                  alignItems: "center",
+                minHeight: 0,
+                "& .MuiTab-root": {
+                  minHeight: 0,
+                  height: "60px",
+                  py: 0,
+                  px: { xs: 1, sm: 1.5 },
+                  minWidth: { xs: "auto", sm: defaultTabWidth },
+                  "& .MuiTab-iconWrapper": { fontSize: "1rem" },
                 },
-                "& .MuiTabs-indicator": {
-                  pb: "0.925rem",
-                },
+                "& .MuiTabs-indicator": { pb: "0.1rem" },
               }}
             >
               {tabsAndPanelsData.map((item, index) => (
@@ -213,16 +157,15 @@ const OngoingCycleView = () => {
                   key={index}
                   icon={item.icon}
                   iconPosition="start"
-                  label={item.label}
+                  label={<Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>{item.label}</Box>}
                   disabled={item.disabled}
                   onClick={() => setSearchParams({ tab: item.value })}
-                  sx={{ minWidth: defaultTabWidth }}
                 />
               ))}
             </Tabs>
           </Box>
 
-          <Box sx={{ flex: 1, overflowY: "auto" }}>
+          <Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
             {employeeStatus === RequestState.LOADING && (
               <LoadingEffect message={uiMessages.loading.pageLoading} />
             )}
@@ -259,16 +202,22 @@ interface TabPanelProps {
 
 const TabPanel = (props: TabPanelProps) => {
   const { children, value, index, ...other } = props;
+  const isActive = value === index;
 
   return (
     <div
       role="tabpanel"
-      hidden={value !== index}
+      hidden={!isActive}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
+      style={isActive ? { height: "100%", display: "flex", flexDirection: "column" } : undefined}
       {...other}
     >
-      {value === index && <Box sx={{ p: 1 }}>{children}</Box>}
+      {isActive && (
+        <Box sx={{ p: 1, flex: 1, display: "flex", flexDirection: "column" }}>
+          {children}
+        </Box>
+      )}
     </div>
   );
 };

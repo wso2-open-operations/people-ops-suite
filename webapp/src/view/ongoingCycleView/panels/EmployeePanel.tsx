@@ -21,7 +21,7 @@ const EmployeePanel = () => {
   const currentCycle = useAppSelector(selectCurrentCycle);
 
   return (
-    <>
+    <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
       {(employeeParCyclesLoadingState === RequestState.LOADING ||
         parCycleLoadingState === RequestState.LOADING) && (
         <LoadingEffect message={uiMessages.loading.pageLoading} />
@@ -29,25 +29,15 @@ const EmployeePanel = () => {
 
       {employeeParCyclesLoadingState === RequestState.SUCCEEDED &&
         parCycleLoadingState === RequestState.SUCCEEDED && (
-          <>
-            {currentCycle?.parCycleId && (
-              <>
-                <ParStatusView currentCycle={currentCycle} />
-              </>
-            )}
+          <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            {currentCycle?.parCycleId && <ParStatusView currentCycle={currentCycle} />}
 
-            {!currentCycle?.parCycleId && (
-              <>
-                {parCycleLoadingState === RequestState.SUCCEEDED && (
-                  <Box sx={{ minHeight: "calc(480px)" }}>
-                    <Alert severity="info">{uiMessages.alert.employeeParNoOngoingCycle}</Alert>
-                  </Box>
-                )}
-              </>
+            {!currentCycle?.parCycleId && parCycleLoadingState === RequestState.SUCCEEDED && (
+              <Alert severity="info">{uiMessages.alert.employeeParNoOngoingCycle}</Alert>
             )}
-          </>
+          </Box>
         )}
-    </>
+    </Box>
   );
 };
 
