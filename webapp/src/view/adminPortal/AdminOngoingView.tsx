@@ -142,7 +142,7 @@ export default function AdminOngoingView() {
                       flexDirection="column"
                       justifyContent="center"
                       alignItems="center"
-                      sx={{ height: "100%", textAlign: "center", mt: 4 }}
+                      sx={{ height: "100%", textAlign: "center" }}
                     >
                       <Typography variant="body1" sx={{ mb: 2 }}>
                         No ongoing PAR cycles found.

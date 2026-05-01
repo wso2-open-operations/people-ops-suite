@@ -13,6 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import React, { useEffect, useRef, useState } from "react";
+
+import { useLocation } from "react-router-dom";
+import dayjs from "dayjs";
+import { useDebounce } from "use-debounce";
+
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
@@ -39,57 +46,41 @@ import {
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { DataGrid, GridRenderCellParams, useGridApiRef } from "@mui/x-data-grid";
-import dayjs from "dayjs";
-import { useLocation } from "react-router-dom";
-import { useDebounce } from "use-debounce";
 
-import { useEffect, useRef, useState } from "react";
-
-import { CompletionStatusSection } from "@component/common/CompletionStatusSection";
-import { DataGridToolbar } from "@component/common/DataGridToolbar";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { CustomModal } from "@component/common/CustomModal";
-import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
-import NoDataView from "@component/common/NoDataView";
-import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
-import { LoadingEffect } from "@component/ui/Loading";
 import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+import { calculateAllTeamsSummary } from "@utils/utils";
+
+import { useAppDispatch, useAppSelector } from "@slices/store";
 import { selectUserEmail } from "@slices/authSlice/auth";
-import { fetchParRatingSummary } from "@slices/employeeHistorySlice/employeeHistory";
-import { ParLeadStatus } from "@slices/employeeHistorySlice/employeeHistory";
+import { ParLeadStatus, fetchParRatingSummary } from "@slices/employeeHistorySlice/employeeHistory";
 import {
   Employee,
   fetchConfigurations,
-  fetchEmployees,
   fetchParticipants,
   selectEmployeeMap,
-  selectEmployeeMapStatus,
   selectParticipants,
   selectParticipantsStatus,
 } from "@slices/metaSlice/meta";
+import { closeParCycle, fetchOpenParCycle, selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { Team, fetchTeams, selectAllTeams, selectAllTeamsSummary, selectTeamStatus } from "@slices/teamSlice/team";
 import {
-  closeParCycle,
-  fetchOpenParCycle,
-  selectCurrentCycle,
-} from "@slices/parCycleSlice/parCycle";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import {
-  Team,
-  fetchTeams,
-  selectAllTeams,
-  selectAllTeamsSummary,
-  selectTeamStatus,
-} from "@slices/teamSlice/team";
-import {
+  ParThreeSixtyReviewStatus,
   RejectedReview,
   fetchRejectedReviews,
   postReviews,
   selectRejectedReviews,
   selectThreeSixtyReviewStatus,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { RequestState } from "@utils/types";
-import { calculateAllTeamsSummary } from "@utils/utils";
+
+import { CompletionStatusSection } from "@component/common/CompletionStatusSection";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import { CustomModal } from "@component/common/CustomModal";
+import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
+import { DataGridToolbar } from "@component/common/DataGridToolbar";
+import NoDataView from "@component/common/NoDataView";
+import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
+import { LoadingEffect } from "@component/ui/Loading";
 import { BulkReminderModal } from "@view/adminPortal/components/BulkReminderModal";
 import { Completion } from "@view/adminPortal/components/Completion";
 import { Report } from "@view/adminPortal/components/Report";
@@ -113,11 +104,7 @@ interface FormattedTeam extends Team {
   f2fCompletion: string;
 }
 
-export const OrgSummary = ({
-  closeOrgSummaryView,
-  isAdminAuditViewOn,
-  isAdminHistoryViewOn,
-}: DashboardProps) => {
+export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHistoryViewOn }: DashboardProps) => {
   const theme = useTheme();
   const location = useLocation();
   const dispatch = useAppDispatch();
@@ -131,7 +118,6 @@ export const OrgSummary = ({
   const employeeArray = useAppSelector(selectParticipants);
   const employeeArrayStatus = useAppSelector(selectParticipantsStatus);
   const employeeMap = useAppSelector(selectEmployeeMap);
-  const employeeMapStatus = useAppSelector(selectEmployeeMapStatus);
   const reviewStatus = useAppSelector(selectThreeSixtyReviewStatus);
   const rejectedReviews = useAppSelector(selectRejectedReviews);
   const apiController = useRef(new AbortController());
@@ -157,7 +143,7 @@ export const OrgSummary = ({
   const teamApiRef = useGridApiRef();
   const employeeApiRef = useGridApiRef();
   const reviewApiRef = useGridApiRef();
-  // NOTE: Array order must match Tab order — [0]=Team View, [1]=Employee View, [2]=Rejected Reviews
+  // NOTE: Array order must match Tab order
   const tabApiRefs = [teamApiRef, employeeApiRef, reviewApiRef];
   // Stores the selected employee email
   const [selectedEmployeeEmail, setSelectedEmployeeEmail] = useState<string>("");
@@ -239,15 +225,13 @@ export const OrgSummary = ({
     setOpenConfirmationDialog(false);
   };
 
-  const formattedTeams = teams.map((team) => {
-    return {
-      ...team,
-      id: team.parTeamId,
-      employeePARCompletion: `${team.summary.employeeParCompletedCount}/${team.numberOfTeamMembers}`,
-      leadReviewCompletion: `${team.summary.leadsReviewCompletedCount}/${team.numberOfTeamMembers}`,
-      f2fCompletion: `${team.summary.f2fCompletedCount}/${team.numberOfTeamMembers}`,
-    };
-  });
+  const formattedTeams = teams.map((team) => ({
+    ...team,
+    id: team.parTeamId,
+    employeePARCompletion: `${team.summary.employeeParCompletedCount}/${team.numberOfTeamMembers}`,
+    leadReviewCompletion: `${team.summary.leadsReviewCompletedCount}/${team.numberOfTeamMembers}`,
+    f2fCompletion: `${team.summary.f2fCompletedCount}/${team.numberOfTeamMembers}`,
+  }));
 
   useEffect(() => {
     return () => {
@@ -266,12 +250,9 @@ export const OrgSummary = ({
   useEffect(() => {
     if (selectedTab === 0) {
       const filteredTeams = formattedTeams.filter((team) =>
-        Object.values(team).some((value) =>
-          String(value).toLowerCase().includes(debouncedTableSearch.toLowerCase()),
-        ),
+        Object.values(team).some((value) => String(value).toLowerCase().includes(debouncedTableSearch.toLowerCase()))
       );
-      const newFilteredSummary = calculateAllTeamsSummary(filteredTeams);
-      setFilteredSummary(newFilteredSummary);
+      setFilteredSummary(calculateAllTeamsSummary(filteredTeams));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedTableSearch, selectedTab]);
@@ -284,26 +265,13 @@ export const OrgSummary = ({
     if (currentCycle.parCycleId) {
       apiController.current = new AbortController();
       if (userEmail) {
-        dispatch(
-          fetchTeams({
-            parCycleId: currentCycle.parCycleId,
-            signal: apiController.current.signal,
-          }),
-        );
+        dispatch(fetchTeams({ parCycleId: currentCycle.parCycleId, signal: apiController.current.signal }));
       }
     }
-    if (dayjs().diff(currentCycle.parEmployeeDeadline, "day", true) >= 0) {
-      setActiveStep(1);
-    }
-    if (dayjs().diff(currentCycle.parLeadDeadline, "day", true) - 1 >= 0) {
-      setActiveStep(2);
-    }
-    if (dayjs().diff(currentCycle.parSpecialRatingDeadline, "day", true) >= 0) {
-      setActiveStep(3);
-    }
-    if (dayjs().diff(currentCycle.parEvaluationEndDate, "day", true) >= 0) {
-      setActiveStep(4);
-    }
+    if (dayjs().diff(currentCycle.parEmployeeDeadline, "day", true) >= 0) setActiveStep(1);
+    if (dayjs().diff(currentCycle.parLeadDeadline, "day", true) - 1 >= 0) setActiveStep(2);
+    if (dayjs().diff(currentCycle.parSpecialRatingDeadline, "day", true) >= 0) setActiveStep(3);
+    if (dayjs().diff(currentCycle.parEvaluationEndDate, "day", true) >= 0) setActiveStep(4);
 
     dispatch(fetchConfigurations());
   }, [currentCycle.parCycleId]);
@@ -314,9 +282,6 @@ export const OrgSummary = ({
     }
     if (selectedTab === 2) {
       fetchReviews();
-    }
-    if ((selectedTab === 1 || selectedTab === 2) && employeeMapStatus === RequestState.IDLE) {
-      dispatch(fetchEmployees());
     }
   }, [selectedTab]);
 
@@ -335,21 +300,13 @@ export const OrgSummary = ({
 
   const handleConfirmReviewRestore = async () => {
     if (currentCycle.parCycleId && selectedReview) {
-      const values: {
-        par360ReviewStatus: ParThreeSixtyReviewStatus;
-        reviewerEmail?: string;
-      } = {
+      const values: { par360ReviewStatus: ParThreeSixtyReviewStatus; reviewerEmail?: string } = {
         par360ReviewStatus: ParThreeSixtyReviewStatus.PENDING,
         reviewerEmail: selectedReview.reviewerEmail,
       };
       const resultAction = await dispatch(
-        postReviews({
-          employeeId: selectedReview.employeeEmail,
-          parCycleId: currentCycle.parCycleId,
-          values: values,
-        }),
+        postReviews({ employeeId: selectedReview.employeeEmail, parCycleId: currentCycle.parCycleId, values })
       );
-
       if (postReviews.fulfilled.match(resultAction)) {
         fetchReviews();
       }
@@ -361,21 +318,10 @@ export const OrgSummary = ({
   const dataGridSx = {
     border: "none",
     fontSize: captionFontSize,
-    "& .MuiDataGrid-columnHeaderTitle": {
-      fontSize: captionFontSize,
-      fontWeight: 600,
-    },
-    "& .MuiDataGrid-columnHeader": {
-      px: 1,
-      py: 0,
-    },
-    "& .MuiDataGrid-cell": {
-      px: 1,
-      py: "3px",
-    },
-    "& .MuiDataGrid-row:hover": {
-      cursor: "pointer",
-    },
+    "& .MuiDataGrid-columnHeaderTitle": { fontSize: captionFontSize, fontWeight: 600 },
+    "& .MuiDataGrid-columnHeader": { px: 1, py: 0 },
+    "& .MuiDataGrid-cell": { px: 1, py: "3px" },
+    "& .MuiDataGrid-row:hover": { cursor: "pointer" },
   };
 
   const columns = [
@@ -418,24 +364,15 @@ export const OrgSummary = ({
       disableExport: true,
       renderCell: (params: GridRenderCellParams<FormattedTeam>) => (
         <Box display="flex" alignItems="center" height="100%">
-          <Tooltip
-            arrow
-            title="Open Team"
-            enterDelay={tooltipVisibilityDelay}
-            enterNextDelay={tooltipVisibilityDelay}
-          >
+          <Tooltip arrow title="Open Team" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
             <IconButton
               size="small"
               onClick={() => handleTeamsTableClick(params.row.id)}
               sx={{
                 borderRadius: "4px",
                 padding: "4px",
-                color: theme.palette.primary.main,
-                "&:hover": {
-                  borderRadius: "4px",
-                  bgcolor: theme.palette.primary.main,
-                  color: theme.palette.common.white,
-                },
+                color: "primary.main",
+                "&:hover": { borderRadius: "4px", bgcolor: "primary.main", color: "white" },
               }}
             >
               <KeyboardArrowRightIcon fontSize="small" />
@@ -452,7 +389,7 @@ export const OrgSummary = ({
       headerName: "Employee Name",
       flex: 2,
       renderCell: (params: GridRenderCellParams) => (
-        <Box display="flex" alignItems="center" position="relative">
+        <Box display="flex" alignItems="center">
           <Avatar
             src={employeeMap[params.row?.workEmail]?.employeeThumbnail || ""}
             alt={
@@ -474,7 +411,7 @@ export const OrgSummary = ({
       headerName: "Employee Email",
       flex: 2,
       renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="caption" color={theme.palette.text.secondary}>
+        <Typography variant="caption" color="text.secondary">
           {params.row?.workEmail}
         </Typography>
       ),
@@ -498,12 +435,8 @@ export const OrgSummary = ({
               sx={{
                 borderRadius: "4px",
                 padding: "4px",
-                color: theme.palette.primary.main,
-                "&:hover": {
-                  borderRadius: "4px",
-                  bgcolor: theme.palette.primary.main,
-                  color: theme.palette.common.white,
-                },
+                color: "primary.main",
+                "&:hover": { borderRadius: "4px", bgcolor: "primary.main", color: "white" },
               }}
             >
               {params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? (
@@ -525,12 +458,8 @@ export const OrgSummary = ({
               sx={{
                 borderRadius: "4px",
                 padding: "4px",
-                color: theme.palette.primary.main,
-                "&:hover": {
-                  borderRadius: "4px",
-                  bgcolor: theme.palette.primary.main,
-                  color: theme.palette.common.white,
-                },
+                color: "primary.main",
+                "&:hover": { borderRadius: "4px", bgcolor: "primary.main", color: "white" },
               }}
             >
               <HistoryEduIcon fontSize="small" />
@@ -547,7 +476,7 @@ export const OrgSummary = ({
       headerName: "Reviewee Details",
       flex: 2,
       renderCell: (params: GridRenderCellParams) => (
-        <Box display="flex" alignItems="center" position="relative">
+        <Box display="flex" alignItems="center">
           <Avatar
             src={employeeMap[params.row?.employeeEmail]?.employeeThumbnail || ""}
             alt={employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail}
@@ -559,12 +488,8 @@ export const OrgSummary = ({
             sx={{
               position: "relative",
               transition: "transform 0.3s ease",
-              "&:hover": {
-                transform: "translateY(-10px)",
-              },
-              "&:hover > div": {
-                opacity: 1,
-              },
+              "&:hover": { transform: "translateY(-10px)" },
+              "&:hover > div": { opacity: 1 },
             }}
           >
             <Typography variant="body2" fontWeight={500}>
@@ -575,15 +500,11 @@ export const OrgSummary = ({
                 position: "absolute",
                 top: "100%",
                 left: 0,
-                display: "flex",
-                alignItems: "center",
-                padding: "1px 0",
-                borderRadius: "4px",
                 opacity: 0,
                 transition: "opacity 0.3s",
               }}
             >
-              <Typography variant="caption" color={theme.palette.text.secondary}>
+              <Typography variant="caption" color="text.secondary">
                 {params.row?.employeeEmail}
               </Typography>
             </Box>
@@ -596,38 +517,28 @@ export const OrgSummary = ({
       headerName: "Review Type",
       flex: 2,
       renderCell: (params: GridRenderCellParams) => (
-        <Box display="flex" alignItems="center" position="relative">
-          <Chip
-            size="small"
-            label={
+        <Chip
+          size="small"
+          label={params.row.isOfferedFeedback === "TRUE" ? "Was offered a review by" : "Requested a review from"}
+          sx={{
+            height: 24,
+            width: "180px",
+            borderRadius: 12,
+            fontWeight: 500,
+            fontSize: "0.75rem",
+            backgroundColor:
               params.row.isOfferedFeedback === "TRUE"
-                ? "Was offered a review by"
-                : " Requested a review from"
-            }
-            sx={{
-              height: 24,
-              width: "180px",
-              borderRadius: 12,
-              fontWeight: 500,
-              fontSize: "0.75rem",
-              backgroundColor:
-                params.row.isOfferedFeedback === "TRUE"
-                  ? (theme) =>
-                    theme.palette.mode === "light"
-                      ? alpha(theme.palette.info.main, 0.1)
-                      : alpha(theme.palette.info.main, 0.8)
-                  : (theme) =>
-                    theme.palette.mode === "light"
-                      ? alpha(theme.palette.warning.main, 0.1)
-                      : alpha(theme.palette.warning.main, 0.8),
-
-              "& .MuiChip-label": {
-                px: 1.5,
-                py: 0.5,
-              },
-            }}
-          />
-        </Box>
+                ? (theme) =>
+                  theme.palette.mode === "light"
+                    ? alpha(theme.palette.info.main, 0.1)
+                    : alpha(theme.palette.info.main, 0.8)
+                : (theme) =>
+                  theme.palette.mode === "light"
+                    ? alpha(theme.palette.warning.main, 0.1)
+                    : alpha(theme.palette.warning.main, 0.8),
+            "& .MuiChip-label": { px: 1.5, py: 0.5 },
+          }}
+        />
       ),
     },
     {
@@ -635,10 +546,9 @@ export const OrgSummary = ({
       headerName: "Reviewer Details",
       flex: 2,
       renderCell: (params: GridRenderCellParams) => (
-        <Box display="flex" alignItems="center" position="relative">
+        <Box display="flex" alignItems="center">
           <Avatar
             src={employeeMap[params.row?.reviewerEmail]?.employeeThumbnail || ""}
-            alt={employeeMap[params.row?.reviewerEmail]?.employeeName ?? params.row?.reviewerEmail}
             sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem" }}
           >
             {(employeeMap[params.row?.reviewerEmail]?.employeeName ?? params.row?.reviewerEmail)?.charAt(0)}
@@ -647,12 +557,8 @@ export const OrgSummary = ({
             sx={{
               position: "relative",
               transition: "transform 0.3s ease",
-              "&:hover": {
-                transform: "translateY(-10px)",
-              },
-              "&:hover > div": {
-                opacity: 1,
-              },
+              "&:hover": { transform: "translateY(-10px)" },
+              "&:hover > div": { opacity: 1 },
             }}
           >
             <Typography variant="body2" fontWeight={500}>
@@ -663,15 +569,11 @@ export const OrgSummary = ({
                 position: "absolute",
                 top: "100%",
                 left: 0,
-                display: "flex",
-                alignItems: "center",
-                padding: "1px 0",
-                borderRadius: "4px",
                 opacity: 0,
                 transition: "opacity 0.3s",
               }}
             >
-              <Typography variant="caption" color={theme.palette.text.secondary}>
+              <Typography variant="caption" color="text.secondary">
                 {params.row?.reviewerEmail}
               </Typography>
             </Box>
@@ -685,25 +587,19 @@ export const OrgSummary = ({
       sortable: false,
       flex: 1,
       renderCell: (params: GridRenderCellParams) => (
-        <IconButton
-          sx={{
-            color: theme.palette.primary.main,
-            "&:hover": {
-              bgcolor: theme.palette.primary.main,
-              color: theme.palette.common.white,
-            },
-          }}
-          onClick={() => handleClickRestoreReview(params.row)}
+        <Tooltip
+          arrow
+          title="Restore the declined review"
+          enterDelay={tooltipVisibilityDelay}
+          enterNextDelay={tooltipVisibilityDelay}
         >
-          <Tooltip
-            arrow
-            title="Restore the declined review"
-            enterDelay={tooltipVisibilityDelay}
-            enterNextDelay={tooltipVisibilityDelay}
+          <IconButton
+            sx={{ color: "primary.main", "&:hover": { bgcolor: "primary.main", color: "white" } }}
+            onClick={() => handleClickRestoreReview(params.row)}
           >
             <UpdateIcon />
-          </Tooltip>
-        </IconButton>
+          </IconButton>
+        </Tooltip>
       ),
     },
   ];

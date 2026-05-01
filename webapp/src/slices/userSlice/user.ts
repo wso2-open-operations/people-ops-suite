@@ -24,6 +24,7 @@ export interface UserInfoInterface {
   team?: string;
   location?: string;
   isTeamLead: boolean;
+  lead: boolean | null;
   leadEmail?: string | null;
   privileges: number[];
 }

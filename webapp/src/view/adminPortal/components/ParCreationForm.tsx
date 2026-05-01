@@ -241,7 +241,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
       </Box>
 
       <Box component="form" onSubmit={handleSubmit} sx={{ flexGrow: 1, overflow: "auto", pr: 1 }}>
-        <Grid container spacing={3}>
+        <Grid container spacing={1}>
           <FormRow label="Name:">
             <TextField
               aria-label="par cycle name"

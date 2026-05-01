@@ -121,6 +121,9 @@ export const loadPrivileges = createAsyncThunk(
     if (userPrivileges.includes(777)) {
       roles.push(Role.TEAM_LEAD);
     }
+    if (userInfo.lead) {
+      roles.push(Role.LEAD);
+    }
     if (roles.length === 0) {
       return rejectWithValue("No valid roles found");
     }

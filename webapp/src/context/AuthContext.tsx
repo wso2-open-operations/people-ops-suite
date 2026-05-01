@@ -13,17 +13,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
-import { useIdleTimer } from "react-idle-timer";
 
 import React, { useContext, useEffect, useState } from "react";
+
+import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
+import { useIdleTimer } from "react-idle-timer";
 
 import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import LoginScreen from "@component/ui/LoginScreen";
 import { redirectUrl } from "@config/constant";
 import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
-import { fetchAppConfig } from "@slices/configSlice/config";
+import { fetchEmployees } from "@slices/metaSlice/meta";
 import { useAppDispatch } from "@slices/store";
 import { getUserInfo } from "@slices/userSlice/user";
 import { ApiService } from "@utils/apiService";
@@ -47,7 +48,7 @@ const timeout = 15 * 60 * 1000;
 // Show warning 4 seconds before session timeout
 const promptBeforeIdle = 4_000;
 
-const AppAuthProvider = (props: { children: React.ReactNode }) => {
+const AppAuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [sessionWarningOpen, setSessionWarningOpen] = useState<boolean>(false);
   const [appState, setAppState] = useState<AppState>(AppState.Loading);
 
@@ -69,17 +70,8 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     activate();
   };
 
-  const {
-    signIn,
-    signOut,
-    getDecodedIDToken,
-    getBasicUserInfo,
-    refreshAccessToken,
-    getIDToken,
-    trySignInSilently,
-    getAccessToken,
-    state,
-  } = useAuthContext();
+  const { signIn, signOut, getDecodedIDToken, getBasicUserInfo, getIDToken, trySignInSilently, state } =
+    useAuthContext();
 
   useEffect(() => {
     if (!localStorage.getItem(redirectUrl)) {
@@ -96,10 +88,10 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
     dispatch(
       setUserAuthData({
-        userInfo: userInfo,
+        userInfo,
         accessToken: idToken,
-        decodedIdToken: decodedIdToken,
-      }),
+        decodedIdToken,
+      })
     );
 
     new ApiService(
@@ -108,11 +100,12 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         const freshIdToken = await getIDToken();
         return { idToken: freshIdToken };
       },
-      dispatch,
+      dispatch
     );
 
     await dispatch(getUserInfo());
     await dispatch(loadPrivileges());
+    await dispatch(fetchEmployees());
   };
 
   useEffect(() => {
@@ -132,12 +125,12 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         } else {
           const silentSignInSuccess = await trySignInSilently();
 
-          if (mounted)
-            setAppState(silentSignInSuccess ? AppState.Authenticating : AppState.Unauthenticated);
+          if (mounted) setAppState(silentSignInSuccess ? AppState.Authenticating : AppState.Unauthenticated);
         }
       } catch (err) {
         if (mounted) {
-          // dispatch(setAuthError());
+          dispatch(setAuthError("Authentication failed. Please try again."));
+          setAppState(AppState.Unauthenticated);
         }
       }
     };
@@ -148,23 +141,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       mounted = false;
     };
   }, [state.isAuthenticated, state.isLoading]);
-
-  const refreshToken = async (): Promise<{ accessToken: string }> => {
-    if (state.isAuthenticated) {
-      const accessToken = await getIDToken();
-      return { accessToken };
-    }
-
-    try {
-      await refreshAccessToken();
-      const accessToken = await getAccessToken();
-      return { accessToken };
-    } catch (error) {
-      console.error("Token refresh failed: ", error);
-      await appSignOut();
-      throw error;
-    }
-  };
 
   const appSignOut = async () => {
     setAppState(AppState.Loading);
@@ -177,10 +153,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     setAppState(AppState.Loading);
   };
 
-  const authContext: AuthContextType = {
-    appSignIn: appSignIn,
-    appSignOut: appSignOut,
-  };
+  const authContext: AuthContextType = { appSignIn, appSignOut };
 
   const renderContent = () => {
     switch (appState) {
@@ -191,7 +164,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         return <PreLoader isLoading message="Loading User Info ..." />;
 
       case AppState.Authenticated:
-        return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
+        return <AuthContext.Provider value={authContext}>{children}</AuthContext.Provider>;
 
       case AppState.Unauthenticated:
         return (
@@ -207,12 +180,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   return (
     <>
-      <SessionWarningDialog
-        open={sessionWarningOpen}
-        handleContinue={handleContinue}
-        appSignOut={appSignOut}
-      />
-
+      <SessionWarningDialog open={sessionWarningOpen} handleContinue={handleContinue} appSignOut={appSignOut} />
       <SecureApp fallback={<PreLoader isLoading message="We are getting things ready ..." />}>
         {renderContent()}
       </SecureApp>
