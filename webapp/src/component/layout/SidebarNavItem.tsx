@@ -45,7 +45,7 @@ function SidebarNavItem({
         transition: "box-shadow 0.2s",
         display: "flex",
         flexDirection: "column",
-        gap: 1,
+        gap: 0.5,
         width: "100%",
       }}
     >

@@ -47,7 +47,7 @@ function SidebarSubMenu({ parentRoute, open }: { parentRoute: RouteDetail; open:
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "8px",
+            gap: open ? "4px" : "1px",
             width: "100%",
             overflow: "hidden",
           }}
