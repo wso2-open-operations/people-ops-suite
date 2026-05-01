@@ -115,7 +115,6 @@ const ParHistory = () => {
     <Fade in={true}>
       <Grid>
         <Paper
-          className="paper"
           variant="outlined"
           sx={{
             height: "calc(100vh - 150px)",

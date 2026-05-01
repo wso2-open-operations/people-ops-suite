@@ -27,7 +27,6 @@ import {
   TableBody,
   TableCell,
   TableContainer,
-  TableHead,
   TableRow,
   TextField,
   Typography,
@@ -49,7 +48,6 @@ import {
 } from "@slices/specialQuotaSlice/specialQuota";
 import { SpecialRatingAllocation } from "@slices/specialQuotaSlice/specialQuota";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { tokens } from "@src/theme";
 import { RequestState } from "@utils/types";
 
 interface GroupedData {
@@ -67,7 +65,6 @@ interface SpecialRatingAllocationViewProps {
 const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationViewProps) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const colors = tokens(theme.palette.mode);
   const [searchQuery, setSearchQuery] = useState("");
   const userEmail = useAppSelector(selectUserEmail);
   const currentCycle = useAppSelector(selectCurrentCycle);
