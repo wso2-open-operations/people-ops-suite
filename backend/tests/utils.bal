@@ -124,7 +124,7 @@ function getDefaultMultipleEmployees(int count) returns entity:Employee[] {
             jobRole: "Software Engineer",
             employeeThumbnail: string `https://localhost/employee/${randomName}/images/thumbnail.png`,
             lead: false,
-            employmentType: "PERMANENT",
+            employmentType: "Permanent",
             employeeStatus: "Active"
         });
     }
@@ -168,6 +168,7 @@ function getParSpecialRatingGroupQuota_One() returns types:ParSpecialRatingGroup
             specialRatingGroupId: 1,
             businessUnit: "1",
             department: "1",
+            team: "",
             specialRatingQuotaId: 1
         }
     ],
@@ -189,6 +190,7 @@ function getParSpecialRatingGroupQuota_Two() returns types:ParSpecialRatingGroup
             specialRatingGroupId: 3,
             businessUnit: "Corporate",
             department: "DIGITAL TRANSFORMATION",
+            team: "",
             specialRatingQuotaId: 1
         },
         {
@@ -196,6 +198,7 @@ function getParSpecialRatingGroupQuota_Two() returns types:ParSpecialRatingGroup
             specialRatingGroupId: 4,
             businessUnit: "Corporate",
             department: "SALES",
+            team: "",
             specialRatingQuotaId: 2
         }
     ],
@@ -224,6 +227,7 @@ function getParSpecialRatingGroupQuota() returns types:ParSpecialRatingGroupQuot
             specialRatingGroupId: 1,
             businessUnit: "Corporate",
             department: "ADMINISTRATION",
+            team: "",
             specialRatingQuotaId: 1
         },
         {
@@ -231,6 +235,7 @@ function getParSpecialRatingGroupQuota() returns types:ParSpecialRatingGroupQuot
             specialRatingGroupId: 2,
             businessUnit: "Corporate",
             department: "DIGITAL TRANSFORMATION",
+            team: "",
             specialRatingQuotaId: 1
         },
         {
@@ -238,6 +243,7 @@ function getParSpecialRatingGroupQuota() returns types:ParSpecialRatingGroupQuot
             specialRatingGroupId: 2,
             businessUnit: "Corporate",
             department: "LEGAL",
+            team: "",
             specialRatingQuotaId: 2
         }
     ],
@@ -266,6 +272,7 @@ function getParSpecialRatingGroupQuotaInvalid_NoQuotaForAllGroups() returns type
             specialRatingGroupId: 1,
             businessUnit: "Corporate",
             department: "ADMINISTRATION",
+            team: "",
             specialRatingQuotaId: 1
         },
         {
@@ -273,6 +280,7 @@ function getParSpecialRatingGroupQuotaInvalid_NoQuotaForAllGroups() returns type
             specialRatingGroupId: 2,
             businessUnit: "Corporate",
             department: "DIGITAL TRANSFORMATION",
+            team: "",
             specialRatingQuotaId: 1
         },
         {
@@ -280,6 +288,7 @@ function getParSpecialRatingGroupQuotaInvalid_NoQuotaForAllGroups() returns type
             specialRatingGroupId: 2,
             businessUnit: "Corporate",
             department: "LEGAL",
+            team: "",
             specialRatingQuotaId: 2
         }
     ],

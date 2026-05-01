@@ -39,6 +39,8 @@ public type UserInfoResponse record {|
     string location?;
     # Whether the employee is a team lead
     boolean isTeamLead;
+    # Whether the employee is a lead
+    boolean lead;
     # Thumbnail of the employee
     string? employeeThumbnail;
     # User Privileges

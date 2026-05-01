@@ -119,6 +119,7 @@ service http:InterceptableService / on new http:Listener(9093) {
             location: fullEmployeeInfo.location,
             leadEmail: fullEmployeeInfo.leadEmail,
             isTeamLead: fullEmployeeInfo.isTeamLead,
+            lead: fullEmployeeInfo.lead ?: false,
             privileges: privileges
         };
 
