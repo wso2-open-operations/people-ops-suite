@@ -29,6 +29,8 @@ interface DataGridToolbarProps {
   apiRef: GridApiRef;
   searchText?: string;
   onSearchChange?: (text: string) => void;
+  hideColumns?: boolean;
+  hideDensity?: boolean;
 }
 
 const DENSITY_OPTIONS: { label: string; value: GridDensity }[] = [
@@ -37,7 +39,13 @@ const DENSITY_OPTIONS: { label: string; value: GridDensity }[] = [
   { label: "Comfortable", value: "comfortable" },
 ];
 
-export const DataGridToolbar = ({ apiRef, searchText, onSearchChange }: DataGridToolbarProps) => {
+export const DataGridToolbar = ({
+  apiRef,
+  searchText,
+  onSearchChange,
+  hideColumns,
+  hideDensity,
+}: DataGridToolbarProps) => {
   const [densityAnchor, setDensityAnchor] = useState<null | HTMLElement>(null);
   const [internalSearch, setInternalSearch] = useState("");
 
@@ -56,31 +64,37 @@ export const DataGridToolbar = ({ apiRef, searchText, onSearchChange }: DataGrid
 
   return (
     <Box display="flex" alignItems="center" gap={0.6}>
-      <Tooltip title="Columns" enterDelay={500}>
-        <IconButton
-          size="small"
-          onClick={() => apiRef.current?.showPreferences(GridPreferencePanelsValue.columns)}
-        >
-          <ViewColumnIcon sx={{ fontSize: "1.1rem" }} />
-        </IconButton>
-      </Tooltip>
+      {!hideColumns && (
+        <Tooltip title="Columns" enterDelay={500}>
+          <IconButton
+            size="small"
+            onClick={() => apiRef.current?.showPreferences(GridPreferencePanelsValue.columns)}
+          >
+            <ViewColumnIcon sx={{ fontSize: "1.1rem" }} />
+          </IconButton>
+        </Tooltip>
+      )}
       <Tooltip title="Filters" enterDelay={500}>
         <IconButton size="small" onClick={() => apiRef.current?.showFilterPanel()}>
           <FilterListIcon sx={{ fontSize: "1.1rem" }} />
         </IconButton>
       </Tooltip>
-      <Tooltip title="Density" enterDelay={500}>
-        <IconButton size="small" onClick={(e) => setDensityAnchor(e.currentTarget)}>
-          <DensityMediumIcon sx={{ fontSize: "1.1rem" }} />
-        </IconButton>
-      </Tooltip>
-      <Menu anchorEl={densityAnchor} open={Boolean(densityAnchor)} onClose={() => setDensityAnchor(null)}>
-        {DENSITY_OPTIONS.map(({ label, value }) => (
-          <MenuItem key={value} onClick={() => handleDensitySelect(value)} dense>
-            {label}
-          </MenuItem>
-        ))}
-      </Menu>
+      {!hideDensity && (
+        <>
+          <Tooltip title="Density" enterDelay={500}>
+            <IconButton size="small" onClick={(e) => setDensityAnchor(e.currentTarget)}>
+              <DensityMediumIcon sx={{ fontSize: "1.1rem" }} />
+            </IconButton>
+          </Tooltip>
+          <Menu anchorEl={densityAnchor} open={Boolean(densityAnchor)} onClose={() => setDensityAnchor(null)}>
+            {DENSITY_OPTIONS.map(({ label, value }) => (
+              <MenuItem key={value} onClick={() => handleDensitySelect(value)} dense>
+                {label}
+              </MenuItem>
+            ))}
+          </Menu>
+        </>
+      )}
       <Tooltip title="Export CSV" enterDelay={500}>
         <IconButton size="small" onClick={() => apiRef.current?.exportDataAsCsv()}>
           <FileDownloadIcon sx={{ fontSize: "1.1rem" }} />
