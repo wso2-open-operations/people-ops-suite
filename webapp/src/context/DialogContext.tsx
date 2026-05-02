@@ -13,23 +13,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import CloseIcon from "@mui/icons-material/Close";
-import DoneIcon from "@mui/icons-material/Done";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
-import SendIcon from "@mui/icons-material/Send";
-import LoadingButton from "@mui/lab/LoadingButton";
-import { IconButton, Stack, TextField } from "@mui/material";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
 import * as React from "react";
 import { useContext, useState } from "react";
+
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import SaveAltIcon from "@mui/icons-material/SaveAlt";
+import SendIcon from "@mui/icons-material/Send";
+import UploadIcon from "@mui/icons-material/Upload";
+import LoadingButton from "@mui/lab/LoadingButton";
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
 import { ConfirmationType } from "@/types/types";
 
@@ -77,11 +82,22 @@ type ConfirmationModalContextProviderProps = {
 
 const ConfirmationModalContext = React.createContext<ConfirmationDialogContextType | null>(null);
 
-const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProviderProps> = (
-  props,
-) => {
-  const { setShow, show, onHide } = useDialogShow();
+const typeIconMap: Record<ConfirmationType, React.ReactElement> = {
+  [ConfirmationType.accept]: <CheckCircleOutlineIcon color="primary" />,
+  [ConfirmationType.send]: <SendIcon color="primary" />,
+  [ConfirmationType.update]: <SaveAltIcon color="primary" />,
+  [ConfirmationType.upload]: <UploadIcon color="primary" />,
+};
 
+const typeButtonIconMap: Record<ConfirmationType, React.ReactElement> = {
+  [ConfirmationType.accept]: <CheckCircleOutlineIcon />,
+  [ConfirmationType.send]: <SendIcon />,
+  [ConfirmationType.update]: <SaveAltIcon />,
+  [ConfirmationType.upload]: <UploadIcon />,
+};
+
+const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProviderProps> = (props) => {
+  const { setShow, show, onHide } = useDialogShow();
   const [comment, setComment] = React.useState("");
 
   const [content, setContent] = useState<{
@@ -95,7 +111,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
   }>({
     title: "",
     message: "",
-    type: ConfirmationType.send,
+    type: ConfirmationType.accept,
     action: () => {},
   });
 
@@ -108,15 +124,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
     cancelText?: string,
     inputObj?: InputObj,
   ) => {
-    setContent({
-      title,
-      message,
-      type,
-      action,
-      okText,
-      cancelText,
-      inputObj,
-    });
+    setContent({ title, message, type, action, okText, cancelText, inputObj });
     setShow(true);
   };
 
@@ -130,21 +138,9 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
   };
 
   const handleCancel = () => {
-    Reset();
-    onHide();
-  };
-
-  const Reset = () => {
-    setContent({
-      title: "",
-      message: "",
-      type: ConfirmationType.accept,
-      action: () => {},
-      okText: undefined,
-      cancelText: undefined,
-    });
-
+    setContent({ title: "", message: "", type: ConfirmationType.accept, action: () => {} });
     setComment("");
+    onHide();
   };
 
   const onChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -155,49 +151,29 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <ConfirmationModalContext.Provider value={dialogContext}>
         {props.children}
-        {content && (
-          <Dialog
-            open={show}
-            sx={{
-              ".MuiDialog-paper": {
-                maxWidth: 350,
-                borderRadius: 3,
-              },
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <DialogTitle
-              variant="h5"
-              sx={{
-                fontWeight: "bold",
-                borderBottom: 1,
-                borderColor: "divider",
-                mb: 1,
-                pd: 0,
-              }}
-            >
-              {content?.title}
-            </DialogTitle>
-            <IconButton
-              aria-label="close"
-              onClick={handleCancel}
-              sx={{
-                position: "absolute",
-                right: 8,
-                top: 8,
-                color: (theme) => theme.palette.secondary.dark,
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-            <DialogContent sx={{ p: 0, m: 0, paddingX: 2 }}>
-              <DialogContentText variant="body2">{content?.message}</DialogContentText>
-            </DialogContent>
+        <Dialog open={show} onClose={handleCancel} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ px: 3, pt: 3, pb: 1.5 }}>
+            <Box display="flex" alignItems="center" gap={1.5}>
+              {typeIconMap[content.type]}
+              <Typography variant="h6" fontWeight={600}>
+                {content.title}
+              </Typography>
+            </Box>
+          </DialogTitle>
+
+          <Divider />
+
+          <DialogContent sx={{ px: 3, pt: 2.5, pb: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              {content.message}
+            </Typography>
+
             {content.inputObj && (
               <TextField
-                sx={{ marginX: 2, mt: 2, maxWidth: 350 }}
+                sx={{ mt: 2 }}
+                fullWidth
                 value={comment}
-                label={content.inputObj?.label}
+                label={content.inputObj.label}
                 type="text"
                 size="small"
                 multiline
@@ -206,51 +182,24 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
                 onChange={onChange}
               />
             )}
+          </DialogContent>
 
-            <DialogActions sx={{ pb: 2, pt: 0, mt: 0, paddingX: 2 }}>
-              <Stack flexDirection={"row"} sx={{ mt: 1 }} gap={1}>
-                {/* Cancel button */}
-                <Button
-                  sx={{
-                    borderRadius: 2,
-                  }}
-                  onClick={handleCancel}
-                  variant="outlined"
-                  size="small"
-                >
-                  {content?.cancelText ? content.cancelText : "No"}
-                </Button>
-
-                {/* Ok button */}
-                <LoadingButton
-                  type="submit"
-                  sx={{
-                    borderRadius: 2,
-                    boxShadow: "none",
-                    border: 0.5,
-                    borderColor: "divider",
-                  }}
-                  variant="contained"
-                  size="small"
-                  disabled={content?.inputObj?.mandatory && comment === ""}
-                  onClick={() => (content?.inputObj ? handleOk(comment) : handleOk())}
-                  loadingPosition="start"
-                  startIcon={
-                    content.type === "update" ? (
-                      <SaveAltIcon />
-                    ) : content.type === "send" ? (
-                      <SendIcon />
-                    ) : (
-                      <DoneIcon />
-                    )
-                  }
-                >
-                  {content?.okText ? content.okText : "Yes"}
-                </LoadingButton>
-              </Stack>
-            </DialogActions>
-          </Dialog>
-        )}
+          <DialogActions sx={{ px: 3, pt: 1.5, pb: 3, gap: 1 }}>
+            <Button onClick={handleCancel} variant="outlined" fullWidth>
+              {content.cancelText ?? "No"}
+            </Button>
+            <LoadingButton
+              variant="contained"
+              fullWidth
+              disabled={content.inputObj?.mandatory && comment === ""}
+              onClick={() => (content.inputObj ? handleOk(comment) : handleOk())}
+              loadingPosition="start"
+              startIcon={typeButtonIconMap[content.type]}
+            >
+              {content.okText ?? "Yes"}
+            </LoadingButton>
+          </DialogActions>
+        </Dialog>
       </ConfirmationModalContext.Provider>
     </LocalizationProvider>
   );
@@ -259,9 +208,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
 const useConfirmationModalContext = (): ConfirmationDialogContextType => {
   const context = useContext(ConfirmationModalContext);
   if (!context) {
-    throw new Error(
-      "useConfirmationModalContext must be used within a ConfirmationModalContextProvider",
-    );
+    throw new Error("useConfirmationModalContext must be used within a ConfirmationModalContextProvider");
   }
   return context;
 };
