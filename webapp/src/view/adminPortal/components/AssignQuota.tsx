@@ -403,10 +403,14 @@ export const AssignQuota = () => {
   };
 
   const handleGroupCreation = (name: string) => {
-    if (selectionModel.ids.size > 0) {
-      const selectedTeams = Array.from(selectionModel.ids).map((id) =>
-        filteredTeams.find((team) => team.specialRatingGroupId === id)
-      ) as SpecialQuotaTeam[];
+    const selectedTeams: SpecialQuotaTeam[] =
+      selectionModel.type === "exclude"
+        ? filteredTeams.filter((team) => !selectionModel.ids.has(team.specialRatingGroupId))
+        : (Array.from(selectionModel.ids)
+            .map((id) => filteredTeams.find((team) => team.specialRatingGroupId === id))
+            .filter(Boolean) as SpecialQuotaTeam[]);
+
+    if (selectedTeams.length > 0) {
 
       const totalHeadCount = calculateTotalHeads(selectedTeams);
       const { default5Slots, default20Slots } = calculateDefaultQuotaValues(totalHeadCount);
@@ -716,13 +720,11 @@ export const AssignQuota = () => {
           )}
           {quotaGroupStatus === RequestState.FAILED && <ErrorComponent />}
           {quotaGroupStatus === RequestState.IDLE && !isDataSubmitting && (
-            <Box height="100%" overflow="auto">
-              {/* Sticky header */}
+            <Box height="100%" overflow="hidden" display="flex" flexDirection="column">
+              {/* Header */}
               <Box
                 sx={{
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 1000,
+                  flexShrink: 0,
                   bgcolor: "background.default",
                   borderBottom: 1,
                   borderColor: "divider",
@@ -781,7 +783,7 @@ export const AssignQuota = () => {
                         <Tooltip
                           arrow
                           title={
-                            selectionModel.ids.size === 0
+                            selectionModel.type === "include" && selectionModel.ids.size === 0
                               ? uiMessages.tooltip.addATeamToGroupHelperDisabled
                               : uiMessages.tooltip.addATeamToGroupHelper
                           }
@@ -792,7 +794,7 @@ export const AssignQuota = () => {
                             <Button
                               variant="contained"
                               onClick={handleOpenNameDialog}
-                              disabled={selectionModel.ids.size === 0}
+                              disabled={selectionModel.type === "include" && selectionModel.ids.size === 0}
                             >
                               Create a Group
                             </Button>
@@ -805,11 +807,11 @@ export const AssignQuota = () => {
               </Box>
 
               {/* Content panels */}
-              <Grid container spacing={2} sx={{ px: 2, pt: 2, pb: 1 }}>
+              <Box sx={{ flex: 1, minHeight: 0, display: "flex", gap: 2, px: 2, pt: 2, pb: 2, overflow: "hidden" }}>
                 {/* Left — group mappings */}
-                <Grid size={{ xs: 12, md: 8 }}>
+                <Box sx={{ flex: 2, minWidth: 0, minHeight: 0 }}>
                   {!isGroupMapEmpty ? (
-                    <Card variant="outlined" sx={{ height: "calc(100vh - 11rem)", overflow: "auto" }}>
+                    <Card variant="outlined" sx={{ height: "100%", overflow: "auto" }}>
                       <Box p={1} key={groupIdCounter}>
                         {groupMappings.map((group) => (
                           <Accordion
@@ -1007,20 +1009,20 @@ export const AssignQuota = () => {
                       </Box>
                     </Card>
                   ) : (
-                    <Card variant="outlined" sx={{ height: "calc(100vh - 11rem)", overflow: "auto" }}>
+                    <Card variant="outlined" sx={{ height: "100%", overflow: "hidden" }}>
                       <NoDataView text={uiMessages.information.emptyGroupsView} />
                     </Card>
                   )}
-                </Grid>
+                </Box>
 
                 {/* Right — team selection table */}
-                <Grid size={{ xs: 12, md: 4 }}>
+                <Box sx={{ flex: 1, minWidth: 0, minHeight: 0 }}>
                   {isTeamsTableEmpty ? (
-                    <Card variant="outlined" sx={{ height: "calc(100vh - 11rem)", overflow: "auto" }}>
+                    <Card variant="outlined" sx={{ height: "100%", overflow: "hidden" }}>
                       <NoDataView text={uiMessages.information.emptyTeamsView} />
                     </Card>
                   ) : (
-                    <Card variant="outlined" sx={{ height: "calc(100vh - 11rem)", overflow: "auto", display: "flex", flexDirection: "column" }}>
+                    <Card variant="outlined" sx={{ height: "100%", overflow: "hidden", display: "flex", flexDirection: "column" }}>
                       <Box
                         sx={{
                           display: "flex",
@@ -1045,13 +1047,14 @@ export const AssignQuota = () => {
                           border: "none",
                           "& .MuiDataGrid-row:hover": { cursor: "pointer" },
                           "& .MuiDataGrid-columnHeaderTitle": { fontWeight: 600 },
+                          "& .MuiDataGrid-columnHeader": { pl: 0.5 },
+                          "& .MuiDataGrid-cell": { pl: 0.1 },
                           flex: 1,
                         }}
                         density="compact"
                         getRowId={(row) => row.specialRatingGroupId}
                         rows={filteredTeams}
                         columns={columns}
-                        autoHeight
                         rowHeight={44}
                         pageSizeOptions={[10]}
                         checkboxSelection
@@ -1061,8 +1064,8 @@ export const AssignQuota = () => {
                       />
                     </Card>
                   )}
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
 
               <InputDialog
                 open={isNameDialogOpen}
