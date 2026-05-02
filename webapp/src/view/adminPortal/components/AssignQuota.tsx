@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,6 +13,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import React, { useEffect, useRef, useState } from "react";
+
+import dayjs from "dayjs";
+import { object, number, string, array } from "yup";
+
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Chip from "@mui/material/Chip";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
@@ -38,25 +48,14 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import Accordion from "@mui/material/Accordion";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import AccordionSummary from "@mui/material/AccordionSummary";
-import Chip from "@mui/material/Chip";
-import { DataGrid, GridRowSelectionModel, GridToolbar } from "@mui/x-data-grid";
-import dayjs from "dayjs";
-import { array, number, object, string } from "yup";
+import { DataGrid, GridRenderCellParams, GridRowSelectionModel, useGridApiRef } from "@mui/x-data-grid";
 
-import { useEffect, useRef, useState } from "react";
+import { shortDateFormat, SnackMessage, tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { ConfirmationType } from "@/types/types";
+import { RequestState, GroupedTeams, SpecialQuotaTeam } from "@utils/types";
 
-import EditQuotaDialog from "@component/common/EditQuotaDialog";
-import InputDialog from "@component/common/GroupNameInputDialog";
-import NoDataView from "@component/common/NoDataView";
-import QuotaChip from "@component/common/QuotaStatusChip";
-import ErrorComponent from "@component/ui/BackdropProgress";
-import { LoadingEffect } from "@component/ui/Loading";
-import { SnackMessage, tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { shortDateFormat } from "@config/constant";
-import { ShowSnackBarMessage } from "@slices/commonSlice/common";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { fetchConfigurations } from "@slices/metaSlice/meta";
 import {
   fetchOpenParCycle,
@@ -64,19 +63,24 @@ import {
   selectCurrentCycle,
   selectParCycleState,
 } from "@slices/parCycleSlice/parCycle";
-import { PostSpecialQuotaTeam, SpecialRatingQuota } from "@slices/specialQuotaSlice/specialQuota";
 import {
+  PostSpecialQuotaTeam,
+  SpecialRatingQuota,
   fetchQuotaGroups,
   postQuotaGroups,
   resetQuotaSate,
   selectQuotaGroups,
   selectQuotaGroupsStatus,
 } from "@slices/specialQuotaSlice/specialQuota";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { GroupedTeams, RequestState, SpecialQuotaTeam } from "@utils/types";
 
-import { useConfirmationModalContext } from "../../../context/DialogContext";
-import { ConfirmationType } from "@/types/types";
+import { DataGridToolbar } from "@component/common/DataGridToolbar";
+import EditQuotaDialog from "@component/common/EditQuotaDialog";
+import InputDialog from "@component/common/GroupNameInputDialog";
+import NoDataView from "@component/common/NoDataView";
+import QuotaChip from "@component/common/QuotaStatusChip";
+import ErrorComponent from "@component/ui/ErrorComponent";
+import { LoadingEffect } from "@component/ui/Loading";
+import { useConfirmationModalContext } from "@context/DialogContext";
 
 export const AssignQuota = () => {
   const dispatch = useAppDispatch();
@@ -108,6 +112,7 @@ export const AssignQuota = () => {
   const [isQuotaDialogOpen, setIsQuotaDialogOpen] = useState(false);
   const [groupMappings, setGroupMappings] = useState<GroupedTeams[]>([]);
   const [filteredTeams, setFilteredTeams] = useState<SpecialQuotaTeam[]>([]);
+  const teamsApiRef = useGridApiRef();
   const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({ type: "include", ids: new Set() });
   const [isGroupExpanded, setIsGroupExpanded] = useState<number | false>(false);
   const [groupToAssignSlots, setGroupToAssignSlots] = useState<GroupedTeams | null>(null);
@@ -119,11 +124,19 @@ export const AssignQuota = () => {
     group: null,
   });
 
+  const renderTextCell = (params: GridRenderCellParams) => (
+    <Tooltip title={String(params.value ?? "")} enterDelay={500} enterNextDelay={500}>
+      <Typography variant="body2" noWrap sx={{ overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
+        {params.value ?? "—"}
+      </Typography>
+    </Tooltip>
+  );
+
   const columns = [
-    { field: "businessUnit", headerName: "BU", flex: 0.12 },
-    { field: "department", headerName: "Department", flex: 0.14 },
-    { field: "team", headerName: "Team", flex: 0.14 },
-    { field: "headCount", headerName: "Head Count", flex: 0.07 },
+    { field: "businessUnit", headerName: "BU", flex: 0.15, renderCell: renderTextCell },
+    { field: "department", headerName: "Department", flex: 0.35, renderCell: renderTextCell },
+    { field: "team", headerName: "Team", flex: 0.35, renderCell: renderTextCell },
+    { field: "headCount", headerName: "Heads", flex: 0.15 },
   ];
 
   const groupSchema = object().shape({
@@ -340,9 +353,8 @@ export const AssignQuota = () => {
   };
 
   const openConfirmChoiceDialog = () => {
-    const message = `${uiMessages.dialog.confirmQuotaAssign.message}${
-      groupsWithIssuesRef.current.length > 0 ? ` Under Served Groups : ${groupsWithIssuesRef.current.join(", ")}` : ""
-    }`;
+    const message = `${uiMessages.dialog.confirmQuotaAssign.message}${groupsWithIssuesRef.current.length > 0 ? ` Under Served Groups : ${groupsWithIssuesRef.current.join(", ")}` : ""
+      }`;
     dialogContext.showConfirmation(
       uiMessages.dialog.confirmQuotaAssign.title,
       message,
@@ -419,7 +431,7 @@ export const AssignQuota = () => {
       setGroupMappings((prevGroups) => [...prevGroups, newGroup]);
       setSelectionModel({ type: "include", ids: new Set() });
       setGroupIdCounter((prevCounter) => prevCounter + 1);
-      dispatch(ShowSnackBarMessage(SnackMessage.success.groupCreated, "success"));
+      dispatch(enqueueSnackbarMessage({ message: SnackMessage.success.groupCreated, type: "success" }));
     }
   };
 
@@ -458,7 +470,7 @@ export const AssignQuota = () => {
         groupMappings.some(
           (group) =>
             group.id === groupIdToRemove &&
-            group.teams.some((t) => t.specialRatingGroupId === team.specialRatingGroupId),
+            group.teams.some((t) => t.specialRatingGroupId === team.specialRatingGroupId)
         )
       ) {
         return { ...team, groupNumber: null };
@@ -474,14 +486,14 @@ export const AssignQuota = () => {
       setFilteredTeams(updatedTeams);
       const updatedGroupMappings = groupMappings.filter((group) => group.id !== groupToBeRemovedRef.current);
       setGroupMappings(updatedGroupMappings);
-      dispatch(ShowSnackBarMessage(SnackMessage.success.groupRemoved, "success"));
+      dispatch(enqueueSnackbarMessage({ message: SnackMessage.success.groupRemoved, type: "success" }));
     }
   };
 
   const handleRemoveTeam = () => {
     const updatedGroups = removeTeamFromGroup();
     const nonEmptyGroups = filterEmptyGroups(updatedGroups);
-    dispatch(ShowSnackBarMessage(SnackMessage.success.teamRemoved, "success"));
+    dispatch(enqueueSnackbarMessage({ message: SnackMessage.success.teamRemoved, type: "success" }));
     setGroupMappings(nonEmptyGroups);
   };
 
@@ -521,7 +533,7 @@ export const AssignQuota = () => {
 
   const validateGroupMap = () => {
     if (!isTeamsTableEmpty) {
-      dispatch(ShowSnackBarMessage(SnackMessage.error.groupAssignIncomplete, "error"));
+      dispatch(enqueueSnackbarMessage({ message: SnackMessage.error.groupAssignIncomplete, type: "error" }));
       return false;
     }
     try {
@@ -530,7 +542,7 @@ export const AssignQuota = () => {
       openConfirmChoiceDialog();
       return true;
     } catch (_) {
-      dispatch(ShowSnackBarMessage(SnackMessage.error.groupValidationFailed, "error"));
+      dispatch(enqueueSnackbarMessage({ message: SnackMessage.error.groupValidationFailed, type: "error" }));
       return false;
     }
   };
@@ -555,7 +567,7 @@ export const AssignQuota = () => {
   const confirmAndProceed = async () => {
     const cycleID = currentCycle?.parCycleId;
     if (cycleID === null || cycleID === undefined) {
-      dispatch(ShowSnackBarMessage(SnackMessage.error.fetchCurrentCycleDetails, "error"));
+      dispatch(enqueueSnackbarMessage({ message: SnackMessage.error.fetchCurrentCycleDetails, type: "error" }));
       return;
     }
     try {
@@ -573,7 +585,7 @@ export const AssignQuota = () => {
       dispatch(fetchOpenParCycle());
     } catch (_) {
       setIsDataSubmitting(false);
-      dispatch(ShowSnackBarMessage(SnackMessage.error.common, "error"));
+      dispatch(enqueueSnackbarMessage({ message: SnackMessage.error.common, type: "error" }));
     }
   };
 
@@ -653,10 +665,10 @@ export const AssignQuota = () => {
     const validationResult = await validateQuotaData(specialRatingQuotas, parSpecialRatingGroups);
 
     if (!validationResult.isValid) {
-      dispatch(ShowSnackBarMessage(SnackMessage.error.quotValidationError, "error"));
+      dispatch(enqueueSnackbarMessage({ message: SnackMessage.error.quotValidationError, type: "error" }));
       if (validationResult.errorMessages) {
         validationResult.errorMessages.map((msg) => {
-          dispatch(ShowSnackBarMessage(msg, "error"));
+          dispatch(enqueueSnackbarMessage({ message: msg, type: "error" }));
         });
       }
 
@@ -669,7 +681,7 @@ export const AssignQuota = () => {
           parCycleId: cycleID,
           parSpecialRatingGroups: validationResult.validatedParSpecialRatingGroups,
           specialRatingQuotas: validationResult.validatedSpecialRatingQuotas,
-        }),
+        })
       );
       if (postQuotaGroups.fulfilled.match(resultAction)) {
         return true;
@@ -702,69 +714,59 @@ export const AssignQuota = () => {
           {quotaGroupStatus === RequestState.IDLE && isDataSubmitting && (
             <LoadingEffect message={uiMessages.loading.parCycleCreation} />
           )}
-          {quotaGroupStatus === RequestState.FAILED && <ErrorComponent open={true} />}
+          {quotaGroupStatus === RequestState.FAILED && <ErrorComponent />}
           {quotaGroupStatus === RequestState.IDLE && !isDataSubmitting && (
-            <Box flexDirection={"row"} height={"100%"} zIndex={1000} overflow={"auto"}>
-              <Grid
-                container
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
+            <Box height="100%" overflow="auto">
+              {/* Sticky header */}
+              <Box
                 sx={{
                   position: "sticky",
                   top: 0,
-                  zIndex: "1000",
-                  borderBottom: "1px solid #ddd",
-                  padding: 1,
-                  backgroundColor: "background.default",
+                  zIndex: 1000,
+                  bgcolor: "background.default",
+                  borderBottom: 1,
+                  borderColor: "divider",
+                  px: 2,
+                  py: 1.5,
                 }}
               >
-                <Grid size={{ xs: 6, sm: 5 }} sx={{ alignContent: "center" }}>
-                  <Typography display="inline" variant="h4" component="span">
-                    {currentCycle.parCycleName}
-                  </Typography>
-                  <Typography display="inline" variant="body1" component="span" sx={{ ml: 1 }}>
-                    ({dayjs(currentCycle.parCycleStartDate).format(shortDateFormat)} -{" "}
-                    {dayjs(currentCycle.parCycleEndDate).format(shortDateFormat)})
-                  </Typography>
-                </Grid>
-                <Grid
-                  size={{ xs: 6, sm: 7 }}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    alignItems: "center",
-                  }}
-                >
-                  <Grid container spacing={2} alignItems="center" justifyContent="flex-end">
-                    <Grid size="grow">
-                      <Grid container alignItems="center" spacing={1}>
-                        <Grid size="grow">
-                          <Typography variant="body2">Eligible Employees :</Typography>
-                        </Grid>
-                        <Grid size="grow">
-                          <Chip label={totalEmployees} />
-                        </Grid>
-                      </Grid>
-                    </Grid>
-                    <Grid size="grow">
+                <Grid container alignItems="center" justifyContent="space-between" spacing={1}>
+                  <Grid size={{ xs: 12, md: 5 }}>
+                    <Typography display="inline" variant="h5" fontWeight={600}>
+                      {currentCycle.parCycleName}
+                    </Typography>
+                    <Typography display="inline" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                      ({dayjs(currentCycle.parCycleStartDate).format(shortDateFormat)} -{" "}
+                      {dayjs(currentCycle.parCycleEndDate).format(shortDateFormat)})
+                    </Typography>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 7 }}>
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      justifyContent={{ xs: "flex-start", md: "flex-end" }}
+                      flexWrap="wrap"
+                      gap={1}
+                    >
+                      <Box display="flex" alignItems="center" gap={0.5}>
+                        <Typography variant="body2" color="text.secondary">
+                          Eligible Employees
+                        </Typography>
+                        <Chip size="small" label={totalEmployees} />
+                      </Box>
                       <QuotaChip
-                        isHeading={true}
+                        isHeading
                         type="Top 5%"
                         available={top5SlotsAvailable}
                         allocated={top5SlotsAllocated}
                       />
-                    </Grid>
-                    <Grid size="grow">
                       <QuotaChip
-                        isHeading={true}
+                        isHeading
                         type="Top 20%"
                         available={top20SlotsAvailable}
                         allocated={top20SlotsAllocated}
                       />
-                    </Grid>
-                    {!isGroupMapEmpty && isTeamsTableEmpty ? (
-                      <Grid>
+                      {!isGroupMapEmpty && isTeamsTableEmpty ? (
                         <Tooltip
                           arrow
                           title={uiMessages.tooltip.finishAssignQuotaButtonHelper}
@@ -772,12 +774,10 @@ export const AssignQuota = () => {
                           enterNextDelay={tooltipVisibilityDelay}
                         >
                           <Button variant="contained" color="primary" onClick={validateGroupMap}>
-                            SAVE QUOTA VALUES
+                            Save Quota Values
                           </Button>
                         </Tooltip>
-                      </Grid>
-                    ) : (
-                      <Grid sx={{ marginRight: 2 }}>
+                      ) : (
                         <Tooltip
                           arrow
                           title={
@@ -790,145 +790,99 @@ export const AssignQuota = () => {
                         >
                           <span>
                             <Button
-                              color="primary"
-                              aria-label="add"
-                              size="medium"
                               variant="contained"
                               onClick={handleOpenNameDialog}
                               disabled={selectionModel.ids.size === 0}
-                              sx={{
-                                position: "relative",
-                                boxShadow: 3,
-                              }}
                             >
-                              CREATE A GROUP
+                              Create a Group
                             </Button>
                           </span>
                         </Tooltip>
-                      </Grid>
-                    )}
+                      )}
+                    </Box>
                   </Grid>
                 </Grid>
-              </Grid>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 8 }}>
+              </Box>
+
+              {/* Content panels */}
+              <Grid container spacing={2} sx={{ px: 2, pt: 2, pb: 1 }}>
+                {/* Left — group mappings */}
+                <Grid size={{ xs: 12, md: 8 }}>
                   {!isGroupMapEmpty ? (
-                    <Card
-                      variant="outlined"
-                      sx={{
-                        textAlign: "center",
-                        height: "calc(100vh - 21.5rem)",
-                        overflow: "auto",
-                        mt: 2,
-                      }}
-                    >
-                      <Box padding={1} key={groupIdCounter}>
+                    <Card variant="outlined" sx={{ height: "calc(100vh - 11rem)", overflow: "auto" }}>
+                      <Box p={1} key={groupIdCounter}>
                         {groupMappings.map((group) => (
                           <Accordion
-                            slotProps={{
-                              transition: { unmountOnExit: true },
-                            }}
+                            slotProps={{ transition: { unmountOnExit: true } }}
                             key={group.id}
                             expanded={isGroupExpanded === group.id}
                             onChange={handleGroupExpand(group.id)}
                             sx={{ mb: 1 }}
                           >
                             <AccordionSummary
-                              aria-controls="panel1-content"
-                              id="panel1-header"
-                              sx={{
-                                position: "relative",
-                                "&:hover": {
-                                  bgcolor: "background.default",
-                                },
-                                "&:hover > div": {
-                                  opacity: 1,
-                                },
-                                height: 20,
-                                "& .MuiAccordionSummary-expandIconWrapper": {
-                                  order: -1,
-                                },
-                              }}
+                              aria-controls={`group-${group.id}-content`}
+                              id={`group-${group.id}-header`}
                               expandIcon={<ExpandMoreIcon />}
+                              sx={{
+                                "&:hover": { bgcolor: "action.hover" },
+                                "& .MuiAccordionSummary-expandIconWrapper": { order: -1 },
+                              }}
                             >
-                              <Grid
-                                container
-                                direction="row"
+                              <Box
+                                display="flex"
                                 alignItems="center"
-                                spacing={1}
-                                sx={{ width: "100%" }}
+                                gap={1}
+                                flexWrap="wrap"
+                                width="100%"
+                                onClick={(e) => handleSummaryClick(e)}
                               >
-                                <Grid size="grow" sx={{ display: "flex", alignItems: "center" }}>
-                                  <Typography variant="body2">{group.name}</Typography>
-                                </Grid>
-                                <Grid sx={{ textAlign: "center" }}>
-                                  <Chip label={` Head Count : ${group.totalHeadCount}`} />
-                                </Grid>
-                                <Grid size="grow">
-                                  <QuotaChip
-                                    isHeading={true}
-                                    type="5%"
-                                    available={group.default5Slots}
-                                    allocated={group.allocated5Slots}
-                                  />
-                                </Grid>
-                                <Grid size="grow">
-                                  <QuotaChip
-                                    isHeading={true}
-                                    type="20%"
-                                    available={group.default20Slots}
-                                    allocated={group.allocated20Slots}
-                                  />
-                                </Grid>
-                                <Grid size="grow">
-                                  <Chip
-                                    label={
-                                      group.allocatedLeads.length > 0
-                                        ? `${group.allocatedLeads.length} Lead${
-                                            group.allocatedLeads.length !== 1 ? "s" : ""
-                                          } Assigned`
-                                        : "No Leads Assigned"
-                                    }
-                                    variant={"outlined"}
-                                    color={group.allocatedLeads.length > 0 ? "primary" : "error"}
-                                    sx={{
-                                      fontWeight: 500,
-                                      px: 2,
-                                      py: 0.5,
-                                      width: "150px",
-                                    }}
-                                  />
-                                </Grid>
-
-                                <Grid size="grow">
+                                <Typography variant="body2" fontWeight={500} sx={{ minWidth: 80 }}>
+                                  {group.name}
+                                </Typography>
+                                <Chip label={`Head Count : ${group.totalHeadCount}`} />
+                                <QuotaChip
+                                  isHeading
+                                  type="5%"
+                                  available={group.default5Slots}
+                                  allocated={group.allocated5Slots}
+                                />
+                                <QuotaChip
+                                  isHeading
+                                  type="20%"
+                                  available={group.default20Slots}
+                                  allocated={group.allocated20Slots}
+                                />
+                                <Chip
+                                  size="small"
+                                  label={
+                                    group.allocatedLeads.length > 0
+                                      ? `${group.allocatedLeads.length} Lead${group.allocatedLeads.length !== 1 ? "s" : ""} Assigned`
+                                      : "No Leads Assigned"
+                                  }
+                                  variant="outlined"
+                                  color={group.allocatedLeads.length > 0 ? "primary" : "error"}
+                                  sx={{ fontWeight: 500, minWidth: 130 }}
+                                />
+                                <Box sx={{ ml: "auto" }}>
                                   <IconButton
+                                    size="small"
                                     onClick={(e) => {
                                       handleSummaryClick(e);
                                       handleMenuOpen(e, group);
                                     }}
                                     sx={{
                                       color: "primary.main",
-                                      "&:hover": {
-                                        bgcolor: "primary.main",
-                                        color: "white",
-                                      },
+                                      "&:hover": { bgcolor: "primary.main", color: "white" },
                                     }}
                                   >
-                                    <MoreVertIcon />
+                                    <MoreVertIcon fontSize="small" />
                                   </IconButton>
                                   <Menu
                                     anchorEl={menuState.anchorEl}
                                     open={Boolean(menuState.anchorEl && menuState.group === group)}
                                     onClose={handleMenuClose}
-                                    sx={{
-                                      "& .MuiPaper-root": {
-                                        boxShadow: "none",
-                                        border: "1px solid black",
-                                      },
-                                    }}
-                                    onClick={(e) => {
-                                      handleSummaryClick(e);
-                                    }}
+                                    sx={{ "& .MuiPaper-root": { boxShadow: 2, border: 1, borderColor: "divider" } }}
+                                    onClick={(e) => handleSummaryClick(e)}
                                   >
                                     <MenuItem
                                       onClick={(e) => {
@@ -938,14 +892,7 @@ export const AssignQuota = () => {
                                         handleMenuClose();
                                       }}
                                     >
-                                      <Tooltip
-                                        arrow
-                                        title={uiMessages.tooltip.editQuotaValues}
-                                        enterDelay={tooltipVisibilityDelay}
-                                        enterNextDelay={tooltipVisibilityDelay}
-                                      >
-                                        <EditIcon sx={{ marginRight: 1 }} />
-                                      </Tooltip>
+                                      <EditIcon fontSize="small" sx={{ mr: 1 }} />
                                       Edit Group Settings
                                     </MenuItem>
                                     <MenuItem
@@ -955,14 +902,7 @@ export const AssignQuota = () => {
                                         handleMenuClose();
                                       }}
                                     >
-                                      <Tooltip
-                                        arrow
-                                        title={uiMessages.tooltip.resetQuotaValues}
-                                        enterDelay={tooltipVisibilityDelay}
-                                        enterNextDelay={tooltipVisibilityDelay}
-                                      >
-                                        <RestartAltIcon sx={{ marginRight: 1 }} />
-                                      </Tooltip>
+                                      <RestartAltIcon fontSize="small" sx={{ mr: 1 }} />
                                       Reset Quota
                                     </MenuItem>
                                     <MenuItem
@@ -973,14 +913,7 @@ export const AssignQuota = () => {
                                         handleMenuClose();
                                       }}
                                     >
-                                      <Tooltip
-                                        arrow
-                                        title={uiMessages.tooltip.removeAGroupFromMap}
-                                        enterDelay={tooltipVisibilityDelay}
-                                        enterNextDelay={tooltipVisibilityDelay}
-                                      >
-                                        <DeleteIcon sx={{ marginRight: 1 }} />
-                                      </Tooltip>
+                                      <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
                                       Remove Group
                                     </MenuItem>
                                     <MenuItem
@@ -989,189 +922,148 @@ export const AssignQuota = () => {
                                         handleMenuClose();
                                       }}
                                     >
-                                      <Tooltip
-                                        arrow
-                                        title={uiMessages.tooltip.editQuotaValues}
-                                        enterDelay={tooltipVisibilityDelay}
-                                        enterNextDelay={tooltipVisibilityDelay}
-                                      >
-                                        <CloseIcon sx={{ marginRight: 1 }} />
-                                      </Tooltip>
+                                      <CloseIcon fontSize="small" sx={{ mr: 1 }} />
                                       Cancel
                                     </MenuItem>
                                   </Menu>
-                                </Grid>
-                              </Grid>
+                                </Box>
+                              </Box>
                             </AccordionSummary>
-                            <AccordionDetails>
-                              <Grid
-                                container
-                                justifyContent="space-between"
-                                alignItems="center"
-                                key={group.id}
-                              >
-                                <TableContainer>
-                                  <Table>
-                                    <TableHead>
-                                      <TableRow>
-                                        <TableCell>BU</TableCell>
-                                        <TableCell>Department</TableCell>
-                                        <TableCell>Team</TableCell>
-                                        <TableCell align="center">Head Count</TableCell>
+
+                            <AccordionDetails sx={{ p: 0 }}>
+                              <TableContainer>
+                                <Table size="small">
+                                  <TableHead>
+                                    <TableRow>
+                                      {["BU", "Department", "Team", "Head Count", "Action"].map((h) => (
                                         <TableCell
-                                          align="center"
-                                          sx={{
-                                            display: "flex",
-                                            justifyContent: "center",
-                                          }}
+                                          key={h}
+                                          align={h === "Head Count" || h === "Action" ? "center" : "left"}
+                                          sx={{ fontWeight: 600, fontSize: "0.75rem", color: "text.secondary" }}
                                         >
-                                          Action
+                                          {h}
+                                        </TableCell>
+                                      ))}
+                                    </TableRow>
+                                  </TableHead>
+                                  <TableBody>
+                                    {group.teams.map((team) => (
+                                      <TableRow key={team.specialRatingGroupId} hover>
+                                        <TableCell sx={{ maxWidth: 100 }}>
+                                          <Tooltip title={team.businessUnit ?? ""} enterDelay={500}>
+                                            <Typography variant="body2" noWrap>
+                                              {team.businessUnit || "—"}
+                                            </Typography>
+                                          </Tooltip>
+                                        </TableCell>
+                                        <TableCell sx={{ maxWidth: 140 }}>
+                                          <Tooltip title={team.department} enterDelay={500}>
+                                            <Typography variant="body2" noWrap>
+                                              {team.department}
+                                            </Typography>
+                                          </Tooltip>
+                                        </TableCell>
+                                        <TableCell sx={{ maxWidth: 120 }}>
+                                          <Tooltip title={team.team} enterDelay={500}>
+                                            <Typography variant="body2" noWrap>
+                                              {team.team}
+                                            </Typography>
+                                          </Tooltip>
+                                        </TableCell>
+                                        <TableCell align="center">
+                                          <Typography variant="body2">{team.headCount}</Typography>
+                                        </TableCell>
+                                        <TableCell align="center">
+                                          <Tooltip
+                                            arrow
+                                            title={uiMessages.tooltip.removeATeamFromGroup}
+                                            enterDelay={tooltipVisibilityDelay}
+                                            enterNextDelay={tooltipVisibilityDelay}
+                                          >
+                                            <IconButton
+                                              size="small"
+                                              sx={{
+                                                color: "primary.main",
+                                                "&:hover": { bgcolor: "primary.main", color: "white" },
+                                              }}
+                                              onClick={() => {
+                                                parentGroupIdRef.current = group.id;
+                                                teamToBeRemovedRef.current = team.specialRatingGroupId;
+                                                openRemoveTeamDialog();
+                                              }}
+                                            >
+                                              <DeleteOutlineOutlinedIcon fontSize="small" />
+                                            </IconButton>
+                                          </Tooltip>
                                         </TableCell>
                                       </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                      {group.teams.map((team) => (
-                                        <TableRow key={team.specialRatingGroupId}>
-                                          <TableCell>
-                                            {team.businessUnit ? team.businessUnit : "No Data"}</TableCell>
-                                          <TableCell>{team.department}</TableCell>
-                                          <TableCell>{team.team}</TableCell>
-                                          <TableCell align="center">{team.headCount}</TableCell>
-                                          <TableCell
-                                            align="center"
-                                            sx={{
-                                              display: "flex",
-                                              justifyContent: "center",
-                                            }}
-                                          >
-                                            <Tooltip
-                                              arrow
-                                              title={uiMessages.tooltip.removeATeamFromGroup}
-                                              enterDelay={tooltipVisibilityDelay}
-                                              enterNextDelay={tooltipVisibilityDelay}
-                                            >
-                                              <IconButton
-                                                sx={{
-                                                  color: "primary.main",
-                                                  "&:hover": {
-                                                    bgcolor: "primary.main",
-                                                    color: "white",
-                                                  },
-                                                }}
-                                                onClick={() => {
-                                                  parentGroupIdRef.current = group.id;
-                                                  teamToBeRemovedRef.current =
-                                                    team.specialRatingGroupId;
-                                                  openRemoveTeamDialog();
-                                                }}
-                                              >
-                                                <DeleteOutlineOutlinedIcon
-                                                  sx={{ marginRight: 0 }}
-                                                />
-                                              </IconButton>
-                                            </Tooltip>
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                </TableContainer>
-                              </Grid>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </TableContainer>
                             </AccordionDetails>
                           </Accordion>
                         ))}
                       </Box>
                     </Card>
                   ) : (
-                    <Card
-                      sx={{
-                        textAlign: "center",
-                        height: "calc(100vh - 21.5rem)",
-                        overflow: "auto",
-                        mt: 2,
-                      }}
-                    >
+                    <Card variant="outlined" sx={{ height: "calc(100vh - 11rem)", overflow: "auto" }}>
                       <NoDataView text={uiMessages.information.emptyGroupsView} />
                     </Card>
                   )}
                 </Grid>
-                <Grid size={{ xs: 4 }} sx={{ justifyContent: "center", textAlign: "center" }}>
+
+                {/* Right — team selection table */}
+                <Grid size={{ xs: 12, md: 4 }}>
                   {isTeamsTableEmpty ? (
-                    <Card
-                      sx={{
-                        textAlign: "center",
-                        height: "calc(100vh - 21.5rem)",
-                        overflow: "auto",
-                        mt: 2,
-                      }}
-                    >
+                    <Card variant="outlined" sx={{ height: "calc(100vh - 11rem)", overflow: "auto" }}>
                       <NoDataView text={uiMessages.information.emptyTeamsView} />
                     </Card>
                   ) : (
-                    <DataGrid
-                      sx={{
-                        border: "1px solid rgba(0, 0, 0, 0.12)",
-                        "& .MuiDataGrid-row:hover": {
-                          cursor: "pointer",
-                        },
-                        flexGrow: 1,
-                        "& .MuiDataGrid-columnHeaderTitle": {
-                          fontWeight: "bold",
-                        },
-                        "& .MuiDataGrid-columnHeader": {
-                          maxWidth: "50%",
-                        },
-                        "& .MuiDataGrid-footerContainer": {
-                          height: "5px",
-                        },
-                        overflow: "auto",
-                        minHeight: "calc(100vh - 21.5rem)",
-                        p: 1,
-                        width: "100%",
-                        textAlign: "center",
-                        display: "flex",
-                        flexDirection: "column",
-                        mt: 2,
-                      }}
-                      density="compact"
-                      loading={isTeamsTableEmpty}
-                      getRowId={(row) => row.specialRatingGroupId}
-                      rows={filteredTeams}
-                      columns={columns}
-                      autoHeight={true}
-                      rowHeight={60}
-                      pageSizeOptions={[10]}
-                      checkboxSelection={true}
-                      onRowSelectionModelChange={handleSelectionChange}
-                      rowSelectionModel={selectionModel}
-                      slots={{ toolbar: GridToolbar }}
-                      disableDensitySelector
-                      disableColumnSelector
-                      slotProps={{
-                        toolbar: {
-                          showQuickFilter: true,
-                          quickFilterProps: { debounceMs: 500 },
-                        },
-                      }}
-                      initialState={{
-                        pagination: { paginationModel: { pageSize: 10 } },
-                        filter: {
-                          filterModel: {
-                            items: [
-                              {
-                                id: "searchText",
-                                value: searchText,
-                                field: "searchText",
-                                operator: "contains",
-                              },
-                            ],
-                          },
-                        },
-                      }}
-                    />
+                    <Card variant="outlined" sx={{ height: "calc(100vh - 11rem)", overflow: "auto", display: "flex", flexDirection: "column" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          px: 1,
+                          py: 0.5,
+                          borderBottom: 1,
+                          borderColor: "divider",
+                        }}
+                      >
+                        <DataGridToolbar
+                          apiRef={teamsApiRef}
+                          searchText={searchText}
+                          onSearchChange={setSearchText}
+                          hideColumns
+                          hideDensity
+                        />
+                      </Box>
+                      <DataGrid
+                        apiRef={teamsApiRef}
+                        sx={{
+                          border: "none",
+                          "& .MuiDataGrid-row:hover": { cursor: "pointer" },
+                          "& .MuiDataGrid-columnHeaderTitle": { fontWeight: 600 },
+                          flex: 1,
+                        }}
+                        density="compact"
+                        getRowId={(row) => row.specialRatingGroupId}
+                        rows={filteredTeams}
+                        columns={columns}
+                        autoHeight
+                        rowHeight={44}
+                        pageSizeOptions={[10]}
+                        checkboxSelection
+                        onRowSelectionModelChange={handleSelectionChange}
+                        rowSelectionModel={selectionModel}
+                        initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+                      />
+                    </Card>
                   )}
                 </Grid>
               </Grid>
+
               <InputDialog
                 open={isNameDialogOpen}
                 onClose={handleCloseNameDialog}
