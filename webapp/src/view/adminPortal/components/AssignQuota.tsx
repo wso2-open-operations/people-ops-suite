@@ -809,7 +809,7 @@ export const AssignQuota = () => {
               {/* Content panels */}
               <Box sx={{ flex: 1, minHeight: 0, display: "flex", gap: 2, px: 2, pt: 2, pb: 2, overflow: "hidden" }}>
                 {/* Left — group mappings */}
-                <Box sx={{ flex: 2, minWidth: 0, minHeight: 0 }}>
+                <Box sx={{ flex: 3, minWidth: 0, minHeight: 0 }}>
                   {!isGroupMapEmpty ? (
                     <Card variant="outlined" sx={{ height: "100%", overflow: "auto" }}>
                       <Box p={1} key={groupIdCounter}>
@@ -1016,7 +1016,7 @@ export const AssignQuota = () => {
                 </Box>
 
                 {/* Right — team selection table */}
-                <Box sx={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+                <Box sx={{ flex: 2, minWidth: 0, minHeight: 0 }}>
                   {isTeamsTableEmpty ? (
                     <Card variant="outlined" sx={{ height: "100%", overflow: "hidden" }}>
                       <NoDataView text={uiMessages.information.emptyTeamsView} />
