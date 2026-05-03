@@ -338,10 +338,10 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
 # + return - Nil on success or error
 public isolated function deleteEmployeeById(string employeeId) returns error? {
     retry transaction {
-        int personalInfoId = check databaseClient->queryRow(
-            `SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}`);
-        int employeePkId = check databaseClient->queryRow(
-            `SELECT id FROM employee WHERE employee_id = ${employeeId}`);
+        EmployeeDeleteIds ids = check databaseClient->queryRow(
+            `SELECT id, personal_info_id FROM employee WHERE employee_id = ${employeeId}`);
+        int employeePkId = ids.id;
+        int personalInfoId = ids.personalInfoId;
         _ = check databaseClient->execute(deleteEmployeeAdditionalManagersQuery(employeeId));
         _ = check databaseClient->execute(deleteEmployeeEmergencyContactsQuery(employeeId));
         _ = check databaseClient->execute(deleteEmployeeAdditionalManagersAuditQuery(employeePkId));

@@ -14,6 +14,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
+# OAuth2 client auth configurations.
+public type ClientAuthConfig record {|
+    # Token URL
+    string tokenUrl;
+    # Client Id
+    string clientId;
+    # Client Secret
+    string clientSecret;
+|};
+
 # Input for creating a user via the SCIM operations service.
 public type UserCreateInput record {|
     # Username

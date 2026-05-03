@@ -17,10 +17,15 @@
 import ballerina/http;
 
 configurable string scimOperationsServiceUrl = "";
+configurable ClientAuthConfig scimClientAuthConfig = ?;
 public configurable string asgardeoUserStoreDomain = "DEFAULT";
 
 @display {
     label: "SCIM Operations Service Client",
     id: "scim_operations/client"
 }
-final http:Client scimOperationsClient = check new (scimOperationsServiceUrl);
+final http:Client scimOperationsClient = check new (scimOperationsServiceUrl, {
+    auth: {
+        ...scimClientAuthConfig
+    }
+});

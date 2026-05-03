@@ -568,7 +568,7 @@ CREATE TABLE `employment_type_idp_group` (
   CONSTRAINT `fk_etag_employment_type`
     FOREIGN KEY (`employment_type_id`) REFERENCES `employment_type` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Procedure: prc_personal_info_audit
 DELIMITER //
