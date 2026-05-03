@@ -153,20 +153,26 @@ const CustomRichTextField: React.FC<CustomRichTextFieldProps> = ({
             overflowWrap: "break-word",
             wordBreak: "normal",
             textAlign: "justify !important",
+            color: theme.palette.text.primary,
+            backgroundColor: theme.palette.background.paper,
+            "&.ql-blank::before": {
+              color: theme.palette.text.disabled,
+              fontStyle: "italic",
+            },
             "&::-webkit-scrollbar": {
               width: "8px",
               height: "8px",
               display: "block",
             },
             "&::-webkit-scrollbar-track": {
-              background: "#f1f1f1",
+              background: theme.palette.background.default,
               borderRadius: "4px",
             },
             "&::-webkit-scrollbar-thumb": {
-              background: "#888",
+              background: theme.palette.text.disabled,
               borderRadius: "4px",
               "&:hover": {
-                background: "#555",
+                background: theme.palette.text.secondary,
               },
             },
             "& ul, & ol": {
@@ -190,6 +196,25 @@ const CustomRichTextField: React.FC<CustomRichTextFieldProps> = ({
             borderBottom: `1px solid ${theme.palette.divider}`,
             padding: "8px 15px",
             flexShrink: 0,
+            backgroundColor: theme.palette.background.paper,
+            "& .ql-stroke": {
+              stroke: theme.palette.text.secondary,
+            },
+            "& .ql-fill": {
+              fill: theme.palette.text.secondary,
+            },
+            "& .ql-picker-label": {
+              color: theme.palette.text.secondary,
+            },
+            "& button:hover .ql-stroke, & .ql-active .ql-stroke": {
+              stroke: theme.palette.primary.main,
+            },
+            "& button:hover .ql-fill, & .ql-active .ql-fill": {
+              fill: theme.palette.primary.main,
+            },
+            "& button:hover .ql-picker-label, & .ql-active .ql-picker-label": {
+              color: theme.palette.primary.main,
+            },
           },
           "& .ql-container.ql-snow, & .ql-toolbar.ql-snow": {
             border: "none",

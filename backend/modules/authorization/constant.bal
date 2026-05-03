@@ -17,6 +17,7 @@
 // Authorization Constants.
 public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
 public const HEADER_USER_INFO = "user-info";
+public const X_USER_TIMEZONE_OFFSET = "x-user-timezone-offset";
 
 # Privileges.
 public const EMPLOYEE_ROLE_PRIVILEGE = 987;

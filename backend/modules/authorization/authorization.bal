@@ -13,6 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import par_app.types;
+
 import ballerina/http;
 import ballerina/jwt;
 import ballerina/log;
@@ -54,6 +56,10 @@ public isolated service class JwtInterceptor {
         foreach anydata role in authorizedRoles.toArray() {
             if userInfo.groups.some(r => r === role) {
                 ctx.set(HEADER_USER_INFO, userInfo);
+                string|error timezoneOffset = req.getHeader(X_USER_TIMEZONE_OFFSET);
+                if timezoneOffset is string {
+                    ctx.set(types:USER_TIMEZONE_OFFSET, timezoneOffset);
+                }
                 return ctx.next();
             }
         }
