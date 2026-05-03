@@ -53,7 +53,6 @@ import {
 } from "@slices/employeeHistorySlice/employeeHistory";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
 import { useAppSelector } from "@slices/store";
-import { tokens } from "@src/theme";
 import { ParCycleStatus, RequestState } from "@utils/types";
 
 interface SummarizedParHistoryViewProps {
@@ -70,7 +69,6 @@ const SummarizedParHistoryView: React.FC<SummarizedParHistoryViewProps> = ({
   handleClose,
 }) => {
   const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
   const employeeMap = useAppSelector(selectEmployeeMap);
   const historyData = useAppSelector(selectSummarizedParHistory) as ParRatingSummary[];
   const historyDataLoadingState = useAppSelector(selectEmployeeHistoryRatingStatus);
@@ -100,10 +98,10 @@ const SummarizedParHistoryView: React.FC<SummarizedParHistoryViewProps> = ({
         sx={{
           p: 4,
           textAlign: "center",
-          bgcolor: alpha(theme.palette.grey[100], 0.5),
+          bgcolor: "background.default",
         }}
       >
-        <TimelineIcon sx={{ fontSize: 64, color: "grey.400", mb: 2 }} />
+        <TimelineIcon sx={{ fontSize: 64, color: "text.disabled", mb: 1 }} />
         <Typography variant="h6" color="text.secondary">
           No PAR History Available
         </Typography>
@@ -122,28 +120,31 @@ const SummarizedParHistoryView: React.FC<SummarizedParHistoryViewProps> = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 2,
-          backgroundColor: colors.primary[300],
-          p: 1,
+          mb: 1,
+          bgcolor: "background.paper",
+          borderRadius: 3,
+          border: 1,
+          borderColor: "divider",
+          px: 2,
+          py: 1,
         }}
       >
-        <Typography variant="h4" color={"white"}>
+        <Typography variant="h5" fontWeight={600} color="text.primary">
           Employee PAR Summary
         </Typography>
-
-        <IconButton onClick={handleClose}>
-          <CloseIcon sx={{ color: "white" }} />
+        <IconButton onClick={handleClose} size="small">
+          <CloseIcon sx={{ color: "text.secondary" }} />
         </IconButton>
       </Box>
-      <Card sx={{ mb: 2, bgcolor: alpha(theme.palette.primary.main, 0.02) }} variant="outlined">
+      <Card sx={{ mb: 1 }} variant="outlined">
         <CardContent>
           <Stack direction="row" spacing={2} alignItems="center">
             <Avatar
               src={empThumbnail}
               alt={`${empName}'s avatar`}
               sx={{
-                width: 64,
-                height: 64,
+                width: 45,
+                height: 45,
                 border: `2px solid ${theme.palette.primary.main}`,
               }}
             >
@@ -209,9 +210,9 @@ const SummarizedParHistoryView: React.FC<SummarizedParHistoryViewProps> = ({
                           <Card
                             elevation={0}
                             sx={{
-                              bgcolor: alpha(theme.palette.primary.main, 0.02),
+                              bgcolor: "background.default",
                               border: "1px solid",
-                              borderColor: "grey.200",
+                              borderColor: "divider",
                               borderRadius: 2,
                               p: 2.5,
                             }}
@@ -246,7 +247,7 @@ const SummarizedParHistoryView: React.FC<SummarizedParHistoryViewProps> = ({
                                 </Typography>
                               </Box>
                             </Box>
-                            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1.5 }}>
+                            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
                               {cycle.parLeadStatus === ParLeadStatus.SHARED && (
                                 <Chip
                                   icon={<CheckCircleIcon sx={{ fontSize: 16 }} />}

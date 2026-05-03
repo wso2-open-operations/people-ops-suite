@@ -51,7 +51,7 @@ export const CustomModal = ({
           left: "50%",
           transform: "translate(-50%, -50%)",
           overflow: "auto",
-          borderRadius: "0",
+          borderRadius: 3,
         }}
       >
         {children}
