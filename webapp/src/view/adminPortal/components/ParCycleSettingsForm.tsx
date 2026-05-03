@@ -46,6 +46,97 @@ interface FormProps {
   closeParCycleSettings: () => void;
 }
 
+interface FormRowProps {
+  label: string;
+  children: React.ReactNode;
+  halfWidth?: boolean;
+}
+
+const FormRow = ({ label, children, halfWidth = false }: FormRowProps) => (
+  <Grid size={{ xs: 12, lg: halfWidth ? 6 : 12 }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", lg: "row" },
+        alignItems: "flex-start",
+      }}
+    >
+      <Typography
+        variant="body2"
+        sx={{
+          width: { xs: "100%", lg: "240px" },
+          flexShrink: 0,
+          mb: { xs: 1, md: 0 },
+          mt: { md: 1 },
+          fontWeight: 500,
+          color: (theme) => theme.palette.customText?.primary?.p2?.active || "text.secondary",
+        }}
+      >
+        {label}
+      </Typography>
+      <Box sx={{ flexGrow: 1, width: "100%" }}>{children}</Box>
+    </Box>
+  </Grid>
+);
+
+const validationSchema = yup.object().shape({
+  parCycleStartDate: yup.date().typeError("Invalid date").required("Required"),
+
+  parCycleEndDate: yup
+    .date()
+    .typeError("Invalid Date")
+    .min(yup.ref("parCycleStartDate"), "Must be later than the cycle start date")
+    .required("Required"),
+
+  parEvaluationEndDate: yup
+    .date()
+    .typeError("Invalid date")
+    .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
+    .required("Required"),
+
+  parEmployeeDeadline: yup
+    .date()
+    .typeError("Invalid date")
+    .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
+    .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR cycle closing date")
+    .required("Required"),
+
+  parThreeSixtyRatingDeadline: yup
+    .date()
+    .typeError("Invalid date")
+    .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
+    .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR cycle closing date")
+    .required("Required"),
+
+  parLeadDeadline: yup
+    .date()
+    .typeError("Invalid date")
+    .min(yup.ref("parEmployeeDeadline"), "Must be later than employee PAR deadline")
+    .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR cycle closing date")
+    .test(
+      "isAfterEmployeeDeadline",
+      "Must be later than employee PAR deadline",
+      (value, context) => {
+        const employeeDeadline = context.parent.parEmployeeDeadline;
+        if (value !== undefined && value !== null) {
+          return value > employeeDeadline;
+        }
+        return false;
+      },
+    )
+    .required("Required"),
+
+  parSpecialRatingDeadline: yup
+    .date()
+    .typeError("Invalid date")
+    .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
+    .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR cycle closing date")
+    .required("Required"),
+
+  employeeParQuestion: yup.string().trim().required("Required"),
+  threeSixtyReviewQuestion: yup.string().trim().required("Required"),
+});
+
 export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
   const dispatch = useAppDispatch();
   const currentCycle = useAppSelector(selectCurrentCycle);
@@ -57,64 +148,6 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
     setSubmitting(false);
   };
   const [hasFormValuesChanged, setHasFormValuesChanged] = useState(false);
-
-  const validationSchema = yup.object().shape({
-    parCycleStartDate: yup.date().typeError("Invalid date").required("Required"),
-
-    parCycleEndDate: yup
-      .date()
-      .typeError("Invalid Date")
-      .min(yup.ref("parCycleStartDate"), "Must be later than the cycle start date")
-      .required("Required"),
-
-    parEvaluationEndDate: yup
-      .date()
-      .typeError("Invalid date")
-      .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
-      .required("Required"),
-
-    parEmployeeDeadline: yup
-      .date()
-      .typeError("Invalid date")
-      .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
-      .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR cycle closing date")
-      .required("Required"),
-
-    parThreeSixtyRatingDeadline: yup
-      .date()
-      .typeError("Invalid date")
-      .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
-      .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR cycle closing date")
-      .required("Required"),
-
-    parLeadDeadline: yup
-      .date()
-      .typeError("Invalid date")
-      .min(yup.ref("parEmployeeDeadline"), "Must be later than employee PAR deadline")
-      .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR cycle closing date")
-      .test(
-        "isAfterEmployeeDeadline",
-        "Must be later than employee PAR deadline",
-        (value, context) => {
-          const employeeDeadline = context.parent.parEmployeeDeadline;
-          if (value !== undefined && value !== null) {
-            return value > employeeDeadline;
-          }
-          return false;
-        },
-      )
-      .required("Required"),
-
-    parSpecialRatingDeadline: yup
-      .date()
-      .typeError("Invalid date")
-      .min(yup.ref("parEvaluationStartDate"), "Must be later than PAR creation date")
-      .max(yup.ref("parEvaluationEndDate"), "Must be earlier than the PAR cycle closing date")
-      .required("Required"),
-
-    employeeParQuestion: yup.string().trim().required("Required"),
-    threeSixtyReviewQuestion: yup.string().trim().required("Required"),
-  });
 
   const {
     values,
@@ -217,71 +250,94 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
   }, [values, currentCycle]);
 
   return (
-    <Box>
-      <Breadcrumbs aria-label="breadcrumb" sx={{ paddingBottom: 2 }}>
-        <Link underline="hover" color="inherit" onClick={closeParCycleSettings}>
-          Home
-        </Link>
-        <Typography color="text.primary">PAR Cycle Settings</Typography>
-      </Breadcrumbs>
-      <Grid size={{ xs: 12, sm: 12 }} paddingBottom={1}>
-        <Typography variant="h4" gutterBottom>
+    <Box sx={{ overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box sx={{ mb: 1 }}>
+        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 0.8 }}>
+          <Link underline="hover" color="textPrimary" onClick={closeParCycleSettings} sx={{ cursor: "pointer" }}>
+            Home
+          </Link>
+          <Typography color="text.primary">PAR Cycle Settings</Typography>
+        </Breadcrumbs>
+        <Typography variant="h5" pb={1}>
           PAR Cycle Settings
         </Typography>
         <Divider />
-      </Grid>
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={1} sx={{ height: "100%" }}>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <Typography paddingTop={1}>PAR cycle starts from:</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>
-              <FormDatePicker
-                name="parCycleStartDate"
-                value={values.parCycleStartDate}
-                onChange={setFieldValue}
-                onBlur={handleBlur}
-                error={touched.parCycleStartDate && errors.parCycleStartDate}
-                helperText={touched.parCycleStartDate && (errors.parCycleStartDate as string)}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 1 }}>
-              <Typography paddingTop={1} textAlign={"end"}>
-                to:
-              </Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>
-              <FormDatePicker
-                name="parCycleEndDate"
-                value={values.parCycleEndDate}
-                onChange={setFieldValue}
-                onBlur={handleBlur}
-                disabled={!Boolean(values.parCycleStartDate)}
-                minDate={values.parCycleStartDate || undefined}
-                error={touched.parCycleEndDate && errors.parCycleEndDate}
-                helperText={touched.parCycleEndDate && (errors.parCycleEndDate as string)}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }} />
+      </Box>
 
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <Typography paddingTop={1}>PAR creation date:</Typography>
+      <Box component="form" onSubmit={handleSubmit} sx={{ flexGrow: 1, overflow: "auto", pr: 1 }}>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <Grid container spacing={1}>
+            {/* PAR cycle date range — two pickers on one row */}
+            <Grid size={{ xs: 12 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", lg: "row" },
+                  alignItems: "flex-start",
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    width: { xs: "100%", lg: "240px" },
+                    flexShrink: 0,
+                    mb: { xs: 1, md: 0 },
+                    mt: { md: 1 },
+                    fontWeight: 500,
+                    color: (theme) =>
+                      theme.palette.customText?.primary?.p2?.active || "text.secondary",
+                  }}
+                >
+                  PAR cycle starts from:
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, flexGrow: 1 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <FormDatePicker
+                      name="parCycleStartDate"
+                      value={values.parCycleStartDate}
+                      onChange={setFieldValue}
+                      onBlur={handleBlur}
+                      error={touched.parCycleStartDate && errors.parCycleStartDate}
+                      helperText={touched.parCycleStartDate && (errors.parCycleStartDate as string)}
+                    />
+                  </Box>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mt: 1,
+                      flexShrink: 0,
+                      color: (theme) =>
+                        theme.palette.customText?.primary?.p2?.active || "text.secondary",
+                    }}
+                  >
+                    to:
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <FormDatePicker
+                      name="parCycleEndDate"
+                      value={values.parCycleEndDate}
+                      onChange={setFieldValue}
+                      onBlur={handleBlur}
+                      disabled={!Boolean(values.parCycleStartDate)}
+                      minDate={values.parCycleStartDate || undefined}
+                      error={touched.parCycleEndDate && errors.parCycleEndDate}
+                      helperText={touched.parCycleEndDate && (errors.parCycleEndDate as string)}
+                    />
+                  </Box>
+                </Box>
+              </Box>
             </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>
+
+            <FormRow label="PAR creation date:" halfWidth>
               <FormDatePicker
                 name="parEvaluationStartDate"
                 value={values.parEvaluationStartDate}
                 onChange={() => {}}
                 disabled
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 7 }} />
+            </FormRow>
 
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <Typography paddingTop={1}>PAR evaluation closing date:</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>
+            <FormRow label="PAR evaluation closing date:" halfWidth>
               <FormDatePicker
                 name="parEvaluationEndDate"
                 value={values.parEvaluationEndDate}
@@ -296,13 +352,9 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
                 error={touched.parEvaluationEndDate && errors.parEvaluationEndDate}
                 helperText={touched.parEvaluationEndDate && (errors.parEvaluationEndDate as string)}
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 7 }} />
+            </FormRow>
 
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <Typography paddingTop={1}>Deadline for employee PAR:</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>
+            <FormRow label="Deadline for employee PAR:" halfWidth>
               <FormDatePicker
                 name="parEmployeeDeadline"
                 value={values.parEmployeeDeadline}
@@ -318,13 +370,9 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
                 error={touched.parEmployeeDeadline && errors.parEmployeeDeadline}
                 helperText={touched.parEmployeeDeadline && (errors.parEmployeeDeadline as string)}
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 7 }} />
+            </FormRow>
 
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <Typography paddingTop={1}>Deadline for 360° feedback:</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>
+            <FormRow label="Deadline for 360° feedback:" halfWidth>
               <FormDatePicker
                 name="parThreeSixtyRatingDeadline"
                 value={values.parThreeSixtyRatingDeadline}
@@ -343,13 +391,9 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
                   (errors.parThreeSixtyRatingDeadline as string)
                 }
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 7 }} />
+            </FormRow>
 
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <Typography paddingTop={1}>Deadline for lead's feedback:</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>
+            <FormRow label="Deadline for lead's feedback:" halfWidth>
               <FormDatePicker
                 name="parLeadDeadline"
                 value={values.parLeadDeadline}
@@ -365,13 +409,9 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
                 error={touched.parLeadDeadline && errors.parLeadDeadline}
                 helperText={touched.parLeadDeadline && (errors.parLeadDeadline as string)}
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 7 }} />
+            </FormRow>
 
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <Typography paddingTop={1}>Top 5%/20% rating submission:</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>
+            <FormRow label="Top 5%/20% rating submission:" halfWidth>
               <FormDatePicker
                 name="parSpecialRatingDeadline"
                 value={values.parSpecialRatingDeadline}
@@ -389,14 +429,9 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
                   touched.parSpecialRatingDeadline && (errors.parSpecialRatingDeadline as string)
                 }
               />
-            </Grid>
+            </FormRow>
 
-            <Grid size={{ xs: 12, sm: 7 }} />
-
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <Typography paddingTop={1}>PAR F2F deadline:</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>
+            <FormRow label="PAR F2F deadline:" halfWidth>
               <FormDatePicker
                 name="parF2FDeadline"
                 value={values.parF2FDeadline}
@@ -408,67 +443,56 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
                 error={touched.parF2FDeadline && errors.parF2FDeadline}
                 helperText={touched.parF2FDeadline && (errors.parF2FDeadline as string)}
               />
-            </Grid>
-          </LocalizationProvider>
+            </FormRow>
 
-          {/* PAR Configuration */}
-          <Box width={"100%"} p={1}>
-            <Grid container spacing={1}>
-              <Grid size={{ xs: 12, sm: 3 }}>
-                <Typography paddingTop={1}>Employee PAR question:</Typography>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  aria-label="employee par question"
-                  size="small"
-                  multiline
-                  fullWidth
-                  minRows={4}
-                  name="employeeParQuestion"
-                  value={values.employeeParQuestion}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.employeeParQuestion && Boolean(errors.employeeParQuestion)}
-                  helperText={touched.employeeParQuestion && errors.employeeParQuestion}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 3 }} />
-              <Grid size={{ xs: 12, sm: 3 }}>
-                <Typography paddingTop={1}>360° feedback question:</Typography>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  aria-label="three sixty review question"
-                  size="small"
-                  multiline
-                  fullWidth
-                  minRows={4}
-                  name="threeSixtyReviewQuestion"
-                  value={values.threeSixtyReviewQuestion}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={
-                    touched.threeSixtyReviewQuestion && Boolean(errors.threeSixtyReviewQuestion)
-                  }
-                  helperText={touched.threeSixtyReviewQuestion && errors.threeSixtyReviewQuestion}
-                />
-              </Grid>
+            <FormRow label="Employee PAR question:">
+              <TextField
+                aria-label="employee par question"
+                size="small"
+                multiline
+                fullWidth
+                minRows={4}
+                name="employeeParQuestion"
+                value={values.employeeParQuestion}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={touched.employeeParQuestion && Boolean(errors.employeeParQuestion)}
+                helperText={touched.employeeParQuestion && errors.employeeParQuestion}
+              />
+            </FormRow>
+
+            <FormRow label="360° feedback question:">
+              <TextField
+                aria-label="three sixty review question"
+                size="small"
+                multiline
+                fullWidth
+                minRows={4}
+                name="threeSixtyReviewQuestion"
+                value={values.threeSixtyReviewQuestion}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={touched.threeSixtyReviewQuestion && Boolean(errors.threeSixtyReviewQuestion)}
+                helperText={touched.threeSixtyReviewQuestion && errors.threeSixtyReviewQuestion}
+              />
+            </FormRow>
+
+            <Grid size={{ xs: 12 }} display="flex" justifyContent="flex-end" gap={2}>
+              <Button variant="outlined" onClick={closeParCycleSettings}>
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                type="submit"
+                disabled={isSubmitting || !hasFormValuesChanged}
+              >
+                Save
+              </Button>
             </Grid>
-          </Box>
-          <Grid size={{ sm: 12 }} display="flex" gap={1}>
-            <Button variant="outlined" onClick={closeParCycleSettings}>
-              Cancel
-            </Button>
-            <Button
-              variant="contained"
-              type="submit"
-              disabled={isSubmitting || !hasFormValuesChanged}
-            >
-              Save
-            </Button>
           </Grid>
-        </Grid>
-      </form>
+        </LocalizationProvider>
+      </Box>
+
       <ConfirmationDialog
         open={isConfirmationDialogOpen}
         onClose={closeConfirmationDialog}

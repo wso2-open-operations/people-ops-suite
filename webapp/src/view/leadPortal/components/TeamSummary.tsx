@@ -191,7 +191,7 @@ export const TeamSummary = ({
                 navigator.clipboard.writeText(params.row?.parEmployeeEmail);
                 dispatch(ShowSnackBarMessage("Email copied", "success"));
               }}
-              sx={{ flexShrink: 0, color: theme.palette.text.disabled }}
+              sx={{ flexShrink: 0, color: theme.palette.mode === "dark" ? theme.palette.info.main : theme.palette.text.secondary }}
             >
               <ContentCopyIcon sx={{ fontSize: "0.85rem" }} />
             </IconButton>
@@ -464,7 +464,7 @@ export const TeamSummary = ({
                       {` History / ${cycle.parCycleName} / `}
                     </Typography>
                   )}
-                  <Link underline="hover" color="inherit" variant="h5" onClick={closeTeamSummary}>
+                  <Link underline="hover" color="textPrimary" variant="h5" onClick={closeTeamSummary}>
                     {"All Teams"}
                   </Link>
                   <Typography display={"inline"} variant="h5">
