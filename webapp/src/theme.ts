@@ -624,19 +624,36 @@ export const themeSettings = (mode: PaletteMode) => {
       },
       MuiDataGrid: {
         styleOverrides: {
-          root: { border: "none" },
+          root: {
+            border: "none",
+            backgroundColor: "transparent",
+            "& .MuiDataGrid-columnHeaders": { backgroundColor: "transparent" },
+            "& .MuiDataGrid-columnHeadersInner": { backgroundColor: "transparent" },
+            "& .MuiDataGrid-filler": { backgroundColor: "transparent" },
+            "& .MuiDataGrid-scrollbarFiller": { backgroundColor: "transparent" },
+            "& .MuiDataGrid-topContainer": { backgroundColor: "transparent" },
+            "& .MuiDataGrid-main": { backgroundColor: "transparent" },
+          },
+          columnHeaders: { backgroundColor: "transparent" },
+          columnHeader: { padding: 0, backgroundColor: "transparent" },
           columnHeaderTitle: {
             fontSize: typography.caption.fontSize,
             fontWeight: 600,
           },
-          columnHeader: { padding: 0 },
           cell: {
             padding: 0,
             display: "flex",
             alignItems: "center",
             fontSize: typography.caption.fontSize,
+            backgroundColor: "transparent",
           },
-          row: { "&:hover": { backgroundColor: "inherit" } },
+          row: {
+            backgroundColor: "transparent",
+            "&:hover": { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)" },
+          },
+          virtualScroller: { backgroundColor: "transparent" },
+          footerContainer: { backgroundColor: "transparent" },
+          overlayWrapper: { backgroundColor: "transparent" },
         },
       },
       MuiButton: {

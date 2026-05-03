@@ -4,31 +4,26 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-import { CircularProgress, Grid, LinearProgress, Typography } from "@mui/material";
+import { Box, CircularProgress, LinearProgress, Typography } from "@mui/material";
 
 export const LoadingEffect = (props: { message: string | null; isCircularLoading?: boolean }) => {
   return (
-    <>
-      <Grid
-        size={{ xs: 12 }}
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          paddingTop: "50px",
-        }}
-      >
-        {props.isCircularLoading ? <CircularProgress /> : <LinearProgress sx={{ width: "70px" }} />}
-      </Grid>
-      <Grid
-        size={{ xs: 12 }}
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          paddingTop: "15px",
-        }}
-      >
-        <Typography variant="h5">{props.message}</Typography>
-      </Grid>
-    </>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100%",
+        width: "100%",
+        gap: 2,
+        background: "transparent",
+      }}
+    >
+      {props.isCircularLoading ? <CircularProgress /> : <LinearProgress sx={{ width: "70px" }} />}
+      <Typography variant="body1" color="text.secondary">
+        {props.message}
+      </Typography>
+    </Box>
   );
 };

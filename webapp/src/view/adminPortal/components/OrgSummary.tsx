@@ -756,6 +756,8 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                       mt: "10px",
                       ml: 0.2,
                       mr: 0.2,
+                      background: "transparent",
+                      backdropFilter: "none",
                     }}
                   >
                     <Box
@@ -798,6 +800,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                               height: "calc(100vh - 24rem)",
                               overflow: "auto",
                               mt: 2,
+                              background: "transparent",
+                              backdropFilter: "none",
+                              border: "none",
                             }}
                           >
                             <LoadingEffect message={uiMessages.loading.pageLoading} />
@@ -812,6 +817,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                               height: "calc(100vh - 23rem)",
                               overflow: "auto",
                               mt: 2,
+                              background: "transparent",
+                              backdropFilter: "none",
+                              border: "none",
                             }}
                           >
                             <NoDataView text={"Error occurred while fetching teams"} />
@@ -865,6 +873,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                               height: "30vh",
                               overflow: "auto",
                               mt: 2,
+                              background: "transparent",
+                              backdropFilter: "none",
+                              border: "none",
                             }}
                           >
                             <LoadingEffect message={uiMessages.loading.pageLoading} />
@@ -879,6 +890,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                               height: "calc(100vh - 23rem)",
                               overflow: "auto",
                               mt: 2,
+                              background: "transparent",
+                              backdropFilter: "none",
+                              border: "none",
                             }}
                           >
                             <NoDataView text={"Error occurred while fetching employees"} />
@@ -951,6 +965,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                               height: "30vh",
                               overflow: "auto",
                               mt: 2,
+                              background: "transparent",
+                              backdropFilter: "none",
+                              border: "none",
                             }}
                           >
                             <LoadingEffect message={uiMessages.loading.pageLoading} />
@@ -965,6 +982,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                               height: "calc(100vh - 23rem)",
                               overflow: "auto",
                               mt: 2,
+                              background: "transparent",
+                              backdropFilter: "none",
+                              border: "none",
                             }}
                           >
                             <NoDataView text={"Error occurred while fetching reviews"} />
@@ -1012,6 +1032,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                   height: "calc(100vh - 23rem)",
                                   overflow: "auto",
                                   mt: 2,
+                                  background: "transparent",
                                 }}
                               >
                                 <NoDataView text={"No reviews found"} />

@@ -51,7 +51,7 @@ export const CompletionStatusSection = ({
   const theme = useTheme();
 
   return (
-    <Card variant="outlined" sx={{ padding: 1, ml: 0.2, mr: 0.2, ...sx }}>
+    <Card variant="outlined" sx={{ padding: 1, ml: 0.2, mr: 0.2, background: "transparent", backdropFilter: "none", ...sx }}>
       <Grid container>
         <Grid size={{ xs: 12 }} display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
           <Typography sx={{ color: theme.palette.brandColors.lightOrange }}>Completion Status</Typography>

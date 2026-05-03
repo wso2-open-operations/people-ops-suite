@@ -30,7 +30,7 @@ const NoDataView: React.FC<NoDataViewProps> = ({ text }) => {
         justifyContent: "center",
         alignItems: "center",
         textAlign: "center",
-        bgcolor: "background.paper",
+        background: "transparent",
         padding: 5,
         borderRadius: 2,
         height: "100%",
