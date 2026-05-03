@@ -27,18 +27,17 @@ import { CommonMessage } from "@config/messages";
 interface SessionWarningDialogProps {
   open: boolean;
   handleContinue: () => void;
-  handleDismiss: () => void;
   appSignOut: () => void;
 }
 
 function SessionWarningDialog(props: SessionWarningDialogProps) {
-  const { open, handleContinue, handleDismiss, appSignOut } = props;
+  const { open, handleContinue, appSignOut } = props;
   return (
     <Dialog
       open={open}
       onClose={(_, reason) => {
         if (reason === "backdropClick" || reason === "escapeKeyDown") {
-          handleDismiss();
+          handleContinue();
         }
       }}
       aria-labelledby="alert-dialog-title"

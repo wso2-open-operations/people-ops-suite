@@ -21,6 +21,7 @@ import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import { SnackMessage } from "@config/constant";
 import { getAPIService } from "@utils/apiService";
+import { extractErrorMessage } from "@utils/errorUtils";
 
 import { enqueueSnackbarMessage } from "../commonSlice/common";
 
@@ -73,11 +74,7 @@ export const fetchCollections = createAsyncThunk(
         return rejectWithValue("Request canceled");
       }
 
-      const msg =
-        (error as { response?: { data?: { message?: string }; status?: number }; message?: string })
-          .response?.data?.message ??
-        (error as { message?: string }).message ??
-        String(error);
+      const msg = extractErrorMessage(error);
 
       dispatch(
         enqueueSnackbarMessage({
@@ -113,11 +110,7 @@ export const addCollections = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      const msg =
-        (error as { response?: { data?: { message?: string }; status?: number }; message?: string })
-          .response?.data?.message ??
-        (error as { message?: string }).message ??
-        "Unknown error";
+      const msg = extractErrorMessage(error);
 
       dispatch(
         enqueueSnackbarMessage({

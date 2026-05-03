@@ -172,8 +172,11 @@ public isolated function getWeeklyTrendData(string startDate, string endDate) re
 #
 # + return - Weekly trend items or Error
 public isolated function getWeeklyTrendDataDefault() returns database:WeeklyTrendItem[]|error {
-    string date = string:substring(time:utcToString(time:utcNow()), 0, 10);
-    return database:getWeeklyTrend(date);
+    time:Utc now = time:utcNow();
+    time:Utc weekAgo = time:utcAddSeconds(now, -7 * 24 * 60 * 60);
+    string endDate = string:substring(time:utcToString(now), 0, 10);
+    string startDate = string:substring(time:utcToString(weekAgo), 0, 10);
+    return database:getWeeklyTrendDateRange(startDate, endDate);
 }
 
 # Get monthly food waste trend for the current calendar month.

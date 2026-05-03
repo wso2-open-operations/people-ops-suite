@@ -184,6 +184,8 @@ function testCreateFoodWasteRecord() returns error? {
             test:assertFail(string `Unexpected 500 response: ${errorPayload.toJsonString()}`);
         }
         if response.statusCode == 409 {
+            int|error existingId = getFoodWasteRecordIdForDate("2024-01-01", headers);
+            test:assertTrue(existingId is int, "Expected existing record on conflict");
             return;
         }
         test:assertEquals(response.statusCode, 201, "Expected 201 Created");
@@ -193,7 +195,7 @@ function testCreateFoodWasteRecord() returns error? {
 }
 
 // 4. Test Get Daily Food Waste (Happy Path - Employee or Admin)
-@test:Config {}
+@test:Config { dependsOn: [testCreateFoodWasteRecord] }
 function testGetDailyFoodWaste() returns error? {
     map<string> headers = check getHeaders(["employee"]);
 
@@ -484,7 +486,7 @@ function testDeleteAdvertisement() returns error? {
 }
 
 // 17. Test Weekly Analytics
-@test:Config {}
+@test:Config { dependsOn: [testCreateFoodWasteRecord] }
 function testGetWeeklyAnalytics() returns error? {
     map<string> headers = check getHeaders(["employee"]);
 
@@ -505,7 +507,7 @@ function testGetWeeklyAnalytics() returns error? {
 }
 
 // 18. Test Monthly Analytics
-@test:Config {}
+@test:Config { dependsOn: [testCreateFoodWasteRecord] }
 function testGetMonthlyAnalytics() returns error? {
     map<string> headers = check getHeaders(["employee"]);
 
@@ -526,7 +528,7 @@ function testGetMonthlyAnalytics() returns error? {
 }
 
 // 19. Test Yearly Analytics
-@test:Config {}
+@test:Config { dependsOn: [testCreateFoodWasteRecord] }
 function testGetYearlyAnalytics() returns error? {
     map<string> headers = check getHeaders(["employee"]);
 

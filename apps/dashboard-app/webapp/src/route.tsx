@@ -41,14 +41,14 @@ export const routes: RouteObjectWithRole[] = [
     text: "Data Entry",
     icon: <PenTool />,
     element: <View.dataEntryView />,
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.ADMIN],
   },
   {
     path: ROUTE_PATHS.adManagement,
     text: "Ad Management",
     icon: <Megaphone />,
     element: <View.adManagementView />,
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.ADMIN],
   },
 ];
 

@@ -72,10 +72,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     activate();
   };
 
-  const handleSessionWarningDismiss = () => {
-    setSessionWarningOpen(false);
-  };
-
   const {
     signIn,
     signOut,
@@ -99,12 +95,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   }, []);
 
   const refreshToken = useCallback(async (): Promise<{ idToken: string }> => {
-    if (isAuthenticatedRef.current) {
-      await refreshAccessToken();
-      const idToken = await getIDToken();
-      return { idToken };
-    }
-
     try {
       await refreshAccessToken();
       const idToken = await getIDToken();
@@ -228,7 +218,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       <SessionWarningDialog
         open={sessionWarningOpen}
         handleContinue={handleContinue}
-        handleDismiss={handleSessionWarningDismiss}
         appSignOut={appSignOut}
       />
 

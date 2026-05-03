@@ -27,7 +27,6 @@
     "noUncheckedSideEffectImports": true,
 
     /* Path mapping */
-    "baseUrl": ".",
     "paths": {
       "@root/*": ["./*"],
       "@src/*": ["./src/*"],
@@ -43,7 +42,7 @@
       "@hooks/*": ["./src/hooks/*"],
       "@/types/*": ["./src/types/*"]
     },
-    "types": ["vite/client"]
+    "types": ["vite/client", "vitest/globals"]
   },
   "include": ["src", "src/**/*", "src/vite-env.d.ts"]
 }
