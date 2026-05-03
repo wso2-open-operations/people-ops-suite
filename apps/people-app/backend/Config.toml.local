@@ -48,3 +48,8 @@ SERVICE_DESK_ROLE = ""
 
 [people.scim_operations]
     scimOperationsServiceUrl = ""
+
+[people.scim_operations.scimClientAuthConfig]
+    tokenUrl = ""
+    clientId = ""
+    clientSecret = ""
