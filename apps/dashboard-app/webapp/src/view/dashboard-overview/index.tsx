@@ -31,6 +31,7 @@ import {
   Legend,
   Pie,
   PieChart,
+  PieLabelRenderProps,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -38,7 +39,7 @@ import {
 } from "recharts";
 
 import type { CSSProperties } from "react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CHART_COLORS, CHART_LAYOUT, DATE_RANGE_DAYS } from "@config/feature";
 import { DashboardOverviewMessage } from "@config/messages";
@@ -235,6 +236,35 @@ interface CompositionPieChartProps {
   chartTooltipStyle: CSSProperties;
 }
 
+const renderPieLabel = (props: PieLabelRenderProps) => {
+  const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
+  if (cx == null || cy == null || midAngle == null || innerRadius == null || outerRadius == null || percent == null) return null;
+  if (percent <= 0) return null;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos((-midAngle * Math.PI) / 180);
+  const y = cy + radius * Math.sin((-midAngle * Math.PI) / 180);
+
+  return (
+    <text x={x} y={y} fill="white" textAnchor={x > cx ? "start" : "middle"} dominantBaseline="central" fontSize={14} fontWeight="bold">
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+};
+
+const PieTooltip = ({ active, payload, tooltipStyle }: { active?: boolean; payload?: { payload: PieDatum; name: string; value: number }[]; tooltipStyle: CSSProperties }) => {
+  if (active && payload && payload.length) {
+    const { name, value, color } = payload[0].payload;
+    return (
+      <Box sx={{ ...tooltipStyle, px: 1.5, py: 1, borderRadius: 1, display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: color, flexShrink: 0 }} />
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>{name}:</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 400 }}>{value.toFixed(1)} kg</Typography>
+      </Box>
+    );
+  }
+  return null;
+};
+
 const CompositionPieChart = memo(
   ({ data, chartLabelColor, chartTooltipStyle }: CompositionPieChartProps) => (
     <Box sx={{ flex: "1 1 0", width: "100%", minWidth: "300px", height: "100%" }}>
@@ -254,7 +284,7 @@ const CompositionPieChart = memo(
           <Box sx={{ flex: 1, minHeight: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart margin={{ bottom: 40 }}>
-                <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: chartLabelColor }} />
+                <Tooltip content={({ active, payload }) => <PieTooltip active={active} payload={payload as { payload: PieDatum; name: string; value: number }[]} tooltipStyle={chartTooltipStyle} />} />
                 <Legend
                   wrapperStyle={{ color: chartLabelColor, paddingTop: "20px" }}
                   verticalAlign="bottom"
@@ -268,6 +298,8 @@ const CompositionPieChart = memo(
                   cy="50%"
                   innerRadius={CHART_LAYOUT.pieInnerRadius}
                   outerRadius={CHART_LAYOUT.pieOuterRadius}
+                  label={renderPieLabel}
+                  labelLine={false}
                 >
                   {data.map((entry) => (
                     <Cell key={entry.name} fill={entry.color} />
@@ -338,6 +370,7 @@ const OverviewCharts = memo(
 export default function Dashboard() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [todayKey, setTodayKey] = useState<string>(() => new Date().toDateString());
 
@@ -409,22 +442,20 @@ export default function Dashboard() {
     };
   }, []);
 
-  const toggleFullscreen = async () => {
-    if (!document.fullscreenElement) {
-      try {
-        await document.documentElement.requestFullscreen();
-      } catch (error) {
-        console.error("Failed to enter fullscreen mode", error);
-      }
-      return;
-    }
+  const toggleFullscreen = useCallback(async () => {
+    const el = containerRef.current;
+    if (!el) return;
 
     try {
-      await document.exitFullscreen();
+      if (!document.fullscreenElement) {
+        await el.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
     } catch (error) {
-      console.error("Failed to exit fullscreen mode", error);
+      console.error("Failed to toggle fullscreen mode", error);
     }
-  };
+  }, []);
 
   const weeklyChartData = useMemo(() => weeklyData || DEFAULT_WEEKLY_DATA, [weeklyData]);
 
@@ -464,10 +495,10 @@ export default function Dashboard() {
 
   return (
     <Box
+      ref={containerRef}
       sx={{
-        p: isFullscreen ? 2 : 3,
-        pt: isFullscreen ? 3 : 3,
-        height: isFullscreen ? "100vh" : "100%",
+        p: 3,
+        height: "100%",
         width: "100%",
         position: "relative",
         bgcolor: "background.default",
@@ -524,7 +555,7 @@ export default function Dashboard() {
           flexWrap="nowrap"
           sx={{
             flex: "0 0 auto",
-            height: isFullscreen ? "10%" : "auto",
+            height: "auto",
           }}
         >
           <KPICard
