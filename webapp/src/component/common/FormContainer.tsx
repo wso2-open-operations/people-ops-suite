@@ -17,6 +17,8 @@ import { Stack, useTheme } from "@mui/material";
 
 import React from "react";
 
+import { gradients } from "@config/constant";
+
 type Props = {
   children: React.ReactNode;
 };
@@ -34,7 +36,7 @@ export const FormContainer: React.FC<Props> = ({ children }) => {
       padding="10px"
       borderRadius="0.5rem"
       sx={{
-        backgroundColor: theme.palette.background.paper,
+        background: theme.palette.mode === "dark" ? gradients.dark : gradients.light,
         overflowX: "hidden",
         boxSizing: "border-box",
       }}

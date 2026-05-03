@@ -22,6 +22,7 @@ import React from "react";
 import Wso2LogoWhite from "@assets/images/wso2-logo-white.png";
 import Wso2Logo from "@assets/images/wso2-logo.png";
 import { APP_NAME } from "@config/config";
+import { gradients } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
 import { useAppSelector } from "@slices/store";
 import { selectUserInfoData } from "@slices/userSlice/user";
@@ -46,7 +47,8 @@ const Header = () => {
     <Box
       sx={{
         zIndex: 2110,
-        backgroundColor: theme.palette.surface.territory.active,
+        background:
+          theme.palette.mode === "dark" ? theme.palette.surface.territory.active : gradients.light,
         boxShadow: theme.shadows[4],
       }}
     >

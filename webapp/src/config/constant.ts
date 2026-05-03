@@ -362,3 +362,8 @@ export const SANITIZE_CONFIG = {
 export const APP_DESC = " Internal App Product Template.";
 
 export const redirectUrl = "iapm-marketplace-redirect-url";
+
+export const gradients = {
+  dark: "radial-gradient(circle at top left, #1E325C 0%, #121C30 50%, #070A11 100%)",
+  light: "linear-gradient(210deg, #FFFFFF 0%, #EBF2F7 60%, #C8D9E6 90%)",
+};

@@ -17,14 +17,13 @@ import { Box, LinearProgress, Typography, useTheme } from "@mui/material";
 
 import Wso2Logo from "@assets/images/wso2-logo.png";
 import Wso2LogoWhite from "@assets/images/wso2-logo-white.png";
+import { gradients } from "@config/constant";
 import type { PreLoaderProps } from "@utils/types";
 
 const PreLoader = (props: PreLoaderProps) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const background = isDark
-    ? "radial-gradient(circle at top left, #1E325C 0%, #121C30 50%, #070A11 100%)"
-    : "radial-gradient(circle at center, #FFFFFF 0%, #EAF0F7 40%, #C8D5E5 100%)";
+  const background = isDark ? gradients.dark : gradients.light;
   return (
     <Box
       sx={{
