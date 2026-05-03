@@ -725,7 +725,7 @@ export const AssignQuota = () => {
               <Box
                 sx={{
                   flexShrink: 0,
-                  bgcolor: "background.default",
+                  bgcolor: "background.paper",
                   borderBottom: 1,
                   borderColor: "divider",
                   px: 2,

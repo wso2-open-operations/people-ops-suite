@@ -69,7 +69,7 @@ export default function Layout() {
           flexDirection: "column",
           height: "100vh",
           width: "100%",
-          backgroundColor: theme.palette.background.default,
+          backgroundColor: theme.palette.surface.secondary.active,
         }}
       >
         {/* Header */}

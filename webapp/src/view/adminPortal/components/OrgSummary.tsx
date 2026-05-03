@@ -639,10 +639,10 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                         </Typography>
                       </Box>
                     )}
-                    <Typography display={"inline"} variant="h5">
+                    <Typography display={"inline"} variant="h5" color="text.primary">
                       {currentCycle.parCycleName}{" "}
                     </Typography>
-                    <Typography display={"inline"}>
+                    <Typography display={"inline"} color="text.secondary">
                       ({dayjs(currentCycle.parCycleStartDate).format(shortDateFormat)} -{" "}
                       {dayjs(currentCycle.parCycleEndDate).format(shortDateFormat)})
                     </Typography>
