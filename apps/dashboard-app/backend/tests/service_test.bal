@@ -195,7 +195,7 @@ function testCreateFoodWasteRecord() returns error? {
 }
 
 // 4. Test Get Daily Food Waste (Happy Path - Employee or Admin)
-@test:Config { dependsOn: [testCreateFoodWasteRecord] }
+@test:Config {dependsOn: [testCreateFoodWasteRecord]}
 function testGetDailyFoodWaste() returns error? {
     map<string> headers = check getHeaders(["employee"]);
 
@@ -486,7 +486,7 @@ function testDeleteAdvertisement() returns error? {
 }
 
 // 17. Test Weekly Analytics
-@test:Config { dependsOn: [testCreateFoodWasteRecord] }
+@test:Config {dependsOn: [testCreateFoodWasteRecord]}
 function testGetWeeklyAnalytics() returns error? {
     map<string> headers = check getHeaders(["employee"]);
 
@@ -507,7 +507,7 @@ function testGetWeeklyAnalytics() returns error? {
 }
 
 // 18. Test Monthly Analytics
-@test:Config { dependsOn: [testCreateFoodWasteRecord] }
+@test:Config {dependsOn: [testCreateFoodWasteRecord]}
 function testGetMonthlyAnalytics() returns error? {
     map<string> headers = check getHeaders(["employee"]);
 
@@ -528,7 +528,7 @@ function testGetMonthlyAnalytics() returns error? {
 }
 
 // 19. Test Yearly Analytics
-@test:Config { dependsOn: [testCreateFoodWasteRecord] }
+@test:Config {dependsOn: [testCreateFoodWasteRecord]}
 function testGetYearlyAnalytics() returns error? {
     map<string> headers = check getHeaders(["employee"]);
 
