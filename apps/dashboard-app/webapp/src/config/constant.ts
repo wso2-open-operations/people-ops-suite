@@ -31,7 +31,7 @@ export const SnackMessage = {
   warning: {},
 };
 
-export const APP_DESC = "Dashboard App";
+export const APP_DESC = "Food Waste Dashboard";
 
 export const redirectUrl = "iapm-marketplace-redirect-url";
 
