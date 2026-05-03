@@ -206,6 +206,7 @@ export const ParInputForm = ({
                 fontSize: { xs: "0.75rem", sm: "1rem" },
                 fontWeight: { xs: 300, sm: 400 },
                 lineHeight: 1.5,
+                color: "text.primary",
               }}
             >
               {currentCycle.parCycleConfigurations?.employeeParQuestion

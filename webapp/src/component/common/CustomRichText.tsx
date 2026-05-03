@@ -154,9 +154,9 @@ const CustomRichTextField: React.FC<CustomRichTextFieldProps> = ({
             wordBreak: "normal",
             textAlign: "justify !important",
             color: theme.palette.text.primary,
-            backgroundColor: theme.palette.background.paper,
+            backgroundColor: "transparent",
             "&.ql-blank::before": {
-              color: theme.palette.text.disabled,
+              color: theme.palette.text.secondary,
               fontStyle: "italic",
             },
             "&::-webkit-scrollbar": {
@@ -196,7 +196,7 @@ const CustomRichTextField: React.FC<CustomRichTextFieldProps> = ({
             borderBottom: `1px solid ${theme.palette.divider}`,
             padding: "8px 15px",
             flexShrink: 0,
-            backgroundColor: theme.palette.background.paper,
+            backgroundColor: "transparent",
             "& .ql-stroke": {
               stroke: theme.palette.text.secondary,
             },
