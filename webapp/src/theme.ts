@@ -128,7 +128,7 @@ export const tokens = (mode: PaletteMode) => {
             textClicked: "#ffffff",
             hover: "#ffffffd9",
             hoverBg: "#ffffff0a",
-            clickedBg: "#ffffff14",
+            clickedBg: "#17223A",
             border: colors.neutral["1700"],
           },
 
@@ -277,8 +277,10 @@ declare module "@mui/material/styles" {
       orange: string;
       lightOrange: string;
       lightBlue: string;
+      focusBlue: string;
       lightWhite: string;
       grayLight: string;
+      midGray: string;
       darkGray: string;
       black: string;
     };
@@ -305,6 +307,7 @@ declare module "@mui/material/styles" {
     customNavigation: {
       text: string;
       textClicked: string;
+      bg?: string;
       hover: string;
       hoverBg: string;
       clicked: string;
@@ -343,8 +346,10 @@ declare module "@mui/material/styles" {
       orange: string;
       lightOrange: string;
       lightBlue: string;
+      focusBlue: string;
       lightWhite: string;
       grayLight: string;
+      midGray: string;
       darkGray: string;
       black: string;
     };
@@ -409,62 +414,131 @@ export const themeSettings = (mode: PaletteMode) => {
 
   return {
     palette: {
-      mode: mode,
+      mode,
       brandColors: {
         blue: "#1B2A49",
         orange: "#F14E23",
         lightOrange: "#FF6700",
         lightBlue: "#B7E4FC",
+        focusBlue: "#5CD1FF",
         lightWhite: "#F2F2F2",
         grayLight: "#D9D9D9",
-        darkGray: "#565656",
+        midGray: "#565656",
+        darkGray: "#262626",
         black: "#0D0D0D",
       },
       primary: {
-        main: colors.primary.main,
-        light: colors.primary["400"],
-        dark: colors.primary["1000"],
+        main: "#FF6700",
+        light: "#FF8F33",
+        dark: "#F14E23",
         contrastText: "#ffffff",
       },
       secondary: {
-        main: colors.secondary.main,
-        light: colors.secondary["400"],
-        dark: colors.secondary["900"],
+        main: "#17223A",
+        light: "#1B2A49",
+        dark: "#0F1827",
         contrastText: "#ffffff",
       },
       error: {
-        main: "#fe4336",
-        light: "#ff6b5e",
-        dark: "#c41c0f",
+        main: "#F14E23",
+        light: "#FF6B4A",
+        dark: "#C93B18",
+        contrastText: "#ffffff",
       },
       warning: {
-        main: "#ff9800",
-        light: "#ffb74d",
-        dark: "#f57c00",
+        main: "#FF6700",
+        light: "#FF8F33",
+        dark: "#F14E23",
+        contrastText: "#ffffff",
       },
       info: {
-        main: colors.secondary.main,
-        light: colors.secondary["400"],
-        dark: colors.secondary["900"],
+        main: "#5CD1FF",
+        light: "#B7E4FC",
+        dark: "#1B2A49",
+        contrastText: "#17223A",
       },
       success: {
         main: "#4caf50",
         light: "#81c784",
         dark: "#388e3c",
+        contrastText: "#ffffff",
       },
       background: {
-        default: mode === "dark" ? colors.surface.primary.active : colors.neutral.white,
-        paper: mode === "dark" ? colors.surface.primary.hover : colors.neutral.white,
+        default: mode === "dark" ? "#17223A" : "#F2F2F2",
+        paper: mode === "dark" ? "#1B2A49" : "#FFFFFF",
       },
-      // Custom palette extensions - preserve all color shades
+      text: {
+        primary: mode === "dark" ? "#FFFFFF" : "#262626",
+        secondary: mode === "dark" ? "#D9D9D9" : "#565656",
+        disabled: mode === "dark" ? "#565656" : "#D9D9D9",
+        brand: mode === "dark" ? "#FF8F33" : "#FF6700",
+      },
+      divider: mode === "dark" ? "#262626" : "#D9D9D9",
       neutral: colors.neutral,
       primaryShades: colors.primary,
       secondaryShades: colors.secondary,
-      customBorder: colors.border,
+      customBorder: {
+        primary: {
+          active: mode === "dark" ? "#FFFFFF" : "#262626",
+          hover: mode === "dark" ? "#D9D9D9" : "#565656",
+          clicked: mode === "dark" ? "#FFFFFF" : "#0D0D0D",
+          disabled: mode === "dark" ? "#565656" : "#D9D9D9",
+        },
+        secondary: {
+          active: mode === "dark" ? "#262626" : "#D9D9D9",
+          hover: mode === "dark" ? "#565656" : "#565656",
+          clicked: mode === "dark" ? "#262626" : "#D9D9D9",
+          disabled: mode === "dark" ? "#565656" : "#D9D9D9",
+        },
+        territory: {
+          active: mode === "dark" ? "#262626" : "#D9D9D9",
+          hover: mode === "dark" ? "#565656" : "#565656",
+          clicked: mode === "dark" ? "#0D0D0D" : "#262626",
+          disabled: mode === "dark" ? "#565656" : "#D9D9D9",
+        },
+      },
       customNavigation: colors.navigation,
-      surface: colors.surface,
-      fill: colors.fill,
-      customText: colors.text,
+      surface: {
+        primary: {
+          active: mode === "dark" ? "#17223A" : "#F2F2F2",
+          hover: mode === "dark" ? "#1B2A49" : "#FFFFFF",
+        },
+        secondary: {
+          active: "#17223A",
+          hover: "#1B2A49",
+        },
+        territory: {
+          active: mode === "dark" ? "#17223A" : "#FFFFFF",
+        },
+      },
+      fill: {
+        primary: {
+          active: "#FF6700",
+          hover: "#E55C00",
+          clicked: "#F14E23",
+          disabled: "rgba(217,217,217,0.8)",
+        },
+        secondary: {
+          active: "#17223A",
+          hover: "#1B2A49",
+          clicked: "#0F1827",
+          disabled: "rgba(217,217,217,0.8)",
+        },
+        territory: {
+          active: mode === "dark" ? "#1B2A49" : "#B7E4FC",
+        },
+      },
+      customText: {
+        primary: {
+          p1: { active: mode === "dark" ? "#FFFFFF" : "#0D0D0D", hover: "#FFFFFF" },
+          p2: { active: mode === "dark" ? "#D9D9D9" : "#262626", hover: "#FFFFFF" },
+          p3: { active: mode === "dark" ? "#D9D9D9" : "#565656", hover: "#FFFFFF" },
+          p4: { active: mode === "dark" ? "#565656" : "#565656", hover: "#FFFFFF" },
+        },
+        brand: {
+          p1: { active: "#FF6700", hover: "#E55C00", disabled: "rgba(255,103,0,0.5)" },
+        },
+      },
     },
     typography: {
       fontFamily: "Poppins, Arial, sans-serif, Helvetica",
@@ -474,36 +548,42 @@ export const themeSettings = (mode: PaletteMode) => {
         fontWeight: typography.h1.fontWeight,
         lineHeight: `${typography.h1.lineHeight}px`,
         letterSpacing: `${typography.h1.letterSpacing}px`,
+        color: mode === "dark" ? "#FFFFFF" : "#0D0D0D",
       },
       h2: {
         fontSize: typography.h2.fontSize,
         fontWeight: typography.h2.fontWeight,
         lineHeight: `${typography.h2.lineHeight}px`,
         letterSpacing: `${typography.h2.letterSpacing}px`,
+        color: mode === "dark" ? "#FFFFFF" : "#0D0D0D",
       },
       h3: {
         fontSize: typography.h3.fontSize,
         fontWeight: typography.h3.fontWeight,
         lineHeight: `${typography.h3.lineHeight}px`,
         letterSpacing: `${typography.h3.letterSpacing}px`,
+        color: mode === "dark" ? "#FFFFFF" : "#0D0D0D",
       },
       h4: {
         fontSize: typography.h4.fontSize,
         fontWeight: typography.h4.fontWeight,
         lineHeight: `${typography.h4.lineHeight}px`,
         letterSpacing: `${typography.h4.letterSpacing}px`,
+        color: mode === "dark" ? "#FFFFFF" : "#0D0D0D",
       },
       h5: {
         fontSize: typography.h5.fontSize,
         fontWeight: typography.h5.fontWeight,
         lineHeight: `${typography.h5.lineHeight}px`,
         letterSpacing: `${typography.h5.letterSpacing}px`,
+        color: mode === "dark" ? "#FFFFFF" : "#0D0D0D",
       },
       h6: {
         fontSize: typography.h6.fontSize,
         fontWeight: typography.h6.fontWeight,
         lineHeight: `${typography.h6.lineHeight}px`,
         letterSpacing: `${typography.h6.letterSpacing}px`,
+        color: mode === "dark" ? "#FFFFFF" : "#0D0D0D",
       },
       body1: {
         fontSize: typography.body1.fontSize,
@@ -531,27 +611,28 @@ export const themeSettings = (mode: PaletteMode) => {
       },
     },
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            backgroundColor: mode === "dark" ? "#17223A" : "#F2F2F2",
+          },
+        },
+      },
       MuiDataGrid: {
         styleOverrides: {
-          root: {
-            border: "none",
-          },
+          root: { border: "none" },
           columnHeaderTitle: {
             fontSize: typography.caption.fontSize,
             fontWeight: 600,
           },
-          columnHeader: {
-            padding: 0,
-          },
+          columnHeader: { padding: 0 },
           cell: {
             padding: 0,
             display: "flex",
             alignItems: "center",
             fontSize: typography.caption.fontSize,
           },
-          row: {
-            "&:hover": { backgroundColor: "inherit" },
-          },
+          row: { "&:hover": { backgroundColor: "inherit" } },
         },
       },
       MuiButton: {
@@ -561,46 +642,178 @@ export const themeSettings = (mode: PaletteMode) => {
             borderRadius: 8,
             fontWeight: 500,
             letterSpacing: "0.5px",
+            "&:focus-visible": {
+              outline: "2px solid #5CD1FF",
+              outlineOffset: "2px",
+            },
           },
           contained: {
-            backgroundColor: colors.primary.main,
-            color: colors.neutral.white,
+            backgroundColor: "#FF6700",
+            color: "#FFFFFF",
+            boxShadow: "none",
             "&:hover": {
-              backgroundColor: colors.primary["800"],
+              backgroundColor: "#E55C00",
+              boxShadow: "0 2px 8px rgba(255,103,0,0.3)",
             },
             "&:active": {
-              backgroundColor: colors.primary["1000"],
+              backgroundColor: "#F14E23",
+              boxShadow: "none",
             },
             "&.Mui-disabled": {
-              backgroundColor: colors.fill.primary.disabled,
-              color: colors.text.brand.p1.disabled,
+              backgroundColor: "#D9D9D9",
+              color: "#565656",
+              cursor: "not-allowed",
+              pointerEvents: "auto",
+            },
+          },
+          containedSecondary: {
+            backgroundColor: "#17223A",
+            color: "#FFFFFF",
+            "&:hover": {
+              backgroundColor: "#1B2A49",
+            },
+            "&:active": {
+              backgroundColor: "#17223A",
+            },
+          },
+          containedError: {
+            backgroundColor: "#F14E23",
+            color: "#FFFFFF",
+            "&:hover": {
+              backgroundColor: "#C93B18",
             },
           },
           outlined: {
-            borderColor: colors.border.primary.active,
-            color: colors.text.primary.p1.active,
+            borderColor: "#D9D9D9",
+            color: mode === "dark" ? "#FFFFFF" : "#262626",
             "&:hover": {
-              borderColor: colors.border.territory.hover,
-              backgroundColor: colors.surface.primary.hover,
+              borderColor: "#565656",
+              backgroundColor: mode === "dark" ? "rgba(255,255,255,0.05)" : "#F2F2F2",
+              color: mode === "dark" ? "#FFFFFF" : "#0D0D0D",
+            },
+            "&:active": {
+              backgroundColor: mode === "dark" ? "rgba(255,255,255,0.1)" : "#D9D9D9",
+            },
+            "&.Mui-disabled": {
+              borderColor: "#D9D9D9",
+              color: "#565656",
+              cursor: "not-allowed",
+              pointerEvents: "auto",
             },
           },
           text: {
-            color: colors.text.primary.p1.active,
+            color: mode === "dark" ? "#D9D9D9" : "#565656",
             "&:hover": {
-              backgroundColor: colors.surface.primary.hover,
+              backgroundColor: mode === "dark" ? "rgba(255,255,255,0.05)" : "#F2F2F2",
+              color: mode === "dark" ? "#FFFFFF" : "#262626",
             },
+            "&:active": {
+              backgroundColor: mode === "dark" ? "rgba(255,255,255,0.1)" : "#D9D9D9",
+            },
+            "&.Mui-disabled": {
+              color: "#D9D9D9",
+              cursor: "not-allowed",
+              pointerEvents: "auto",
+            },
+          },
+        },
+      },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          notchedOutline: {
+            borderColor: mode === "dark" ? "#262626" : "#D9D9D9",
+          },
+          input: {
+            color: mode === "dark" ? "#FFFFFF" : "#262626",
+          },
+          root: {
+            color: mode === "dark" ? "#FFFFFF" : "#262626",
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: "#565656",
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: "#5CD1FF",
+              borderWidth: "2px",
+            },
+            "&.Mui-disabled .MuiOutlinedInput-notchedOutline": {
+              borderColor: "#D9D9D9",
+            },
+            "& input::placeholder": {
+              color: "#565656",
+              opacity: 1,
+            },
+          },
+        },
+      },
+      MuiInputLabel: {
+        styleOverrides: {
+          root: {
+            color: mode === "dark" ? "#D9D9D9" : "#565656",
+            "&.Mui-focused": {
+              color: "#5CD1FF",
+            },
+            "&.Mui-disabled": {
+              color: "#D9D9D9",
+            },
+          },
+        },
+      },
+      MuiFormHelperText: {
+        styleOverrides: {
+          root: {
+            color: mode === "dark" ? "#D9D9D9" : "#565656",
+          },
+        },
+      },
+      MuiDivider: {
+        styleOverrides: {
+          root: {
+            borderColor: mode === "dark" ? "#262626" : "#D9D9D9",
+          },
+        },
+      },
+      MuiAlert: {
+        styleOverrides: {
+          standardInfo: {
+            backgroundColor: "#B7E4FC",
+            color: "#17223A",
+            "& .MuiAlert-icon": { color: "#1B2A49" },
+          },
+          standardWarning: {
+            backgroundColor: "rgba(255,103,0,0.1)",
+            color: mode === "dark" ? "#FF8F33" : "#C93B18",
+          },
+          standardError: {
+            backgroundColor: "rgba(241,78,35,0.1)",
+            color: "#F14E23",
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            backgroundColor: mode === "dark" ? "#1B2A49" : "#FFFFFF",
+            backgroundImage: "none",
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            borderRadius: 6,
           },
         },
       },
     },
     breakpoints: {
-      values: {
-        xs: 0,
-        sm: 600,
-        md: 960,
-        lg: 1280,
-        xl: 1920,
-      },
+      values: { xs: 0, sm: 600, md: 960, lg: 1280, xl: 1920 },
     },
     shape: {
       borderRadius: 8,

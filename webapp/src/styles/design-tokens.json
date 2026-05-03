@@ -442,7 +442,7 @@
         },
         "main": {
           "type": "string",
-          "value": "#ff7300ff",
+          "value": "#FF6700ff",
           "blendMode": "normal"
         }
       },
@@ -552,6 +552,15 @@
           "value": "#0a0e0fff",
           "blendMode": "normal"
         }
+      },
+      "brand": {
+        "navyDark":   { "type": "color", "value": "#17223Aff", "blendMode": "normal" },
+        "navyMedium": { "type": "color", "value": "#1B2A49ff", "blendMode": "normal" },
+        "focusBlue":  { "type": "color", "value": "#5CD1FFff", "blendMode": "normal" },
+        "paleBlue":   { "type": "color", "value": "#B7E4FCff", "blendMode": "normal" },
+        "orange":     { "type": "color", "value": "#FF6700ff", "blendMode": "normal" },
+        "orangeDeep": { "type": "color", "value": "#F14E23ff", "blendMode": "normal" },
+        "midGray":    { "type": "color", "value": "#565656ff", "blendMode": "normal" }
       }
     },
     "font": {
