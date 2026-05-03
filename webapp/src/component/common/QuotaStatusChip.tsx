@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Chip, Grid } from "@mui/material";
+import { Chip, Grid, useTheme } from "@mui/material";
 
 import React from "react";
 
@@ -25,53 +25,25 @@ interface QuotaChipProps {
 }
 
 const QuotaChip: React.FC<QuotaChipProps> = ({ isHeading, type, available, allocated }) => {
-  let chipLabel = "N/A";
-  let typographyText = `${type} Slots :`;
-  let isWarningColor = false;
+  const theme = useTheme();
 
-  if (allocated < available) {
-    isWarningColor = true;
-  }
+  let chipLabel = "N/A";
+  const typographyText = `${type} Slots :`;
 
   if (available !== 0) {
     chipLabel = `${allocated} / ${available}`;
   }
 
-  // Hardcoded Colors
-  const warningColor = "#ed6c02"; // Standard MUI Warning Orange/Yellow
-  const successColor = "#2e7d32"; // Standard MUI Success Green
-  const defaultColor = "#e0e0e0"; // Standard MUI Default Gray
+  const chipBg = theme.palette.mode === "dark" ? "#5CD1FF" : "#D9D9D9";
 
   return (
-    <Grid
-      container
-      alignItems="center"
-      spacing={1}
-      textAlign={"center"}
-      display="flex"
-      justifyContent="center"
-    >
-      {isHeading ? (
-        <Grid>
-          <Chip
-            label={`${typographyText} ${chipLabel}`}
-            sx={{
-              backgroundColor: isWarningColor ? warningColor : defaultColor,
-              color: isWarningColor ? "#fff" : "inherit", // Keeps text readable
-            }}
-          />
-        </Grid>
-      ) : (
-        <Grid>
-          <Chip
-            label={chipLabel}
-            sx={{
-              backgroundColor: isWarningColor ? warningColor : successColor,
-              color: "#fff", // Keeps text white on dark backgrounds
-            }}
-          />
-        </Grid>
-      )}
+    <Grid container alignItems="center" spacing={1} textAlign={"center"} display="flex" justifyContent="center">
+      <Grid>
+        <Chip
+          label={isHeading ? `${typographyText} ${chipLabel}` : chipLabel}
+          sx={{ backgroundColor: chipBg, color: "#0D0D0D" }}
+        />
+      </Grid>
     </Grid>
   );
 };

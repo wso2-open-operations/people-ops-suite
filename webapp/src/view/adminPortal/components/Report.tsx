@@ -106,7 +106,7 @@ export const Report = ({ parCycle, closeReportView, isAdminHistoryViewOn }: Repo
             {` History / `}
           </Typography>
         )}
-        <Link underline="hover" color="inherit" variant="h5" onClick={closeReportView}>
+        <Link underline="hover" color="textPrimary" variant="h5" onClick={closeReportView}>
           {parCycle.parCycleName}
         </Link>
         <Typography display={"inline"} variant="h5">
