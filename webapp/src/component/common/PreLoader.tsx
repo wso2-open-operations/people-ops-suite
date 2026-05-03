@@ -15,35 +15,44 @@
 // under the License.
 import { Box, LinearProgress, Typography, useTheme } from "@mui/material";
 
+import Wso2Logo from "@assets/images/wso2-logo.png";
+import Wso2LogoWhite from "@assets/images/wso2-logo-white.png";
 import type { PreLoaderProps } from "@utils/types";
 
 const PreLoader = (props: PreLoaderProps) => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+const background = isDark
+  ? "radial-gradient(circle at top left, #1E325C 0%, #121C30 50%, #070A11 100%)"
+  : "radial-gradient(circle at center, #FFFFFF 0%, #EAF0F7 40%, #C8D5E5 100%)"; // <-- Updated
   return (
     <Box
       sx={{
-        background: (theme) => theme.palette.background.default,
+        background,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
         width: "100%",
+        gap: 2,
       }}
     >
+      <img
+        src={isDark ? Wso2LogoWhite : Wso2Logo}
+        alt="WSO2"
+        style={{ height: 20, marginBottom: 5 }}
+      />
+
       {props.isLoading && (
-        <LinearProgress
-          sx={{
-            width: "150px",
-            mb: 2,
-          }}
-        />
+        <LinearProgress sx={{ width: "150px" }} />
       )}
+
       <Typography
-        variant="inherit"
+        variant="body2"
         sx={{
-          fontSize: theme.typography.body1.fontSize,
-          color: theme.palette.customText.primary.p1.active,
+          color: isDark ? "rgba(255,255,255,0.7)" : theme.palette.text.secondary,
+          letterSpacing: 0.5,
         }}
       >
         {props.message}
