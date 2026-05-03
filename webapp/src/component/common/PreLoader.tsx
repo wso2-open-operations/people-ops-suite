@@ -22,9 +22,9 @@ import type { PreLoaderProps } from "@utils/types";
 const PreLoader = (props: PreLoaderProps) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-const background = isDark
-  ? "radial-gradient(circle at top left, #1E325C 0%, #121C30 50%, #070A11 100%)"
-  : "radial-gradient(circle at center, #FFFFFF 0%, #EAF0F7 40%, #C8D5E5 100%)"; // <-- Updated
+  const background = isDark
+    ? "radial-gradient(circle at top left, #1E325C 0%, #121C30 50%, #070A11 100%)"
+    : "radial-gradient(circle at center, #FFFFFF 0%, #EAF0F7 40%, #C8D5E5 100%)";
   return (
     <Box
       sx={{
