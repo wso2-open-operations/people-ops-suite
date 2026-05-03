@@ -15,7 +15,7 @@
 // under the License.
 
 export const extractErrorMessage = (error: unknown): string =>
-  (error as { response?: { data?: { message?: string } }; message?: string })
-    .response?.data?.message ??
+  (error as { response?: { data?: { message?: string } }; message?: string }).response?.data
+    ?.message ??
   (error as { message?: string }).message ??
   String(error);

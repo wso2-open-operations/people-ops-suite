@@ -13,8 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import type { ReactElement, ReactNode } from "react";
 import type { NonIndexRouteObject } from "react-router-dom";
+
+import type { ReactElement, ReactNode } from "react";
 
 export type NavState = {
   hovered: number | null;

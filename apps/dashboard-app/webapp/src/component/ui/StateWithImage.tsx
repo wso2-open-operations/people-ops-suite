@@ -15,10 +15,22 @@
 // under the License.
 import { Box, Typography } from "@mui/material";
 
-function StateWithImage(props: { message: string; imageUrl: string; hideImage?: boolean; imageAlt?: string }) {
+function StateWithImage(props: {
+  message: string;
+  imageUrl: string;
+  hideImage?: boolean;
+  imageAlt?: string;
+}) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-      {!props.hideImage && <img alt={props.imageAlt || "illustration"} width="140" height="auto" src={props.imageUrl}></img>}
+      {!props.hideImage && (
+        <img
+          alt={props.imageAlt || "illustration"}
+          width="140"
+          height="auto"
+          src={props.imageUrl}
+        ></img>
+      )}
 
       <Typography
         variant="h5"

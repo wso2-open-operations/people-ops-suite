@@ -238,27 +238,65 @@ interface CompositionPieChartProps {
 
 const renderPieLabel = (props: PieLabelRenderProps) => {
   const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
-  if (cx == null || cy == null || midAngle == null || innerRadius == null || outerRadius == null || percent == null) return null;
+  if (
+    cx == null ||
+    cy == null ||
+    midAngle == null ||
+    innerRadius == null ||
+    outerRadius == null ||
+    percent == null
+  )
+    return null;
   if (percent <= 0) return null;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos((-midAngle * Math.PI) / 180);
   const y = cy + radius * Math.sin((-midAngle * Math.PI) / 180);
 
   return (
-    <text x={x} y={y} fill="white" textAnchor={x > cx ? "start" : "middle"} dominantBaseline="central" fontSize={14} fontWeight="bold">
+    <text
+      x={x}
+      y={y}
+      fill="white"
+      textAnchor={x > cx ? "start" : "middle"}
+      dominantBaseline="central"
+      fontSize={14}
+      fontWeight="bold"
+    >
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
 };
 
-const PieTooltip = ({ active, payload, tooltipStyle }: { active?: boolean; payload?: { payload: PieDatum; name: string; value: number }[]; tooltipStyle: CSSProperties }) => {
+const PieTooltip = ({
+  active,
+  payload,
+  tooltipStyle,
+}: {
+  active?: boolean;
+  payload?: { payload: PieDatum; name: string; value: number }[];
+  tooltipStyle: CSSProperties;
+}) => {
   if (active && payload && payload.length) {
     const { name, value, color } = payload[0].payload;
     return (
-      <Box sx={{ ...tooltipStyle, px: 1.5, py: 1, borderRadius: 1, display: "flex", alignItems: "center", gap: 1 }}>
+      <Box
+        sx={{
+          ...tooltipStyle,
+          px: 1.5,
+          py: 1,
+          borderRadius: 1,
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+        }}
+      >
         <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: color, flexShrink: 0 }} />
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>{name}:</Typography>
-        <Typography variant="body2" sx={{ fontWeight: 400 }}>{value.toFixed(1)} kg</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {name}:
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 400 }}>
+          {value.toFixed(1)} kg
+        </Typography>
       </Box>
     );
   }
@@ -284,7 +322,15 @@ const CompositionPieChart = memo(
           <Box sx={{ flex: 1, minHeight: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart margin={{ bottom: 40 }}>
-                <Tooltip content={({ active, payload }) => <PieTooltip active={active} payload={payload as { payload: PieDatum; name: string; value: number }[]} tooltipStyle={chartTooltipStyle} />} />
+                <Tooltip
+                  content={({ active, payload }) => (
+                    <PieTooltip
+                      active={active}
+                      payload={payload as { payload: PieDatum; name: string; value: number }[]}
+                      tooltipStyle={chartTooltipStyle}
+                    />
+                  )}
+                />
                 <Legend
                   wrapperStyle={{ color: chartLabelColor, paddingTop: "20px" }}
                   verticalAlign="bottom"
