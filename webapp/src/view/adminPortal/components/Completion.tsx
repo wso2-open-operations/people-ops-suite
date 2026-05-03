@@ -105,7 +105,7 @@ export const Completion = ({
             {` History / `}
           </Typography>
         )}
-        <Link underline="hover" color="inherit" variant="h4" onClick={closeCompletionView}>
+        <Link underline="hover" color="text.primary" variant="h4" onClick={closeCompletionView}>
           {parCycle.parCycleName}
         </Link>
         <Typography display={"inline"} variant="h5">

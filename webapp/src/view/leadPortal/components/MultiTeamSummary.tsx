@@ -9,7 +9,6 @@ import {
   Box,
   Button,
   Card,
-  Divider,
   Grid,
   IconButton,
   Stack,
@@ -32,7 +31,6 @@ import React, { useState } from "react";
 
 import { CompletionStatusSection } from "@component/common/CompletionStatusSection";
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { CustomModal } from "@component/common/CustomModal";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
 import { LoadingEffect } from "@component/ui/Loading";
 import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
@@ -203,15 +201,12 @@ export const MultiTeamSummary = ({
         ariaLabelledby="alert-360-reminder-title"
         ariaDescribedby="alert-360-reminder-description"
       />
-      <CustomModal open={isParCycleDatesOpen} onClose={closeCycleDeadlines} width="80vw">
-        <Typography id="dashboard-modal-title" variant="h4" pb={2}>
-          Cycle Dates
-        </Typography>
-        <Divider sx={{ bgcolor: "primary.main" }} />
-        <Box pt={9} pb={5}>
-          <CycleDatesStepper cycle={currentCycle} activeStep={activeStep} />
-        </Box>
-      </CustomModal>
+      <CycleDatesStepper
+        cycle={currentCycle}
+        activeStep={activeStep}
+        open={isParCycleDatesOpen}
+        onClose={closeCycleDeadlines}
+      />
     </Box>
   );
 };

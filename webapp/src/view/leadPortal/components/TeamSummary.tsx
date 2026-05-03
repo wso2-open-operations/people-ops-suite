@@ -680,15 +680,12 @@ export const TeamSummary = ({
             ariaLabelledby="alert-360-reminder-title"
             ariaDescribedby="alert-360-reminder-description"
           />
-          <CustomModal open={isParCycleDatesOpen} onClose={closeCycleDeadlines} width="80vw">
-            <Typography id="dashboard-modal-title" variant="h5" pb={2}>
-              Cycle Dates
-            </Typography>
-            <Divider sx={{ bgcolor: "primary.main" }} />
-            <Box pt={9} pb={5}>
-              <CycleDatesStepper cycle={cycle} activeStep={activeStep} />
-            </Box>
-          </CustomModal>
+          <CycleDatesStepper
+            cycle={cycle}
+            activeStep={activeStep}
+            open={isParCycleDatesOpen}
+            onClose={closeCycleDeadlines}
+          />
           <CustomModal open={feedbackRequestModalOpen} onClose={handleCloseFeedbackRequestModal}>
             <EmployeeSyncModal leadonly onSyncSuccess={handleEmployeeSyncSuccess} />
           </CustomModal>

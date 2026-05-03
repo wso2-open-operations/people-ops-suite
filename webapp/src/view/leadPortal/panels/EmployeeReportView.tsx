@@ -22,7 +22,6 @@ import {
   Avatar,
   Box,
   Card,
-  Divider,
   Grid,
   IconButton,
   InputAdornment,
@@ -36,7 +35,6 @@ import dayjs from "dayjs";
 import React from "react";
 import { useEffect, useRef, useState } from "react";
 
-import { CustomModal } from "@component/common/CustomModal";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
 import NoDataView from "@component/common/NoDataView";
 import ParStatusChip from "@component/common/ParStatusChip";
@@ -461,15 +459,12 @@ const EmployeeReportView = () => {
             </Box>
           )}
 
-          <CustomModal open={isParCycleDatesOpen} onClose={closeCycleDeadlines} width="80vw">
-            <Typography id="dashboard-modal-title" variant="h4" pb={2}>
-              Cycle Dates
-            </Typography>
-            <Divider sx={{ bgcolor: "primary.main" }} />
-            <Box pt={9} pb={5}>
-              <CycleDatesStepper cycle={currentCycle} activeStep={activeStep} />
-            </Box>
-          </CustomModal>
+          <CycleDatesStepper
+            cycle={currentCycle}
+            activeStep={activeStep}
+            open={isParCycleDatesOpen}
+            onClose={closeCycleDeadlines}
+          />
         </>
       )}
     </Box>

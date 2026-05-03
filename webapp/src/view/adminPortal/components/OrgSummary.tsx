@@ -1028,15 +1028,12 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                 <CustomModal open={bulkReminderModal} onClose={closeBulkReminderModal}>
                   {<BulkReminderModal onClose={closeBulkReminderModal} isAdmin={true} />}
                 </CustomModal>
-                <CustomModal open={isParCycleDatesOpen} onClose={closeCycleDeadlines} width="80vw">
-                  <Typography id="dashboard-modal-title" variant="h5" pb={2}>
-                    Cycle Dates
-                  </Typography>
-                  <Divider sx={{ bgcolor: "primary.main" }} />
-                  <Box pt={9} pb={5}>
-                    <CycleDatesStepper cycle={currentCycle} activeStep={activeStep} />
-                  </Box>
-                </CustomModal>
+                <CycleDatesStepper
+                  cycle={currentCycle}
+                  activeStep={activeStep}
+                  open={isParCycleDatesOpen}
+                  onClose={closeCycleDeadlines}
+                />
                 <CustomModal open={employeeSyncModal} onClose={handleEmployeeSyncModal}>
                   <EmployeeSyncModal />
                 </CustomModal>
