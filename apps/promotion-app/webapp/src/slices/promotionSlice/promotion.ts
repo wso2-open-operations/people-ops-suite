@@ -38,6 +38,13 @@ interface InsertPromotionPaylod {
   statement: string,
 }
 
+interface UpdatePromotionPaylod {
+  id: number,
+  statement? : string,
+  reasonForRejection? : number,
+  promotingJobBand? : number,
+}
+
 const initialState: Promotion = {
   state: State.idle,
   postState: State.idle,
@@ -54,11 +61,15 @@ export const fetchPromotions = createAsyncThunk(
       statusArray,
       type,
       recommendedBy,
+      enableBuFilter,
+      cycleId
     }: {
       employeeEmail?: string;
       statusArray?: string[];
       type?: string;
       recommendedBy?: string;
+      enableBuFilter?: boolean;
+      cycleId?: number;
     },
     { dispatch, rejectWithValue }
   ) => {
@@ -73,6 +84,8 @@ export const fetchPromotions = createAsyncThunk(
             type,
             recommendedBy,
             statusArray: statusArray?.join(","),
+            enableBuFilter,
+            cycleId,
           },
           cancelToken: newCancelTokenSource.token,
         })
@@ -134,6 +147,153 @@ export const insertPromotions = createAsyncThunk(
               message:
                 error.response?.status === HttpStatusCode.InternalServerError
                   ? "Failed to Create a Promotion!"
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error.response?.data?.message);
+        });
+    });
+  }
+);
+
+export const approvePromotions = createAsyncThunk(
+  "promotion/approvePromotions",
+  async (
+    {
+      id,
+      from
+    }: {
+      id: number,
+      from: string
+    },
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+
+    return new Promise<{ status: string}>((resolve, reject) => {
+      APIService.getInstance()
+        .get(`${AppConfig.serviceUrls.retrieveAllPromotionRequests}/${id}/approve?from=${from}`, {
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve({
+            status: response.data.promotionRequests,
+          });
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Successfully Approved the Promotion!",
+              type: "success",
+            })
+          );
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            reject(rejectWithValue("Request canceled"));
+            return;
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? "Failed to Approved the Promotion."
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error.response?.data?.message);
+        });
+    });
+  }
+);
+
+export const rejectPromotions = createAsyncThunk(
+  "promotion/rejectPromotions",
+  async (
+    {
+      id,
+      from,
+      reason
+    }: {
+      id: number,
+      from: string,
+      reason: string
+    },
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+
+    return new Promise<{ status: string}>((resolve, reject) => {
+      APIService.getInstance()
+        .get(`${AppConfig.serviceUrls.retrieveAllPromotionRequests}/${id}/reject?from=${from}&reason=${reason}`, {
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve({
+            status: response.data.promotionRequests,
+          });
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Successfully Reject the Promotion!",
+              type: "success",
+            })
+          );
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            reject(rejectWithValue("Request canceled"));
+            return;
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? "Failed to Reject the Promotion."
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error.response?.data?.message);
+        });
+    });
+  }
+);
+
+export const updatePromotion = createAsyncThunk(
+  "promotion/updatePromotion",
+  async (payload: UpdatePromotionPaylod,
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken(); 
+    return new Promise<{ status: string }>((resolve, reject) => {
+      APIService.getInstance()
+        .patch(AppConfig.serviceUrls.retrieveAllPromotionRequests, payload,{
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve({
+            status: response.data
+          })
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Successfully Updated the Promotion!",
+              type: "success",
+            })
+          );
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            reject(rejectWithValue("Request canceled"));
+            return;
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? "Failed to Update the Promotion!"
                   : "An unknown error occurred.",
               type: "error",
             })
