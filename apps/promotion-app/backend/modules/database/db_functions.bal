@@ -187,3 +187,58 @@ public isolated function insertPromotionRecommendation(PromotionRecommendationIn
 
     return error("Failed to retrieve last inserted promotion recommendation ID!");
 }
+
+# Retrieving promotion recommendations
+#
+# + id - Recommendation ID  
+# + promotionRequestId - Promotion Request Id  
+# + employeeEmail - Email of the employee  
+# + leadEmail - Email of the lead  
+# + statusArray - Array of Promotion Recommendation Status  
+# + cycleID - Cycle ID
+# + return - Array of Promotion Requests
+public isolated function getFullPromotionRecommendations(int? id = (), int? promotionRequestId = (),
+        string? employeeEmail = (), string? leadEmail = (), string[]? statusArray = (), int? cycleID = ())
+    returns FullPromotionRecommendation[]|error {
+
+    stream<FullPromotionRecommendation, error?> resultStream = databaseClient->query(getFullPromotionRecommendationsQuery(
+            id = id,
+            employeeEmail = employeeEmail,
+            leadEmail = leadEmail,
+            statusArray = statusArray,
+            cycleID = cycleID,
+            promotionRequestId = promotionRequestId
+            )
+        );
+
+    return from FullPromotionRecommendation promotionRequest in resultStream
+        select promotionRequest;
+}
+
+# Update Promotion Recommendation
+#
+# + payload - Update payload
+# + return - Return Value Description
+public isolated function updatePromotionRecommendation(PromotionRecommendationDbUpdatePayload payload)
+        returns error? {
+
+    sql:ExecutionResult result = check databaseClient->execute(updatePromotionRecommendationQuery(payload));
+
+    if result.affectedRowCount == 0 {
+        return error("No editable promotion recommendation found for update!");
+    }
+}
+
+# Update Promotion Request
+#
+# + payload - Promotion Request Update Data
+# + return - Error or Null
+public isolated function updatePromotionRequest(ApplicationDbUpdatePayload payload)
+    returns error? {
+
+    sql:ExecutionResult result = check databaseClient->execute(updatePromotionRequestQuery(payload));
+
+    if result.affectedRowCount == 0 {
+        return error("No editable promotion request found for update!");
+    }
+}

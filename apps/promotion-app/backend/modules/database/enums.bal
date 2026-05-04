@@ -44,3 +44,9 @@ public enum PromotionRecommendationStatus {
     DECLINED,
     EXPIRED
 }
+
+# User Roles that have the permission to approve the promotion applications.
+public enum ApprovalParties {
+    promotion_board,
+    functional_lead
+}

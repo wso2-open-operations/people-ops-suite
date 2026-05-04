@@ -19,9 +19,15 @@ import { lazy } from "react";
 const help = lazy(() => import("@view/help/help"));
 const history = lazy(() => import("@view/history/promotionHistory"));
 const individualContributor = lazy(() => import("@view/individualContributor/individualContributor"));
+const timeBased = lazy(() => import("@view/timeBased/timeBased"));
+const functionaLead = lazy(() => import("@view/functionalLead/functionalLead"));
+const promotionBoard = lazy(() => import("@view/promotionBoard/promotionBoard"));
 
 export const View = {
   help,
   history,
   individualContributor,
+  timeBased,
+  functionaLead,
+  promotionBoard,
 };

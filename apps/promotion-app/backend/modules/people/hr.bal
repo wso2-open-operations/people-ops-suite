@@ -12,7 +12,7 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 
 # Retrieves basic employee details by work email.
 #
@@ -162,9 +162,36 @@ public isolated function fetchEmployeeHistory(string workEmail) returns Employee
 
     // Null Check.
     if employeeHistory is () {
-        log:printError(string `No matching employee found for ${workEmail}`);
         return error("No matching employee found for " + workEmail);
     }
 
     return employeeHistory;
+}
+
+# Retrieve the Employee name by work email.
+#
+# + workEmail - workEmail
+# + return - Employee name object or error
+public isolated function getEmployeeName(string workEmail) returns EmployeeName|error {
+
+    string document = string `
+        query employeeQuery ($workEmail: String!) {
+            employee(email: $workEmail) {
+            firstName,
+            businessUnit,
+            lastName
+            }
+        }
+    `;
+
+    EmployeeNameResult employeeData = check hrClient->execute(document, {workEmail});
+
+    EmployeeName? employeeName = employeeData.data.employee;
+
+    // Null Check
+    if employeeName is null {
+        return error("No matching employee found for " + workEmail);
+    }
+
+    return employeeName;
 }

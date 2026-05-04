@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -19,10 +19,9 @@ import { AppConfig } from "@config/config";
 import axios, { HttpStatusCode } from "axios";
 import { APIService } from "@utils/apiService";
 import { SnackMessage } from "@config/constant";
-import { UserState } from "@slices/authSlice/auth";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { Employee } from "@root/src/utils/types";
+import { PromotionRequest } from "@root/src/utils/types";
 
 export interface EmployeeJoinedDetails {
   workEmail: string;
@@ -38,58 +37,28 @@ export interface EmployeeJoinedDetails {
   reportingLead: string;
 };
 
+
+
 interface EmployeesState {
-  state: State;
+  employeeHistoryState: State;
+  promotionsState: State;
   stateMessage: string | null;
   errorMessage: string | null;
-  employees: Employee[] ;
-  employeeHistory: EmployeeJoinedDetails | null
+  employeeHistory: EmployeeJoinedDetails | null;
+  promotions: PromotionRequest[] | null;
 }
 
 const initialState: EmployeesState = {
-  state: State.idle,
+  employeeHistoryState: State.idle,
+  promotionsState: State.idle,
   stateMessage: null,
   errorMessage: null,
-  employees: [],
   employeeHistory: null,
+  promotions: null,
 };
 
-export const fetchEmployees = createAsyncThunk(
-  "employee/fetchEmployees",
-  async (_, { getState, dispatch, rejectWithValue }) => {
-    const { userInfo } = (getState() as { user: UserState }).user;
-    APIService.getCancelToken().cancel();
-    const newCancelTokenSource = APIService.updateCancelToken();
-    return new Promise<Employee[]>((resolve, reject) => {
-      APIService.getInstance()
-        .get(AppConfig.serviceUrls.employees, {
-          cancelToken: newCancelTokenSource.token,
-        })
-        .then((response) => {
-          const filteredEmployees = response.data.employees.filter((emp: Employee) => emp.workEmail !== userInfo?.workEmail);
-          resolve(filteredEmployees);
-        })
-        .catch((error) => {
-          if (axios.isCancel(error)) {
-            return rejectWithValue("Request canceled");
-          }
-          dispatch(
-            enqueueSnackbarMessage({
-              message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? SnackMessage.error.fetchEmployees
-                  : "An unknown error occurred.",
-              type: "error",
-            })
-          );
-          reject(error.response.data.message);
-        });
-    });
-  }
-);
-
 export const fetchEmployeeHistory = createAsyncThunk(
-  "employee/fetchEmployeeHistory",
+  "timeline/fetchEmployeeHistory",
   async (
     {
       employeeWorkEmail,
@@ -132,44 +101,106 @@ export const fetchEmployeeHistory = createAsyncThunk(
 
 );
 
-const EmployeeSlice = createSlice({
-  name: "employee",
+export const fetchPromotions = createAsyncThunk(
+  "promotion/fetchPromotions",
+  async (
+    {
+      employeeEmail,
+      statusArray,
+      type,
+      recommendedBy,
+      enableBuFilter,
+      cycleId
+    }: {
+      employeeEmail?: string;
+      statusArray?: string[];
+      type?: string;
+      recommendedBy?: string;
+      enableBuFilter?: boolean;
+      cycleId?: number;
+    },
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+
+    return new Promise<{ promotions: PromotionRequest[] }>((resolve, reject) => {
+      APIService.getInstance()
+        .get(AppConfig.serviceUrls.retrieveAllPromotionRequests, {
+          params: {
+            employeeEmail,
+            type,
+            recommendedBy,
+            statusArray: statusArray?.join(","),
+            enableBuFilter,
+            cycleId,
+          },
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve({
+            promotions: response.data.promotionRequests,
+          });
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            reject(rejectWithValue("Request canceled"));
+            return;
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? "Failed to fetch promotions."
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error.response?.data?.message);
+        });
+    });
+  }
+);
+
+const TimelineSlice = createSlice({
+  name: "timeline",
   initialState,
   reducers: {
     resetSubmitState(state) {
-      state.state = State.idle;
+      state.employeeHistoryState = State.idle;
+      state.promotionsState = State.idle;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchEmployees.pending, (state) => {
-        state.state = State.loading;
-        state.stateMessage = "Fetching employee data...";
-      })
-      .addCase(fetchEmployees.fulfilled, (state, action) => {
-        state.state = State.success;
-        state.stateMessage = "Successfully fetched!";
-        state.employees = action.payload;
-      })
-      .addCase(fetchEmployees.rejected, (state) => {
-        state.state = State.failed;
-        state.stateMessage = "Failed to fetch!";
-      })
       .addCase(fetchEmployeeHistory.pending, (state) => {
-        state.state = State.loading;
+        state.employeeHistoryState = State.loading;
         state.stateMessage = "Fetching employee history data...";
       })
       .addCase(fetchEmployeeHistory.fulfilled, (state, action) => {
-        state.state = State.success;
+        state.employeeHistoryState = State.success;
         state.stateMessage = "Successfully fetched!";
         state.employeeHistory = action.payload;
       })
       .addCase(fetchEmployeeHistory.rejected, (state) => {
-        state.state = State.failed;
+        state.employeeHistoryState = State.failed;
+        state.stateMessage = "Failed to fetch!";
+      })
+      .addCase(fetchPromotions.pending, (state) => {
+        state.promotionsState = State.loading;
+        state.stateMessage = "Fetching employee history data...";
+      })
+      .addCase(fetchPromotions.fulfilled, (state, action) => {
+            state.promotionsState = State.success;
+            state.stateMessage = "Successfully fetched!";
+            state.promotions = action.payload.promotions;
+        })
+      .addCase(fetchPromotions.rejected, (state) => {
+        state.promotionsState = State.failed;
         state.stateMessage = "Failed to fetch!";
       });
   },
 });
 
-export const { resetSubmitState } = EmployeeSlice.actions;
-export default EmployeeSlice.reducer;
+export const { resetSubmitState } = TimelineSlice.actions;
+export default TimelineSlice.reducer;

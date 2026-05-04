@@ -51,5 +51,9 @@ export const AppConfig = {
     getPromotionCycle: SERVICE_BASE_URL + "/promotion/cycles",
     appConfig: SERVICE_BASE_URL + "/app-config",
     retrieveAllPromotionRequests: SERVICE_BASE_URL + "/promotions",
+    getPromotionRecommendations: SERVICE_BASE_URL + "/promotion/recommendations",
+    getActivePromotionCycle: SERVICE_BASE_URL + "/promotion/cycles?statusArray=OPEN",
+    getClosePromotionCycle: SERVICE_BASE_URL + "/promotion/cycles?statusArray=CLOSE",
+    employeeInfo: SERVICE_BASE_URL + "/employee-info",
   },
 };

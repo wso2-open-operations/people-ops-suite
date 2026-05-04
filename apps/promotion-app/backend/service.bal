@@ -673,4 +673,970 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
     }
+
+    # Retrieve specific users' promotion recommendations.
+    #
+    # + ctx - Request Context appended from the interceptor
+    # + leadEmail - Email of the lead  
+    # + statusArray - Status of the promotion recommendation  
+    # + promotionCycleId - Promotion cycle ID
+    # + return - Internal Server Error or Promotion Recommendations array
+    resource function GET promotion/recommendations(http:RequestContext ctx, string? leadEmail, string[]? statusArray,
+            int? promotionCycleId) returns FullPromotionRecommendation[]|http:InternalServerError|http:Forbidden {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value ater validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            string customError = "Error occurred while retrieving User Privileges!";
+            log:printError(customError, userAppPrivileges);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        boolean setEmailConstrain = false;
+        if !(database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) ||
+            database:checkRoles([database:FUNCTIONAL_LEAD], userAppPrivileges.roles) ||
+            database:checkRoles([database:PROMOTION_BOARD_MEMBER], userAppPrivileges.roles)) {
+
+            if !database:checkRoles([database:LEAD], userAppPrivileges.roles) || leadEmail !is () && userInfo.email != leadEmail {
+                string customError = "Insufficient privilege to access the recommendations.";
+                log:printError(customError);
+                return <http:Forbidden>{
+                    body: {
+                        message: customError
+                    }
+                };
+            } else {
+                setEmailConstrain = true;
+            }
+        }
+
+        if statusArray !is null {
+            foreach string status in statusArray {
+                if status !is database:PromotionRecommendationStatus {
+                    string customError = "Invalid promotion recommendation status provided!";
+                    log:printError(customError);
+                    return <http:InternalServerError>{
+                        body: {
+                            message: customError
+                        }
+                    };
+                }
+            }
+        }
+
+        database:FullPromotionRecommendation[]|error recommendationsArray = database:getFullPromotionRecommendations(
+                employeeEmail = (),
+                leadEmail = setEmailConstrain ? userInfo.email : leadEmail,
+                statusArray = statusArray,
+                cycleID = promotionCycleId);
+        
+        if recommendationsArray is error {
+            string customError = "Error occurred while retrieving Recommendations!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        FullPromotionRecommendation[] recommendations = [];
+
+        // Adding employee name to recommendation
+        error? queryError = from database:FullPromotionRecommendation recommendation in recommendationsArray
+            do {
+                people:EmployeeName|error employeeName = people:getEmployeeName(recommendation.employeeEmail);
+                if employeeName is error {
+                    string customError = "Error occurred while retrieving Employee Name!";
+                    log:printError(customError, employeeName);
+                    return <http:InternalServerError>{
+                        body: {
+                            message: customError
+                        }
+                    };
+                }
+                recommendations.push({
+                    ...recommendation,
+                    employeeName: employeeName.firstName + " " + employeeName.lastName
+                });
+            };
+
+        if queryError is error {
+            string customError = "An error occurred while processing promotion recommendations!";
+            log:printError(customError, queryError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return recommendations;
+    }
+
+    # Update Recommendation data.
+    #
+    # + ctx - Request Context appended from the interceptor 
+    # + payload - Recommendation update payload
+    # + return - Internal Server Error or recommendation update results
+    resource function patch promotion/recommendations(http:RequestContext ctx,
+            @http:Payload RecommendationUpdateData payload)
+        returns RecommendationStatus|http:Forbidden|http:InternalServerError|http:BadRequest {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            string customError = "Error occurred while retrieving User Privileges!";
+            log:printError(customError, userAppPrivileges);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Getting active promotion cycle
+        database:PromotionCycle[]|error promotionCycles = database:getPromotionCyclesByStatus([database:OPEN]);
+
+        if promotionCycles is error {
+            string customError = "Error while retrieving Promotion Cycles!";
+            log:printError(customError, promotionCycles);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        
+        if promotionCycles.length() == 0 {
+            string customError = "There is no open promotion cycle!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        database:FullPromotionRecommendation[]|error recommendationsArray = database:getFullPromotionRecommendations(
+                id = payload.id);
+
+        if recommendationsArray is error {
+            string customError =  "Error while retrieving Recommendations Array!";
+            log:printError(customError, recommendationsArray);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if recommendationsArray.length() == 0 {
+            string customError = "Promotion recommendation is not found!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        database:FullPromotionRecommendation recommendation = recommendationsArray[0];
+
+        if recommendation.leadEmail != userInfo.email && !database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles){
+            string customError = "Insufficient privilege to access the recommendation!";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if recommendation.recommendationStatus != database:REQUESTED && !database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) {
+            string customError = "Promotion recommendation is not in editable state!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if recommendation.promotionCycleId != promotionCycles[0].id {
+            string customError = "Recommendation does not belongs to current promotion cycle!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        error? updateRecommendation = database:updatePromotionRecommendation({
+            id: payload.id,
+            statement: payload.statement,
+            comments: payload.comment,
+            updatedBy: userInfo.email
+        });
+
+        if updateRecommendation is error {
+            string customError = "Error while Updating the Recommendation!";
+            log:printError(customError, updateRecommendation);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return {
+            status: "Successfully updated the recommendation."
+        };
+    }
+
+    # Submit promotion recommendation.
+    #
+    # + id - Id of the recommendation  
+    # + ctx - Request Context appended from the interceptor
+    # + return - Internal Server Error or recommendation submit results
+    resource function get promotion/recommendations/[int id]/submit(http:RequestContext ctx)
+            returns RecommendationStatus|http:Forbidden|http:NotFound|http:InternalServerError|http:BadRequest {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        /// Getting active promotion cycle
+        database:PromotionCycle[]|error promotionCycles = database:getPromotionCyclesByStatus([database:OPEN]);
+        if promotionCycles is error {
+            string customError = "Error while retrieving Promotion Cycles!";
+            log:printError(customError, promotionCycles);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if promotionCycles.length() == 0 {
+            string customError = "There is no open promotion cycle!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        database:FullPromotionRecommendation[]|error recommendationsArray = database:getFullPromotionRecommendations(
+                id = id);
+        
+        if recommendationsArray is error {
+            string customError = "Error while retrieving Recommendations Array!";
+            log:printError(customError, recommendationsArray);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if recommendationsArray.length() == 0 {
+            string customError = string `Promotion recommendation is not found!`;
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        database:FullPromotionRecommendation recommendation = recommendationsArray[0];
+
+        if recommendation.leadEmail != userInfo.email {
+            string customError = "Insufficient privilege to access the recommendation.";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if recommendation.recommendationStatus != database:REQUESTED {
+            string customError = "Promotion recommendation is not in editable state!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if recommendation.promotionCycleId != promotionCycles[0].id {
+            string customError = "Recommendation does not belongs to current promotion cycle!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Update promotion recommendation status 
+        error? updateRecommendation = database:updatePromotionRecommendation({
+            id: id,
+            status: database:SUBMITTED,
+            updatedBy: userInfo.email
+        });
+
+        if updateRecommendation is error {
+            string customError = "Error while Updating the Recommendation!";
+            log:printError(customError, updateRecommendation);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        //get name by work email for send the email
+        people:EmployeeName|error leadName = people:getEmployeeName(workEmail = userInfo.email);
+        
+        if leadName is error{
+            string customError = "Error while retrieving Lead Name!";
+            log:printError(customError, leadName);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        //get employee name by work email for send the email
+        people:EmployeeName|error employeeName = people:getEmployeeName(workEmail = recommendation.employeeEmail);
+
+        if employeeName is error{
+            string customError = "Error while retrieving Employee Name!";
+            log:printError(customError, employeeName);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if recommendation.promotionType == database:TIME_BASED {
+            database:PromotionRequestStatus approvedStatus = database:SUBMITTED;
+            //if login user is a functional lead -> approve
+            authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+            if userAppPrivileges is error {
+                string customError = "Error occurred while retrieving User Privileges!";
+                log:printError(customError, userAppPrivileges);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+
+            if (database:checkRoles([database:FUNCTIONAL_LEAD], userAppPrivileges.roles)) {
+                approvedStatus = database:APPROVED;
+            }
+            //Submit promotion request
+            error? updateRequest = database:updatePromotionRequest({
+                id: recommendation.requestId,
+                status: approvedStatus,
+                updatedBy: userInfo.email
+            });
+
+            if updateRequest is error {
+                string customError = string `Error while Updating the Promotion Request!`;
+                log:printError(customError, updateRequest);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+            return {
+                status: "Successfully approved the Time-based promotion."
+            };
+        }
+
+        // TODO: Send the email
+
+        // _ = check email:recommendationAlert({
+        //     receiverName: employeeName.firstName,
+        //     receiverEmail: recommendation.employeeEmail,
+        //     senderName: leadName.firstName + " " + leadName.lastName,
+        //     senderEmail: requestedBy,
+        //     closingDate: promotionCycles[0].endDate,
+        //     templateId: email:hrisPromotionRecommendationRequestSubmission
+        // });
+
+        return {
+            status: "Successfully submitted the recommendation."
+        };
+    }
+
+    # Decline promotion recommendation
+    #
+    # + id - Id of the recommendation
+    # + ctx - Request Context appended from the interceptor
+    # + comment - Comment for the decline
+    # + return - Internal Server Error or recommendation submit results
+    resource function get promotion/recommendations/[int id]/decline(http:RequestContext ctx, string comment)
+            returns RecommendationStatus|http:Forbidden|http:NotFound|http:InternalServerError|http:BadRequest {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        /// Getting active promotion cycle
+        database:PromotionCycle[]|error promotionCycles = database:getPromotionCyclesByStatus([database:OPEN]);
+
+        if promotionCycles is error {
+            string customError = "Error while retrieving Promotion Cycles!";
+            log:printError(customError, promotionCycles);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if promotionCycles.length() == 0 {
+            string customError = "There is no open promotion cycle!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        database:FullPromotionRecommendation[]|error recommendationsArray = database:getFullPromotionRecommendations(
+                id = id);
+
+        if recommendationsArray is error {
+            string customError = "Error while retrieving Recommendations Array!";
+            log:printError(customError, recommendationsArray);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if recommendationsArray.length() == 0 {
+            string customError = "Promotion recommendation is not found!";
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        database:FullPromotionRecommendation recommendation = recommendationsArray[0];
+
+        if recommendation.leadEmail != userInfo.email {
+            string customError = "Insufficient privilege to access the recommendation.";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if recommendation.recommendationStatus != database:REQUESTED {
+            string customError = "Promotion recommendation is not in editable state!";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if recommendation.promotionCycleId != promotionCycles[0].id {
+            string customError = "Recommendation does not belongs to current promotion cycle!";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Update promotion recommendation status 
+        error? updateRecommendation = database:updatePromotionRecommendation({
+            id: id,
+            status: database:SUBMITTED,
+            updatedBy: userInfo.email
+        });
+
+        if updateRecommendation is error {
+            string customError = "Error while Updating the Recommendation!";
+            log:printError(customError, updateRecommendation);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        error? updateRequest = database:updatePromotionRequest({
+            id: recommendation.requestId,
+            status: database:REJECTED,
+            updatedBy: userInfo.email,
+            reasonForRejection: comment
+        });
+    
+        if updateRequest is error {
+            string customError = "Error while Updating the Promotion Request!";
+            log:printError(customError, updateRequest);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return {
+            status: "Successfully declined the recommendation."
+        };
+    }
+
+    # Update promotion request data
+    #
+    # + ctx - Request Context appended from the interceptor
+    # + payload - Promotion request update payload
+    # + return - Internal Server Error or update results
+    resource function PATCH promotions(http:RequestContext ctx, @http:Payload ApplicationUpdateData payload)
+        returns ApplicationStatus|http:BadRequest|http:InternalServerError|http:Forbidden {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        // [Start] Resource level authorization 
+        // NOTE : After introducing ballerina resource level authorization we can remove this section
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            string customError = "Error occurred while retrieving User Privileges!";
+            log:printError(customError, userAppPrivileges);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if !(database:checkRoles([database:LEAD], userAppPrivileges.roles) ||
+                database:checkRoles([database:FUNCTIONAL_LEAD], userAppPrivileges.roles) ||
+                database:checkRoles([database:PROMOTION_BOARD_MEMBER], userAppPrivileges.roles)) {
+            string customError = "You do not have the required permission!";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if payload.statement is () && payload.promotingJobBand is () 
+            && payload.reasonForRejection is () {
+            string customError = "Nothing to update!";
+            log:printError(customError);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Getting active promotion cycle
+        database:PromotionCycle[]|error promotionCycles = database:getPromotionCyclesByStatus([database:OPEN]);
+
+        if promotionCycles is error {
+            string customError = "Error while retrieving Promotion Cycles!";
+            log:printError(customError, promotionCycles);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if promotionCycles.length() == 0 {
+            string customError = "There is no open promotion cycle!";
+            log:printError(customError);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        database:Promotion[]|error promotionRequests =
+            database:getPromotions(cycleID = promotionCycles[0].id, id = payload.id);
+
+        if promotionRequests is error {
+            string customError = "Error while retrieving Promotion Requests!";
+            log:printError(customError, promotionRequests);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if promotionRequests.length() == 0 {
+            string customError = "Invalid promotion request id!";
+            log:printError(customError);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        error? updatePromotion = database:updatePromotionRequest({
+            id: payload.id,
+            statement: payload.statement,
+            reasonForRejection: payload.reasonForRejection,
+            promotingJobBand: payload.promotingJobBand,
+            updatedBy: userInfo.email
+        });
+
+        if updatePromotion is error {
+            string customError = "Error while Updating Promotion Requests!";
+            log:printError(customError, updatePromotion);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return {
+            status: "Successfully updated the application."
+        };
+    }
+
+    # approve promotion request
+    #
+    # + id - Id of the promotion request  
+    # + ctx - Request Context appended from the interceptor
+    # + 'from - User who approve the promotion request
+    # + return - Internal Server Error or application submit results
+    resource function GET promotions/[int id]/approve(http:RequestContext ctx, string 'from)
+            returns ApplicationStatus|http:Forbidden|http:NotFound|http:InternalServerError|http:BadRequest {
+
+        if 'from !is database:ApprovalParties {
+            string customError = "Invalid approver!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            string customError = "Error occurred while retrieving User Privileges!";
+            log:printError(customError, userAppPrivileges);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if !(
+            'from is database:promotion_board && database:checkRoles([database:PROMOTION_BOARD_MEMBER], userAppPrivileges.roles) ||
+            'from is database:functional_lead && database:checkRoles([database:FUNCTIONAL_LEAD], userAppPrivileges.roles)) {
+
+            string customError = "Insufficient privilege to approve this application.";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        database:Promotion[]|error promotionRequestArray = database:getPromotions(id = id,
+                statusArray = ['from is database:promotion_board ? database:FL_APPROVED : database:SUBMITTED]);
+
+        if promotionRequestArray is error {
+            string customError = "Error while retrieving Promotion Requests!";
+            log:printError(customError, promotionRequestArray);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if promotionRequestArray.length() == 0 {
+            string customError = "Invalid promotion request id!";
+            log:printError(customError);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Getting open promotion cycle
+        database:PromotionCycle[]|error openedPromotionCycles = database:getPromotionCyclesByStatus([database:OPEN]);
+
+        if openedPromotionCycles is error {
+            string customError = "Error while retrieving Promotion Cycles!";
+            log:printError(customError, openedPromotionCycles);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if openedPromotionCycles.length() == 0 {
+            string customError = "There is no open promotion cycle!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Update promotion request status 
+        error? updatePromotion = database:updatePromotionRequest({
+            id: promotionRequestArray[0].id,
+            status: 'from is database:promotion_board ? database:APPROVED :
+                (promotionRequestArray[0].promotionType == database:TIME_BASED ? database:APPROVED : database:FL_APPROVED),
+            updatedBy: userInfo.email
+        });
+
+        if updatePromotion is error {
+            string customError = "Error while Updating Promotion Requests!";
+            log:printError(customError, updatePromotion);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return {
+            status: "Successfully approved the application."
+        };
+    }
+
+    # Reject promotion request
+    #
+    # + id - Id of the promotion request  
+    # + ctx - Request Context appended from the interceptor  
+    # + 'from - Who sent the reject request  
+    # + reason - Reason for the rejection
+    # + return - Internal Server Error or application submit results
+    resource function GET promotions/[int id]/reject(http:RequestContext ctx, string 'from, string reason)
+        returns ApplicationStatus|http:Forbidden|http:NotFound|http:InternalServerError|http:BadRequest|error {
+
+        if 'from !is database:ApprovalParties {
+            // return error("Invalid rejector!");
+            string customError = "Invalid rejector!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            string customError = "Error occurred while retrieving User Privileges!";
+            log:printError(customError, userAppPrivileges);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if !(
+            'from is database:promotion_board && database:checkRoles([database:PROMOTION_BOARD_MEMBER], userAppPrivileges.roles) ||
+            'from is database:functional_lead && database:checkRoles([database:FUNCTIONAL_LEAD], userAppPrivileges.roles)) {
+
+            string customError = "Insufficient privilege to reject this application.";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Getting open promotion cycle
+        database:PromotionCycle[]|error openedPromotionCycles = database:getPromotionCyclesByStatus([database:OPEN]);
+
+        if openedPromotionCycles is error {
+            string customError = "Error while retrieving Promotion Cycles!";
+            log:printError(customError, openedPromotionCycles);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if openedPromotionCycles.length() == 0 {
+            string customError = "There is no open promotion cycle!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        database:Promotion[]|error promotionRequestArray = database:getPromotions(id = id,
+                statusArray = ['from is database:promotion_board ? database:FL_APPROVED : database:SUBMITTED]);
+
+        if promotionRequestArray is error {
+            string customError = "Error while retrieving Promotion Requests!";
+            log:printError(customError, promotionRequestArray);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if promotionRequestArray.length() == 0 {
+            string customError = "There is no promotion application to reject!";
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Update promotion request status 
+        error? updatePromotion = database:updatePromotionRequest({
+            id: promotionRequestArray[0].id,
+            status: 'from is database:promotion_board ? database:REJECTED : database:FL_REJECTED,
+            reasonForRejection: reason,
+            updatedBy: userInfo.email
+        });
+
+        if updatePromotion is error {
+            string customError = "Error while Updating Promotion Requests!";
+            log:printError(customError, updatePromotion);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return {
+            status: "Successfully rejected the application."
+        };
+    }
 }

@@ -20,78 +20,59 @@ import axios, { HttpStatusCode } from "axios";
 import { APIService } from "@utils/apiService";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { PromotionRequest } from "@root/src/utils/types";
+import { RecommendationInterface } from "@root/src/utils/types";
 
-interface Promotion {
+interface Recommendation {
   state: State;
-  postState: State;
+  updateState: State;
   stateMessage: string | null;
   errorMessage: string | null;
-  promotions: PromotionRequest[] | null;
+  recommendations: RecommendationInterface[] | null;
 }
 
-interface InsertPromotionPaylod {
-  PromotionCycleID: number,
-  type: string,
-  promotingJobBand: number,
-  employeeEmail: string,
-  statement: string,
+interface UpdateRecommendationPaylod {
+  id: number;
+  statement?: string;
+  comment?: string|null;
 }
 
-interface UpdatePromotionPaylod {
-  id: number,
-  statement? : string,
-  reasonForRejection? : number,
-  promotingJobBand? : number,
-}
-
-const initialState: Promotion = {
+const initialState: Recommendation = {
   state: State.idle,
-  postState: State.idle,
+  updateState: State.idle,
   stateMessage: null,
   errorMessage: null,
-  promotions: null,
+  recommendations: null,
 };
 
-export const fetchPromotions = createAsyncThunk(
-  "promotion/fetchPromotions",
-  async (
-    {
-      employeeEmail,
-      statusArray,
-      type,
-      recommendedBy,
-      enableBuFilter,
-      cycleId
-    }: {
-      employeeEmail?: string;
-      statusArray?: string[];
-      type?: string;
-      recommendedBy?: string;
-      enableBuFilter?: boolean;
-      cycleId?: number;
-    },
-    { dispatch, rejectWithValue }
+export const fetchRecommendation = createAsyncThunk(
+  "recommendation/fetchRecommendation",
+  async ({
+    leadEmail,
+    statusArray,
+    promotionCycleId,
+  }:{
+    leadEmail: string,
+    statusArray: string[],
+    promotionCycleId?: number,
+  },{ dispatch, rejectWithValue }
   ) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
 
-    return new Promise<{ promotions: PromotionRequest[] }>((resolve, reject) => {
+    return new Promise<{ recommendations: RecommendationInterface[] }>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.retrieveAllPromotionRequests, {
-          params: {
-            employeeEmail,
-            type,
-            recommendedBy,
-            statusArray: statusArray?.join(","),
-            enableBuFilter,
-            cycleId,
-          },
+        .get(AppConfig.serviceUrls.getPromotionRecommendations, {
+            params: {
+                leadEmail: leadEmail,
+                statusArray: statusArray?.join(","),
+                promotionCycleId: promotionCycleId
+            },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
+          console.log(response.data.promotionRequests);
           resolve({
-            promotions: response.data.promotionRequests,
+            recommendations: response.data,
           });
         })
         .catch((error) => {
@@ -103,7 +84,7 @@ export const fetchPromotions = createAsyncThunk(
             enqueueSnackbarMessage({
               message:
                 error.response?.status === HttpStatusCode.InternalServerError
-                  ? "Failed to fetch promotions."
+                  ? "Failed to fetch recommendations."
                   : "An unknown error occurred.",
               type: "error",
             })
@@ -114,163 +95,16 @@ export const fetchPromotions = createAsyncThunk(
   }
 );
 
-export const insertPromotions = createAsyncThunk(
-  "promotion/insertPromotions",
-  async (payload: InsertPromotionPaylod,
-    { dispatch, rejectWithValue }
-  ) => {
-    APIService.getCancelToken().cancel();
-    const newCancelTokenSource = APIService.updateCancelToken(); 
-    return new Promise<{ applicationID: number }>((resolve, reject) => {
-      APIService.getInstance()
-        .post(AppConfig.serviceUrls.retrieveAllPromotionRequests, payload,{
-          cancelToken: newCancelTokenSource.token,
-        })
-        .then((response) => {
-          resolve({
-            applicationID: response.data
-          })
-          dispatch(
-            enqueueSnackbarMessage({
-              message: "Successfully Create a Promotion!",
-              type: "success",
-            })
-          );
-        })
-        .catch((error) => {
-          if (axios.isCancel(error)) {
-            reject(rejectWithValue("Request canceled"));
-            return;
-          }
-          dispatch(
-            enqueueSnackbarMessage({
-              message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? "Failed to Create a Promotion!"
-                  : "An unknown error occurred.",
-              type: "error",
-            })
-          );
-          reject(error.response?.data?.message);
-        });
-    });
-  }
-);
-
-export const approvePromotions = createAsyncThunk(
-  "promotion/approvePromotions",
-  async (
-    {
-      id,
-      from
-    }: {
-      id: number,
-      from: string
-    },
-    { dispatch, rejectWithValue }
-  ) => {
-    APIService.getCancelToken().cancel();
-    const newCancelTokenSource = APIService.updateCancelToken();
-
-    return new Promise<{ status: string}>((resolve, reject) => {
-      APIService.getInstance()
-        .get(`${AppConfig.serviceUrls.retrieveAllPromotionRequests}/${id}/approve?from=${from}`, {
-          cancelToken: newCancelTokenSource.token,
-        })
-        .then((response) => {
-          resolve({
-            status: response.data.promotionRequests,
-          });
-          dispatch(
-            enqueueSnackbarMessage({
-              message: "Successfully Approved the Promotion!",
-              type: "success",
-            })
-          );
-        })
-        .catch((error) => {
-          if (axios.isCancel(error)) {
-            reject(rejectWithValue("Request canceled"));
-            return;
-          }
-          dispatch(
-            enqueueSnackbarMessage({
-              message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? "Failed to Approved the Promotion."
-                  : "An unknown error occurred.",
-              type: "error",
-            })
-          );
-          reject(error.response?.data?.message);
-        });
-    });
-  }
-);
-
-export const rejectPromotions = createAsyncThunk(
-  "promotion/rejectPromotions",
-  async (
-    {
-      id,
-      from,
-      reason
-    }: {
-      id: number,
-      from: string,
-      reason: string
-    },
-    { dispatch, rejectWithValue }
-  ) => {
-    APIService.getCancelToken().cancel();
-    const newCancelTokenSource = APIService.updateCancelToken();
-
-    return new Promise<{ status: string}>((resolve, reject) => {
-      APIService.getInstance()
-        .get(`${AppConfig.serviceUrls.retrieveAllPromotionRequests}/${id}/reject?from=${from}&reason=${reason}`, {
-          cancelToken: newCancelTokenSource.token,
-        })
-        .then((response) => {
-          resolve({
-            status: response.data.promotionRequests,
-          });
-          dispatch(
-            enqueueSnackbarMessage({
-              message: "Successfully Reject the Promotion!",
-              type: "success",
-            })
-          );
-        })
-        .catch((error) => {
-          if (axios.isCancel(error)) {
-            reject(rejectWithValue("Request canceled"));
-            return;
-          }
-          dispatch(
-            enqueueSnackbarMessage({
-              message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? "Failed to Reject the Promotion."
-                  : "An unknown error occurred.",
-              type: "error",
-            })
-          );
-          reject(error.response?.data?.message);
-        });
-    });
-  }
-);
-
-export const updatePromotion = createAsyncThunk(
-  "promotion/updatePromotion",
-  async (payload: UpdatePromotionPaylod,
+export const patchRecommendation = createAsyncThunk(
+  "recommendation/patchRecommendation",
+  async (payload: UpdateRecommendationPaylod,
     { dispatch, rejectWithValue }
   ) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken(); 
     return new Promise<{ status: string }>((resolve, reject) => {
       APIService.getInstance()
-        .patch(AppConfig.serviceUrls.retrieveAllPromotionRequests, payload,{
+        .patch(AppConfig.serviceUrls.getPromotionRecommendations, payload,{
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -279,7 +113,7 @@ export const updatePromotion = createAsyncThunk(
           })
           dispatch(
             enqueueSnackbarMessage({
-              message: "Successfully Updated the Promotion!",
+              message: "Successfully Save Draft!",
               type: "success",
             })
           );
@@ -293,7 +127,106 @@ export const updatePromotion = createAsyncThunk(
             enqueueSnackbarMessage({
               message:
                 error.response?.status === HttpStatusCode.InternalServerError
-                  ? "Failed to Update the Promotion!"
+                  ? "Failed to Save Draft!"
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error.response?.data?.message);
+        });
+    });
+  }
+);
+
+export const approveRecommendation = createAsyncThunk(
+  "recommendation/approveRecommendation",
+  async ({
+    id
+  }:{
+    id: number
+  },
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken(); 
+    return new Promise<{ status: string }>((resolve, reject) => {
+      APIService.getInstance()
+        .get(`${AppConfig.serviceUrls.getPromotionRecommendations}/${id}/submit`,{
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve({
+            status: response.data
+          })
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Successfully submit the Promotion!",
+              type: "success",
+            })
+          );
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            reject(rejectWithValue("Request canceled"));
+            return;
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? "Failed to submit the promotion!"
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error.response?.data?.message);
+        });
+    });
+  }
+);
+
+export const declineRecommendation = createAsyncThunk(
+  "recommendation/declineRecommendation",
+  async ({
+    id,
+    comment
+  }:{
+    id: number,
+    comment: string,
+  },
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken(); 
+    return new Promise<{ status: string }>((resolve, reject) => {
+      APIService.getInstance()
+        .get(`${AppConfig.serviceUrls.getPromotionRecommendations}/${id}/decline`,{
+          params: {
+            comment: comment
+          },
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve({
+            status: response.data
+          })
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Successfully decline the Promotion!",
+              type: "success",
+            })
+          );
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            reject(rejectWithValue("Request canceled"));
+            return;
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? "Failed to decline the promotion!"
                   : "An unknown error occurred.",
               type: "error",
             })
@@ -311,35 +244,58 @@ const PromotionSlice = createSlice({
   reducers: {
     resetSubmitState(state) {
       state.state = State.idle;
-      state.postState = State.idle;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchPromotions.pending, (state) => {
+      .addCase(fetchRecommendation.pending, (state) => {
         state.state = State.loading;
-        state.stateMessage = "Fetching promotion data...";
+        state.stateMessage = "Fetching recommendation data...";
       })
-      .addCase(fetchPromotions.fulfilled, (state, action) => {
+      .addCase(fetchRecommendation.fulfilled, (state, action) => {
         state.state = State.success;
         state.stateMessage = "Successfully fetched!";
-        state.promotions = action.payload.promotions;
+        state.recommendations = action.payload.recommendations;
       })
-      .addCase(fetchPromotions.rejected, (state) => {
+      .addCase(fetchRecommendation.rejected, (state) => {
         state.state = State.failed;
         state.stateMessage = "Failed to fetch!";
       })
-      .addCase(insertPromotions.pending, (state) => {
-        state.postState = State.loading;
-        state.stateMessage = "Inserting promotion data...";
+      .addCase(patchRecommendation.pending, (state) => {
+        state.updateState = State.loading;
+        state.stateMessage = "Updateding recommendation comment...";
       })
-      .addCase(insertPromotions.fulfilled, (state, action) => {
-        state.postState = State.success;
-        state.stateMessage = "Successfully Created!";
+      .addCase(patchRecommendation.fulfilled, (state, action) => {
+        state.updateState = State.success;
+        state.stateMessage = action.payload.status;
       })
-      .addCase(insertPromotions.rejected, (state) => {
-        state.postState = State.failed;
-        state.stateMessage = "Failed to Insert the promotion!";
+      .addCase(patchRecommendation.rejected, (state) => {
+        state.updateState = State.failed;
+        state.stateMessage = "Failed to Updated!";
+      })
+      .addCase(approveRecommendation.pending, (state) => {
+        state.updateState = State.loading;
+        state.stateMessage = "Submiting promotion...";
+      })
+      .addCase(approveRecommendation.fulfilled, (state, action) => {
+        state.updateState = State.success;
+        state.stateMessage = action.payload.status;
+      })
+      .addCase(approveRecommendation.rejected, (state) => {
+        state.updateState = State.failed;
+        state.stateMessage = "Failed to submit the promotion!";
+      })
+      .addCase(declineRecommendation.pending, (state) => {
+        state.updateState = State.loading;
+        state.stateMessage = "declining promotion...";
+      })
+      .addCase(declineRecommendation.fulfilled, (state, action) => {
+        state.updateState = State.success;
+        state.stateMessage = action.payload.status;
+      })
+      .addCase(declineRecommendation.rejected, (state) => {
+        state.updateState = State.failed;
+        state.stateMessage = "Failed to decline the promotion!";
       });
   },
 });

@@ -20,6 +20,8 @@ import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import SafetyCheckIcon from '@mui/icons-material/SafetyCheck';
+import GroupsIcon from '@mui/icons-material/Groups';
 import PersonPinIcon from '@mui/icons-material/PersonPin';
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
 
@@ -57,6 +59,30 @@ export const routes: RouteObjectWithRole[] = [
     text: "Individual Contributor",
     icon: React.createElement(PersonPinIcon),
     element: React.createElement(View.individualContributor),
+    allowRoles: [Role.LEAD],
+    bottomNav: false,
+  },
+  {
+    path: "/timeBased",
+    text: "Time Based",
+    icon: React.createElement(SafetyCheckIcon),
+    element: React.createElement(View.timeBased),
+    allowRoles: [Role.LEAD],
+    bottomNav: false,
+  },
+  {
+    path: "/functionalLead",
+    text: "Functional Lead",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.functionaLead),
+    allowRoles: [Role.LEAD],
+    bottomNav: false,
+  },
+  {
+    path: "/promotionBoard",
+    text: "Promotion Board",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.promotionBoard),
     allowRoles: [Role.LEAD],
     bottomNav: false,
   },

@@ -320,3 +320,53 @@ public type PromotionRecommendationInsertPayload record {
     # Person who created the record
     string createdBy;
 };
+
+# Promotion Recommendation Update Payload
+public type PromotionRecommendationUpdatePayload record {
+    # Recommendation ID
+    int id;
+    # Statement
+    string? statement = ();
+    # Any Other Comments
+    string? comments = ();
+    # Recommendation Status
+    PromotionRecommendationStatus? status = ();
+};
+
+# Promotion Recommendation Update Payload
+public type PromotionRecommendationDbUpdatePayload record {
+    *PromotionRecommendationUpdatePayload;
+    # To identify the last user who modified or updated
+    string updatedBy;
+};
+
+# Update record for hris_promotion_recommendation table.
+public type ApplicationUpdatePayload record {
+    # Promotion Request ID
+    int id;
+    # Promotion Request statement
+    string? statement = ();
+    # Promotion Request status
+    PromotionRequestStatus? status = ();
+    # Job band of the promotion
+    int? promotingJobBand = ();
+};
+
+# Update record for hris_promotion_recommendation table.
+public type ApplicationDbUpdatePayload record {
+    *ApplicationUpdatePayload;
+    # Business unit of the employee
+    string? businessUnit = ();
+    # Department of the employee
+    string? department = ();
+    # Team of the employee
+    string? team = ();
+    # Sub team of the employee
+    string? subTeam = ();
+    # Reason for rejection
+    string? reasonForRejection = ();
+    # Notification email sent status
+    int? isNotificationEmailSent = ();
+    # To identify the last user who modified or updated
+    string updatedBy;
+};
