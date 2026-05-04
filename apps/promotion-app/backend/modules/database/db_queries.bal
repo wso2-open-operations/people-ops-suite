@@ -398,3 +398,98 @@ isolated function insertPromotionRecommendationQuery(PromotionRecommendationInse
                 ${payload.createdBy},
                 ${payload.createdBy}
             )`;
+
+# Update Promotion Recommendation Query
+#
+# + payload - Promotion Recommendation Update Payload
+# + return - sql:ParameterizedQuery - Update query for the Promotion Recommendation
+isolated function updatePromotionRecommendationQuery(PromotionRecommendationDbUpdatePayload payload)
+        returns sql:ParameterizedQuery {
+        
+    sql:ParameterizedQuery sqlQuery = `
+        UPDATE 
+            hris_promotion_recommendation
+        SET
+        `;
+
+    boolean isFirstUpdate = true;
+
+    if payload.statement is string {
+        sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
+                `promotion_recommendation_statement = ${payload.statement}`);
+        isFirstUpdate = false;
+    }
+
+    if payload.comments is string {
+        sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
+                `promotion_recommendation_comments = ${payload.comments}`);
+        isFirstUpdate = false;
+    }
+
+    if payload.status is string {
+        sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
+                `promotion_recommendation_status = ${payload.status}`);
+        isFirstUpdate = false;
+    }
+    sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
+            `promotion_recommendation_updated_by = ${payload.updatedBy}`);
+
+    sqlQuery = sql:queryConcat(sqlQuery, ` WHERE promotion_recommendation_id = ${payload.id}`);
+
+    return sqlQuery;
+}
+
+# Update Promotion Request Query
+#
+# + payload - Promotion Request Update Payload  
+# + return - sql:ParameterizedQuery - Update query for the Promotion Request
+isolated function updatePromotionRequestQuery(ApplicationDbUpdatePayload payload)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery sqlQuery = `
+        UPDATE
+            hris_promotion_request
+        SET 
+
+        `;
+
+    boolean isFirstUpdate = true;
+
+    if payload.promotingJobBand is int {
+        sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
+                ` promotion_request_requested_job_band = ${payload.promotingJobBand} `);
+        isFirstUpdate = false;
+    }
+
+    if payload.businessUnit is string {
+        sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
+                ` promotion_request_business_unit = ${payload.businessUnit} `);
+        isFirstUpdate = false;
+    }
+
+    if payload.isNotificationEmailSent is int {
+        sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
+                ` promotion_request_email_sent = ${payload.isNotificationEmailSent} `);
+        isFirstUpdate = false;
+    }
+
+    if payload.reasonForRejection is string {
+        sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
+                ` promotion_request_reason_for_reject = ${payload.reasonForRejection} `);
+        isFirstUpdate = false;
+    }
+
+    if payload.statement !is null {
+        sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery, ` promotion_request_statement = ${payload.statement}`);
+        isFirstUpdate = false;
+    }
+
+    if payload.status !is null {
+        sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery, ` promotion_request_status = ${payload.status} `);
+        isFirstUpdate = false;
+    }
+
+    sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery, ` promotion_request_updated_by = ${payload.updatedBy} `);
+
+    return sql:queryConcat(sqlQuery, ` WHERE promotion_request_id = ${payload.id}`);
+}
