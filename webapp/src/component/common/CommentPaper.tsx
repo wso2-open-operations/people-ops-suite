@@ -13,14 +13,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Paper, Typography, useTheme } from "@mui/material";
+import { Paper, Typography } from "@mui/material";
 import DOMPurify from "dompurify";
 
 import React from "react";
 
 import { SANITIZE_CONFIG } from "@config/constant";
-
-import { tokens } from "../../theme";
 
 interface CommentPaperProps {
   comment?: string | null;
@@ -28,8 +26,6 @@ interface CommentPaperProps {
 }
 
 const CommentPaper: React.FC<CommentPaperProps> = ({ comment, refKey }) => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
 
   // HTML entity decoder using browser APIs
   const decodeHTMLEntities = (text: string) => {
@@ -49,7 +45,7 @@ const CommentPaper: React.FC<CommentPaperProps> = ({ comment, refKey }) => {
         variant="outlined"
         sx={{
           padding: 1,
-          bgcolor: colors.primary[400],
+          bgcolor: "background.default",
           width: "auto",
           maxHeight: "1500px",
           overflowY: "auto",

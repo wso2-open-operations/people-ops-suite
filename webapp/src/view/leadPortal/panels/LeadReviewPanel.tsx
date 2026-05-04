@@ -1031,23 +1031,32 @@ export const LeadReviewPanel = ({
                                 refKey={leadCommentRef}
                               />
                             ) : (
-                              <NoDataView
-                                text={getLeadFeedbackMessage(
-                                  employeeParRating.parLeadStatus ?? ParLeadStatus.PENDING,
-                                  isDeadlinePassed,
-                                )}
-                              />
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  minHeight: "10rem",
+                                }}
+                              >
+                                <NoDataView
+                                  text={getLeadFeedbackMessage(
+                                    employeeParRating.parLeadStatus ?? ParLeadStatus.PENDING,
+                                    isDeadlinePassed,
+                                  )}
+                                />
+                              </Box>
                             )}
                           </>
                         )}
                       </Grid>
 
                       {/* Rating Section */}
-                      <Grid container size={{ xs: 12 }} spacing={2} alignItems="center">
-                        <Grid size={{ xs: 12, sm: 4 }}>
+                      <Grid container size={{ xs: 12 }} spacing={1} alignItems="center">
+                        <Grid size={{ xs: 12, sm: 3 }}>
                           <Typography variant="body2">Rating:</Typography>
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 8 }}>
+                        <Grid size={{ xs: 12, sm: 9 }}>
                           {!isReadOnly ? (
                             <TextField
                               select
@@ -1080,11 +1089,11 @@ export const LeadReviewPanel = ({
 
                       {/* PAR Shared By Section */}
                       {isReadOnly && employeeParRating.parRatingSharedBy && (
-                        <Grid container size={{ xs: 12 }} spacing={2} alignItems="center">
-                          <Grid size={{ xs: 12, sm: 4 }}>
+                        <Grid container size={{ xs: 12 }} spacing={1} alignItems="center">
+                          <Grid size={{ xs: 12, sm: 3 }}>
                             <Typography variant="body2">PAR shared by:</Typography>
                           </Grid>
-                          <Grid size={{ xs: 12, sm: 8 }}>
+                          <Grid size={{ xs: 12, sm: 9 }}>
                             <Chip
                               size="small"
                               label={employeeParRating.parRatingSharedBy}
@@ -1200,11 +1209,11 @@ export const LeadReviewPanel = ({
 
                       {/* Special Rating Section */}
                       {values.parRating === top5p20pEnabledRating && (
-                        <Grid container size={{ xs: 12 }} spacing={2} alignItems="center">
-                          <Grid size={{ xs: 12, sm: 4 }}>
+                        <Grid container size={{ xs: 12 }} spacing={1} alignItems="center">
+                          <Grid size={{ xs: 12, sm: 3 }}>
                             <Typography variant="body2">Top 5%/20% Rating:</Typography>
                           </Grid>
-                          <Grid size={{ xs: 12, sm: 8 }}>
+                          <Grid size={{ xs: 12, sm: 9 }}>
                             {!isReadOnly ? (
                               <TextField
                                 disabled={!isCheckboxChecked || isSubmitting}
@@ -1381,7 +1390,16 @@ export const LeadReviewPanel = ({
                 <CardContent>
                   {!employeeParRating?.parEmployeeComment ? (
                     isReadOnly || !isAdminAuditViewOn ? (
-                      <NoDataView text="Employee PAR hasn't been shared" />
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          minHeight: "10rem",
+                        }}
+                      >
+                        <NoDataView text="Employee PAR hasn't been shared" />
+                      </Box>
                     ) : (
                       renderTextField()
                     )
@@ -1393,11 +1411,8 @@ export const LeadReviewPanel = ({
                   ) : (
                     renderTextField()
                   )}
-                </CardContent>
-
-                {isAdminAuditViewOn && (
-                  <Grid size={{ xs: 12 }} sx={{ mt: 2 }}>
-                    <Box display="flex" justifyContent="flex-end" gap={2}>
+                  {isAdminAuditViewOn && (
+                    <Box display="flex" justifyContent="flex-end" gap={2} sx={{ mt: 2 }}>
                       {!isReadOnly && (
                         <Button
                           onClick={openEmployeeParShareDialog}
@@ -1418,8 +1433,8 @@ export const LeadReviewPanel = ({
                         </Button>
                       )}
                     </Box>
-                  </Grid>
-                )}
+                  )}
+                </CardContent>
               </Card>
             </Grid>
             {/* Admin Comment Section */}

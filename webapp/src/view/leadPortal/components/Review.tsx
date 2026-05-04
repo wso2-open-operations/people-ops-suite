@@ -165,7 +165,7 @@ export const Review = ({
               aria-label="back"
               color="primary"
               onClick={closeReviewEmployeeView}
-              sx={{ mb: 1, mr: 1 }}
+              sx={{ mb: 1, mr: 1, ml: -1, "&:hover": { bgcolor: "transparent" } }}
             >
               <ArrowBackIcon />
             </IconButton>

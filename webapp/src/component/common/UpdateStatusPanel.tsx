@@ -165,9 +165,9 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
   return (
     <Box>
       <form onSubmit={handleSubmit}>
-        <Grid container maxWidth={"35%"}>
+        <Grid container maxWidth={"55%"} ml={2}>
           <Grid size={{ xs: 5 }} display={"flex"} alignItems={"center"} my={1}>
-            <Typography>
+            <Typography color="text.primary">
               {"Employee PAR Status: "}
               <Tooltip
                 arrow
@@ -215,7 +215,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
           </Grid>
 
           <Grid size={{ xs: 5 }} display={"flex"} alignItems={"center"} my={1}>
-            <Typography>
+            <Typography color="text.primary">
               {"Lead's feedback Status: "}
               <Tooltip
                 arrow
@@ -267,7 +267,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
           </Grid>
 
           <Grid size={{ xs: 5 }} display={"flex"} alignItems={"center"} my={1}>
-            <Typography>
+            <Typography color="text.primary">
               {"F2F Status: "}
               <Tooltip
                 arrow
@@ -316,7 +316,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Grid size={{ xs: 5 }} display={"flex"} alignItems={"center"} my={1}>
-              <Typography mr={13}>F2F Date:</Typography>
+              <Typography color="text.primary" mr={13}>F2F Date:</Typography>
             </Grid>
 
             <Grid size={{ xs: 7 }} display={"flex"} alignItems={"center"} my={1}>
