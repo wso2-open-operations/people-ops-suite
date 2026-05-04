@@ -65,7 +65,6 @@ import { RequestState } from "@utils/types";
 import OfferFeedbackView from "@view/ongoingCycleView/components/OfferFeedbackView";
 import { ReviewProvideModal } from "@view/ongoingCycleView/components/ReviewProvideModal";
 
-import { tokens } from "../../theme";
 import NoDataView from "./NoDataView";
 import { ReviewViewModal } from "./ReviewViewModal";
 
@@ -76,7 +75,6 @@ export enum FeedbackTypes {
 
 export const ProvideFeedbackTab = () => {
   const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();

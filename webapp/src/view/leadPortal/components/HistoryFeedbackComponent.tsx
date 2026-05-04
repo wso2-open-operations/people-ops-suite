@@ -46,8 +46,6 @@ import {
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 import { RequestState } from "@utils/types";
 
-import { tokens } from "../../../theme";
-
 interface ThreeSixtyHistoryFeedbackSectionProps {
   isAdminsSelfProfile: boolean;
   current?: boolean;
@@ -58,7 +56,6 @@ const ThreeSixtyHistoryFeedbackSection: React.FC<ThreeSixtyHistoryFeedbackSectio
 }) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const colors = tokens(theme.palette.mode);
   const employeeMap = useAppSelector(selectEmployeeMap);
   const threeSixtyReviewStatus = useAppSelector(selectEmployeeHistoryReviewStatus);
   const threeSixtyReviews = useAppSelector(selectEmployeeHistoryReviews);
