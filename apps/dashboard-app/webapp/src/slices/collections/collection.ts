@@ -1,0 +1,174 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk } from "@reduxjs/toolkit";
+import axios, { HttpStatusCode } from "axios";
+
+import { State } from "@/types/types";
+import { AppConfig } from "@config/config";
+import { SnackMessage } from "@config/constant";
+import { getAPIService } from "@utils/apiService";
+import { extractErrorMessage } from "@utils/errorUtils";
+
+import { enqueueSnackbarMessage } from "../commonSlice/common";
+
+interface CollectionState {
+  state: State;
+  submitState: State;
+  stateMessage: string | null;
+  errorMessage: string | null;
+  collections: Collections | null;
+  backgroundProcess: boolean;
+  backgroundProcessMessage: string | null;
+  [key: string]: unknown;
+}
+
+const initialState: CollectionState = {
+  state: State.idle,
+  submitState: State.idle,
+  stateMessage: "",
+  errorMessage: "",
+  collections: null,
+  backgroundProcess: false,
+  backgroundProcessMessage: null,
+};
+
+interface Collections {
+  count: number;
+  collections: Collection[];
+}
+
+export interface Collection {
+  id: number;
+  name: string;
+  createdOn: string;
+  createdBy: string;
+  updatedOn: string;
+  updatedBy: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+}
+
+export const fetchCollections = createAsyncThunk(
+  "collection/fetchCollections",
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await getAPIService().get(AppConfig.serviceUrls.collections);
+      return response.data;
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        return rejectWithValue("Request canceled");
+      }
+
+      const msg = extractErrorMessage(error);
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message:
+            (error as { response?: { status?: number } }).response?.status ===
+            HttpStatusCode.InternalServerError
+              ? SnackMessage.error.fetchCollectionsMessage
+              : msg,
+          type: "error",
+        }),
+      );
+
+      return rejectWithValue(msg);
+    }
+  },
+);
+
+// Payload of the add new collection
+export interface AddCollectionPayload {
+  name: string;
+}
+
+export const addCollections = createAsyncThunk(
+  "collection/addCollections",
+  async (payload: AddCollectionPayload, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await getAPIService().post(AppConfig.serviceUrls.collections, payload);
+      dispatch(
+        enqueueSnackbarMessage({
+          message: SnackMessage.success.addCollections,
+          type: "success",
+        }),
+      );
+      return response.data;
+    } catch (error) {
+      const msg = extractErrorMessage(error);
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message:
+            (error as { response?: { status?: number } }).response?.status ===
+            HttpStatusCode.InternalServerError
+              ? SnackMessage.error.addCollections
+              : msg,
+          type: "error",
+        }),
+      );
+
+      return rejectWithValue(
+        (error as { response?: { data?: unknown }; message?: string }).response?.data ?? {
+          message: msg,
+        },
+      );
+    }
+  },
+);
+
+const CollectionSlice = createSlice({
+  name: "collection",
+  initialState,
+  reducers: {
+    resetSubmitState(state) {
+      state.submitState = State.idle;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchCollections.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Fetching collections...";
+      })
+      .addCase(fetchCollections.fulfilled, (state, action) => {
+        state.state = State.success;
+        state.stateMessage = "Successfully fetched!";
+        state.collections = action.payload;
+      })
+      .addCase(fetchCollections.rejected, (state) => {
+        state.state = State.failed;
+        state.stateMessage = "Failed to fetch!";
+      })
+      .addCase(addCollections.pending, (state) => {
+        state.submitState = State.loading;
+        state.stateMessage = "Creating collections...";
+      })
+      .addCase(addCollections.fulfilled, (state) => {
+        state.submitState = State.success;
+        state.stateMessage = "Successfully created!";
+      })
+      .addCase(addCollections.rejected, (state) => {
+        state.submitState = State.failed;
+        state.stateMessage = "Failed to create!";
+      });
+  },
+});
+
+export const { resetSubmitState } = CollectionSlice.actions;
+export default CollectionSlice.reducer;
