@@ -38,6 +38,7 @@ const AutoPlayAd = memo(() => {
   const [loading, setLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const latestRequestRef = useRef(0);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -47,27 +48,35 @@ const AutoPlayAd = memo(() => {
   }, []);
 
   const fetchAndPlay = useCallback(() => {
+    const requestId = ++latestRequestRef.current;
     setLoading(true);
     axios
       .get(AppConfig.serviceUrls.advertisementsActive)
       .then((res) => {
+        if (requestId !== latestRequestRef.current) return;
         const data = res.data;
-        if (data) {
-          setAd({
-            id: data.id,
-            adName: data.adName,
-            mediaUrl: data.mediaUrl,
-            mediaType: data.mediaType,
-            durationSeconds: data.durationSeconds || 5,
-            isVideo: data.mediaType.startsWith("video/"),
-          });
-          setPlaying(true);
+        if (!data) {
+          setAd(null);
+          setPlaying(false);
+          return;
         }
+        setAd({
+          id: data.id,
+          adName: data.adName,
+          mediaUrl: data.mediaUrl,
+          mediaType: data.mediaType,
+          durationSeconds: data.durationSeconds || 5,
+          isVideo: data.mediaType.startsWith("video/"),
+        });
+        setPlaying(true);
       })
       .catch(() => {
+        if (requestId !== latestRequestRef.current) return;
         setAd(null);
+        setPlaying(false);
       })
       .finally(() => {
+        if (requestId !== latestRequestRef.current) return;
         setLoading(false);
       });
   }, []);
@@ -86,6 +95,7 @@ const AutoPlayAd = memo(() => {
   }, [fetchAndPlay]);
 
   const stopPlaying = useCallback(() => {
+    latestRequestRef.current += 1;
     setPlaying(false);
     setAd(null);
     clearTimer();
@@ -192,6 +202,7 @@ const AutoPlayAd = memo(() => {
       }}
     >
       <IconButton
+        aria-label="Close advertisement"
         onClick={stopPlaying}
         sx={{
           position: "absolute",

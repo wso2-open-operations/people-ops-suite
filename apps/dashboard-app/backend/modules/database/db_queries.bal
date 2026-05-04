@@ -80,9 +80,8 @@ isolated function getFoodWasteRecordsByDateQuery(string recordDate) returns sql:
 # + return - Parameterized select query
 isolated function getFoodWasteRecordsQuery(FoodWasteRecordFilters filters, int page, int pageSize)
     returns sql:ParameterizedQuery {
-    int safePage = page < 1 ? 1 : page;
     int safePageSize = pageSize < 1 ? 1 : (pageSize > MAX_PAGE_SIZE ? MAX_PAGE_SIZE : pageSize);
-    int computedOffset = (safePage - 1) * safePageSize;
+    int computedOffset = filters.offset < 0 ? 0 : filters.offset;
 
     sql:ParameterizedQuery baseQuery =
 `
@@ -110,7 +109,7 @@ isolated function getFoodWasteRecordsQuery(FoodWasteRecordFilters filters, int p
         baseQuery = sql:queryConcat(baseQuery, ` AND meal_type = ${filters.mealType}`);
     }
     return sql:queryConcat(baseQuery,
-            ` ORDER BY record_date DESC LIMIT ${safePageSize} OFFSET ${computedOffset}`);
+            ` ORDER BY record_date DESC, food_waste_record_id DESC LIMIT ${safePageSize} OFFSET ${computedOffset}`);
 }
 
 # Build query to update a food waste record.

@@ -202,7 +202,13 @@ public isolated function getAdvertisementById(int id) returns Advertisement|erro
 # + id - Advertisement ID
 # + return - AdvertisementNotFoundError or Error if failed
 public isolated function activateAdvertisement(int id) returns AdvertisementNotFoundError|error? {
-    sql:ExecutionResult result = check databaseClient->execute(activateAdvertisementQuery(id));
+    sql:ExecutionResult|error result = databaseClient->execute(activateAdvertisementQuery(id));
+    if result is error {
+        if result.message().includes("Advertisement not found") {
+            return error AdvertisementNotFoundError("Advertisement not found.");
+        }
+        return result;
+    }
     if result.affectedRowCount == 0 {
         Advertisement|error? ad = getAdvertisementById(id);
         if ad is error {
@@ -219,7 +225,13 @@ public isolated function activateAdvertisement(int id) returns AdvertisementNotF
 # + id - Advertisement ID
 # + return - AdvertisementNotFoundError or Error if failed
 public isolated function deactivateAdvertisement(int id) returns AdvertisementNotFoundError|error? {
-    sql:ExecutionResult result = check databaseClient->execute(deactivateAdvertisementQuery(id));
+    sql:ExecutionResult|error result = databaseClient->execute(deactivateAdvertisementQuery(id));
+    if result is error {
+        if result.message().includes("Advertisement not found") {
+            return error AdvertisementNotFoundError("Advertisement not found.");
+        }
+        return result;
+    }
     if result.affectedRowCount == 0 {
         Advertisement|error? ad = getAdvertisementById(id);
         if ad is error {
