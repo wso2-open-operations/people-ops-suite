@@ -272,3 +272,23 @@ public type EmployeeInfo record {
     # Sub team of the employee
     string? subTeam = ();
 };
+
+# Return record for single employee Name.
+public type EmployeeName record {
+    # First Name
+    string firstName;
+    # Last Name
+    string lastName;
+};
+
+# Return record for single employee Name.
+type EmployeeNameData record {
+    # Employee Name Object
+    EmployeeName employee;
+};
+
+# Return record for single employee Name.
+type EmployeeNameResult record {
+    # Employee Name Data Object
+    EmployeeNameData data;
+};
