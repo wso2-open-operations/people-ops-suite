@@ -22,6 +22,8 @@ public type ClientAuthConfig record {|
     string clientId;
     # Client Secret
     string clientSecret;
+    # OAuth2 scopes required by the upstream service
+    string[] scopes = [];
 |};
 
 # Input for creating a user via the SCIM operations service.

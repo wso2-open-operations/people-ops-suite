@@ -17,7 +17,7 @@
 import people.authorization;
 import people.database;
 import people.qr;
-import people.scim_operations;
+import people.scim;
 import people.wso2_coin;
 
 import ballerina/http;
@@ -976,8 +976,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? scimUserResult = scim_operations:createUser({
-            userName: string `${scim_operations:asgardeoUserStoreDomain}/${payload.workEmail}`,
+        error? scimUserResult = scim:createUser({
+            userName: string `${scim:asgardeoUserStoreDomain}/${payload.workEmail}`,
             emails: [payload.workEmail],
             name: {givenName: payload.firstName, familyName: payload.lastName},
             urn\:scim\:wso2\:schema: {askPassword: true}
@@ -985,11 +985,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if scimUserResult is error {
             log:printError("Failed to provision user in Asgardeo; rolling back employee record",
                     scimUserResult, workEmail = payload.workEmail, employeeId = employeeId);
-            error? rollbackErr = database:deleteEmployeeById(employeeId);
-            if rollbackErr is error {
-                log:printError("Failed to roll back employee record after Asgardeo provisioning failure; manual cleanup required",
-                        rollbackErr, employeeId = employeeId);
-            }
+            rollbackEmployeeCreation(employeeId, payload.workEmail);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_EMPLOYEE_CREATION_FAILED
@@ -997,24 +993,35 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string[]|error groupNames = database:getAsgardeoGroupsForEmploymentType(payload.employmentTypeId);
+        string[]|error groupNames = database:getAsgardeoGroupsByEmploymentType(payload.employmentTypeId);
         if groupNames is error {
-            log:printError("Failed to fetch Asgardeo groups for employment type; user created without group assignment",
-                    groupNames, workEmail = payload.workEmail, employmentTypeId = payload.employmentTypeId);
-            return newEmployeeId;
+            log:printError("Failed to fetch Asgardeo groups for employment type; rolling back employee record. " +
+                    "Asgardeo user was already created and requires manual cleanup",
+                    groupNames, workEmail = payload.workEmail, employeeId = employeeId,
+                    employmentTypeId = payload.employmentTypeId);
+            rollbackEmployeeCreation(employeeId, payload.workEmail);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                }
+            };
         }
         foreach string groupName in groupNames {
-            scim_operations:AddUsersToGroupResponse|error addResult =
-                    scim_operations:addUserToGroup(groupName, payload.workEmail);
-            if addResult is error {
-                log:printError("Failed to add user to Asgardeo group", addResult,
-                        workEmail = payload.workEmail, group = groupName);
-                continue;
-            }
-            if addResult.failedUsers.length() > 0 {
-                log:printWarn("Asgardeo reported failure adding user to group",
-                        workEmail = payload.workEmail, group = groupName,
-                        failedUsers = addResult.failedUsers);
+            scim:AddUsersToGroupResponse|error addResult =
+                    scim:addUserToGroup(groupName, payload.workEmail);
+            boolean hasFailure = addResult is error
+                    || addResult.failedUsers.length() > 0;
+            if hasFailure {
+                log:printError("Failed to add user to Asgardeo group. " +
+                        "Asgardeo user was already created and requires manual cleanup",
+                        addResult is error ? addResult : (),
+                        workEmail = payload.workEmail, group = groupName, employeeId = employeeId,
+                        failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
+                return <http:InternalServerError>{
+                    body: {
+                        message: ERROR_EMPLOYEE_CREATION_FAILED
+                    }
+                };
             }
         }
         return newEmployeeId;

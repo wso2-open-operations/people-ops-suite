@@ -249,7 +249,7 @@ public isolated function getEmploymentTypes() returns EmploymentType[]|error {
 #
 # + employmentTypeId - Employment type ID
 # + return - Group names, or error
-public isolated function getAsgardeoGroupsForEmploymentType(int employmentTypeId) returns string[]|error {
+public isolated function getAsgardeoGroupsByEmploymentType(int employmentTypeId) returns string[]|error {
     stream<record {|string groupName;|}, error?> rows =
         databaseClient->query(getAsgardeoGroupsForEmploymentTypeQuery(employmentTypeId));
     return from var row in rows

@@ -22,10 +22,22 @@ public configurable string asgardeoUserStoreDomain = "DEFAULT";
 
 @display {
     label: "SCIM Operations Service Client",
-    id: "scim_operations/client"
+    id: "scim/client"
 }
 final http:Client scimOperationsClient = check new (scimOperationsServiceUrl, {
     auth: {
         ...scimClientAuthConfig
+    },
+    timeout: 15.0,
+    httpVersion: http:HTTP_1_1,
+    http1Settings: {keepAlive: http:KEEPALIVE_NEVER},
+    retryConfig: {
+        count: 3,
+        interval: 3.0,
+        statusCodes: [
+            http:STATUS_BAD_GATEWAY,
+            http:STATUS_SERVICE_UNAVAILABLE,
+            http:STATUS_GATEWAY_TIMEOUT
+        ]
     }
 });
