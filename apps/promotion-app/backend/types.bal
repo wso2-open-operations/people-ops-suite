@@ -91,7 +91,6 @@ type Employees record {
     people:EmployeeInfo[] employees;
 };
 
-// Response type for POST promotion/request/
 # Result object of the Update promotion request resource function.
 type ApplicationInfo record {
     # New Application ID
@@ -112,4 +111,45 @@ public type Application record {
     string? statement = ();
     # Promotion recommendation comment for the special promotion
     string? comment = ();
+};
+
+# Return record for full recommendation.
+public type FullPromotionRecommendation record {|
+    *database:FullPromotionRecommendation;
+    # Name of the employee
+    string employeeName;
+|};
+
+# Promotion recommendation update payload.
+public type RecommendationUpdateData record {
+    # Promotion Recommendation ID 
+    int id;
+    # Promotion Recommendation statement
+    string? statement;
+    # Promotion Recommendation comment
+    string? comment;
+};
+
+# Result object of the Update promotion recommendation resource function.
+type RecommendationStatus record {
+    # Recommendation Status
+    string status;
+};
+
+# Result object of the Update promotion request resource function.
+type ApplicationStatus record {
+    # Application Status
+    string status;
+};
+
+# Promotion Request Update Payload.
+public type ApplicationUpdateData record {
+    # Promotion Request ID
+    int id;
+    # Promotion Request statement
+    string? statement = ();
+    # Promotion Reason for rejection
+    string? reasonForRejection = ();
+    # Job band of the promotion
+    int? promotingJobBand = ();
 };
