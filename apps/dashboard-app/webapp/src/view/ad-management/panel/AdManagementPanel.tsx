@@ -34,6 +34,7 @@ import { AdManagementMessage } from "@config/messages";
 import {
   activateAdvertisement,
   addAdvertisement,
+  deactivateAdvertisement,
   deleteAdvertisement,
   fetchAdvertisements,
 } from "@slices/advertisementSlice/advertisement";
@@ -239,14 +240,25 @@ export default function AdManagementPanel() {
     }
   };
 
-  const handleSetActiveAd = (adId: string) => {
-    dispatch(activateAdvertisement(adId))
+  const handleSetActiveAd = (adId: string, isActive: boolean) => {
+    const action = isActive ? deactivateAdvertisement(adId) : activateAdvertisement(adId);
+    dispatch(action)
       .unwrap()
       .then(() => {
-        enqueueSnackbar(AdManagementMessage.snackbar.activeUpdatedSuccess, { variant: "success" });
+        enqueueSnackbar(
+          isActive
+            ? AdManagementMessage.snackbar.deactivatedSuccess
+            : AdManagementMessage.snackbar.activeUpdatedSuccess,
+          { variant: "success" },
+        );
       })
       .catch(() => {
-        enqueueSnackbar(AdManagementMessage.snackbar.activeUpdatedFailed, { variant: "error" });
+        enqueueSnackbar(
+          isActive
+            ? AdManagementMessage.snackbar.deactivatedFailed
+            : AdManagementMessage.snackbar.activeUpdatedFailed,
+          { variant: "error" },
+        );
       });
   };
 
@@ -498,10 +510,9 @@ export default function AdManagementPanel() {
           </Box>
 
           <Button
-            fullWidth
             variant="contained"
-            size="large"
-            startIcon={<Upload />}
+            size="medium"
+            startIcon={<Upload size={16} />}
             onClick={handleAddAd}
             sx={{ mt: 4 }}
           >
@@ -602,10 +613,10 @@ export default function AdManagementPanel() {
                           variant={ad.isActive ? "contained" : "outlined"}
                           size="small"
                           startIcon={<Radio size={16} />}
-                          onClick={() => handleSetActiveAd(ad.id)}
+                          onClick={() => handleSetActiveAd(ad.id, ad.isActive)}
                         >
                           {ad.isActive
-                            ? AdManagementMessage.actions.active
+                            ? AdManagementMessage.actions.deactivate
                             : AdManagementMessage.actions.setActive}
                         </Button>
 

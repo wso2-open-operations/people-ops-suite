@@ -214,6 +214,23 @@ public isolated function activateAdvertisement(int id) returns AdvertisementNotF
     }
 }
 
+# Deactivate an advertisement.
+#
+# + id - Advertisement ID
+# + return - AdvertisementNotFoundError or Error if failed
+public isolated function deactivateAdvertisement(int id) returns AdvertisementNotFoundError|error? {
+    sql:ExecutionResult result = check databaseClient->execute(deactivateAdvertisementQuery(id));
+    if result.affectedRowCount == 0 {
+        Advertisement|error? ad = getAdvertisementById(id);
+        if ad is error {
+            return ad;
+        }
+        if ad is () {
+            return error AdvertisementNotFoundError("Advertisement not found.");
+        }
+    }
+}
+
 # Delete an advertisement (active-ad guard is in the operation layer).
 #
 # + id - Advertisement ID

@@ -102,6 +102,37 @@ BEGIN
 END$$
 DELIMITER ;
 
+-- Deactivate an advertisement.
+DELIMITER $$
+CREATE PROCEDURE deactivate_advertisement(IN p_advertisement_id INT)
+BEGIN
+    DECLARE v_ad_exists INT DEFAULT 0;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+        SELECT COUNT(*)
+        INTO v_ad_exists
+        FROM advertisements
+        WHERE advertisement_id = p_advertisement_id
+        FOR UPDATE;
+
+        IF v_ad_exists = 0 THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Advertisement not found';
+        END IF;
+
+        UPDATE advertisements
+        SET    is_active  = FALSE,
+               updated_by = 'system',
+               updated_on = CURRENT_TIMESTAMP
+        WHERE  advertisement_id = p_advertisement_id;
+    COMMIT;
+END$$
+DELIMITER ;
+
 -- Table: daily_summaries (Materialized view / Pre-aggregation)
 CREATE TABLE IF NOT EXISTS daily_summaries (
     id INT AUTO_INCREMENT PRIMARY KEY,

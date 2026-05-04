@@ -440,6 +440,31 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
     }
 
+    # Deactivate an advertisement.
+    #
+    # + ctx - Request context
+    # + id - Ad ID
+    # + return - Ok or NotFound or Forbidden or BadRequest or InternalServerError
+    resource function put advertisements/[int id]/deactivate(http:RequestContext ctx)
+            returns http:Ok|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+        do {
+            authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
+
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
+                return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
+            }
+
+            check database:deactivateAdvertisement(id);
+            return <http:Ok>{body: {message: "Advertisement deactivated successfully"}};
+        } on fail error internalErr {
+            if internalErr is database:AdvertisementNotFoundError {
+                return <http:NotFound>{body: {message: internalErr.message()}};
+            }
+            log:printError("Error occurred while deactivating advertisement!", internalErr);
+            return <http:InternalServerError>{body: {message: "Error occurred while deactivating advertisement!"}};
+        }
+    }
+
     # Delete an advertisement.
     #
     # + ctx - Request context

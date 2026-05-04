@@ -230,6 +230,13 @@ isolated function getAdvertisementByIdQuery(int id) returns sql:ParameterizedQue
 isolated function activateAdvertisementQuery(int id) returns sql:ParameterizedQuery =>
     `CALL dashboard_app_db.activate_advertisement(${id})`;
 
+# Build query to deactivate an advertisement.
+#
+# + id - Advertisement id
+# + return - Parameterized procedure call query
+isolated function deactivateAdvertisementQuery(int id) returns sql:ParameterizedQuery =>
+    `CALL dashboard_app_db.deactivate_advertisement(${id})`;
+
 # Build query to delete an advertisement.
 #
 # + id - Advertisement id

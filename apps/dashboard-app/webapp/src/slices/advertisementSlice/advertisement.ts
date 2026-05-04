@@ -162,6 +162,23 @@ export const activateAdvertisement = createAsyncThunk(
   },
 );
 
+export const deactivateAdvertisement = createAsyncThunk(
+  "advertisement/deactivateAdvertisement",
+  async (adId: string, { rejectWithValue }) => {
+    try {
+      await getAPIService().put(`${AppConfig.serviceUrls.advertisements}/${adId}/deactivate`);
+      return { adId };
+    } catch (error) {
+      const err = error as AxiosError;
+      return rejectWithValue({
+        code: err.code,
+        message: err.message,
+        status: err.response?.status,
+      });
+    }
+  },
+);
+
 export const deleteAdvertisement = createAsyncThunk(
   "advertisement/deleteAdvertisement",
   async (adId: string, { rejectWithValue }) => {
@@ -213,6 +230,12 @@ const advertisementSlice = createSlice({
         state.advertisements = state.advertisements.map((ad) => ({
           ...ad,
           isActive: ad.id === action.payload.adId,
+        }));
+      })
+      .addCase(deactivateAdvertisement.fulfilled, (state, action) => {
+        state.advertisements = state.advertisements.map((ad) => ({
+          ...ad,
+          isActive: ad.id === action.payload.adId ? false : ad.isActive,
         }));
       })
       .addCase(deleteAdvertisement.fulfilled, (state, action) => {

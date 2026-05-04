@@ -148,6 +148,7 @@ class APIService {
     this.authRequestInterceptorId = this.instance.interceptors.request.use(
       (config) => {
         config.headers.set("Authorization", `Bearer ${this.idToken}`);
+        config.headers.set("x-jwt-assertion", this.idToken);
 
         const endpoint = config.url || "";
         const params = config.params ? `?${new URLSearchParams(config.params).toString()}` : "";
