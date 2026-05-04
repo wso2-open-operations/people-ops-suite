@@ -24,7 +24,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { Employee } from "@root/src/utils/types";
 
-interface EmployeeJoinedDetails {
+export interface EmployeeJoinedDetails {
   workEmail: string;
   startDate: string;
   jobBand: number | null;
