@@ -395,12 +395,15 @@ export const TeamSummary = ({
   };
 
   const copySelectedEmailsToClipboard = () => {
-    const emails = Array.from(selectionModel.ids).map((rowId) => {
-      const employeeParRating = teamReport?.details.find((member) => member.parRatingId === rowId);
-      if (employeeParRating?.parEmployeeEmail) {
-        return employeeParRating?.parEmployeeEmail;
-      }
-    });
+    const allDetails = teamReport?.details ?? [];
+    const emails =
+      selectionModel.type === "exclude"
+        ? allDetails
+            .filter((m) => !selectionModel.ids.has(m.parRatingId))
+            .map((m) => m.parEmployeeEmail)
+        : Array.from(selectionModel.ids)
+            .map((rowId) => allDetails.find((m) => m.parRatingId === rowId)?.parEmployeeEmail)
+            .filter(Boolean);
 
     navigator.clipboard.writeText(emails.join(", "));
     dispatch(ShowSnackBarMessage("Emails copied to clipboard", "success"));
@@ -596,6 +599,8 @@ export const TeamSummary = ({
               height: "100%",
               display: "flex",
               flexDirection: "column",
+              background: "transparent",
+              backdropFilter: "none",
             }}
           >
             <Grid container justifyContent="space-between" mb={2}>
@@ -604,7 +609,7 @@ export const TeamSummary = ({
                 <Button
                   variant="contained"
                   onClick={copySelectedEmailsToClipboard}
-                  disabled={selectionModel.ids.size === 0}
+                  disabled={selectionModel.type === "include" && selectionModel.ids.size === 0}
                   sx={{ mr: 2 }}
                 >
                   Copy Emails
@@ -613,7 +618,7 @@ export const TeamSummary = ({
                   <Button
                     variant="contained"
                     onClick={openParShareDialog}
-                    disabled={selectionModel.ids.size === 0}
+                    disabled={selectionModel.type === "include" && selectionModel.ids.size === 0}
                     sx={{ mr: 2 }}
                   >
                     Share
