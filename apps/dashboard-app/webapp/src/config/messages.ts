@@ -85,15 +85,15 @@ export const DataEntryMessage = {
 };
 
 export const AdManagementMessage = {
-  title: "Ad Management Console",
+  title: "Advertisement Management Console",
   subtitle: "Configure dashboard announcements, promotional content, and scheduling",
   sections: {
-    activeAd: "Currently Active Ad",
-    addNewAd: "Add New Ad",
-    adLibrary: "Ad Library",
+    activeAd: "Currently Active Advertisement",
+    addNewAd: "Add New Advertisement",
+    adLibrary: "Advertisement Library",
   },
   labels: {
-    adName: "Ad Name",
+    adName: "Advertisement Name",
     mediaUrl: "Media URL",
     uploaded: "Uploaded",
     displayDuration: "Display Duration",
@@ -112,7 +112,7 @@ export const AdManagementMessage = {
     activeBadge: "ACTIVE",
   },
   actions: {
-    testAd: "Test Ad",
+    testAd: "Test Advertisement",
     uploadAndAdd: "Upload & Add to Library",
     setActive: "Set Active",
     deactivate: "Deactivate",
@@ -121,17 +121,17 @@ export const AdManagementMessage = {
     delete: "Delete",
   },
   snackbar: {
-    adNameRequired: "Please enter an ad name",
+    adNameRequired: "Please enter an advertisement name",
     mediaUrlRequired: "Please enter a media URL",
-    adAddedSuccess: "Ad added successfully",
-    adAddedFailed: "Failed to add ad. Please try again.",
-    activeUpdatedSuccess: "Active ad updated",
-    activeUpdatedFailed: "Failed to activate ad. Please try again.",
-    deactivatedSuccess: "Ad deactivated",
-    deactivatedFailed: "Failed to deactivate ad. Please try again.",
-    deleteActiveBlocked: "Cannot delete active ad. Please select another ad first.",
-    adDeletedSuccess: "Ad deleted successfully",
-    adDeletedFailed: "Failed to delete ad. Please try again.",
+    adAddedSuccess: "Advertisement added successfully",
+    adAddedFailed: "Failed to add advertisement. Please try again.",
+    activeUpdatedSuccess: "Active advertisement updated",
+    activeUpdatedFailed: "Failed to activate advertisement. Please try again.",
+    deactivatedSuccess: "Advertisement deactivated",
+    deactivatedFailed: "Failed to deactivate advertisement. Please try again.",
+    deleteActiveBlocked: "Cannot delete active advertisement. Please select another one first.",
+    adDeletedSuccess: "Advertisement deleted successfully",
+    adDeletedFailed: "Failed to delete advertisement. Please try again.",
   },
 };
 

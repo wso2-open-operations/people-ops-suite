@@ -20,7 +20,7 @@ import { useNavigate } from "react-router-dom";
 
 import React from "react";
 
-import Wso2Logo from "@assets/images/wso2-logo.svg";
+import PulseOrange from "@assets/images/pulse-orange.png";
 import { APP_NAME } from "@config/config";
 import { CommonMessage } from "@config/messages";
 import { useAppAuthContext } from "@context/authState";
@@ -89,12 +89,12 @@ const Header = () => {
           }}
         >
           <img
-            alt="WSO2 logo"
+            alt="Dashboard logo"
             style={{
-              height: "40px",
-              maxWidth: "100px",
+              height: "32px",
+              maxWidth: "120px",
             }}
-            src={Wso2Logo}
+            src={PulseOrange}
           ></img>
         </Box>
 

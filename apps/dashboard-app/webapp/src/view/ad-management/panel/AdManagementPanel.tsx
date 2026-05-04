@@ -420,7 +420,7 @@ export default function AdManagementPanel() {
       )}
 
       <Card sx={{ mb: 4 }}>
-        <CardContent sx={{ p: 4 }}>
+        <CardContent sx={{ p: 3, pl: 3 }}>
           <Box
             sx={{
               display: "flex",
@@ -436,8 +436,8 @@ export default function AdManagementPanel() {
             <Typography variant="h5">{AdManagementMessage.sections.addNewAd}</Typography>
           </Box>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "flex-start" }}>
+            <Box sx={{ maxWidth: 500 }}>
               <TextField
                 fullWidth
                 label={AdManagementMessage.labels.adName}
@@ -459,45 +459,29 @@ export default function AdManagementPanel() {
             </Box>
 
             {!isVideoMedia(newMediaUrl) && (
-              <Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {AdManagementMessage.helper.imageDuration}
-                </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-                  <Slider
-                    value={newDuration}
-                    onChange={(_, value) => setNewDuration(value as number)}
-                    min={ADVERTISEMENT.minImageDurationSeconds}
-                    max={ADVERTISEMENT.maxImageDurationSeconds}
-                    sx={{ flex: 1 }}
-                  />
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <TextField
-                      type="number"
-                      value={newDuration}
-                      onChange={(e) => {
-                        const parsedValue = parseInt(e.target.value, 10);
-                        if (Number.isNaN(parsedValue)) {
-                          setNewDuration(ADVERTISEMENT.minImageDurationSeconds);
-                          return;
-                        }
-                        const clampedValue = Math.max(
-                          ADVERTISEMENT.minImageDurationSeconds,
-                          Math.min(ADVERTISEMENT.maxImageDurationSeconds, parsedValue),
-                        );
-                        setNewDuration(clampedValue);
-                      }}
-                      inputProps={{
-                        min: ADVERTISEMENT.minImageDurationSeconds,
-                        max: ADVERTISEMENT.maxImageDurationSeconds,
-                      }}
-                      sx={{ width: 100 }}
-                    />
-                    <Typography variant="body1" fontWeight="medium">
-                      sec
-                    </Typography>
-                  </Box>
-                </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <TextField
+                  type="number"
+                  label="Duration (seconds)"
+                  value={newDuration}
+                  onChange={(e) => {
+                    const parsedValue = parseInt(e.target.value, 10);
+                    if (Number.isNaN(parsedValue)) {
+                      setNewDuration(ADVERTISEMENT.minImageDurationSeconds);
+                      return;
+                    }
+                    const clampedValue = Math.max(
+                      ADVERTISEMENT.minImageDurationSeconds,
+                      Math.min(ADVERTISEMENT.maxImageDurationSeconds, parsedValue),
+                    );
+                    setNewDuration(clampedValue);
+                  }}
+                  inputProps={{
+                    min: ADVERTISEMENT.minImageDurationSeconds,
+                    max: ADVERTISEMENT.maxImageDurationSeconds,
+                  }}
+                  sx={{ width: 140 }}
+                />
               </Box>
             )}
             {isVideoMedia(newMediaUrl) && (
