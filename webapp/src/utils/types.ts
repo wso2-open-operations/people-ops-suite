@@ -47,6 +47,7 @@ export interface PreLoaderProps {
   message?: string;
   hideLogo?: boolean;
   isLoading?: boolean;
+  fullScreen?: boolean;
 }
 
 export interface ErrorHandlerProps {

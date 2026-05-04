@@ -20,7 +20,7 @@ import Wso2LogoWhite from "@assets/images/wso2-logo-white.png";
 import { gradients } from "@config/constant";
 import type { PreLoaderProps } from "@utils/types";
 
-const PreLoader = (props: PreLoaderProps) => {
+const PreLoader = ({ fullScreen = true, ...props }: PreLoaderProps) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const background = isDark ? gradients.dark : gradients.light;
@@ -32,8 +32,7 @@ const PreLoader = (props: PreLoaderProps) => {
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        minHeight: "100vh",
-        width: "100%",
+        ...(fullScreen ? { minHeight: "100vh", width: "100%" } : { height: "100%", width: "100%", borderRadius: 1 }),
         gap: 2,
       }}
     >

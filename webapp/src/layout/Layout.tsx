@@ -100,7 +100,7 @@ export default function Layout() {
               minWidth: 0,
             }}
           >
-            <Suspense fallback={<PreLoader isLoading message="Grabbing the latest data..." />}>
+            <Suspense fallback={<PreLoader isLoading fullScreen={false} message="Grabbing the latest data..." />}>
               <Outlet />
             </Suspense>
           </Box>

@@ -216,23 +216,24 @@ const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationVie
                     height: "fit-content",
                     display: "flex",
                     flexDirection: "row",
+                    background: "transparent",
+                    backdropFilter: "none",
                   }}
                 >
                   <Box
                     sx={{
                       p: 2,
-                      bgcolor:
-                        theme.palette.mode === "light"
-                          ? alpha(theme.palette.primary.light, 0.1)
-                          : alpha(theme.palette.primary.main, 0.25),
-                      color: "primary.contrastText",
+                      background: theme.palette.mode === "dark" ? "#1B2A49" : "#B7E4FC",
                       width: "250px",
                       minWidth: "250px",
+                      borderRight: 1,
+                      borderColor: "divider",
                     }}
                   >
                     <Stack direction="column" spacing={2} alignItems="center">
                       <Typography
                         variant="h6"
+                        color="text.primary"
                         sx={{
                           textTransform: "capitalize",
                           textAlign: "center",
@@ -244,31 +245,23 @@ const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationVie
                       <Chip
                         label={`Top 5%: ${group.top5Quota}`}
                         size="small"
-                        sx={{
-                          bgcolor: "rgba(255,255,255,0.2)",
-                          color: "inherit",
-                          width: "90%",
-                        }}
+                        sx={{ width: "90%", bgcolor: "action.selected", color: "text.primary" }}
                       />
                       <Chip
                         label={`Top 20%: ${top20}`}
                         size="small"
-                        sx={{
-                          bgcolor: "rgba(255,255,255,0.2)",
-                          color: "inherit",
-                          width: "90%",
-                        }}
+                        sx={{ width: "90%", bgcolor: "action.selected", color: "text.primary" }}
                       />
                     </Stack>
                   </Box>
-                  {/* Department Table */}
 
-                  <TableContainer component={Paper} elevation={0}>
+                  {/* Department Table */}
+                  <TableContainer component={Paper} elevation={0} sx={{ background: "transparent" }}>
                     {group.top5Quota === 1 && group.top20Quota === 0 && (
                       <Alert severity="warning">
                         The total allocation for the top 5% and top 20% categories is 1 due to the
                         small team size. This means only one team member can be placed in{" "}
-                        <b>either</b> the top 5% or the top 20%. The allocation appears as “1” for
+                        <b>either</b> the top 5% or the top 20%. The allocation appears as "1" for
                         each category solely for system purposes; it does not mean you can allocate
                         one person to each category. Once a slot is used for any of the categories,
                         the overall quota is considered utilised
@@ -280,52 +273,25 @@ const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationVie
                           <TableRow
                             key={`${dept.parQuotaId}-${dept.parDepartment}-${dept.parTeam}-${index}`}
                             sx={{
-                              "&:last-child td, &:last-child th": { border: 0 },
+                              "& td, & th": { border: 0 },
                               backgroundColor: dept.highlight
                                 ? alpha(theme.palette.warning.light, 0.3)
                                 : "transparent",
                             }}
                           >
-                            <TableCell
-                              sx={{ width: "30%", wordWrap: "break-word" }}
-                            >
-                              <Typography
-                                variant="body2"
-                                noWrap
-                                title={dept.parBusinessUnit}
-                              >
-                                {highlightText(
-                                  dept.parBusinessUnit,
-                                  searchQuery.trim()
-                                )}
+                            <TableCell sx={{ width: "30%", wordWrap: "break-word" }}>
+                              <Typography variant="body2" color="text.primary" noWrap title={dept.parBusinessUnit}>
+                                {highlightText(dept.parBusinessUnit, searchQuery.trim())}
                               </Typography>
                             </TableCell>
-                            <TableCell
-                              sx={{ width: "35%", wordWrap: "break-word" }}
-                            >
-                              <Typography
-                                variant="body2"
-                                noWrap
-                                title={dept.parDepartment}
-                              >
-                                {highlightText(
-                                  dept.parDepartment,
-                                  searchQuery.trim()
-                                )}
+                            <TableCell sx={{ width: "35%", wordWrap: "break-word" }}>
+                              <Typography variant="body2" color="text.primary" noWrap title={dept.parDepartment}>
+                                {highlightText(dept.parDepartment, searchQuery.trim())}
                               </Typography>
                             </TableCell>
-                            <TableCell
-                              sx={{ width: "35%", wordWrap: "break-word" }}
-                            >
-                              <Typography
-                                variant="body2"
-                                noWrap
-                                title={dept.parTeam}
-                              >
-                                {highlightText(
-                                  dept.parTeam,
-                                  searchQuery.trim()
-                                )}
+                            <TableCell sx={{ width: "35%", wordWrap: "break-word" }}>
+                              <Typography variant="body2" color="text.primary" noWrap title={dept.parTeam}>
+                                {highlightText(dept.parTeam, searchQuery.trim())}
                               </Typography>
                             </TableCell>
                           </TableRow>

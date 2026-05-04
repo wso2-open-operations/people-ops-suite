@@ -365,5 +365,5 @@ export const redirectUrl = "iapm-marketplace-redirect-url";
 
 export const gradients = {
   dark: "radial-gradient(circle at top left, #1E325C 0%, #121C30 50%, #070A11 100%)",
-  light: "linear-gradient(210deg, #FFFFFF 0%, #EBF2F7 60%, #C8D9E6 90%)",
+  light: "linear-gradient(135deg, #B7E4FC 00%, #F0F5FA 30%, #FFFFFF 100%)",
 };
