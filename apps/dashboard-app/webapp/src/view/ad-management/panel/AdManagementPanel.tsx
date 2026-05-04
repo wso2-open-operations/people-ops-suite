@@ -20,7 +20,6 @@ import {
   Card,
   CardContent,
   Chip,
-  Slider,
   TextField,
   Typography,
 } from "@wso2/oxygen-ui";

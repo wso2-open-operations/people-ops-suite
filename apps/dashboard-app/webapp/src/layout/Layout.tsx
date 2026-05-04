@@ -21,6 +21,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Suspense, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
+import AutoPlayAd from "@component/common/AutoPlayAd";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
 import { CommonMessage } from "@config/messages";
 import { ColorModeContext } from "@context/ColorModeContext";
@@ -98,6 +99,7 @@ export default function Layout() {
 
   return (
     <ConfirmationModalContextProvider>
+      <AutoPlayAd />
       {/* Full screen container */}
       <Box
         sx={{
