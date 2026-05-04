@@ -139,3 +139,18 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
         }
     }
 }
+
+# Roll back an employee record after a downstream provisioning step fails.
+# The SCIM module does not expose a user-delete operation, so any Asgardeo
+# user that was already created becomes orphaned and must be cleaned up
+# manually — callers should log that context before invoking this helper.
+#
+# + employeeId - Employee ID to delete
+# + workEmail - Work email of the affected user (for log correlation)
+isolated function rollbackEmployeeCreation(string employeeId, string workEmail) {
+    error? rollbackErr = database:deleteEmployeeById(employeeId);
+    if rollbackErr is error {
+        log:printError("Failed to roll back employee record; manual cleanup required",
+                rollbackErr, employeeId = employeeId, workEmail = workEmail);
+    }
+}
