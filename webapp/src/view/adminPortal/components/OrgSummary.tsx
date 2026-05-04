@@ -475,40 +475,20 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       headerName: "Reviewee Details",
       flex: 2,
       renderCell: (params: GridRenderCellParams) => (
-        <Box display="flex" alignItems="center">
-          <Avatar
-            src={employeeMap[params.row?.employeeEmail]?.employeeThumbnail || ""}
-            alt={employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail}
-            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem" }}
-          >
-            {(employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail)?.charAt(0)}
-          </Avatar>
-          <Box
-            sx={{
-              position: "relative",
-              transition: "transform 0.3s ease",
-              "&:hover": { transform: "translateY(-10px)" },
-              "&:hover > div": { opacity: 1 },
-            }}
-          >
-            <Typography variant="body2" fontWeight={500}>
+        <Tooltip title={params.row?.employeeEmail} enterDelay={300} arrow>
+          <Box display="flex" alignItems="center" sx={{ overflow: "hidden" }}>
+            <Avatar
+              src={employeeMap[params.row?.employeeEmail]?.employeeThumbnail || ""}
+              alt={employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail}
+              sx={{ mr: 1, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem", flexShrink: 0 }}
+            >
+              {(employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail)?.charAt(0)}
+            </Avatar>
+            <Typography variant="body2" fontWeight={500} noWrap>
               {employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail}
             </Typography>
-            <Box
-              sx={{
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                opacity: 0,
-                transition: "opacity 0.3s",
-              }}
-            >
-              <Typography variant="caption" color="text.secondary">
-                {params.row?.employeeEmail}
-              </Typography>
-            </Box>
           </Box>
-        </Box>
+        </Tooltip>
       ),
     },
     {
@@ -518,25 +498,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       renderCell: (params: GridRenderCellParams) => (
         <Chip
           size="small"
+          color={params.row.isOfferedFeedback === "TRUE" ? "info" : "warning"}
+          variant="outlined"
           label={params.row.isOfferedFeedback === "TRUE" ? "Was offered a review by" : "Requested a review from"}
-          sx={{
-            height: 24,
-            width: "180px",
-            borderRadius: 12,
-            fontWeight: 500,
-            fontSize: "0.75rem",
-            backgroundColor:
-              params.row.isOfferedFeedback === "TRUE"
-                ? (theme) =>
-                  theme.palette.mode === "light"
-                    ? alpha(theme.palette.info.main, 0.1)
-                    : alpha(theme.palette.info.main, 0.8)
-                : (theme) =>
-                  theme.palette.mode === "light"
-                    ? alpha(theme.palette.warning.main, 0.1)
-                    : alpha(theme.palette.warning.main, 0.8),
-            "& .MuiChip-label": { px: 1.5, py: 0.5 },
-          }}
         />
       ),
     },
@@ -545,39 +509,19 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       headerName: "Reviewer Details",
       flex: 2,
       renderCell: (params: GridRenderCellParams) => (
-        <Box display="flex" alignItems="center">
-          <Avatar
-            src={employeeMap[params.row?.reviewerEmail]?.employeeThumbnail || ""}
-            sx={{ marginRight: 1, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem" }}
-          >
-            {(employeeMap[params.row?.reviewerEmail]?.employeeName ?? params.row?.reviewerEmail)?.charAt(0)}
-          </Avatar>
-          <Box
-            sx={{
-              position: "relative",
-              transition: "transform 0.3s ease",
-              "&:hover": { transform: "translateY(-10px)" },
-              "&:hover > div": { opacity: 1 },
-            }}
-          >
-            <Typography variant="body2" fontWeight={500}>
+        <Tooltip title={params.row?.reviewerEmail} enterDelay={300} arrow>
+          <Box display="flex" alignItems="center" sx={{ overflow: "hidden" }}>
+            <Avatar
+              src={employeeMap[params.row?.reviewerEmail]?.employeeThumbnail || ""}
+              sx={{ mr: 1, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem", flexShrink: 0 }}
+            >
+              {(employeeMap[params.row?.reviewerEmail]?.employeeName ?? params.row?.reviewerEmail)?.charAt(0)}
+            </Avatar>
+            <Typography variant="body2" fontWeight={500} noWrap>
               {employeeMap[params.row?.reviewerEmail]?.employeeName ?? params.row?.reviewerEmail}
             </Typography>
-            <Box
-              sx={{
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                opacity: 0,
-                transition: "opacity 0.3s",
-              }}
-            >
-              <Typography variant="caption" color="text.secondary">
-                {params.row?.reviewerEmail}
-              </Typography>
-            </Box>
           </Box>
-        </Box>
+        </Tooltip>
       ),
     },
     {
@@ -593,10 +537,11 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
           enterNextDelay={tooltipVisibilityDelay}
         >
           <IconButton
-            sx={{ color: "primary.main", "&:hover": { bgcolor: "primary.main", color: "white" } }}
+            size="small"
+            sx={{ borderRadius: "4px", padding: "4px", color: "primary.main", "&:hover": { borderRadius: "4px", bgcolor: "primary.main", color: "white" } }}
             onClick={() => handleClickRestoreReview(params.row)}
           >
-            <UpdateIcon />
+            <UpdateIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       ),

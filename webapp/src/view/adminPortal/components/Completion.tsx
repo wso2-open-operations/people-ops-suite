@@ -15,15 +15,14 @@
 // under the License.
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Box, Chip, IconButton, Link, Typography } from "@mui/material";
-import { DataGrid, GridColDef, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridRenderCellParams, useGridApiRef } from "@mui/x-data-grid";
 
-import { useState } from "react";
-
+import { DataGridToolbar } from "@component/common/DataGridToolbar";
 import { LoadingEffect } from "@component/ui/Loading";
 import { uiMessages } from "@config/constant";
 import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 import { useAppSelector } from "@slices/store";
-import { Team, selectAllTeams, selectTeamStatus } from "@slices/teamSlice/team";
+import { selectAllTeams, selectTeamStatus } from "@slices/teamSlice/team";
 import { RequestState } from "@utils/types";
 import { getCombinedTeams } from "@utils/utils";
 
@@ -40,23 +39,21 @@ export const Completion = ({
 }: CompletionProps) => {
   const teams = useAppSelector(selectAllTeams);
   const teamState = useAppSelector(selectTeamStatus);
-  const [searchText, setSearchText] = useState("");
+  const apiRef = useGridApiRef();
 
-  const formattedTeams = getCombinedTeams(teams).map((team) => {
-    return {
-      ...team,
-      id: team.parTeamId,
-      employeePARCompletion: Number(
-        ((team.summary.employeeParCompletedCount / team.numberOfTeamMembers) * 100).toFixed(1),
-      ),
-      leadReviewCompletion: Number(
-        ((team.summary.leadsReviewCompletedCount / team.numberOfTeamMembers) * 100).toFixed(1),
-      ),
-      f2fCompletion: Number(
-        ((team.summary.f2fCompletedCount / team.numberOfTeamMembers) * 100).toFixed(1),
-      ),
-    };
-  });
+  const formattedTeams = getCombinedTeams(teams).map((team) => ({
+    ...team,
+    id: team.parTeamId,
+    employeePARCompletion: Number(
+      ((team.summary.employeeParCompletedCount / team.numberOfTeamMembers) * 100).toFixed(1),
+    ),
+    leadReviewCompletion: Number(
+      ((team.summary.leadsReviewCompletedCount / team.numberOfTeamMembers) * 100).toFixed(1),
+    ),
+    f2fCompletion: Number(
+      ((team.summary.f2fCompletedCount / team.numberOfTeamMembers) * 100).toFixed(1),
+    ),
+  }));
 
   const columns: GridColDef[] = [
     { field: "parBusinessUnit", headerName: "BU", flex: 0.15 },
@@ -85,82 +82,69 @@ export const Completion = ({
       renderCell: (params: GridRenderCellParams) => (
         <Chip size="small" label={params.row.f2fCompletion} />
       ),
-      // 1. Removed hide: true from here
     },
   ];
 
   return (
     <Box>
-      <Box mb={2}>
-        <IconButton
-          aria-label="back"
-          color="primary"
-          onClick={closeCompletionView}
-          sx={{ mb: 1, mr: 1 }}
-        >
-          <ArrowBackIcon />
-        </IconButton>
-        {isAdminHistoryViewOn && (
-          <Typography display={"inline"} variant="h5">
-            {` History / `}
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        mt={1}
+        mb={1}
+      >
+        <Box>
+          <IconButton
+            aria-label="back"
+            color="primary"
+            onClick={closeCompletionView}
+            sx={{ mr: 1, ml: -1 }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          {isAdminHistoryViewOn && (
+            <Typography display="inline" variant="h5">
+              {` History / `}
+            </Typography>
+          )}
+          <Link underline="hover" color="text.primary" variant="h5" onClick={closeCompletionView}>
+            {parCycle.parCycleName}
+          </Link>
+          <Typography display="inline" variant="h5">
+            {" / Completion Overview"}
           </Typography>
+        </Box>
+
+        {teamState === RequestState.SUCCEEDED && (
+          <DataGridToolbar apiRef={apiRef} />
         )}
-        <Link underline="hover" color="text.primary" variant="h4" onClick={closeCompletionView}>
-          {parCycle.parCycleName}
-        </Link>
-        <Typography display={"inline"} variant="h5">
-          {" / Completion Overview"}
-        </Typography>
       </Box>
 
       {teamState === RequestState.LOADING && (
-        <LoadingEffect message={uiMessages.loading.pageLoading} />
+        <Box sx={{ height: "calc(100vh - 28rem)" }}>
+          <LoadingEffect message={uiMessages.loading.pageLoading} />
+        </Box>
       )}
 
       {teamState === RequestState.SUCCEEDED && (
-        <Box height={"calc(100vh - 23rem)"}>
-          <DataGrid
-            sx={{
-              border: "none",
-            }}
-            rows={formattedTeams}
-            columns={columns}
-            rowHeight={60}
-            disableRowSelectionOnClick
-            pageSizeOptions={[10]}
-            slots={{
-              toolbar: GridToolbar,
-            }}
-            slotProps={{
-              toolbar: {
-                showQuickFilter: true,
-                quickFilterProps: { debounceMs: 500 },
-              },
-            }}
-            initialState={{
-              columns: {
-                columnVisibilityModel: {
-                  f2fCompletion: false, // This hides the column
-                },
-              },
-              pagination: {
-                paginationModel: { pageSize: 10, page: 0 },
-              },
-              filter: {
-                filterModel: {
-                  items: [
-                    {
-                      id: "searchText",
-                      value: searchText,
-                      field: "searchText",
-                      operator: "contains",
-                    },
-                  ],
-                },
-              },
-            }}
-          />
-        </Box>
+        <DataGrid
+          apiRef={apiRef}
+          sx={{ border: "none", height: "auto", ml: 3 }}
+          rows={formattedTeams}
+          columns={columns}
+          rowHeight={50}
+          disableRowSelectionOnClick
+          pageSizeOptions={[10, 20, 25]}
+          initialState={{
+            columns: {
+              columnVisibilityModel: { f2fCompletion: false },
+            },
+            pagination: {
+              paginationModel: { pageSize: 10, page: 0 },
+            },
+          }}
+        />
       )}
     </Box>
   );
