@@ -25,6 +25,7 @@ import type { UserState } from "@slices/userSlice/user";
 export enum Role {
   ADMIN = "ADMIN",
   EMPLOYEE = "EMPLOYEE",
+  GUEST = "GUEST",
 }
 
 // Custom extended interface
@@ -50,7 +51,7 @@ const initialState: AuthState = {
   mode: "active",
   statusMessage: null,
   decodedIdToken: null,
-  roles: [],
+  roles: [Role.GUEST],
 };
 
 export const loadPrivileges = createAsyncThunk(
@@ -68,7 +69,7 @@ export const loadPrivileges = createAsyncThunk(
       return rejectWithValue(errorMessage);
     }
     const userPrivileges = userInfo?.privileges || [];
-    const roles: Role[] = [];
+    const roles: Role[] = [Role.GUEST];
 
     if (userPrivileges.includes(PRIVILEGE_ADMIN)) {
       roles.push(Role.ADMIN);
@@ -77,15 +78,6 @@ export const loadPrivileges = createAsyncThunk(
       roles.push(Role.EMPLOYEE);
     }
 
-    if (roles.length === 0) {
-      dispatch(
-        enqueueSnackbarMessage({
-          message: SnackMessage.error.insufficientPrivileges,
-          type: "error",
-        }),
-      );
-      return rejectWithValue("No roles found");
-    }
     return { roles };
   },
 );
@@ -101,7 +93,7 @@ export const authSlice = createSlice({
     setAuthError: (state) => {
       state.status = State.failed;
       state.decodedIdToken = null;
-      state.roles = [];
+      state.roles = [Role.GUEST];
     },
   },
   extraReducers: (builder) => {

@@ -65,7 +65,7 @@ const AppHandler = () => {
       setAppState("maintenance");
     } else if (auth.status === "loading") {
       setAppState("loading");
-    } else if (auth.status === "success") {
+    } else if (auth.status === "success" || auth.status === "idle") {
       setAppState("success");
     } else if (auth.status === "failed") {
       setAppState("failed");

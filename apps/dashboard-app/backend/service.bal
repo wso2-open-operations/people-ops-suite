@@ -30,6 +30,8 @@ final cache:Cache cache = new ({
     cleanupInterval: 900.0
 });
 
+listener http:Listener backendListener = new (9090);
+
 // Intercept and sanitize HTTP Bad Request responses caused by payload binding failures.
 service class BadRequestInterceptor {
     *http:ResponseErrorInterceptor;
@@ -51,7 +53,7 @@ service class BadRequestInterceptor {
     label: "Dashboard Application",
     id: "people-ops-suite/dashboard-service"
 }
-service http:InterceptableService / on new http:Listener(9090) {
+service http:InterceptableService / on backendListener {
 
     # Request interceptor.
     #
@@ -524,6 +526,192 @@ service http:InterceptableService / on new http:Listener(9090) {
         } on fail error internalErr {
             log:printError("Error occurred while fetching date range summary!", internalErr);
             return <http:InternalServerError>{body: {message: "Error occurred while fetching date range summary!"}};
+        }
+    }
+}
+
+// --- Public Endpoints (No Authentication Required) ---
+
+# Public dashboard data accessible without authentication.
+service http:Service /pub on backendListener {
+
+    # Get breakfast + lunch data for one specific day (public).
+    #
+    # + date - The date in YYYY-MM-DD format
+    # + return - `DailyFoodWasteRecords` - Breakfast and lunch waste data for the given date,
+    #          or `http:BadRequest` if the date format is invalid,
+    #          or `http:InternalServerError` on server error
+    resource function get food\-waste/daily(string date)
+            returns DailyFoodWasteRecords|http:BadRequest|http:InternalServerError {
+        do {
+            if !database:DATE_REGEX.isFullMatch(date) {
+                return <http:BadRequest>{body: {message: "Invalid date string. Expected YYYY-MM-DD."}};
+            }
+            DailyFoodWasteRecords daily = check database:fetchDailyFoodWasteRecords(date);
+            return daily;
+        } on fail error internalErr {
+            log:printError("Error occurred while fetching daily food waste records!", internalErr);
+            return <http:InternalServerError>{body: {message: "Error occurred while fetching daily food waste records!"}};
+        }
+    }
+
+    # List/filter food waste records with pagination or return analytics data (public).
+    #
+    # + startDate - Start date filter in YYYY-MM-DD format (optional)
+    # + endDate - End date filter in YYYY-MM-DD format (optional)
+    # + mealType - Filter by meal type: BREAKFAST or LUNCH (optional)
+    # + duration - Analytics duration: yearly, monthly, or weekly (optional)
+    # + latest - If true, returns only the most recent day's KPI summary (optional, default false)
+    # + 'limit - Maximum number of records to return (optional, default 10)
+    # + offset - Number of records to skip for pagination (optional, default 0)
+    # + return - `PaginatedFoodWasteRecords` when listing records,
+    #          or `TodayKPIs` when latest=true,
+    #          or `WeeklyTrendItem[]` when duration=weekly,
+    #          or `MonthlyTrendItem[]` when duration=monthly or duration=yearly,
+    #          or `http:BadRequest` on invalid parameters,
+    #          or `http:InternalServerError` on server error
+    resource function get food\-waste(string? startDate = (), string? endDate = (),
+            string? mealType = (), string? duration = (), boolean latest = false, int? 'limit = (),
+            int? offset = ())
+            returns PaginatedFoodWasteRecords|TodayKPIs|WeeklyTrendItem[]|
+                MonthlyTrendItem[]|http:BadRequest|http:InternalServerError {
+        do {
+            if startDate is string && !database:DATE_REGEX.isFullMatch(startDate) ||
+                    endDate is string && !database:DATE_REGEX.isFullMatch(endDate) {
+                return <http:BadRequest>{body: {message: "Invalid date string. Expected YYYY-MM-DD."}};
+            }
+
+            if duration is string {
+                if !(duration == "yearly" || duration == "monthly" || duration == "weekly") {
+                    return <http:BadRequest>{body: {message: "duration must be yearly, monthly, or weekly"}};
+                }
+
+                if duration == "weekly" {
+                    if startDate is () && endDate is string || startDate is string && endDate is () {
+                        return <http:BadRequest>{
+                            body: {message: "Provide both startDate and endDate for weekly duration."}
+                        };
+                    }
+                    if startDate is string && endDate is string && startDate > endDate {
+                        return <http:BadRequest>{body: {message: "startDate must be <= endDate."}};
+                    }
+
+                    WeeklyTrendItem[] weeklyData;
+                    if startDate is string && endDate is string {
+                        weeklyData = check operation:getWeeklyTrendData(startDate, endDate);
+                    } else {
+                        weeklyData = check operation:getWeeklyTrendDataDefault();
+                    }
+                    return weeklyData;
+                } else if duration == "monthly" {
+                    MonthlyTrendItem[] monthlyData = check operation:getMonthlyTrendData();
+                    return monthlyData;
+                }
+
+                MonthlyTrendItem[] yearlyData = check operation:getYearlyTrendData();
+                return yearlyData;
+            }
+
+            if mealType is string && !(mealType == "BREAKFAST" || mealType == "LUNCH") {
+                return <http:BadRequest>{body: {message: "mealType must be BREAKFAST or LUNCH"}};
+            }
+
+            int limitValue = 'limit ?: database:DEFAULT_PAGE_SIZE;
+            int offsetValue = offset ?: 0;
+
+            if limitValue < 1 || limitValue > database:MAX_PAGE_SIZE {
+                return <http:BadRequest>{
+                    body: {message: string `limit must be between 1 and ${database:MAX_PAGE_SIZE}`}
+                };
+            }
+            if offsetValue < 0 {
+                return <http:BadRequest>{body: {message: "offset must be >= 0"}};
+            }
+
+            if latest {
+                database:FoodWasteRecordFilters latestFilters = {startDate, endDate, mealType, 'limit: 1, offset: 0};
+                PaginatedFoodWasteRecords result =
+                    check database:fetchFoodWasteRecords(latestFilters, 1, 1);
+
+                string kpiDate = endDate ?: string:substring(time:utcToString(time:utcNow()), 0, 10);
+                if result.records.length() == 0 {
+                    return {
+                        date: kpiDate,
+                        breakfast: (),
+                        lunch: (),
+                        totalDailyWasteKg: 0.0d,
+                        totalDailyPlates: 0,
+                        averageWastePerPlateGrams: 0.0d
+                    };
+                }
+
+                kpiDate = result.records[0].recordDate;
+                TodayKPIs latestKpi = check operation:getTodayKpis(kpiDate);
+                return latestKpi;
+            }
+
+            database:FoodWasteRecordFilters filters = {
+                startDate,
+                endDate,
+                mealType,
+                'limit: limitValue,
+                offset: offsetValue
+            };
+            int page = (offsetValue / limitValue) + 1;
+            PaginatedFoodWasteRecords pageResult =
+                check database:fetchFoodWasteRecords(filters, page, limitValue);
+            return pageResult;
+        } on fail error internalErr {
+            log:printError("Error occurred while listing food waste records!", internalErr);
+            return <http:InternalServerError>{body: {message: "Error occurred while listing food waste records!"}};
+        }
+    }
+
+    # Get summary statistics for a date range (public).
+    #
+    # + startDate - Start date in YYYY-MM-DD format
+    # + endDate - End date in YYYY-MM-DD format
+    # + return - `DateRangeSummary` containing total waste, plates, and averages for the date range,
+    #          or `http:BadRequest` on invalid or reversed dates,
+    #          or `http:InternalServerError` on server error
+    resource function get food\-waste/summary(string startDate, string endDate)
+            returns DateRangeSummary|http:BadRequest|http:InternalServerError {
+        do {
+            if !database:DATE_REGEX.isFullMatch(startDate) || !database:DATE_REGEX.isFullMatch(endDate) {
+                return <http:BadRequest>{body: {message: "Invalid date string. Expected YYYY-MM-DD."}};
+            }
+
+            if startDate > endDate {
+                return <http:BadRequest>{body: {message: "startDate must be <= endDate."}};
+            }
+
+            DateRangeSummary summary = check operation:getDateRangeSummary(startDate, endDate);
+            return summary;
+        } on fail error internalErr {
+            log:printError("Error occurred while fetching date range summary!", internalErr);
+            return <http:InternalServerError>{body: {message: "Error occurred while fetching date range summary!"}};
+        }
+    }
+
+    # Get the currently active advertisement (public).
+    #
+    # + return - `Advertisement` details of the active ad,
+    #          or `http:NotFound` when no active advertisement exists,
+    #          or `http:InternalServerError` on server error
+    resource function get advertisements/active()
+            returns Advertisement|http:NotFound|http:InternalServerError {
+        do {
+            Advertisement|error? adResult = database:getActiveAdvertisement();
+            if adResult is error {
+                return <http:InternalServerError>{body: {message: "Error occurred while fetching active advertisement!"}};
+            }
+            if adResult is () {
+                return <http:NotFound>{body: {message: "No active advertisement found."}};
+            }
+            return adResult;
+        } on fail error internalErr {
+            log:printError("Error occurred while fetching active advertisement!", internalErr);
+            return <http:InternalServerError>{body: {message: "Error occurred while fetching active advertisement!"}};
         }
     }
 }

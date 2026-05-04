@@ -31,6 +31,7 @@ interface ActiveAd {
 }
 
 const DEFAULT_PLAY_INTERVAL_MINUTES = 1;
+const INITIAL_DELAY_MINUTES = 60;
 
 const AutoPlayAd = memo(() => {
   const [ad, setAd] = useState<ActiveAd | null>(null);
@@ -82,7 +83,10 @@ const AutoPlayAd = memo(() => {
   }, []);
 
   useEffect(() => {
-    fetchAndPlay();
+    const initialDelay = INITIAL_DELAY_MINUTES * 60 * 1000;
+    const startTimer = setTimeout(() => {
+      fetchAndPlay();
+    }, initialDelay);
 
     const intervalMs = DEFAULT_PLAY_INTERVAL_MINUTES * 60 * 1000;
     const loopTimer = setInterval(() => {
@@ -90,6 +94,7 @@ const AutoPlayAd = memo(() => {
     }, intervalMs);
 
     return () => {
+      clearTimeout(startTimer);
       clearInterval(loopTimer);
     };
   }, [fetchAndPlay]);

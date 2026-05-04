@@ -34,7 +34,7 @@ export const routes: RouteObjectWithRole[] = [
     text: "Home",
     icon: <HomeIcon />,
     element: <View.dashboardOverviewView />,
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE, Role.GUEST],
   },
   {
     path: ROUTE_PATHS.dataEntry,

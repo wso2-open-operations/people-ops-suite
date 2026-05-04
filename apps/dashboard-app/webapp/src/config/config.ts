@@ -63,9 +63,10 @@ export const AppConfig = {
     employees: SERVICE_BASE_URL + "/employees",
     appConfig: SERVICE_BASE_URL + "/app-config",
     collections: SERVICE_BASE_URL + "/collections",
-    foodWaste: SERVICE_BASE_URL + "/food-waste",
-    foodWasteDaily: SERVICE_BASE_URL + "/food-waste/daily",
+    foodWaste: SERVICE_BASE_URL + "/pub/food-waste",
+    foodWasteDaily: SERVICE_BASE_URL + "/pub/food-waste/daily",
     advertisements: SERVICE_BASE_URL + "/advertisements",
-    advertisementsActive: SERVICE_BASE_URL + "/advertisements/active",
+    advertisementsActive: SERVICE_BASE_URL + "/pub/advertisements/active",
+    foodWasteSummaryPublic: SERVICE_BASE_URL + "/pub/food-waste/summary",
   },
 };

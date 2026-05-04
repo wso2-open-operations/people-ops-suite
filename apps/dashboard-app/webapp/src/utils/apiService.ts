@@ -25,18 +25,18 @@ import {
 import { CommonMessage } from "@config/messages";
 
 interface APIServiceOptions {
-  idToken: string;
-  callback: () => Promise<{ idToken: string }>;
+  idToken?: string;
+  callback?: () => Promise<{ idToken: string }>;
 }
 
 class APIService {
   private instance: AxiosInstance;
-  private idToken: string;
+  private idToken: string | undefined;
   private authRequestInterceptorId: number | null = null;
   private authResponseInterceptorId: number | null = null;
   private cancelTokenSource = axios.CancelToken.source();
   private cancelTokenMap: Map<string, CancelTokenSource> = new Map();
-  private callback: () => Promise<{ idToken: string }>;
+  private callback?: () => Promise<{ idToken: string }>;
 
   private isRefreshing = false;
   private refreshPromise: Promise<{ idToken: string }> | null = null;
@@ -61,10 +61,10 @@ class APIService {
           return existingPromise;
         }
 
-        if (!this.isRefreshing) {
+        if (!this.isRefreshing && this.callback) {
           this.isRefreshing = true;
           const promise = Promise.resolve()
-            .then(() => this.callback())
+            .then(() => this.callback!())
             .then((res) => {
               this.updateTokens(res.idToken);
               this.updateRequestInterceptor();
@@ -147,7 +147,10 @@ class APIService {
 
     this.authRequestInterceptorId = this.instance.interceptors.request.use(
       (config) => {
-        config.headers.set("Authorization", `Bearer ${this.idToken}`);
+        if (this.idToken) {
+          config.headers.set("Authorization", `Bearer ${this.idToken}`);
+          config.headers.set("x-jwt-assertion", this.idToken);
+        }
 
         const endpoint = config.url || "";
         const params = config.params ? `?${new URLSearchParams(config.params).toString()}` : "";
@@ -178,7 +181,7 @@ class APIService {
 
 let apiServiceInstance: APIService | null = null;
 
-export const initializeAPIService = (options: APIServiceOptions): APIService => {
+export const initializeAPIService = (options: APIServiceOptions = {}): APIService => {
   apiServiceInstance = new APIService(options);
   return apiServiceInstance;
 };

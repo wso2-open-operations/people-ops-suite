@@ -13,9 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/material";
-import Toolbar from "@mui/material/Toolbar";
+import { Avatar, Box, Menu, MenuItem, Stack, Toolbar, Tooltip, useTheme } from "@mui/material";
 import Typography from "@mui/material/Typography";
+import { LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import React from "react";
@@ -25,6 +25,7 @@ import { APP_NAME } from "@config/config";
 import { CommonMessage } from "@config/messages";
 import { useAppAuthContext } from "@context/authState";
 import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
+import { Role, selectRoles } from "@slices/authSlice/auth";
 import { RootState, useAppSelector } from "@slices/store";
 
 import { ROUTE_PATHS } from "../../route";
@@ -35,6 +36,8 @@ const Header = () => {
   const navigate = useNavigate();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
   const user = useAppSelector((state: RootState) => state.user);
+  const roles = useAppSelector(selectRoles);
+  const isGuest = roles.length === 1 && roles.includes(Role.GUEST);
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
@@ -120,7 +123,64 @@ const Header = () => {
         </Box>
 
         <Box sx={{ flexGrow: 0 }}>
-          {user.userInfo && (
+          {isGuest ? (
+            <Stack flexDirection={"row"} alignItems={"center"} gap={1}>
+              <Tooltip title="Sign in to manage data">
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={() => authContext.appSignIn()}
+                  aria-label="Sign in"
+                  sx={{
+                    border: "none",
+                    background: "transparent",
+                    padding: 0,
+                    margin: 0,
+                    cursor: "pointer",
+                    display: "flex",
+                    borderRadius: "50%",
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": {
+                      transform: "scale(1.05)",
+                    },
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      border: 1,
+                      borderColor: theme.palette.customBorder.territory.active,
+                      bgcolor: theme.palette.customBorder.territory.active,
+                    }}
+                  >
+                    <LogIn size={24} />
+                  </Avatar>
+                </Box>
+              </Tooltip>
+              <Box sx={{ width: "fit-content", cursor: "pointer" }} onClick={() => authContext.appSignIn()}>
+                <Typography
+                  noWrap
+                  variant="body1"
+                  sx={{
+                    color: theme.palette.customText.primary.p2.active,
+                    fontWeight: 600,
+                  }}
+                >
+                  Sign In
+                </Typography>
+                <Typography
+                  noWrap
+                  variant="body2"
+                  sx={{
+                    color: theme.palette.customText.primary.p3.active,
+                  }}
+                >
+                  Manage food waste data
+                </Typography>
+              </Box>
+            </Stack>
+          ) : user.userInfo ? (
             <>
               <Stack flexDirection={"row"} alignItems={"center"} gap={1}>
                 <Tooltip title="Open user menu">
@@ -203,7 +263,7 @@ const Header = () => {
                 </MenuItem>
               </Menu>
             </>
-          )}
+          ) : null}
         </Box>
       </Toolbar>
     </Box>

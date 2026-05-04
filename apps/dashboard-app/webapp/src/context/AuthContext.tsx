@@ -13,14 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
+import { useAuthContext } from "@asgardeo/auth-react";
 import { useIdleTimer } from "react-idle-timer";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
-import LoginScreen from "@component/ui/LoginScreen";
 import {
   SESSION_IDLE_THROTTLE_MS,
   SESSION_PROMPT_BEFORE_IDLE_MS,
@@ -79,7 +78,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     getBasicUserInfo,
     refreshAccessToken,
     getIDToken,
-    trySignInSilently,
     state,
   } = useAuthContext();
   const isAuthenticatedRef = useRef(state.isAuthenticated);
@@ -146,17 +144,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
           if (mounted) setAppState(AppState.Authenticated);
         } else {
-          const silentSignInSuccess = await trySignInSilently();
-
-          if (mounted) {
-            if (silentSignInSuccess) {
-              setAppState(AppState.Authenticating);
-              await setupAuthenticatedUser();
-              if (mounted) setAppState(AppState.Authenticated);
-            } else {
-              setAppState(AppState.Unauthenticated);
-            }
-          }
+          if (mounted) setAppState(AppState.Unauthenticated);
         }
       } catch (err) {
         if (mounted) {
@@ -172,7 +160,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     return () => {
       mounted = false;
     };
-  }, [dispatch, setupAuthenticatedUser, state.isAuthenticated, state.isLoading, trySignInSilently]);
+  }, [dispatch, setupAuthenticatedUser, state.isAuthenticated, state.isLoading]);
 
   const appSignOut = async () => {
     setAppState(AppState.Loading);
@@ -202,11 +190,8 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
 
       case AppState.Unauthenticated:
-        return (
-          <AuthContext.Provider value={authContext}>
-            <LoginScreen />
-          </AuthContext.Provider>
-        );
+        initializeAPIService();
+        return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
 
       default:
         return null;
@@ -221,9 +206,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         appSignOut={appSignOut}
       />
 
-      <SecureApp fallback={<PreLoader isLoading message={CommonMessage.loading.appReady} />}>
-        {renderContent()}
-      </SecureApp>
+      {renderContent()}
     </>
   );
 };
