@@ -39,7 +39,7 @@ import React, { useEffect } from "react";
 import { ConfirmationType, State } from "@/types/types";
 import { DashboardOverviewMessage } from "@config/messages";
 import { useConfirmationModalContext } from "@context/dialogState";
-import { addCollections, resetSubmitState } from "@slices/collections/collection";
+import { addCollections, fetchCollections, resetSubmitState } from "@slices/collections/collection";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 
 interface AddCollectionFormValues {
@@ -73,7 +73,11 @@ const AddCollectionModal: React.FC<{ toggleClose: () => void }> = ({ toggleClose
         DashboardOverviewMessage.collectionActions.confirmBody,
         ConfirmationType.send,
         () => {
-          dispatch(addCollections({ name: values.collectionName }));
+          dispatch(addCollections({ name: values.collectionName }))
+            .unwrap()
+            .then(() => {
+              dispatch(fetchCollections());
+            });
         },
       );
     },
