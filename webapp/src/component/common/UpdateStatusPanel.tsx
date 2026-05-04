@@ -322,6 +322,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
             <Grid size={{ xs: 7 }} display={"flex"} alignItems={"center"} my={1}>
               <DatePicker
                 label="PAR F2F Date"
+                enableAccessibleFieldDOMStructure={false}
                 disabled={
                   employeeRating.parF2fStatus === ParF2fStatus.COMPLETED ||
                   values.parF2fStatus !== ParF2fStatus.COMPLETED

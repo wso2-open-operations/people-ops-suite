@@ -43,7 +43,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { alpha, useTheme } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import { DataGrid, GridRenderCellParams, useGridApiRef } from "@mui/x-data-grid";
 
 import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
@@ -557,7 +557,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
             !reportView &&
             !isParCompletionViewOpen && (
               <Box flexDirection={"column"} height={"100%"}>
-                <Grid container mb={"5px"} mt={"5px"} spacing={2}>
+                <Grid container mb={"8px"} mt={"5px"} spacing={2} ml={"5px"}>
                   {/* Title Section */}
                   <Grid size={{ xs: 12, md: 4 }} alignContent={"center"}>
                     {isAdminHistoryViewOn && (
