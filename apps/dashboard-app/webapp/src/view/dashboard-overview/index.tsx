@@ -418,21 +418,18 @@ export default function Dashboard() {
   const dispatch = useAppDispatch();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [todayKey, setTodayKey] = useState<string>(() => new Date().toDateString());
+  const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
 
   useEffect(() => {
     const timerId = window.setInterval(() => {
-      const nextKey = new Date().toDateString();
-      setTodayKey((previousKey) => (previousKey === nextKey ? previousKey : nextKey));
+      setCurrentDate(new Date());
     }, 60 * 1000);
 
     return () => window.clearInterval(timerId);
   }, []);
 
-  // Calculate date range for last 7 days using LOCAL dates (not UTC).
   const { startDate, endDate } = useMemo(() => {
-    const today = new Date(todayKey);
-    const sevenDaysAgo = new Date(today);
+    const sevenDaysAgo = new Date(currentDate);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - DATE_RANGE_DAYS);
 
     const toLocalDateStr = (d: Date) =>
@@ -440,9 +437,9 @@ export default function Dashboard() {
 
     return {
       startDate: toLocalDateStr(sevenDaysAgo),
-      endDate: toLocalDateStr(today),
+      endDate: toLocalDateStr(currentDate),
     };
-  }, [todayKey]);
+  }, [currentDate]);
 
   const {
     weeklyData = DEFAULT_WEEKLY_DATA,
