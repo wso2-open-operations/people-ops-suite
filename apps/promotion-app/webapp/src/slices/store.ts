@@ -23,6 +23,8 @@ import appConfigReducer from "@slices/configSlice/config";
 import employeeReducer from "@slices/employeeSlice/employee";
 import promotionReducer from "@slices/promotionSlice/promotion";
 import promotionCycleReducer from "@slices/promotionCycleSlice/promotionCycle";
+import recommendationReducer from "@slices/recommendationSlice/recommendation";
+import timelineReducer from "@slices/timelineSlice/timeline";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 enableMapSet();
@@ -32,8 +34,10 @@ export const store = configureStore({
     auth: authReducer,
     user: userReducer,
     common: commonReducer,
+    timeline: timelineReducer,
     employee: employeeReducer,
     promotion: promotionReducer,
+    recommendation: recommendationReducer,
     promotionCycle: promotionCycleReducer,
     appConfig: appConfigReducer,
   },
