@@ -42,13 +42,7 @@ public function fetchActiveVisits() returns Visit[]|error {
         }
 
         string path = string `/visits?statusArray=APPROVED&limit=${PAGE_SIZE}&offset=${offset}`;
-        VisitsResponse|http:ClientError response = visitorClient->get(path, headers);
-
-        if response is http:ClientError {
-            string msg = "Error fetching active visits from backend";
-            log:printError(msg, response);
-            return error(msg, response);
-        }
+        VisitsResponse response = check visitorClient->get(path, headers);
 
         allVisits.push(...response.visits);
 
@@ -72,15 +66,9 @@ public function completeVisit(int visitId) returns error? {
         return headers;
     }
 
-    http:Response|http:ClientError response = visitorClient->post(
+    http:Response response = check visitorClient->post(
         string `/visits/${visitId}/COMPLETE`, {}, headers
     );
-
-    if response is http:ClientError {
-        string msg = string `Error completing visit ${visitId}`;
-        log:printError(msg, response);
-        return error(msg, response);
-    }
 
     if response.statusCode != http:STATUS_OK {
         string msg = string `Backend rejected COMPLETE for visit ${visitId}, status: ${response.statusCode}`;

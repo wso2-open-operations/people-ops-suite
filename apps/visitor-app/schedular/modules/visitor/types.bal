@@ -16,50 +16,75 @@
 
 # OAuth2 client credentials grant configuration.
 public type ClientAuthConfig record {|
-    # Token URL
+    # Token endpoint URL of the identity provider
     string tokenUrl;
-    # Client ID
+    # OAuth2 client ID of the scheduler application
     string clientId;
-    # Client Secret
+    # OAuth2 client secret of the scheduler application
     string clientSecret;
 |};
 
-# Full visit record including visitor information returned by the backend API.
-public type Visit record {|
-    # Visit ID
-    int id;
-    # Current status of the visit
-    string status;
-    # Date of the visit (YYYY-MM-DD)
-    string visitDate;
-    # Scheduled entry time in UTC (YYYY-MM-DDTHH:mm:ss)
-    string? timeOfEntry;
-    # Scheduled departure time in UTC (YYYY-MM-DDTHH:mm:ss)
-    string? timeOfDeparture;
-    # Pass number assigned to the visitor
-    string? passNumber;
-    # Visitor's company name
-    string? companyName;
-    # Email of the employee the visitor is meeting
-    string? whomTheyMeet;
-    # Purpose of the visit
-    string? purposeOfVisit;
-    # Hashed visitor ID
-    string? visitorIdHash;
-    # Visitor first name
-    string? firstName;
-    # Visitor last name
-    string? lastName;
-    # Visitor email
-    string? email;
-    # Visitor contact number
-    string? contactNumber;
+# Audit fields present on every visit record returned by the backend.
+public type AuditFields record {|
+    # Email of the user who created the record
+    string createdBy;
+    # Timestamp when the record was created
+    string createdOn;
+    # Email of the user who last updated the record
+    string updatedBy;
+    # Timestamp when the record was last updated
+    string updatedOn;
 |};
 
-# Response from GET /visits.
+# A floor and its accessible rooms assigned to a visitor.
+public type Floor record {|
+    # Floor identifier (e.g. "Floor 1", "Ground Floor")
+    string floor;
+    # List of room names accessible on this floor
+    string[] rooms;
+|};
+
+# Visit record — mirrors the backend database:Visit type returned by GET /visits.
+public type Visit record {|
+    *AuditFields;
+    # Unique numeric ID of the visit
+    int id;
+    # Hashed ID of the visitor (email or contact number hash)
+    string visitorIdHash;
+    # Name of the visitor's company
+    string? companyName = ();
+    # Pass number issued to the visitor upon entry
+    string passNumber?;
+    # Email of the employee the visitor is meeting
+    string? whomTheyMeet = ();
+    # Reason for the visit
+    string? purposeOfVisit = ();
+    # Floors and rooms the visitor is permitted to access
+    Floor[]? accessibleLocations = ();
+    # Scheduled visit date in YYYY-MM-DD format
+    string visitDate;
+    # Actual or scheduled entry time in UTC (YYYY-MM-DDTHH:mm:ss)
+    string? timeOfEntry = ();
+    # Actual or scheduled departure time in UTC (YYYY-MM-DDTHH:mm:ss)
+    string? timeOfDeparture = ();
+    # Current status of the visit: REQUESTED, APPROVED, REJECTED, or COMPLETED
+    string status;
+    # First name of the visitor
+    string firstName;
+    # Last name of the visitor
+    string? lastName = ();
+    # Contact number of the visitor
+    string? contactNumber = ();
+    # Email address of the visitor
+    string? email = ();
+    # ID of the invitation linked to this visit, if any
+    int? invitationId = ();
+|};
+
+# Paginated response from GET /visits — mirrors the backend database:VisitsResponse.
 public type VisitsResponse record {|
-    # Total number of visits matching the filter
+    # Total number of visits matching the applied filter (used for pagination)
     int totalCount;
-    # List of visits
+    # List of visits in the current page
     Visit[] visits;
 |};
