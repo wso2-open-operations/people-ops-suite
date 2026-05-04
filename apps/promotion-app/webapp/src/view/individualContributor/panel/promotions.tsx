@@ -42,6 +42,8 @@ import CustomizedTimeline from "@root/src/component/common/TimeLine";
 import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 import { fetchEmployees } from "@slices/employeeSlice/employee";
 import { insertPromotions } from "@slices/promotionSlice/promotion"; 
+import { useConfirmationModalContext } from "@context/DialogContext";
+import { ConfirmationType } from "@src/types/types";
 import { fetchActivePromotionCycle } from "@slices/promotionCycleSlice/promotionCycle";
 import { RootState, useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import StateWithImage from "@root/src/component/ui/StateWithImage";
@@ -50,13 +52,16 @@ export default function Request() {
         
     const theme = useTheme();
     const dispatch = useAppDispatch();
+    const dialogContext = useConfirmationModalContext();
     const employee  = useAppSelector((state: RootState) => state.employee);
     const promotionCycle  = useAppSelector((state: RootState) => state.promotionCycle);
+    const promotion  = useAppSelector((state: RootState) => state.promotion);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [recommendedJobBand, setRecommendedJobBand] = useState<number | null>(null);
     const [recommendationText, setRecommendationText] = useState<string>("");
     const isSubmitDisabled = recommendedJobBand === null;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const isLoading = promotion.postState === "loading";
 
     const fetchAllEmployees = async () => {
         setSelectedEmployee(null);
@@ -97,30 +102,39 @@ export default function Request() {
     }
 
     const handleSubmit = async () => {
-        const encodedStatement = safeBase64Encode(recommendationText);
-        if (
-            !promotionCycle.activePromotionCycle?.id ||
-            !recommendedJobBand ||
-            !selectedEmployee?.workEmail
-        ) {
-            return;
-        }
+        dialogContext.showConfirmation(
+              "Confirm Acceptance",
+              `Are you sure you want to Approve this Promotion?`,
+              ConfirmationType.accept,
+              async () => {
+                const encodedStatement = safeBase64Encode(recommendationText);
+                if (
+                    !promotionCycle.activePromotionCycle?.id ||
+                    !recommendedJobBand ||
+                    !selectedEmployee?.workEmail
+                ) {
+                    return;
+                }
 
-        try {
-            await dispatch(insertPromotions({
-                PromotionCycleID: promotionCycle.activePromotionCycle.id,
-                type: "INDIVIDUAL_CONTRIBUTOR",
-                promotingJobBand: recommendedJobBand,
-                employeeEmail: selectedEmployee.workEmail,
-                statement: encodedStatement
-            })).unwrap();
+                try {
+                    await dispatch(insertPromotions({
+                        PromotionCycleID: promotionCycle.activePromotionCycle.id,
+                        type: "INDIVIDUAL_CONTRIBUTOR",
+                        promotingJobBand: recommendedJobBand,
+                        employeeEmail: selectedEmployee.workEmail,
+                        statement: encodedStatement
+                    })).unwrap();
 
-            setSelectedEmployee(null);
-            setRecommendedJobBand(null);
-            setRecommendationText("");
-        } catch (error) {
-            console.error("Failed to submit promotion:", error);
-        }
+                    setSelectedEmployee(null);
+                    setRecommendedJobBand(null);
+                    setRecommendationText("");
+                } catch (error) {
+                    console.error("Failed to submit promotion:", error);
+                }
+              },
+              "Accept",
+              "Cancel"
+            );
     };
 
     const safeBase64Encode = (str: string): string => {
@@ -443,7 +457,7 @@ export default function Request() {
                             onClick={handleSubmit}
                             variant="contained"
                             size="large"
-                            disabled={isSubmitDisabled}
+                            disabled={isSubmitDisabled || isLoading}
                             sx={{
                                 textTransform: 'none',
                                 fontWeight: 500,
