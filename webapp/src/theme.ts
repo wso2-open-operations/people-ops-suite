@@ -750,7 +750,7 @@ export const themeSettings = (mode: PaletteMode) => {
       MuiOutlinedInput: {
         styleOverrides: {
           notchedOutline: {
-            borderColor: mode === "dark" ? "#262626" : "#D9D9D9",
+            borderColor: mode === "dark" ? "rgba(255,255,255,0.28)" : "#D9D9D9",
           },
           input: {
             color: mode === "dark" ? "#FFFFFF" : "#262626",

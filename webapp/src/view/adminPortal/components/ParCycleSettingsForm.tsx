@@ -13,13 +13,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import {
   Box,
-  Breadcrumbs,
   Button,
-  Divider,
   Grid,
-  Link,
+  IconButton,
   TextField,
   Typography,
 } from "@mui/material";
@@ -250,21 +249,20 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
   }, [values, currentCycle]);
 
   return (
-    <Box sx={{ overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
-      <Box sx={{ mb: 1 }}>
-        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 0.8 }}>
-          <Link underline="hover" color="textPrimary" onClick={closeParCycleSettings} sx={{ cursor: "pointer" }}>
-            Home
-          </Link>
-          <Typography color="text.primary">PAR Cycle Settings</Typography>
-        </Breadcrumbs>
-        <Typography variant="h5" pb={1}>
-          PAR Cycle Settings
-        </Typography>
-        <Divider />
+    <Box sx={{ overflow: "hidden", display: "flex", flexDirection: "column", height: "100%", mt: 1 }}>
+      <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 0.5 }}>
+        <IconButton
+          aria-label="back"
+          color="primary"
+          onClick={closeParCycleSettings}
+          sx={{ ml: -1, "&:hover": { bgcolor: "transparent" } }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h5">PAR Cycle Settings</Typography>
       </Box>
 
-      <Box component="form" onSubmit={handleSubmit} sx={{ flexGrow: 1, overflow: "auto", pr: 1 }}>
+      <Box component="form" onSubmit={handleSubmit} sx={{ flexGrow: 1, overflow: "auto", pr: 1, pl: 2 }}>
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <Grid container spacing={1}>
             {/* PAR cycle date range — two pickers on one row */}

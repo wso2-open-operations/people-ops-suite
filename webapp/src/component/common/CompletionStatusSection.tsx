@@ -22,10 +22,12 @@ import { tooltipVisibilityDelay } from "@config/constant";
 import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
 
 const overviewButtonSx = {
-  p: 0,
-  mr: "8px",
+  borderRadius: "4px",
+  padding: "2px",
+  mr: "4px",
   color: "primary.main",
   "&:hover": {
+    borderRadius: "4px",
     bgcolor: "primary.main",
     color: "white",
   },
@@ -62,8 +64,8 @@ export const CompletionStatusSection = ({
               enterDelay={tooltipVisibilityDelay}
               enterNextDelay={tooltipVisibilityDelay}
             >
-              <IconButton aria-label="PAR completion overview" onClick={onOpenOverview} sx={overviewButtonSx}>
-                <OpenInNewIcon />
+              <IconButton size="small" aria-label="PAR completion overview" onClick={onOpenOverview} sx={overviewButtonSx}>
+                <OpenInNewIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}

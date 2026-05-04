@@ -31,10 +31,9 @@ interface CycleDatesStepperProps {
 export const CycleDatesStepper = ({ cycle, activeStep, open, onClose }: CycleDatesStepperProps) => {
   return (
     <CustomModal open={open} onClose={onClose} width="80vw">
-      <Typography variant="h5" fontWeight={600} pb={2}>
+      <Typography variant="h5" fontWeight={600} pb={1}>
         Cycle Dates
       </Typography>
-      <Divider />
       <Box pt={3} pb={2}>
         <Card variant="outlined" sx={{ borderRadius: 3, p: 3 }}>
           <Stepper activeStep={activeStep} alternativeLabel>

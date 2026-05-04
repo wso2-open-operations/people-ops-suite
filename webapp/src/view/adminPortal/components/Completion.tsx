@@ -99,7 +99,7 @@ export const Completion = ({
             aria-label="back"
             color="primary"
             onClick={closeCompletionView}
-            sx={{ mr: 1, ml: -1 }}
+            sx={{ mr: 1, ml: -1, "&:hover": { bgcolor: "transparent" } }}
           >
             <ArrowBackIcon />
           </IconButton>
