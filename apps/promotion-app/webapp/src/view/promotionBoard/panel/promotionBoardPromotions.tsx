@@ -269,7 +269,7 @@ const applyFilters = (data: PromotionRequest[]) => {
         console.log(emp);
         setSelectedEmployee(emp);
         setPromotionJobBand(emp.nextJobBand);
-        setCurrentJobBand(emp.nextJobBand);
+        setCurrentJobBand(emp.currentJobBand);
     }
 
     const handleClose = () => {
