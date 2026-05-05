@@ -33,6 +33,7 @@ import {
 import { RequestState } from "@utils/types";
 
 import CommentPaper from "./CommentPaper";
+import { uiMessages } from "@root/src/config/constant";
 
 dayjs.extend(utc);
 
@@ -74,9 +75,9 @@ export const ReviewViewModal = ({
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 3, display: "flex", flexDirection: "column", alignItems: "center" }}>
         <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <Typography variant="h4" component="h1">
+          <Typography variant="h5">
             360° Feedback
           </Typography>
           {(threeSixtyReviewStatus === RequestState.SUCCEEDED || reviewObject) &&
@@ -89,33 +90,29 @@ export const ReviewViewModal = ({
               />
             )}
         </Box>
-        <Divider sx={{ bgcolor: "primary.main" }} />
-      </Box>
-      <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
-        <Avatar
-          src={employeeMap[employeeEmail]?.employeeThumbnail}
-          alt={employeeMap[employeeEmail]?.employeeName || employeeEmail}
-          sx={{
-            width: 100,
-            height: 100,
-            mr: 3,
-          }}
-        />
-        <Box>
-          <Typography variant="h5" component="h2" sx={{ mb: 1 }}>
-            {employeeMap[employeeEmail]?.employeeName}
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {employeeEmail}
-          </Typography>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Avatar
+            src={employeeMap[employeeEmail]?.employeeThumbnail}
+            alt={employeeMap[employeeEmail]?.employeeName || employeeEmail}
+            sizes="xl"
+            sx={{ height: 50, width: 50 }}
+          />
+          <Box ml={2}>
+            <Typography variant="h3" sx={{ fontSize: 20 }}>
+              {employeeMap[employeeEmail]?.employeeName}
+            </Typography>
+            <Typography variant="h6" color="text.secondary">
+              {employeeEmail}
+            </Typography>
+          </Box>
         </Box>
       </Box>
 
       {threeSixtyReviewStatus === RequestState.LOADING && (
         <Box
-          sx={{ minHeight: 470, display: "flex", alignItems: "center", justifyContent: "center" }}
+          sx={{ minHeight: 193, display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          <LoadingEffect message={""} />
+          <LoadingEffect message={uiMessages.loading.pageLoading} />
         </Box>
       )}
 

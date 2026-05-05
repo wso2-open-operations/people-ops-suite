@@ -340,28 +340,27 @@ export const ReviewProvideModal = ({
 
   return (
     <Box sx={{ p: 1 }}>
-      <Typography id="dashboard-modal-title" variant="h4" pb={2}>
+      <Typography id="dashboard-modal-title" variant="h5" sx={{ textAlign: 'center' }}>
         Provide 360° Feedback
       </Typography>
-      <Divider sx={{ bgcolor: "primary.main" }} />
-      <Box display="flex" justifyContent="space-between">
+      <Box display="flex" justifyContent="center" alignItems="center" gap={4}>
         <Box display="flex" alignItems="center">
           <Avatar
             src={employeeMap[employeeEmail]?.employeeThumbnail}
             alt={employeeMap[employeeEmail]?.employeeName || employeeEmail}
             sizes="xl"
-            sx={{ marginRight: 4, marginY: 3, height: 100, width: 100 }}
+            sx={{ height: 50, width: 50 }}
           />
-          <Box>
-            <Typography variant="h2" sx={{ fontSize: 30 }}>
+          <Box ml={2}>
+            <Typography variant="h3" sx={{ fontSize: 20 }}>
               {employeeMap[employeeEmail]?.employeeName}
             </Typography>
-            <Typography variant="h6" pb={4} color={"GrayText"}>
+            <Typography variant="h6" color={"primary.secondary"}>
               {employeeEmail}
             </Typography>
           </Box>
         </Box>
-        <Box mt={2}>
+        <Box mt={1}>
           {!isRejectionSelected && !isOfferedFeedback && (
             <Button color="error" variant="outlined" onClick={() => setIsRejectionSelected(true)}>
               DECLINE
@@ -370,161 +369,163 @@ export const ReviewProvideModal = ({
         </Box>
       </Box>
 
-      {!isDeadlinePassed &&
-        threeSixtyReviewContent.reviewStatus === ParThreeSixtyReviewStatus.PENDING && (
-          <Alert severity="info">
-            {`Please share your 360° feedback before the deadline: ${dayjs
+      <Box mt={2}>
+        {!isDeadlinePassed &&
+          threeSixtyReviewContent.reviewStatus === ParThreeSixtyReviewStatus.PENDING && (
+            <Alert severity="info">
+              {`Please share your 360° feedback before the deadline: ${dayjs
+                .utc(parCycle.parThreeSixtyRatingDeadline)
+                .format("D MMM 'YY")}`}
+            </Alert>
+          )}
+        {!isDeadlinePassed &&
+          threeSixtyReviewContent.reviewStatus === ParThreeSixtyReviewStatus.DRAFT && (
+            <Alert severity="warning">
+              {`Your 360° feedback is saved as a draft. Please share on or before the deadline: ${dayjs
+                .utc(parCycle.parThreeSixtyRatingDeadline)
+                .format("D MMM 'YY")}`}
+            </Alert>
+          )}
+        {isDeadlinePassed && (
+          <Alert severity="error">
+            {`The deadline for sharing the 360° feedback has passed on ${dayjs
               .utc(parCycle.parThreeSixtyRatingDeadline)
               .format("D MMM 'YY")}`}
           </Alert>
         )}
-      {!isDeadlinePassed &&
-        threeSixtyReviewContent.reviewStatus === ParThreeSixtyReviewStatus.DRAFT && (
-          <Alert severity="warning">
-            {`Your 360° feedback is saved as a draft. Please share on or before the deadline: ${dayjs
-              .utc(parCycle.parThreeSixtyRatingDeadline)
-              .format("D MMM 'YY")}`}
-          </Alert>
-        )}
-      {isDeadlinePassed && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {`The deadline for sharing the 360° feedback has passed on ${dayjs
-            .utc(parCycle.parThreeSixtyRatingDeadline)
-            .format("D MMM 'YY")}`}
-        </Alert>
-      )}
+      </Box>
 
       <form onSubmit={handleSubmit}>
         {threeSixtyReviewStatus === RequestState.LOADING && (
-          <Box minHeight={400}>
+          <Box minHeight={340} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
             <LoadingEffect message={uiMessages.loading.pageLoading} />
           </Box>
         )}
 
         {(threeSixtyReviewStatus === RequestState.SUCCEEDED ||
           threeSixtyReviewStatus === RequestState.FAILED) && (
-          <Grid container spacing={1} pt={3} id="modal-description">
-            {!isRejectionSelected && (
-              <>
-                <Grid size={{ md: 12 }} pb={3}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Box display="flex" alignItems="center">
-                      <Typography variant="h5" pt={1} mr={2}>
-                        {parUiText.ThreeSixtyReviewPanelDescription}
-                      </Typography>
+            <Grid container spacing={1} pt={1} id="modal-description">
+              {!isRejectionSelected && (
+                <>
+                  <Grid size={{ md: 12 }} pb={2}>
+                    <Box display="flex" justifyContent="space-between">
+                      <Box display="flex" alignItems="center">
+                        <Typography>
+                          {parUiText.ThreeSixtyReviewPanelDescription}
+                        </Typography>
+                      </Box>
                     </Box>
-                  </Box>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 1 }}>
-                  <Typography pt={1} mr={2}>
-                    Rating:
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 11, md: 6 }} pb={3}>
-                  <TextField
-                    select
-                    size="small"
-                    fullWidth
-                    name="reviewRating"
-                    label="Select Rating"
-                    value={values.reviewRating}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.reviewRating && Boolean(errors.reviewRating)}
-                    helperText={touched.reviewRating && errors.reviewRating}
-                    variant="outlined"
-                    InputProps={{
-                      readOnly: isDeadlinePassed,
-                    }}
-                  >
-                    {threeSixtyReviewRatings.map((rating) => (
-                      <MenuItem key={rating} value={rating}>
-                        {rating}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-                <Grid size={{ md: 3, sm: 0 }} />
-              </>
-            )}
-            <Grid size={{ xs: 12 }}>
-              <Typography pb={1}>
-                {isRejectionSelected ? "Reason :" : threeSixtyReviewQuestion}
-              </Typography>
-              <Box sx={{ position: "relative" }}>
-                {isDeadlinePassed ? (
-                  <CommentPaper comment={values.reviewComment} />
-                ) : (
-                  <CustomRichTextField
-                    name="reviewComment"
-                    value={values.reviewComment}
-                    onChange={(value) => {
-                      if (value !== values.reviewComment) {
-                        setFieldValue("reviewComment", value);
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 1 }}>
+                    <Typography pt={1} sx={{ mr: 2 }}>
+                      Rating:
+                    </Typography>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 11, md: 6 }} sx={{ mb: 1, pl: 3 }}>
+                    <TextField
+                      select
+                      size="small"
+                      fullWidth
+                      name="reviewRating"
+                      label="Select Rating"
+                      value={values.reviewRating}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.reviewRating && Boolean(errors.reviewRating)}
+                      helperText={touched.reviewRating && errors.reviewRating}
+                      variant="outlined"
+                      InputProps={{
+                        readOnly: isDeadlinePassed,
+                      }}
+                    >
+                      {threeSixtyReviewRatings.map((rating) => (
+                        <MenuItem key={rating} value={rating}>
+                          {rating}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid size={{ md: 3, sm: 0 }} />
+                </>
+              )}
+              <Grid size={{ xs: 12 }}>
+                <Typography pb={1}>
+                  {isRejectionSelected ? "Reason :" : threeSixtyReviewQuestion}
+                </Typography>
+                <Box sx={{ position: "relative" }}>
+                  {isDeadlinePassed ? (
+                    <CommentPaper comment={values.reviewComment} />
+                  ) : (
+                    <CustomRichTextField
+                      name="reviewComment"
+                      value={values.reviewComment}
+                      onChange={(value) => {
+                        if (value !== values.reviewComment) {
+                          setFieldValue("reviewComment", value);
+                        }
+                      }}
+                      onBlur={handleBlur}
+                      error={Boolean(touched.reviewComment && errors.reviewComment)}
+                      helperText={
+                        touched.reviewComment && errors.reviewComment
+                          ? errors.reviewComment.toString()
+                          : ""
                       }
-                    }}
-                    onBlur={handleBlur}
-                    error={Boolean(touched.reviewComment && errors.reviewComment)}
-                    helperText={
-                      touched.reviewComment && errors.reviewComment
-                        ? errors.reviewComment.toString()
-                        : ""
+                      placeholder="Enter your comment here"
+                      setFieldTouched={setFieldTouched}
+                    />
+                  )}
+                  {autoSaveCountdown === 0 && isSavingDraft && (
+                    <Typography
+                      color={"GrayText"}
+                      sx={{ position: "absolute", bottom: "-1.5rem", left: 0 }}
+                    >
+                      Saving draft...
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
+              <Grid size={{ sm: 12 }} display="flex" justifyContent="flex-end" gap={2} mt={2}>
+                {isRejectionSelected && (
+                  <Button color="error" variant="outlined" onClick={onClose}>
+                    Cancel
+                  </Button>
+                )}
+                {!isRejectionSelected && (
+                  <Button variant="outlined" onClick={onClose}>
+                    Cancel
+                  </Button>
+                )}
+                {!isRejectionSelected && (
+                  <LoadingButton
+                    disabled={
+                      isDeadlinePassed ||
+                      !(
+                        (values.reviewComment !== threeSixtyReviewContent.reviewComment &&
+                          !errors?.reviewComment) ||
+                        (values.reviewRating !== threeSixtyReviewContent.reviewRating &&
+                          values.reviewRating !== "")
+                      )
                     }
-                    placeholder="Enter your comment here"
-                    setFieldTouched={setFieldTouched}
-                  />
-                )}
-                {autoSaveCountdown === 0 && isSavingDraft && (
-                  <Typography
-                    color={"GrayText"}
-                    sx={{ position: "absolute", bottom: "-1.5rem", left: 0 }}
+                    loading={isSubmitting}
+                    variant="outlined"
+                    onClick={() => handleDraftSubmit()}
                   >
-                    Saving draft...
-                  </Typography>
+                    <span>Save Draft</span>
+                  </LoadingButton>
                 )}
-              </Box>
-            </Grid>
-            <Grid size={{ sm: 12 }} display="flex" justifyContent="flex-end" gap={2} mt={2}>
-              {isRejectionSelected && (
-                <Button color="error" variant="outlined" onClick={onClose}>
-                  Cancel
-                </Button>
-              )}
-              {!isRejectionSelected && (
-                <Button variant="outlined" onClick={onClose}>
-                  Cancel
-                </Button>
-              )}
-              {!isRejectionSelected && (
                 <LoadingButton
-                  disabled={
-                    isDeadlinePassed ||
-                    !(
-                      (values.reviewComment !== threeSixtyReviewContent.reviewComment &&
-                        !errors?.reviewComment) ||
-                      (values.reviewRating !== threeSixtyReviewContent.reviewRating &&
-                        values.reviewRating !== "")
-                    )
-                  }
+                  color={isRejectionSelected ? "error" : "primary"}
+                  type="submit"
+                  disabled={isDeadlinePassed}
                   loading={isSubmitting}
-                  variant="outlined"
-                  onClick={() => handleDraftSubmit()}
+                  variant={isSubmitting ? "outlined" : "contained"}
                 >
-                  <span>Save Draft</span>
+                  <span>{isRejectionSelected ? "Decline" : "Share"}</span>
                 </LoadingButton>
-              )}
-              <LoadingButton
-                color={isRejectionSelected ? "error" : "primary"}
-                type="submit"
-                disabled={isDeadlinePassed}
-                loading={isSubmitting}
-                variant={isSubmitting ? "outlined" : "contained"}
-              >
-                <span>{isRejectionSelected ? "Decline" : "Share"}</span>
-              </LoadingButton>
+              </Grid>
             </Grid>
-          </Grid>
-        )}
+          )}
       </form>
       <ConfirmationDialog
         open={isConfirmationDialogOpen}
