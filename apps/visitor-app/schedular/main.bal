@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import schedular.email;
 import schedular.visitor;
 
 import ballerina/log;
@@ -30,58 +31,77 @@ public function main() returns error? {
     log:printInfo("Active visits fetched", count = activeVisits.length());
 
     time:Utc now = time:utcNow();
+    string today = string:substring(time:utcToString(now), 0, 10);
+    time:Utc oneWeekAgo = time:utcAddSeconds(now, -7.0 * 24.0 * 60.0 * 60.0);
 
-    // foreach visitor:Visit v in activeVisits {
-    //     string? departure = v.timeOfDeparture;
-    //     if departure is () {
-    //         log:printInfo("Skipping visit with no departure time set", id = v.id);
-    //         continue;
-    //     }
+    foreach visitor:Visit visit in activeVisits {
+        string? timeOfDeparture = visit.timeOfDeparture;
+        if timeOfDeparture is string {
+            string departureDate = string:substring(timeOfDeparture, 0, 10);
+            if departureDate == today {
+                log:printInfo("Force completing visit with today's departure",
+                        id = visit.id,
+                        visitorName = buildVisitorName(visit.firstName, visit.lastName),
+                        timeOfDeparture = timeOfDeparture
+                );
 
-    //     time:Utc|error departureUtc = time:utcFromString(departure + "Z");
-    //     if departureUtc is error {
-    //         log:printError("Cannot parse timeOfDeparture, skipping", departureUtc, id = v.id, timeOfDeparture = departure);
-    //         continue;
-    //     }
+                error? completeError = visitor:completeVisit(visit.id);
+                if completeError is error {
+                    log:printError("Failed to force complete visit, skipping email", completeError, id = visit.id);
+                    continue;
+                }
 
-    //     if time:utcDiffSeconds(now, departureUtc) < 0d {
-    //         continue;
-    //     }
+                error? emailError = email:sendForceCompleteEmail({
+                                                                     id: visit.id,
+                                                                     visitorName: buildVisitorName(visit.firstName, visit.lastName),
+                                                                     visitDate: visit.visitDate,
+                                                                     timeOfEntry: visit.timeOfEntry,
+                                                                     timeOfDeparture: visit.timeOfDeparture,
+                                                                     whomTheyMeet: visit.whomTheyMeet,
+                                                                     passNumber: visit.passNumber,
+                                                                     companyName: visit.companyName,
+                                                                     purposeOfVisit: visit.purposeOfVisit
+                                                                 });
+                if emailError is error {
+                    log:printError("Failed to send force-complete email", emailError, id = visit.id);
+                }
+            }
+        } else {
+            string? entry = visit.timeOfEntry;
+            if entry is () {
+                continue;
+            }
 
-    //     log:printInfo("Completing expired visit", id = v.id, timeOfDeparture = departure);
+            time:Utc|error entryUtc = time:utcFromString(re ` `.replaceAll(entry, "T") + "Z");
+            if entryUtc is error {
+                log:printError("Cannot parse timeOfEntry, skipping", entryUtc, id = visit.id, timeOfEntry = entry);
+                continue;
+            }
 
-    //     error? completeError = visitor:completeVisit(v.id);
-    //     if completeError is error {
-    //         log:printError("Failed to complete visit, skipping email", completeError, id = v.id);
-    //         continue;
-    //     }
+            if time:utcDiffSeconds(oneWeekAgo, entryUtc) >= 0d {
+                log:printInfo("Visit has no departure and entry was a week ago or more",
+                        id = visit.id,
+                        visitorName = buildVisitorName(visit.firstName, visit.lastName),
+                        timeOfEntry = entry
+                );
 
-    //     string visitorName = buildVisitorName(v.firstName, v.lastName);
-    //     error? emailError = email:sendCompletionEmail({
-    //         id: v.id,
-    //         visitorName: visitorName,
-    //         visitDate: v.visitDate,
-    //         timeOfEntry: v.timeOfEntry,
-    //         timeOfDeparture: v.timeOfDeparture,
-    //         whomTheyMeet: v.whomTheyMeet,
-    //         passNumber: v.passNumber,
-    //         companyName: v.companyName,
-    //         purposeOfVisit: v.purposeOfVisit
-    //     });
-    //     if emailError is error {
-    //         log:printError("Failed to send completion email", emailError, id = v.id);
-    //     }
-    // }
+                error? emailError = email:sendExpiredVisitEmail({
+                                                                    id: visit.id,
+                                                                    visitorName: buildVisitorName(visit.firstName, visit.lastName),
+                                                                    visitDate: visit.visitDate,
+                                                                    timeOfEntry: visit.timeOfEntry,
+                                                                    timeOfDeparture: (),
+                                                                    whomTheyMeet: visit.whomTheyMeet,
+                                                                    passNumber: visit.passNumber,
+                                                                    companyName: visit.companyName,
+                                                                    purposeOfVisit: visit.purposeOfVisit
+                                                                });
+                if emailError is error {
+                    log:printError("Failed to send expired-visit email", emailError, id = visit.id);
+                }
+            }
+        }
+    }
 
     log:printInfo("Scheduler run completed");
-}
-
-isolated function buildVisitorName(string? firstName, string? lastName) returns string {
-    if firstName is string && lastName is string {
-        return firstName + " " + lastName;
-    }
-    if firstName is string {
-        return firstName;
-    }
-    return "Unknown Visitor";
 }

@@ -15,98 +15,71 @@
 // under the License.
 import ballerina/http;
 import ballerina/log;
+import ballerina/time;
 
 public configurable string fromEmailAddress = ?;
 public configurable string[] adminEmailList = ?;
 
-# Sends a notification email to the admin group for a visit that was forcefully
-# completed by the scheduler because the reception did not complete it.
+# Sends a notification email to the admin group for a visit that was force-completed
+# by the scheduler because the scheduled departure time passed without reception action.
 #
 # + visit - Details of the completed visit
 # + return - An error if sending fails
-public function sendCompletionEmail(CompletedVisitInfo visit) returns error? {
-    string template = buildEmailBody(visit);
+public function sendForceCompleteEmail(CompletedVisitInfo visit) returns error? {
+    string template = check bindKeyValues(
+            forceCompleteTemplate,
+            {
+                "VISIT_ID": visit.id.toString(),
+                "VISITOR_NAME": visit.visitorName,
+                "COMPANY": visit.companyName ?: "N/A",
+                "VISIT_DATE": visit.visitDate,
+                "TIME_OF_ENTRY": visit.timeOfEntry ?: "N/A",
+                "TIME_OF_DEPARTURE": visit.timeOfDeparture ?: "N/A",
+                "WHOM_THEY_MEET": visit.whomTheyMeet ?: "N/A",
+                "PASS_NUMBER": visit.passNumber ?: "N/A",
+                "PURPOSE_OF_VISIT": visit.purposeOfVisit ?: "N/A",
+                "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+            });
+    return sendEmail(FORCE_COMPLETE_SUBJECT, template, visit.id);
+}
 
-    http:Response|http:ClientError response = emailClient->/send\-email.post(<EmailPayload>{
+# Sends a notification email to the admin group for a visit that has been active
+# for more than one week with no departure recorded.
+#
+# + visit - Details of the long-running visit
+# + return - An error if sending fails
+public function sendExpiredVisitEmail(CompletedVisitInfo visit) returns error? {
+    string|error template = bindKeyValues(
+            expiredVisitTemplate,
+            {
+                "VISIT_ID": visit.id.toString(),
+                "VISITOR_NAME": visit.visitorName,
+                "COMPANY": visit.companyName ?: "N/A",
+                "VISIT_DATE": visit.visitDate,
+                "TIME_OF_ENTRY": visit.timeOfEntry ?: "N/A",
+                "WHOM_THEY_MEET": visit.whomTheyMeet ?: "N/A",
+                "PASS_NUMBER": visit.passNumber ?: "N/A",
+                "PURPOSE_OF_VISIT": visit.purposeOfVisit ?: "N/A",
+                "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+            });
+    if template is error {
+        log:printError("Failed to bind expired-visit email template", template, id = visit.id);
+        return template;
+    }
+    return sendEmail(EXPIRED_VISIT_SUBJECT, template, visit.id);
+}
+
+isolated function sendEmail(string subject, string template, int visitId) returns error? {
+    http:Response response = check emailClient->/send\-email.post(<EmailPayload>{
         to: adminEmailList,
         'from: fromEmailAddress,
-        subject: SCHEDULER_COMPLETION_SUBJECT,
+        subject: subject,
         template: template
     });
 
-    if response is http:ClientError {
-        string msg = string `Client error while sending completion email for visit ${visit.id}`;
-        log:printError(msg, response);
-        return error(msg, response);
-    }
-
     if response.statusCode != http:STATUS_OK {
-        string msg = string `Email service rejected completion email for visit ${visit.id}, status: ${response.statusCode}`;
+        string msg = string `Email service rejected email for visit ${visitId}, status: ${response.statusCode}`;
         log:printError(msg);
         return error(msg);
     }
-}
-
-isolated function buildEmailBody(CompletedVisitInfo visit) returns string {
-    string visitorName = visit.visitorName;
-    string visitDate = visit.visitDate;
-    string timeOfEntry = visit.timeOfEntry ?: "N/A";
-    string timeOfDeparture = visit.timeOfDeparture ?: "N/A";
-    string whomTheyMeet = visit.whomTheyMeet ?: "N/A";
-    string passNumber = visit.passNumber ?: "N/A";
-    string companyName = visit.companyName ?: "N/A";
-    string purposeOfVisit = visit.purposeOfVisit ?: "N/A";
-
-    return string `
-        <html>
-        <body style="font-family: 'Roboto', Helvetica, sans-serif; color: #465868;">
-            <h2 style="color: #d9534f;">Visit Auto-Completed by Scheduler</h2>
-            <p>
-                The following visit was <strong>forcefully completed by the scheduler</strong>
-                because it was not completed by the reception before the scheduled departure time.
-            </p>
-            <table style="border-collapse: collapse; width: 100%;">
-                <tr>
-                    <td style="padding: 8px; font-weight: bold;">Visit ID</td>
-                    <td style="padding: 8px;">${visit.id}</td>
-                </tr>
-                <tr style="background-color: #f9f9f9;">
-                    <td style="padding: 8px; font-weight: bold;">Visitor Name</td>
-                    <td style="padding: 8px;">${visitorName}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; font-weight: bold;">Company</td>
-                    <td style="padding: 8px;">${companyName}</td>
-                </tr>
-                <tr style="background-color: #f9f9f9;">
-                    <td style="padding: 8px; font-weight: bold;">Visit Date</td>
-                    <td style="padding: 8px;">${visitDate}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; font-weight: bold;">Entry Time (UTC)</td>
-                    <td style="padding: 8px;">${timeOfEntry}</td>
-                </tr>
-                <tr style="background-color: #f9f9f9;">
-                    <td style="padding: 8px; font-weight: bold;">Scheduled Departure (UTC)</td>
-                    <td style="padding: 8px;">${timeOfDeparture}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; font-weight: bold;">Whom They Meet</td>
-                    <td style="padding: 8px;">${whomTheyMeet}</td>
-                </tr>
-                <tr style="background-color: #f9f9f9;">
-                    <td style="padding: 8px; font-weight: bold;">Pass Number</td>
-                    <td style="padding: 8px;">${passNumber}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; font-weight: bold;">Purpose of Visit</td>
-                    <td style="padding: 8px;">${purposeOfVisit}</td>
-                </tr>
-            </table>
-            <p style="margin-top: 20px; color: #888; font-size: 13px;">
-                This is an automated notification from the Visitor Management Scheduler.
-            </p>
-        </body>
-        </html>
-    `;
 }

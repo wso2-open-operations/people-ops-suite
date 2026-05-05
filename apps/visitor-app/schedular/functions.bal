@@ -13,6 +13,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-public const FORCE_COMPLETE_SUBJECT = "Visit Auto-Completed by Scheduler - Action Required";
-public const EXPIRED_VISIT_SUBJECT = "Visit Active for Over One Week - Immediate Attention Required";
+# Builds the full name of a visitor from their first and last names, handling null values gracefully.
+#
+# + firstName - First name of the visitor, can be null  
+# + lastName - Last name of the visitor, can be null
+# + return - Full name of the visitor, or "Unknown Visitor" if both names are null
+isolated function buildVisitorName(string? firstName, string? lastName) returns string {
+    if firstName is string && lastName is string {
+        return firstName + " " + lastName;
+    }
+    if firstName is string {
+        return firstName;
+    }
+    return "Unknown Visitor";
+}

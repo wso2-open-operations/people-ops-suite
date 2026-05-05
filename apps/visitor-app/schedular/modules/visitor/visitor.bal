@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -71,7 +71,9 @@ public function completeVisit(int visitId) returns error? {
     );
 
     if response.statusCode != http:STATUS_OK {
-        string msg = string `Backend rejected COMPLETE for visit ${visitId}, status: ${response.statusCode}`;
+        string|error body = response.getTextPayload();
+        string bodyText = body is string ? body : "unable to read response body";
+        string msg = string `Backend rejected COMPLETE for visit ${visitId} — status: ${response.statusCode}, body: ${bodyText}`;
         log:printError(msg);
         return error(msg);
     }
