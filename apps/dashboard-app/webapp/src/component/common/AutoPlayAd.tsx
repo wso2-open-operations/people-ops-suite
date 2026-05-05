@@ -122,7 +122,7 @@ const AutoPlayAd = memo(() => {
     return () => {
       clearTimers();
     };
-  }, []);
+  }, [clearTimers]);
 
   const handleStopPlaying = useCallback(() => {
     latestRequestRef.current += 1;

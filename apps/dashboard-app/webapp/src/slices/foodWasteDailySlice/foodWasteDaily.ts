@@ -26,6 +26,7 @@ export interface FoodWasteRecord {
 }
 
 interface DailyFoodWasteData {
+  recordDate: string;
   breakfast?: FoodWasteRecord;
   lunch?: FoodWasteRecord;
 }
@@ -51,11 +52,13 @@ export const fetchDailyFoodWaste = createAsyncThunk(
       });
 
       const daily = response.data as {
+        recordDate: string;
         breakfast?: { id?: number; totalWasteKg: number; plateCount: number } | null;
         lunch?: { id?: number; totalWasteKg: number; plateCount: number } | null;
       };
 
       return {
+        recordDate: daily.recordDate,
         data: {
           breakfast: daily.breakfast
             ? {
@@ -146,7 +149,10 @@ const foodWasteDailySlice = createSlice({
       })
       .addCase(fetchDailyFoodWaste.fulfilled, (state, action) => {
         state.state = "success";
-        state.data = action.payload.data;
+        state.data = {
+          recordDate: action.payload.recordDate,
+          ...action.payload.data,
+        };
         state.errorMessage = null;
       })
       .addCase(fetchDailyFoodWaste.rejected, (state) => {
@@ -154,9 +160,9 @@ const foodWasteDailySlice = createSlice({
         state.errorMessage = "Failed to load daily records";
       })
       .addCase(saveFoodWasteRecord.fulfilled, (state, action) => {
-        const { mealType, returnedId } = action.payload;
+        const { mealType, returnedId, recordDate } = action.payload;
         if (!state.data) {
-          state.data = { breakfast: undefined, lunch: undefined };
+          state.data = { recordDate, breakfast: undefined, lunch: undefined };
         }
         if (mealType === "BREAKFAST") {
           if (!state.data.breakfast) {

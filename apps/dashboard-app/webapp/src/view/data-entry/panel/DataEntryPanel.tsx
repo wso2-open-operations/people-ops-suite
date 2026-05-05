@@ -19,7 +19,7 @@ import Typography from "@mui/material/Typography";
 import { Save, X } from "lucide-react";
 import { useSnackbar } from "notistack";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { DATE_RANGE_DAYS } from "@config/feature";
 import { DataEntryMessage } from "@config/messages";
@@ -51,7 +51,6 @@ export default function DataEntryPanel() {
   );
 
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const activeFetchDateRef = useRef(selectedDate);
   const [isSaving, setIsSaving] = useState(false);
 
   const [breakfastData, setBreakfastData] = useState<FoodWasteData>({
@@ -78,17 +77,20 @@ export default function DataEntryPanel() {
     setBreakfastData({ id: null, totalWasteKg: "", plateCount: "" });
     setLunchData({ id: null, totalWasteKg: "", plateCount: "" });
 
-    activeFetchDateRef.current = selectedDate;
     dispatch(clearDailyData());
     dispatch(fetchDailyFoodWaste(selectedDate));
   }, [selectedDate, dispatch]);
 
   useEffect(() => {
-    if (dailyData && typeof dailyData === "object" && activeFetchDateRef.current === selectedDate) {
+    if (dailyData && typeof dailyData === "object") {
       const data = dailyData as {
+        recordDate?: string;
         breakfast?: { id?: number; totalWasteKg: number; plateCount: number };
         lunch?: { id?: number; totalWasteKg: number; plateCount: number };
       };
+      if (data.recordDate && data.recordDate !== selectedDate) {
+        return;
+      }
       if (data.breakfast) {
         setBreakfastData({
           id: data.breakfast.id ?? null,
