@@ -348,7 +348,7 @@ const CompositionPieChart = memo(
                   labelLine={false}
                 >
                   {data.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
+                    <Cell key={entry.name} fill={entry.color} strokeWidth={0} />
                   ))}
                 </Pie>
               </PieChart>

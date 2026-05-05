@@ -149,7 +149,6 @@ class APIService {
       (config) => {
         if (this.idToken) {
           config.headers.set("Authorization", `Bearer ${this.idToken}`);
-          config.headers.set("x-jwt-assertion", this.idToken);
         }
 
         const endpoint = config.url || "";
