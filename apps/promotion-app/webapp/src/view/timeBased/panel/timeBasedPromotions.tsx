@@ -108,7 +108,7 @@ export default function Pending() {
   const handleAcceptOpen = (employee: any, id: number, comment: string, statement: string) => {
     const decodedValue = safeBase64Decode(statement);
     setSelectedEmployee(employee);
-    setLastSavedText(employee.recommendationStatement);
+    setLastSavedText(decodedValue);
     setOpenSubmissionPage(true);
     setRecommendationID(id);
     setRecommendationText(decodedValue);
@@ -170,7 +170,7 @@ export default function Pending() {
     }
   };
 
-  const isDraftChanged = recommendationText?.trim() !== safeBase64Decode(lastSavedText.trim());
+  const isDraftChanged = recommendationText?.trim() !== lastSavedText.trim();
 
   const handleSaveDraft = async () => {
     const encodedStatement = safeBase64Encode(recommendationText);
