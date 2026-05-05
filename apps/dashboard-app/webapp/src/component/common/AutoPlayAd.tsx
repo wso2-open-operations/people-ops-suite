@@ -34,13 +34,19 @@ const AutoPlayAd = memo(() => {
   const [ad, setAd] = useState<ActiveAd | null>(null);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const adRef = useRef<ActiveAd | null>(null);
+  const displayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const latestRequestRef = useRef(0);
 
-  const clearTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
+  const clearTimers = useCallback(() => {
+    if (displayTimerRef.current) {
+      clearTimeout(displayTimerRef.current);
+      displayTimerRef.current = null;
+    }
+    if (intervalTimerRef.current) {
+      clearInterval(intervalTimerRef.current);
+      intervalTimerRef.current = null;
     }
   }, []);
 
@@ -52,19 +58,21 @@ const AutoPlayAd = memo(() => {
       .then((res) => {
         if (requestId !== latestRequestRef.current) return;
         const data = res.data;
-        if (!data) {
+        if (!data || !data.mediaData) {
           setAd(null);
           setPlaying(false);
           return;
         }
-        setAd({
+        const newAd: ActiveAd = {
           id: data.id,
           adName: data.adName,
           mediaData: data.mediaData,
           mediaType: data.mediaType,
           durationSeconds: data.durationSeconds || 5,
           frequencyHours: data.frequencyHours || 1,
-        });
+        };
+        adRef.current = newAd;
+        setAd(newAd);
         setPlaying(true);
       })
       .catch(() => {
@@ -78,40 +86,55 @@ const AutoPlayAd = memo(() => {
       });
   }, []);
 
+  // Initial fetch after 10s
+  useEffect(() => {
+    const initialTimer = setTimeout(() => {
+      fetchAndPlay();
+    }, 10000);
+
+    return () => {
+      clearTimeout(initialTimer);
+    };
+  }, [fetchAndPlay]);
+
+  // Auto-stop after duration, then schedule next fetch
   useEffect(() => {
     if (!ad) return;
 
-    const intervalMs = ad.frequencyHours * 60 * 60 * 1000;
-    const loopTimer = setInterval(() => {
-      fetchAndPlay();
-    }, intervalMs);
+    displayTimerRef.current = setTimeout(() => {
+      setPlaying(false);
+      setAd(null);
+      const freqMs = ad.frequencyHours * 60 * 60 * 1000;
+      intervalTimerRef.current = setTimeout(() => {
+        fetchAndPlay();
+      }, freqMs);
+    }, ad.durationSeconds * 1000);
 
     return () => {
-      clearInterval(loopTimer);
+      if (displayTimerRef.current) {
+        clearTimeout(displayTimerRef.current);
+        displayTimerRef.current = null;
+      }
     };
   }, [ad, fetchAndPlay]);
 
-  const stopPlaying = useCallback(() => {
+  useEffect(() => {
+    return () => {
+      clearTimers();
+    };
+  }, []);
+
+  const handleStopPlaying = useCallback(() => {
     latestRequestRef.current += 1;
+    const freqMs = (adRef.current?.frequencyHours ?? 1) * 60 * 60 * 1000;
     setPlaying(false);
     setAd(null);
-    clearTimer();
-    if (ad) {
-      const intervalMs = ad.frequencyHours * 60 * 60 * 1000;
-      timerRef.current = setTimeout(() => {
-        fetchAndPlay();
-      }, intervalMs);
-    }
-  }, [clearTimer, fetchAndPlay, ad]);
-
-  useEffect(() => {
-    if (ad) {
-      timerRef.current = setTimeout(() => {
-        stopPlaying();
-      }, (ad.durationSeconds || 5) * 1000);
-    }
-    return () => clearTimer();
-  }, [ad, stopPlaying, clearTimer]);
+    adRef.current = null;
+    clearTimers();
+    intervalTimerRef.current = setTimeout(() => {
+      fetchAndPlay();
+    }, freqMs);
+  }, [clearTimers, fetchAndPlay]);
 
   if (!playing && !loading) {
     return null;
@@ -135,7 +158,7 @@ const AutoPlayAd = memo(() => {
     >
       <IconButton
         aria-label="Close advertisement"
-        onClick={stopPlaying}
+        onClick={handleStopPlaying}
         sx={{
           position: "absolute",
           top: 16,

@@ -486,12 +486,9 @@ export default function Dashboard() {
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
-    const el = containerRef.current;
-    if (!el) return;
-
     try {
       if (!document.fullscreenElement) {
-        await el.requestFullscreen();
+        await document.documentElement.requestFullscreen();
       } else {
         await document.exitFullscreen();
       }
