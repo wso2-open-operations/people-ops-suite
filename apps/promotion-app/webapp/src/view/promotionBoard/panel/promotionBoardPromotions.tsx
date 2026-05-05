@@ -370,13 +370,16 @@ const applyFilters = (data: PromotionRequest[]) => {
                 }));
                 if (fetchPromotions.fulfilled.match(promotionsAction)) {
                         const promotions: PromotionRequest[] =
-                    promotionsAction.payload.promotions || [];
-                        const emails = promotions.map((p) => p.employeeEmail);
-                        const employeeHistoryPromises = emails.map((email) =>
-                            dispatch(fetchEmployeeHistory({ employeeWorkEmail: email })).unwrap()
-                        );
-                        const employeeHistories = await Promise.all(employeeHistoryPromises);
-                        setEmployeeHistories(employeeHistories);
+                         promotionsAction.payload.promotions || [];
+                     const emails = promotions.map((p) => p.employeeEmail);
+                     const employeeHistories: EmployeeJoinedDetails[] = [];
+                     for (const email of emails) {
+                         const employeeHistory = await dispatch(
+                             fetchEmployeeHistory({ employeeWorkEmail: email })
+                         ).unwrap();
+                         employeeHistories.push(employeeHistory);
+                     }
+                     setEmployeeHistories(employeeHistories);
                 }
             }
         } catch (error) {
