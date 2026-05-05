@@ -44,8 +44,8 @@ const OngoingCycleView = () => {
   const [value, setValue] = useState<number>(0);
   enum ParCycleViewTabs {
     EMPLOYEE = "employee",
-    PROVIDETHREESIXTYREVIEWS = "provideThreeSixtyReviews",
     REQUESTTHREESIXTYREVIEWS = "requestThreeSixtyReviews",
+    PROVIDETHREESIXTYREVIEWS = "provideThreeSixtyReviews",
     F2F = "F2F",
     REQUESTS = "requests",
   }

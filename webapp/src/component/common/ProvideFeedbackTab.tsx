@@ -324,55 +324,45 @@ export const ProvideFeedbackTab = () => {
           <TableContainer
             component={Paper}
             elevation={0}
-            sx={{
-              height: "100%",
-              borderRadius: 2,
-              border: (theme) => `1px solid ${theme.palette.divider}`,
-              "&::-webkit-scrollbar": {
-                width: 8,
-                height: 8,
-              },
-              "&::-webkit-scrollbar-track": {
-                backgroundColor: (theme) => theme.palette.grey[100],
-              },
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: (theme) => theme.palette.grey[400],
-                borderRadius: 1,
-                "&:hover": {
-                  backgroundColor: (theme) => theme.palette.grey[500],
-                },
-              },
-            }}
+            sx={{ background: "transparent", height: "calc(100vh - 18rem)", pt: 1 }}
           >
-            <Table stickyHeader>
+            <Table stickyHeader size="small">
               <TableHead>
                 <TableRow>
                   <TableCell
                     sx={{
-                      width: "40%",
-                      backgroundColor: (theme) => theme.palette.background.default,
+                      width: "45%",
+                      background: "transparent",
+                      borderBottom: "none",
                       fontWeight: 600,
-                      color: (theme) => theme.palette.text.secondary,
+                      fontSize: "0.8rem",
+                      color: "text.secondary",
+                      pl: 6.2,
                     }}
                   >
                     Name
                   </TableCell>
                   <TableCell
                     sx={{
-                      width: "40%",
-                      backgroundColor: (theme) => theme.palette.background.default,
+                      width: "30%",
+                      background: "transparent",
+                      borderBottom: "none",
                       fontWeight: 600,
-                      color: (theme) => theme.palette.text.secondary,
+                      fontSize: "0.8rem",
+                      color: "text.secondary",
+                      pl: 5,
                     }}
                   >
                     Status
                   </TableCell>
                   <TableCell
                     sx={{
-                      width: "20%",
-                      backgroundColor: (theme) => theme.palette.background.default,
+                      width: "25%",
+                      background: "transparent",
+                      borderBottom: "none",
                       fontWeight: 600,
-                      color: (theme) => theme.palette.text.secondary,
+                      fontSize: "0.8rem",
+                      color: "text.secondary",
                     }}
                   >
                     Actions
@@ -409,29 +399,29 @@ export const ProvideFeedbackTab = () => {
                           !isDeadlinePassed && (isPendingOrDraft || isCompletedOrRejected)
                             ? "pointer"
                             : "default",
-                        "&:hover": {
-                          backgroundColor: (theme) => theme.palette.action.hover,
-                        },
+                        "& .MuiTableCell-root": { borderBottom: "none" },
                       }}
                     >
-                      <TableCell sx={{ py: 2 }}>
-                        <Box display="flex" alignItems="center" gap={2}>
+                      <TableCell sx={{ py: 1 }}>
+                        <Box display="flex" alignItems="center">
                           <Avatar
                             src={employee?.employeeThumbnail}
                             alt={employee?.employeeName || request.employeeEmail}
-                            sx={{ height: 48, width: 48 }}
-                          />
+                            sx={{ height: "1.6rem", width: "1.6rem", fontSize: "0.65rem", mr: 1 }}
+                          >
+                            {(employee?.employeeName || request.employeeEmail)?.charAt(0)}
+                          </Avatar>
                           <Box>
-                            <Typography variant="subtitle1" fontWeight={500}>
+                            <Typography variant="body2" fontWeight={500}>
                               {employee?.employeeName}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="caption" color="text.secondary">
                               {request.employeeEmail}
                             </Typography>
                           </Box>
                         </Box>
                       </TableCell>
-                      <TableCell sx={{ py: 2 }}>
+                      <TableCell sx={{ py: 1 }}>
                         {!isEmployeeOrLeadRequested &&
                         request.reviewStatus === ParThreeSixtyReviewStatus.PENDING &&
                         isDeadlinePassed ? (
@@ -439,9 +429,7 @@ export const ProvideFeedbackTab = () => {
                             size="small"
                             label="Abandoned"
                             sx={{
-                              width: "100px",
                               height: "1.23rem",
-                              paddingTop: "0.15rem",
                               paddingX: "0.2rem",
                               backgroundColor:
                                 theme.palette.mode === "light"
@@ -456,9 +444,9 @@ export const ProvideFeedbackTab = () => {
                           />
                         )}
                       </TableCell>
-                      <TableCell sx={{ py: 2 }}>
+                      <TableCell sx={{ py: 1 }}>
                         {!isDeadlinePassed && (
-                          <Box display="flex" gap={1}>
+                          <Box display="flex" gap={0.5}>
                             {isPendingOrDraft && (
                               <>
                                 <Tooltip
@@ -467,20 +455,17 @@ export const ProvideFeedbackTab = () => {
                                   enterDelay={tooltipVisibilityDelay}
                                 >
                                   <IconButton
+                                    size="small"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       openReviewProvideModal(request);
                                     }}
-                                    color="primary"
-                                    size="medium"
                                     sx={{
-                                      "&:hover": {
-                                        backgroundColor: (theme) => theme.palette.primary.main,
-                                        color: "white",
-                                      },
+                                      color: "primary.main",
+                                      "&:hover": { bgcolor: "primary.main", color: "white" },
                                     }}
                                   >
-                                    <RateReviewIcon />
+                                    <RateReviewIcon fontSize="small" />
                                   </IconButton>
                                 </Tooltip>
                                 {isEmployeeOrLeadRequested && (
@@ -490,23 +475,20 @@ export const ProvideFeedbackTab = () => {
                                     enterDelay={tooltipVisibilityDelay}
                                   >
                                     <IconButton
+                                      size="small"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleRejectClick(request);
                                       }}
-                                      color="error"
-                                      size="medium"
                                       sx={{
-                                        "&:hover": {
-                                          backgroundColor: (theme) => theme.palette.error.main,
-                                          color: "white",
-                                        },
+                                        color: "error.main",
+                                        "&:hover": { bgcolor: "error.main", color: "white" },
                                       }}
                                     >
                                       {isEmployeeOrLeadRequested ? (
-                                        <CloseIcon />
+                                        <CloseIcon fontSize="small" />
                                       ) : (
-                                        <PlaylistRemoveIcon />
+                                        <PlaylistRemoveIcon fontSize="small" />
                                       )}
                                     </IconButton>
                                   </Tooltip>
@@ -520,20 +502,17 @@ export const ProvideFeedbackTab = () => {
                                 enterDelay={tooltipVisibilityDelay}
                               >
                                 <IconButton
+                                  size="small"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     openReviewViewModal(request);
                                   }}
-                                  color="primary"
-                                  size="medium"
                                   sx={{
-                                    "&:hover": {
-                                      backgroundColor: (theme) => theme.palette.primary.main,
-                                      color: "white",
-                                    },
+                                    color: "primary.main",
+                                    "&:hover": { bgcolor: "primary.main", color: "white" },
                                   }}
                                 >
-                                  <VisibilityIcon />
+                                  <VisibilityIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             )}

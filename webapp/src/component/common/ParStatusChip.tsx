@@ -13,13 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import CloseIcon from "@mui/icons-material/Close";
-import DoneIcon from "@mui/icons-material/Done";
-import EditIcon from "@mui/icons-material/Edit";
-import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
-import { Avatar, Chip, Tooltip, alpha, useTheme } from "@mui/material";
+import { Chip, alpha, useTheme } from "@mui/material";
 
-import { parUiText, tooltipVisibilityDelay } from "@config/constant";
+import { parUiText } from "@config/constant";
 import {
   ParEmployeeStatus,
   ParF2fStatus,
@@ -27,7 +23,6 @@ import {
   ParSpecialRating,
 } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import { ParThreeSixtyReviewStatus } from "@root/src/slices/threeSixtyReviewSlice/threeSixtyReview";
-import { capitalizeFirstLetter } from "@utils/utils";
 
 interface StatusChipProps {
   content:
@@ -47,51 +42,26 @@ interface StatusChipProps {
 const ParStatusChip = ({ content, countDetails, isDeadlinePassed }: StatusChipProps) => {
   const theme = useTheme();
 
-  const isCompleted = (status: string) => {
-    return [
-      ParEmployeeStatus.SHARED,
-      ParEmployeeStatus.SHARED_BLOCKED,
-      ParThreeSixtyReviewStatus.COMPLETED,
-      ParLeadStatus.SHARED,
-      ParF2fStatus.COMPLETED,
-    ].includes(status as any);
-  };
-
-  const isPending = (status: string) => {
-    return [
-      ParEmployeeStatus.PENDING,
-      ParThreeSixtyReviewStatus.PENDING,
-      ParLeadStatus.PENDING,
-      ParF2fStatus.PENDING,
-    ].includes(status as any);
-  };
   const statusConfig = {
     completed: {
       color: alpha(theme.palette.success.main, theme.palette.mode === "light" ? 0.15 : 0.25),
       textColor:
         theme.palette.mode === "light" ? theme.palette.success.dark : theme.palette.success.main,
-      icon: <DoneIcon sx={{ fontSize: "0.875rem" }} />,
-      tooltip: "Completed",
     },
     pending: {
       color: alpha(theme.palette.warning.main, theme.palette.mode === "light" ? 0.15 : 0.25),
       textColor:
         theme.palette.mode === "light" ? theme.palette.warning.dark : theme.palette.warning.main,
-      icon: <HourglassEmptyIcon sx={{ fontSize: "0.875rem" }} />,
-      tooltip: "Pending",
     },
     rejected: {
       color: alpha(theme.palette.error.main, theme.palette.mode === "light" ? 0.15 : 0.25),
       textColor:
         theme.palette.mode === "light" ? theme.palette.error.dark : theme.palette.error.main,
-      icon: <CloseIcon sx={{ fontSize: "0.875rem" }} />,
-      tooltip: "Rejected",
     },
     draft: {
       color: alpha(theme.palette.info.main, theme.palette.mode === "light" ? 0.15 : 0.25),
-      textColor: theme.palette.mode === "light" ? theme.palette.info.dark : theme.palette.info.main,
-      icon: <EditIcon sx={{ fontSize: "0.875rem" }} />,
-      tooltip: "Draft",
+      textColor:
+        theme.palette.mode === "light" ? theme.palette.info.dark : theme.palette.info.main,
     },
     default: {
       color: alpha(
@@ -104,119 +74,72 @@ const ParStatusChip = ({ content, countDetails, isDeadlinePassed }: StatusChipPr
     },
   };
 
-  const getStatusConfig = (status: string) => {
-    if (isCompleted(status)) return statusConfig.completed;
-    if (isPending(status)) return statusConfig.pending;
-    if (status === ParThreeSixtyReviewStatus.REJECTED) return statusConfig.rejected;
-    if (status === ParThreeSixtyReviewStatus.DRAFT) return statusConfig.draft;
-    return statusConfig.default;
+  const labelMap: Record<string, string> = {
+    SHARED: "Shared",
+    SHARED_BLOCKED: "Shared",
+    PENDING: "Pending",
+    DRAFT: "Drafted",
+    COMPLETED: "Completed",
+    REJECTED: "Rejected",
   };
 
-  const getStatusDisplay = () => {
+  const colorMap: Record<string, (typeof statusConfig)[keyof typeof statusConfig]> = {
+    SHARED: statusConfig.completed,
+    SHARED_BLOCKED: statusConfig.completed,
+    PENDING: statusConfig.pending,
+    DRAFT: statusConfig.draft,
+    COMPLETED: statusConfig.completed,
+    REJECTED: statusConfig.rejected,
+  };
+
+  const getDisplay = () => {
     if (isDeadlinePassed && content === ParThreeSixtyReviewStatus.PENDING) {
-      return {
-        type: "text",
-        content: "-",
-        style: statusConfig.default,
-      };
+      return { label: "-", config: statusConfig.default };
     }
 
-    const config = getStatusConfig(content as string);
-
-    if (isCompleted(content as string) || isPending(content as string)) {
-      return {
-        type: "status",
-        ...config,
-      };
-    }
-
-    let displayContent = content;
-    if (content === ParSpecialRating.TOP_FIVE_PERCENT) {
-      displayContent = parUiText.ParSpecialRatingTopFivePercent;
-    } else if (content === ParSpecialRating.TOP_TWENTY_PERCENT) {
-      displayContent = parUiText.ParSpecialRatingTopTwentyPercent;
-    } else if (content === ParSpecialRating.NONE || content === "") {
-      displayContent = parUiText.NotAvailableText;
-    } else {
-      displayContent = capitalizeFirstLetter(content as string);
-    }
-
-    return {
-      type: "text",
-      content: displayContent,
-      style: config,
-    };
-  };
-
-  const renderStatusIndicator = (statusInfo: any) => {
     if (countDetails) {
-      return (
-        <Chip
-          size="small"
-          label={`${countDetails.completed}/${countDetails.total}`}
-          sx={{
-            height: "24px",
-            minWidth: "120px",
-            borderRadius: "12px",
-            backgroundColor: statusInfo.color,
-            color: statusInfo.textColor,
-            fontWeight: 500,
-            "& .MuiChip-label": {
-              px: 1.5,
-              py: 0.5,
-            },
-            width: "auto",
-          }}
-        />
-      );
+      const config = colorMap[content as string] ?? statusConfig.default;
+      return { label: `${countDetails.completed}/${countDetails.total}`, config };
     }
 
-    if (statusInfo.type === "status") {
-      return (
-        <Tooltip
-          arrow
-          title={statusInfo.tooltip}
-          enterDelay={tooltipVisibilityDelay}
-          enterNextDelay={tooltipVisibilityDelay}
-        >
-          <Avatar
-            sx={{
-              backgroundColor: statusInfo.color,
-              width: 24,
-              height: 24,
-              ".MuiSvgIcon-root": {
-                color: statusInfo.textColor,
-              },
-            }}
-          >
-            {statusInfo.icon}
-          </Avatar>
-        </Tooltip>
-      );
+    let label: string;
+    if (labelMap[content as string]) {
+      label = labelMap[content as string];
+    } else if (content === ParSpecialRating.TOP_FIVE_PERCENT) {
+      label = parUiText.ParSpecialRatingTopFivePercent;
+    } else if (content === ParSpecialRating.TOP_TWENTY_PERCENT) {
+      label = parUiText.ParSpecialRatingTopTwentyPercent;
+    } else if (content === ParSpecialRating.NONE || content === "") {
+      label = parUiText.NotAvailableText;
+    } else {
+      label = (content as string)
+        .toLowerCase()
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
     }
 
-    return (
-      <Chip
-        size="small"
-        label={statusInfo.content}
-        sx={{
-          height: "24px",
-          width: "auto",
-          minWidth: "120px",
-          borderRadius: "12px",
-          backgroundColor: statusInfo.style.color,
-          color: statusInfo.style.textColor,
-          fontWeight: 500,
-          "& .MuiChip-label": {
-            px: 1.5,
-            py: 0.5,
-          },
-        }}
-      />
-    );
+    const config = colorMap[content as string] ?? statusConfig.default;
+    return { label, config };
   };
 
-  return renderStatusIndicator(getStatusDisplay());
+  const { label, config } = getDisplay();
+
+  return (
+    <Chip
+      size="small"
+      label={label}
+      sx={{
+        height: "24px",
+        width: "auto",
+        minWidth: "90px",
+        borderRadius: "12px",
+        backgroundColor: config.color,
+        color: config.textColor,
+        fontWeight: 500,
+        "& .MuiChip-label": { px: 1.5, py: 0.5 },
+      }}
+    />
+  );
 };
 
 export default ParStatusChip;

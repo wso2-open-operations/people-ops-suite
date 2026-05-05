@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Avatar, Box, Button, Chip, Divider, Grid, Typography } from "@mui/material";
+import { Avatar, Box, Button, Chip, Grid, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
