@@ -56,7 +56,7 @@ const Header = () => {
         variant="dense"
         sx={{
           py: 1,
-          px: { xs: 1, md: 4 },
+          px: { xs: 1, md: 2.2 },
           display: "flex",
           gap: 2,
         }}
