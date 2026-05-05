@@ -414,7 +414,7 @@ const applyFilters = (data: PromotionRequest[]) => {
                 const resultAction = await dispatch(rejectPromotions({
                     id: selectedEmployee.id,
                     from: "promotion_board",
-                    reason: "",
+                    reason: rejectReason,
                 }));
                 if (rejectPromotions.fulfilled.match(resultAction)) {
                     handleRejectClose()
