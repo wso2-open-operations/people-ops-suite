@@ -102,7 +102,7 @@ export const fetchEmployeeHistory = createAsyncThunk(
 );
 
 export const fetchPromotions = createAsyncThunk(
-  "promotion/fetchPromotions",
+  "timeline/fetchPromotions",
   async (
     {
       employeeEmail,
