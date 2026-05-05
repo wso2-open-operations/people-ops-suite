@@ -76,8 +76,10 @@ export default function TimeBaseHistory() {
     };
   
     useEffect(() => {
+      if (!auth.userInfo?.email) return;
+
       fetchPromotions();
-    }, []);
+    }, [auth.userInfo?.email, dispatch]);
     
     const filteredRecs = recommendation.recommendations?.filter(
       (rec) => rec.promotionType === "TIME_BASED"
