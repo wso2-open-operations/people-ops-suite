@@ -39,16 +39,33 @@ public function main() returns error? {
         if timeOfDeparture is string {
             string departureDate = string:substring(timeOfDeparture, 0, 10);
             if departureDate == today {
-                log:printInfo("Force completing visit with today's departure",
-                        id = visit.id,
-                        visitorName = buildVisitorName(visit.firstName, visit.lastName),
-                        timeOfDeparture = timeOfDeparture
-                );
 
+                // Force complete the visit in the backend
                 error? completeError = visitor:completeVisit(visit.id);
                 if completeError is error {
                     log:printError("Failed to force complete visit, skipping email", completeError, id = visit.id);
                     continue;
+                }
+
+                // Format the departure time for the email content
+                string|error formattedDepartureTime = formatDateTime(timeOfDeparture, "Asia/Colombo", false);
+                if formattedDepartureTime is error {
+                    log:printError("Failed to format departure time, skipping email", formattedDepartureTime, id = visit.id, timeOfDeparture = timeOfDeparture);
+                    formattedDepartureTime = timeOfDeparture + " UTC"; // Fallback to original string if formatting fails
+                }
+
+                // Format the time of entry for the email content
+                string? formattedTimeOfEntry = visit.timeOfEntry;
+                if formattedTimeOfEntry is string {
+                    string|error formattedTimeOfEntryResult = formatDateTime(formattedTimeOfEntry, "Asia/Colombo", false);
+                    if formattedTimeOfEntryResult is error {
+                        log:printError("Failed to format time of entry, skipping email", formattedTimeOfEntryResult, id = visit.id, timeOfEntry = formattedTimeOfEntry);
+                        formattedTimeOfEntry = formattedTimeOfEntry + " UTC"; // Fallback to original string if formatting fails    
+                    } else {
+                        formattedTimeOfEntry = formattedTimeOfEntryResult;
+                    }
+                } else {
+                    formattedTimeOfEntry = ();
                 }
 
                 error? emailError = email:sendForceCompleteEmail({
@@ -56,7 +73,7 @@ public function main() returns error? {
                                                                      visitorName: buildVisitorName(visit.firstName, visit.lastName),
                                                                      visitDate: visit.visitDate,
                                                                      timeOfEntry: visit.timeOfEntry,
-                                                                     timeOfDeparture: visit.timeOfDeparture,
+                                                                     timeOfDeparture: formattedTimeOfEntry,
                                                                      whomTheyMeet: visit.whomTheyMeet,
                                                                      passNumber: visit.passNumber,
                                                                      companyName: visit.companyName,
