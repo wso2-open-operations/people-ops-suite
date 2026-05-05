@@ -21,10 +21,10 @@ import History from "./panel/promotionBoardHistory";
 import GroupsIcon from '@mui/icons-material/Groups';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 
-export default function Individual() {
+export default function PromotionBoard() {
   return (
     <CommonPage
-      title="Pormotion Board Portal"
+      title="Promotion Board Portal"
       icon={<GroupsIcon />}
       commonPageTabs={[
         {
