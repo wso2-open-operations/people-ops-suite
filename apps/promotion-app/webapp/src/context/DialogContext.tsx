@@ -77,9 +77,19 @@ type ConfirmationModalContextProviderProps = {
 };
 
 const ConfirmationModalContext =
-  React.createContext<ConfirmationDialogContextType>(
-    {} as ConfirmationDialogContextType
-  );
+  React.createContext<ConfirmationDialogContextType | null>(null);
+
+  const useConfirmationModalContext = (): ConfirmationDialogContextType => {
+  const context = useContext(ConfirmationModalContext);
+
+  if (!context) {
+    throw new Error(
+      "useConfirmationModalContext must be used within a ConfirmationDialogContextProvider"
+    );
+  }
+
+  return context;
+};
 
 const ConfirmationDialogContextProvider: React.FC<
   ConfirmationModalContextProviderProps
@@ -280,9 +290,6 @@ const ConfirmationDialogContextProvider: React.FC<
     </LocalizationProvider>
   );
 };
-
-const useConfirmationModalContext = (): ConfirmationDialogContextType =>
-  useContext(ConfirmationModalContext);
 
 export { useDialogShow, useConfirmationModalContext };
 
