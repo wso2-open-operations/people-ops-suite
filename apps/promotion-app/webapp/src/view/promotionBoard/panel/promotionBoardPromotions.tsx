@@ -476,8 +476,8 @@ const applyFilters = (data: PromotionRequest[]) => {
         </Box>
         )}
 
-        {promotionCycle.state === "loading" ||
-         promotion.state === "loading" && (
+        {(promotionCycle.state === "loading" ||
+         promotion.state === "loading") && (
             <LoadingEffect message={"Loading Promotions"} />
         )}
 
