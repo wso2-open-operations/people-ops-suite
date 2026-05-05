@@ -27,7 +27,6 @@ import {
   Chip,
   Fab,
   IconButton,
-  Paper,
   Tab,
   Table,
   TableBody,
@@ -238,7 +237,7 @@ export const ProvideFeedbackTab = () => {
 
   return (
     <React.Fragment>
-      <Box position="relative" height="100%" overflow={"auto"}>
+      <Box position="relative" height="100%" overflow="auto">
         {isDeadlinePassed ? (
           <Alert severity="error" sx={{ mb: 1 }}>
             {`The 360° feedback submission deadline has now passed ${dayjs
@@ -322,9 +321,8 @@ export const ProvideFeedbackTab = () => {
         )}
         {reviewSliceState === RequestState.SUCCEEDED && filteredRequests.length > 0 && (
           <TableContainer
-            component={Paper}
-            elevation={0}
-            sx={{ background: "transparent", height: "calc(100vh - 18rem)", pt: 1 }}
+            component="div"
+            sx={{ background: "transparent", height: "100%", pt: 1 }}
           >
             <Table stickyHeader size="small">
               <TableHead>
