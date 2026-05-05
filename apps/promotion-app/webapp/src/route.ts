@@ -74,7 +74,7 @@ export const routes: RouteObjectWithRole[] = [
     path: "/functionalLead",
     text: "Functional Lead",
     icon: React.createElement(GroupsIcon),
-    element: React.createElement(View.functionaLead),
+    element: React.createElement(View.functionalLead),
     allowRoles: [Role.LEAD],
     bottomNav: false,
   },
