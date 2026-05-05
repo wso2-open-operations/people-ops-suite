@@ -237,7 +237,7 @@ export const ProvideFeedbackTab = () => {
 
   return (
     <React.Fragment>
-      <Box position="relative" height="100%" overflow="auto">
+      <Box position="relative">
         {isDeadlinePassed ? (
           <Alert severity="error" sx={{ mb: 1 }}>
             {`The 360° feedback submission deadline has now passed ${dayjs
@@ -324,7 +324,7 @@ export const ProvideFeedbackTab = () => {
             component="div"
             sx={{ background: "transparent", height: "100%", pt: 1 }}
           >
-            <Table stickyHeader size="small">
+            <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell

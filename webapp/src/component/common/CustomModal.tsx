@@ -32,6 +32,8 @@ export const CustomModal = ({
   width = "50vw",
   maxHeight = "95vh",
 }: CustomModalProps) => {
+  if (!open || !React.Children.count(children)) return null;
+
   return (
     <Modal
       open={open}

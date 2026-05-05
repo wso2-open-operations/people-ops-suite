@@ -165,7 +165,7 @@ const OngoingCycleView = () => {
             </Tabs>
           </Box>
 
-          <Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", px: 3, pt: 1 }}>
+          <Box sx={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", px: 3, pt: 1 }}>
             {employeeStatus === RequestState.LOADING && (
               <LoadingEffect message={uiMessages.loading.pageLoading} />
             )}
