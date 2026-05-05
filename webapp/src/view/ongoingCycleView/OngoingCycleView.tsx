@@ -146,7 +146,7 @@ const OngoingCycleView = () => {
                   height: "60px",
                   py: 0,
                   px: { xs: 1, sm: 1.5 },
-                  minWidth: { xs: "auto", sm: defaultTabWidth },
+                  minWidth: { xs: "auto", sm: "230px" },
                   "& .MuiTab-iconWrapper": { fontSize: "1rem" },
                 },
                 "& .MuiTabs-indicator": { pb: "0.1rem" },
@@ -165,7 +165,7 @@ const OngoingCycleView = () => {
             </Tabs>
           </Box>
 
-          <Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", px: 3, pt: 1 }}>
             {employeeStatus === RequestState.LOADING && (
               <LoadingEffect message={uiMessages.loading.pageLoading} />
             )}

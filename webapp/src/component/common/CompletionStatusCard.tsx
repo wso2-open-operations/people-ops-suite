@@ -34,7 +34,7 @@ export const CompletionStatusCard = ({ name, completed, total, hideLeftCount }: 
       <LinearProgress
         variant="determinate"
         value={(completed * 100) / total}
-        sx={{ height: 15, borderRadius: 2 }}
+        sx={{ height: 10, borderRadius: 1 }}
       />
     </Box>
   );

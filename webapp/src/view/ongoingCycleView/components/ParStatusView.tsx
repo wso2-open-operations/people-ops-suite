@@ -97,7 +97,7 @@ export const ParStatusView = ({ currentCycle }: ParStatusViewProps) => {
             {employeeRatings?.parEmployeeStatus === ParEmployeeStatus.DRAFT && (
               <>
                 {!isDeadlinePassed && (
-                  <Alert severity="warning">
+                  <Alert severity="info">
                     {uiMessages.alert.employeeParDraftSaved}{" "}
                     {`Please share your PAR on or before the deadline: ${dayjs
                       .utc(currentCycle.parEmployeeDeadline)

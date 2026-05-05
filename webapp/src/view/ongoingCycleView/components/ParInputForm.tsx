@@ -207,6 +207,7 @@ export const ParInputForm = ({
                 fontWeight: { xs: 300, sm: 400 },
                 lineHeight: 1.5,
                 color: "text.primary",
+                pt: 0.8,
               }}
             >
               {currentCycle.parCycleConfigurations?.employeeParQuestion
@@ -214,7 +215,7 @@ export const ParInputForm = ({
                 : parUiText.EmptyEmployeeQuestionText}
             </Typography>
           </Grid>
-          <Grid size={{ xs: 12 }} sx={{ overflowX: "auto" }}>
+          <Grid size={{ xs: 12 }} sx={{ overflowX: "auto", paddingTop: 1 }}>
             {isDeadlinePassed ? (
               <CommentPaper comment={values.parEmployeeComment} />
             ) : (
@@ -247,7 +248,7 @@ export const ParInputForm = ({
               </Typography>
             )}
           </Box>
-          <Box display="flex" gap={1}>
+          <Box display="flex" gap={2} paddingTop={1}>
             <Button
               variant="outlined"
               type="submit"
