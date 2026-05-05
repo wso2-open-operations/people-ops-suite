@@ -197,8 +197,8 @@ export const RequestFeedbackTab = () => {
         <Box
           sx={{
             position: "fixed",
-            bottom: 100,
-            right: 100,
+            bottom: 50,
+            right: 50,
             zIndex: 1000,
           }}
         >

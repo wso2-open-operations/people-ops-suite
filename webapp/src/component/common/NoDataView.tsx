@@ -32,8 +32,9 @@ const NoDataView: React.FC<NoDataViewProps> = ({ text }) => {
         textAlign: "center",
         background: "transparent",
         padding: 5,
+        pt: 20,
         borderRadius: 2,
-        height: "100%",
+        height: "auto%",
       }}
     >
       <Groups3Icon

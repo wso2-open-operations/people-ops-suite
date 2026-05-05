@@ -166,6 +166,7 @@ export const F2fPanel = ({ employeeId, parCycle, isEmployeeView }: F2fPanelProp)
         }}
       >
         <Typography
+          color="text.primary"
           sx={{
             mr: { sm: 3 },
             fontWeight: "medium",
@@ -175,6 +176,7 @@ export const F2fPanel = ({ employeeId, parCycle, isEmployeeView }: F2fPanelProp)
           F2F Completed Date:
         </Typography>
         <DatePicker
+          enableAccessibleFieldDOMStructure={false}
           disabled={parRating?.parLeadStatus !== ParLeadStatus.SHARED}
           value={values.parF2fDate ? dayjs(values.parF2fDate) : null}
           onChange={(newValue: Dayjs | null) => {
@@ -196,9 +198,17 @@ export const F2fPanel = ({ employeeId, parCycle, isEmployeeView }: F2fPanelProp)
               helperText: (touched.parF2fDate && errors.parF2fDate) as string,
               sx: {
                 "& .MuiOutlinedInput-root": {
+                  backgroundColor: "transparent",
                   "&:hover fieldset": {
                     borderColor: "primary.main",
                   },
+                  "& input": {
+                    color: "text.primary",
+                  },
+                },
+                "& .MuiInputBase-input.Mui-disabled": {
+                  WebkitTextFillColor: "inherit",
+                  color: "text.primary",
                 },
               },
             },
@@ -249,7 +259,7 @@ export const F2fPanel = ({ employeeId, parCycle, isEmployeeView }: F2fPanelProp)
           sx={{
             pr: 3,
             pl: 3,
-            backgroundColor: "background.paper",
+            backgroundColor: "transparent",
             borderRadius: 2,
             "& .MuiAlert-root": {
               marginBottom: 2,

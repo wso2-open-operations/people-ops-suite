@@ -205,6 +205,7 @@ const MeetingSchedulerPage: React.FC<MeetingSchedulerPageProps> = ({ parRatingId
             <Grid container spacing={3}>
               <Grid size={{ xs: 12 }}>
                 <DatePicker
+                  enableAccessibleFieldDOMStructure={false}
                   label="Select Date"
                   minDate={dayjs()}
                   value={getSelectedDateObject()}
