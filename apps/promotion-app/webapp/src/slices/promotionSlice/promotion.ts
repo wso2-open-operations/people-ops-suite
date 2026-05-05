@@ -41,7 +41,7 @@ interface InsertPromotionPaylod {
 interface UpdatePromotionPaylod {
   id: number,
   statement? : string,
-  reasonForRejection? : number,
+  reasonForRejection? : string,
   promotingJobBand? : number,
 }
 
