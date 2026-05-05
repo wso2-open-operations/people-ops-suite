@@ -64,6 +64,7 @@ export const AppConfig = {
     appConfig: SERVICE_BASE_URL + "/app-config",
     collections: SERVICE_BASE_URL + "/collections",
     foodWaste: SERVICE_BASE_URL + "/food-waste",
+    foodWastePublic: SERVICE_BASE_URL + "/pub/food-waste",
     foodWasteDaily: SERVICE_BASE_URL + "/pub/food-waste/daily",
     advertisements: SERVICE_BASE_URL + "/advertisements",
     advertisementsActive: SERVICE_BASE_URL + "/pub/advertisements/active",

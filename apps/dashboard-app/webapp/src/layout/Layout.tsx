@@ -43,6 +43,17 @@ export default function Layout() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const colorMode = useContext(ColorModeContext);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
@@ -112,7 +123,7 @@ export default function Layout() {
         }}
       >
         {/* Header */}
-        <Header />
+        {!isFullscreen && <Header />}
 
         {/* Main content container */}
         <Box
@@ -126,38 +137,40 @@ export default function Layout() {
           }}
         >
           {/* Sidebar */}
-          {isMobile ? (
-            <>
-              {open && (
+          {!isFullscreen && (
+            isMobile ? (
+              <>
+                {open && (
+                  <Box
+                    onClick={() => setOpen(false)}
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: "rgba(0, 0, 0, 0.5)",
+                      zIndex: 999,
+                    }}
+                  />
+                )}
                 <Box
-                  onClick={() => setOpen(false)}
                   sx={{
                     position: "absolute",
                     top: 0,
                     left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: "rgba(0, 0, 0, 0.5)",
-                    zIndex: 999,
+                    height: "100%",
+                    zIndex: 1000,
+                    transform: open ? "translateX(0)" : "translateX(-100%)",
+                    transition: "transform 0.3s ease-in-out",
                   }}
-                />
-              )}
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  height: "100%",
-                  zIndex: 1000,
-                  transform: open ? "translateX(0)" : "translateX(-100%)",
-                  transition: "transform 0.3s ease-in-out",
-                }}
-              >
-                {sidebar}
-              </Box>
-            </>
-          ) : (
-            <Box sx={{ width: "fit-content", height: "100%", alignSelf: "stretch" }}>{sidebar}</Box>
+                >
+                  {sidebar}
+                </Box>
+              </>
+            ) : (
+              <Box sx={{ width: "fit-content", height: "100%", alignSelf: "stretch" }}>{sidebar}</Box>
+            )
           )}
 
           {/* Main content area */}
@@ -177,7 +190,7 @@ export default function Layout() {
             </Suspense>
           </Box>
 
-          {isMobile && (
+          {!isFullscreen && isMobile && (
             <MobileBottomBar
               onMenuClick={() => setOpen(!open)}
               onThemeToggle={colorMode.toggleColorMode}

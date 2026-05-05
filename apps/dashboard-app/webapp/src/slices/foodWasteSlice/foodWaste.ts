@@ -149,7 +149,7 @@ export const fetchWeeklyFoodWasteData = createAsyncThunk<
   { rejectValue: unknown }
 >("foodWaste/fetchWeeklyData", async ({ startDate, endDate }, { rejectWithValue }) => {
   try {
-    const response = await getAPIService().get(AppConfig.serviceUrls.foodWaste, {
+    const response = await getAPIService().get(AppConfig.serviceUrls.foodWastePublic, {
       params: { duration: "weekly", startDate, endDate },
     });
     return transformWeeklyData(response.data as WeeklyTrendItem[]);
@@ -164,7 +164,7 @@ export const fetchMonthlyFoodWasteData = createAsyncThunk<
   { rejectValue: unknown }
 >("foodWaste/fetchMonthlyData", async (_, { rejectWithValue }) => {
   try {
-    const response = await getAPIService().get(AppConfig.serviceUrls.foodWaste, {
+    const response = await getAPIService().get(AppConfig.serviceUrls.foodWastePublic, {
       params: { duration: "monthly" },
     });
     return transformMonthlyData(response.data as MonthlyTrendItem[]);
@@ -179,7 +179,7 @@ export const fetchYearlyFoodWasteData = createAsyncThunk<
   { rejectValue: unknown }
 >("foodWaste/fetchYearlyData", async (_, { rejectWithValue }) => {
   try {
-    const response = await getAPIService().get(AppConfig.serviceUrls.foodWaste, {
+    const response = await getAPIService().get(AppConfig.serviceUrls.foodWastePublic, {
       params: { duration: "yearly" },
     });
     return transformYearlyData(response.data as MonthlyTrendItem[]);
@@ -194,7 +194,7 @@ export const fetchLatestFoodWasteData = createAsyncThunk<
   { rejectValue: unknown }
 >("foodWaste/fetchLatestData", async (_, { rejectWithValue }) => {
   try {
-    const response = await getAPIService().get(AppConfig.serviceUrls.foodWaste, {
+    const response = await getAPIService().get(AppConfig.serviceUrls.foodWastePublic, {
       params: { latest: true },
     });
     return response.data as LatestFoodWasteResponse;
