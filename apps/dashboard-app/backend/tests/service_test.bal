@@ -115,10 +115,10 @@ function createFoodWasteRecordAndGetId(string date, map<string> headers) returns
 }
 
 function createAdvertisementAndGetId(map<string> headers) returns int|error {
-    CreateAdvertisementPayload payload = {
+    database:CreateAdvertisementPayload payload = {
         adName: "Sample Ad",
-        mediaUrl: "http://example.com/ad.mp4",
-        mediaType: database:VIDEO_MP4,
+        mediaData: "data:image/png;base64,iVBORw0KGgo=",
+        mediaType: database:IMAGE_PNG,
         durationSeconds: 15
     };
 
@@ -297,10 +297,10 @@ function testGetLatestFoodWasteRecord() returns error? {
 function testCreateAdvertisement() returns error? {
     map<string> headers = check getHeaders(["admin"]);
 
-    CreateAdvertisementPayload payload = {
+    database:CreateAdvertisementPayload payload = {
         adName: "Test Campaign",
-        mediaUrl: "http://example.com/ad.mp4",
-        mediaType: database:VIDEO_MP4,
+        mediaData: "data:image/png;base64,iVBORw0KGgo=",
+        mediaType: database:IMAGE_PNG,
         durationSeconds: 15
     };
 

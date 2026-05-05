@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Dialog, DialogContent } from "@mui/material";
+import { Dialog, DialogContent, IconButton } from "@mui/material";
 import {
   Box,
   Button,
@@ -23,11 +23,12 @@ import {
   TextField,
   Typography,
 } from "@wso2/oxygen-ui";
-import { CheckCircle, Play, Radio, Trash2, Upload } from "@wso2/oxygen-ui-icons-react";
+import { CheckCircle, Play, Radio, Trash2, Upload, X } from "@wso2/oxygen-ui-icons-react";
 import { useSnackbar } from "notistack";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import CloseIcon from "@mui/icons-material/Close";
 import { ADVERTISEMENT } from "@config/feature";
 import { AdManagementMessage } from "@config/messages";
 import {
@@ -37,20 +38,11 @@ import {
   deleteAdvertisement,
   fetchAdvertisements,
 } from "@slices/advertisementSlice/advertisement";
+import type { Advertisement } from "@slices/advertisementSlice/advertisement";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 
-interface Ad {
-  id: string;
-  adName: string;
-  mediaUrl: string;
-  mediaType: string;
-  duration: number;
-  isActive: boolean;
-  uploadedDate: string;
-  scheduleEnabled: boolean;
-  scheduleIntervalMinutes: number;
-  lastDisplayedAt?: string;
-}
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export default function AdManagementPanel() {
   const { enqueueSnackbar } = useSnackbar();
@@ -58,173 +50,63 @@ export default function AdManagementPanel() {
   const { advertisements } = useAppSelector((state) => state.advertisement);
 
   const [newAdName, setNewAdName] = useState("");
-  const [newMediaUrl, setNewMediaUrl] = useState("");
   const [newDuration, setNewDuration] = useState<number>(ADVERTISEMENT.defaultImageDurationSeconds);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewBase64, setPreviewBase64] = useState<string | null>(null);
   const [testAdOpen, setTestAdOpen] = useState(false);
-  const [previewedAd, setPreviewedAd] = useState<Ad | null>(null);
+  const [previewedAd, setPreviewedAd] = useState<Advertisement | null>(null);
 
-  const isVideoMedia = (mediaUrl: string): boolean => {
-    const lower = mediaUrl.toLowerCase();
-    return lower.endsWith(".mp4") || lower.endsWith(".webm");
-  };
-
-  const isVideoMediaType = (mediaType: string): boolean => {
-    return mediaType.startsWith("video/");
-  };
-
-  const convertToYouTubeEmbed = (url: string): string => {
-    let videoId = "";
-
-    const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]+)/);
-    if (watchMatch) {
-      videoId = watchMatch[1];
-    }
-
-    const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
-    if (shortMatch) {
-      videoId = shortMatch[1];
-    }
-
-    const shortsMatch = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/);
-    if (shortsMatch) {
-      videoId = shortsMatch[1];
-    }
-
-    const embedMatch = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
-    if (embedMatch) {
-      videoId = embedMatch[1];
-    }
-
-    if (videoId) {
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0`;
-    }
-
-    return url;
-  };
-
-  const resolveMediaType = async (mediaUrl: string): Promise<string> => {
-    const extensionToMime: Record<string, string> = {
-      ".png": "image/png",
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".gif": "image/gif",
-      ".pdf": "application/pdf",
-      ".mp4": "video/mp4",
-      ".webm": "video/webm",
-    };
-
-    let parsedUrl: URL | null = null;
-    try {
-      parsedUrl = new URL(mediaUrl);
-    } catch {
-      parsedUrl = null;
-    }
-
-    if (parsedUrl) {
-      const isHttp = parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
-      const host = parsedUrl.hostname.toLowerCase();
-      if (!isHttp || host === "localhost" || host === "127.0.0.1" || host === "::1") {
-        return "image/jpeg";
-      }
-    }
-
-    const pathname = parsedUrl ? parsedUrl.pathname.toLowerCase() : mediaUrl.toLowerCase();
-    const extensionMatch = pathname.match(/\.[a-z0-9]+$/);
-    const extension = extensionMatch?.[0];
-
-    if (extension && extensionToMime[extension]) {
-      return extensionToMime[extension];
-    }
-
-    return "image/jpeg";
-  };
-
-  const validateDriveEmbedUrl = (mediaUrl: string): string | null => {
-    let parsedUrl: URL;
-
-    try {
-      parsedUrl = new URL(mediaUrl);
-    } catch {
-      return null;
-    }
-
-    const host = parsedUrl.hostname.toLowerCase();
-    const path = parsedUrl.pathname;
-    const allowedHosts = new Set([
-      "drive.google.com",
-      "docs.google.com",
-      "drive.googleusercontent.com",
-    ]);
-
-    if (!allowedHosts.has(host)) {
-      return null;
-    }
-
-    if (host === "drive.google.com") {
-      const isFilePreviewOrView = /^\/file\/d\/[^/]+\/(preview|view)\/?$/.test(path);
-      const isEmbedFolderView = /^\/embeddedfolderview\/?$/.test(path);
-      const isUcWithId = /^\/uc\/?$/.test(path) && parsedUrl.searchParams.has("id");
-      if (!isFilePreviewOrView && !isEmbedFolderView && !isUcWithId) {
-        return null;
-      }
-    }
-
-    if (host === "docs.google.com") {
-      const isDocsPreviewOrEmbed =
-        /^\/(document|presentation|spreadsheets)\/d\/[^/]+\/(preview|embed)\/?$/.test(path);
-      if (!isDocsPreviewOrEmbed) {
-        return null;
-      }
-    }
-
-    if (host === "drive.googleusercontent.com") {
-      const isDirectFilePath = /^\/.+/.test(path);
-      if (!isDirectFilePath) {
-        return null;
-      }
-    }
-
-    return parsedUrl.toString();
-  };
-
-  const normalizeMediaUrl = (raw: string): string | null => {
-    try {
-      const parsed = new URL(raw.trim());
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        return null;
-      }
-      return parsed.toString();
-    } catch {
-      return null;
-    }
-  };
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     dispatch(fetchAdvertisements());
   }, [dispatch]);
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      enqueueSnackbar("Only JPEG, PNG, and GIF images are allowed.", { variant: "error" });
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      enqueueSnackbar("Image must be smaller than 10 MB.", { variant: "error" });
+      return;
+    }
+
+    setSelectedFile(file);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreviewBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }, [enqueueSnackbar]);
+
+  const clearFile = useCallback(() => {
+    setSelectedFile(null);
+    setPreviewBase64(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
 
   const handleAddAd = async () => {
     if (!newAdName.trim()) {
       enqueueSnackbar(AdManagementMessage.snackbar.adNameRequired, { variant: "warning" });
       return;
     }
-
-    if (!newMediaUrl.trim()) {
-      enqueueSnackbar(AdManagementMessage.snackbar.mediaUrlRequired, { variant: "warning" });
-      return;
-    }
-
-    const safeMediaUrl = normalizeMediaUrl(newMediaUrl);
-    if (!safeMediaUrl) {
-      enqueueSnackbar(AdManagementMessage.snackbar.mediaUrlRequired, { variant: "warning" });
+    if (!previewBase64) {
+      enqueueSnackbar("Please select an image.", { variant: "warning" });
       return;
     }
 
     try {
       const payload = {
         adName: newAdName.trim(),
-        mediaUrl: safeMediaUrl,
-        mediaType: await resolveMediaType(safeMediaUrl),
+        mediaData: previewBase64,
+        mediaType: selectedFile!.type,
         durationSeconds: newDuration,
       };
 
@@ -232,7 +114,7 @@ export default function AdManagementPanel() {
       await dispatch(fetchAdvertisements());
       enqueueSnackbar(AdManagementMessage.snackbar.adAddedSuccess, { variant: "success" });
       setNewAdName("");
-      setNewMediaUrl("");
+      clearFile();
       setNewDuration(ADVERTISEMENT.defaultImageDurationSeconds);
     } catch {
       enqueueSnackbar(AdManagementMessage.snackbar.adAddedFailed, { variant: "error" });
@@ -281,43 +163,28 @@ export default function AdManagementPanel() {
       });
   };
 
-  const handlePreview = (ad: Ad) => {
+  const handlePreview = (ad: Advertisement) => {
     setPreviewedAd(ad);
     setTestAdOpen(true);
   };
 
   useEffect(() => {
-    if (!testAdOpen || !previewedAd) {
-      return;
-    }
+    if (!testAdOpen || !previewedAd) return;
 
-    let timeout: ReturnType<typeof setTimeout>;
-
-    if (isVideoMediaType(previewedAd.mediaType)) {
-      const videoDuration = previewedAd.duration ?? 30;
-      const totalTime =
-        Math.max(videoDuration, ADVERTISEMENT.minPreviewVideoSeconds) * 1000 +
-        ADVERTISEMENT.previewVideoBufferMs;
-      timeout = setTimeout(() => {
+    const timeout = setTimeout(
+      () => {
         setTestAdOpen(false);
-      }, totalTime);
-    } else {
-      timeout = setTimeout(
-        () => {
-          setTestAdOpen(false);
-        },
-        Math.max(
-          previewedAd.duration ?? ADVERTISEMENT.defaultImageDurationSeconds,
-          ADVERTISEMENT.minPreviewImageSeconds,
-        ) * 1000,
-      );
-    }
+      },
+      Math.max(
+        previewedAd.duration ?? ADVERTISEMENT.defaultImageDurationSeconds,
+        ADVERTISEMENT.minPreviewImageSeconds,
+      ) * 1000,
+    );
 
     return () => clearTimeout(timeout);
   }, [testAdOpen, previewedAd]);
 
   const activeAd = advertisements.find((ad) => ad.isActive);
-  const validatedDriveUrl = previewedAd ? validateDriveEmbedUrl(previewedAd.mediaUrl) : null;
 
   return (
     <Box sx={{ maxWidth: 1200, mx: "auto", px: 3, py: 4 }}>
@@ -366,41 +233,13 @@ export default function AdManagementPanel() {
                 <Typography variant="h6" sx={{ mb: 1.5 }}>
                   {activeAd.adName}
                 </Typography>
-                <Typography variant="caption" sx={{ opacity: 0.9 }} gutterBottom>
-                  {AdManagementMessage.labels.mediaUrl}
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1, wordBreak: "break-all" }}>
-                  {activeAd.mediaUrl}
-                </Typography>
                 <Box sx={{ display: "flex", gap: 3, typography: "body2", mt: 2, flexWrap: "wrap" }}>
-                  {!isVideoMediaType(activeAd.mediaType) && (
-                    <Box>
-                      <Typography component="span" sx={{ opacity: 0.9 }}>
-                        {AdManagementMessage.labels.displayDuration}:{" "}
-                      </Typography>
-                      <Typography component="span" fontWeight="bold">
-                        {activeAd.duration}s
-                      </Typography>
-                    </Box>
-                  )}
-                  {isVideoMediaType(activeAd.mediaType) && (
-                    <Box>
-                      <Typography component="span" sx={{ opacity: 0.9 }}>
-                        {AdManagementMessage.labels.videoType}:{" "}
-                      </Typography>
-                      <Typography component="span" fontWeight="bold">
-                        {AdManagementMessage.labels.video}
-                      </Typography>
-                    </Box>
-                  )}
                   <Box>
                     <Typography component="span" sx={{ opacity: 0.9 }}>
-                      {AdManagementMessage.labels.schedule}:{" "}
+                      {AdManagementMessage.labels.displayDuration}:{" "}
                     </Typography>
                     <Typography component="span" fontWeight="bold">
-                      {activeAd.scheduleEnabled
-                        ? `Every ${activeAd.scheduleIntervalMinutes} min`
-                        : AdManagementMessage.helper.scheduleDisabled}
+                      {activeAd.duration}s
                     </Typography>
                   </Box>
                   <Box>
@@ -446,50 +285,74 @@ export default function AdManagementPanel() {
                 sx={{ mb: 2 }}
               />
 
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+              />
+              <Button
+                variant="outlined"
+                startIcon={<Upload size={16} />}
+                onClick={() => fileInputRef.current?.click()}
+                sx={{ mb: 2 }}
+              >
+                {selectedFile ? "Change image" : "Choose image"}
+              </Button>
+
+              {selectedFile && (
+                <Box sx={{ mb: 2, display: "flex", alignItems: "center", gap: 2 }}>
+                  <Box
+                    component="img"
+                    src={previewBase64 || ""}
+                    alt="Preview"
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      objectFit: "cover",
+                      borderRadius: 1,
+                      border: 1,
+                      borderColor: "divider",
+                    }}
+                  />
+                  <Box>
+                    <Typography variant="body2" fontWeight="semibold">
+                      {selectedFile.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {(selectedFile.size / 1024).toFixed(0)} KB · {selectedFile.type}
+                    </Typography>
+                  </Box>
+                  <IconButton size="small" onClick={clearFile} sx={{ ml: "auto" }}>
+                    <X size={16} />
+                  </IconButton>
+                </Box>
+              )}
+
               <TextField
-                fullWidth
-                type="url"
-                label={AdManagementMessage.labels.mediaUrl}
-                value={newMediaUrl}
-                onChange={(e) => setNewMediaUrl(e.target.value)}
-                placeholder={AdManagementMessage.helper.mediaUrlPlaceholder}
-                helperText={AdManagementMessage.helper.mediaUrlSupport}
+                type="number"
+                label="Duration (seconds)"
+                value={newDuration}
+                onChange={(e) => {
+                  const parsedValue = parseInt(e.target.value, 10);
+                  if (Number.isNaN(parsedValue)) {
+                    setNewDuration(ADVERTISEMENT.minImageDurationSeconds);
+                    return;
+                  }
+                  const clampedValue = Math.max(
+                    ADVERTISEMENT.minImageDurationSeconds,
+                    Math.min(ADVERTISEMENT.maxImageDurationSeconds, parsedValue),
+                  );
+                  setNewDuration(clampedValue);
+                }}
+                inputProps={{
+                  min: ADVERTISEMENT.minImageDurationSeconds,
+                  max: ADVERTISEMENT.maxImageDurationSeconds,
+                }}
+                sx={{ width: 180 }}
               />
             </Box>
-
-            {!isVideoMedia(newMediaUrl) && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <TextField
-                  type="number"
-                  label="Duration (seconds)"
-                  value={newDuration}
-                  onChange={(e) => {
-                    const parsedValue = parseInt(e.target.value, 10);
-                    if (Number.isNaN(parsedValue)) {
-                      setNewDuration(ADVERTISEMENT.minImageDurationSeconds);
-                      return;
-                    }
-                    const clampedValue = Math.max(
-                      ADVERTISEMENT.minImageDurationSeconds,
-                      Math.min(ADVERTISEMENT.maxImageDurationSeconds, parsedValue),
-                    );
-                    setNewDuration(clampedValue);
-                  }}
-                  inputProps={{
-                    min: ADVERTISEMENT.minImageDurationSeconds,
-                    max: ADVERTISEMENT.maxImageDurationSeconds,
-                  }}
-                  sx={{ width: 140 }}
-                />
-              </Box>
-            )}
-            {isVideoMedia(newMediaUrl) && (
-              <Box sx={{ p: 2, bgcolor: "info.lighter", borderRadius: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                  {AdManagementMessage.helper.videoDetected}
-                </Typography>
-              </Box>
-            )}
           </Box>
 
           <Button
@@ -498,6 +361,7 @@ export default function AdManagementPanel() {
             startIcon={<Upload size={16} />}
             onClick={handleAddAd}
             sx={{ mt: 4 }}
+            disabled={!selectedFile || !newAdName.trim()}
           >
             {AdManagementMessage.actions.uploadAndAdd}
           </Button>
@@ -536,6 +400,20 @@ export default function AdManagementPanel() {
               >
                 <CardContent>
                   <Box sx={{ display: "flex", gap: 3 }}>
+                    <Box
+                      component="img"
+                      src={ad.mediaData}
+                      alt={ad.adName}
+                      sx={{
+                        width: 120,
+                        height: 80,
+                        objectFit: "cover",
+                        borderRadius: 1,
+                        border: 1,
+                        borderColor: "divider",
+                        flexShrink: 0,
+                      }}
+                    />
                     <Box sx={{ flex: 1 }}>
                       <Box sx={{ position: "relative", mb: 1 }}>
                         <Typography variant="h6" sx={{ pr: 8 }}>
@@ -556,39 +434,23 @@ export default function AdManagementPanel() {
                         )}
                       </Box>
 
-                      <Box sx={{ mb: 2 }}>
-                        <Typography
-                          variant="body2"
-                          fontWeight="semibold"
-                          sx={{ mb: 0.5, wordBreak: "break-all" }}
-                        >
-                          {ad.mediaUrl}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 2,
+                          typography: "caption",
+                          color: "text.secondary",
+                          flexWrap: "wrap",
+                          mb: 1.5,
+                        }}
+                      >
+                        <Typography variant="caption">
+                          {AdManagementMessage.labels.duration}: <strong>{ad.duration}s</strong>
                         </Typography>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            gap: 2,
-                            typography: "caption",
-                            color: "text.secondary",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <Typography variant="caption">
-                            {AdManagementMessage.labels.duration}: <strong>{ad.duration}s</strong>
-                          </Typography>
-                          <Typography variant="caption">
-                            {AdManagementMessage.labels.schedule}:{" "}
-                            <strong>
-                              {ad.scheduleEnabled
-                                ? `Every ${ad.scheduleIntervalMinutes} min`
-                                : AdManagementMessage.helper.scheduleDisabled}
-                            </strong>
-                          </Typography>
-                          <Typography variant="caption">
-                            {AdManagementMessage.labels.uploaded}:{" "}
-                            <strong>{new Date(ad.uploadedDate).toLocaleDateString()}</strong>
-                          </Typography>
-                        </Box>
+                        <Typography variant="caption">
+                          {AdManagementMessage.labels.uploaded}:{" "}
+                          <strong>{new Date(ad.uploadedDate).toLocaleDateString()}</strong>
+                        </Typography>
                       </Box>
 
                       <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
@@ -651,63 +513,30 @@ export default function AdManagementPanel() {
         >
           {previewedAd && (
             <>
-              {previewedAd.mediaUrl.includes("youtube.com") ||
-              previewedAd.mediaUrl.includes("youtu.be") ? (
-                <iframe
-                  src={convertToYouTubeEmbed(previewedAd.mediaUrl)}
-                  title="Ad Preview - YouTube"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    border: "none",
-                  }}
-                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : validatedDriveUrl ? (
-                <iframe
-                  src={validatedDriveUrl}
-                  title="Ad Preview - Google Drive"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    border: "none",
-                  }}
-                  sandbox="allow-same-origin allow-scripts allow-presentation"
-                />
-              ) : previewedAd.mediaUrl.includes("drive.google.com") ||
-                previewedAd.mediaUrl.includes("docs.google.com") ||
-                previewedAd.mediaUrl.includes("drive.googleusercontent.com") ? (
-                <Typography variant="body1" color="white">
-                  Unable to preview this Google Drive URL.
-                </Typography>
-              ) : isVideoMediaType(previewedAd.mediaType) ? (
-                <video
-                  autoPlay
-                  muted
-                  playsInline
-                  controls
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "contain",
-                  }}
-                >
-                  <source src={previewedAd.mediaUrl} type={previewedAd.mediaType || undefined} />
-                  Your browser does not support the video tag.
-                </video>
-              ) : (
-                <Box
-                  component="img"
-                  src={previewedAd.mediaUrl}
-                  alt={previewedAd.adName ? `Ad preview: ${previewedAd.adName}` : "Ad preview"}
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "contain",
-                  }}
-                />
-              )}
+              <IconButton
+                onClick={() => setTestAdOpen(false)}
+                sx={{
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  color: "white",
+                  bgcolor: "rgba(0,0,0,0.5)",
+                  zIndex: 10,
+                  "&:hover": { bgcolor: "rgba(0,0,0,0.8)" },
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+              <Box
+                component="img"
+                src={previewedAd.mediaData}
+                alt={previewedAd.adName}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                }}
+              />
             </>
           )}
         </DialogContent>

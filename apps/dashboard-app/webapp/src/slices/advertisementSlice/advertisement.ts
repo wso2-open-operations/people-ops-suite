@@ -22,14 +22,11 @@ import { getAPIService } from "@utils/apiService";
 export interface Advertisement {
   id: string;
   adName: string;
-  mediaUrl: string;
+  mediaData: string;
   mediaType: string;
   duration: number;
   isActive: boolean;
   uploadedDate: string;
-  scheduleEnabled: boolean;
-  scheduleIntervalMinutes: number;
-  lastDisplayedAt?: string;
 }
 
 interface AdvertisementState {
@@ -49,25 +46,19 @@ const initialState: AdvertisementState = {
 const mapAdvertisement = (item: {
   id: number;
   adName: string;
-  mediaUrl: string;
+  mediaData: string;
   mediaType: string;
   durationSeconds: number;
   isActive: boolean;
   uploadedDate: string;
-  scheduleEnabled?: boolean;
-  scheduleIntervalMinutes?: number;
-  lastDisplayedAt?: string;
 }): Advertisement => ({
   id: String(item.id),
   adName: item.adName,
-  mediaUrl: item.mediaUrl,
+  mediaData: item.mediaData,
   mediaType: item.mediaType,
   duration: item.durationSeconds,
   isActive: item.isActive,
   uploadedDate: item.uploadedDate,
-  scheduleEnabled: item.scheduleEnabled ?? false,
-  scheduleIntervalMinutes: item.scheduleIntervalMinutes ?? 5,
-  lastDisplayedAt: item.lastDisplayedAt,
 });
 
 export const fetchAdvertisements = createAsyncThunk(
@@ -86,14 +77,11 @@ export const fetchAdvertisements = createAsyncThunk(
       const list = listResult.value.data as Array<{
         id: number;
         adName: string;
-        mediaUrl: string;
+        mediaData: string;
         mediaType: string;
         durationSeconds: number;
         isActive: boolean;
         uploadedDate: string;
-        scheduleEnabled?: boolean;
-        scheduleIntervalMinutes?: number;
-        lastDisplayedAt?: string;
       }>;
 
       const active =
@@ -125,7 +113,7 @@ export const addAdvertisement = createAsyncThunk(
   async (
     payload: {
       adName: string;
-      mediaUrl: string;
+      mediaData: string;
       mediaType: string;
       durationSeconds: number;
     },

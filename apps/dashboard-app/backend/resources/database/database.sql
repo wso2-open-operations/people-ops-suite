@@ -37,8 +37,8 @@ CREATE TABLE IF NOT EXISTS `food_waste_records` (
 CREATE TABLE IF NOT EXISTS advertisements (
     advertisement_id INT AUTO_INCREMENT PRIMARY KEY,
     ad_name VARCHAR(255) NOT NULL,
-    media_url VARCHAR(2048) NOT NULL,
-    media_type ENUM('video/mp4', 'video/webm', 'image/jpeg', 'image/png', 'image/gif') NOT NULL,
+    media_data LONGTEXT NOT NULL COMMENT 'Base64-encoded image data',
+    media_type ENUM('image/jpeg', 'image/png', 'image/gif') NOT NULL,
     duration_seconds INT NOT NULL DEFAULT 5,
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
     display_order INT DEFAULT 0,

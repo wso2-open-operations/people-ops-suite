@@ -93,9 +93,9 @@ public type Advertisement record {|
     int id;
     # Advertisement name
     string adName;
-    # Media URL
-    string mediaUrl;
-    # Media type
+    # Base64-encoded image data
+    string mediaData;
+    # Image MIME type
     string mediaType;
     # Duration in seconds
     int durationSeconds;
@@ -119,9 +119,9 @@ public type Advertisement record {|
 public type CreateAdvertisementPayload record {|
     # Advertisement name
     string adName;
-    # Media URL
-    string mediaUrl;
-    # Media type
+    # Base64-encoded image data
+    string mediaData;
+    # Image MIME type
     database:MediaType mediaType;
     # Duration in seconds
     int durationSeconds;

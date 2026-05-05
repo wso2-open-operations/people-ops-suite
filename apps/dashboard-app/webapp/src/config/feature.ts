@@ -38,7 +38,5 @@ export const ADVERTISEMENT = {
   minImageDurationSeconds: 1,
   maxImageDurationSeconds: 30,
   minPreviewImageSeconds: 3,
-  minPreviewVideoSeconds: 15,
-  previewVideoBufferMs: 3000,
   defaultScheduleIntervalMinutes: 10,
 } as const;

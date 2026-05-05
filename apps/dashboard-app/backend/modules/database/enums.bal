@@ -20,10 +20,8 @@ public enum MealType {
     LUNCH
 };
 
-# Supported media types for advertisements.
+# Supported image types for advertisements.
 public enum MediaType {
-    VIDEO_MP4 = "video/mp4",
-    VIDEO_WEBM = "video/webm",
     IMAGE_JPEG = "image/jpeg",
     IMAGE_PNG = "image/png",
     IMAGE_GIF = "image/gif"

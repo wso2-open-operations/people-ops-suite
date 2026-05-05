@@ -13,21 +13,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Typography, CircularProgress, IconButton } from "@mui/material";
+import { Box, CircularProgress, IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import axios from "axios";
 
-import { memo, useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { memo, useEffect, useRef, useState, useCallback } from "react";
 
 import { AppConfig } from "@config/config";
 
 interface ActiveAd {
   id: string;
   adName: string;
-  mediaUrl: string;
+  mediaData: string;
   mediaType: string;
   durationSeconds: number;
-  isVideo: boolean;
 }
 
 const DEFAULT_PLAY_INTERVAL_MINUTES = 1;
@@ -38,7 +37,6 @@ const AutoPlayAd = memo(() => {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const latestRequestRef = useRef(0);
 
   const clearTimer = useCallback(() => {
@@ -64,10 +62,9 @@ const AutoPlayAd = memo(() => {
         setAd({
           id: data.id,
           adName: data.adName,
-          mediaUrl: data.mediaUrl,
+          mediaData: data.mediaData,
           mediaType: data.mediaType,
           durationSeconds: data.durationSeconds || 5,
-          isVideo: data.mediaType.startsWith("video/"),
         });
         setPlaying(true);
       })
@@ -110,81 +107,14 @@ const AutoPlayAd = memo(() => {
     }, intervalMs);
   }, [clearTimer, fetchAndPlay]);
 
-  const isImageMedia = useCallback((mediaType: string): boolean => {
-    return !mediaType.startsWith("video/");
-  }, []);
-
   useEffect(() => {
-    if (ad && isImageMedia(ad.mediaType)) {
+    if (ad) {
       timerRef.current = setTimeout(() => {
         stopPlaying();
       }, (ad.durationSeconds || 5) * 1000);
     }
     return () => clearTimer();
-  }, [ad, isImageMedia, stopPlaying, clearTimer]);
-
-  const convertToYouTubeEmbed = useMemo(() => {
-    return (url: string): string => {
-      let videoId = "";
-      const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]+)/);
-      if (watchMatch) videoId = watchMatch[1];
-      const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
-      if (shortMatch) videoId = shortMatch[1];
-      const shortsMatch = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/);
-      if (shortsMatch) videoId = shortsMatch[1];
-      const embedMatch = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
-      if (embedMatch) videoId = embedMatch[1];
-
-      return videoId
-        ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0`
-        : url;
-    };
-  }, []);
-
-  const validateDriveEmbedUrl = useMemo(() => {
-    return (mediaUrl: string): string | null => {
-      let parsedUrl: URL;
-      try {
-        parsedUrl = new URL(mediaUrl);
-      } catch {
-        return null;
-      }
-
-      const host = parsedUrl.hostname.toLowerCase();
-      const path = parsedUrl.pathname;
-      const allowedHosts = new Set([
-        "drive.google.com",
-        "docs.google.com",
-        "drive.googleusercontent.com",
-      ]);
-
-      if (!allowedHosts.has(host)) return null;
-
-      if (host === "drive.google.com") {
-        const isFilePreviewOrView = /^\/file\/d\/[^/]+\/(preview|view)\/?$/.test(path);
-        const isEmbedFolderView = /^\/embeddedfolderview\/?$/.test(path);
-        const isUcWithId = /^\/uc\/?$/.test(path) && parsedUrl.searchParams.has("id");
-        if (!isFilePreviewOrView && !isEmbedFolderView && !isUcWithId) return null;
-      }
-
-      if (host === "docs.google.com") {
-        const isDocsPreviewOrEmbed =
-          /^\/(document|presentation|spreadsheets)\/d\/[^/]+\/(preview|embed)\/?$/.test(path);
-        if (!isDocsPreviewOrEmbed) return null;
-      }
-
-      if (host === "drive.googleusercontent.com") {
-        const isDirectFilePath = /^\/.+/.test(path);
-        if (!isDirectFilePath) return null;
-      }
-
-      return parsedUrl.toString();
-    };
-  }, []);
-
-  const handleVideoEnd = useCallback(() => {
-    stopPlaying();
-  }, [stopPlaying]);
+  }, [ad, stopPlaying, clearTimer]);
 
   if (!playing && !loading) {
     return null;
@@ -225,50 +155,12 @@ const AutoPlayAd = memo(() => {
       {loading ? (
         <CircularProgress color="primary" />
       ) : ad ? (
-        <>
-          {ad.mediaUrl.includes("youtube.com") || ad.mediaUrl.includes("youtu.be") ? (
-            <iframe
-              src={convertToYouTubeEmbed(ad.mediaUrl)}
-              title={ad.adName}
-              style={{ width: "100%", height: "100%", border: "none" }}
-              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-              allowFullScreen
-            />
-          ) : validateDriveEmbedUrl(ad.mediaUrl) ? (
-            <iframe
-              src={validateDriveEmbedUrl(ad.mediaUrl) as string}
-              title={ad.adName}
-              style={{ width: "100%", height: "100%", border: "none" }}
-              sandbox="allow-same-origin allow-scripts allow-presentation"
-            />
-          ) : ad.mediaUrl.includes("drive.google.com") ||
-            ad.mediaUrl.includes("docs.google.com") ||
-            ad.mediaUrl.includes("drive.googleusercontent.com") ? (
-            <Typography variant="body1" color="white" textAlign="center">
-              Unable to preview this Google Drive URL.
-            </Typography>
-          ) : !isImageMedia(ad.mediaType) ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              playsInline
-              controls
-              onEnded={handleVideoEnd}
-              style={{ width: "100%", height: "100%", objectFit: "contain" }}
-            >
-              <source src={ad.mediaUrl} type={ad.mediaType || undefined} />
-              Your browser does not support the video tag.
-            </video>
-          ) : (
-            <Box
-              component="img"
-              src={ad.mediaUrl}
-              alt={ad.adName}
-              sx={{ width: "100%", height: "100%", objectFit: "contain" }}
-            />
-          )}
-        </>
+        <Box
+          component="img"
+          src={ad.mediaData}
+          alt={ad.adName}
+          sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+        />
       ) : null}
     </Box>
   );

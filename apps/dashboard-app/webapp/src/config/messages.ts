@@ -86,7 +86,7 @@ export const DataEntryMessage = {
 
 export const AdManagementMessage = {
   title: "Advertisement Management Console",
-  subtitle: "Configure dashboard announcements, promotional content, and scheduling",
+  subtitle: "Configure dashboard announcements and promotional content",
   sections: {
     activeAd: "Currently Active Advertisement",
     addNewAd: "Add New Advertisement",
@@ -94,20 +94,17 @@ export const AdManagementMessage = {
   },
   labels: {
     adName: "Advertisement Name",
-    mediaUrl: "Media URL",
+    mediaUrl: "Image",
     uploaded: "Uploaded",
     displayDuration: "Display Duration",
     schedule: "Schedule",
-    videoType: "Type",
-    video: "Video",
     duration: "Duration",
   },
   helper: {
     adNamePlaceholder: "e.g., Morning Promotion",
-    mediaUrlPlaceholder: "https://example.com/promo-video.mp4",
-    mediaUrlSupport: "Supported: MP4, WebM, JPG, PNG, GIF, and embeddable links",
-    imageDuration: "Display Duration (Seconds) - For Images",
-    videoDetected: "Video detected - Duration uses the video's native length",
+    mediaUrlPlaceholder: "",
+    mediaUrlSupport: "Supported: JPEG, PNG, GIF (max 10 MB)",
+    imageDuration: "Display Duration (Seconds)",
     scheduleDisabled: "Disabled",
     activeBadge: "ACTIVE",
   },
@@ -122,7 +119,7 @@ export const AdManagementMessage = {
   },
   snackbar: {
     adNameRequired: "Please enter an advertisement name",
-    mediaUrlRequired: "Please enter a media URL",
+    mediaUrlRequired: "Please select an image",
     adAddedSuccess: "Advertisement added successfully",
     adAddedFailed: "Failed to add advertisement. Please try again.",
     activeUpdatedSuccess: "Active advertisement updated",
