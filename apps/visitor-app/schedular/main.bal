@@ -88,8 +88,10 @@ public function main() returns error? {
                 }
             }
         } else {
+            // If there's no departure time, we check if the visit has been active for more than a week to consider it for expiration and sending the expired-visit email.
             string? entry = visit.timeOfEntry;
             if entry is () {
+                log:printError("Visit has no entry time, skipping", id = visit.id);
                 continue;
             }
 
@@ -100,17 +102,33 @@ public function main() returns error? {
             }
 
             if time:utcDiffSeconds(oneWeekAgo, entryUtc) >= 0d {
-                log:printInfo("Visit has no departure and entry was a week ago or more",
-                        id = visit.id,
-                        visitorName = buildVisitorName(visit.firstName, visit.lastName),
-                        timeOfEntry = entry
-                );
+
+                // Force complete the visit in the backend
+                error? completeError = visitor:completeVisit(visit.id);
+                if completeError is error {
+                    log:printError("Failed to expire the visit, skipping email", completeError, id = visit.id);
+                    continue;
+                }
+
+                // Format the time of entry for the email content
+                string? formattedTimeOfEntry = visit.timeOfEntry;
+                if formattedTimeOfEntry is string {
+                    string|error formattedTimeOfEntryResult = formatDateTime(formattedTimeOfEntry, "Asia/Colombo");
+                    if formattedTimeOfEntryResult is error {
+                        log:printError("Failed to format time of entry, skipping email", formattedTimeOfEntryResult, id = visit.id, timeOfEntry = formattedTimeOfEntry);
+                        formattedTimeOfEntry = formattedTimeOfEntry + " UTC"; // Fallback to original string if formatting fails    
+                    } else {
+                        formattedTimeOfEntry = formattedTimeOfEntryResult;
+                    }
+                } else {
+                    formattedTimeOfEntry = ();
+                }
 
                 error? emailError = email:sendExpiredVisitEmail({
                                                                     id: visit.id,
                                                                     visitorName: buildVisitorName(visit.firstName, visit.lastName),
                                                                     visitDate: visit.visitDate,
-                                                                    timeOfEntry: visit.timeOfEntry,
+                                                                    timeOfEntry: formattedTimeOfEntry,
                                                                     timeOfDeparture: (),
                                                                     whomTheyMeet: visit.whomTheyMeet,
                                                                     passNumber: visit.passNumber,
