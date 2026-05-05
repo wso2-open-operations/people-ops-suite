@@ -38,8 +38,9 @@ public function main() returns error? {
         string? timeOfDeparture = visit.timeOfDeparture;
         if timeOfDeparture is string {
             string departureDate = string:substring(timeOfDeparture, 0, 10);
-            if departureDate == today {
 
+            // If the visit has a departure time and it's today, we consider it for force-completion and sending the force-complete email.
+            if departureDate == today {
                 // Force complete the visit in the backend
                 error? completeError = visitor:completeVisit(visit.id);
                 if completeError is error {
@@ -48,16 +49,19 @@ public function main() returns error? {
                 }
 
                 // Format the departure time for the email content
-                string|error formattedDepartureTime = formatDateTime(timeOfDeparture, "Asia/Colombo", false);
-                if formattedDepartureTime is error {
-                    log:printError("Failed to format departure time, skipping email", formattedDepartureTime, id = visit.id, timeOfDeparture = timeOfDeparture);
+                string formattedDepartureTime = timeOfDeparture + " UTC";
+                string|error formattedDepartureTimeResult = formatDateTime(timeOfDeparture, "Asia/Colombo");
+                if formattedDepartureTimeResult is error {
+                    log:printError("Failed to format departure time, skipping email", formattedDepartureTimeResult, id = visit.id, timeOfDeparture = timeOfDeparture);
                     formattedDepartureTime = timeOfDeparture + " UTC"; // Fallback to original string if formatting fails
+                } else {
+                    formattedDepartureTime = formattedDepartureTimeResult;
                 }
 
                 // Format the time of entry for the email content
                 string? formattedTimeOfEntry = visit.timeOfEntry;
                 if formattedTimeOfEntry is string {
-                    string|error formattedTimeOfEntryResult = formatDateTime(formattedTimeOfEntry, "Asia/Colombo", false);
+                    string|error formattedTimeOfEntryResult = formatDateTime(formattedTimeOfEntry, "Asia/Colombo");
                     if formattedTimeOfEntryResult is error {
                         log:printError("Failed to format time of entry, skipping email", formattedTimeOfEntryResult, id = visit.id, timeOfEntry = formattedTimeOfEntry);
                         formattedTimeOfEntry = formattedTimeOfEntry + " UTC"; // Fallback to original string if formatting fails    
@@ -72,8 +76,8 @@ public function main() returns error? {
                                                                      id: visit.id,
                                                                      visitorName: buildVisitorName(visit.firstName, visit.lastName),
                                                                      visitDate: visit.visitDate,
-                                                                     timeOfEntry: visit.timeOfEntry,
-                                                                     timeOfDeparture: formattedTimeOfEntry,
+                                                                     timeOfEntry: formattedTimeOfEntry,
+                                                                     timeOfDeparture: formattedDepartureTime,
                                                                      whomTheyMeet: visit.whomTheyMeet,
                                                                      passNumber: visit.passNumber,
                                                                      companyName: visit.companyName,
