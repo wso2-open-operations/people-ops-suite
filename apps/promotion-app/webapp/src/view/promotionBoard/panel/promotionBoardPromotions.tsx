@@ -252,10 +252,8 @@ const applyFilters = (data: PromotionRequest[]) => {
 
     const handleOpenMore = (emp : any, history : any) => {
         setOpenMore(true);
-        console.log("hello", emp);
         setSelectedEmployee(emp);
         setSelectedHistory(history);
-        console.log(data);
     }
 
     const handleCloseMore = () => {
@@ -266,7 +264,6 @@ const applyFilters = (data: PromotionRequest[]) => {
 
     const handleOpenEdit = (emp: any) => {
         setOpen(true);
-        console.log(emp);
         setSelectedEmployee(emp);
         setPromotionJobBand(emp.nextJobBand);
         setCurrentJobBand(emp.currentJobBand);
@@ -284,7 +281,6 @@ const applyFilters = (data: PromotionRequest[]) => {
     const handleToggleFilters = () => setShowFilters((prev) => !prev);
 
     const handleReject = (emp: any) => {
-        console.log("Rejected IDs:", selectedIds);
         setSelectedEmployee(emp)
         setConfirmRejectOpen(true);
     }

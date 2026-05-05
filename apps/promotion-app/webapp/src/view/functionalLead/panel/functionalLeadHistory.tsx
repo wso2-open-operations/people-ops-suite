@@ -103,7 +103,6 @@ export default function History() {
                         dispatch(fetchEmployeeHistory({ employeeWorkEmail: email })).unwrap()
                     );
                     const employeeHistories = await Promise.all(employeeHistoryPromises);
-                    console.log(employeeHistories);
                     setEmployeeHistories(employeeHistories);
                 }
             }
@@ -147,7 +146,6 @@ export default function History() {
 
     const handleOpenMore = (emp : any, history : any) => {
         setOpenMore(true);
-        console.log("hello", emp);
         setSelectedEmployee(emp);
         setSelectedHistory(history);
     }

@@ -70,7 +70,6 @@ export const fetchRecommendation = createAsyncThunk(
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
-          console.log(response.data.promotionRequests);
           resolve({
             recommendations: response.data,
           });
