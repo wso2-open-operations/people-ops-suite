@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS advertisements (
     media_data LONGTEXT NOT NULL COMMENT 'Base64-encoded image data',
     media_type ENUM('image/jpeg', 'image/png', 'image/gif') NOT NULL,
     duration_seconds INT NOT NULL DEFAULT 5,
+    frequency_hours INT NOT NULL DEFAULT 1 COMMENT 'How often this ad plays (in hours)',
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
     display_order INT DEFAULT 0,
     uploaded_date DATE NOT NULL DEFAULT (CURRENT_DATE),

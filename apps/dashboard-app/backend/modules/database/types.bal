@@ -142,6 +142,8 @@ public type Advertisement record {|
     string mediaType;
     # Duration in seconds
     int durationSeconds;
+    # How often this ad plays (in hours)
+    int frequencyHours;
     # Whether this advertisement is currently active
     boolean isActive;
     # Display order
@@ -168,6 +170,8 @@ public type CreateAdvertisementPayload record {|
     MediaType mediaType;
     # Duration in seconds
     int durationSeconds;
+    # How often this ad plays (in hours)
+    int frequencyHours;
 |};
 
 # Not-found error for advertisement operations.

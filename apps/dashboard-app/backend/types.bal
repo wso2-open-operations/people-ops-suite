@@ -99,6 +99,8 @@ public type Advertisement record {|
     string mediaType;
     # Duration in seconds
     int durationSeconds;
+    # How often this ad plays (in hours)
+    int frequencyHours;
     # Whether this advertisement is currently active
     boolean isActive;
     # Display order
@@ -125,6 +127,8 @@ public type CreateAdvertisementPayload record {|
     database:MediaType mediaType;
     # Duration in seconds
     int durationSeconds;
+    # How often this ad plays (in hours)
+    int frequencyHours;
 |};
 
 # Weekly trend item.

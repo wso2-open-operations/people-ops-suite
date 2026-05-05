@@ -148,10 +148,10 @@ isolated function addAdvertisementQuery(CreateAdvertisementPayload payload, stri
     returns sql:ParameterizedQuery =>
 `
     INSERT INTO dashboard_app_db.advertisements
-        (ad_name, media_data, media_type, duration_seconds, created_by, updated_by)
+        (ad_name, media_data, media_type, duration_seconds, frequency_hours, created_by, updated_by)
     VALUES
         (${payload.adName}, ${payload.mediaData}, ${payload.mediaType.toString()}, ${payload.durationSeconds},
-         ${createdBy}, ${createdBy})
+         ${payload.frequencyHours}, ${createdBy}, ${createdBy})
 `;
 
 # Build query to retrieve all advertisements.
@@ -165,6 +165,7 @@ isolated function getAdvertisementsQuery() returns sql:ParameterizedQuery =>
         media_data       AS mediaData,
         media_type       AS mediaType,
         duration_seconds AS durationSeconds,
+        frequency_hours  AS frequencyHours,
         is_active        AS isActive,
         display_order    AS displayOrder,
         uploaded_date    AS uploadedDate,
@@ -187,6 +188,7 @@ isolated function getActiveAdvertisementQuery() returns sql:ParameterizedQuery =
         media_data       AS mediaData,
         media_type       AS mediaType,
         duration_seconds AS durationSeconds,
+        frequency_hours  AS frequencyHours,
         is_active        AS isActive,
         display_order    AS displayOrder,
         uploaded_date    AS uploadedDate,
@@ -211,6 +213,7 @@ isolated function getAdvertisementByIdQuery(int id) returns sql:ParameterizedQue
         media_data       AS mediaData,
         media_type       AS mediaType,
         duration_seconds AS durationSeconds,
+        frequency_hours  AS frequencyHours,
         is_active        AS isActive,
         display_order    AS displayOrder,
         uploaded_date    AS uploadedDate,

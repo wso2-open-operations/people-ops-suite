@@ -119,7 +119,8 @@ function createAdvertisementAndGetId(map<string> headers) returns int|error {
         adName: "Sample Ad",
         mediaData: "data:image/png;base64,iVBORw0KGgo=",
         mediaType: database:IMAGE_PNG,
-        durationSeconds: 15
+        durationSeconds: 15,
+        frequencyHours: 1
     };
 
     http:Response|error response = dashboardClient->post("/advertisements", payload, headers);
@@ -301,7 +302,8 @@ function testCreateAdvertisement() returns error? {
         adName: "Test Campaign",
         mediaData: "data:image/png;base64,iVBORw0KGgo=",
         mediaType: database:IMAGE_PNG,
-        durationSeconds: 15
+        durationSeconds: 15,
+        frequencyHours: 1
     };
 
     http:Response|error response = dashboardClient->post("/advertisements", payload, headers);

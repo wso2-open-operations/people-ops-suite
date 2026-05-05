@@ -27,10 +27,8 @@ interface ActiveAd {
   mediaData: string;
   mediaType: string;
   durationSeconds: number;
+  frequencyHours: number;
 }
-
-const DEFAULT_PLAY_INTERVAL_MINUTES = 1;
-const INITIAL_DELAY_MINUTES = 60;
 
 const AutoPlayAd = memo(() => {
   const [ad, setAd] = useState<ActiveAd | null>(null);
@@ -65,6 +63,7 @@ const AutoPlayAd = memo(() => {
           mediaData: data.mediaData,
           mediaType: data.mediaType,
           durationSeconds: data.durationSeconds || 5,
+          frequencyHours: data.frequencyHours || 1,
         });
         setPlaying(true);
       })
@@ -80,32 +79,30 @@ const AutoPlayAd = memo(() => {
   }, []);
 
   useEffect(() => {
-    const initialDelay = INITIAL_DELAY_MINUTES * 60 * 1000;
-    const startTimer = setTimeout(() => {
-      fetchAndPlay();
-    }, initialDelay);
+    if (!ad) return;
 
-    const intervalMs = DEFAULT_PLAY_INTERVAL_MINUTES * 60 * 1000;
+    const intervalMs = ad.frequencyHours * 60 * 60 * 1000;
     const loopTimer = setInterval(() => {
       fetchAndPlay();
     }, intervalMs);
 
     return () => {
-      clearTimeout(startTimer);
       clearInterval(loopTimer);
     };
-  }, [fetchAndPlay]);
+  }, [ad, fetchAndPlay]);
 
   const stopPlaying = useCallback(() => {
     latestRequestRef.current += 1;
     setPlaying(false);
     setAd(null);
     clearTimer();
-    const intervalMs = DEFAULT_PLAY_INTERVAL_MINUTES * 60 * 1000;
-    timerRef.current = setTimeout(() => {
-      fetchAndPlay();
-    }, intervalMs);
-  }, [clearTimer, fetchAndPlay]);
+    if (ad) {
+      const intervalMs = ad.frequencyHours * 60 * 60 * 1000;
+      timerRef.current = setTimeout(() => {
+        fetchAndPlay();
+      }, intervalMs);
+    }
+  }, [clearTimer, fetchAndPlay, ad]);
 
   useEffect(() => {
     if (ad) {

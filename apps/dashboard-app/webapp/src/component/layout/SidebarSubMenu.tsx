@@ -43,7 +43,7 @@ function SidebarSubMenu({ parentRoute, open }: { parentRoute: RouteDetail; open:
           key="submenu"
           variants={container}
           initial="closed"
-          animate="open"
+          animate={open ? "open" : "closed"}
           exit="closed"
           style={{
             display: "flex",

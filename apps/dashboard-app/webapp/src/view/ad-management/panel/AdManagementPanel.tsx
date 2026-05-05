@@ -51,6 +51,7 @@ export default function AdManagementPanel() {
 
   const [newAdName, setNewAdName] = useState("");
   const [newDuration, setNewDuration] = useState<number>(ADVERTISEMENT.defaultImageDurationSeconds);
+  const [newFrequencyHours, setNewFrequencyHours] = useState<number>(1);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewBase64, setPreviewBase64] = useState<string | null>(null);
   const [testAdOpen, setTestAdOpen] = useState(false);
@@ -108,6 +109,7 @@ export default function AdManagementPanel() {
         mediaData: previewBase64,
         mediaType: selectedFile!.type,
         durationSeconds: newDuration,
+        frequencyHours: newFrequencyHours,
       };
 
       await dispatch(addAdvertisement(payload)).unwrap();
@@ -116,6 +118,7 @@ export default function AdManagementPanel() {
       setNewAdName("");
       clearFile();
       setNewDuration(ADVERTISEMENT.defaultImageDurationSeconds);
+      setNewFrequencyHours(1);
     } catch {
       enqueueSnackbar(AdManagementMessage.snackbar.adAddedFailed, { variant: "error" });
     }
@@ -244,6 +247,14 @@ export default function AdManagementPanel() {
                   </Box>
                   <Box>
                     <Typography component="span" sx={{ opacity: 0.9 }}>
+                      Frequency:{" "}
+                    </Typography>
+                    <Typography component="span" fontWeight="bold">
+                      Every {activeAd.frequencyHours}h
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography component="span" sx={{ opacity: 0.9 }}>
                       {AdManagementMessage.labels.uploaded}:{" "}
                     </Typography>
                     <Typography component="span" fontWeight="bold">
@@ -258,7 +269,7 @@ export default function AdManagementPanel() {
       )}
 
       <Card sx={{ mb: 4 }}>
-        <CardContent sx={{ p: 3, pl: 3 }}>
+        <CardContent sx={{ p: 3 }}>
           <Box
             sx={{
               display: "flex",
@@ -274,61 +285,82 @@ export default function AdManagementPanel() {
             <Typography variant="h5">{AdManagementMessage.sections.addNewAd}</Typography>
           </Box>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "flex-start" }}>
-            <Box sx={{ maxWidth: 500 }}>
+          <Box sx={{ display: "flex", gap: 4, alignItems: "flex-start" }}>
+            <Box
+              sx={{
+                width: 200,
+                height: 200,
+                borderRadius: 2,
+                border: 2,
+                borderStyle: selectedFile ? "solid" : "dashed",
+                borderColor: selectedFile ? "divider" : "primary.main",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                bgcolor: "background.default",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                position: "relative",
+                "&:hover": {
+                  borderColor: "primary.dark",
+                  bgcolor: "action.hover",
+                },
+              }}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {selectedFile && previewBase64 ? (
+                <>
+                  <Box
+                    component="img"
+                    src={previewBase64}
+                    alt="Preview"
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearFile();
+                    }}
+                    sx={{
+                      position: "absolute",
+                      top: 4,
+                      right: 4,
+                      bgcolor: "rgba(0,0,0,0.6)",
+                      color: "white",
+                      "&:hover": { bgcolor: "rgba(0,0,0,0.8)" },
+                    }}
+                  >
+                    <X size={14} />
+                  </IconButton>
+                </>
+              ) : (
+                <Box sx={{ textAlign: "center" }}>
+                  <Upload size={40} color="primary" />
+                  <Typography variant="body2" color="primary" sx={{ mt: 1, fontWeight: 500 }}>
+                    Click to upload
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    JPEG, PNG, GIF (max 10MB)
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
               <TextField
                 fullWidth
                 label={AdManagementMessage.labels.adName}
                 value={newAdName}
                 onChange={(e) => setNewAdName(e.target.value)}
                 placeholder={AdManagementMessage.helper.adNamePlaceholder}
-                sx={{ mb: 2 }}
+                sx={{ maxWidth: 400 }}
               />
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/gif"
-                onChange={handleFileChange}
-                style={{ display: "none" }}
-              />
-              <Button
-                variant="outlined"
-                startIcon={<Upload size={16} />}
-                onClick={() => fileInputRef.current?.click()}
-                sx={{ mb: 2 }}
-              >
-                {selectedFile ? "Change image" : "Choose image"}
-              </Button>
-
-              {selectedFile && (
-                <Box sx={{ mb: 2, display: "flex", alignItems: "center", gap: 2 }}>
-                  <Box
-                    component="img"
-                    src={previewBase64 || ""}
-                    alt="Preview"
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      objectFit: "cover",
-                      borderRadius: 1,
-                      border: 1,
-                      borderColor: "divider",
-                    }}
-                  />
-                  <Box>
-                    <Typography variant="body2" fontWeight="semibold">
-                      {selectedFile.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {(selectedFile.size / 1024).toFixed(0)} KB · {selectedFile.type}
-                    </Typography>
-                  </Box>
-                  <IconButton size="small" onClick={clearFile} sx={{ ml: "auto" }}>
-                    <X size={16} />
-                  </IconButton>
-                </Box>
-              )}
 
               <TextField
                 type="number"
@@ -351,20 +383,55 @@ export default function AdManagementPanel() {
                   max: ADVERTISEMENT.maxImageDurationSeconds,
                 }}
                 sx={{ width: 180 }}
+                helperText="How long to display this image"
               />
+
+              <TextField
+                type="number"
+                label="Frequency (hours)"
+                value={newFrequencyHours}
+                onChange={(e) => {
+                  const parsedValue = parseInt(e.target.value, 10);
+                  setNewFrequencyHours(Number.isNaN(parsedValue) || parsedValue < 1 ? 1 : parsedValue);
+                }}
+                inputProps={{
+                  min: 1,
+                }}
+                sx={{ width: 180 }}
+                helperText="How often this ad plays"
+              />
+
+              {selectedFile && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
+                  <Typography variant="body2" fontWeight="semibold" color="success.main">
+                    {selectedFile.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    ({(selectedFile.size / 1024).toFixed(0)} KB)
+                  </Typography>
+                </Box>
+              )}
+
+              <Button
+                variant="contained"
+                size="medium"
+                startIcon={<Upload size={16} />}
+                onClick={handleAddAd}
+                sx={{ mt: 2, alignSelf: "flex-start" }}
+                disabled={!selectedFile || !newAdName.trim()}
+              >
+                {AdManagementMessage.actions.uploadAndAdd}
+              </Button>
             </Box>
           </Box>
 
-          <Button
-            variant="contained"
-            size="medium"
-            startIcon={<Upload size={16} />}
-            onClick={handleAddAd}
-            sx={{ mt: 4 }}
-            disabled={!selectedFile || !newAdName.trim()}
-          >
-            {AdManagementMessage.actions.uploadAndAdd}
-          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif"
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+          />
         </CardContent>
       </Card>
 
@@ -446,6 +513,9 @@ export default function AdManagementPanel() {
                       >
                         <Typography variant="caption">
                           {AdManagementMessage.labels.duration}: <strong>{ad.duration}s</strong>
+                        </Typography>
+                        <Typography variant="caption">
+                          Frequency: <strong>Every {ad.frequencyHours}h</strong>
                         </Typography>
                         <Typography variant="caption">
                           {AdManagementMessage.labels.uploaded}:{" "}

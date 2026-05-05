@@ -77,6 +77,9 @@ const AddCollectionModal: React.FC<{ toggleClose: () => void }> = ({ toggleClose
             .unwrap()
             .then(() => {
               dispatch(fetchCollections());
+            })
+            .catch((error: unknown) => {
+              console.error("Failed to add collection:", error);
             });
         },
       );

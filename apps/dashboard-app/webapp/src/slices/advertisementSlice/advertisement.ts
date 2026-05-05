@@ -25,6 +25,7 @@ export interface Advertisement {
   mediaData: string;
   mediaType: string;
   duration: number;
+  frequencyHours: number;
   isActive: boolean;
   uploadedDate: string;
 }
@@ -51,12 +52,14 @@ const mapAdvertisement = (item: {
   durationSeconds: number;
   isActive: boolean;
   uploadedDate: string;
+  frequencyHours: number;
 }): Advertisement => ({
   id: String(item.id),
   adName: item.adName,
   mediaData: item.mediaData,
   mediaType: item.mediaType,
   duration: item.durationSeconds,
+  frequencyHours: item.frequencyHours,
   isActive: item.isActive,
   uploadedDate: item.uploadedDate,
 });
@@ -82,6 +85,7 @@ export const fetchAdvertisements = createAsyncThunk(
         durationSeconds: number;
         isActive: boolean;
         uploadedDate: string;
+        frequencyHours: number;
       }>;
 
       const active =
@@ -116,6 +120,7 @@ export const addAdvertisement = createAsyncThunk(
       mediaData: string;
       mediaType: string;
       durationSeconds: number;
+      frequencyHours: number;
     },
     { rejectWithValue },
   ) => {
