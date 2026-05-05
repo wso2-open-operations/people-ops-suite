@@ -196,7 +196,7 @@ export default function TimeBaseHistory() {
                               <Box
                                 sx={{
                                   backgroundColor:
-                                    statusColorMap[rec.promotionType] || '#eeeeee',
+                                    statusColorMap[rec.recommendationStatus] || '#eeeeee',
                                   color: '#000',
                                   px: 2,
                                   py: 0.5,
