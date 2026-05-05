@@ -17,8 +17,8 @@ import { Box, Typography } from "@mui/material";
 
 function StateWithImage(props: { message: string; imageUrl: string; hideImage?: boolean }) {
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-      {!props.hideImage && <img alt="logo" width="140" height="auto" src={props.imageUrl}></img>}
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+      {!props.hideImage && <img alt="logo" width="110" height="auto" src={props.imageUrl}></img>}
 
       <Typography
         variant="h5"

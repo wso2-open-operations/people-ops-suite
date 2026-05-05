@@ -24,13 +24,17 @@ const ErrorHandler = (props: ErrorHandlerProps) => {
   return (
     <Box
       sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         px: 2,
         py: 5,
       }}
     >
       <Container maxWidth="md">
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-          <img alt="logo" width="150" height="auto" src={Wso2Logo} />
+          <img alt="logo" width="100" height="auto" src={Wso2Logo} />
           <StateWithImage
             message={props.message || "Something went wrong! Please try again later."}
             imageUrl={ErrorSvg}
