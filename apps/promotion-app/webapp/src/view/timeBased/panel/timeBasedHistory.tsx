@@ -155,7 +155,7 @@ export default function TimeBaseHistory() {
         )}
 
         {recommendation.state === "loading" && (
-            <LoadingEffect message={"Loading Time Base Promotion Hisroty"} />
+            <LoadingEffect message={"Loading Time Base Promotion History"} />
         )}
 
         {recommendation.state === "success" && (
