@@ -15,14 +15,11 @@
 // under the License.
 
 import React, { useContext, useState } from "react";
-
-// MUI Imports
 import { IconButton, Stack, TextField } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import SendIcon from "@mui/icons-material/Send";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import DoneIcon from "@mui/icons-material/Done";
-import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -187,7 +184,7 @@ const ConfirmationDialogContextProvider: React.FC<
                 borderBottom: 1,
                 borderColor: "divider",
                 mb: 1,
-                pd: 0,
+                p: 2,
               }}
             >
               {content?.title}
