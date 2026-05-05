@@ -173,28 +173,42 @@ export default function Pending() {
   const isDraftChanged = recommendationText?.trim() !== lastSavedText.trim();
 
   const handleSaveDraft = async () => {
+    if (!selectedRecommendationId) {
+      console.error("No recommendation selected");
+      return;
+    }
+
     const encodedStatement = safeBase64Encode(recommendationText);
-    const resultAction = await dispatch(patchRecommendation({
-      id: selectedRecommendationId??1,
-      statement: encodedStatement,
-      comment: null,
-    }))
+
+    const resultAction = await dispatch(
+      patchRecommendation({
+        id: selectedRecommendationId,
+        statement: encodedStatement,
+        comment: null,
+      })
+    );
+
     if (patchRecommendation.fulfilled.match(resultAction)) {
       setLastSavedText(recommendationText);
     }
-  }
+  };
 
   const handleApprove = async () => {
+    if (!selectedRecommendationId) {
+      console.error("No recommendation selected");
+      return;
+    }
 
     dialogContext.showConfirmation(
       "Confirm Acceptance",
-      `Are you sure you want to Approve this Promotion?`,
+      `Are you sure you want to approve this promotion?`,
       ConfirmationType.accept,
       async () => {
-        const resultAction = await dispatch(approveRecommendation({
-          id: selectedRecommendationId??1
-        }));;
-
+        const resultAction = await dispatch(
+          approveRecommendation({
+            id: selectedRecommendationId,
+          })
+        );
         if (approveRecommendation.fulfilled.match(resultAction)) {
           setOpenSubmissionPage(false);
           setSelectedEmployee(null);
@@ -205,7 +219,7 @@ export default function Pending() {
       "Accept",
       "Cancel"
     );
-  }
+  };
 
 
   const handleRefresh = () => {
