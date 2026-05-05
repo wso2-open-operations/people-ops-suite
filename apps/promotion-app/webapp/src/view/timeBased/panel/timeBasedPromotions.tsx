@@ -91,11 +91,13 @@ export default function Pending() {
   };
 
   useEffect(() => {
-  try {
-    loadData();
-  }catch (error) {
-      console.error("Failed to fetch promotion requests:", error);
-    }
+  void (async () => {
+       try {
+         await loadData();
+       } catch (error) {
+         console.error("Failed to fetch promotion requests:", error);
+       }
+     })();
   }, [dispatch, auth.userInfo?.email]);
 
   const handleClose = () => {
