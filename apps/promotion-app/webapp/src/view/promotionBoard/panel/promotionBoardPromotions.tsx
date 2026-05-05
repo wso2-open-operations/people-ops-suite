@@ -305,7 +305,7 @@ const applyFilters = (data: PromotionRequest[]) => {
                         dispatch(
                         approvePromotions({
                             id: id,
-                            from: "functional_lead",
+                            from: "promotion_board",
                         })
                         )
                     )
@@ -334,7 +334,7 @@ const applyFilters = (data: PromotionRequest[]) => {
                         dispatch(
                         rejectPromotions({
                             id: id,
-                            from: "functional_lead",
+                            from: "promotion_board",
                             reason: "",
                         })
                         )
