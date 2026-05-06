@@ -45,6 +45,7 @@ import { fetchPromotions } from "@slices/promotionSlice/promotion";
 import { PromotionRequest } from '@root/src/utils/types';
 import { EmployeeJoinedDetails, fetchEmployeeHistory } from "@slices/employeeSlice/employee";
 import { LoadingEffect } from "@component/ui/Loading";
+import DOMPurify from 'dompurify';
 
 const statusColorMap: Record<string, string> = {
     TIMEBASE: '#f0f4c3',
@@ -459,7 +460,7 @@ export default function History() {
                                             <Typography
                                             variant="body1"
                                             dangerouslySetInnerHTML={{
-                                                __html: safeBase64Decode(selectedEmployee?.recommendations[0]?.recommendationStatement || "Recommendation Statement not available"),
+                                                __html: DOMPurify.sanitize(safeBase64Decode(selectedEmployee?.recommendations[0]?.recommendationStatement || "Recommendation Statement not available")),
                                             }}
                                             />
                                         </Box>
