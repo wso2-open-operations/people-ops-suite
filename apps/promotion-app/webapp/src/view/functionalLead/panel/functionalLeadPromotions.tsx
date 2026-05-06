@@ -343,7 +343,7 @@ const applyFilters = (data: PromotionRequest[]) => {
                     );
 
                     setSelectedIds([]);
-                    handleRejectClose()
+                    handleRejectClose();
                     fetchAllPromotions();
                 } catch (error) {
                     console.error("Bulk reject failed", error);
