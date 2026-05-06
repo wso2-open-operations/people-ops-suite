@@ -105,6 +105,14 @@ public type EmployeeIdSequence record {|
     decimal lastNumericId;
 |};
 
+# IDs fetched from the employee row before a compensating delete.
+type EmployeeDeleteIds record {|
+    # Primary key of the employee row
+    int id;
+    # Foreign key to the personal_info row
+    int personalInfoId;
+|};
+
 # TODO: Add structured types for org structure fields and company details
 # Employee information.
 public type Employee record {|

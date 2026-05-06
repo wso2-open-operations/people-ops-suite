@@ -245,6 +245,17 @@ public isolated function getEmploymentTypes() returns EmploymentType[]|error {
         select employmentType;
 }
 
+# Fetch IDP group names mapped to an employment type.
+#
+# + employmentTypeId - Employment type ID
+# + return - Group names, or error
+public isolated function getAsgardeoGroupsByEmploymentType(int employmentTypeId) returns string[]|error {
+    stream<record {|string groupName;|}, error?> rows =
+        databaseClient->query(getAsgardeoGroupsForEmploymentTypeQuery(employmentTypeId));
+    return from var row in rows
+        select row.groupName;
+}
+
 # Get houses.
 #
 # + return - Houses
@@ -319,6 +330,28 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
         check commit;
     }
     return lastInsertedId;
+}
+
+# Compensating delete used to roll back `addEmployee` when downstream provisioning fails.
+#
+# + employeeId - Employee ID string
+# + return - Nil on success or error
+public isolated function deleteEmployeeById(string employeeId) returns error? {
+    retry transaction {
+        EmployeeDeleteIds ids = check databaseClient->queryRow(
+            `SELECT id, personal_info_id FROM employee WHERE employee_id = ${employeeId}`);
+        int employeePkId = ids.id;
+        int personalInfoId = ids.personalInfoId;
+        _ = check databaseClient->execute(deleteEmployeeAdditionalManagersQuery(employeeId));
+        _ = check databaseClient->execute(deleteEmployeeEmergencyContactsQuery(employeeId));
+        _ = check databaseClient->execute(deleteEmployeeAdditionalManagersAuditQuery(employeePkId));
+        _ = check databaseClient->execute(deleteEmployeeEmergencyContactsAuditQuery(personalInfoId));
+        _ = check databaseClient->execute(deleteEmployeeAuditQuery(employeePkId));
+        _ = check databaseClient->execute(deleteEmployeeQuery(employeeId));
+        _ = check databaseClient->execute(deletePersonalInfoAuditQuery(personalInfoId));
+        _ = check databaseClient->execute(deletePersonalInfoQuery(personalInfoId));
+        check commit;
+    }
 }
 
 # Fetch employee ID generation context.
