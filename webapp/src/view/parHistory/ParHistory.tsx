@@ -24,8 +24,6 @@ import {
   Grid,
   Tab,
   Tabs,
-  Typography,
-  IconButton,
   Paper,
   Table,
   TableBody,
@@ -34,6 +32,8 @@ import {
   TableHead,
   TableRow,
   Tooltip,
+  Typography,
+  useTheme,
 } from "@mui/material";
 import dayjs from "dayjs";
 import { useLocation } from "react-router-dom";
@@ -41,11 +41,12 @@ import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import { EmployeePar } from "@component/common/EmployeePar";
+import Title from "@component/common/Title";
 import { LoadingEffect } from "@component/ui/Loading";
-import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { gradients, tooltipVisibilityDelay, uiMessages } from "@config/constant";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { RequestState, Role } from "@utils/types";
-import { ParCycle} from "@slices/parCycleSlice/parCycle";
+import { ParCycle } from "@slices/parCycleSlice/parCycle";
 import { selectRoles, selectUserEmail } from "@slices/authSlice/auth";
 import {
   fetchParRatingOfEmployee,
@@ -64,6 +65,8 @@ const ParHistory = () => {
   const previousCycles = useAppSelector(selectPreviousParCycleOfEmployee);
   const cycleLoadingState = useAppSelector(selectEmployeeStatus);
   const managerEmailSet = useAppSelector(selectManagerEmailSet);
+
+  const theme = useTheme();
 
   const isLead = roles.includes(Role.LEAD);
   const hasSubordinates = !!userEmail && managerEmailSet.has(userEmail);
@@ -113,41 +116,21 @@ const ParHistory = () => {
 
   return (
     <Fade in={true}>
-      <Grid>
+      <Grid sx={{ height: "100%" }}>
         <Paper
-          variant="outlined"
           sx={{
-            height: "calc(100vh - 150px)",
-            borderRadius: "5px",
-            minWidth: "1200px",
+            width: "100%",
+            height: "100%",
+            borderRadius: "0.5rem",
+            padding: "10px",
+            background: theme.palette.mode === "dark" ? gradients.dark : gradients.light,
+            boxShadow: "none",
+            border: "none",
+            overflowX: "hidden",
+            boxSizing: "border-box",
           }}
         >
-          <Grid
-            size={{ xs: 12, md: 12 }}
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              margin: "10px",
-            }}
-          >
-            <Grid
-              size={{ xs: 12, md: 6 }}
-              style={{
-                display: "flex",
-                justifyContent: "left",
-              }}
-            >
-              <IconButton color="primary" component="label" onClick={() => {}}>
-                <HistoryIcon fontSize="large" />
-              </IconButton>
-              <Typography
-                variant="h4"
-                sx={{ marginTop: "12px", marginLeft: "10px" }}
-              >
-                PAR History
-              </Typography>
-            </Grid>
-          </Grid>
+          <Title firstWord="PAR" secondWord="History" icon={<HistoryIcon fontSize="medium" />} />
 
           {isLead && hasSubordinates && (
             <Box sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}>
@@ -180,37 +163,72 @@ const ParHistory = () => {
             id="par-history-panel-0"
             hidden={isLead && hasSubordinates && activeTab !== 0}
           >
-            <Alert severity="info" sx={{ margin: 2 }}>
+            <Alert severity="info" sx={{ mx: 4, mt: 2 }}>
               <Typography>{uiMessages.alert.historyDataNotSynced}</Typography>
             </Alert>
 
             {!isEmployeePreviousParOpen && (
-              <Box sx={{ margin: 4 }}>
-                <TableContainer sx={{ height: "calc(100vh - 430px)" }}>
-                  <Table stickyHeader>
+              <Box sx={{ mx: 4, mt: 2 }}>
+                <TableContainer
+                  component="div"
+                  sx={{ background: "transparent", height: "calc(100vh - 430px)" }}
+                >
+                  <Table size="small">
                     <TableHead>
                       <TableRow>
                         <TableCell
-                          sx={{ width: "50%", fontWeight: "bold", color: "grey" }}
+                          sx={{
+                            width: "50%",
+                            background: "transparent",
+                            borderBottom: "none",
+                            fontWeight: 600,
+                            fontSize: "0.8rem",
+                            color: "text.Primary",
+                            pb: 2
+                          }}
                         >
                           Cycle Name
                         </TableCell>
-                        <TableCell sx={{ fontWeight: "bold", color: "grey" }}>
+                        <TableCell
+                          sx={{
+                            background: "transparent",
+                            borderBottom: "none",
+                            fontWeight: 600,
+                            fontSize: "0.8rem",
+                            color: "text.Primary",
+                          }}
+                        >
                           Start Date
                         </TableCell>
-                        <TableCell sx={{ fontWeight: "bold", color: "grey" }}>
+                        <TableCell
+                          sx={{
+                            background: "transparent",
+                            borderBottom: "none",
+                            fontWeight: 600,
+                            fontSize: "0.8rem",
+                            color: "text.Primary",
+                          }}
+                        >
                           End Date
                         </TableCell>
-                        <TableCell sx={{ width: "10%" }}></TableCell>
+                        <TableCell
+                          sx={{ width: "10%", background: "transparent", borderBottom: "none" }}
+                        />
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {cycleLoadingState === RequestState.LOADING && (
                         <TableRow>
-                          <TableCell colSpan={3} style={{ border: "none" }}>
-                            <LoadingEffect
-                              message={uiMessages.loading.pageLoading}
-                            />
+                          <TableCell
+                            colSpan={4}
+                            sx={{
+                              border: "none",
+                              height: "calc(100vh - 500px)",
+                              textAlign: "center",
+                              verticalAlign: "middle",
+                            }}
+                          >
+                            <LoadingEffect message={uiMessages.loading.pageLoading} />
                           </TableCell>
                         </TableRow>
                       )}
@@ -219,23 +237,26 @@ const ParHistory = () => {
                           {previousCycles.length > 0 &&
                             previousCycles.map((cycle) => (
                               <TableRow
-                                sx={{ cursor: "pointer" }}
                                 hover
                                 key={cycle.parCycleId}
                                 onClick={() => handleRowClick(cycle)}
+                                sx={{
+                                  cursor: "pointer",
+                                  "& .MuiTableCell-root": { borderBottom: "none" },
+                                }}
                               >
-                                <TableCell>{cycle.parCycleName}</TableCell>
-                                <TableCell>
+                                <TableCell sx={{ py: 1 }}>{cycle.parCycleName}</TableCell>
+                                <TableCell sx={{ py: 1 }}>
                                   {dayjs(cycle.parCycleStartDate).format(
                                     "D MMM 'YY"
                                   )}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell sx={{ py: 1 }}>
                                   {dayjs(cycle.parCycleEndDate).format(
                                     "D MMM 'YY"
                                   )}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell sx={{ py: 1 }}>
                                   <Tooltip
                                     arrow
                                     title="View"
@@ -245,7 +266,7 @@ const ParHistory = () => {
                                     <Button
                                       variant="outlined"
                                       endIcon={
-                                        <Box sx={{ m: 0, p: 0, ml: -1 }}>
+                                        <Box sx={{ m: 0, p: 0, ml: -1, pt: 1 }}>
                                           <KeyboardArrowRightIcon />
                                         </Box>
                                       }
@@ -263,11 +284,11 @@ const ParHistory = () => {
                           {previousCycles.length === 0 && (
                             <TableRow>
                               <TableCell
-                                colSpan={3}
+                                colSpan={4}
                                 align="center"
-                                style={{ border: "none" }}
+                                sx={{ border: "none" }}
                               >
-                                <Typography color={"GrayText"}>
+                                <Typography color="text.secondary">
                                   No data available
                                 </Typography>
                               </TableCell>

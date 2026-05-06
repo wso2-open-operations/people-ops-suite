@@ -4,13 +4,12 @@ import {
   Box,
   Button,
   Chip,
-  Divider,
   Fade,
   Grid,
-  IconButton,
   Paper,
   TextField,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as yup from "yup";
@@ -18,8 +17,9 @@ import * as yup from "yup";
 import { useEffect, useState } from "react";
 
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import Title from "@component/common/Title";
 import { LoadingEffect } from "@component/ui/Loading";
-import { uiMessages } from "@config/constant";
+import { gradients, uiMessages } from "@config/constant";
 import {
   fetchConfigurations,
   selectConfigStatus,
@@ -33,6 +33,7 @@ const GlobalSettingsView = () => {
   const globalConfigStatus = useAppSelector(selectConfigStatus);
   const dispatch = useAppDispatch();
   const globalConfig = useAppSelector(selectGlobalConfig);
+  const theme = useTheme();
 
   const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] = useState(false);
   const openConfirmationDialog = () => setIsConfirmationDialogOpen(true);
@@ -138,50 +139,27 @@ const GlobalSettingsView = () => {
 
   return (
     <Fade in={true}>
-      <Grid>
+      <Grid sx={{ height: "100%" }}>
         <Paper
-          square
-          className="paper"
-          variant="outlined"
           sx={{
-            minHeight: "calc(835px)",
-            borderRadius: "5px",
-            minWidth: "1200px",
+            width: "100%",
+            height: "100%",
+            borderRadius: "0.5rem",
+            padding: "10px",
+            background: theme.palette.mode === "dark" ? gradients.dark : gradients.light,
+            boxShadow: "none",
+            border: "none",
+            overflowX: "hidden",
+            boxSizing: "border-box",
           }}
         >
           <Grid>
-            <Grid
-              size={{
-                xs: 12,
-              }}
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                margin: "10px",
-              }}
-            >
-              <Grid
-                size={{ xs: 12 }}
-                style={{
-                  display: "flex",
-                  justifyContent: "left",
-                }}
-              >
-                <IconButton color="primary" component="label" onClick={() => {}}>
-                  <SettingsIcon fontSize="large" />
-                </IconButton>
-                <Typography variant="h4" sx={{ marginTop: "12px", marginLeft: "10px" }}>
-                  Settings
-                </Typography>
-              </Grid>
-              <Grid></Grid>
-            </Grid>
+            <Title firstWord="PAR" secondWord="Settings" icon={<SettingsIcon fontSize="medium" />} />
             <Box alignItems="center">
-              <Grid size={{ xs: 12, sm: 12 }} paddingY={3} mx={4}>
+              <Grid size={{ xs: 12, sm: 12 }} paddingY={2} mx={4}>
                 <Typography variant="h4" gutterBottom>
                   Global PAR Configurations
                 </Typography>
-                <Divider></Divider>
               </Grid>
 
               {globalConfigStatus === RequestState.LOADING && (
@@ -193,7 +171,7 @@ const GlobalSettingsView = () => {
                   <form onSubmit={handleSubmit}>
                     <Grid container spacing={1}>
                       <Box
-                        paddingY={2}
+                        paddingY={1}
                         sx={{
                           height: "calc(100vh - 350px)",
                           overflow: "auto",
