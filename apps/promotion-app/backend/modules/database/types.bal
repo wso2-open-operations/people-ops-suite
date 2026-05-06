@@ -338,6 +338,10 @@ public type PromotionRecommendationDbUpdatePayload record {
     *PromotionRecommendationUpdatePayload;
     # To identify the last user who modified or updated
     string updatedBy;
+    # Expected current status to ensure safe update
+    string? expectedStatus;  
+    # Expected promotion cycle to ensure consistency
+    int? expectedCycleId;
 };
 
 # Update record for hris_promotion_recommendation table.

@@ -906,7 +906,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             id: payload.id,
             statement: payload.statement,
             comments: payload.comment,
-            updatedBy: userInfo.email
+            updatedBy: userInfo.email,
+            expectedStatus: database:REQUESTED,
+            expectedCycleId: promotionCycles[0].id
         });
 
         if updateRecommendation is error {
@@ -1026,7 +1028,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         error? updateRecommendation = database:updatePromotionRecommendation({
             id: id,
             status: database:SUBMITTED,
-            updatedBy: userInfo.email
+            updatedBy: userInfo.email,
+            expectedStatus: database:REQUESTED,
+            expectedCycleId: promotionCycles[0].id
         });
 
         if updateRecommendation is error {
@@ -1224,7 +1228,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         error? updateRecommendation = database:updatePromotionRecommendation({
             id: id,
             status: database:SUBMITTED,
-            updatedBy: userInfo.email
+            updatedBy: userInfo.email,
+            expectedStatus: database:REQUESTED,
+            expectedCycleId: promotionCycles[0].id
         });
 
         if updateRecommendation is error {

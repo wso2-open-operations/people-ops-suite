@@ -434,7 +434,9 @@ isolated function updatePromotionRecommendationQuery(PromotionRecommendationDbUp
     sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
             `promotion_recommendation_updated_by = ${payload.updatedBy}`);
 
-    sqlQuery = sql:queryConcat(sqlQuery, ` WHERE promotion_recommendation_id = ${payload.id}`);
+    sqlQuery = sql:queryConcat(sqlQuery, ` WHERE promotion_recommendation_id = ${payload.id} 
+        AND promotion_recommendation_status = ${payload.expectedStatus}
+        AND promotion_cycle_id = ${payload.expectedCycleId}`);
 
     return sqlQuery;
 }
