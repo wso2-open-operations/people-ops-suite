@@ -10,7 +10,7 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import HistoryToggleOffIcon from "@mui/icons-material/HistoryToggleOff";
 import LinkIcon from "@mui/icons-material/Link";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
-import { Box, Fade, IconButton, Paper, Stack, Tab, Tabs, Typography } from "@mui/material";
+import { Box, Fade, Paper, Stack, Tab, Tabs, useTheme } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
 
 import React from "react";
@@ -18,7 +18,8 @@ import { SyntheticEvent, useEffect } from "react";
 
 import EmployeeHistoryView from "@component/common/EmployeeHistoryView";
 import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
-import { defaultTabWidth } from "@config/constant";
+import Title from "@component/common/Title";
+import { gradients } from "@config/constant";
 import { selectUserEmail } from "@slices/authSlice/auth";
 import { resetSelectedEmployeeParState } from "@slices/employeeSlice/employee";
 import { useAppSelector } from "@slices/store";
@@ -30,6 +31,7 @@ import ReportChainView from "./panels/ReportChainView";
 const LeadPortal = () => {
   const userEmail = useAppSelector(selectUserEmail);
   const [searchParams, setSearchParams] = useSearchParams();
+  const theme = useTheme();
 
   enum ParCycleViewTabs {
     ONGOING = "ongoing",
@@ -86,54 +88,41 @@ const LeadPortal = () => {
 
   return (
     <Fade in={true}>
-      <Stack>
+      <Stack sx={{ height: "100%" }}>
         <Paper
-          square
-          className="paper"
-          variant="outlined"
           sx={{
-            borderRadius: "5px",
-            minWidth: "1200px",
+            width: "100%",
+            height: "100%",
+            borderRadius: "0.5rem",
+            padding: "10px",
+            background: theme.palette.mode === "dark" ? gradients.dark : gradients.light,
+            boxShadow: "none",
+            border: "none",
+            overflowX: "hidden",
+            boxSizing: "border-box",
           }}
         >
-          <Stack
-            direction="row"
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              minWidth: "100%",
-              padding: "10px",
-            }}
-          >
-            <Stack direction="row" alignItems={"center"}>
-              <IconButton color="primary" component="label" onClick={() => {}}>
-                <GroupsIcon fontSize="large" />
-              </IconButton>
-              <Typography variant="h4" sx={{ marginLeft: "10px" }}>
-                Lead Portal
-              </Typography>
-            </Stack>
-          </Stack>
+          <Title firstWord="Lead" secondWord="Portal" icon={<GroupsIcon fontSize="medium" />} />
 
-          <Box
-            sx={{
-              borderBottom: 1,
-              borderColor: "divider",
-              padding: "0px 30px",
-            }}
-          >
+          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
             <Tabs
               value={value}
               onChange={handleChange}
               aria-label="icon label tabs"
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
               sx={{
-                "&.MuiTabs-root": {
-                  height: "3rem",
-                  alignItems: "center",
+                minHeight: 0,
+                "& .MuiTab-root": {
+                  minHeight: 0,
+                  height: "60px",
+                  px: { xs: 0.5, sm: 4 },
+                  minWidth: { xs: "auto", sm: "190px" },
+
+                  "& .MuiTab-iconWrapper": { fontSize: "1rem" },
                 },
-                "& .MuiTabs-indicator": {
-                  pb: "0.925rem",
-                },
+                "& .MuiTabs-indicator": { pb: "0.1rem" },
               }}
             >
               {tabsAndPanelsData.map((tab, index) => (
@@ -141,17 +130,23 @@ const LeadPortal = () => {
                   key={index}
                   icon={tab.icon}
                   iconPosition="start"
-                  label={tab.label}
-                  sx={{ width: defaultTabWidth }}
+                  label={
+                    <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                      {tab.label}
+                    </Box>
+                  }
                 />
               ))}
             </Tabs>
           </Box>
-          {tabsAndPanelsData.map((tab, index) => (
-            <TabPanel key={index} value={value} index={index}>
-              {tab.component}
-            </TabPanel>
-          ))}
+
+          <Box sx={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column" }}>
+            {tabsAndPanelsData.map((tab, index) => (
+              <TabPanel key={index} value={value} index={index}>
+                {tab.component}
+              </TabPanel>
+            ))}
+          </Box>
         </Paper>
       </Stack>
     </Fade>
@@ -177,7 +172,7 @@ const TabPanel = (props: TabPanelProps) => {
       aria-labelledby={`simple-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: "10px 20px 10px 20px" }}>{children}</Box>}
+      {value === index && <Box sx={{ pt: 1 }}>{children}</Box>}
     </div>
   );
 };

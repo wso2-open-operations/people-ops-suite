@@ -449,6 +449,7 @@ export const TeamSummary = ({
               width: "100%",
               justifyContent: "space-between",
               alignItems: "center",
+              pb: 1
             }}
           >
             <Box>
