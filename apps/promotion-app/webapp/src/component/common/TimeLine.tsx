@@ -79,8 +79,8 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
     }
     return (
         <>
-            {employeeHistory.promotionsState === "loading" || 
-            employeeHistory.employeeHistoryState === "loading" &&(
+            {(employeeHistory.promotionsState === "loading" || 
+            employeeHistory.employeeHistoryState === "loading") &&(
                 <LoadingEffect
                     message="Loading Employee History"
                 />
