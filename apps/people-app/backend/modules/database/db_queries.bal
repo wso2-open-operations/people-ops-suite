@@ -1111,7 +1111,7 @@ isolated function deleteEmergencyContactQuery(string employeeId, string mobile, 
         AND piec.mobile = ${mobile}
         AND piec.is_active = 1;`;
 
-# Inactivate all emergency contacts for the given employee email.
+# Inactivate all emergency contacts belonging to the given employee.
 #
 # + employeeEmail - Work email of the employee who is leaving
 # + actor - User performing the operation
@@ -1123,7 +1123,7 @@ isolated function inactivateEmployeeEmergencyContactsQuery(string employeeEmail,
      SET piec.is_active = 0,
          piec.updated_by = ${actor},
          piec.updated_on = CURRENT_TIMESTAMP(6)
-     WHERE LOWER(e.work_email) = LOWER(${employeeEmail})
+     WHERE e.work_email = ${employeeEmail}
        AND piec.is_active = 1;`;
 
 # Update employee job information query.
@@ -1360,9 +1360,10 @@ isolated function deleteAdditionalManagerQuery(string employeeId, string email, 
         AND LOWER(eam.additional_manager_email) = LOWER(${email})
         AND eam.is_active = 1;`;
 
-# Inactivate all additional manager relationships where the given email is the additional manager.
+# Inactivate all additional-manager relationships where the leaving
+# employee's email is recorded as the additional manager for other employees.
 #
-# + managerEmail - Email of the manager who is leaving
+# + managerEmail - Work email of the employee who is leaving
 # + actor - User performing the operation
 # + return - Parameterized query
 isolated function inactivateAdditionalManagerRelationshipsQuery(string managerEmail, string actor)

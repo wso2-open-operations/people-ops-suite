@@ -571,7 +571,8 @@ public isolated function hasLeaverFields(UpdateEmployeeJobInfoPayload payload) r
     || payload.finalDayOfEmployment is string
     || payload.resignationReason is string;
 
-# Inactivate all employee relationships (additional manager roles and emergency contacts) during offboarding.
+# Inactivate the leaving employee's emergency contacts and any additional-manager
+# relationships where the employee is listed as the additional manager for others.
 #
 # + employeeId - Employee ID of the employee who is leaving
 # + actor - User performing the operation
