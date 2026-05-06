@@ -571,6 +571,27 @@ public isolated function hasLeaverFields(UpdateEmployeeJobInfoPayload payload) r
     || payload.finalDayOfEmployment is string
     || payload.resignationReason is string;
 
+# Inactivate all employee relationships (additional manager roles and emergency contacts) during offboarding.
+#
+# + employeeId - Employee ID of the employee who is leaving
+# + actor - User performing the operation
+# + return - Nil or error
+isolated function inactivateEmployeeRelationshipsOnOffboarding(string employeeId, string actor)
+    returns error? {
+
+    Employee|error? employeeInfo = getEmployeeInfo(employeeId);
+    if employeeInfo is error {
+        return employeeInfo;
+    }
+    if employeeInfo is () {
+        return ();
+    }
+
+    string employeeEmail = employeeInfo.workEmail;
+    _ = check databaseClient->execute(inactivateAdditionalManagerRelationshipsQuery(employeeEmail, actor));
+    _ = check databaseClient->execute(inactivateEmployeeEmergencyContactsQuery(employeeEmail, actor));
+}
+
 # Sync the resignation table row for an employee based on the job-info update payload.
 # Retains any existing resignation record when the employee is reactivated, so historical details are preserved.
 #
@@ -583,6 +604,7 @@ isolated function syncResignationRecord(string employeeId, UpdateEmployeeJobInfo
 
     if hasLeaverFields(payload) {
         _ = check databaseClient->execute(upsertResignationQuery(employeeId, payload, updatedBy));
+        check inactivateEmployeeRelationshipsOnOffboarding(employeeId, updatedBy);
     }
 }
 

@@ -1111,6 +1111,21 @@ isolated function deleteEmergencyContactQuery(string employeeId, string mobile, 
         AND piec.mobile = ${mobile}
         AND piec.is_active = 1;`;
 
+# Inactivate all emergency contacts for the given employee email.
+#
+# + employeeEmail - Work email of the employee who is leaving
+# + actor - User performing the operation
+# + return - Parameterized query
+isolated function inactivateEmployeeEmergencyContactsQuery(string employeeEmail, string actor)
+    returns sql:ParameterizedQuery =>
+    `UPDATE personal_info_emergency_contacts piec
+     INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+     SET piec.is_active = 0,
+         piec.updated_by = ${actor},
+         piec.updated_on = CURRENT_TIMESTAMP(6)
+     WHERE LOWER(e.work_email) = LOWER(${employeeEmail})
+       AND piec.is_active = 1;`;
+
 # Update employee job information query.
 #
 # + employeeId - Employee ID
@@ -1344,6 +1359,20 @@ isolated function deleteAdditionalManagerQuery(string employeeId, string email, 
       WHERE e.employee_id = ${employeeId}
         AND LOWER(eam.additional_manager_email) = LOWER(${email})
         AND eam.is_active = 1;`;
+
+# Inactivate all additional manager relationships where the given email is the additional manager.
+#
+# + managerEmail - Email of the manager who is leaving
+# + actor - User performing the operation
+# + return - Parameterized query
+isolated function inactivateAdditionalManagerRelationshipsQuery(string managerEmail, string actor)
+    returns sql:ParameterizedQuery =>
+    `UPDATE employee_additional_managers eam
+     SET eam.is_active = 0,
+         eam.updated_by = ${actor},
+         eam.updated_on = CURRENT_TIMESTAMP(6)
+     WHERE LOWER(eam.additional_manager_email) = LOWER(${managerEmail})
+       AND eam.is_active = 1;`;
 
 # Build query to fetch vehicles.
 #
