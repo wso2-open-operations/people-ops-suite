@@ -275,13 +275,18 @@ const applyFilters = (data: PromotionRequest[]) => {
 
     const handleRejectClose = () => {
         setConfirmRejectOpen(false);
-        setSelectedEmployee(null);
+        setRejectReason("");
+        setSelectedIds([]);
     };
 
     const handleToggleFilters = () => setShowFilters((prev) => !prev);
 
     const handleReject = (emp: any) => {
-        setSelectedEmployee(emp)
+        setSelectedIds([emp.id]);
+        setConfirmRejectOpen(true);
+    }
+
+    const handleBulkRejectrReason = () => {
         setConfirmRejectOpen(true);
     }
 
@@ -331,13 +336,14 @@ const applyFilters = (data: PromotionRequest[]) => {
                         rejectPromotions({
                             id: id,
                             from: "functional_lead",
-                            reason: "",
+                            reason: rejectReason,
                         })
                         )
                     )
                     );
 
                     setSelectedIds([]);
+                    handleRejectClose()
                     fetchAllPromotions();
                 } catch (error) {
                     console.error("Bulk reject failed", error);
@@ -394,28 +400,6 @@ const applyFilters = (data: PromotionRequest[]) => {
                     from: "functional_lead"
                 }));
                 if (approvePromotions.fulfilled.match(resultAction)) {
-                    fetchAllPromotions();
-                }
-            }
-            ,
-            "Accept",
-            "Cancel"
-        );
-    };
-
-    const handleRejectOpen = () => {
-        dialogContext.showConfirmation(
-            "Confirm Acceptance",
-            `Are you sure you want to Reject this Promotion?`,
-            ConfirmationType.accept,
-            async () => {
-                const resultAction = await dispatch(rejectPromotions({
-                    id: selectedEmployee.id,
-                    from: "functional_lead",
-                    reason: "",
-                }));
-                if (rejectPromotions.fulfilled.match(resultAction)) {
-                    handleRejectClose()
                     fetchAllPromotions();
                 }
             }
@@ -507,7 +491,7 @@ const applyFilters = (data: PromotionRequest[]) => {
                     <Button
                         variant="text"
                         disabled={selectedIds.length === 0}
-                        onClick={handleBulkReject}
+                        onClick={handleBulkRejectrReason}
                         startIcon={
                             <ClearIcon
                                 sx={{
@@ -893,7 +877,7 @@ const applyFilters = (data: PromotionRequest[]) => {
                             <Button
                             variant="contained"
                             color="error"
-                            onClick={handleRejectOpen}
+                            onClick={handleBulkReject}
                             disabled={!rejectReason.trim()}
                             >
                             Submit
