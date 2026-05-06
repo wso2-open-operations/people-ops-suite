@@ -237,16 +237,22 @@ export default function Pending() {
   }
 
   const handleReject= () => {
-
+    if (!selectedRecommendationId) {
+      return;
+    }
+    
     dialogContext.showConfirmation(
       "Confirm Acceptance",
       `Are you sure you want to Reject this Promotion?`,
       ConfirmationType.accept,
       async () => {
-        const resultAction = await dispatch(declineRecommendation({
-          id: selectedRecommendationId??1,
-          comment: rejectReason
-        }));;
+        if (!selectedRecommendationId) return;
+        const resultAction = await dispatch(
+          declineRecommendation({
+            id: selectedRecommendationId,
+            comment: rejectReason,
+          })
+        );
 
         if (declineRecommendation.fulfilled.match(resultAction)) {
           handleRejectClose();
