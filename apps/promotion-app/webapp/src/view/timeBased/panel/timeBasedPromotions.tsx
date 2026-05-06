@@ -46,7 +46,7 @@ import StateWithImage from '@root/src/component/ui/StateWithImage';
 import { LoadingEffect } from "@component/ui/Loading";
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { fetchActivePromotionCycle } from "@slices/promotionCycleSlice/promotionCycle";
-import { fetchEmployeeHistory } from "@slices/employeeSlice/employee";
+import { fetchEmployeeHistory } from "@slices/timelineSlice/timeline";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -58,7 +58,7 @@ export default function Pending() {
   const auth = useAppSelector((state: RootState) => state.auth);
   const promotionCycle  = useAppSelector((state: RootState) => state.promotionCycle);
   const recommendation  = useAppSelector((state: RootState) => state.recommendation);
-  const employee  = useAppSelector((state: RootState) => state.employee);
+  const employee  = useAppSelector((state: RootState) => state.timeline);
   const [selectedNoteHtml, setSelectedNoteHtml] = useState<string>('');
   const [open, setOpen] = useState(false);
   const dialogContext = useConfirmationModalContext();
@@ -471,12 +471,12 @@ export default function Pending() {
         )}
 
         {openSubmissionPage && 
-         employee.state === "loading" && (
+         employee.employeeHistoryState === "loading" && (
           <LoadingEffect message={"Loading Employee Info.."} />
         )}
 
         {openSubmissionPage && 
-         employee.state === "success" && (
+         employee.employeeHistoryState === "success" && (
           <>
             <Box sx={{ p: 3, maxWidth: "95%", mx: "auto" }}>
               <Box
@@ -634,7 +634,7 @@ export default function Pending() {
         )}
 
         {openSubmissionPage && 
-         employee.state === "failed" &&  (
+         employee.employeeHistoryState === "failed" &&  (
             <Box
                 sx={{
                 display: "flex",
