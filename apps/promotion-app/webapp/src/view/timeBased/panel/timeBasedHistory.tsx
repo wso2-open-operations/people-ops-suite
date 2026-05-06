@@ -35,6 +35,7 @@ import StateWithImage from '@root/src/component/ui/StateWithImage';
 import { LoadingEffect } from "@component/ui/Loading";
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { fetchRecommendation } from "@slices/recommendationSlice/recommendation";
+import DOMPurify from "dompurify"
 
 const statusColorMap: Record<string, string> = {
   REQUESTED: '#e3f2fd',
@@ -116,7 +117,8 @@ export default function TimeBaseHistory() {
 
   const handleOpen = (base64EncodedNote: string) => {
     const decodedHtml = safeBase64Decode(base64EncodedNote);
-    setSelectedNoteHtml(decodedHtml);
+    const safeHtml = DOMPurify.sanitize(decodedHtml);
+    setSelectedNoteHtml(safeHtml);
     setOpen(true);
   };
 
