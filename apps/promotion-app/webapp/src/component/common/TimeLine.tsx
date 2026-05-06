@@ -35,20 +35,21 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
     const dispatch = useAppDispatch();
     const timelineData: TimeLineData[] = [];
 
+    const fetchTimelinePromotions = async () => {
+        if (!employeeEmail) return;
+
+        const promotionsAction = await dispatch(fetchEmployeeHistory({ employeeWorkEmail: employeeEmail }));
+            if (fetchEmployeeHistory.fulfilled.match(promotionsAction)) {
+                    dispatch(fetchPromotions({
+                    employeeEmail: employeeEmail,
+                    statusArray: ["APPROVED"]
+                    }));
+            }
+    }
+
     useEffect(() => {
-  if (!employeeEmail) return;
-
-  if (employeeHistory.employeeHistoryState === "idle") {
-    dispatch(fetchEmployeeHistory({ employeeWorkEmail: employeeEmail }));
-  }
-
-  if (employeeHistory.promotionsState === "idle") {
-    dispatch(fetchPromotions({
-      employeeEmail: employeeEmail,
-      statusArray: ["APPROVED"]
-    }));
-  }
-}, [employeeEmail, employeeHistory.employeeHistoryState, employeeHistory.promotionsState, dispatch]);
+        fetchTimelinePromotions();
+    }, [employeeEmail, dispatch]);
 
     if (employeeHistory.employeeHistoryState === "success" && employeeHistory.employeeHistory) {
         timelineData.push({
