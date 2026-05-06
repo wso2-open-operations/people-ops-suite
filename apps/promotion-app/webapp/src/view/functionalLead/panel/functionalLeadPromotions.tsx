@@ -58,6 +58,7 @@ import { EmployeeJoinedDetails, fetchEmployeeHistory } from "@slices/employeeSli
 import NumberFilter from "@src/component/common/stringFilter";
 import { Header, Filter } from "@src/component/common/stringFilter";
 import CustomizedTimeline from '@root/src/component/common/TimeLine';
+import DOMPurify from 'dompurify';
  
 const statusColorMap: Record<string, string> = {
   TIMEBASE: '#0c0c0cff',
@@ -763,7 +764,7 @@ const applyFilters = (data: PromotionRequest[]) => {
                                     <Typography
                                     variant="body1"
                                     dangerouslySetInnerHTML={{
-                                        __html: safeBase64Decode(selectedEmployee?.recommendations[0]?.recommendationStatement || "Recommendation Statement not available"),
+                                        __html:  DOMPurify.sanitize(safeBase64Decode(selectedEmployee?.recommendations[0]?.recommendationStatement || "Recommendation Statement not available")),
                                     }}
                                     />
                                 </Box>
