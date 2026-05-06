@@ -99,37 +99,29 @@ export default function NumberFilter(props: {
   }, []);
 
   useEffect(() => {
-    if (value) {
-      var idx = props.filters.findIndex((val) => val.key === props.header.id);
-
-      if (idx === -1) {
-        props.setFilters((prevState) => [
-          ...prevState,
-          {
-            key: props.header.id,
-            value: value,
-            operation: type,
-            type: "string",
-          },
-        ]);
-      } else {
-        var c_filters = _.cloneDeep(props.filters);
-
-        c_filters[idx] = {
-          key: props.header.id,
-          value: value,
-          operation: type,
-          type: "string",
-        };
-
-        props.setFilters(c_filters);
-      }
+    const noValueNeeded = type === "EMTY" || type === "DEMTY";
+    if (value || noValueNeeded) {
+      const newEntry: Filter = {
+        key: props.header.id,
+        value: noValueNeeded ? "" : value,
+        operation: type,
+        type: "string",
+      };
+      props.setFilters((prevState) => {
+        const idx = prevState.findIndex((f) => f.key === props.header.id);
+        if (idx === -1) {
+          return [...prevState, newEntry];
+        }
+        const updated = [...prevState];
+        updated[idx] = newEntry;
+        return updated;
+      });
     } else {
       props.setFilters((prevState) =>
         prevState.filter((filter) => filter.key !== props.header.id)
       );
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, type]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
