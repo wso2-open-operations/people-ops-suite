@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, LinearProgress, Typography, useTheme } from "@mui/material";
 
 import Wso2Logo from "@assets/images/wso2-logo.png";
@@ -32,7 +33,9 @@ const PreLoader = ({ fullScreen = true, ...props }: PreLoaderProps) => {
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        ...(fullScreen ? { minHeight: "100vh", width: "100%" } : { height: "100%", width: "100%", borderRadius: 1 }),
+        ...(fullScreen
+          ? { minHeight: "100vh", width: "100%" }
+          : { height: "100%", width: "100%", borderRadius: 1 }),
         gap: 2,
       }}
     >
@@ -42,9 +45,7 @@ const PreLoader = ({ fullScreen = true, ...props }: PreLoaderProps) => {
         style={{ height: 20, marginBottom: 5 }}
       />
 
-      {props.isLoading && (
-        <LinearProgress sx={{ width: "150px" }} />
-      )}
+      {props.isLoading && <LinearProgress sx={{ width: "150px" }} />}
 
       <Typography
         variant="body2"

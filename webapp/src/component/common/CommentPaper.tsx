@@ -13,10 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Paper, Typography } from "@mui/material";
-import DOMPurify from "dompurify";
 
 import React from "react";
+
+import { Paper, Typography } from "@mui/material";
+import DOMPurify from "dompurify";
 
 import { SANITIZE_CONFIG } from "@config/constant";
 
@@ -26,7 +27,6 @@ interface CommentPaperProps {
 }
 
 const CommentPaper: React.FC<CommentPaperProps> = ({ comment, refKey }) => {
-
   // HTML entity decoder using browser APIs
   const decodeHTMLEntities = (text: string) => {
     const textarea = document.createElement("textarea");

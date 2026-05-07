@@ -13,9 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import { useEffect, useMemo, useState } from "react";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
@@ -23,8 +23,7 @@ import Layout from "@layout/Layout";
 import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
-
-import { getActiveRoutesV2, routes } from "../route";
+import { getActiveRoutesV2, routes } from "@src/route";
 
 const AppHandler = () => {
   const dispatch = useAppDispatch();

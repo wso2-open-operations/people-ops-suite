@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Chip, alpha, useTheme } from "@mui/material";
 
 import { parUiText } from "@config/constant";
@@ -26,12 +27,12 @@ import { ParThreeSixtyReviewStatus } from "@root/src/slices/threeSixtyReviewSlic
 
 interface StatusChipProps {
   content:
-    | ParEmployeeStatus
-    | ParThreeSixtyReviewStatus
-    | ParLeadStatus
-    | ParF2fStatus
-    | string
-    | ParSpecialRating;
+  | ParEmployeeStatus
+  | ParThreeSixtyReviewStatus
+  | ParLeadStatus
+  | ParF2fStatus
+  | string
+  | ParSpecialRating;
   countDetails?: {
     total: number;
     completed: number;
@@ -60,8 +61,7 @@ const ParStatusChip = ({ content, countDetails, isDeadlinePassed }: StatusChipPr
     },
     draft: {
       color: alpha(theme.palette.info.main, theme.palette.mode === "light" ? 0.15 : 0.25),
-      textColor:
-        theme.palette.mode === "light" ? theme.palette.info.dark : theme.palette.info.main,
+      textColor: theme.palette.mode === "light" ? theme.palette.info.dark : theme.palette.info.main,
     },
     default: {
       color: alpha(

@@ -13,6 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import { useEffect, useState } from "react";
+
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
@@ -29,8 +32,6 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-
-import { useEffect, useState } from "react";
 
 import EmployeeChip from "@component/common/EmployeeChip";
 import ErrorComponent from "@component/ui/ErrorComponent";
@@ -52,9 +53,9 @@ import {
 } from "@slices/employeeHistorySlice/employeeHistory";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
 import { useAppDispatch, useAppSelector } from "@slices/store";
+import { tokens } from "@src/theme";
 import { RequestState } from "@utils/types";
 
-import { tokens } from "../../theme";
 import CommentPaper from "./CommentPaper";
 
 interface EmployeeHistoryCardProps {
@@ -224,7 +225,7 @@ const EmployeeHistoryCard = ({
                   />
                 </Grid>
                 {ratings.parSpecialRating === ParSpecialRating.NONE &&
-                ratings.parRating === ParSpecialRating.NONE ? (
+                  ratings.parRating === ParSpecialRating.NONE ? (
                   <></>
                 ) : (
                   <Grid size={{ xs: 12 }}>

@@ -13,9 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Chip, Grid, useTheme } from "@mui/material";
 
 import React from "react";
+
+import { Chip, Grid, useTheme } from "@mui/material";
 
 interface QuotaChipProps {
   isHeading: boolean;
@@ -37,7 +38,14 @@ const QuotaChip: React.FC<QuotaChipProps> = ({ isHeading, type, available, alloc
   const chipBg = theme.palette.mode === "dark" ? "#5CD1FF" : "#D9D9D9";
 
   return (
-    <Grid container alignItems="center" spacing={1} textAlign={"center"} display="flex" justifyContent="center">
+    <Grid
+      container
+      alignItems="center"
+      spacing={1}
+      textAlign={"center"}
+      display="flex"
+      justifyContent="center"
+    >
       <Grid>
         <Chip
           label={isHeading ? `${typographyText} ${chipLabel}` : chipLabel}

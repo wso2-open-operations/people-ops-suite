@@ -13,13 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Card, Divider, Step, StepLabel, Stepper, Typography } from "@mui/material";
+
+import { Box, Card, Step, StepLabel, Stepper, Typography } from "@mui/material";
 import dayjs from "dayjs";
 
 import { CustomModal } from "@component/common/CustomModal";
 import { StepperIcon } from "@component/common/StepperIcon";
 import { shortDateFormat } from "@config/constant";
-import { type ParCycle } from "@slices/parCycleSlice/parCycle";
+import type { ParCycle } from "@slices/parCycleSlice/parCycle";
 
 interface CycleDatesStepperProps {
   cycle: Partial<ParCycle>;

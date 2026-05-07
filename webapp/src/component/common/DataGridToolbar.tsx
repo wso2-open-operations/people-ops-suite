@@ -13,6 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import { useState } from "react";
+
 import DensityMediumIcon from "@mui/icons-material/DensityMedium";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -20,8 +23,6 @@ import SearchIcon from "@mui/icons-material/Search";
 import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import { Box, IconButton, InputAdornment, Menu, MenuItem, TextField, Tooltip } from "@mui/material";
 import { GridDensity, GridPreferencePanelsValue, useGridApiRef } from "@mui/x-data-grid";
-
-import { useState } from "react";
 
 type GridApiRef = ReturnType<typeof useGridApiRef>;
 
@@ -86,7 +87,11 @@ export const DataGridToolbar = ({
               <DensityMediumIcon sx={{ fontSize: "1.1rem" }} />
             </IconButton>
           </Tooltip>
-          <Menu anchorEl={densityAnchor} open={Boolean(densityAnchor)} onClose={() => setDensityAnchor(null)}>
+          <Menu
+            anchorEl={densityAnchor}
+            open={Boolean(densityAnchor)}
+            onClose={() => setDensityAnchor(null)}
+          >
             {DENSITY_OPTIONS.map(({ label, value }) => (
               <MenuItem key={value} onClick={() => handleDensitySelect(value)} dense>
                 {label}

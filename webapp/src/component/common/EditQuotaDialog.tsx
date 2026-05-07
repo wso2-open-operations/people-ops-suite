@@ -29,7 +29,7 @@ import {
 } from "@mui/material";
 
 import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { GroupedTeams } from "@utils/types";
+import type { GroupedTeams } from "@utils/types";
 
 import { EmailAutocomplete } from "./EmailAutoComplete";
 
@@ -74,7 +74,10 @@ const EditQuotaDialog: FC<EditQuotaDialogProps> = ({ open, onClose, onSave, grou
     onClose();
   };
 
-  const handleInputChange = (type: "5Slots" | "20Slots", e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    type: "5Slots" | "20Slots",
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const inputValue = e.target.value;
     const value = inputValue === "" ? 0 : parseInt(inputValue, 10);
     const validatedValue = isNaN(value) ? 0 : Math.max(value, 0);
@@ -82,7 +85,12 @@ const EditQuotaDialog: FC<EditQuotaDialogProps> = ({ open, onClose, onSave, grou
     if (type === "20Slots") {
       const capped20Slots = Math.min(validatedValue, group.default20Slots);
       const adjusted5Slots = Math.min(group.allocated5Slots, capped20Slots);
-      setGroup({ ...group, allocated20Slots: capped20Slots, allocated5Slots: adjusted5Slots, allocatedLeads: leadEmails ?? [] });
+      setGroup({
+        ...group,
+        allocated20Slots: capped20Slots,
+        allocated5Slots: adjusted5Slots,
+        allocatedLeads: leadEmails ?? [],
+      });
     } else {
       const capped5Slots = Math.min(validatedValue, group.default5Slots);
       if (capped5Slots > group.allocated20Slots) {
@@ -145,7 +153,9 @@ const EditQuotaDialog: FC<EditQuotaDialogProps> = ({ open, onClose, onSave, grou
                   label="Top 5% Allocated"
                   helperText={`Max: ${group.default5Slots} · Remaining: ${group.default5Slots - group.allocated5Slots}`}
                   inputProps={{ ...commonTextFieldProps.inputProps, max: group.default5Slots }}
-                  onChange={(e) => handleInputChange("5Slots", e as React.ChangeEvent<HTMLInputElement>)}
+                  onChange={(e) =>
+                    handleInputChange("5Slots", e as React.ChangeEvent<HTMLInputElement>)
+                  }
                   value={group.allocated5Slots ?? ""}
                 />
               </Tooltip>
@@ -164,7 +174,9 @@ const EditQuotaDialog: FC<EditQuotaDialogProps> = ({ open, onClose, onSave, grou
                   label="Top 20% Allocated"
                   helperText={`Max: ${group.default20Slots} · Remaining: ${group.default20Slots - group.allocated20Slots}`}
                   inputProps={{ ...commonTextFieldProps.inputProps, max: group.default20Slots }}
-                  onChange={(e) => handleInputChange("20Slots", e as React.ChangeEvent<HTMLInputElement>)}
+                  onChange={(e) =>
+                    handleInputChange("20Slots", e as React.ChangeEvent<HTMLInputElement>)
+                  }
                   value={group.allocated20Slots ?? ""}
                 />
               </Tooltip>
@@ -182,7 +194,7 @@ const EditQuotaDialog: FC<EditQuotaDialogProps> = ({ open, onClose, onSave, grou
             value={leadEmails || []}
             onChange={handleEmailChange}
             emailsToSkip={[]}
-            onBlur={() => {}}
+            onBlur={() => { }}
             error={leadError}
             helperText={leadError ? "At least one lead email is required." : ""}
           />

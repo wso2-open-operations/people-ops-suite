@@ -13,6 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import MailIcon from "@mui/icons-material/Mail";
@@ -40,9 +44,6 @@ import {
   useTheme,
 } from "@mui/material";
 import dayjs from "dayjs";
-import { useLocation, useNavigate } from "react-router-dom";
-
-import React, { useEffect, useMemo, useState } from "react";
 
 import { CustomModal } from "@component/common/CustomModal";
 import ParStatusChip from "@component/common/ParStatusChip";
@@ -227,13 +228,12 @@ export const ProvideFeedbackTab = () => {
     return reviewRequests;
   }, [reviewRequests, filterValue]);
 
-  const noDataMessage = `No ${
-    filterValue === FeedbackTypes.OFFERED
-      ? "voluntary"
-      : filterValue === FeedbackTypes.REQUESTED
-        ? "requested"
-        : ""
-  } feedback available`;
+  const noDataMessage = `No ${filterValue === FeedbackTypes.OFFERED
+    ? "voluntary"
+    : filterValue === FeedbackTypes.REQUESTED
+      ? "requested"
+      : ""
+    } feedback available`;
 
   return (
     <React.Fragment>
@@ -320,10 +320,7 @@ export const ProvideFeedbackTab = () => {
           <NoDataView text={noDataMessage} />
         )}
         {reviewSliceState === RequestState.SUCCEEDED && filteredRequests.length > 0 && (
-          <TableContainer
-            component="div"
-            sx={{ background: "transparent", height: "100%", pt: 1 }}
-          >
+          <TableContainer component="div" sx={{ background: "transparent", height: "100%", pt: 1 }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -421,8 +418,8 @@ export const ProvideFeedbackTab = () => {
                       </TableCell>
                       <TableCell sx={{ py: 1 }}>
                         {!isEmployeeOrLeadRequested &&
-                        request.reviewStatus === ParThreeSixtyReviewStatus.PENDING &&
-                        isDeadlinePassed ? (
+                          request.reviewStatus === ParThreeSixtyReviewStatus.PENDING &&
+                          isDeadlinePassed ? (
                           <Chip
                             size="small"
                             label="Abandoned"
