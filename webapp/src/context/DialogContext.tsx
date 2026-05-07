@@ -14,8 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import * as React from "react";
-import { useContext, useState } from "react";
+import React, { useContext, useState } from "react";
 
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
@@ -96,7 +95,9 @@ const typeButtonIconMap: Record<ConfirmationType, React.ReactElement> = {
   [ConfirmationType.upload]: <UploadIcon />,
 };
 
-const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProviderProps> = (props) => {
+const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProviderProps> = (
+  props,
+) => {
   const { setShow, show, onHide } = useDialogShow();
   const [comment, setComment] = React.useState("");
 
@@ -112,7 +113,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
     title: "",
     message: "",
     type: ConfirmationType.accept,
-    action: () => {},
+    action: () => { },
   });
 
   const handleShow = (
@@ -138,7 +139,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
   };
 
   const handleCancel = () => {
-    setContent({ title: "", message: "", type: ConfirmationType.accept, action: () => {} });
+    setContent({ title: "", message: "", type: ConfirmationType.accept, action: () => { } });
     setComment("");
     onHide();
   };
@@ -208,7 +209,9 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
 const useConfirmationModalContext = (): ConfirmationDialogContextType => {
   const context = useContext(ConfirmationModalContext);
   if (!context) {
-    throw new Error("useConfirmationModalContext must be used within a ConfirmationModalContextProvider");
+    throw new Error(
+      "useConfirmationModalContext must be used within a ConfirmationModalContextProvider",
+    );
   }
   return context;
 };

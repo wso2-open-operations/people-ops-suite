@@ -70,8 +70,15 @@ const AppAuthProvider = ({ children }: { children: React.ReactNode }) => {
     activate();
   };
 
-  const { signIn, signOut, getDecodedIDToken, getBasicUserInfo, getIDToken, trySignInSilently, state } =
-    useAuthContext();
+  const {
+    signIn,
+    signOut,
+    getDecodedIDToken,
+    getBasicUserInfo,
+    getIDToken,
+    trySignInSilently,
+    state,
+  } = useAuthContext();
 
   useEffect(() => {
     if (!localStorage.getItem(redirectUrl)) {
@@ -91,7 +98,7 @@ const AppAuthProvider = ({ children }: { children: React.ReactNode }) => {
         userInfo,
         accessToken: idToken,
         decodedIdToken,
-      })
+      }),
     );
 
     new ApiService(
@@ -100,7 +107,7 @@ const AppAuthProvider = ({ children }: { children: React.ReactNode }) => {
         const freshIdToken = await getIDToken();
         return { idToken: freshIdToken };
       },
-      dispatch
+      dispatch,
     );
 
     await dispatch(getUserInfo());
@@ -125,7 +132,8 @@ const AppAuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           const silentSignInSuccess = await trySignInSilently();
 
-          if (mounted) setAppState(silentSignInSuccess ? AppState.Authenticating : AppState.Unauthenticated);
+          if (mounted)
+            setAppState(silentSignInSuccess ? AppState.Authenticating : AppState.Unauthenticated);
         }
       } catch (err) {
         if (mounted) {
@@ -180,7 +188,11 @@ const AppAuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <>
-      <SessionWarningDialog open={sessionWarningOpen} handleContinue={handleContinue} appSignOut={appSignOut} />
+      <SessionWarningDialog
+        open={sessionWarningOpen}
+        handleContinue={handleContinue}
+        appSignOut={appSignOut}
+      />
       <SecureApp fallback={<PreLoader isLoading message="We are getting things ready ..." />}>
         {renderContent()}
       </SecureApp>

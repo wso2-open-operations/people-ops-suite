@@ -13,6 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import { useEffect } from "react";
+
 import InfoIcon from "@mui/icons-material/Info";
 import LoadingButton from "@mui/lab/LoadingButton";
 import {
@@ -33,8 +36,6 @@ import dayjs from "dayjs";
 import { useFormik } from "formik";
 import { isEqual } from "lodash";
 import * as yup from "yup";
-
-import { useEffect } from "react";
 
 import { SnackMessage, tooltipVisibilityDelay, uiMessages } from "@config/constant";
 import {
@@ -316,7 +317,9 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Grid size={{ xs: 5 }} display={"flex"} alignItems={"center"} my={1}>
-              <Typography color="text.primary" mr={13}>F2F Date:</Typography>
+              <Typography color="text.primary" mr={13}>
+                F2F Date:
+              </Typography>
             </Grid>
 
             <Grid size={{ xs: 7 }} display={"flex"} alignItems={"center"} my={1}>

@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import LoadingButton from "@mui/lab/LoadingButton";
 import { Box, Button, Divider, Grid, Typography } from "@mui/material";
 import { useFormik } from "formik";
@@ -20,8 +21,8 @@ import * as yup from "yup";
 
 import { selectEmployeeInfo, selectUserEmail } from "@slices/authSlice/auth";
 import { useAppDispatch, useAppSelector } from "@slices/store";
+import { fetchReviewers, postReviewers } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 
-import { fetchReviewers, postReviewers } from "../../slices/threeSixtyReviewSlice/threeSixtyReview";
 import { EmailAutocomplete } from "../common/EmailAutoComplete";
 
 interface ReviewRequestModalProps {

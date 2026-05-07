@@ -13,18 +13,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import { Suspense, useCallback, useEffect, useState } from "react";
+
 import { Box, useTheme } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
-
 import PreLoader from "@component/common/PreLoader";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
 import ConfirmationModalContextProvider from "@context/DialogContext";
 import { selectRoles } from "@slices/authSlice/auth";
-import { type RootState, useAppSelector } from "@slices/store";
+import { useAppSelector, type RootState } from "@slices/store";
 
 import Header from "./header";
 import Sidebar from "./sidebar";
@@ -100,7 +101,11 @@ export default function Layout() {
               minWidth: 0,
             }}
           >
-            <Suspense fallback={<PreLoader isLoading fullScreen={false} message="Grabbing the latest data..." />}>
+            <Suspense
+              fallback={
+                <PreLoader isLoading fullScreen={false} message="Grabbing the latest data..." />
+              }
+            >
               <Outlet />
             </Suspense>
           </Box>

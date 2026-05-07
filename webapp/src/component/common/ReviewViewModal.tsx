@@ -13,13 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import { useEffect } from "react";
+
 import { Avatar, Box, Button, Chip, Grid, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
-import { useEffect } from "react";
-
 import { LoadingEffect } from "@component/ui/Loading";
+import { uiMessages } from "@root/src/config/constant";
 import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
 import { useAppDispatch, useAppSelector } from "@slices/store";
@@ -33,7 +35,6 @@ import {
 import { RequestState } from "@utils/types";
 
 import CommentPaper from "./CommentPaper";
-import { uiMessages } from "@root/src/config/constant";
 
 dayjs.extend(utc);
 
@@ -77,9 +78,7 @@ export const ReviewViewModal = ({
     <Box sx={{ p: 3 }}>
       <Box sx={{ mb: 3, display: "flex", flexDirection: "column", alignItems: "center" }}>
         <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <Typography variant="h5">
-            360° Feedback
-          </Typography>
+          <Typography variant="h5">360° Feedback</Typography>
           {(threeSixtyReviewStatus === RequestState.SUCCEEDED || reviewObject) &&
             threeSixtyReviewContent.reviewStatus === ParThreeSixtyReviewStatus.REJECTED && (
               <Chip

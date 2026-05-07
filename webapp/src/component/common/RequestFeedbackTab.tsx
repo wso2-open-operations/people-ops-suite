@@ -13,6 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import React, { useEffect, useState } from "react";
+
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import AddIcon from "@mui/icons-material/Add";
 import {
   Alert,
@@ -28,10 +33,6 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-
-import React, { useEffect, useState } from "react";
 
 import { CustomModal } from "@component/common/CustomModal";
 import { ReviewRequestModal } from "@component/common/ReviewRequestModal";
@@ -96,11 +97,11 @@ export const RequestFeedbackTab = () => {
       ? "Lead has shared the PAR"
       : isDeadlinePassed
         ? `The deadline for requesting 360° feedback has passed on ${dayjs
-            .utc(currentCycle.parThreeSixtyRatingDeadline)
-            .format("D MMM 'YY")}`
+          .utc(currentCycle.parThreeSixtyRatingDeadline)
+          .format("D MMM 'YY")}`
         : `Please request feedback before the deadline: ${dayjs
-            .utc(currentCycle.parThreeSixtyRatingDeadline)
-            .format("D MMM 'YY")}`;
+          .utc(currentCycle.parThreeSixtyRatingDeadline)
+          .format("D MMM 'YY")}`;
 
   return (
     <React.Fragment>
@@ -117,10 +118,7 @@ export const RequestFeedbackTab = () => {
           <NoDataView text=" No reviewers available" />
         )}
         {reviewSliceState === RequestState.SUCCEEDED && reviewers.length > 0 && (
-          <TableContainer
-            component="div"
-            sx={{ background: "transparent", height: "100%", pt: 1 }}
-          >
+          <TableContainer component="div" sx={{ background: "transparent", height: "100%", pt: 1 }}>
             <Table size="small">
               <TableHead>
                 <TableRow>

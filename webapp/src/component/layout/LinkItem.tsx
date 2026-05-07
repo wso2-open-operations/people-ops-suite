@@ -13,13 +13,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Typography, useTheme } from "@mui/material";
-import { ChevronDown as ChevronDownIcon } from "lucide-react";
-import { ChevronUp as ChevronUpIcon } from "lucide-react";
 
 import React from "react";
 
-import { RouteDetail } from "../../types/types";
+import { Box, Typography, useTheme } from "@mui/material";
+import { 
+  ChevronDown as ChevronDownIcon, 
+  ChevronUp as ChevronUpIcon 
+} from "lucide-react";
+
+import type { RouteDetail } from "@/types/types";
 
 interface ListItemLinkProps {
   icon?: React.ReactElement;

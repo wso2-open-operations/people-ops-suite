@@ -13,6 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import React, { useEffect, useMemo, useState } from "react";
+
 import SearchIcon from "@mui/icons-material/Search";
 import {
   Alert,
@@ -34,8 +37,6 @@ import {
   useTheme,
 } from "@mui/material";
 
-import React, { useEffect, useMemo, useState } from "react";
-
 import NoDataView from "@component/common/NoDataView";
 import { LoadingEffect } from "@component/ui/Loading";
 import { uiMessages } from "@config/constant";
@@ -45,8 +46,8 @@ import {
   fetchQuotaGroupRatings,
   selectQuotaGroupsStatus,
   selectSpecialRatingAllocation,
+  type SpecialRatingAllocation,
 } from "@slices/specialQuotaSlice/specialQuota";
-import { SpecialRatingAllocation } from "@slices/specialQuotaSlice/specialQuota";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { RequestState } from "@utils/types";
 
@@ -98,15 +99,9 @@ const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationVie
       // Create combined search text for more comprehensive matching
       const combinedText =
         `${item.parBusinessUnit} ${item.parDepartment} ${item.parTeam}`.toLowerCase();
-      const businessUnitMatch = item.parBusinessUnit
-        ?.toLowerCase()
-        .includes(searchTerm);
-      const departmentMatch = item.parDepartment
-        ?.toLowerCase()
-        .includes(searchTerm);
-      const teamMatch = item.parTeam
-        ?.toLowerCase()
-        .includes(searchTerm);
+      const businessUnitMatch = item.parBusinessUnit?.toLowerCase().includes(searchTerm);
+      const departmentMatch = item.parDepartment?.toLowerCase().includes(searchTerm);
+      const teamMatch = item.parTeam?.toLowerCase().includes(searchTerm);
       const combinedMatch = combinedText.includes(searchTerm);
 
       // Highlight if any part matches
@@ -256,7 +251,11 @@ const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationVie
                   </Box>
 
                   {/* Department Table */}
-                  <TableContainer component={Paper} elevation={0} sx={{ background: "transparent" }}>
+                  <TableContainer
+                    component={Paper}
+                    elevation={0}
+                    sx={{ background: "transparent" }}
+                  >
                     {group.top5Quota === 1 && group.top20Quota === 0 && (
                       <Alert severity="warning">
                         The total allocation for the top 5% and top 20% categories is 1 due to the
@@ -280,17 +279,32 @@ const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationVie
                             }}
                           >
                             <TableCell sx={{ width: "30%", wordWrap: "break-word" }}>
-                              <Typography variant="body2" color="text.primary" noWrap title={dept.parBusinessUnit}>
+                              <Typography
+                                variant="body2"
+                                color="text.primary"
+                                noWrap
+                                title={dept.parBusinessUnit}
+                              >
                                 {highlightText(dept.parBusinessUnit, searchQuery.trim())}
                               </Typography>
                             </TableCell>
                             <TableCell sx={{ width: "35%", wordWrap: "break-word" }}>
-                              <Typography variant="body2" color="text.primary" noWrap title={dept.parDepartment}>
+                              <Typography
+                                variant="body2"
+                                color="text.primary"
+                                noWrap
+                                title={dept.parDepartment}
+                              >
                                 {highlightText(dept.parDepartment, searchQuery.trim())}
                               </Typography>
                             </TableCell>
                             <TableCell sx={{ width: "35%", wordWrap: "break-word" }}>
-                              <Typography variant="body2" color="text.primary" noWrap title={dept.parTeam}>
+                              <Typography
+                                variant="body2"
+                                color="text.primary"
+                                noWrap
+                                title={dept.parTeam}
+                              >
                                 {highlightText(dept.parTeam, searchQuery.trim())}
                               </Typography>
                             </TableCell>
