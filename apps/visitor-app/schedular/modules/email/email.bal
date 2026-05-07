@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -49,7 +49,7 @@ public function sendForceCompleteEmail(CompletedVisitInfo visit) returns error? 
 # + visit - Details of the long-running visit
 # + return - An error if sending fails
 public function sendExpiredVisitEmail(CompletedVisitInfo visit) returns error? {
-    string|error template = bindKeyValues(
+    string template = check bindKeyValues(
             expiredVisitTemplate,
             {
                 "VISIT_ID": visit.id.toString(),
@@ -62,10 +62,6 @@ public function sendExpiredVisitEmail(CompletedVisitInfo visit) returns error? {
                 "PURPOSE_OF_VISIT": visit.purposeOfVisit ?: "N/A",
                 "YEAR": time:utcToCivil(time:utcNow()).year.toString()
             });
-    if template is error {
-        log:printError("Failed to bind expired-visit email template", template, id = visit.id);
-        return template;
-    }
     return sendEmail(EXPIRED_VISIT_SUBJECT, template, visit.id);
 }
 

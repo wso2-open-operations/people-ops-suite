@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -85,6 +85,8 @@ public function main() returns error? {
                                                                  });
                 if emailError is error {
                     log:printError("Failed to send force-complete email", emailError, id = visit.id);
+                } else {
+                    log:printInfo("Force-complete email sent successfully", id = visit.id);
                 }
             }
         } else {
@@ -137,10 +139,12 @@ public function main() returns error? {
                                                                 });
                 if emailError is error {
                     log:printError("Failed to send expired-visit email", emailError, id = visit.id);
+                } else {
+                    log:printInfo("Expired-visit email sent successfully", id = visit.id);
                 }
             }
         }
     }
 
-    log:printInfo("Scheduler run completed");
+    log:printInfo("Scheduler run completed : " + today);
 }
