@@ -14,5 +14,5 @@
 // specific language governing permissions and limitations
 // under the License.
 
-public const FORCE_COMPLETE_SUBJECT = "Visit Auto-Completed by Scheduler - Immediate Action Required";
+public const FORCE_COMPLETE_SUBJECT = "Visit Auto-Completed by Scheduler - Immediate Attention Required";
 public const EXPIRED_VISIT_SUBJECT = "Visit Active for Over One Week - Immediate Attention Required";

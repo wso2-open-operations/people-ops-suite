@@ -67,8 +67,8 @@ public final string forceCompleteTemplate = string `
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tbody>
                         <tr>
-                          <td style="background-color:#fff3cd; border-left:4px solid #ff7300; padding:14px 16px; border-radius:4px;">
-                            <p style="margin:0; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#856404;">
+                          <td style="background-color:#fde8e8; border-left:4px solid #d9534f; padding:14px 16px; border-radius:4px;">
+                            <p style="margin:0; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#721c24;">
                               <strong>Action Taken by Scheduler</strong> &mdash;
                               This visit was automatically completed because the scheduled departure time passed
                               without the reception marking it as complete.
@@ -152,7 +152,7 @@ public final string forceCompleteTemplate = string `
 `;
 
 # Email template for visits that have been active for more than one week
-# with no departure recorded — requires admin attention.
+# with no departure recorded — auto-completed by the scheduler.
 # Placeholders: VISIT_ID, VISITOR_NAME, COMPANY, VISIT_DATE,
 # TIME_OF_ENTRY, WHOM_THEY_MEET, PASS_NUMBER,
 # PURPOSE_OF_VISIT, YEAR
@@ -206,9 +206,9 @@ public final string expiredVisitTemplate = string `
                         <tr>
                           <td style="background-color:#fde8e8; border-left:4px solid #d9534f; padding:14px 16px; border-radius:4px;">
                             <p style="margin:0; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#721c24;">
-                              <strong>Attention Required</strong> &mdash;
-                              This visit has been active for <strong>more than one week</strong> with no departure recorded.
-                              The reception did not mark this visit as complete. Immediate action may be required.
+                              <strong>Action Taken by Scheduler</strong> &mdash;
+                              This visit had no scheduled departure time and has been active for <strong>more than one week</strong>.
+                              It was automatically completed by the scheduler because the reception did not mark it as complete.
                             </p>
                           </td>
                         </tr>
@@ -216,7 +216,7 @@ public final string expiredVisitTemplate = string `
                     </table>
 
                     <p style="font-family:'Roboto', Helvetica, sans-serif; font-size:16px; color:#465868; margin-top:24px;">
-                      Please review and manually complete or investigate the following visit.
+                      The following visit has been <strong>force-completed</strong> by the scheduler. Please review the details below.
                     </p>
 
                     <!-- Visit Details Table -->
