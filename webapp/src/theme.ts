@@ -13,8 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-// MUI Import
-import { type PaletteMode } from "@mui/material";
+
+import type { PaletteMode } from "@mui/material";
 
 import designTokens from "./styles/design-tokens.json";
 
@@ -657,7 +657,9 @@ export const themeSettings = (mode: PaletteMode) => {
           },
           row: {
             backgroundColor: "transparent",
-            "&:hover": { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)" },
+            "&:hover": {
+              backgroundColor: mode === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+            },
           },
           virtualScroller: { backgroundColor: "transparent" },
           footerContainer: { backgroundColor: "transparent", borderTop: "none" },
