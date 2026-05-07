@@ -4,10 +4,12 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { HttpStatusCode } from "axios";
 
-import { SnackMessage, sliceErrorMessages } from "@config/constant";
+import { AppConfig, ServiceBaseUrl } from "@config/config";
+import { SnackMessage, base64Regex, sliceErrorMessages } from "@config/constant";
 import { RequestState } from "@root/src/utils/types";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { ParCycleStatus, ParCycleSummary } from "@slices/parCycleSlice/parCycle";
@@ -15,9 +17,6 @@ import { RootState } from "@slices/store";
 import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 import { ApiService } from "@utils/apiService";
 import { getErrorMessage } from "@utils/utils";
-
-import { AppConfig, ServiceBaseUrl } from "../../config/config";
-import { base64Regex } from "../../config/constant";
 
 interface EmployeeState {
   ratingStatus: RequestState;

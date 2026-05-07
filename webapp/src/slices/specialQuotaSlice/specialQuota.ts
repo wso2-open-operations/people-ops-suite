@@ -4,9 +4,11 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios, { HttpStatusCode } from "axios";
 
+import { AppConfig } from "@config/config";
 import { SnackMessage } from "@config/constant";
 import { sliceErrorMessages } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
@@ -14,8 +16,6 @@ import { RootState } from "@slices/store";
 import { ApiService } from "@utils/apiService";
 import { RequestState } from "@utils/types";
 import { getErrorMessage } from "@utils/utils";
-
-import { AppConfig } from "../../config/config";
 
 interface QuotaState {
   status: RequestState;

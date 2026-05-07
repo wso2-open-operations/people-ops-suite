@@ -4,6 +4,7 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { HttpStatusCode } from "axios";
 
@@ -254,7 +255,7 @@ const metaSlice = createSlice({
       })
       .addCase(fetchEntityEmployees.fulfilled, (state, action) => {
         state.subordinatesArray = (action.payload as Employee[]).sort((a, b) =>
-          a.workEmail.toLowerCase().localeCompare(b.workEmail.toLowerCase())
+          a.workEmail.toLowerCase().localeCompare(b.workEmail.toLowerCase()),
         );
         state.subordinatesState = RequestState.SUCCEEDED;
       })

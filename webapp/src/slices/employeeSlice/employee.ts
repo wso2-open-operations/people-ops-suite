@@ -4,20 +4,19 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { HttpStatusCode } from "axios";
 
-import { SnackMessage, sliceErrorMessages } from "@config/constant";
+import { AppConfig } from "@config/config";
+import { SnackMessage, base64Regex, sliceErrorMessages } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { ParCycleSummary } from "@slices/parCycleSlice/parCycle";
-import { fetchParCycleById } from "@slices/parCycleSlice/parCycle";
+import { ParCycleSummary, fetchParCycleById } from "@slices/parCycleSlice/parCycle";
 import { RootState } from "@slices/store";
 import { ApiService } from "@utils/apiService";
 import { ParCycleStatus, RequestState } from "@utils/types";
 import { getErrorMessage } from "@utils/utils";
 
-import { AppConfig } from "../../config/config";
-import { base64Regex } from "../../config/constant";
 import {
   ParEmployeeStatus,
   ParF2fStatus,
@@ -196,7 +195,7 @@ export const fetchParRatingOfEmployee = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         (error instanceof Error ? error.message : String(error)) ||
-          sliceErrorMessages.employeeSlice.getEmployeeRating,
+        sliceErrorMessages.employeeSlice.getEmployeeRating,
       );
     }
   },
