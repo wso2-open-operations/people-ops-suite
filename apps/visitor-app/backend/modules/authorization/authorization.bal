@@ -83,7 +83,7 @@ public isolated service class JwtInterceptor {
                 };
             }
             CustomJwtPayload clientAsUserInfo = {
-                email: userInfo.client_id,
+                email: "Client ID: " + userInfo.client_id,
                 groups: [authorizedRoles.ADMIN_ROLE] // Assuming client credentials should have admin privileges, adjust as necessary
             };
             ctx.set(HEADER_USER_INFO, clientAsUserInfo);
