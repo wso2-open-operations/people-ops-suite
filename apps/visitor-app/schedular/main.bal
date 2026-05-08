@@ -13,8 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import schedular.email;
-import schedular.visitor;
+import scheduler.email;
+import scheduler.visitor;
 
 import ballerina/log;
 import ballerina/time;

@@ -1,6 +1,6 @@
 [package]
 org = "wso2"
-name = "schedular"
+name = "scheduler"
 version = "1.0.0"
 distribution = "2201.12.7"
 
