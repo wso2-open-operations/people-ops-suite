@@ -13,18 +13,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+
 import { Box, Chip, IconButton, Link, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams, useGridApiRef } from "@mui/x-data-grid";
 
-import { DataGridToolbar } from "@component/common/DataGridToolbar";
-import { LoadingEffect } from "@component/ui/Loading";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+
 import { uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+import { getCombinedTeams } from "@utils/utils";
+
 import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 import { useAppSelector } from "@slices/store";
 import { selectAllTeams, selectTeamStatus } from "@slices/teamSlice/team";
-import { RequestState } from "@utils/types";
-import { getCombinedTeams } from "@utils/utils";
+
+import { DataGridToolbar } from "@component/common/DataGridToolbar";
+import { LoadingEffect } from "@component/ui/Loading";
 
 interface CompletionProps {
   parCycle: Partial<ParCycle>;
@@ -87,13 +91,7 @@ export const Completion = ({
 
   return (
     <Box>
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        mt={1}
-        mb={1}
-      >
+      <Box display="flex" alignItems="center" justifyContent="space-between" mt={1} mb={1}>
         <Box>
           <IconButton
             aria-label="back"
@@ -116,9 +114,7 @@ export const Completion = ({
           </Typography>
         </Box>
 
-        {teamState === RequestState.SUCCEEDED && (
-          <DataGridToolbar apiRef={apiRef} />
-        )}
+        {teamState === RequestState.SUCCEEDED && <DataGridToolbar apiRef={apiRef} />}
       </Box>
 
       {teamState === RequestState.LOADING && (

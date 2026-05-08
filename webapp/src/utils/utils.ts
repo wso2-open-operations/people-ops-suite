@@ -13,11 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { AxiosError } from "axios";
 
+import { ParSpecialRating } from "@slices/employeeHistorySlice/employeeHistory";
 import { AllTeamsSummary, Team } from "@slices/teamSlice/team";
-
-import { ParSpecialRating } from "../slices/employeeHistorySlice/employeeHistory";
 
 export const isIncludedRole = (a: string[], b: string[]): boolean => {
   return [...getCrossItems(a, b), ...getCrossItems(b, a)].length > 0;

@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import HistoryIcon from "@mui/icons-material/History";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import {
@@ -32,6 +33,8 @@ import dayjs from "dayjs";
 
 import { useEffect, useState } from "react";
 
+import { FormContainer } from "@component/common/FormContainer";
+import Title from "@component/common/Title";
 import { LoadingEffect } from "@component/ui/Loading";
 import { shortDateFormat, uiMessages } from "@config/constant";
 import {
@@ -43,9 +46,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { RequestState } from "@utils/types";
 
-import { FormContainer } from "../../component/common/FormContainer";
-import Title from "../../component/common/Title";
-import { OrgSummary } from "..//adminPortal/components/OrgSummary";
+import { OrgSummary } from "./components/OrgSummary";
 
 export default function AdminHistoryView() {
   const dispatch = useAppDispatch();

@@ -4,16 +4,18 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { AppConfig } from "../../config/config";
-import { ApiService } from "../../utils/apiService";
-import { RequestState } from "../../utils/types";
+import { AppConfig } from "@config/config";
+
+import { ApiService } from "@utils/apiService";
+import { RequestState } from "@utils/types";
 
 export interface UserInfoInterface {
   employeeId: string;
-  employeeName: string; // Backend sends "employeeName" (combined)
-  firstName?: string; // Optional if backend doesn't send split names
+  employeeName: string;
+  firstName?: string;
   lastName?: string;
   workEmail: string;
   employeeThumbnail: string | null;

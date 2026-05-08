@@ -4,19 +4,21 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { AxiosError, HttpStatusCode } from "axios";
 
+import { AppConfig } from "@config/config";
 import { SnackMessage, sliceErrorMessages } from "@config/constant";
+
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { ParRating } from "@slices/employeeHistorySlice/employeeHistory";
 import { RootState } from "@slices/store";
 import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+
 import { ApiService } from "@utils/apiService";
 import { RequestState } from "@utils/types";
 import { calculateAllTeamsSummary, getErrorMessage } from "@utils/utils";
-
-import { AppConfig } from "../../config/config";
 
 interface teamState {
   teams: Team[];

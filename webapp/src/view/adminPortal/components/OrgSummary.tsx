@@ -16,18 +16,10 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
-import { useLocation } from "react-router-dom";
 import dayjs from "dayjs";
+import { useLocation } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import DateRangeIcon from "@mui/icons-material/DateRange";
-import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
-import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import RateReviewIcon from "@mui/icons-material/RateReview";
-import SettingsIcon from "@mui/icons-material/Settings";
-import UpdateIcon from "@mui/icons-material/Update";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Avatar,
   Box,
@@ -46,11 +38,19 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { DataGrid, GridRenderCellParams, useGridApiRef } from "@mui/x-data-grid";
 
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import DateRangeIcon from "@mui/icons-material/DateRange";
+import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import RateReviewIcon from "@mui/icons-material/RateReview";
+import SettingsIcon from "@mui/icons-material/Settings";
+import UpdateIcon from "@mui/icons-material/Update";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+
 import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
 import { RequestState } from "@utils/types";
 import { calculateAllTeamsSummary } from "@utils/utils";
 
-import { useAppDispatch, useAppSelector } from "@slices/store";
 import { selectUserEmail } from "@slices/authSlice/auth";
 import { ParLeadStatus, fetchParRatingSummary } from "@slices/employeeHistorySlice/employeeHistory";
 import {
@@ -62,7 +62,14 @@ import {
   selectParticipantsStatus,
 } from "@slices/metaSlice/meta";
 import { closeParCycle, fetchOpenParCycle, selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import { Team, fetchTeams, selectAllTeams, selectAllTeamsSummary, selectTeamStatus } from "@slices/teamSlice/team";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import {
+  Team,
+  fetchTeams,
+  selectAllTeams,
+  selectAllTeamsSummary,
+  selectTeamStatus,
+} from "@slices/teamSlice/team";
 import {
   ParThreeSixtyReviewStatus,
   RejectedReview,
@@ -80,6 +87,7 @@ import { DataGridToolbar } from "@component/common/DataGridToolbar";
 import NoDataView from "@component/common/NoDataView";
 import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
 import { LoadingEffect } from "@component/ui/Loading";
+
 import { BulkReminderModal } from "@view/adminPortal/components/BulkReminderModal";
 import { Completion } from "@view/adminPortal/components/Completion";
 import { Report } from "@view/adminPortal/components/Report";
@@ -103,7 +111,11 @@ interface FormattedTeam extends Team {
   f2fCompletion: string;
 }
 
-export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHistoryViewOn }: DashboardProps) => {
+export const OrgSummary = ({
+  closeOrgSummaryView,
+  isAdminAuditViewOn,
+  isAdminHistoryViewOn,
+}: DashboardProps) => {
   const theme = useTheme();
   const location = useLocation();
   const dispatch = useAppDispatch();
@@ -249,7 +261,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
   useEffect(() => {
     if (selectedTab === 0) {
       const filteredTeams = formattedTeams.filter((team) =>
-        Object.values(team).some((value) => String(value).toLowerCase().includes(debouncedTableSearch.toLowerCase()))
+        Object.values(team).some((value) =>
+          String(value).toLowerCase().includes(debouncedTableSearch.toLowerCase()),
+        ),
       );
       setFilteredSummary(calculateAllTeamsSummary(filteredTeams));
     }
@@ -264,7 +278,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
     if (currentCycle.parCycleId) {
       apiController.current = new AbortController();
       if (userEmail) {
-        dispatch(fetchTeams({ parCycleId: currentCycle.parCycleId, signal: apiController.current.signal }));
+        dispatch(
+          fetchTeams({ parCycleId: currentCycle.parCycleId, signal: apiController.current.signal }),
+        );
       }
     }
     if (dayjs().diff(currentCycle.parEmployeeDeadline, "day", true) >= 0) setActiveStep(1);
@@ -304,7 +320,11 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
         reviewerEmail: selectedReview.reviewerEmail,
       };
       const resultAction = await dispatch(
-        postReviews({ employeeId: selectedReview.employeeEmail, parCycleId: currentCycle.parCycleId, values })
+        postReviews({
+          employeeId: selectedReview.employeeEmail,
+          parCycleId: currentCycle.parCycleId,
+          values,
+        }),
       );
       if (postReviews.fulfilled.match(resultAction)) {
         fetchReviews();
@@ -363,7 +383,12 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       disableExport: true,
       renderCell: (params: GridRenderCellParams<FormattedTeam>) => (
         <Box display="flex" alignItems="center" height="100%">
-          <Tooltip arrow title="Open Team" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
+          <Tooltip
+            arrow
+            title="Open Team"
+            enterDelay={tooltipVisibilityDelay}
+            enterNextDelay={tooltipVisibilityDelay}
+          >
             <IconButton
               size="small"
               onClick={() => handleTeamsTableClick(params.row.id)}
@@ -424,7 +449,11 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
         <Box display="flex" alignItems="center" height="100%" gap={0.5}>
           <Tooltip
             arrow
-            title={params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? "View" : "Review"}
+            title={
+              params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn
+                ? "View"
+                : "Review"
+            }
             enterDelay={tooltipVisibilityDelay}
             enterNextDelay={tooltipVisibilityDelay}
           >
@@ -479,10 +508,14 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
           <Box display="flex" alignItems="center" sx={{ overflow: "hidden" }}>
             <Avatar
               src={employeeMap[params.row?.employeeEmail]?.employeeThumbnail || ""}
-              alt={employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail}
+              alt={
+                employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail
+              }
               sx={{ mr: 1, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem", flexShrink: 0 }}
             >
-              {(employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail)?.charAt(0)}
+              {(
+                employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail
+              )?.charAt(0)}
             </Avatar>
             <Typography variant="body2" fontWeight={500} noWrap>
               {employeeMap[params.row?.employeeEmail]?.employeeName ?? params.row?.employeeEmail}
@@ -500,7 +533,11 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
           size="small"
           color={params.row.isOfferedFeedback === "TRUE" ? "info" : "warning"}
           variant="outlined"
-          label={params.row.isOfferedFeedback === "TRUE" ? "Was offered a review by" : "Requested a review from"}
+          label={
+            params.row.isOfferedFeedback === "TRUE"
+              ? "Was offered a review by"
+              : "Requested a review from"
+          }
         />
       ),
     },
@@ -515,7 +552,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
               src={employeeMap[params.row?.reviewerEmail]?.employeeThumbnail || ""}
               sx={{ mr: 1, height: "1.6rem", width: "1.6rem", fontSize: "0.65rem", flexShrink: 0 }}
             >
-              {(employeeMap[params.row?.reviewerEmail]?.employeeName ?? params.row?.reviewerEmail)?.charAt(0)}
+              {(
+                employeeMap[params.row?.reviewerEmail]?.employeeName ?? params.row?.reviewerEmail
+              )?.charAt(0)}
             </Avatar>
             <Typography variant="body2" fontWeight={500} noWrap>
               {employeeMap[params.row?.reviewerEmail]?.employeeName ?? params.row?.reviewerEmail}
@@ -538,7 +577,12 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
         >
           <IconButton
             size="small"
-            sx={{ borderRadius: "4px", padding: "4px", color: "primary.main", "&:hover": { borderRadius: "4px", bgcolor: "primary.main", color: "white" } }}
+            sx={{
+              borderRadius: "4px",
+              padding: "4px",
+              color: "primary.main",
+              "&:hover": { borderRadius: "4px", bgcolor: "primary.main", color: "white" },
+            }}
             onClick={() => handleClickRestoreReview(params.row)}
           >
             <UpdateIcon fontSize="small" />
@@ -551,7 +595,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
   return (
     <Stack sx={{ height: "100%" }}>
       {!isParCycleSettingsOpen && (
-        <Box >
+        <Box>
           {selectedTeamId === null &&
             !reviewEmployeeView &&
             !reportView &&
