@@ -103,11 +103,11 @@ public final string forceCompleteTemplate = string `
                           <td style="padding:10px 16px; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#465868;"><!-- [VISIT_DATE] --></td>
                         </tr>
                         <tr style="background-color:#f9f9f9;">
-                          <td style="padding:10px 16px; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#465868; font-weight:bold;">Entry Time (UTC)</td>
+                          <td style="padding:10px 16px; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#465868; font-weight:bold;">Entry Time</td>
                           <td style="padding:10px 16px; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#465868;"><!-- [TIME_OF_ENTRY] --></td>
                         </tr>
                         <tr>
-                          <td style="padding:10px 16px; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#465868; font-weight:bold;">Scheduled Departure (UTC)</td>
+                          <td style="padding:10px 16px; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#465868; font-weight:bold;">Scheduled Departure</td>
                           <td style="padding:10px 16px; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#465868;"><!-- [TIME_OF_DEPARTURE] --></td>
                         </tr>
                         <tr style="background-color:#f9f9f9;">
@@ -240,7 +240,7 @@ public final string expiredVisitTemplate = string `
                           <td style="padding:10px 16px; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#465868;"><!-- [VISIT_DATE] --></td>
                         </tr>
                         <tr style="background-color:#f9f9f9;">
-                          <td style="padding:10px 16px; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#465868; font-weight:bold;">Entry Time (UTC)</td>
+                          <td style="padding:10px 16px; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#465868; font-weight:bold;">Entry Time</td>
                           <td style="padding:10px 16px; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#465868;"><!-- [TIME_OF_ENTRY] --></td>
                         </tr>
                         <tr>
