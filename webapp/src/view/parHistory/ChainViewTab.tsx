@@ -5,48 +5,49 @@
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
 
-import {
-  Box,
-  Card,
-  Grid,
-  Link,
-  Avatar,
-  Switch,
-  Tooltip,
-  TextField,
-  IconButton,
-  Typography,
-  Breadcrumbs,
-  InputAdornment,
-  FormControlLabel,
-} from "@mui/material";
 import React, { useCallback, useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import SearchIcon from "@mui/icons-material/Search";
-import Groups3Icon from "@mui/icons-material/Groups3";
+
+import {
+  Avatar,
+  Box,
+  Breadcrumbs,
+  Card,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Link,
+  Switch,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { DataGrid, GridRenderCellParams, GridRowSelectionModel } from "@mui/x-data-grid";
+
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import Groups3Icon from "@mui/icons-material/Groups3";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import SearchIcon from "@mui/icons-material/Search";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+
+import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+
+import { selectUserEmail } from "@slices/authSlice/auth";
 import {
   Employee,
   fetchEntityEmployees,
   resetSubordinates,
-  selectSubordinatesArray,
-  selectSubordinates,
   selectEmployeeMap,
   selectManagerEmailSet,
+  selectSubordinates,
+  selectSubordinatesArray,
 } from "@slices/metaSlice/meta";
-import { LoadingEffect } from "@component/ui/Loading";
-import NoDataView from "@component/common/NoDataView";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import NavigateNextIcon from "@mui/icons-material/NavigateNext";
-import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+
 import EmployeeHistoryCard from "@component/common/EmployeeHistoryCard";
-import { RequestState } from "@utils/types";
-import {
-  DataGrid,
-  GridRenderCellParams,
-  GridRowSelectionModel,
-} from "@mui/x-data-grid";
+import NoDataView from "@component/common/NoDataView";
+import { LoadingEffect } from "@component/ui/Loading";
 
 interface NavEntry {
   email: string;
@@ -70,7 +71,10 @@ const ChainViewTab = () => {
   const [navigationHistory, setNavigationHistory] = useState<NavEntry[]>([]);
   const [showLeadsOnly, setShowLeadsOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({ type: "include", ids: new Set() });
+  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({
+    type: "include",
+    ids: new Set(),
+  });
   const [selectedEmployee, setSelectedEmployee] = useState<SelectedEmployee | null>(null);
 
   const isLoading = subordinatesStatus === RequestState.LOADING;
@@ -80,7 +84,7 @@ const ChainViewTab = () => {
     (email: string) => {
       dispatch(fetchEntityEmployees({ leadEmail: email }));
     },
-    [dispatch]
+    [dispatch],
   );
 
   useEffect(() => {
@@ -120,9 +124,8 @@ const ChainViewTab = () => {
     const term = searchQuery.toLowerCase();
     return subordinates.filter(
       (s) =>
-        (s.employeeName.toLowerCase().includes(term) ||
-          s.workEmail.toLowerCase().includes(term)) &&
-        (!showLeadsOnly || s.isLead === true)
+        (s.employeeName.toLowerCase().includes(term) || s.workEmail.toLowerCase().includes(term)) &&
+        (!showLeadsOnly || s.isLead === true),
     );
   };
 
@@ -135,8 +138,7 @@ const ChainViewTab = () => {
         <Box display="flex" alignItems="center">
           <Avatar
             src={
-              employeeMap[params.row.workEmail]?.employeeThumbnail ??
-              params.row.employeeThumbnail
+              employeeMap[params.row.workEmail]?.employeeThumbnail ?? params.row.employeeThumbnail
             }
             alt={params.row.employeeName}
             sx={{ mr: 1.5, height: "2.2rem", width: "2.2rem" }}
@@ -171,9 +173,7 @@ const ChainViewTab = () => {
               onClick={() =>
                 setSelectedEmployee({
                   email: params.row.workEmail,
-                  name:
-                    employeeMap[params.row.workEmail]?.employeeName ??
-                    params.row.employeeName,
+                  name: employeeMap[params.row.workEmail]?.employeeName ?? params.row.employeeName,
                   thumbnail:
                     employeeMap[params.row.workEmail]?.employeeThumbnail ??
                     params.row.employeeThumbnail ??
@@ -315,9 +315,7 @@ const ChainViewTab = () => {
               initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
               rows={getFilteredRows()}
               rowSelectionModel={selectionModel}
-              onRowSelectionModelChange={(m: GridRowSelectionModel) =>
-                setSelectionModel(m)
-              }
+              onRowSelectionModelChange={(m: GridRowSelectionModel) => setSelectionModel(m)}
             />
           </Card>
         </>
@@ -331,13 +329,8 @@ interface ChainBreadcrumbsProps {
   onNavigate: (index: number) => void;
 }
 
-const ChainBreadcrumbs: React.FC<ChainBreadcrumbsProps> = ({
-  navigationHistory,
-  onNavigate,
-}) => (
-  <Breadcrumbs
-    separator={<NavigateNextIcon fontSize="small" />}
-  >
+const ChainBreadcrumbs: React.FC<ChainBreadcrumbsProps> = ({ navigationHistory, onNavigate }) => (
+  <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />}>
     {navigationHistory.map((item, index) => {
       const isLast = index === navigationHistory.length - 1;
       return isLast ? (

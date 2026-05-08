@@ -13,15 +13,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Avatar, Box, Chip, Grid, Typography, useTheme } from "@mui/material";
+
 import dayjs from "dayjs";
 
-import { employeeThumbnailResolutionParam } from "@config/constant";
-import { shortDateFormat } from "@config/constant";
+import { Avatar, Box, Chip, Grid, Typography, useTheme } from "@mui/material";
+
+import { employeeThumbnailResolutionParam, shortDateFormat } from "@config/constant";
+import { tokens } from "@src/theme";
+
 import { selectEmployeeInfo } from "@slices/authSlice/auth";
 import { useAppSelector } from "@slices/store";
-
-import { tokens } from "../../../theme";
 
 export const EmployeeProfileCard = () => {
   const theme = useTheme();

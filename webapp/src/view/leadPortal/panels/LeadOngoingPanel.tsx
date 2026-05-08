@@ -13,21 +13,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import { Box, Chip, IconButton, Stack, Tooltip, useTheme } from "@mui/material";
-import { GridRenderCellParams, GridRowParams } from "@mui/x-data-grid";
-import { useLocation, useNavigate } from "react-router-dom";
-
 import { useEffect, useRef, useState } from "react";
 
-import NoDataView from "@component/common/NoDataView";
-import { LoadingEffect } from "@component/ui/Loading";
+import { useLocation, useNavigate } from "react-router-dom";
+
+import { Box, Chip, IconButton, Stack, Tooltip } from "@mui/material";
+import { GridRenderCellParams, GridRowParams } from "@mui/x-data-grid";
+
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+
 import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+
 import { selectUserEmail } from "@slices/authSlice/auth";
-import {
-  fetchCurrentParCycleOfEmployee,
-  selectEmployeeStatus,
-} from "@slices/employeeSlice/employee";
+import { fetchCurrentParCycleOfEmployee, selectEmployeeStatus } from "@slices/employeeSlice/employee";
 import { ParCycle } from "@slices/parCycleSlice/parCycle";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
@@ -37,9 +36,10 @@ import {
   selectAllTeamsSummary,
   selectTeamStatus,
 } from "@slices/teamSlice/team";
-import { RequestState } from "@utils/types";
 
-import { tokens } from "../../../theme";
+import NoDataView from "@component/common/NoDataView";
+import { LoadingEffect } from "@component/ui/Loading";
+
 import { MultiTeamSummary } from "../components/MultiTeamSummary";
 import { Review } from "../components/Review";
 import { TeamSummary } from "../components/TeamSummary";
@@ -47,8 +47,6 @@ import { TeamSummary } from "../components/TeamSummary";
 const LeadOngoingPanel = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
   const userEmail = useAppSelector(selectUserEmail);
   const parCycleLoadingStatus = useAppSelector(selectEmployeeStatus);
   const teamsLoadingStatus = useAppSelector(selectTeamStatus);

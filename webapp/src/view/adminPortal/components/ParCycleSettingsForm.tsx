@@ -13,26 +13,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import {
-  Box,
-  Button,
-  Grid,
-  IconButton,
-  TextField,
-  Typography,
-} from "@mui/material";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
+import React, { useEffect, useState } from "react";
+
 import dayjs from "dayjs";
 import { useFormik } from "formik";
 import * as yup from "yup";
 
-import { useEffect, useState } from "react";
+import { Box, Button, Grid, IconButton, TextField, Typography } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import FormDatePicker from "@view/adminPortal/components/FormDatePicker";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+
 import { SnackMessage, uiMessages } from "@config/constant";
+
 import {
   fetchOpenParCycle,
   selectCurrentCycle,
@@ -40,6 +35,9 @@ import {
 } from "@root/src/slices/parCycleSlice/parCycle";
 import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import { useAppDispatch, useAppSelector } from "@slices/store";
+
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import FormDatePicker from "@view/adminPortal/components/FormDatePicker";
 
 interface FormProps {
   closeParCycleSettings: () => void;
@@ -234,22 +232,24 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
       values.parCycleStartDate !== dayjs(currentCycle.parCycleStartDate).format("YYYY-MM-DD") ||
       values.parCycleEndDate !== dayjs(currentCycle.parCycleEndDate).format("YYYY-MM-DD") ||
       values.parEvaluationEndDate !==
-        dayjs(currentCycle.parEvaluationEndDate).format("YYYY-MM-DD") ||
+      dayjs(currentCycle.parEvaluationEndDate).format("YYYY-MM-DD") ||
       values.parEmployeeDeadline !== dayjs(currentCycle.parEmployeeDeadline).format("YYYY-MM-DD") ||
       values.parThreeSixtyRatingDeadline !==
-        dayjs(currentCycle.parThreeSixtyRatingDeadline).format("YYYY-MM-DD") ||
+      dayjs(currentCycle.parThreeSixtyRatingDeadline).format("YYYY-MM-DD") ||
       values.parLeadDeadline !== dayjs(currentCycle.parLeadDeadline).format("YYYY-MM-DD") ||
       values.parSpecialRatingDeadline !==
-        dayjs(currentCycle.parSpecialRatingDeadline).format("YYYY-MM-DD") ||
+      dayjs(currentCycle.parSpecialRatingDeadline).format("YYYY-MM-DD") ||
       values.employeeParQuestion !== currentCycle.parCycleConfigurations?.employeeParQuestion ||
       values.threeSixtyReviewQuestion !==
-        currentCycle.parCycleConfigurations?.threeSixtyReviewQuestion;
+      currentCycle.parCycleConfigurations?.threeSixtyReviewQuestion;
 
     setHasFormValuesChanged(hasChanged);
   }, [values, currentCycle]);
 
   return (
-    <Box sx={{ overflow: "hidden", display: "flex", flexDirection: "column", height: "100%", mt: 1 }}>
+    <Box
+      sx={{ overflow: "hidden", display: "flex", flexDirection: "column", height: "100%", mt: 1 }}
+    >
       <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 0.5 }}>
         <IconButton
           aria-label="back"
@@ -262,7 +262,11 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
         <Typography variant="h5">PAR Cycle Settings</Typography>
       </Box>
 
-      <Box component="form" onSubmit={handleSubmit} sx={{ flexGrow: 1, overflow: "auto", pr: 1, pl: 2 }}>
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{ flexGrow: 1, overflow: "auto", pr: 1, pl: 2 }}
+      >
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <Grid container spacing={1}>
             {/* PAR cycle date range — two pickers on one row */}
@@ -330,7 +334,7 @@ export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
               <FormDatePicker
                 name="parEvaluationStartDate"
                 value={values.parEvaluationStartDate}
-                onChange={() => {}}
+                onChange={() => { }}
                 disabled
               />
             </FormRow>

@@ -13,13 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import AddIcon from "@mui/icons-material/Add";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import GradingIcon from "@mui/icons-material/Grading";
-import GroupIcon from "@mui/icons-material/Group";
-import GroupWorkIcon from "@mui/icons-material/GroupWork";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+
+import React, { SyntheticEvent, useEffect, useState } from "react";
+
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+
 import {
+  alpha,
   Avatar,
   Box,
   Breadcrumbs,
@@ -41,11 +42,30 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
 
-import { SyntheticEvent, useEffect, useState } from "react";
-import React from "react";
+import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import GradingIcon from "@mui/icons-material/Grading";
+import GroupIcon from "@mui/icons-material/Group";
+import GroupWorkIcon from "@mui/icons-material/GroupWork";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+
+import { base64Regex, defaultTabWidth, tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+
+import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { selectUserEmail, selectUserInfo } from "@slices/authSlice/auth";
+import { selectEmployeeRatingStatus, selectEmployeeRatings } from "@slices/employeeSlice/employee";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import {
+  ParThreeSixtyReviewStatus,
+  fetchReviewers,
+  selectThreeSixtyReviewStatus,
+  selectThreeSixtyReviewers,
+  selectThreeSixtyReviews,
+} from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 
 import { CustomModal } from "@component/common/CustomModal";
 import EmployeeHistoryCard from "@component/common/EmployeeHistoryCard";
@@ -55,22 +75,6 @@ import { ReviewRequestModal } from "@component/common/ReviewRequestModal";
 import { ReviewViewModal } from "@component/common/ReviewViewModal";
 import { UpdateStatusPanel } from "@component/common/UpdateStatusPanel";
 import { LoadingEffect } from "@component/ui/Loading";
-import { base64Regex, defaultTabWidth, tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
-import { selectUserEmail, selectUserInfo } from "@slices/authSlice/auth";
-import { selectEmployeeRatingStatus, selectEmployeeRatings } from "@slices/employeeSlice/employee";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import {
-  fetchReviewers,
-  selectThreeSixtyReviewStatus,
-  selectThreeSixtyReviewers,
-  selectThreeSixtyReviews,
-} from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { RequestState } from "@utils/types";
-
 import { LeadReviewPanel } from "../panels/LeadReviewPanel";
 
 dayjs.extend(utc);
@@ -345,13 +349,34 @@ export const Review = ({
               <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: "40%", fontWeight: 600, fontSize: "0.75rem", color: theme.palette.text.secondary }}>
+                    <TableCell
+                      sx={{
+                        width: "40%",
+                        fontWeight: 600,
+                        fontSize: "0.75rem",
+                        color: theme.palette.text.secondary,
+                      }}
+                    >
                       Name
                     </TableCell>
-                    <TableCell sx={{ width: "20%", fontWeight: 600, fontSize: "0.75rem", color: theme.palette.text.secondary }}>
+                    <TableCell
+                      sx={{
+                        width: "20%",
+                        fontWeight: 600,
+                        fontSize: "0.75rem",
+                        color: theme.palette.text.secondary,
+                      }}
+                    >
                       Status
                     </TableCell>
-                    <TableCell sx={{ width: "30%", fontWeight: 600, fontSize: "0.75rem", color: theme.palette.text.secondary }}>
+                    <TableCell
+                      sx={{
+                        width: "30%",
+                        fontWeight: 600,
+                        fontSize: "0.75rem",
+                        color: theme.palette.text.secondary,
+                      }}
+                    >
                       Requested by
                     </TableCell>
                     <TableCell sx={{ width: "10%" }}></TableCell>
@@ -417,7 +442,14 @@ export const Review = ({
                                 sx={{
                                   height: "1.23rem",
                                   paddingX: "0.2rem",
-                                  backgroundColor: theme.palette.fill.secondary.active,
+                                  backgroundColor: alpha(
+                                    theme.palette.info.main,
+                                    theme.palette.mode === "dark" ? 0.25 : 0.15,
+                                  ),
+                                  color:
+                                    theme.palette.mode === "dark"
+                                      ? theme.palette.info.main
+                                      : theme.palette.info.dark,
                                 }}
                               />
                             )}
@@ -429,7 +461,14 @@ export const Review = ({
                                 sx={{
                                   height: "1.23rem",
                                   paddingX: "0.2rem",
-                                  backgroundColor: (theme) => theme.palette.primaryShades["1700"],
+                                  backgroundColor: alpha(
+                                    theme.palette.primary.main,
+                                    theme.palette.mode === "dark" ? 0.25 : 0.15,
+                                  ),
+                                  color:
+                                    theme.palette.mode === "dark"
+                                      ? theme.palette.primary.main
+                                      : theme.palette.primary.dark,
                                 }}
                               />
                             )}
@@ -437,27 +476,27 @@ export const Review = ({
                           <TableCell sx={{ py: 1 }}>
                             {(reviewer.reviewStatus === ParThreeSixtyReviewStatus.COMPLETED ||
                               reviewer.reviewStatus === ParThreeSixtyReviewStatus.REJECTED) && (
-                              <Tooltip
-                                arrow
-                                title="View Feedback"
-                                enterDelay={tooltipVisibilityDelay}
-                                enterNextDelay={tooltipVisibilityDelay}
-                              >
-                                <IconButton
-                                  size="small"
-                                  onClick={() => openReviewViewModal(reviewer.reviewerEmail)}
-                                  sx={{
-                                    color: "primary.main",
-                                    "&:hover": {
-                                      bgcolor: "primary.main",
-                                      color: "white",
-                                    },
-                                  }}
+                                <Tooltip
+                                  arrow
+                                  title="View Feedback"
+                                  enterDelay={tooltipVisibilityDelay}
+                                  enterNextDelay={tooltipVisibilityDelay}
                                 >
-                                  <VisibilityIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => openReviewViewModal(reviewer.reviewerEmail)}
+                                    sx={{
+                                      color: "primary.main",
+                                      "&:hover": {
+                                        bgcolor: "primary.main",
+                                        color: "white",
+                                      },
+                                    }}
+                                  >
+                                    <VisibilityIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
                           </TableCell>
                         </TableRow>
                       ))
