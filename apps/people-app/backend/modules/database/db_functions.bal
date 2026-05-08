@@ -580,15 +580,16 @@ public isolated function hasLeaverFields(UpdateEmployeeJobInfoPayload payload) r
 isolated function inactivateEmployeeRelationshipsOnOffboarding(string employeeId, string actor)
     returns error? {
 
-    Employee|error? employeeInfo = getEmployeeInfo(employeeId);
-    if employeeInfo is error {
-        return employeeInfo;
-    }
-    if employeeInfo is () {
+    WorkEmailRow|error workEmailRow =
+        databaseClient->queryRow(getEmployeeWorkEmailQuery(employeeId));
+    if workEmailRow is sql:NoRowsError {
         return ();
     }
+    if workEmailRow is error {
+        return workEmailRow;
+    }
 
-    string employeeEmail = employeeInfo.workEmail;
+    string employeeEmail = workEmailRow.workEmail;
     _ = check databaseClient->execute(inactivateAdditionalManagerRelationshipsQuery(employeeEmail, actor));
     _ = check databaseClient->execute(inactivateEmployeeEmergencyContactsQuery(employeeEmail, actor));
 }

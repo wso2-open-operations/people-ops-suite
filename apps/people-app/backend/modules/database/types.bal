@@ -669,6 +669,13 @@ type EmployeeNameRow record {|
     string fullName;
 |};
 
+# [Database] Work email row mapping for employee lookups.
+type WorkEmailRow record {|
+    # Work email of the employee
+    @sql:Column {name: "work_email"}
+    string workEmail;
+|};
+
 # Additional manager email row mapping.
 public type AdditionalManagerEmailRow record {|
     # Additional manager email

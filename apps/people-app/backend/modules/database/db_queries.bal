@@ -56,6 +56,13 @@ isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
 isolated function getEmployeeIdByEpfQuery(string epf) returns sql:ParameterizedQuery =>
     `SELECT employee_id FROM employee WHERE epf = ${epf} LIMIT 1;`;
 
+# Fetch employee work email by employee ID.
+#
+# + employeeId - Employee ID
+# + return - Query to get employee work email
+isolated function getEmployeeWorkEmailQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT work_email FROM employee WHERE employee_id = ${employeeId};`;
+
 # Fetch employee detailed information.
 #
 # + employeeId - Employee ID
