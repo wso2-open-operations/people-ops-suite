@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,6 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import { useEffect, useState } from "react";
+
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import { useFormik } from "formik";
+import * as yup from "yup";
+
 import LoadingButton from "@mui/lab/LoadingButton";
 import {
   Alert,
@@ -24,25 +32,21 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import { useFormik } from "formik";
-import * as yup from "yup";
 
-import { useEffect, useState } from "react";
-
-import CommentPaper from "@component/common/CommentPaper";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import CustomRichTextField from "@component/common/CustomRichText";
-import { LoadingEffect } from "@component/ui/Loading";
-import { SnackMessage, autoSaveCountdownDuration, parUiText, uiMessages } from "@config/constant";
-import { parRatingNotAssigned } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import {
+  SnackMessage,
+  autoSaveCountdownDuration,
+  parUiText,
+  uiMessages,
+} from "@config/constant";
 import { RequestState } from "@root/src/utils/types";
+
 import { selectUserEmail } from "@slices/authSlice/auth";
 import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
 import { ParCycle } from "@slices/parCycleSlice/parCycle";
 import { useAppDispatch, useAppSelector } from "@slices/store";
+import { parRatingNotAssigned } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import {
   ParThreeSixtyReviewStatus,
   fetchSelectedReview,
@@ -51,6 +55,11 @@ import {
   selectSelectedThreeSixtyReviewStatus,
   updateSelectedReview,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+
+import CommentPaper from "@component/common/CommentPaper";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import CustomRichTextField from "@component/common/CustomRichText";
+import { LoadingEffect } from "@component/ui/Loading";
 
 dayjs.extend(utc);
 
@@ -339,7 +348,7 @@ export const ReviewProvideModal = ({
 
   return (
     <Box sx={{ p: 1 }}>
-      <Typography id="dashboard-modal-title" variant="h5" sx={{ textAlign: 'center' }}>
+      <Typography id="dashboard-modal-title" variant="h5" sx={{ textAlign: "center" }}>
         Provide 360° Feedback
       </Typography>
       <Box display="flex" justifyContent="center" alignItems="center" gap={4}>
@@ -396,7 +405,10 @@ export const ReviewProvideModal = ({
 
       <form onSubmit={handleSubmit}>
         {threeSixtyReviewStatus === RequestState.LOADING && (
-          <Box minHeight={340} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box
+            minHeight={340}
+            sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
             <LoadingEffect message={uiMessages.loading.pageLoading} />
           </Box>
         )}
@@ -409,9 +421,7 @@ export const ReviewProvideModal = ({
                   <Grid size={{ md: 12 }} pb={2}>
                     <Box display="flex" justifyContent="space-between">
                       <Box display="flex" alignItems="center">
-                        <Typography>
-                          {parUiText.ThreeSixtyReviewPanelDescription}
-                        </Typography>
+                        <Typography>{parUiText.ThreeSixtyReviewPanelDescription}</Typography>
                       </Box>
                     </Box>
                   </Grid>

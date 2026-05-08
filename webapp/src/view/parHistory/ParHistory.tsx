@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,40 +13,39 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import HistoryIcon from "@mui/icons-material/History";
-import AccountTreeIcon from "@mui/icons-material/AccountTree";
-import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+
+import { useEffect, useState } from "react";
+
+import dayjs from "dayjs";
+import { useLocation } from "react-router-dom";
+
 import {
   Alert,
   Box,
   Button,
   Fade,
   Grid,
-  Tab,
-  Tabs,
   Paper,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
   Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
-import dayjs from "dayjs";
-import { useLocation } from "react-router-dom";
 
-import { useEffect, useState } from "react";
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import HistoryIcon from "@mui/icons-material/History";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 
-import { EmployeePar } from "@component/common/EmployeePar";
-import Title from "@component/common/Title";
-import { LoadingEffect } from "@component/ui/Loading";
 import { gradients, tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { useAppDispatch, useAppSelector } from "@slices/store";
 import { RequestState, Role } from "@utils/types";
-import { ParCycle } from "@slices/parCycleSlice/parCycle";
+
 import { selectRoles, selectUserEmail } from "@slices/authSlice/auth";
 import {
   fetchParRatingOfEmployee,
@@ -54,8 +53,14 @@ import {
   selectEmployeeStatus,
   selectPreviousParCycleOfEmployee,
 } from "@slices/employeeSlice/employee";
-import ChainViewTab from "./ChainViewTab";
 import { selectManagerEmailSet } from "@slices/metaSlice/meta";
+import { ParCycle } from "@slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+
+import { EmployeePar } from "@component/common/EmployeePar";
+import Title from "@component/common/Title";
+import { LoadingEffect } from "@component/ui/Loading";
+import ChainViewTab from "./ChainViewTab";
 
 const ParHistory = () => {
   const location = useLocation();
@@ -72,11 +77,10 @@ const ParHistory = () => {
   const hasSubordinates = !!userEmail && managerEmailSet.has(userEmail);
   const [activeTab, setActiveTab] = useState(0);
 
-  const [isEmployeePreviousParOpen, setIsEmployeePreviousParOpen] =
-    useState(false);
-  const [selectedParCycle, setSelectedParCycle] = useState<
-    Partial<ParCycle> | undefined
-  >(undefined);
+  const [isEmployeePreviousParOpen, setIsEmployeePreviousParOpen] = useState(false);
+  const [selectedParCycle, setSelectedParCycle] = useState<Partial<ParCycle> | undefined>(
+    undefined,
+  );
 
   const closeParRatingView = () => setIsEmployeePreviousParOpen(false);
 
@@ -134,11 +138,7 @@ const ParHistory = () => {
 
           {isLead && hasSubordinates && (
             <Box sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}>
-              <Tabs
-                value={activeTab}
-                onChange={handleTabChange}
-                aria-label="PAR History tabs"
-              >
+              <Tabs value={activeTab} onChange={handleTabChange} aria-label="PAR History tabs">
                 <Tab
                   icon={<HistoryIcon />}
                   iconPosition="start"
@@ -184,7 +184,7 @@ const ParHistory = () => {
                             fontWeight: 600,
                             fontSize: "0.8rem",
                             color: "text.Primary",
-                            pb: 2
+                            pb: 2,
                           }}
                         >
                           Cycle Name
@@ -247,14 +247,10 @@ const ParHistory = () => {
                               >
                                 <TableCell sx={{ py: 1 }}>{cycle.parCycleName}</TableCell>
                                 <TableCell sx={{ py: 1 }}>
-                                  {dayjs(cycle.parCycleStartDate).format(
-                                    "D MMM 'YY"
-                                  )}
+                                  {dayjs(cycle.parCycleStartDate).format("D MMM 'YY")}
                                 </TableCell>
                                 <TableCell sx={{ py: 1 }}>
-                                  {dayjs(cycle.parCycleEndDate).format(
-                                    "D MMM 'YY"
-                                  )}
+                                  {dayjs(cycle.parCycleEndDate).format("D MMM 'YY")}
                                 </TableCell>
                                 <TableCell sx={{ py: 1 }}>
                                   <Tooltip
@@ -283,14 +279,8 @@ const ParHistory = () => {
                             ))}
                           {previousCycles.length === 0 && (
                             <TableRow>
-                              <TableCell
-                                colSpan={4}
-                                align="center"
-                                sx={{ border: "none" }}
-                              >
-                                <Typography color="text.secondary">
-                                  No data available
-                                </Typography>
+                              <TableCell colSpan={4} align="center" sx={{ border: "none" }}>
+                                <Typography color="text.secondary">No data available</Typography>
                               </TableCell>
                             </TableRow>
                           )}

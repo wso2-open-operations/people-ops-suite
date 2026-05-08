@@ -13,17 +13,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DateRangeIcon from "@mui/icons-material/DateRange";
-import RateReviewIcon from "@mui/icons-material/RateReview";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+
+import { useEffect, useState } from "react";
+
+import dayjs from "dayjs";
+
 import {
   Avatar,
   Box,
   Button,
   Card,
-  Divider,
   Grid,
   IconButton,
   Link,
@@ -33,18 +32,23 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { DataGrid, GridColDef, GridRenderCellParams, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
-import dayjs from "dayjs";
+import {
+  DataGrid,
+  GridColDef,
+  GridRenderCellParams,
+  GridRowId,
+  GridRowSelectionModel,
+} from "@mui/x-data-grid";
 
-import { useEffect, useState } from "react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DateRangeIcon from "@mui/icons-material/DateRange";
+import RateReviewIcon from "@mui/icons-material/RateReview";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
-import { CompletionStatusSection } from "@component/common/CompletionStatusSection";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { CustomModal } from "@component/common/CustomModal";
-import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
-import ParStatusChip from "@component/common/ParStatusChip";
-import { LoadingEffect } from "@component/ui/Loading";
 import { SnackMessage, tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+
 import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 import { ShowSnackBarMessage } from "@slices/commonSlice/common";
@@ -59,8 +63,13 @@ import {
   selectTeamReport,
   selectTeamReportStatus,
 } from "@slices/teamSlice/team";
-import { RequestState } from "@utils/types";
 
+import { CompletionStatusSection } from "@component/common/CompletionStatusSection";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import { CustomModal } from "@component/common/CustomModal";
+import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
+import ParStatusChip from "@component/common/ParStatusChip";
+import { LoadingEffect } from "@component/ui/Loading";
 import EmployeeSyncModal from "./EmployeeSyncModal";
 
 interface DashboardProps {
@@ -191,7 +200,13 @@ export const TeamSummary = ({
                 navigator.clipboard.writeText(params.row?.parEmployeeEmail);
                 dispatch(ShowSnackBarMessage("Email copied", "success"));
               }}
-              sx={{ flexShrink: 0, color: theme.palette.mode === "dark" ? theme.palette.info.main : theme.palette.text.secondary }}
+              sx={{
+                flexShrink: 0,
+                color:
+                  theme.palette.mode === "dark"
+                    ? theme.palette.info.main
+                    : theme.palette.text.secondary,
+              }}
             >
               <ContentCopyIcon sx={{ fontSize: "0.85rem" }} />
             </IconButton>
@@ -205,7 +220,15 @@ export const TeamSummary = ({
       flex: 0.1,
       headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
           <ParStatusChip content={params.row?.parEmployeeStatus || ""} />
         </Box>
       ),
@@ -216,7 +239,15 @@ export const TeamSummary = ({
       flex: 0.12,
       headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
           <ParStatusChip
             content={params.row?.par360ReviewStatus || ""}
             countDetails={{
@@ -233,7 +264,15 @@ export const TeamSummary = ({
       flex: 0.1,
       headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
           <ParStatusChip content={params.row?.parLeadStatus || ""} />
         </Box>
       ),
@@ -244,7 +283,15 @@ export const TeamSummary = ({
       flex: 0.15,
       headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
           <ParStatusChip content={params.row?.parRating || ""} />
         </Box>
       ),
@@ -255,7 +302,15 @@ export const TeamSummary = ({
       flex: 0.15,
       headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
           <ParStatusChip content={params.row?.parSpecialRating || ""} />
         </Box>
       ),
@@ -266,7 +321,15 @@ export const TeamSummary = ({
       flex: 0.08,
       headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
           <ParStatusChip content={params.row?.parF2fStatus || ""} />
         </Box>
       ),
@@ -278,10 +341,22 @@ export const TeamSummary = ({
       flex: 0.08,
       headerAlign: "center",
       renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
           <Tooltip
             arrow
-            title={params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? "View" : "Review"}
+            title={
+              params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn
+                ? "View"
+                : "Review"
+            }
             enterDelay={tooltipVisibilityDelay}
             enterNextDelay={tooltipVisibilityDelay}
           >
@@ -325,7 +400,10 @@ export const TeamSummary = ({
 
   const updateSelectedRatings = async () => {
     try {
-      const ratingMap = getSelectedRatings(Array.from(selectionModel.ids), teamReport?.details ?? []);
+      const ratingMap = getSelectedRatings(
+        Array.from(selectionModel.ids),
+        teamReport?.details ?? [],
+      );
 
       if (!validateRatings(ratingMap)) {
         dispatch(ShowSnackBarMessage(SnackMessage.error.invalidBulkShare, "error"));
@@ -399,11 +477,11 @@ export const TeamSummary = ({
     const emails =
       selectionModel.type === "exclude"
         ? allDetails
-            .filter((m) => !selectionModel.ids.has(m.parRatingId))
-            .map((m) => m.parEmployeeEmail)
+          .filter((m) => !selectionModel.ids.has(m.parRatingId))
+          .map((m) => m.parEmployeeEmail)
         : Array.from(selectionModel.ids)
-            .map((rowId) => allDetails.find((m) => m.parRatingId === rowId)?.parEmployeeEmail)
-            .filter(Boolean);
+          .map((rowId) => allDetails.find((m) => m.parRatingId === rowId)?.parEmployeeEmail)
+          .filter(Boolean);
 
     navigator.clipboard.writeText(emails.join(", "));
     dispatch(ShowSnackBarMessage("Emails copied to clipboard", "success"));
@@ -449,7 +527,7 @@ export const TeamSummary = ({
               width: "100%",
               justifyContent: "space-between",
               alignItems: "center",
-              pb: 1
+              pb: 1,
             }}
           >
             <Box>
@@ -468,7 +546,12 @@ export const TeamSummary = ({
                       {` History / ${cycle.parCycleName} / `}
                     </Typography>
                   )}
-                  <Link underline="hover" color="textPrimary" variant="h5" onClick={closeTeamSummary}>
+                  <Link
+                    underline="hover"
+                    color="textPrimary"
+                    variant="h5"
+                    onClick={closeTeamSummary}
+                  >
                     {"All Teams"}
                   </Link>
                   <Typography display={"inline"} variant="h5">

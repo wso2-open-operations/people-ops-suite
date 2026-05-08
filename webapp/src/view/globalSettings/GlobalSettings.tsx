@@ -1,4 +1,24 @@
-import SettingsIcon from "@mui/icons-material/Settings";
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+import { useEffect, useState } from "react";
+
+import { useFormik } from "formik";
+import * as yup from "yup";
+
 import {
   Autocomplete,
   Box,
@@ -11,15 +31,12 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { useFormik } from "formik";
-import * as yup from "yup";
 
-import { useEffect, useState } from "react";
+import SettingsIcon from "@mui/icons-material/Settings";
 
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import Title from "@component/common/Title";
-import { LoadingEffect } from "@component/ui/Loading";
 import { gradients, uiMessages } from "@config/constant";
+import { ParConfigurations, RequestState } from "@utils/types";
+
 import {
   fetchConfigurations,
   selectConfigStatus,
@@ -27,7 +44,10 @@ import {
   updateConfigurations,
 } from "@slices/metaSlice/meta";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { ParConfigurations, RequestState } from "@utils/types";
+
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import Title from "@component/common/Title";
+import { LoadingEffect } from "@component/ui/Loading";
 
 const GlobalSettingsView = () => {
   const globalConfigStatus = useAppSelector(selectConfigStatus);
@@ -154,7 +174,11 @@ const GlobalSettingsView = () => {
           }}
         >
           <Grid>
-            <Title firstWord="PAR" secondWord="Settings" icon={<SettingsIcon fontSize="medium" />} />
+            <Title
+              firstWord="PAR"
+              secondWord="Settings"
+              icon={<SettingsIcon fontSize="medium" />}
+            />
             <Box alignItems="center">
               <Grid size={{ xs: 12, sm: 12 }} paddingY={2} mx={4}>
                 <Typography variant="h4" gutterBottom>

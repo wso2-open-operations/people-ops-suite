@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,23 +13,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
-import { Alert, Box, Button } from "@mui/material";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
 
 import { useEffect, useState } from "react";
 
-import { EmployeePar } from "@component/common/EmployeePar";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+
+import { Alert, Box, Button } from "@mui/material";
+
+import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
+
 import { uiMessages } from "@config/constant";
-import {
-  ParEmployeeStatus,
-  ParLeadStatus,
-} from "@root/src/slices/employeeHistorySlice/employeeHistory";
+
+import { ParEmployeeStatus, ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 import { selectEmployeeRatings } from "@slices/employeeSlice/employee";
 import { useAppSelector } from "@slices/store";
 
+import { EmployeePar } from "@component/common/EmployeePar";
 import { ParInputForm } from "./ParInputForm";
 
 dayjs.extend(utc);
@@ -53,7 +54,9 @@ export const ParStatusView = ({ currentCycle }: ParStatusViewProps) => {
   return (
     <>
       {employeeRatings?.parEmployeeStatus === ParEmployeeStatus.PENDING && (
-        <Box sx={{ flex: isParInputViewOpen ? "none" : 1, display: "flex", flexDirection: "column" }}>
+        <Box
+          sx={{ flex: isParInputViewOpen ? "none" : 1, display: "flex", flexDirection: "column" }}
+        >
           {!isDeadlinePassed && (
             <Alert severity="info" sx={{ py: 0.5 }}>
               {`Please share your PAR before the deadline: ${dayjs
