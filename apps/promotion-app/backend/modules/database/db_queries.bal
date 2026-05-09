@@ -431,20 +431,16 @@ isolated function updatePromotionRecommendationQuery(PromotionRecommendationDbUp
                 `promotion_recommendation_status = ${payload.status}`);
         isFirstUpdate = false;
     }
-
-    if payload.expectedStatus is string {
-    sqlQuery = sql:queryConcat(sqlQuery,
-        ` AND promotion_recommendation_status = ${payload.expectedStatus}`);
-    }
-
-    if payload.expectedCycleId is int {
-        sqlQuery = sql:queryConcat(sqlQuery,
-            ` AND promotion_cycle_id = ${payload.expectedCycleId}`);
-    }
+    
     sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
             `promotion_recommendation_updated_by = ${payload.updatedBy}`);
 
     sqlQuery = sql:queryConcat(sqlQuery, ` WHERE promotion_recommendation_id = ${payload.id}`);
+
+    if payload.expectedStatus is string {
+        sqlQuery = sql:queryConcat(sqlQuery,
+        ` AND promotion_recommendation_status = ${payload.expectedStatus}`);
+    }
 
     return sqlQuery;
 }
