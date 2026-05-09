@@ -20,6 +20,7 @@ import promotion_app.people;
 import ballerina/cache;
 import ballerina/http;
 import ballerina/log;
+import ballerina/lang.regexp;
 
 public configurable AppConfig appConfig = ?;
 
@@ -306,7 +307,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + statusArray - Status of the promotion request
     # + return - Promotion request array or error
     resource function GET promotions(http:RequestContext ctx, string[]? statusArray, 
-            string? employeeEmail, string? recommendedBy, string? 'type)
+            string? employeeEmail,  int? cycleId, string? recommendedBy, boolean? enableBuFilter, string? 'type)
         returns Promotions|http:Forbidden|http:InternalServerError {
 
         // if there is a status array.
@@ -335,6 +336,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Data sanitization
+        boolean hideRecommendations = false;
+        boolean hideStatus = false;
+
+        // [Start] Custom Resource level authorization 
+        boolean setEmailConstrain = false;
+        boolean setBuConstrain = false; // use to set BU constrain
+
         authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
 
         if userAppPrivileges is error {
@@ -345,21 +354,98 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !database:checkRoles([database:LEAD], userAppPrivileges.roles) && userInfo.email != employeeEmail {
-            string customError = string `You are not authorized to view promotion details of other employees!`;
-            log:printError(customError);
+        if !(database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) ||
+            database:checkRoles([database:FUNCTIONAL_LEAD], userAppPrivileges.roles) ||
+            database:checkRoles([database:PROMOTION_BOARD_MEMBER], userAppPrivileges.roles)) {
+
+            hideRecommendations = true;
+
+            // Employees and leads cannot see their own promotion request status while cycle is ended.
+            hideStatus = true;
+
+            if employeeEmail !is () && userInfo.email != employeeEmail {
+                people:Employee|error employeeResult = people:getEmployee(workEmail = employeeEmail);
+                if employeeResult is error {
+                    return <http:InternalServerError>{
+                        body: {
+                            message: "Error occurred while retrieving Employee!"
+                        }
+                    };
+                }
+                if employeeResult.managerEmail != userInfo.email {
+                    string[] reportsToEmails = regexp:split(re `,`, employeeResult.reportsTo ?: "");
+                    reportsToEmails = from var email in reportsToEmails
+                        select email.trim();
+
+                    if reportsToEmails.indexOf(userInfo.email) == () {
+                        log:printError("Unauthorized access attempt by " + userInfo.email);
+                        return <http:Forbidden>{
+                            body: {
+                                message: "Insufficient privilege to access promotion application of others."
+                            }
+                        };
+                    }
+                }
+            } else {
+                setEmailConstrain = true;
+            }
+
+        } else if !(database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) ||
+            database:checkRoles([database:PROMOTION_BOARD_MEMBER], userAppPrivileges.roles)) &&
+            database:checkRoles([database:FUNCTIONAL_LEAD], userAppPrivileges.roles) {
+
+            // functional lead cannot access others BU requests. 
+            setBuConstrain = true;
+        } else {
+            // for function lead 
+            setBuConstrain = enableBuFilter is boolean ? enableBuFilter : false;
+        }
+
+        // validating functional lead permission 
+        if setBuConstrain && userAppPrivileges.functionalLeadAccessLevels is () {
             return <http:Forbidden>{
+                body: {
+                    message: "Insufficient privilege to enable BU filter."
+                }
+            };
+        }
+
+        // Getting active promotion cycle.
+        database:PromotionCycle[]|error promotionCycles = database:getPromotionCyclesByStatus([database:OPEN]);
+
+        if promotionCycles is error {
+            string customError = string `Error while retrieving Promotion Cycle!`;
+            log:printError(customError);
+            return <http:InternalServerError>{
                 body: {
                     message: customError
                 }
             };
         }
 
+        if promotionCycles.length() == 0 {
+            string customError = "There is no open promotion cycle for applying!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if 'type is string && 'type == database:INDIVIDUAL_CONTRIBUTOR {
+            setEmailConstrain = false;
+            hideRecommendations = false;
+        }
+
         // Retrieve promotion requests from the database, using various filters and constraints.
         database:Promotion[]|error PromotionArray = database:getPromotions(
-            employeeEmail = employeeEmail,
+            employeeEmail = setEmailConstrain ? userInfo.email : employeeEmail,
             statusArray = statusArray,
-            recommendedBy = recommendedBy
+            cycleID = cycleId,
+            businessAccessLevels = setBuConstrain ? userAppPrivileges.functionalLeadAccessLevels : (),
+            recommendedBy = recommendedBy,
+            'type ='type
         );
 
         if PromotionArray is error {
@@ -389,6 +475,27 @@ service http:InterceptableService / on new http:Listener(9090) {
                         message: customError
                     }
                 };
+            }
+            if hideRecommendations {
+                error? updateError = from database:FullPromotionRecommendation recommendation in promotionRecommendationsArray
+                    do {
+                        recommendation.recommendationStatement = "";
+                        recommendation.recommendationAdditionalComment = "";
+                    };
+                if updateError is error {
+                    string customError = string `Error occurred while data sanitization`;
+                    log:printError(customError, updateError);
+                    return <http:InternalServerError>{
+                        body: {
+                            message: customError
+                        }
+                    };
+                }
+            }
+            // Hide status if the user is not a HR admin or a promotion board member
+            if hideStatus && !(promotionRequest.status == database:SUBMITTED || promotionRequest.status == database:DRAFT) &&
+                promotionRequest.promotionCycle == promotionCycles[0].name && promotionRequest.employeeEmail == userInfo.email {
+                promotionRequest.status = database:PROCESSING;
             }
 
             promotions.push({
@@ -1024,104 +1131,117 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Update promotion recommendation status 
-        error? updateRecommendation = database:updatePromotionRecommendation({
-            id: id,
-            status: database:SUBMITTED,
-            updatedBy: userInfo.email,
-            expectedStatus: database:REQUESTED,
-            expectedCycleId: promotionCycles[0].id
-        });
-
-        if updateRecommendation is error {
-            string customError = "Error while Updating the Recommendation!";
-            log:printError(customError, updateRecommendation);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        //get name by work email for send the email
-        people:EmployeeName|error leadName = people:getEmployeeName(workEmail = userInfo.email);
-        
-        if leadName is error{
-            string customError = "Error while retrieving Lead Name!";
-            log:printError(customError, leadName);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        //get employee name by work email for send the email
-        people:EmployeeName|error employeeName = people:getEmployeeName(workEmail = recommendation.employeeEmail);
-
-        if employeeName is error{
-            string customError = "Error while retrieving Employee Name!";
-            log:printError(customError, employeeName);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        if recommendation.promotionType == database:TIME_BASED {
-            database:PromotionRequestStatus approvedStatus = database:SUBMITTED;
-            //if login user is a functional lead -> approve
-            authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
-
-            if userAppPrivileges is error {
-                string customError = "Error occurred while retrieving User Privileges!";
-                log:printError(customError, userAppPrivileges);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
-            }
-
-            if (database:checkRoles([database:FUNCTIONAL_LEAD], userAppPrivileges.roles)) {
-                approvedStatus = database:APPROVED;
-            }
-            //Submit promotion request
-            error? updateRequest = database:updatePromotionRequest({
-                id: recommendation.requestId,
-                status: approvedStatus,
-                updatedBy: userInfo.email
+        transaction {
+            error? updateRecommendation = database:updatePromotionRecommendation({
+                id: id,
+                status: database:SUBMITTED,
+                updatedBy: userInfo.email,
+                expectedStatus: database:REQUESTED,
+                expectedCycleId: promotionCycles[0].id
             });
-
-            if updateRequest is error {
-                string customError = string `Error while Updating the Promotion Request!`;
-                log:printError(customError, updateRequest);
+            if updateRecommendation is error {
+                rollback;
+                string customError = "Error while Updating the Recommendation!";
+                log:printError(customError, updateRecommendation);
                 return <http:InternalServerError>{
                     body: {
                         message: customError
                     }
                 };
+            }else{
+                //get name by work email for send the email
+                people:EmployeeName|error leadName = people:getEmployeeName(workEmail = userInfo.email);
+        
+                if leadName is error{
+                    rollback;
+                    string customError = "Error while retrieving Lead Name!";
+                    log:printError(customError, leadName);
+                    return <http:InternalServerError>{
+                        body: {
+                            message: customError
+                        }
+                    };
+                }else{
+                    //get employee name by work email for send the email
+                    people:EmployeeName|error employeeName = people:getEmployeeName(workEmail = recommendation.employeeEmail);
+
+                    if employeeName is error{
+                        rollback;
+                        string customError = "Error while retrieving Employee Name!";
+                        log:printError(customError, employeeName);
+                        return <http:InternalServerError>{
+                            body: {
+                                message: customError
+                            }
+                        };
+                    }else{
+                        if recommendation.promotionType == database:TIME_BASED {
+                            database:PromotionRequestStatus approvedStatus = database:SUBMITTED;
+                            //if login user is a functional lead -> approve
+                            authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+                            if userAppPrivileges is error {
+                                rollback;
+                                string customError = "Error occurred while retrieving User Privileges!";
+                                log:printError(customError, userAppPrivileges);
+                                return <http:InternalServerError>{
+                                    body: {
+                                        message: customError
+                                    }
+                                };
+                            }else{
+                                if (database:checkRoles([database:FUNCTIONAL_LEAD], userAppPrivileges.roles)) {
+                                    approvedStatus = database:APPROVED;
+                                }
+                                //Submit promotion request
+                                error? updateRequest = database:updatePromotionRequest({
+                                    id: recommendation.requestId,
+                                    status: approvedStatus,
+                                    updatedBy: userInfo.email
+                                });
+
+                                if updateRequest is error {
+                                    rollback;
+                                    string customError = string `Error while Updating the Promotion Request!`;
+                                    log:printError(customError, updateRequest);
+                                    return <http:InternalServerError>{
+                                        body: {
+                                            message: customError
+                                        }
+                                    };
+                                }else{
+                                    check commit;
+                                    return {
+                                        status: "Successfully approved the Time-based promotion."
+                                    };
+                                }
+                            }
+                        }else{
+                            // TODO: Send the email
+
+                            // _ = check email:recommendationAlert({
+                            //     receiverName: employeeName.firstName,
+                            //     receiverEmail: recommendation.employeeEmail,
+                            //     senderName: leadName.firstName + " " + leadName.lastName,
+                            //     senderEmail: requestedBy,
+                            //     closingDate: promotionCycles[0].endDate,
+                            //     templateId: email:hrisPromotionRecommendationRequestSubmission
+                            // });
+                            check commit;
+                            return {
+                                status: "Successfully submitted the recommendation."
+                            };
+                        }
+                    }
+                }
             }
-            return {
-                status: "Successfully approved the Time-based promotion."
+        } on fail error err {
+            return <http:InternalServerError>{
+                body: {
+                    message: err.toString()
+                }
             };
         }
-
-        // TODO: Send the email
-
-        // _ = check email:recommendationAlert({
-        //     receiverName: employeeName.firstName,
-        //     receiverEmail: recommendation.employeeEmail,
-        //     senderName: leadName.firstName + " " + leadName.lastName,
-        //     senderEmail: requestedBy,
-        //     closingDate: promotionCycles[0].endDate,
-        //     templateId: email:hrisPromotionRecommendationRequestSubmission
-        // });
-
-        return {
-            status: "Successfully submitted the recommendation."
-        };
     }
 
     # Decline promotion recommendation
