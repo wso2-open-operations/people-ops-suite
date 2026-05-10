@@ -19,7 +19,6 @@ interface CheckBoxProps {
   label: string;
 }
 
-// Custom reusable check box component
 export default function CheckBox({ label }: CheckBoxProps) {
   const theme = useTheme();
   return (
