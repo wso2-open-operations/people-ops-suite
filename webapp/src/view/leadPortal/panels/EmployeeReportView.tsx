@@ -75,7 +75,6 @@ const EmployeeReportView = () => {
   });
 
   const [isParCycleDatesOpen, setIsParCycleDatesOpen] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEmployeeEmail, setSelectedEmployeeEmail] = useState<string>("");
   const [reviewEmployeeView, setReviewEmployeeView] = useState(false);
@@ -302,20 +301,6 @@ const EmployeeReportView = () => {
     setIsParCycleDatesOpen(false);
   };
 
-  useEffect(() => {
-    if (dayjs().diff(currentCycle.parEmployeeDeadline, "day", true) >= 0) {
-      setActiveStep(1);
-    }
-    if (dayjs().diff(currentCycle.parLeadDeadline, "day", true) - 1 >= 0) {
-      setActiveStep(2);
-    }
-    if (dayjs().diff(currentCycle.parSpecialRatingDeadline, "day", true) >= 0) {
-      setActiveStep(3);
-    }
-    if (dayjs().diff(currentCycle.parEvaluationEndDate, "day", true) >= 0) {
-      setActiveStep(4);
-    }
-  }, [dispatch, currentCycle]);
 
   return (
     <Box
@@ -461,7 +446,6 @@ const EmployeeReportView = () => {
 
           <CycleDatesStepper
             cycle={currentCycle}
-            activeStep={activeStep}
             open={isParCycleDatesOpen}
             onClose={closeCycleDeadlines}
           />

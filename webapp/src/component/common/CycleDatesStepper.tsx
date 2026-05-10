@@ -24,12 +24,21 @@ import type { ParCycle } from "@slices/parCycleSlice/parCycle";
 
 interface CycleDatesStepperProps {
   cycle: Partial<ParCycle>;
-  activeStep: number;
   open: boolean;
   onClose: () => void;
 }
 
-export const CycleDatesStepper = ({ cycle, activeStep, open, onClose }: CycleDatesStepperProps) => {
+const computeActiveStep = (cycle: Partial<ParCycle>): number => {
+  let step = 0;
+  if (cycle.parEmployeeDeadline && dayjs().diff(cycle.parEmployeeDeadline, "day", true) >= 0) step = 1;
+  if (cycle.parLeadDeadline && dayjs().diff(cycle.parLeadDeadline, "day", true) - 1 >= 0) step = 2;
+  if (cycle.parSpecialRatingDeadline && dayjs().diff(cycle.parSpecialRatingDeadline, "day", true) >= 0) step = 3;
+  if (cycle.parEvaluationEndDate && dayjs().diff(cycle.parEvaluationEndDate, "day", true) >= 0) step = 4;
+  return step;
+};
+
+export const CycleDatesStepper = ({ cycle, open, onClose }: CycleDatesStepperProps) => {
+  const activeStep = computeActiveStep(cycle);
   return (
     <CustomModal open={open} onClose={onClose} width="80vw">
       <Typography variant="h5" fontWeight={600} pb={1}>

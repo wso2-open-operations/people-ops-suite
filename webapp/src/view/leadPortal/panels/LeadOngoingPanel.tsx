@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { Box, Chip, IconButton, Stack, Tooltip } from "@mui/material";
+import { Box, Chip, IconButton, Stack, Tooltip, alpha, useTheme } from "@mui/material";
 import { GridRenderCellParams, GridRowParams } from "@mui/x-data-grid";
 
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
@@ -45,6 +45,7 @@ import { Review } from "../components/Review";
 import { TeamSummary } from "../components/TeamSummary";
 
 const LeadOngoingPanel = () => {
+  const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const userEmail = useAppSelector(selectUserEmail);
@@ -111,12 +112,20 @@ const LeadOngoingPanel = () => {
       renderCell: (params: GridRenderCellParams<Team>) => {
         const completed = params.row.summary.employeeParCompletedCount;
         const total = params.row.numberOfTeamMembers;
+        const done = completed === total;
         return (
           <Chip
             size="small"
             label={`${completed}/${total}`}
             sx={{
-              backgroundColor: completed === total ? "success.main" : "warning.dark",
+              backgroundColor: alpha(
+                done ? theme.palette.success.main : theme.palette.warning.main,
+                theme.palette.mode === "dark" ? 0.25 : 0.15,
+              ),
+              color: done
+                ? theme.palette.mode === "dark" ? theme.palette.success.main : theme.palette.success.dark
+                : theme.palette.mode === "dark" ? theme.palette.warning.main : theme.palette.warning.dark,
+              fontWeight: 500,
             }}
           />
         );
@@ -129,12 +138,20 @@ const LeadOngoingPanel = () => {
       renderCell: (params: GridRenderCellParams<Team>) => {
         const completed = params.row.summary.leadsReviewCompletedCount;
         const total = params.row.numberOfTeamMembers;
+        const done = completed === total;
         return (
           <Chip
             size="small"
             label={`${completed}/${total}`}
             sx={{
-              backgroundColor: completed === total ? "success.main" : "warning.dark",
+              backgroundColor: alpha(
+                done ? theme.palette.success.main : theme.palette.warning.main,
+                theme.palette.mode === "dark" ? 0.25 : 0.15,
+              ),
+              color: done
+                ? theme.palette.mode === "dark" ? theme.palette.success.main : theme.palette.success.dark
+                : theme.palette.mode === "dark" ? theme.palette.warning.main : theme.palette.warning.dark,
+              fontWeight: 500,
             }}
           />
         );
@@ -147,12 +164,20 @@ const LeadOngoingPanel = () => {
       renderCell: (params: GridRenderCellParams<Team>) => {
         const completed = params.row.summary.f2fCompletedCount;
         const total = params.row.numberOfTeamMembers;
+        const done = completed === total;
         return (
           <Chip
             size="small"
             label={`${completed}/${total}`}
             sx={{
-              backgroundColor: completed === total ? "success.main" : "warning.dark",
+              backgroundColor: alpha(
+                done ? theme.palette.success.main : theme.palette.warning.main,
+                theme.palette.mode === "dark" ? 0.25 : 0.15,
+              ),
+              color: done
+                ? theme.palette.mode === "dark" ? theme.palette.success.main : theme.palette.success.dark
+                : theme.palette.mode === "dark" ? theme.palette.warning.main : theme.palette.warning.dark,
+              fontWeight: 500,
             }}
           />
         );

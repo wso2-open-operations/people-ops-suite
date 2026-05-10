@@ -141,7 +141,6 @@ export const OrgSummary = ({
   // Stores state of PAR cycle settings view open
   const [isParCompletionViewOpen, setIsParCompletionViewOpen] = useState(false);
   // Stores state of active step of the Cycle Dates MUI stepper
-  const [activeStep, setActiveStep] = useState(0);
   // Stores the selected team id
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   // Stores the unified search text for the active tab
@@ -283,10 +282,6 @@ export const OrgSummary = ({
         );
       }
     }
-    if (dayjs().diff(currentCycle.parEmployeeDeadline, "day", true) >= 0) setActiveStep(1);
-    if (dayjs().diff(currentCycle.parLeadDeadline, "day", true) - 1 >= 0) setActiveStep(2);
-    if (dayjs().diff(currentCycle.parSpecialRatingDeadline, "day", true) >= 0) setActiveStep(3);
-    if (dayjs().diff(currentCycle.parEvaluationEndDate, "day", true) >= 0) setActiveStep(4);
 
     dispatch(fetchConfigurations());
   }, [currentCycle.parCycleId]);
@@ -1039,7 +1034,6 @@ export const OrgSummary = ({
                 </CustomModal>
                 <CycleDatesStepper
                   cycle={currentCycle}
-                  activeStep={activeStep}
                   open={isParCycleDatesOpen}
                   onClose={closeCycleDeadlines}
                 />

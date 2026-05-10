@@ -97,7 +97,6 @@ export const TeamSummary = ({
   const teamReport = useAppSelector<TeamReport | null>(selectTeamReport);
   const employeeMap = useAppSelector(selectEmployeeMap);
   // Stores state of active step of the Cycle Dates MUI stepper
-  const [activeStep, setActiveStep] = useState(0);
   // Stores the search term for the teams list
   const [searchTerm, setSearchTerm] = useState("");
   // Stores the selected rows in the data grid
@@ -497,20 +496,6 @@ export const TeamSummary = ({
     }
   }, [dispatch, cycle.parCycleId, teamId]);
 
-  useEffect(() => {
-    if (dayjs().diff(cycle.parEmployeeDeadline, "day", true) >= 0) {
-      setActiveStep(1);
-    }
-    if (dayjs().diff(cycle.parLeadDeadline, "day", true) - 1 >= 0) {
-      setActiveStep(2);
-    }
-    if (dayjs().diff(cycle.parSpecialRatingDeadline, "day", true) >= 0) {
-      setActiveStep(3);
-    }
-    if (dayjs().diff(cycle.parEvaluationEndDate, "day", true) >= 0) {
-      setActiveStep(4);
-    }
-  }, [dispatch, cycle]);
 
   return (
     <Box sx={{ height: "auto" }}>
@@ -771,7 +756,6 @@ export const TeamSummary = ({
           />
           <CycleDatesStepper
             cycle={cycle}
-            activeStep={activeStep}
             open={isParCycleDatesOpen}
             onClose={closeCycleDeadlines}
           />
