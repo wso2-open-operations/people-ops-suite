@@ -1118,21 +1118,6 @@ isolated function deleteEmergencyContactQuery(string employeeId, string mobile, 
         AND piec.mobile = ${mobile}
         AND piec.is_active = 1;`;
 
-# Inactivate all emergency contacts belonging to the given employee.
-#
-# + employeeEmail - Work email of the employee who is leaving
-# + actor - User performing the operation
-# + return - Parameterized query
-isolated function inactivateEmployeeEmergencyContactsQuery(string employeeEmail, string actor)
-    returns sql:ParameterizedQuery =>
-    `UPDATE personal_info_emergency_contacts piec
-     INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
-     SET piec.is_active = 0,
-         piec.updated_by = ${actor},
-         piec.updated_on = CURRENT_TIMESTAMP(6)
-     WHERE e.work_email = ${employeeEmail}
-       AND piec.is_active = 1;`;
-
 # Update employee job information query.
 #
 # + employeeId - Employee ID
