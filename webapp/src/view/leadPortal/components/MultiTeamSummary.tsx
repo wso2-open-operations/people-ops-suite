@@ -1,53 +1,47 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import DateRangeIcon from "@mui/icons-material/DateRange";
-import {
-  Box,
-  Button,
-  Card,
-  Grid,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import {
-  DataGrid,
-  GridColDef,
-  GridRowParams,
-  GridToolbarColumnsButton,
-  GridToolbarContainer,
-  GridToolbarDensitySelector,
-  GridToolbarFilterButton,
-  GridToolbarQuickFilter,
-} from "@mui/x-data-grid";
+import { Box, Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { DataGrid, GridColDef, GridRowParams, useGridApiRef } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 
-import React, { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
+
+import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+import { calculateAllTeamsSummary } from "@utils/utils";
+
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { sendAllThreeSixtyReminder } from "@slices/reminderSlice/reminder";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { AllTeamsSummary, Team, selectTeamStatus } from "@slices/teamSlice/team";
 
 import { CompletionStatusSection } from "@component/common/CompletionStatusSection";
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
+import { DataGridToolbar } from "@component/common/DataGridToolbar";
 import { LoadingEffect } from "@component/ui/Loading";
-import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import { sendAllThreeSixtyReminder } from "@slices/reminderSlice/reminder";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { AllTeamsSummary, Team } from "@slices/teamSlice/team";
-import { selectTeamStatus } from "@slices/teamSlice/team";
-import { RequestState } from "@utils/types";
-import { calculateAllTeamsSummary } from "@utils/utils";
 
 interface MultiTeamSummaryProps {
   filteredSummary: AllTeamsSummary;
   formattedTeams: Team[];
   columns: GridColDef[];
   handleTeamChange: (params: GridRowParams) => void;
-  setFilteredSummary: React.Dispatch<React.SetStateAction<AllTeamsSummary>>;
+  setFilteredSummary: Dispatch<SetStateAction<AllTeamsSummary>>;
 }
 
 export const MultiTeamSummary = ({
@@ -60,9 +54,7 @@ export const MultiTeamSummary = ({
   const currentCycle = useAppSelector(selectCurrentCycle);
   const dispatch = useAppDispatch();
   const teamState = useAppSelector(selectTeamStatus);
-
-  // Stores state of active step of the Cycle Dates MUI stepper
-  const [activeStep, setActiveStep] = useState(0);
+  const apiRef = useGridApiRef();
 
   // Stores state of 360 reminder confirmation open/ close
   const [is360ReminderDialogOpen, setIs360ReminderDialogOpen] = useState(false);
@@ -93,7 +85,7 @@ export const MultiTeamSummary = ({
           <Typography display={"inline"} variant="h4">
             {currentCycle.parCycleName}{" "}
           </Typography>
-          <Typography display={"inline"} color={"GrayText"}>
+          <Typography display={"inline"} color="text.secondary">
             ({dayjs(currentCycle.parCycleStartDate).format(shortDateFormat)} -{" "}
             {dayjs(currentCycle.parCycleEndDate).format(shortDateFormat)})
           </Typography>
@@ -131,52 +123,38 @@ export const MultiTeamSummary = ({
         f2fComplete={filteredSummary.totalF2fComplete}
         total={filteredSummary.totalEmployees}
       />
-      <Card
-        variant="outlined"
-        sx={{
-          p: 2,
-          width: "100%",
-          mt: 2,
-          flex: 1,
-          pb: 0,
-          mb: 3,
-        }}
-      >
-        <Grid container justifyContent="space-between" mb={2}>
-          <Typography variant="h5">Teams</Typography>
-        </Grid>
+      <Box sx={{ my: 2, mx: 0.5 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+          <Typography variant="h6" fontWeight={600}>
+            Teams
+          </Typography>
+          <DataGridToolbar apiRef={apiRef} />
+        </Box>
         {teamState === RequestState.LOADING && (
-          <Box sx={{ height: "70vh" }}>
+          <Box sx={{ height: "40vh", display: "flex", alignItems: "center" }}>
             <LoadingEffect message={uiMessages.loading.pageLoading} />
           </Box>
         )}
         {teamState === RequestState.SUCCEEDED && (
           <DataGrid
+            apiRef={apiRef}
             sx={{
               border: "none",
-              "& .MuiDataGrid-row:hover": {
-                cursor: "pointer",
-              },
+              "& .MuiDataGrid-row:hover": { cursor: "pointer" },
+              "& .MuiDataGrid-columnHeaders": { borderBottom: "none" },
+              "& .MuiDataGrid-cell": { borderBottom: "none" },
             }}
             rows={formattedTeams}
             columns={columns}
-            rowHeight={60}
+            rowHeight={44}
             getRowId={(row) => row.parTeamId}
             disableRowSelectionOnClick
             autoHeight
             pageSizeOptions={[10, 20, 25]}
             initialState={{
-              pagination: {
-                paginationModel: {
-                  pageSize: 10,
-                  page: 0,
-                },
-              },
+              pagination: { paginationModel: { pageSize: 10, page: 0 } },
             }}
             onRowClick={handleTeamChange}
-            // components={{
-            //   Toolbar: CustomToolbar,
-            // }}
             onFilterModelChange={(model) => {
               const filteredRows = formattedTeams.filter((row) =>
                 Object.values(row).some((value) =>
@@ -185,12 +163,11 @@ export const MultiTeamSummary = ({
                     .includes(model.quickFilterValues?.[0]?.toLowerCase() || ""),
                 ),
               );
-              const newFilteredSummary = calculateAllTeamsSummary(filteredRows);
-              setFilteredSummary(newFilteredSummary);
+              setFilteredSummary(calculateAllTeamsSummary(filteredRows));
             }}
           />
         )}
-      </Card>
+      </Box>
       <ConfirmationDialog
         open={is360ReminderDialogOpen}
         onClose={close360ReminderDialog}
@@ -203,23 +180,9 @@ export const MultiTeamSummary = ({
       />
       <CycleDatesStepper
         cycle={currentCycle}
-        activeStep={activeStep}
         open={isParCycleDatesOpen}
         onClose={closeCycleDeadlines}
       />
     </Box>
-  );
-};
-
-const CustomToolbar = () => {
-  return (
-    <GridToolbarContainer sx={{ justifyContent: "space-between" }}>
-      <Box>
-        <GridToolbarColumnsButton />
-        <GridToolbarFilterButton />
-        <GridToolbarDensitySelector />
-      </Box>
-      <GridToolbarQuickFilter />
-    </GridToolbarContainer>
   );
 };
