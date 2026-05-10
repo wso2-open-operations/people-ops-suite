@@ -16,8 +16,6 @@
 
 import { useEffect, useState } from "react";
 
-import dayjs from "dayjs";
-
 import {
   Avatar,
   Box,
@@ -597,66 +595,6 @@ export const TeamSummary = ({
               total={teamReport.numberOfTeamMembers}
               sx={{ flex: 1 }}
             />
-            {/* Commented out temporarily for testing new features; to be removed later. */}
-            {/* <Card variant="outlined" sx={{ padding: 2, flex: 1 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  position: "relative",
-                }}
-              >
-                <Typography variant="h5">Top 5%/20% Ratings</Typography>
-                <Tooltip
-                  arrow
-                  title={uiMessages.tooltip.top5Percent20PercentInfo}
-                  enterDelay={tooltipVisibilityDelay}
-                  enterNextDelay={tooltipVisibilityDelay}
-                >
-                  <IconButton
-                    aria-label="info"
-                    sx={{
-                      position: "absolute",
-                      left: "9rem",
-                      top: "-0.5rem",
-                      "&:hover": {
-                        backgroundColor: "transparent",
-                      },
-                    }}
-                  >
-                    <InfoIcon
-                      sx={{ fontSize: "1.3rem", color: "primary.main" }}
-                    />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-              <Stack direction={"row"} spacing={4}>
-                <Box sx={{ width: "50%" }}>
-                  <CompletionStatusCard
-                    name={`Top 5% : ${
-                      teamReport.numberOf5pSlots - teamReport.available5pSlots
-                    }/${teamReport.numberOf5pSlots}`}
-                    completed={
-                      teamReport.numberOf5pSlots - teamReport.available5pSlots
-                    }
-                    total={teamReport.numberOf5pSlots}
-                    hideLeftCount={true}
-                  />
-                </Box>
-                <Box sx={{ width: "50%" }}>
-                  <CompletionStatusCard
-                    name={`Top 20% : ${
-                      teamReport.numberOf20pSlots - teamReport.available20pSlots
-                    }/${teamReport.numberOf20pSlots}`}
-                    completed={
-                      teamReport.numberOf20pSlots - teamReport.available20pSlots
-                    }
-                    total={teamReport.numberOf20pSlots}
-                    hideLeftCount={true}
-                  />
-                </Box>
-              </Stack>
-            </Card> */}
           </Stack>
           <Card
             variant="outlined"
