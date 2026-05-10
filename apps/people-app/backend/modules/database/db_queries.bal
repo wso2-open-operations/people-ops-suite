@@ -56,6 +56,13 @@ isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
 isolated function getEmployeeIdByEpfQuery(string epf) returns sql:ParameterizedQuery =>
     `SELECT employee_id FROM employee WHERE epf = ${epf} LIMIT 1;`;
 
+# Fetch employee work email by employee ID.
+#
+# + employeeId - Employee ID
+# + return - Query to get employee work email
+isolated function getEmployeeWorkEmailQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT work_email FROM employee WHERE employee_id = ${employeeId};`;
+
 # Fetch employee detailed information.
 #
 # + employeeId - Employee ID
@@ -1344,6 +1351,21 @@ isolated function deleteAdditionalManagerQuery(string employeeId, string email, 
       WHERE e.employee_id = ${employeeId}
         AND LOWER(eam.additional_manager_email) = LOWER(${email})
         AND eam.is_active = 1;`;
+
+# Inactivate all additional-manager relationships where the leaving
+# employee's email is recorded as the additional manager for other employees.
+#
+# + managerEmail - Work email of the employee who is leaving
+# + actor - User performing the operation
+# + return - Parameterized query
+isolated function inactivateAdditionalManagerRelationshipsQuery(string managerEmail, string actor)
+    returns sql:ParameterizedQuery =>
+    `UPDATE employee_additional_managers eam
+     SET eam.is_active = 0,
+         eam.updated_by = ${actor},
+         eam.updated_on = CURRENT_TIMESTAMP(6)
+     WHERE LOWER(eam.additional_manager_email) = LOWER(${managerEmail})
+       AND eam.is_active = 1;`;
 
 # Build query to fetch vehicles.
 #
