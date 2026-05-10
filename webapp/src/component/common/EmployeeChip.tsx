@@ -13,12 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import React from "react";
+
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import StarRateIcon from "@mui/icons-material/StarRate";
 import WorkHistoryIcon from "@mui/icons-material/WorkHistory";
 import { Chip, Grid } from "@mui/material";
-
-import React from "react";
 
 interface EmployeeChipProps {
   isSpecial: boolean;

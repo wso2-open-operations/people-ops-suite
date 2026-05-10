@@ -13,8 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+
+import { useState } from "react";
+
+import dayjs from "dayjs";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import autoTable, { RowInput } from "jspdf-autotable";
+
 import {
   Avatar,
   Box,
@@ -23,21 +29,19 @@ import {
   Grid,
   IconButton,
   Link,
-  Table as MuiTable,
   Paper,
+  Table as MuiTable,
   TableBody,
   TableCell,
   TableRow,
   Typography,
 } from "@mui/material";
-import dayjs from "dayjs";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
-import autoTable, { RowInput } from "jspdf-autotable";
 
-import { useState } from "react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 
 import { base64Regex, uiMessages } from "@config/constant";
+
 import {
   ParEmployeeStatus,
   ParLeadStatus,
@@ -209,23 +213,19 @@ export const EmployeePar = ({
       head: [
         [
           {
-            content: ` - Employee: ${
-              employeeMap[employeeRatings.parEmployeeEmail]?.employeeName ??
+            content: ` - Employee: ${employeeMap[employeeRatings.parEmployeeEmail]?.employeeName ??
               employeeRatings.parEmployeeEmail
-            }\n - PAR Rating: ${
-              employeeRatings.parRating === parRatingNotAssigned
+              }\n - PAR Rating: ${employeeRatings.parRating === parRatingNotAssigned
                 ? "Not Assigned"
                 : employeeRatings.parRating
-            }\n - Top 5%/20% Rating: ${
-              employeeRatings.parSpecialRating !== ParSpecialRating.NONE
+              }\n - Top 5%/20% Rating: ${employeeRatings.parSpecialRating !== ParSpecialRating.NONE
                 ? employeeRatings.parSpecialRating
                 : "Not Assigned"
-            }\n - PAR Shared By: ${
-              employeeRatings.parRatingSharedBy
+              }\n - PAR Shared By: ${employeeRatings.parRatingSharedBy
                 ? employeeMap[employeeRatings.parRatingSharedBy]?.employeeName ||
-                  employeeRatings.parRatingSharedBy
+                employeeRatings.parRatingSharedBy
                 : "Not Provided"
-            }`,
+              }`,
             colSpan: 3,
             styles: {
               halign: "left",
