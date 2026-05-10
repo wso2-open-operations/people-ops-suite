@@ -15,10 +15,19 @@
 // under the License.
 
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { Card, Grid, IconButton, Tooltip, Typography, type SxProps, type Theme } from "@mui/material";
+import {
+  Box,
+  Card,
+  Grid,
+  IconButton,
+  LinearProgress,
+  Tooltip,
+  Typography,
+  type SxProps,
+  type Theme,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
-import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
 import { tooltipVisibilityDelay } from "@config/constant";
 
 const overviewButtonSx = {
@@ -93,15 +102,24 @@ export const CompletionStatusSection = ({
         </Grid>
       </Grid>
       <Grid container spacing={10}>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <CompletionStatusCard name="Employee PAR" completed={employeeParComplete} total={total} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <CompletionStatusCard name="Lead's PAR" completed={leadReviewComplete} total={total} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <CompletionStatusCard name="F2F" completed={f2fComplete} total={total} />
-        </Grid>
+        {[
+          { name: "Employee PAR", completed: employeeParComplete },
+          { name: "Lead's PAR", completed: leadReviewComplete },
+          { name: "F2F", completed: f2fComplete },
+        ].map(({ name, completed }) => (
+          <Grid key={name} size={{ xs: 12, sm: 4 }}>
+            <Box>
+              <Typography pb="5px">
+                {name} : {total - completed} Pending
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={(completed * 100) / total}
+                sx={{ height: 8, borderRadius: 1 }}
+              />
+            </Box>
+          </Grid>
+        ))}
       </Grid>
     </Card>
   );
