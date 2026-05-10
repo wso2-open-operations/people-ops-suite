@@ -13,13 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Stack, Typography } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+
+import React, { ChangeEvent, useState } from "react";
+
 import DOMPurify from "dompurify";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 
-import React, { ChangeEvent, useState } from "react";
+import { Stack, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 import { SANITIZE_CONFIG } from "@config/constant";
 

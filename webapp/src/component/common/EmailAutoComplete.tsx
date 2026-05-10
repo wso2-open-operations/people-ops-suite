@@ -10,12 +10,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Avatar, Chip } from "@mui/material";
-import Autocomplete from "@mui/material/Autocomplete";
-import CircularProgress from "@mui/material/CircularProgress";
-import TextField from "@mui/material/TextField";
 
 import React, { SyntheticEvent, useCallback, useState } from "react";
+
+import {
+  Autocomplete,
+  Avatar,
+  Chip,
+  CircularProgress,
+  TextField
+} from "@mui/material";
+
+import { RequestState } from "@utils/types";
 
 import { selectUserEmail } from "@slices/authSlice/auth";
 import {
@@ -25,7 +31,8 @@ import {
 } from "@slices/metaSlice/meta";
 import { useAppSelector } from "@slices/store";
 import { selectThreeSixtyReviewers } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { RequestState } from "@utils/types";
+
+const emailRegex = /^[^\s@]+@wso2\.com$/;
 
 interface EmailAutocompleteProps {
   value: string[];
@@ -49,9 +56,6 @@ export const EmailAutocomplete = ({
   const employeeMap = useAppSelector(selectEmployeeMap);
   const ownEmail = useAppSelector(selectUserEmail);
   const reviewers = useAppSelector(selectThreeSixtyReviewers);
-
-  // Email validation regex
-  const emailRegex = /^[^\s@]+@wso2\.com$/;
 
   // State for controlling the open state of the autocomplete
   const [open, setOpen] = useState(false);
@@ -145,7 +149,7 @@ export const EmailAutocomplete = ({
         }
       }
     },
-    [inputValue, value, onChange, ownEmail, reviewers, emailsToSkip, emailRegex, employeeArray],
+    [inputValue, value, onChange, ownEmail, reviewers, emailsToSkip, employeeArray],
   );
 
   return (
@@ -199,7 +203,7 @@ export const EmailAutocomplete = ({
           />
         ))
       }
-      renderOption={(props, option, { selected }) => (
+      renderOption={(props, option) => (
         <li {...props}>
           <div style={{ display: "flex", alignItems: "center", height: 30 }}>
             <Avatar
