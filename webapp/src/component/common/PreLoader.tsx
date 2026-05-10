@@ -16,10 +16,11 @@
 
 import { Box, LinearProgress, Typography, useTheme } from "@mui/material";
 
-import Wso2Logo from "@assets/images/wso2-logo.png";
-import Wso2LogoWhite from "@assets/images/wso2-logo-white.png";
 import { gradients } from "@config/constant";
 import type { PreLoaderProps } from "@utils/types";
+
+import Wso2Logo from "@assets/images/wso2-logo.png";
+import Wso2LogoWhite from "@assets/images/wso2-logo-white.png";
 
 const PreLoader = ({ fullScreen = true, ...props }: PreLoaderProps) => {
   const theme = useTheme();

@@ -13,9 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Stack, Typography, useTheme } from "@mui/material";
 
 import { ReactNode } from "react";
+
+import { Box, Stack, Typography, useTheme } from "@mui/material";
 
 interface TitleProps {
   firstWord: string;

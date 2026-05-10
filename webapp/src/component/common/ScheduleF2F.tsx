@@ -13,8 +13,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { AccessTime, CalendarMonth, Description, VideoCall } from "@mui/icons-material";
-import CloseIcon from "@mui/icons-material/Close";
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
+import dayjs, { Dayjs } from "dayjs";
+import { useDispatch } from "react-redux";
+
 import {
   Alert,
   Box,
@@ -32,15 +36,21 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-// import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import dayjs, { Dayjs } from "dayjs";
-import { useDispatch } from "react-redux";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  AccessTime,
+  CalendarMonth,
+  Close as CloseIcon,
+  Description,
+  VideoCall,
+} from "@mui/icons-material";
 
+import { RequestState } from "@utils/types";
+
+import { AppDispatch, RootState, useAppSelector } from "@slices/store";
 import {
   TimeSlot,
   checkAvailability,
@@ -55,8 +65,6 @@ import {
   setMeetingDetails,
   setSelectedTimeSlot,
 } from "@slices/calendarSlice/calendar";
-import { AppDispatch, RootState, useAppSelector } from "@slices/store";
-import { RequestState } from "@utils/types";
 
 interface MeetingSchedulerPageProps {
   parRatingId: number;
