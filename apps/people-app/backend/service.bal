@@ -1041,7 +1041,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         return <http:Ok>{
             body: {
                 employeeId: newEmployeeId,
-                message: "Employee created successfully!"
+                message: "Employee created successfully!",
+                hasGroupAssignmentWarning: false
             }
         };
     }
