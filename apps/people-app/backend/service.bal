@@ -1015,7 +1015,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             if addResult is error || addResult.failedUsers.length() > 0 {
                 log:printError("Failed to add user to Asgardeo group. " +
                         "Asgardeo user was already created and requires manual cleanup",
-                        addResult is error ? addResult : (),
+                            addResult is error ? addResult : (),
                         workEmail = payload.workEmail, group = groupName, employeeId = employeeId,
                         failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
                 failedGroups.push(groupName);
@@ -1023,9 +1023,13 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if failedGroups.length() > 0 {
-            email:notifyGroupAssignmentFailure(employeeId, payload.firstName, payload.lastName,
-                    payload.workEmail, failedGroups);
-                    
+            error? notificationResult = email:notifyGroupAssignmentFailure(employeeId, payload.firstName,
+                    payload.lastName, payload.workEmail, failedGroups);
+            if notificationResult is error {
+                log:printError("Failed to send group assignment failure notification",
+                        notificationResult, employeeId = employeeId, workEmail = payload.workEmail);
+            }
+
             return <http:Ok>{
                 body: {
                     employeeId: newEmployeeId,
@@ -1221,7 +1225,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if database:hasLeaverFields(payload) && payload.employeeStatus != database:EMPLOYEE_LEFT
                 && employeeInfo.employeeStatus != database:EMPLOYEE_LEFT {
             log:printWarn("Attempt to set resignation fields on a non-Left employee",
-                employeeId = employeeId);
+                    employeeId = employeeId);
             return <http:BadRequest>{
                 body: {
                     message: "Resignation details can only be set when employee status is 'Left'"
