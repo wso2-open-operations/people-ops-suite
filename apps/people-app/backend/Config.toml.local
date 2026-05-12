@@ -53,3 +53,16 @@ SERVICE_DESK_ROLE = ""
     tokenUrl = ""
     clientId = ""
     clientSecret = ""
+
+[people.email]
+appName = ""
+
+[people.email.emailServiceConfig]
+    emailServiceEndpoint = ""
+    to = [""]
+    from = ""
+
+[people.email.emailServiceConfig.oauthConfig]
+    tokenUrl = ""
+    clientId = ""
+    clientSecret = ""

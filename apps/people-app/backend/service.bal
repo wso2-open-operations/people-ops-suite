@@ -16,6 +16,7 @@
 
 import people.authorization;
 import people.database;
+import people.email;
 import people.qr;
 import people.scim;
 import people.wso2_coin;
@@ -895,7 +896,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - The created employee ID as an integer, or HTTP errors
     resource function post employees(http:RequestContext ctx, database:CreateEmployeePayload payload)
-        returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Ok|int {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1017,9 +1018,26 @@ service http:InterceptableService / on new http:Listener(9090) {
                         addResult is error ? addResult : (),
                         workEmail = payload.workEmail, group = groupName, employeeId = employeeId,
                         failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
-                return <http:InternalServerError>{
+                        
+                string[] failedGroups = [groupName];
+                foreach string remainingGroup in groupNames {
+                    if remainingGroup != groupName {
+                        scim:AddUsersToGroupResponse|error remainingAddResult =
+                                scim:addUserToGroup(remainingGroup, payload.workEmail);
+                        if remainingAddResult is error || remainingAddResult.failedUsers.length() > 0 {
+                            failedGroups.push(remainingGroup);
+                        }
+                    }
+                }
+
+                email:notifyGroupAssignmentFailure(employeeId, payload.firstName, payload.lastName,
+                        payload.workEmail, failedGroups);
+                        
+                return <http:Ok>{
                     body: {
-                        message: ERROR_EMPLOYEE_CREATION_FAILED
+                        employeeId: newEmployeeId,
+                        message: WARNING_GROUP_ASSIGNMENT_FAILED,
+                        hasGroupAssignmentWarning: true
                     }
                 };
             }
