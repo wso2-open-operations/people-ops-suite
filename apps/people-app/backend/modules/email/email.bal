@@ -53,12 +53,12 @@ public isolated function notifyGroupAssignmentFailure(string employeeId, string 
     ).reduce(isolated function(string acc, string item) returns string => acc + item, "");
 
     map<string> keyValues = {
-        "appName": appName,
-        "EMPLOYEE_NAME": string `${firstName} ${lastName}`,
-        "EMPLOYEE_EMAIL": workEmail,
-        "EMPLOYEE_ID": employeeId,
-        "FAILED_GROUPS": failedGroupsList,
-        "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+        appName,
+        EMPLOYEE_NAME: string `${firstName} ${lastName}`,
+        EMPLOYEE_EMAIL: workEmail,
+        EMPLOYEE_ID: employeeId,
+        FAILED_GROUPS: failedGroupsList,
+        YEAR: time:utcToCivil(time:utcNow()).year.toString()
     };
 
     string|error boundTemplate = bindKeyValues(groupAssignmentFailureTemplate, keyValues);
