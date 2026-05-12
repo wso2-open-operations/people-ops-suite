@@ -38,15 +38,16 @@ public isolated function sendEmail(EmailPayload payload) returns error? {
 }
 
 # Send a notification email when Asgardeo group assignment fails during employee onboarding.
-# Logs errors without throwing exceptions to ensure employee creation flow is not interrupted.
+# Throws an error if the email notification fails to send.
 #
 # + employeeId - The unique identifier of the created employee
 # + firstName - First name of the employee
 # + lastName - Last name of the employee
 # + workEmail - Work email address of the employee
 # + failedGroups - List of group names that failed to be assigned
+# + return - Error if email notification fails to send
 public isolated function notifyGroupAssignmentFailure(string employeeId, string firstName, string lastName,
-        string workEmail, string[] failedGroups) {
+        string workEmail, string[] failedGroups) returns error? {
 
     string failedGroupsList = failedGroups.map(isolated function(string group) returns string =>
         string `<li>${htmlEscape(group)}</li>`
@@ -65,7 +66,7 @@ public isolated function notifyGroupAssignmentFailure(string employeeId, string 
     if boundTemplate is error {
         log:printError("Failed to bind email template for group assignment failure notification",
                 boundTemplate, employeeId = employeeId, workEmail = workEmail);
-        return;
+        return boundTemplate;
     }
 
     EmailPayload emailPayload = {
@@ -79,5 +80,6 @@ public isolated function notifyGroupAssignmentFailure(string employeeId, string 
     if emailResult is error {
         log:printError("Failed to send group assignment failure notification email",
                 emailResult, employeeId = employeeId, workEmail = workEmail);
+        return emailResult;
     }
 }

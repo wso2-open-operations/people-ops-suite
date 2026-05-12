@@ -897,7 +897,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Employee creation payload
     # + return - HTTP OK with created employee ID and status, or HTTP errors
     resource function post employees(http:RequestContext ctx, database:CreateEmployeePayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Ok {
+        returns http:Ok|http:InternalServerError|http:BadRequest|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {

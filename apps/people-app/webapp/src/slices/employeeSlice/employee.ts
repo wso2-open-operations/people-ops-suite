@@ -201,6 +201,12 @@ export type CreateEmployeePayload = {
   personalInfo: CreatePersonalInfoPayload;
 };
 
+export type CreateEmployeeResponse = {
+  employeeId: number;
+  message: string;
+  hasGroupAssignmentWarning: boolean;
+};
+
 export type UpdateEmployeeJobInfoPayload = {
   epf?: string | null;
   workLocation?: string;
@@ -458,9 +464,10 @@ export const createEmployee = createAsyncThunk(
         AppConfig.serviceUrls.employees,
         payload,
       );
-      const employeeId = response.data.employeeId as number;
-      const message = response.data.message || "Employee created successfully!";
-      const messageType = response.data.hasGroupAssignmentWarning ? "warning" : "success";
+      const data = response.data as CreateEmployeeResponse;
+      const employeeId = data.employeeId;
+      const message = data.message || "Employee created successfully!";
+      const messageType = data.hasGroupAssignmentWarning ? "warning" : "success";
       dispatch(
         enqueueSnackbarMessage({
           message,
