@@ -896,7 +896,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - The created employee ID as an integer, or HTTP errors
     resource function post employees(http:RequestContext ctx, database:CreateEmployeePayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Ok|int {
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Ok {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1007,42 +1007,38 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+        string[] failedGroups = [];
         foreach string groupName in groupNames {
             scim:AddUsersToGroupResponse|error addResult =
                     scim:addUserToGroup(groupName, payload.workEmail);
-            boolean hasFailure = addResult is error
-                    || addResult.failedUsers.length() > 0;
-            if hasFailure {
+            if addResult is error || addResult.failedUsers.length() > 0 {
                 log:printError("Failed to add user to Asgardeo group. " +
                         "Asgardeo user was already created and requires manual cleanup",
                         addResult is error ? addResult : (),
                         workEmail = payload.workEmail, group = groupName, employeeId = employeeId,
                         failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
-                        
-                string[] failedGroups = [groupName];
-                foreach string remainingGroup in groupNames {
-                    if remainingGroup != groupName {
-                        scim:AddUsersToGroupResponse|error remainingAddResult =
-                                scim:addUserToGroup(remainingGroup, payload.workEmail);
-                        if remainingAddResult is error || remainingAddResult.failedUsers.length() > 0 {
-                            failedGroups.push(remainingGroup);
-                        }
-                    }
-                }
-
-                email:notifyGroupAssignmentFailure(employeeId, payload.firstName, payload.lastName,
-                        payload.workEmail, failedGroups);
-                        
-                return <http:Ok>{
-                    body: {
-                        employeeId: newEmployeeId,
-                        message: WARNING_GROUP_ASSIGNMENT_FAILED,
-                        hasGroupAssignmentWarning: true
-                    }
-                };
+                failedGroups.push(groupName);
             }
         }
-        return newEmployeeId;
+
+        if failedGroups.length() > 0 {
+            email:notifyGroupAssignmentFailure(employeeId, payload.firstName, payload.lastName,
+                    payload.workEmail, failedGroups);
+                    
+            return <http:Ok>{
+                body: {
+                    employeeId: newEmployeeId,
+                    message: WARNING_GROUP_ASSIGNMENT_FAILED,
+                    hasGroupAssignmentWarning: true
+                }
+            };
+        }
+        return <http:Ok>{
+            body: {
+                employeeId: newEmployeeId,
+                message: "Employee created successfully!"
+            }
+        };
     }
 
     # Update employee personal information.

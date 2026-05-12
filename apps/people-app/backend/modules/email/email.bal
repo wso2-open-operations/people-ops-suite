@@ -31,7 +31,7 @@ public isolated function sendEmail(EmailPayload payload) returns error? {
     }
     if response.statusCode != http:STATUS_OK {
         string customError = string `Error occurred while sending the email !`;
-        log:printError(string `${customError} : ${(check response.getJsonPayload()).toJsonString()}`);
+        log:printError(string `${customError} - HTTP ${response.statusCode}`);
         return error(customError);
     }
     log:printInfo(string `Email sent successfully to ${payload.to.toString()}`);
@@ -49,7 +49,7 @@ public isolated function notifyGroupAssignmentFailure(string employeeId, string 
         string workEmail, string[] failedGroups) {
 
     string failedGroupsList = failedGroups.map(isolated function(string group) returns string =>
-        string `<li>${group}</li>`
+        string `<li>${htmlEscape(group)}</li>`
     ).reduce(isolated function(string acc, string item) returns string => acc + item, "");
 
     map<string> keyValues = {

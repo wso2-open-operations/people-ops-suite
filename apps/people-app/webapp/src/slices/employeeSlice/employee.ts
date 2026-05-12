@@ -460,9 +460,7 @@ export const createEmployee = createAsyncThunk(
       );
       const employeeId = response.data.employeeId as number;
       const message = response.data.message || "Employee created successfully!";
-      const messageType = response.data.hasGroupAssignmentWarning
-        ? "warning"
-        : "success";
+      const messageType = response.data.hasGroupAssignmentWarning ? "warning" : "success";
       dispatch(
         enqueueSnackbarMessage({
           message,
