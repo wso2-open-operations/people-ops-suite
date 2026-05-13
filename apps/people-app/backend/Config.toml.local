@@ -55,7 +55,7 @@ SERVICE_DESK_ROLE = ""
     clientSecret = ""
 
 [people.email]
-appName = ""
+    appName = ""
 
 [people.email.emailServiceConfig]
     emailServiceEndpoint = ""

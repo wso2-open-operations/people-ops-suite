@@ -15,7 +15,7 @@
 // under the License.
 
 # Email template for Asgardeo group assignment failure notifications during employee onboarding.
-# Placeholders: EMPLOYEE_NAME, EMPLOYEE_EMAIL, EMPLOYEE_ID, FAILED_GROUPS, YEAR
+# Placeholders: APP_NAME, EMPLOYEE_NAME, EMPLOYEE_EMAIL, EMPLOYEE_ID, FAILED_GROUPS, YEAR
 public final string groupAssignmentFailureTemplate = string `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">

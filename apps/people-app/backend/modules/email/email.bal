@@ -54,7 +54,7 @@ public isolated function notifyGroupAssignmentFailure(string employeeId, string 
     ).reduce(isolated function(string acc, string item) returns string => acc + item, "");
 
     map<string> keyValues = {
-        appName,
+        APP_NAME: appName,
         EMPLOYEE_NAME: string `${firstName} ${lastName}`,
         EMPLOYEE_EMAIL: workEmail,
         EMPLOYEE_ID: employeeId,
