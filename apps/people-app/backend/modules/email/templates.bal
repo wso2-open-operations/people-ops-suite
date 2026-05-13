@@ -23,7 +23,7 @@ public final string groupAssignmentFailureTemplate = string `
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
     <meta name="color-scheme" content="light dark" />
     <meta name="supported-color-schemes" content="light dark" />
-    <title>WSO2 People App</title>
+    <title>WSO2 <!-- [APP_NAME] --></title>
     <style type="text/css">
       @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap");
       body {
@@ -297,7 +297,7 @@ public final string groupAssignmentFailureTemplate = string `
                       "
                     >
                       Best regards,<br />
-                      People App System
+                      <!-- [APP_NAME] --> System
                     </p>
 
                   </td>
@@ -318,7 +318,7 @@ public final string groupAssignmentFailureTemplate = string `
                         margin:0;
                       "
                     >
-                      &copy; <!-- [YEAR] --> WSO2 LLC. This is an automated notification from the People App System.
+                      &copy; <!-- [YEAR] --> WSO2 LLC. This is an automated notification from the <!-- [APP_NAME] --> System.
                     </p>
                   </td>
                 </tr>
