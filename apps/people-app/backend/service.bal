@@ -897,7 +897,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Employee creation payload
     # + return - HTTP OK with created employee ID and status, or HTTP errors
     resource function post employees(http:RequestContext ctx, database:CreateEmployeePayload payload)
-        returns http:Created|http:InternalServerError|http:BadRequest|http:Forbidden {
+        returns EmployeeCreatedResponse|http:InternalServerError|http:BadRequest|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1030,21 +1030,19 @@ service http:InterceptableService / on new http:Listener(9090) {
                         notificationResult, employeeId = employeeId, workEmail = payload.workEmail);
             }
 
-            return <http:Created>{
-                body: {
-                    employeeId: newEmployeeId,
-                    message: WARNING_GROUP_ASSIGNMENT_FAILED,
-                    hasGroupAssignmentWarning: true
-                }
-            };
-        }
-        return <http:Created>{
-            body: {
+            EmployeeCreatedResponse response = {
                 employeeId: newEmployeeId,
-                message: "Employee created successfully!",
-                hasGroupAssignmentWarning: false
-            }
+                message: WARNING_GROUP_ASSIGNMENT_FAILED,
+                hasGroupAssignmentWarning: true
+            };
+            return response;
+        }
+        EmployeeCreatedResponse response = {
+            employeeId: newEmployeeId,
+            message: "Employee created successfully!",
+            hasGroupAssignmentWarning: false
         };
+        return response;
     }
 
     # Update employee personal information.
