@@ -24,11 +24,11 @@ import PreLoader from "@component/common/PreLoader";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
 import ConfirmationModalContextProvider from "@context/DialogContext";
 import { ColorModeContext } from "@hooks/useColorMode";
-import { useMicroApp } from "@hooks/useMicroApp";
 import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
 import { selectRoles } from "@slices/authSlice/auth";
 import { type RootState, useAppSelector } from "@slices/store";
+import { isMicroApp } from "@config/config";
 
 import MobileBottomBar from "./MobileBottomBar/MobileBottomBar";
 
@@ -41,7 +41,6 @@ export default function Layout() {
   const roles = useSelector(selectRoles);
   const common = useAppSelector((state: RootState) => state.common);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isValidMicroApp = useMicroApp();
   const colorMode = useContext(ColorModeContext);
 
   const snackbarConfig = useMemo(
@@ -95,12 +94,12 @@ export default function Layout() {
         }}
       >
         {/* Header */}
-        {!isValidMicroApp && <Header />}
+        {!isMicroApp && <Header />}
 
         {/* Main content container */}
         <Box sx={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
           {/* Sidebar - show on small screens and hide on MicroApps */}
-          {!isValidMicroApp &&
+          {!isMicroApp &&
             (isMobile ? (
               <>
                 {/* Backdrop when sidebar is open */}
@@ -152,7 +151,7 @@ export default function Layout() {
           </Box>
 
           {/* Mobile Bottom Bar - Only on Mobile */}
-          {!isValidMicroApp && isMobile && (
+          {!isMicroApp && isMobile && (
             <MobileBottomBar
               onMenuClick={() => setOpen(!open)}
               onThemeToggle={colorMode.toggleColorMode}
