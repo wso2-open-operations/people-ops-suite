@@ -217,11 +217,12 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
 const MicroAppAuthProvider = (props: { children: React.ReactNode }) => {
   const [appState, setAppState] = useState<AppState>(AppState.Loading);
-  let mounted = true;
   const dispatch = useAppDispatch();
   const [triggerGetUserInfo] = useLazyGetUserInfoQuery();
 
   useEffect(() => {
+    let mounted = true;
+
     const setupAuthenticatedUser = async () => {
       const userInfoResult = await triggerGetUserInfo();
       if (userInfoResult?.isError) {
