@@ -16,6 +16,7 @@
 
 import people.authorization;
 import people.database;
+import people.email;
 import people.qr;
 import people.scim;
 import people.wso2_coin;
@@ -893,9 +894,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Create a new employee.
     #
-    # + return - The created employee ID as an integer, or HTTP errors
+    # + payload - Employee creation payload
+    # + return - HTTP OK with created employee ID and status, or HTTP errors
     resource function post employees(http:RequestContext ctx, database:CreateEmployeePayload payload)
-        returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+        returns EmployeeCreatedResponse|http:InternalServerError|http:BadRequest|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1006,25 +1008,39 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+        string[] failedGroups = [];
         foreach string groupName in groupNames {
             scim:AddUsersToGroupResponse|error addResult =
                     scim:addUserToGroup(groupName, payload.workEmail);
-            boolean hasFailure = addResult is error
-                    || addResult.failedUsers.length() > 0;
-            if hasFailure {
+            if addResult is error || addResult.failedUsers.length() > 0 {
                 log:printError("Failed to add user to Asgardeo group. " +
                         "Asgardeo user was already created and requires manual cleanup",
-                        addResult is error ? addResult : (),
+                            addResult is error ? addResult : (),
                         workEmail = payload.workEmail, group = groupName, employeeId = employeeId,
                         failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
-                return <http:InternalServerError>{
-                    body: {
-                        message: ERROR_EMPLOYEE_CREATION_FAILED
-                    }
-                };
+                failedGroups.push(groupName);
             }
         }
-        return newEmployeeId;
+
+        if failedGroups.length() > 0 {
+            error? notificationResult = email:notifyGroupAssignmentFailure(employeeId, payload.firstName,
+                    payload.lastName, payload.workEmail, failedGroups);
+            if notificationResult is error {
+                log:printError("Failed to send group assignment failure notification",
+                        notificationResult, employeeId = employeeId, workEmail = payload.workEmail);
+            }
+
+            return {
+                employeeId: newEmployeeId,
+                message: WARNING_GROUP_ASSIGNMENT_FAILED,
+                hasGroupAssignmentWarning: true
+            };
+        }
+        return {
+            employeeId: newEmployeeId,
+            message: "Employee created successfully!",
+            hasGroupAssignmentWarning: false
+        };
     }
 
     # Update employee personal information.
@@ -1206,7 +1222,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if database:hasLeaverFields(payload) && payload.employeeStatus != database:EMPLOYEE_LEFT
                 && employeeInfo.employeeStatus != database:EMPLOYEE_LEFT {
             log:printWarn("Attempt to set resignation fields on a non-Left employee",
-                employeeId = employeeId);
+                    employeeId = employeeId);
             return <http:BadRequest>{
                 body: {
                     message: "Resignation details can only be set when employee status is 'Left'"

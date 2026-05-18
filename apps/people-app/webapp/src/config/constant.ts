@@ -28,7 +28,10 @@ export const SnackMessage = {
     updateEmployeePersonalInfo: "Error while updating personal info",
     addEmployee: "Unable to add employee",
   },
-  warning: {},
+  warning: {
+    groupAssignmentFailed:
+      "Employee created successfully, but some group assignments failed",
+  },
 };
 export const ADMIN_PRIVILEGE = 999;
 export const LEAD_PRIVILEGE = 993;

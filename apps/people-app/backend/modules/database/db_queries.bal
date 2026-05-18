@@ -1726,22 +1726,6 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
 isolated function getEmployeeEmailToNameMapQuery() returns sql:ParameterizedQuery =>
     `SELECT work_email, CONCAT(first_name, ' ', last_name) AS full_name FROM employee;`;
 
-# Delete additional managers for an employee.
-#
-# + employeeId - Employee ID string
-# + return - Parameterized query to delete additional managers
-isolated function deleteEmployeeAdditionalManagersQuery(string employeeId) returns sql:ParameterizedQuery =>
-    `DELETE FROM employee_additional_managers
-     WHERE employee_pk_id = (SELECT id FROM employee WHERE employee_id = ${employeeId});`;
-
-# Delete emergency contacts linked to an employee's personal info.
-#
-# + employeeId - Employee ID string
-# + return - Parameterized query to delete emergency contacts
-isolated function deleteEmployeeEmergencyContactsQuery(string employeeId) returns sql:ParameterizedQuery =>
-    `DELETE FROM personal_info_emergency_contacts
-     WHERE personal_info_id = (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId});`;
-
 # Delete an employee record.
 #
 # + employeeId - Employee ID string

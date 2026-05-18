@@ -73,3 +73,13 @@ type CarParkConfigResponse record {|
     # Hour after which same-day reservations are no longer allowed.
     int reservationWindowEndHour;
 |};
+
+# Response for employee creation.
+type EmployeeCreatedResponse record {|
+    # ID of the newly created employee
+    int employeeId;
+    # Status message
+    string message;
+    # Whether there was a warning during group assignment
+    boolean hasGroupAssignmentWarning;
+|};
