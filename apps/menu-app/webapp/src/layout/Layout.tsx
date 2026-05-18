@@ -21,6 +21,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
+import { isMicroApp } from "@config/config";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
 import ConfirmationModalContextProvider from "@context/DialogContext";
 import { ColorModeContext } from "@hooks/useColorMode";
@@ -28,7 +29,6 @@ import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
 import { selectRoles } from "@slices/authSlice/auth";
 import { type RootState, useAppSelector } from "@slices/store";
-import { isMicroApp } from "@config/config";
 
 import MobileBottomBar from "./MobileBottomBar/MobileBottomBar";
 
