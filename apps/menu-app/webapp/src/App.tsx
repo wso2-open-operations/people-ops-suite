@@ -73,6 +73,5 @@ function MicroApp() {
 
 export default function App() {
 
-  console.log("microapp", isMicroApp);
   return isMicroApp ? <MicroApp /> : <WebApp />;
 }
