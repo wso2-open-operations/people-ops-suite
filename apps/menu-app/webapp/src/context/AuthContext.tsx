@@ -268,7 +268,7 @@ const MicroAppAuthProvider = (props: { children: React.ReactNode }) => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [dispatch, triggerGetUserInfo]);
 
   const renderContent = () => {
     switch (appState) {
