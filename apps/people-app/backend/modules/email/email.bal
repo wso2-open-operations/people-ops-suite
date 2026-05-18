@@ -49,9 +49,9 @@ public isolated function sendEmail(EmailPayload payload) returns error? {
 public isolated function notifyGroupAssignmentFailure(string employeeId, string firstName, string lastName,
         string workEmail, string[] failedGroups) returns error? {
 
-    string failedGroupsList = failedGroups.map(isolated function(string group) returns string =>
-        string `<li>${htmlEscape(group)}</li>`
-    ).reduce(isolated function(string acc, string item) returns string => acc + item, "");
+    string failedGroupsList = string:'join("",
+    ...from string group in failedGroups
+       select string `<li>${htmlEscape(group)}</li>`);
 
     map<string> keyValues = {
         APP_NAME: appName,

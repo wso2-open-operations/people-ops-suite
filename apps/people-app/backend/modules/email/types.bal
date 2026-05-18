@@ -22,6 +22,8 @@ public type Oauth2Config record {|
     string clientId;
     # The client secret of the application
     string clientSecret;
+    # OAuth2 scopes
+    string[] scopes = [];
 |};
 
 # Email Service Configuration.
