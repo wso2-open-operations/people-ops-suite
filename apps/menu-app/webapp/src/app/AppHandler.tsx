@@ -26,8 +26,8 @@ import MaintenancePage from "@layout/pages/Maintenance";
 import { RootState } from "@slices/store";
 import { useAppSelector } from "@slices/store";
 
-import { getActiveRoutesV2, getAllActiveRoutes, routes } from "../route";
 import { isMicroApp } from "../config/config";
+import { getActiveRoutesV2, getAllActiveRoutes, routes } from "../route";
 
 const getAppState = (authStatus: string, authMode: string): AppState => {
   if (authMode === AppState.Maintenance) return AppState.Maintenance;
