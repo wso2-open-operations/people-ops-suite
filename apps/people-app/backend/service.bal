@@ -1030,19 +1030,17 @@ service http:InterceptableService / on new http:Listener(9090) {
                         notificationResult, employeeId = employeeId, workEmail = payload.workEmail);
             }
 
-            EmployeeCreatedResponse response = {
+            return {
                 employeeId: newEmployeeId,
                 message: WARNING_GROUP_ASSIGNMENT_FAILED,
                 hasGroupAssignmentWarning: true
             };
-            return response;
         }
-        EmployeeCreatedResponse response = {
+        return {
             employeeId: newEmployeeId,
             message: "Employee created successfully!",
             hasGroupAssignmentWarning: false
         };
-        return response;
     }
 
     # Update employee personal information.
