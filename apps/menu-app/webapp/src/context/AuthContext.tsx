@@ -225,6 +225,9 @@ const MicroAppAuthProvider = (props: { children: React.ReactNode }) => {
 
     const setupAuthenticatedUser = async () => {
       const userInfoResult = await triggerGetUserInfo();
+
+      if (!mounted) return;
+
       if (userInfoResult?.isError) {
         console.error("Failed to fetch user info:", userInfoResult.error);
         dispatch(setAuthError());
@@ -232,13 +235,25 @@ const MicroAppAuthProvider = (props: { children: React.ReactNode }) => {
       await dispatch(loadPrivileges());
     };
 
-    getToken((token) => {
+    getToken(async (token) => {
       if (!mounted) return;
 
       if (token) {
         setTokens(token, null, null);
-        setAppState(AppState.Authenticated);
-        setupAuthenticatedUser();
+        setAppState(AppState.Authenticating);
+        try {
+          await setupAuthenticatedUser();
+
+          if (mounted) {
+            setAppState(AppState.Authenticated);
+          }
+        } catch (error) {
+          console.error("Error setting up authenticated user:", error);
+          if (mounted) {
+            dispatch(setAuthError());
+            setAppState(AppState.Unauthenticated);
+          }
+        }
       } else {
         setAppState(AppState.Unauthenticated);
         console.error("No token available");
