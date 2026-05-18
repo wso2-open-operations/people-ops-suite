@@ -218,23 +218,31 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 const MicroAppAuthProvider = (props: { children: React.ReactNode }) => {
   const [appState, setAppState] = useState<AppState>(AppState.Loading);
   let mounted = true;
+  const dispatch = useAppDispatch();
+  const [triggerGetUserInfo] = useLazyGetUserInfoQuery();
 
   useEffect(() => {
-    const getIdToken = async () => {
-      getToken((token) => {
-        if (!mounted) return;
-
-        if (token) {
-          setTokens(token, null, null);
-          setAppState(AppState.Authenticated);
-        } else {
-          setAppState(AppState.Unauthenticated);
-          console.error("No token available");
-        }
-      });
+    const setupAuthenticatedUser = async () => {
+      const userInfoResult = await triggerGetUserInfo();
+      if (userInfoResult?.isError) {
+        console.error("Failed to fetch user info:", userInfoResult.error);
+        dispatch(setAuthError());
+      }
+      await dispatch(loadPrivileges());
     };
 
-    getIdToken();
+    getToken((token) => {
+      if (!mounted) return;
+
+      if (token) {
+        setTokens(token, null, null);
+        setAppState(AppState.Authenticated);
+        setupAuthenticatedUser();
+      } else {
+        setAppState(AppState.Unauthenticated);
+        console.error("No token available");
+      }
+    });
 
     return () => {
       mounted = false;
