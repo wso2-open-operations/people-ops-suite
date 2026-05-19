@@ -27,10 +27,24 @@ export interface BulkEmployeeError {
   message: string;
 }
 
+export interface BulkProvisioningError {
+  employeeId: string;
+  workEmail: string;
+  reason: string;
+}
+
+export interface BulkGroupAssignmentWarning {
+  employeeId: string;
+  workEmail: string;
+  failedGroups: string[];
+}
+
 export interface BulkUploadResponse {
   created: number;
   skipped: number;
   errors: BulkEmployeeError[];
+  provisioningErrors: BulkProvisioningError[];
+  groupAssignmentWarnings: BulkGroupAssignmentWarning[];
 }
 
 interface BulkOnboardingState {
@@ -40,6 +54,8 @@ interface BulkOnboardingState {
   errors: BulkEmployeeError[];
   created: number;
   skipped: number;
+  provisioningErrors: BulkProvisioningError[];
+  groupAssignmentWarnings: BulkGroupAssignmentWarning[];
 }
 
 const initialState: BulkOnboardingState = {
@@ -49,6 +65,8 @@ const initialState: BulkOnboardingState = {
   errors: [],
   created: 0,
   skipped: 0,
+  provisioningErrors: [],
+  groupAssignmentWarnings: [],
 };
 
 export const uploadBulkEmployees = createAsyncThunk<
@@ -67,13 +85,31 @@ export const uploadBulkEmployees = createAsyncThunk<
         formData,
         { headers: { "Content-Type": "multipart/form-data" } },
       );
-      dispatch(
-        enqueueSnackbarMessage({
-          message: "Bulk onboarding completed successfully",
-          type: "success",
-        }),
-      );
-      return response.data as BulkUploadResponse;
+
+      const data = response.data as BulkUploadResponse;
+      const provisioningFailed = data.provisioningErrors?.length ?? 0;
+      const groupWarnings = data.groupAssignmentWarnings?.length ?? 0;
+
+      if (provisioningFailed > 0 || groupWarnings > 0) {
+        dispatch(
+          enqueueSnackbarMessage({
+            message:
+              provisioningFailed > 0
+                ? `Bulk onboarding completed with ${provisioningFailed} provisioning ${provisioningFailed === 1 ? "failure" : "failures"} — see details below`
+                : `Bulk onboarding completed with group assignment warnings — see details below`,
+            type: "warning",
+          }),
+        );
+      } else {
+        dispatch(
+          enqueueSnackbarMessage({
+            message: "Bulk onboarding completed successfully",
+            type: "success",
+          }),
+        );
+      }
+
+      return data;
     } catch (error: any) {
       if (isCancel(error)) return rejectWithValue("cancelled");
       const status = error?.response?.status;
@@ -117,6 +153,8 @@ const BulkOnboardingSlice = createSlice({
       state.errors = [];
       state.created = 0;
       state.skipped = 0;
+      state.provisioningErrors = [];
+      state.groupAssignmentWarnings = [];
     },
   },
   extraReducers: (builder) => {
@@ -128,6 +166,8 @@ const BulkOnboardingSlice = createSlice({
         state.errors = [];
         state.created = 0;
         state.skipped = 0;
+        state.provisioningErrors = [];
+        state.groupAssignmentWarnings = [];
       })
       .addCase(uploadBulkEmployees.fulfilled, (state, action) => {
         state.state = State.success;
@@ -136,10 +176,15 @@ const BulkOnboardingSlice = createSlice({
         state.errors = action.payload.errors;
         state.created = action.payload.created;
         state.skipped = action.payload.skipped;
+        state.provisioningErrors = action.payload.provisioningErrors ?? [];
+        state.groupAssignmentWarnings =
+          action.payload.groupAssignmentWarnings ?? [];
       })
       .addCase(uploadBulkEmployees.rejected, (state, action) => {
         state.state = State.failed;
         state.stateMessage = "Bulk upload failed";
+        state.provisioningErrors = [];
+        state.groupAssignmentWarnings = [];
         if (Array.isArray(action.payload)) {
           state.errors = action.payload as BulkEmployeeError[];
           state.errorMessage = null;

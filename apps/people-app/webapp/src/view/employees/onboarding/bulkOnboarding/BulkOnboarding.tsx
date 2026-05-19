@@ -39,6 +39,8 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   ChangeEvent,
@@ -268,10 +270,16 @@ export default function BulkOnboarding() {
   const dispatch = useAppDispatch();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const errorsRef = useRef<HTMLDivElement | null>(null);
+  const postUploadRef = useRef<HTMLDivElement | null>(null);
 
-  const { state, errors, created, skipped } = useAppSelector(
-    (store) => store.bulkOnboarding,
-  );
+  const {
+    state,
+    errors,
+    created,
+    skipped,
+    provisioningErrors,
+    groupAssignmentWarnings,
+  } = useAppSelector((store) => store.bulkOnboarding);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [rowCount, setRowCount] = useState<number | null>(null);
@@ -284,6 +292,9 @@ export default function BulkOnboarding() {
   const isFailed = state === State.failed;
   const accent = theme.palette.secondary.contrastText;
   const isDark = theme.palette.mode === "dark";
+
+  const hasProvisioningErrors = provisioningErrors.length > 0;
+  const hasGroupWarnings = groupAssignmentWarnings.length > 0;
 
   const errorsByRow = useMemo(() => {
     const map = new Map<number, typeof errors>();
@@ -304,6 +315,21 @@ export default function BulkOnboarding() {
       }, 80);
     }
   }, [errors]);
+
+  useEffect(() => {
+    if (
+      isSuccess &&
+      (hasProvisioningErrors || hasGroupWarnings) &&
+      postUploadRef.current
+    ) {
+      setTimeout(() => {
+        postUploadRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 80);
+    }
+  }, [isSuccess, hasProvisioningErrors, hasGroupWarnings]);
 
   useEffect(() => {
     if (state === State.success) {
@@ -540,11 +566,10 @@ export default function BulkOnboarding() {
               flex: 1,
               minHeight: 220,
               borderRadius: 3,
-              border: `2px dashed ${
-                isDragOver
+              border: `2px dashed ${isDragOver
                   ? accent
                   : alpha(theme.palette.divider, isDark ? 0.35 : 0.45)
-              }`,
+                }`,
               backgroundColor: isDragOver
                 ? alpha(accent, 0.06)
                 : isSuccess
@@ -561,9 +586,9 @@ export default function BulkOnboarding() {
               p: 3,
               "&:hover": !(selectedFile || isSuccess)
                 ? {
-                    borderColor: alpha(accent, 0.55),
-                    backgroundColor: alpha(accent, 0.04),
-                  }
+                  borderColor: alpha(accent, 0.55),
+                  backgroundColor: alpha(accent, 0.04),
+                }
                 : {},
             }}
           >
@@ -583,7 +608,12 @@ export default function BulkOnboarding() {
                 <Typography variant="h6" fontWeight={700}>
                   Upload complete
                 </Typography>
-                <Stack direction="row" spacing={2}>
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  flexWrap="wrap"
+                  justifyContent="center"
+                >
                   <Paper
                     elevation={0}
                     sx={{
@@ -636,6 +666,69 @@ export default function BulkOnboarding() {
                         sx={{ color: theme.palette.text.secondary }}
                       >
                         empty {skipped === 1 ? "row" : "rows"} skipped
+                      </Typography>
+                    </Paper>
+                  )}
+                  {hasProvisioningErrors && (
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: 2,
+                        textAlign: "center",
+                        backgroundColor: alpha(theme.palette.error.main, 0.08),
+                        border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+                      }}
+                    >
+                      <Typography
+                        variant="h5"
+                        fontWeight={800}
+                        sx={{ color: theme.palette.error.main }}
+                      >
+                        {provisioningErrors.length}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{ color: theme.palette.text.secondary }}
+                      >
+                        provisioning{" "}
+                        {provisioningErrors.length === 1
+                          ? "failure"
+                          : "failures"}
+                      </Typography>
+                    </Paper>
+                  )}
+                  {hasGroupWarnings && (
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: 2,
+                        textAlign: "center",
+                        backgroundColor: alpha(
+                          theme.palette.warning.main,
+                          0.08,
+                        ),
+                        border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+                      }}
+                    >
+                      <Typography
+                        variant="h5"
+                        fontWeight={800}
+                        sx={{ color: theme.palette.warning.main }}
+                      >
+                        {groupAssignmentWarnings.length}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{ color: theme.palette.text.secondary }}
+                      >
+                        group{" "}
+                        {groupAssignmentWarnings.length === 1
+                          ? "warning"
+                          : "warnings"}
                       </Typography>
                     </Paper>
                   )}
@@ -1021,6 +1114,278 @@ export default function BulkOnboarding() {
               </Accordion>
             ))}
           </Stack>
+        </Box>
+      )}
+
+      {isSuccess && (hasProvisioningErrors || hasGroupWarnings) && (
+        <Box
+          ref={postUploadRef}
+          sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+        >
+          {/* Provisioning errors */}
+          {hasProvisioningErrors && (
+            <Box>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1.5}
+                sx={{ mb: 2 }}
+              >
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    backgroundColor: alpha(theme.palette.error.main, 0.12),
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <ErrorOutlineIcon
+                    sx={{ color: theme.palette.error.main, fontSize: 22 }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography
+                      variant="h6"
+                      fontWeight={700}
+                      sx={{ color: theme.palette.error.main }}
+                    >
+                      Provisioning Failures
+                    </Typography>
+                    <Chip
+                      label={`${provisioningErrors.length} ${provisioningErrors.length === 1 ? "employee" : "employees"}`}
+                      size="small"
+                      sx={{
+                        height: 24,
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        backgroundColor: alpha(theme.palette.error.main, 0.12),
+                        color: theme.palette.error.main,
+                      }}
+                    />
+                  </Stack>
+                  <Typography
+                    variant="body1"
+                    sx={{ color: theme.palette.text.secondary, mt: 0.25 }}
+                  >
+                    These employees were not created — Re-onboard them individually or in a new
+                    CSV upload.
+                  </Typography>
+                </Box>
+              </Stack>
+
+              <Stack spacing={1.5}>
+                {provisioningErrors.map((pe) => (
+                  <Paper
+                    key={pe.employeeId}
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(theme.palette.error.main, 0.22)}`,
+                      backgroundColor: isDark
+                        ? alpha(theme.palette.error.main, 0.06)
+                        : alpha(theme.palette.error.main, 0.03),
+                    }}
+                  >
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={1.5}
+                      alignItems={{ sm: "center" }}
+                    >
+                      <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          flexWrap="wrap"
+                        >
+                          <Typography
+                            variant="body1"
+                            fontWeight={600}
+                            sx={{ color: theme.palette.text.primary }}
+                          >
+                            {pe.workEmail}
+                          </Typography>
+                          <Chip
+                            label={`ID: ${pe.employeeId}`}
+                            size="small"
+                            sx={{
+                              height: 20,
+                              fontSize: "0.7rem",
+                              fontFamily: "monospace",
+                              backgroundColor: alpha(
+                                theme.palette.error.main,
+                                0.1,
+                              ),
+                              color: theme.palette.error.main,
+                            }}
+                          />
+                        </Stack>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: theme.palette.text.secondary }}
+                        >
+                          {pe.reason}
+                        </Typography>
+                      </Stack>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          {/* Group assignment warnings */}
+          {hasGroupWarnings && (
+            <Box>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1.5}
+                sx={{ mb: 2 }}
+              >
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    backgroundColor: alpha(theme.palette.warning.main, 0.12),
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <WarningAmberOutlinedIcon
+                    sx={{ color: theme.palette.warning.main, fontSize: 22 }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography
+                      variant="h6"
+                      fontWeight={700}
+                      sx={{ color: theme.palette.warning.main }}
+                    >
+                      Group Assignment Warnings
+                    </Typography>
+                    <Chip
+                      label={`${groupAssignmentWarnings.length} ${groupAssignmentWarnings.length === 1 ? "employee" : "employees"}`}
+                      size="small"
+                      sx={{
+                        height: 24,
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        backgroundColor: alpha(
+                          theme.palette.warning.main,
+                          0.12,
+                        ),
+                        color: theme.palette.warning.main,
+                      }}
+                    />
+                  </Stack>
+                  <Typography
+                    variant="body1"
+                    sx={{ color: theme.palette.text.secondary, mt: 0.25 }}
+                  >
+                    These employees were created successfully but could not be
+                    assigned to all Asgardeo groups. An email notification has
+                    been sent.
+                  </Typography>
+                </Box>
+              </Stack>
+
+              <Stack spacing={1.5}>
+                {groupAssignmentWarnings.map((gw) => (
+                  <Paper
+                    key={gw.employeeId}
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(theme.palette.warning.main, 0.22)}`,
+                      backgroundColor: isDark
+                        ? alpha(theme.palette.warning.main, 0.05)
+                        : alpha(theme.palette.warning.main, 0.03),
+                    }}
+                  >
+                    <Stack spacing={1}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        flexWrap="wrap"
+                      >
+                        <Typography
+                          variant="body1"
+                          fontWeight={600}
+                          sx={{ color: theme.palette.text.primary }}
+                        >
+                          {gw.workEmail}
+                        </Typography>
+                        <Chip
+                          label={`ID: ${gw.employeeId}`}
+                          size="small"
+                          sx={{
+                            height: 20,
+                            fontSize: "0.7rem",
+                            fontFamily: "monospace",
+                            backgroundColor: alpha(
+                              theme.palette.warning.main,
+                              0.1,
+                            ),
+                            color: theme.palette.warning.main,
+                          }}
+                        />
+                      </Stack>
+                      <Stack
+                        direction="row"
+                        spacing={0.75}
+                        alignItems="center"
+                        flexWrap="wrap"
+                      >
+                        <GroupOutlinedIcon
+                          sx={{
+                            fontSize: 16,
+                            color: theme.palette.text.secondary,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{ color: theme.palette.text.secondary, mr: 0.5 }}
+                        >
+                          Failed groups:
+                        </Typography>
+                        {gw.failedGroups.map((g) => (
+                          <Chip
+                            key={g}
+                            label={g}
+                            size="small"
+                            sx={{
+                              height: 20,
+                              fontSize: "0.7rem",
+                              fontFamily: "monospace",
+                              backgroundColor: alpha(
+                                theme.palette.warning.main,
+                                0.1,
+                              ),
+                              color: theme.palette.warning.main,
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Stack>
+            </Box>
+          )}
         </Box>
       )}
     </Box>

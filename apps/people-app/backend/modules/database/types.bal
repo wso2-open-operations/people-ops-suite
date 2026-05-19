@@ -700,13 +700,6 @@ type EmployeeNameRow record {|
     string fullName;
 |};
 
-# [Database] Work email row mapping for employee lookups.
-type WorkEmailRow record {|
-    # Work email of the employee
-    @sql:Column {name: "work_email"}
-    string workEmail;
-|};
-
 # Additional manager email row mapping.
 public type AdditionalManagerEmailRow record {|
     # Additional manager email
@@ -724,6 +717,26 @@ public type BulkEmployeeError record {|
     string message;
 |};
 
+# Records an employee whose SCIM provisioning failed during bulk onboarding.
+public type BulkProvisioningError record {|
+    # Employee ID of the affected record
+    string employeeId;
+    # Work email of the affected record
+    string workEmail;
+    # Failure reason from the provisioning step
+    string reason;
+|};
+
+# Records an employee who was created successfully but whose group assignment was partially or fully skipped.
+public type BulkGroupAssignmentWarning record {|
+    # Employee ID of the affected employee
+    string employeeId;
+    # Work email of the affected employee
+    string workEmail;
+    # Groups that could not be assigned
+    string[] failedGroups;
+|};
+
 # Bulk onboarding response payload.
 public type BulkUploadResponse record {|
     # Number of employees created
@@ -732,6 +745,10 @@ public type BulkUploadResponse record {|
     int skipped;
     # Validation errors (empty when success)
     BulkEmployeeError[] errors;
+    # Employees for whom SCIM provisioning failed and whose DB records were rolled back
+    BulkProvisioningError[] provisioningErrors = [];
+    # Employees who were created in the DB and Asgardeo but had one or more group-assignment failures
+    BulkGroupAssignmentWarning[] groupAssignmentWarnings = [];
 |};
 
 # Create personal info payload.
@@ -969,10 +986,10 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Employee Status
     EmployeeStatus? employeeStatus = ();
     # Final day in office
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? finalDayInOffice = ();
     # Final day of employment 
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? finalDayOfEmployment = ();
     # Resignation reason
     string? resignationReason = ();

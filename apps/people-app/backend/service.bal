@@ -1025,8 +1025,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         BulkFirstPassResult firstPass = processBulkCsvRows(rows, refData);
 
         database:BulkEmployeeError[]|error dbErrors = detectDbDuplicates(
-            firstPass.rowByEmail, firstPass.rowByNic, firstPass.rowByEpf,
-            firstPass.candidateEmails, firstPass.candidateNics, firstPass.candidateEpfs);
+                firstPass.rowByEmail, firstPass.rowByNic, firstPass.rowByEpf,
+                firstPass.candidateEmails, firstPass.candidateNics, firstPass.candidateEpfs);
         if dbErrors is error {
             log:printError("Error checking duplicates during bulk upload", dbErrors);
             return <http:InternalServerError>{
@@ -1054,9 +1054,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error created = database:addEmployeesBulk(
-            payloadResult.employees.map(e => e.payload),
-            payloadResult.employees.map(e => e.employeeId),
-            userInfo.email);
+                payloadResult.employees.map(e => e.payload),
+                payloadResult.employees.map(e => e.employeeId),
+                userInfo.email);
         if created is error {
             log:printError("Error occurred while bulk creating employees", created);
             return <http:InternalServerError>{
@@ -1066,7 +1066,80 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        return {created, skipped: firstPass.skipped, errors: []};
+        database:BulkProvisioningError[] provisioningErrors = [];
+        database:BulkGroupAssignmentWarning[] groupAssignmentWarnings = [];
+
+        foreach ResolvedEmployee emp in payloadResult.employees {
+            error? scimResult = scim:createUser({
+                userName: string `${scim:asgardeoUserStoreDomain}/${emp.payload.workEmail}`,
+                emails: [emp.payload.workEmail],
+                name: {givenName: emp.payload.firstName, familyName: emp.payload.lastName},
+                urn\:scim\:wso2\:schema: {askPassword: true}
+            });
+
+            if scimResult is error {
+                log:printError("Failed to provision user in Asgardeo during bulk onboarding; rolling back employee record",
+                        scimResult, workEmail = emp.payload.workEmail, employeeId = emp.employeeId);
+                rollbackEmployeeCreation(emp.employeeId, emp.payload.workEmail);
+                provisioningErrors.push({
+                    employeeId: emp.employeeId,
+                    workEmail: emp.payload.workEmail,
+                    reason: scimResult.message()
+                });
+                continue;
+            }
+
+            string[]|error groupNames = database:getAsgardeoGroupsByEmploymentType(emp.payload.employmentTypeId);
+            if groupNames is error {
+                log:printError("Failed to fetch Asgardeo groups during bulk onboarding; rolling back employee record. " +
+                        "Asgardeo user was already created and requires manual cleanup",
+                        groupNames, workEmail = emp.payload.workEmail, employeeId = emp.employeeId,
+                        employmentTypeId = emp.payload.employmentTypeId);
+                rollbackEmployeeCreation(emp.employeeId, emp.payload.workEmail);
+                provisioningErrors.push({
+                    employeeId: emp.employeeId,
+                    workEmail: emp.payload.workEmail,
+                    reason: groupNames.message()
+                });
+                continue;
+            }
+
+            string[] failedGroups = [];
+            foreach string groupName in groupNames {
+                scim:AddUsersToGroupResponse|error addResult =
+                        scim:addUserToGroup(groupName, emp.payload.workEmail);
+                if addResult is error || addResult.failedUsers.length() > 0 {
+                    log:printError("Failed to add user to Asgardeo group during bulk onboarding. " +
+                            "Asgardeo user was already created and requires manual cleanup",
+                                addResult is error ? addResult : (),
+                            workEmail = emp.payload.workEmail, group = groupName, employeeId = emp.employeeId,
+                            failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
+                    failedGroups.push(groupName);
+                }
+            }
+
+            if failedGroups.length() > 0 {
+                error? notificationResult = email:notifyGroupAssignmentFailure(emp.employeeId, emp.payload.firstName,
+                        emp.payload.lastName, emp.payload.workEmail, failedGroups);
+                if notificationResult is error {
+                    log:printError("Failed to send group assignment failure notification during bulk onboarding",
+                            notificationResult, employeeId = emp.employeeId, workEmail = emp.payload.workEmail);
+                }
+                groupAssignmentWarnings.push({
+                    employeeId: emp.employeeId,
+                    workEmail: emp.payload.workEmail,
+                    failedGroups
+                });
+            }
+        }
+
+        return {
+            created,
+            skipped: firstPass.skipped,
+            errors: [],
+            provisioningErrors,
+            groupAssignmentWarnings
+        };
     }
 
     # Create a new employee.
