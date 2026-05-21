@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,14 +13,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/material";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
 
 import React from "react";
 
-import Wso2LogoWhite from "@assets/images/wso2-logo-white.png";
+import {
+  Avatar,
+  Box,
+  Menu,
+  MenuItem,
+  Stack,
+  Toolbar,
+  Tooltip,
+  Typography,
+  useTheme,
+} from "@mui/material";
+
 import Wso2Logo from "@assets/images/wso2-logo.png";
+import Wso2LogoWhite from "@assets/images/wso2-logo-white.png";
 import { APP_NAME } from "@config/config";
 import { gradients } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
