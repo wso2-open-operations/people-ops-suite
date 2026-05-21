@@ -186,8 +186,7 @@ export const fetchParticipatedParCyclesOfEmployee = createAsyncThunk(
   async (args: { email?: string; status?: ParCycleStatus } | void, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}?status=${args?.status ?? ParCycleStatus.CLOSED}${
-          args?.email ? `&email=${encodeURIComponent(args.email)}` : ""
+        `${AppConfig.serviceUrls.parCycles}?status=${args?.status ?? ParCycleStatus.CLOSED}${args?.email ? `&email=${encodeURIComponent(args.email)}` : ""
         }`,
       );
 

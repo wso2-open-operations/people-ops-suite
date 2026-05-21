@@ -18,13 +18,13 @@ import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { HttpStatusCode } from "axios";
 
 import { AppConfig } from "@config/config";
-import { SnackMessage, uiMessages } from "@config/constant";
-import { sliceErrorMessages } from "@config/constant";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { RootState } from "@slices/store";
+import { SnackMessage, sliceErrorMessages, uiMessages } from "@config/constant";
 import { ApiService } from "@utils/apiService";
 import { RequestState } from "@utils/types";
 import { getErrorMessage } from "@utils/utils";
+
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { RootState } from "@slices/store";
 
 interface UpdateOpenParCycleRequest {
   parCycleId: number;

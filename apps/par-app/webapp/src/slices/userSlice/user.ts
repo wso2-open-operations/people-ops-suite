@@ -17,7 +17,6 @@
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { AppConfig } from "@config/config";
-
 import { ApiService } from "@utils/apiService";
 import { RequestState } from "@utils/types";
 

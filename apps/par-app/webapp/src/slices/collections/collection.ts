@@ -14,8 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { createSlice } from "@reduxjs/toolkit";
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios, { HttpStatusCode } from "axios";
 
 import { AppConfig } from "@config/config";

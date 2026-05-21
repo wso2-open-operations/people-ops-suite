@@ -18,8 +18,7 @@ import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios, { HttpStatusCode } from "axios";
 
 import { AppConfig } from "@config/config";
-import { SnackMessage } from "@config/constant";
-import { sliceErrorMessages } from "@config/constant";
+import { SnackMessage, sliceErrorMessages } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
 import { ApiService } from "@utils/apiService";

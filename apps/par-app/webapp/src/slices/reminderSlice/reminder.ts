@@ -19,10 +19,12 @@ import { HttpStatusCode } from "axios";
 
 import { AppConfig } from "@config/config";
 import { SnackMessage, sliceErrorMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
+
 import { ApiService } from "@utils/apiService";
-import { RequestState } from "@utils/types";
 import { getErrorMessage } from "@utils/utils";
 
 export interface reminderState {
