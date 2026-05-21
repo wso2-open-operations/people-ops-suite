@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -22,11 +22,14 @@ import { useIdleTimer } from "react-idle-timer";
 import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import LoginScreen from "@component/ui/LoginScreen";
+
 import { redirectUrl } from "@config/constant";
+
 import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
 import { fetchEmployees } from "@slices/metaSlice/meta";
 import { useAppDispatch } from "@slices/store";
 import { getUserInfo } from "@slices/userSlice/user";
+
 import { ApiService } from "@utils/apiService";
 
 type AuthContextType = {

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -16,11 +16,9 @@
 
 import React, { useContext, useState } from "react";
 
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
-import SendIcon from "@mui/icons-material/Send";
-import UploadIcon from "@mui/icons-material/Upload";
 import LoadingButton from "@mui/lab/LoadingButton";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import {
   Box,
   Button,
@@ -32,8 +30,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import SaveAltIcon from "@mui/icons-material/SaveAlt";
+import SendIcon from "@mui/icons-material/Send";
+import UploadIcon from "@mui/icons-material/Upload";
 
 import { ConfirmationType } from "@/types/types";
 
