@@ -124,7 +124,7 @@ function getDefaultMultipleEmployees(int count) returns entity:Employee[] {
             jobRole: "Software Engineer",
             employeeThumbnail: string `https://localhost/employee/${randomName}/images/thumbnail.png`,
             lead: false,
-            employmentType: "Permanent",
+            employmentType: "PERMANENT",
             employeeStatus: "Active"
         });
     }
