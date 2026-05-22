@@ -20,14 +20,14 @@ import ballerina/time;
 public configurable string fromEmailAddress = ?;
 public configurable string[] adminEmailList = ?;
 
-# Sends a notification email to the admin group for a visit that was force-completed
-# by the scheduler because the scheduled departure time passed without reception action.
+# Sends a reminder email to the admin/reception group for a visit whose
+# scheduled departure time has passed without being marked as complete.
 #
-# + visit - Details of the completed visit
+# + visit - Details of the visit
 # + return - An error if sending fails
-public function sendForceCompleteEmail(CompletedVisitInfo visit) returns error? {
+public function sendDepartureOverdueReminderEmail(CompletedVisitInfo visit) returns error? {
     string template = check bindKeyValues(
-            forceCompleteTemplate,
+            departureOverdueTemplate,
             {
                 "VISIT_ID": visit.id.toString(),
                 "VISITOR_NAME": visit.visitorName,
@@ -40,17 +40,17 @@ public function sendForceCompleteEmail(CompletedVisitInfo visit) returns error? 
                 "PURPOSE_OF_VISIT": visit.purposeOfVisit ?: "N/A",
                 "YEAR": time:utcToCivil(time:utcNow()).year.toString()
             });
-    return sendEmail(FORCE_COMPLETE_SUBJECT, template, visit.id);
+    return sendEmail(DEPARTURE_OVERDUE_SUBJECT, template, visit.id);
 }
 
-# Sends a notification email to the admin group for a visit that has been active
-# for more than one week with no departure recorded.
+# Sends a reminder email to the admin/reception group for a visit that has
+# been active for more than one week with no departure recorded.
 #
-# + visit - Details of the long-running visit
+# + visit - Details of the visit
 # + return - An error if sending fails
-public function sendExpiredVisitEmail(CompletedVisitInfo visit) returns error? {
+public function sendLongRunningVisitReminderEmail(CompletedVisitInfo visit) returns error? {
     string template = check bindKeyValues(
-            expiredVisitTemplate,
+            longRunningVisitTemplate,
             {
                 "VISIT_ID": visit.id.toString(),
                 "VISITOR_NAME": visit.visitorName,
@@ -62,7 +62,7 @@ public function sendExpiredVisitEmail(CompletedVisitInfo visit) returns error? {
                 "PURPOSE_OF_VISIT": visit.purposeOfVisit ?: "N/A",
                 "YEAR": time:utcToCivil(time:utcNow()).year.toString()
             });
-    return sendEmail(EXPIRED_VISIT_SUBJECT, template, visit.id);
+    return sendEmail(LONG_RUNNING_VISIT_SUBJECT, template, visit.id);
 }
 
 isolated function sendEmail(string subject, string template, int visitId) returns error? {
