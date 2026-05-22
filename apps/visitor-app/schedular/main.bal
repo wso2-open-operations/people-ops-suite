@@ -83,7 +83,7 @@ public function main() returns error? {
                 }
             }
         } else {
-            // If there's no departure time, we check if the visit has been active for more than a week to consider it for expiration and sending the expired-visit email.
+            // If there's no departure time, send a long-running visit reminder once the visit has been active for more than a week.
             string? entry = visit.timeOfEntry;
             if entry is () {
                 log:printError("Visit has no entry time, skipping", id = visit.id);
