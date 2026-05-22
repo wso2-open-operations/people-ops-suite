@@ -62,6 +62,7 @@ import {
   BULK_TEMPLATE_FILENAME,
   BULK_REQUIRED_FIELDS,
   BULK_OPTIONAL_FIELDS,
+  BULK_UPLOAD_MAX_FILE_SIZE,
 } from "@config/constant";
 import {
   escapeCsvCell,
@@ -278,6 +279,7 @@ export default function BulkOnboarding() {
     created,
     skipped,
     provisioningErrors,
+    orphanedScimUsers,
     groupAssignmentWarnings,
   } = useAppSelector((store) => store.bulkOnboarding);
 
@@ -294,6 +296,7 @@ export default function BulkOnboarding() {
   const isDark = theme.palette.mode === "dark";
 
   const hasProvisioningErrors = provisioningErrors.length > 0;
+  const hasOrphanedScimUsers = orphanedScimUsers.length > 0;
   const hasGroupWarnings = groupAssignmentWarnings.length > 0;
 
   const errorsByRow = useMemo(() => {
@@ -319,7 +322,7 @@ export default function BulkOnboarding() {
   useEffect(() => {
     if (
       isSuccess &&
-      (hasProvisioningErrors || hasGroupWarnings) &&
+      (hasProvisioningErrors || hasOrphanedScimUsers || hasGroupWarnings) &&
       postUploadRef.current
     ) {
       setTimeout(() => {
@@ -329,7 +332,7 @@ export default function BulkOnboarding() {
         });
       }, 80);
     }
-  }, [isSuccess, hasProvisioningErrors, hasGroupWarnings]);
+  }, [isSuccess, hasProvisioningErrors, hasOrphanedScimUsers, hasGroupWarnings]);
 
   useEffect(() => {
     if (state === State.success) {
@@ -360,6 +363,15 @@ export default function BulkOnboarding() {
     (file: File) => {
       setFileError(null);
       dispatch(resetBulkUploadState());
+
+      if (file.size > BULK_UPLOAD_MAX_FILE_SIZE) {
+        setFileError(`File too large (max ${BULK_UPLOAD_MAX_FILE_SIZE / 1024 / 1024} MB)`);
+        setSelectedFile(null);
+        setRowCount(null);
+        setRowNames({});
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
 
       if (!file.name.toLowerCase().endsWith(".csv")) {
         setFileError("Only .csv files are supported.");
@@ -696,6 +708,36 @@ export default function BulkOnboarding() {
                         {provisioningErrors.length === 1
                           ? "failure"
                           : "failures"}
+                      </Typography>
+                    </Paper>
+                  )}
+                  {hasOrphanedScimUsers && (
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: 2,
+                        textAlign: "center",
+                        backgroundColor: alpha(
+                          theme.palette.warning.main,
+                          0.08,
+                        ),
+                        border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+                      }}
+                    >
+                      <Typography
+                        variant="h5"
+                        fontWeight={800}
+                        sx={{ color: theme.palette.warning.main }}
+                      >
+                        {orphanedScimUsers.length}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{ color: theme.palette.text.secondary }}
+                      >
+                        orphaned Asgardeo
                       </Typography>
                     </Paper>
                   )}
@@ -1117,7 +1159,8 @@ export default function BulkOnboarding() {
         </Box>
       )}
 
-      {isSuccess && (hasProvisioningErrors || hasGroupWarnings) && (
+      {isSuccess &&
+        (hasProvisioningErrors || hasOrphanedScimUsers || hasGroupWarnings) && (
         <Box
           ref={postUploadRef}
           sx={{ display: "flex", flexDirection: "column", gap: 3 }}
@@ -1233,6 +1276,121 @@ export default function BulkOnboarding() {
                           {pe.reason}
                         </Typography>
                       </Stack>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          {/* Orphaned Asgardeo users */}
+          {hasOrphanedScimUsers && (
+            <Box>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1.5}
+                sx={{ mb: 2 }}
+              >
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    backgroundColor: alpha(theme.palette.warning.main, 0.12),
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <WarningAmberOutlinedIcon
+                    sx={{ color: theme.palette.warning.main, fontSize: 22 }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography
+                      variant="h6"
+                      fontWeight={700}
+                      sx={{ color: theme.palette.warning.main }}
+                    >
+                      Orphaned Asgardeo Users
+                    </Typography>
+                    <Chip
+                      label={`${orphanedScimUsers.length} ${orphanedScimUsers.length === 1 ? "user" : "users"}`}
+                      size="small"
+                      sx={{
+                        height: 24,
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        backgroundColor: alpha(
+                          theme.palette.warning.main,
+                          0.12,
+                        ),
+                        color: theme.palette.warning.main,
+                      }}
+                    />
+                  </Stack>
+                  <Typography
+                    variant="body1"
+                    sx={{ color: theme.palette.text.secondary, mt: 0.25 }}
+                  >
+                    These users were created in Asgardeo but the employee rows
+                    were rolled back. Please clean them up in Asgardeo.
+                  </Typography>
+                </Box>
+              </Stack>
+
+              <Stack spacing={1.5}>
+                {orphanedScimUsers.map((orphan) => (
+                  <Paper
+                    key={orphan.employeeId}
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(theme.palette.warning.main, 0.22)}`,
+                      backgroundColor: isDark
+                        ? alpha(theme.palette.warning.main, 0.05)
+                        : alpha(theme.palette.warning.main, 0.03),
+                    }}
+                  >
+                    <Stack spacing={0.5}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        flexWrap="wrap"
+                      >
+                        <Typography
+                          variant="body1"
+                          fontWeight={600}
+                          sx={{ color: theme.palette.text.primary }}
+                        >
+                          {orphan.workEmail}
+                        </Typography>
+                        <Chip
+                          label={`ID: ${orphan.employeeId}`}
+                          size="small"
+                          sx={{
+                            height: 20,
+                            fontSize: "0.7rem",
+                            fontFamily: "monospace",
+                            backgroundColor: alpha(
+                              theme.palette.warning.main,
+                              0.1,
+                            ),
+                            color: theme.palette.warning.main,
+                          }}
+                        />
+                      </Stack>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: theme.palette.text.secondary }}
+                      >
+                        {orphan.reason}
+                      </Typography>
                     </Stack>
                   </Paper>
                 ))}

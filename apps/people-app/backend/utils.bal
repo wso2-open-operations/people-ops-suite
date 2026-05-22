@@ -166,90 +166,51 @@ public isolated function normalizeKey(string value) returns string {
     return re `[^a-zA-Z0-9]+`.replaceAll(stripped.trim(), "").toLowerAscii();
 }
 
-# Generates an employee ID for a single CSV row during bulk onboarding.
-#
-# + payload - Partially built payload for the current row
-# + contextCache - Cache mapping `"companyId:employmentTypeId"` to `EmployeeIdContext`
-# + sequenceCache - Cache mapping sequence key to last used numeric suffix
-# + return - Auto-generated employee ID, or an error on DB failure
-public isolated function generateBulkEmployeeId(database:CreateEmployeePayload payload,
-        map<database:EmployeeIdContext> contextCache, map<int> sequenceCache) returns string|error {
-
-    string ctxKey = string `${payload.companyId}:${payload.employmentTypeId}`;
-
-    database:EmployeeIdContext context;
-    database:EmployeeIdContext? cached = contextCache[ctxKey];
-    if cached is database:EmployeeIdContext {
-        context = cached;
-    } else {
-        context = check database:getEmployeeIdContext(payload.companyId, payload.employmentTypeId);
-        contextCache[ctxKey] = context;
-    }
-
-    match context.employmentType {
-        database:PERMANENT|database:INTERNSHIP => {
-            string seqKey = context.companyPrefix + ":" + context.employmentType.toString();
-            if !sequenceCache.hasKey(seqKey) {
-                database:EmployeeIdSequence seq = check database:getLastEmployeeNumericSuffix(
-                        context.companyPrefix, [context.employmentType]);
-                sequenceCache[seqKey] = <int>seq.lastNumericId;
-            }
-            int next = (sequenceCache[seqKey] ?: 0) + 1;
-            sequenceCache[seqKey] = next;
-            return string `${context.companyPrefix}${next}`;
-        }
-        database:CONSULTANCY|database:ADVISORY_CONSULTANCY|database:PART_TIME_CONSULTANCY => {
-            string seqKey = database:CONSULTANCY_ID_PREFIX;
-            if !sequenceCache.hasKey(seqKey) {
-                database:EmployeeIdSequence seq = check database:getLastEmployeeNumericSuffix(
-                        database:CONSULTANCY_ID_PREFIX,
-                        [database:CONSULTANCY, database:ADVISORY_CONSULTANCY, database:PART_TIME_CONSULTANCY]);
-                sequenceCache[seqKey] = <int>seq.lastNumericId;
-            }
-            int next = (sequenceCache[seqKey] ?: 0) + 1;
-            sequenceCache[seqKey] = next;
-            return string `${database:CONSULTANCY_ID_PREFIX}${next}`;
-        }
-        _ => {
-            return error("Unsupported employment type: " + context.employmentType.toString());
-        }
-    }
-}
-
 # Loads all reference data required for bulk CSV validation from the database
 # and builds normalized name-to-ID lookup maps.
 #
 # + return - `BulkRefData` with lookup maps, or an error if any DB query fails
 isolated function loadBulkReferenceData() returns BulkRefData|error {
-    database:BusinessUnit[] businessUnits = check database:getBusinessUnits();
-    database:Team[] teams = check database:getTeams();
-    database:SubTeam[] subTeams = check database:getSubTeams();
-    database:Unit[] units = check database:getUnits();
-    database:Designation[] designations = check database:getDesignations();
-    database:EmploymentType[] employmentTypes = check database:getEmploymentTypes();
-    database:CompanyResponse[] companies = check database:getCompanies();
-    database:Office[] offices = check database:getOffices();
-    database:House[] houses = check database:getHouses();
+    future<database:BusinessUnit[]|error> bu = start database:getBusinessUnits();
+    future<database:Team[]|error> t = start database:getTeams();
+    future<database:SubTeam[]|error> st = start database:getSubTeams();
+    future<database:Unit[]|error> u = start database:getUnits();
+    future<database:Designation[]|error> d = start database:getDesignations();
+    future<database:EmploymentType[]|error> et = start database:getEmploymentTypes();
+    future<database:CompanyResponse[]|error> c = start database:getCompanies();
+    future<database:Office[]|error> o = start database:getOffices();
+    future<database:HouseWithCount[]|error> h = start database:getHousesWithActiveEmployeeCounts();
+
+    database:BusinessUnit[] businessUnits = check wait bu;
+    database:Team[] teams = check wait t;
+    database:SubTeam[] subTeams = check wait st;
+    database:Unit[] units = check wait u;
+    database:Designation[] designations = check wait d;
+    database:EmploymentType[] employmentTypes = check wait et;
+    database:CompanyResponse[] companies = check wait c;
+    database:Office[] offices = check wait o;
+    database:HouseWithCount[] houses = check wait h;
 
     return {
-        businessUnitIds: map from database:BusinessUnit bu in businessUnits
-            select [normalizeKey(bu.name), bu.id],
-        teamIds: map from database:Team t in teams
-            select [normalizeKey(t.name), t.id],
-        subTeamIds: map from database:SubTeam st in subTeams
-            select [normalizeKey(st.name), st.id],
-        unitIds: map from database:Unit u in units
-            select [normalizeKey(u.name), u.id],
-        designationIds: map from database:Designation d in designations
-            select [normalizeKey(d.designation), d.id],
-        employmentTypeIds: map from database:EmploymentType et in employmentTypes
-            select [normalizeKey(et.name), et.id],
-        companyIds: map from database:CompanyResponse c in companies
-            select [normalizeKey(c.name), c.id],
-        officeIds: map from database:Office o in offices
-            select [normalizeKey(o.name), o.id],
-        houseIds: map from database:House h in houses
-            select [normalizeKey(h.name), h.id]
+        businessUnitIds: map from database:BusinessUnit bu_row in businessUnits
+            select [normalizeKey(bu_row.name), bu_row.id],
+        teamIds: map from database:Team t_row in teams
+            select [normalizeKey(t_row.name), t_row.id],
+        subTeamIds: map from database:SubTeam st_row in subTeams
+            select [normalizeKey(st_row.name), st_row.id],
+        unitIds: map from database:Unit u_row in units
+            select [normalizeKey(u_row.name), u_row.id],
+        designationIds: map from database:Designation d_row in designations
+            select [normalizeKey(d_row.designation), d_row.id],
+        employmentTypeIds: map from database:EmploymentType et_row in employmentTypes
+            select [normalizeKey(et_row.name), et_row.id],
+        companyIds: map from database:CompanyResponse c_row in companies
+            select [normalizeKey(c_row.name), c_row.id],
+        officeIds: map from database:Office o_row in offices
+            select [normalizeKey(o_row.name), o_row.id],
+        houseIds: map from database:HouseWithCount h_row in houses
+            select [normalizeKey(h_row.name), h_row.id],
+        houses: houses
     };
 }
 
@@ -629,7 +590,7 @@ isolated function processBulkCsvRows(BulkEmployeeCsvRow[] rows, BulkRefData refD
             }
         }
 
-        string normNic = row.nicOrPassport.trim();
+        string normNic = row.nicOrPassport.trim().toLowerAscii();
         if normNic.length() > 0 {
             if rowByNic.hasKey(normNic) {
                 errors.push({
@@ -643,7 +604,7 @@ isolated function processBulkCsvRows(BulkEmployeeCsvRow[] rows, BulkRefData refD
             }
         }
 
-        string normEpf = row.epf.trim();
+        string normEpf = row.epf.trim().toLowerAscii();
         if normEpf.length() > 0 {
             if rowByEpf.hasKey(normEpf) {
                 errors.push({row: rowNumber, 'field: CSV_FIELD_EPF, message: string `Duplicate EPF in CSV: ${normEpf}`});
@@ -728,28 +689,24 @@ public isolated function detectDbDuplicates(map<int> rowByEmail, map<int> rowByN
     return errors;
 }
 
-# Builds `CreateEmployeePayload` records for all validated rows
-# and auto-generates employee IDs using in-memory sequence caches.
+# Builds `CreateEmployeePayload` records for all validated rows.
 #
 # + rowInfos - Parsed and validated data rows from `processBulkCsvRows`
 # + refData - Pre-loaded reference data lookup maps
-# + return - `BulkPayloadResult` with resolved employees, or an error on DB failure
+# + return - `BulkPayloadResult` with resolved employees
 isolated function buildBulkPayloads(CsvRowInfo[] rowInfos, BulkRefData refData)
-        returns BulkPayloadResult|error {
+        returns BulkPayloadResult {
     ResolvedEmployee[] employees = [];
-    map<database:EmployeeIdContext> contextCache = {};
-    map<int> sequenceCache = {};
 
-    database:HouseWithCount[] houses = check database:getHousesWithActiveEmployeeCounts();
-    map<int> houseCounts = map from database:HouseWithCount h in houses
+    map<int> houseCounts = map from database:HouseWithCount h in refData.houses
         select [h.id.toString(), h.activeCount];
 
     foreach CsvRowInfo rowInfo in rowInfos {
         int? suggestedHouseId = ();
-        if houses.length() > 0 {
+        if refData.houses.length() > 0 {
             int minCount = int:MAX_VALUE;
             int? minHouseId = ();
-            foreach database:HouseWithCount h in houses {
+            foreach database:HouseWithCount h in refData.houses {
                 int count = houseCounts[h.id.toString()] ?: 0;
                 if count < minCount {
                     minCount = count;
@@ -762,9 +719,7 @@ isolated function buildBulkPayloads(CsvRowInfo[] rowInfos, BulkRefData refData)
             }
         }
         database:CreateEmployeePayload payload = buildBulkEmployeePayload(rowInfo.values, refData, suggestedHouseId);
-        string generatedId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
-        payload.employeeId = generatedId;
-        employees.push({employeeId: generatedId, payload, rowNumber: rowInfo.rowNumber});
+        employees.push({employeeId: "", payload, rowNumber: rowInfo.rowNumber});
     }
 
     return {employees};

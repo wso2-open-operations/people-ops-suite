@@ -39,11 +39,18 @@ export interface BulkGroupAssignmentWarning {
   failedGroups: string[];
 }
 
+export interface OrphanedScimUser {
+  employeeId: string;
+  workEmail: string;
+  reason: string;
+}
+
 export interface BulkUploadResponse {
   created: number;
   skipped: number;
   errors: BulkEmployeeError[];
   provisioningErrors: BulkProvisioningError[];
+  orphanedScimUsers: OrphanedScimUser[];
   groupAssignmentWarnings: BulkGroupAssignmentWarning[];
 }
 
@@ -55,6 +62,7 @@ interface BulkOnboardingState {
   created: number;
   skipped: number;
   provisioningErrors: BulkProvisioningError[];
+  orphanedScimUsers: OrphanedScimUser[];
   groupAssignmentWarnings: BulkGroupAssignmentWarning[];
 }
 
@@ -66,6 +74,7 @@ const initialState: BulkOnboardingState = {
   created: 0,
   skipped: 0,
   provisioningErrors: [],
+  orphanedScimUsers: [],
   groupAssignmentWarnings: [],
 };
 
@@ -154,6 +163,7 @@ const BulkOnboardingSlice = createSlice({
       state.created = 0;
       state.skipped = 0;
       state.provisioningErrors = [];
+      state.orphanedScimUsers = [];
       state.groupAssignmentWarnings = [];
     },
   },
@@ -167,6 +177,7 @@ const BulkOnboardingSlice = createSlice({
         state.created = 0;
         state.skipped = 0;
         state.provisioningErrors = [];
+        state.orphanedScimUsers = [];
         state.groupAssignmentWarnings = [];
       })
       .addCase(uploadBulkEmployees.fulfilled, (state, action) => {
@@ -177,6 +188,7 @@ const BulkOnboardingSlice = createSlice({
         state.created = action.payload.created;
         state.skipped = action.payload.skipped;
         state.provisioningErrors = action.payload.provisioningErrors ?? [];
+        state.orphanedScimUsers = action.payload.orphanedScimUsers ?? [];
         state.groupAssignmentWarnings =
           action.payload.groupAssignmentWarnings ?? [];
       })
@@ -184,6 +196,7 @@ const BulkOnboardingSlice = createSlice({
         state.state = State.failed;
         state.stateMessage = "Bulk upload failed";
         state.provisioningErrors = [];
+        state.orphanedScimUsers = [];
         state.groupAssignmentWarnings = [];
         if (Array.isArray(action.payload)) {
           state.errors = action.payload as BulkEmployeeError[];

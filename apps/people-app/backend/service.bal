@@ -1012,6 +1012,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        if rows.length() > MAX_BULK_ROWS {
+            return <http:BadRequest>{ body: { message: string `CSV exceeds ${MAX_BULK_ROWS}-row limit` }};
+        }
+
         BulkRefData|error refData = loadBulkReferenceData();
         if refData is error {
             log:printError("Error loading reference data for bulk upload", refData);
@@ -1043,9 +1047,23 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        BulkPayloadResult|error payloadResult = buildBulkPayloads(firstPass.rowInfos, refData);
-        if payloadResult is error {
-            log:printError("Error building bulk employee payloads", payloadResult);
+        BulkPayloadResult payloadResult = buildBulkPayloads(firstPass.rowInfos, refData);
+
+        string[]|error generatedIds = database:addEmployeesBulk(
+                payloadResult.employees.map(e => e.payload),
+                userInfo.email);
+        
+        if generatedIds is error {
+            log:printError("Error occurred while bulk creating employees", generatedIds);
+            
+            if generatedIds.message().includes("Duplicate entry") || generatedIds.message().includes("Unique constraint") {
+                 return <http:InternalServerError>{
+                     body: {
+                         message: "Concurrent upload conflict — please retry"
+                     }
+                 };
+            }
+
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_EMPLOYEE_CREATION_FAILED
@@ -1053,21 +1071,15 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error created = database:addEmployeesBulk(
-                payloadResult.employees.map(e => e.payload),
-                payloadResult.employees.map(e => e.employeeId),
-                userInfo.email);
-        if created is error {
-            log:printError("Error occurred while bulk creating employees", created);
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_EMPLOYEE_CREATION_FAILED
-                }
-            };
+        foreach int i in 0 ..< generatedIds.length() {
+            payloadResult.employees[i].employeeId = generatedIds[i];
         }
+
+        int created = 0;
 
         database:BulkProvisioningError[] provisioningErrors = [];
         database:BulkGroupAssignmentWarning[] groupAssignmentWarnings = [];
+        database:OrphanedScimUser[] orphanedScimUsers = [];
 
         foreach ResolvedEmployee emp in payloadResult.employees {
             error? scimResult = scim:createUser({
@@ -1097,6 +1109,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                         employmentTypeId = emp.payload.employmentTypeId);
                 rollbackEmployeeCreation(emp.employeeId, emp.payload.workEmail);
                 provisioningErrors.push({
+                    employeeId: emp.employeeId,
+                    workEmail: emp.payload.workEmail,
+                    reason: groupNames.message()
+                });
+                orphanedScimUsers.push({
                     employeeId: emp.employeeId,
                     workEmail: emp.payload.workEmail,
                     reason: groupNames.message()
@@ -1131,6 +1148,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     failedGroups
                 });
             }
+
+            created += 1;
         }
 
         return {
@@ -1138,6 +1157,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             skipped: firstPass.skipped,
             errors: [],
             provisioningErrors,
+            orphanedScimUsers,
             groupAssignmentWarnings
         };
     }
@@ -1254,7 +1274,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             rollbackEmployeeCreation(employeeId, payload.workEmail);
             return <http:InternalServerError>{
                 body: {
-                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                    message: ERROR_EMPLOYEE_CREATION_FAILED,
+                    orphanedScimUsers: [
+                        {
+                            employeeId,
+                            workEmail: payload.workEmail,
+                            reason: groupNames.message()
+                        }
+                    ]
                 }
             };
         }

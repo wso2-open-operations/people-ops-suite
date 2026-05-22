@@ -737,6 +737,17 @@ public type BulkGroupAssignmentWarning record {|
     string[] failedGroups;
 |};
 
+public type OrphanedScimUser record {|
+    string employeeId;
+    string workEmail;
+    string reason;
+|};
+
+public type BulkOnboardingResult record {|
+    int created;
+    int failed;
+|};
+
 # Bulk onboarding response payload.
 public type BulkUploadResponse record {|
     # Number of employees created
@@ -747,6 +758,8 @@ public type BulkUploadResponse record {|
     BulkEmployeeError[] errors;
     # Employees for whom SCIM provisioning failed and whose DB records were rolled back
     BulkProvisioningError[] provisioningErrors = [];
+    # Asgardeo users created but DB rows were rolled back due to downstream failures
+    OrphanedScimUser[] orphanedScimUsers = [];
     # Employees who were created in the DB and Asgardeo but had one or more group-assignment failures
     BulkGroupAssignmentWarning[] groupAssignmentWarnings = [];
 |};

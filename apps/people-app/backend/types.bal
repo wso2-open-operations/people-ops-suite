@@ -112,6 +112,8 @@ type BulkRefData record {|
     map<int> officeIds;
     # Normalized house name to ID
     map<int> houseIds;
+    # Array of houses with their active employee counts
+    database:HouseWithCount[] houses;
 |};
 
 # Result of the first pass over a bulk CSV upload.

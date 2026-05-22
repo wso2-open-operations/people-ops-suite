@@ -593,15 +593,7 @@ isolated function getSubTeamsQuery(int? teamId = (), boolean includeInactive = f
 # + emails - Work email list
 # + return - Query to fetch existing work emails
 isolated function getExistingWorkEmailsQuery(string[] emails) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery inClause = ``;
-    foreach int i in 0 ..< emails.length() {
-        if i == 0 {
-            inClause = sql:queryConcat(inClause, `${emails[i]}`);
-        } else {
-            inClause = sql:queryConcat(inClause, `, `, `${emails[i]}`);
-        }
-    }
-
+    sql:ParameterizedQuery inClause = buildInClause(emails);
     return sql:queryConcat(
             `SELECT LOWER(work_email) AS work_email FROM employee WHERE LOWER(work_email) IN (`,
             inClause,
@@ -614,17 +606,9 @@ isolated function getExistingWorkEmailsQuery(string[] emails) returns sql:Parame
 # + nics - NIC or passport list
 # + return - Query to fetch existing NIC or passport values
 isolated function getExistingNicOrPassportQuery(string[] nics) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery inClause = ``;
-    foreach int i in 0 ..< nics.length() {
-        if i == 0 {
-            inClause = sql:queryConcat(inClause, `${nics[i]}`);
-        } else {
-            inClause = sql:queryConcat(inClause, `, `, `${nics[i]}`);
-        }
-    }
-
+    sql:ParameterizedQuery inClause = buildInClause(nics);
     return sql:queryConcat(
-            `SELECT nic_or_passport FROM personal_info WHERE nic_or_passport IN (`,
+            `SELECT LOWER(nic_or_passport) AS nic_or_passport FROM personal_info WHERE LOWER(nic_or_passport) IN (`,
             inClause,
             `);`
     );
@@ -635,19 +619,26 @@ isolated function getExistingNicOrPassportQuery(string[] nics) returns sql:Param
 # + epfs - EPF number list
 # + return - Query to fetch existing EPF values
 isolated function getExistingEpfsQuery(string[] epfs) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery inClause = ``;
-    foreach int i in 0 ..< epfs.length() {
-        if i == 0 {
-            inClause = sql:queryConcat(inClause, `${epfs[i]}`);
-        } else {
-            inClause = sql:queryConcat(inClause, `, `, `${epfs[i]}`);
-        }
-    }
+    sql:ParameterizedQuery inClause = buildInClause(epfs);
     return sql:queryConcat(
-            `SELECT epf FROM employee WHERE epf IN (`,
+            `SELECT LOWER(epf) AS epf FROM employee WHERE LOWER(epf) IN (`,
             inClause,
             `);`
     );
+}
+
+# Build an SQL IN clause for a list of string values.
+# 
+# + values - List of string values to include in the IN clause
+# + return - Parameterized query representing the IN clause
+isolated function buildInClause(string[] values) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery clause = ``;
+    foreach int i in 0 ..< values.length() {
+        clause = i == 0
+            ? sql:queryConcat(clause, `${values[i]}`)
+            : sql:queryConcat(clause, `, `, `${values[i]}`);
+    }
+    return clause;
 }
 
 # Get units query.

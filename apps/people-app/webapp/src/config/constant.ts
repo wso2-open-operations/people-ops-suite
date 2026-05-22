@@ -305,6 +305,8 @@ export const DATE_FMT = "yyyy-MM-dd";
 
 export const BULK_TEMPLATE_FILENAME = "bulk_onboarding_template.csv";
 
+export const BULK_UPLOAD_MAX_FILE_SIZE = 5 * 1024 * 1024;
+
 export const BULK_TEMPLATE_HEADERS = [
   "firstName",
   "lastName",

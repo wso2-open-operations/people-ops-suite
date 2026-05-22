@@ -410,19 +410,23 @@ public isolated function deleteEmployeeById(string employeeId) returns error? {
 # Add multiple employees in a single transaction.
 #
 # + payloads - Create employee payloads
-# + employeeIds - Pre-resolved employee IDs
 # + createdBy - Creator of the employee records
-# + return - Number of employees created or error
-public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, string[] employeeIds, string createdBy)
-        returns int|error {
-    if payloads.length() != employeeIds.length() {
-        return error("Bulk insert payload length mismatch");
-    }
+# + return - Array of generated employee IDs or error
+public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, string createdBy)
+        returns string[]|error {
+
+    string[] generatedIds = [];
 
     retry transaction {
+        generatedIds = [];
+        map<EmployeeIdContext> contextCache = {};
+        map<int> sequenceCache = {};
+
         foreach int i in 0 ..< payloads.length() {
             CreateEmployeePayload payload = payloads[i];
-            string employeeId = employeeIds[i];
+            string employeeId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
+            generatedIds.push(employeeId);
+
             int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
             _ = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
             check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
@@ -430,7 +434,57 @@ public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, stri
         }
         check commit;
     }
-    return payloads.length();
+    return generatedIds;
+}
+
+# Generates an employee ID for a single CSV row during bulk onboarding.
+#
+# + payload - Partially built payload for the current row
+# + contextCache - Cache mapping `"companyId:employmentTypeId"` to `EmployeeIdContext`
+# + sequenceCache - Cache mapping sequence key to last used numeric suffix
+# + return - Auto-generated employee ID, or an error on DB failure
+isolated function generateBulkEmployeeId(CreateEmployeePayload payload,
+        map<EmployeeIdContext> contextCache, map<int> sequenceCache) returns string|error {
+
+    string ctxKey = string `${payload.companyId}:${payload.employmentTypeId}`;
+
+    EmployeeIdContext context;
+    EmployeeIdContext? cached = contextCache[ctxKey];
+    if cached is EmployeeIdContext {
+        context = cached;
+    } else {
+        context = check getEmployeeIdContext(payload.companyId, payload.employmentTypeId);
+        contextCache[ctxKey] = context;
+    }
+
+    match context.employmentType {
+        PERMANENT|INTERNSHIP => {
+            string seqKey = context.companyPrefix + ":" + context.employmentType.toString();
+            if !sequenceCache.hasKey(seqKey) {
+                EmployeeIdSequence seq = check getLastEmployeeNumericSuffix(
+                        context.companyPrefix, [context.employmentType]);
+                sequenceCache[seqKey] = <int>seq.lastNumericId;
+            }
+            int next = (sequenceCache[seqKey] ?: 0) + 1;
+            sequenceCache[seqKey] = next;
+            return string `${context.companyPrefix}${next}`;
+        }
+        CONSULTANCY|ADVISORY_CONSULTANCY|PART_TIME_CONSULTANCY => {
+            string seqKey = CONSULTANCY_ID_PREFIX;
+            if !sequenceCache.hasKey(seqKey) {
+                EmployeeIdSequence seq = check getLastEmployeeNumericSuffix(
+                        CONSULTANCY_ID_PREFIX,
+                        [CONSULTANCY, ADVISORY_CONSULTANCY, PART_TIME_CONSULTANCY]);
+                sequenceCache[seqKey] = <int>seq.lastNumericId;
+            }
+            int next = (sequenceCache[seqKey] ?: 0) + 1;
+            sequenceCache[seqKey] = next;
+            return string `${CONSULTANCY_ID_PREFIX}${next}`;
+        }
+        _ => {
+            return error("Unsupported employment type: " + context.employmentType.toString());
+        }
+    }
 }
 
 # Fetch employee ID generation context.
