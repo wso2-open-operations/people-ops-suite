@@ -50,7 +50,6 @@ export const SnackMessage = {
     addCollections: "Unable to create the Collection",
     fetchEmployees: "Unable to retrieve list of Employees",
     insufficientPrivileges: "Insufficient Privileges",
-    fetchAppConfigMessage: "Unable to retrieve app configurations",
     fetchPrivileges: "Failed to fetch Privileges",
     fetchGlobalParConfigs: "Error while retrieving global configurations",
     updateGlobalParConfigs: "Error while updating global configurations",

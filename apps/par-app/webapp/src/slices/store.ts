@@ -22,7 +22,6 @@ import authReducer from "@slices/authSlice/auth";
 import calendarSlice from "@slices/calendarSlice/calendar";
 import collectionReducer from "@slices/collections/collection";
 import commonReducer from "@slices/commonSlice/common";
-import appConfigReducer from "@slices/configSlice/config";
 import employeeHistorySlice from "@slices/employeeHistorySlice/employeeHistory";
 import employeeReducer from "@slices/employeeSlice/employee";
 import healthReducer from "@slices/healthSlice/health";
@@ -45,7 +44,6 @@ export const store = configureStore({
     common: commonReducer,
     parCycle: parCycleReducer,
     employee: employeeReducer,
-    appConfig: appConfigReducer,
     report: reportReducer,
     reminder: reminderReducer,
     meta: metaReducer,

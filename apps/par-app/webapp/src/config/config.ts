@@ -50,13 +50,11 @@ export const AppConfig = {
     contacts: ServiceBaseUrl + "/contacts",
     userInfo: ServiceBaseUrl + "/user-info",
     employees: ServiceBaseUrl + "/employees",
-    appConfig: ServiceBaseUrl + "/app-config",
     userData: ServiceBaseUrl + "/employees",
     parCycles: ServiceBaseUrl + "/par-cycles",
     configurations: ServiceBaseUrl + "/meta/configurations",
     collections: ServiceBaseUrl + "/collections",
 
-    userPrivileges: ServiceBaseUrl + "/user-privileges",
     emails: ServiceBaseUrl + "/employee-emails",
     reminders: ServiceBaseUrl + "/reminders",
     participants: ServiceBaseUrl + "/participants",

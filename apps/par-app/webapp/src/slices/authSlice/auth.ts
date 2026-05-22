@@ -16,7 +16,7 @@
 
 import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
-import { AuthData, AuthFlowState, AuthState, RequestState, Role } from "@utils/types";
+import { AuthData, AuthState, RequestState, Role } from "@utils/types";
 
 import { RootState } from "../store";
 import { UserState } from "../userSlice/user";
@@ -28,14 +28,10 @@ const initialState: AuthState = {
   statusMessage: null,
   userInfo: null,
   accessToken: null,
-  isIdTokenExpired: null,
   decodedIdToken: null,
   roles: [],
-  userPrivileges: null,
   errorMessage: null,
-  authFlowState: "start",
   userEmail: null,
-  employeeInfoStatus: RequestState.IDLE,
   employeeInfo: null,
 };
 
@@ -53,45 +49,6 @@ export const authSlice = createSlice({
       state.errorMessage = action.payload;
       state.isAuthenticated = false;
       state.status = RequestState.FAILED;
-    },
-    setStatus: (state, action: PayloadAction<AuthState["status"]>) => {
-      state.status = action.payload;
-    },
-    setStatusMessage: (state, action: PayloadAction<string | null>) => {
-      state.statusMessage = action.payload;
-    },
-    setTokenState: (state) => {
-      state.isIdTokenExpired = true;
-    },
-    setAuthFlowState: (state, action: PayloadAction<AuthFlowState>) => {
-      state.authFlowState = action.payload;
-    },
-    setErrorMessage: (state, action: PayloadAction<string | null>) => {
-      state.errorMessage = action.payload;
-    },
-    checkTokenState: (state) => {
-      state.isIdTokenExpired = state.decodedIdToken
-        ? Date.now() >= state.decodedIdToken?.exp * 1000
-        : null;
-    },
-    resetStates: (state) => {
-      state = {
-        isAuthenticated: false,
-        status: RequestState.IDLE,
-        mode: "active",
-        statusMessage: null,
-        userInfo: null,
-        accessToken: null,
-        isIdTokenExpired: null,
-        decodedIdToken: null,
-        roles: [],
-        userPrivileges: null,
-        errorMessage: null,
-        authFlowState: "start",
-        employeeInfoStatus: RequestState.IDLE,
-        employeeInfo: null,
-        userEmail: null,
-      };
     },
   },
 
@@ -113,7 +70,6 @@ export const authSlice = createSlice({
 export const loadPrivileges = createAsyncThunk(
   "auth/loadPrivileges",
   (_, { getState, rejectWithValue }) => {
-    // Get the data fetched by the UserSlice
     const { userInfo, state } = (getState() as RootState).user as UserState;
 
     if (state === RequestState.FAILED || !userInfo) {
@@ -123,18 +79,11 @@ export const loadPrivileges = createAsyncThunk(
     const userPrivileges = userInfo.privileges || [];
     const roles: Role[] = [];
 
-    if (userPrivileges.includes(762)) {
-      roles.push(Role.ADMIN);
-    }
-    if (userPrivileges.includes(987)) {
-      roles.push(Role.EMPLOYEE);
-    }
-    if (userPrivileges.includes(777)) {
-      roles.push(Role.TEAM_LEAD);
-    }
-    if (userInfo.lead) {
-      roles.push(Role.LEAD);
-    }
+    if (userPrivileges.includes(762)) roles.push(Role.ADMIN);
+    if (userPrivileges.includes(987)) roles.push(Role.EMPLOYEE);
+    if (userPrivileges.includes(777)) roles.push(Role.TEAM_LEAD);
+    if (userInfo.lead) roles.push(Role.LEAD);
+
     if (roles.length === 0) {
       return rejectWithValue("No valid roles found");
     }
@@ -143,42 +92,12 @@ export const loadPrivileges = createAsyncThunk(
   },
 );
 
-// export const loadPrivileges = createAsyncThunk(
-//   "auth/loadPrivileges",
-//   async () => {
-//     return getUserPrivileges();
-//   }
-// );
+export const { setUserAuthData, setAuthError } = authSlice.actions;
 
-// export const loadEmployeeInfo = createAsyncThunk(
-//   "auth/loadEmployeeInfo",
-//   async (userEmail: string) => {
-//     return getEmployeeInfo(userEmail);
-//   }
-// );
-
-export const {
-  setUserAuthData,
-  setStatus,
-  setStatusMessage,
-  checkTokenState,
-  setTokenState,
-  resetStates,
-  setAuthFlowState,
-  setErrorMessage,
-} = authSlice.actions;
-
-export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 export const selectUserInfo = (state: RootState) => state.auth.userInfo;
 export const selectIdToken = (state: RootState) => state.auth.accessToken;
 export const selectUserEmail = (state: RootState) => state.auth.userEmail || null;
 export const selectEmployeeInfo = (state: RootState) => state.auth.employeeInfo;
-
-export const selectStatus = (state: RootState) => state.auth.status;
 export const selectRoles = (state: RootState) => state.auth.roles;
-export const selectStatusMessage = (state: RootState) => state.auth.statusMessage;
-export const isIdTokenExpired = (state: RootState) => state.auth.isIdTokenExpired;
-export const selectEmployeeInfoStatus = (state: RootState) => state.auth.employeeInfoStatus;
-export const { setAuthError } = authSlice.actions;
 
 export default authSlice.reducer;

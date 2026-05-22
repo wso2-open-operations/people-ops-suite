@@ -119,14 +119,10 @@ export interface AuthState {
   isAuthenticated: boolean;
   userInfo: BasicUserInfo | null;
   accessToken: string | null;
-  isIdTokenExpired: boolean | null;
   decodedIdToken: DecodedIDTokenPayload | null;
   roles: Role[];
-  userPrivileges: number[] | null;
   errorMessage: string | null;
-  authFlowState: AuthFlowState;
   userEmail?: string | null;
-  employeeInfoStatus: RequestState;
   employeeInfo?: EmployeeInfo | null;
 }
 
@@ -135,8 +131,6 @@ export interface AuthData {
   accessToken: string;
   decodedIdToken: DecodedIDTokenPayload;
 }
-
-export type AuthFlowState = "start" | "l_user_privileges" | "e_user_privileges" | "end";
 
 export interface EmployeeInfo {
   employeeName: string;
