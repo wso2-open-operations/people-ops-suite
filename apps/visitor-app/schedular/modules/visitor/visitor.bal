@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import ballerina/http;
 import ballerina/log;
 import ballerina/oauth2;
 
@@ -53,28 +52,4 @@ public function fetchActiveVisits() returns Visit[]|error {
     }
 
     return allVisits;
-}
-
-# Calls the backend COMPLETE action for the given visit ID.
-#
-# + visitId - ID of the visit to complete
-# + return - An error if the request fails
-public function completeVisit(int visitId) returns error? {
-    map<string|string[]>|error headers = getJwtHeader();
-    if headers is error {
-        log:printError("Failed to get access token", headers);
-        return headers;
-    }
-
-    http:Response response = check visitorClient->post(
-        string `/visits/${visitId}/COMPLETE`, {}, headers
-    );
-
-    if response.statusCode != http:STATUS_OK {
-        string|error body = response.getTextPayload();
-        string bodyText = body is string ? body : "unable to read response body";
-        string msg = string `Backend rejected COMPLETE for visit ${visitId} — status: ${response.statusCode}, body: ${bodyText}`;
-        log:printError(msg);
-        return error(msg);
-    }
 }
