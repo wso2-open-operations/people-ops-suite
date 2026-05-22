@@ -37,10 +37,17 @@ public function main() returns error? {
     foreach visitor:Visit visit in activeVisits {
         string? timeOfDeparture = visit.timeOfDeparture;
         if timeOfDeparture is string {
-            string departureDate = string:substring(timeOfDeparture, 0, 10);
+            time:Utc|error departureUtc = time:utcFromString(re ` `.replaceAll(timeOfDeparture, "T") + "Z");
+            if departureUtc is error {
+                log:printError("Cannot parse timeOfDeparture, skipping", departureUtc, id = visit.id, timeOfDeparture = timeOfDeparture);
+                continue;
+            }
 
-            // Send a reminder email if the departure date is today or in the past.
-            if departureDate <= today {
+            // Send a reminder email if the departure time has passed the current UTC time.
+            if time:utcDiffSeconds(now, departureUtc) >= 0d {
+                int daysOverdueCount = <int>(time:utcDiffSeconds(now, departureUtc) / 86400d);
+                string daysOverdue = daysOverdueCount == 0 ? "today" : daysOverdueCount == 1 ? "1 day ago" : daysOverdueCount.toString() + " days ago";
+
                 // Format the departure time for the email content
                 string formattedDepartureTime = timeOfDeparture + " UTC";
                 string|error formattedDepartureTimeResult = formatDateTime(timeOfDeparture, "Asia/Colombo");
@@ -75,7 +82,7 @@ public function main() returns error? {
                                                                      passNumber: visit.passNumber,
                                                                      companyName: visit.companyName,
                                                                      purposeOfVisit: visit.purposeOfVisit
-                                                                 });
+                                                                 }, daysOverdue);
                 if emailError is error {
                     log:printError("Failed to send departure-overdue reminder email", emailError, id = visit.id);
                 } else {

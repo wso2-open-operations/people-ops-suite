@@ -70,7 +70,7 @@ public final string departureOverdueTemplate = string `
                           <td style="background-color:#fde8e8; border-left:4px solid #d9534f; padding:14px 16px; border-radius:4px;">
                             <p style="margin:0; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#721c24;">
                               <strong>Immediate Action Required</strong> &mdash;
-                              The scheduled departure time for this visit has passed and it has not been marked as complete. Please complete this visit immediately.
+                              The scheduled departure time for this visit passed <!-- [DAYS_OVERDUE] --> and it has not been marked as complete. Please complete this visit immediately.
                             </p>
                           </td>
                         </tr>

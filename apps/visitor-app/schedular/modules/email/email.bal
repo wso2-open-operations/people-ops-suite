@@ -24,8 +24,9 @@ public configurable string[] adminEmailList = ?;
 # scheduled departure time has passed without being marked as complete.
 #
 # + visit - Details of the visit
+# + daysOverdue - Human-readable overdue duration, e.g. "today", "1 day ago", "3 days ago"
 # + return - An error if sending fails
-public function sendDepartureOverdueReminderEmail(CompletedVisitInfo visit) returns error? {
+public function sendDepartureOverdueReminderEmail(CompletedVisitInfo visit, string daysOverdue) returns error? {
     string template = check bindKeyValues(
             departureOverdueTemplate,
             {
@@ -38,6 +39,7 @@ public function sendDepartureOverdueReminderEmail(CompletedVisitInfo visit) retu
                 "WHOM_THEY_MEET": visit.whomTheyMeet ?: "N/A",
                 "PASS_NUMBER": visit.passNumber ?: "N/A",
                 "PURPOSE_OF_VISIT": visit.purposeOfVisit ?: "N/A",
+                "DAYS_OVERDUE": daysOverdue,
                 "YEAR": time:utcToCivil(time:utcNow()).year.toString()
             });
     return sendEmail(DEPARTURE_OVERDUE_SUBJECT, template, visit.id);
