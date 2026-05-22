@@ -20,7 +20,7 @@ import * as rax from "retry-axios";
 
 import { SnackMessage, USER_TIMEZONE_OFFSET } from "@config/constant";
 import { ShowSnackBarMessage } from "@slices/commonSlice/common";
-import { createSetMaintenanceStatusAction } from "@slices/healthSlice/health";
+import { setMaintenanceStatus } from "@slices/healthSlice/health";
 
 export class ApiService {
   private static _instance: AxiosInstance;
@@ -48,11 +48,7 @@ export class ApiService {
             };
 
             if (message.isMaintenanceMode && message.maintenanceMessage) {
-              const setMaintenanceStatusAction = createSetMaintenanceStatusAction(
-                true,
-                message.maintenanceMessage,
-              );
-              dispatch(setMaintenanceStatusAction);
+              dispatch(setMaintenanceStatus({ maintenanceStatus: true, maintenanceMessage: message.maintenanceMessage }));
             }
           } catch (parseError) {
             ShowSnackBarMessage(SnackMessage.error.maintenanceMessageParseError, "error");

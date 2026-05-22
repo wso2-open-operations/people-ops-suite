@@ -22,16 +22,17 @@ import PreLoader from "@component/common/PreLoader";
 import Layout from "@layout/Layout";
 import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
-import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { selectMaintenanceStatus } from "@slices/healthSlice/health";
+import { RootState, useAppSelector } from "@slices/store";
 import { getActiveRoutesV2, routes } from "@src/route";
 
 const AppHandler = () => {
-  const dispatch = useAppDispatch();
   const [appState, setAppState] = useState<"loading" | "success" | "failed" | "maintenance">(
     "loading",
   );
 
   const auth = useAppSelector((state: RootState) => state.auth);
+  const isMaintenanceMode = useAppSelector(selectMaintenanceStatus);
 
   const router = useMemo(
     () =>
@@ -47,16 +48,16 @@ const AppHandler = () => {
   );
 
   useEffect(() => {
-    if (auth.status === "loading") {
+    if (isMaintenanceMode) {
+      setAppState("maintenance");
+    } else if (auth.status === "loading") {
       setAppState("loading");
     } else if (auth.status === "succeeded") {
       setAppState("success");
     } else if (auth.status === "failed") {
       setAppState("failed");
-    } else if (auth.mode === "maintenance") {
-      setAppState("maintenance");
     }
-  }, [auth.status, auth.mode, dispatch]);
+  }, [auth.status, isMaintenanceMode]);
 
   const renderApp = () => {
     switch (appState) {

@@ -46,15 +46,5 @@ const healthSlice = createSlice({
 });
 
 export const { setMaintenanceStatus } = healthSlice.actions;
-export const createSetMaintenanceStatusAction = (
-  maintenanceStatus: boolean,
-  maintenanceMessage: string,
-) =>
-  healthSlice.actions.setMaintenanceStatus({
-    maintenanceStatus,
-    maintenanceMessage,
-  });
-
 export const selectMaintenanceStatus = (state: RootState) => state.health.maintenanceStatus;
-export const selectMaintenanceMessage = (state: RootState) => state.health.maintenanceMessage;
 export default healthSlice.reducer;

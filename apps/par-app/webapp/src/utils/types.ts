@@ -115,7 +115,6 @@ export enum Role {
 export interface AuthState {
   status: RequestState;
   statusMessage: string | null;
-  mode: "active" | "maintenance";
   isAuthenticated: boolean;
   userInfo: BasicUserInfo | null;
   accessToken: string | null;

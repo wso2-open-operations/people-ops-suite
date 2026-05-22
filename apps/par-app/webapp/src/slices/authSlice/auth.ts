@@ -24,7 +24,6 @@ import { UserState } from "../userSlice/user";
 const initialState: AuthState = {
   isAuthenticated: false,
   status: RequestState.IDLE,
-  mode: "active",
   statusMessage: null,
   userInfo: null,
   accessToken: null,
