@@ -39,20 +39,25 @@ public function main() returns error? {
         if timeOfDeparture is string {
             time:Utc|error departureUtc = time:utcFromString(re ` `.replaceAll(timeOfDeparture, "T") + "Z");
             if departureUtc is error {
-                log:printError("Cannot parse timeOfDeparture, skipping", departureUtc, id = visit.id, timeOfDeparture = timeOfDeparture);
+                log:printError("Cannot parse timeOfDeparture, skipping",
+                        departureUtc, id = visit.id, timeOfDeparture = timeOfDeparture);
+
                 continue;
             }
 
             // Send a reminder email if the departure time has passed the current UTC time.
             if time:utcDiffSeconds(now, departureUtc) >= 0d {
                 int daysOverdueCount = <int>(time:utcDiffSeconds(now, departureUtc) / 86400d);
-                string daysOverdue = daysOverdueCount == 0 ? "today" : daysOverdueCount == 1 ? "1 day ago" : daysOverdueCount.toString() + " days ago";
+                string daysOverdue = daysOverdueCount == 0 ? "today" : daysOverdueCount == 1 ? "1 day ago" :
+                        daysOverdueCount.toString() + " days ago";
 
                 // Format the departure time for the email content
                 string formattedDepartureTime = timeOfDeparture + " UTC";
                 string|error formattedDepartureTimeResult = formatDateTime(timeOfDeparture, "Asia/Colombo");
                 if formattedDepartureTimeResult is error {
-                    log:printError("Failed to format departure time, skipping email", formattedDepartureTimeResult, id = visit.id, timeOfDeparture = timeOfDeparture);
+                    log:printError("Failed to format departure time, skipping email",
+                            formattedDepartureTimeResult, id = visit.id, timeOfDeparture = timeOfDeparture);
+
                     formattedDepartureTime = timeOfDeparture + " UTC"; // Fallback to original string if formatting fails
                 } else {
                     formattedDepartureTime = formattedDepartureTimeResult;
@@ -63,7 +68,9 @@ public function main() returns error? {
                 if formattedTimeOfEntry is string {
                     string|error formattedTimeOfEntryResult = formatDateTime(formattedTimeOfEntry, "Asia/Colombo");
                     if formattedTimeOfEntryResult is error {
-                        log:printError("Failed to format time of entry, skipping email", formattedTimeOfEntryResult, id = visit.id, timeOfEntry = formattedTimeOfEntry);
+                        log:printError("Failed to format time of entry, skipping email",
+                                formattedTimeOfEntryResult, id = visit.id, timeOfEntry = formattedTimeOfEntry);
+
                         formattedTimeOfEntry = formattedTimeOfEntry + " UTC"; // Fallback to original string if formatting fails    
                     } else {
                         formattedTimeOfEntry = formattedTimeOfEntryResult;
@@ -73,16 +80,16 @@ public function main() returns error? {
                 }
 
                 error? emailError = email:sendDepartureOverdueReminderEmail({
-                                                                     id: visit.id,
-                                                                     visitorName: buildVisitorName(visit.firstName, visit.lastName),
-                                                                     visitDate: visit.visitDate,
-                                                                     timeOfEntry: formattedTimeOfEntry,
-                                                                     timeOfDeparture: formattedDepartureTime,
-                                                                     whomTheyMeet: visit.whomTheyMeet,
-                                                                     passNumber: visit.passNumber,
-                                                                     companyName: visit.companyName,
-                                                                     purposeOfVisit: visit.purposeOfVisit
-                                                                 }, daysOverdue);
+                    id: visit.id,
+                    visitorName: buildVisitorName(visit.firstName, visit.lastName),
+                    visitDate: visit.visitDate,
+                    timeOfEntry: formattedTimeOfEntry,
+                    timeOfDeparture: formattedDepartureTime,
+                    whomTheyMeet: visit.whomTheyMeet,
+                    passNumber: visit.passNumber,
+                    companyName: visit.companyName,
+                    purposeOfVisit: visit.purposeOfVisit
+                }, daysOverdue);
                 if emailError is error {
                     log:printError("Failed to send departure-overdue reminder email", emailError, id = visit.id);
                 } else {
@@ -110,7 +117,9 @@ public function main() returns error? {
                 if formattedTimeOfEntry is string {
                     string|error formattedTimeOfEntryResult = formatDateTime(formattedTimeOfEntry, "Asia/Colombo");
                     if formattedTimeOfEntryResult is error {
-                        log:printError("Failed to format time of entry, skipping email", formattedTimeOfEntryResult, id = visit.id, timeOfEntry = formattedTimeOfEntry);
+                        log:printError("Failed to format time of entry, skipping email",
+                                formattedTimeOfEntryResult, id = visit.id, timeOfEntry = formattedTimeOfEntry);
+
                         formattedTimeOfEntry = formattedTimeOfEntry + " UTC"; // Fallback to original string if formatting fails    
                     } else {
                         formattedTimeOfEntry = formattedTimeOfEntryResult;
@@ -120,16 +129,16 @@ public function main() returns error? {
                 }
 
                 error? emailError = email:sendLongRunningVisitReminderEmail({
-                                                                    id: visit.id,
-                                                                    visitorName: buildVisitorName(visit.firstName, visit.lastName),
-                                                                    visitDate: visit.visitDate,
-                                                                    timeOfEntry: formattedTimeOfEntry,
-                                                                    timeOfDeparture: (),
-                                                                    whomTheyMeet: visit.whomTheyMeet,
-                                                                    passNumber: visit.passNumber,
-                                                                    companyName: visit.companyName,
-                                                                    purposeOfVisit: visit.purposeOfVisit
-                                                                });
+                    id: visit.id,
+                    visitorName: buildVisitorName(visit.firstName, visit.lastName),
+                    visitDate: visit.visitDate,
+                    timeOfEntry: formattedTimeOfEntry,
+                    timeOfDeparture: (),
+                    whomTheyMeet: visit.whomTheyMeet,
+                    passNumber: visit.passNumber,
+                    companyName: visit.companyName,
+                    purposeOfVisit: visit.purposeOfVisit
+                });
                 if emailError is error {
                     log:printError("Failed to send long-running visit reminder email", emailError, id = visit.id);
                 } else {
