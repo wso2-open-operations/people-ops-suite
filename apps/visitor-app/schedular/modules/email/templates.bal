@@ -14,12 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# Email template for visits that were force-completed by the scheduler
-# because the scheduled departure time passed without reception action.
+# Email template for visits where the scheduled departure time has passed
+# without being marked as complete — reminder that action is required.
 # Placeholders: VISIT_ID, VISITOR_NAME, COMPANY, VISIT_DATE,
 # TIME_OF_ENTRY, TIME_OF_DEPARTURE, WHOM_THEY_MEET,
 # PASS_NUMBER, PURPOSE_OF_VISIT, YEAR
-public final string forceCompleteTemplate = string `
+public final string departureOverdueTemplate = string `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -69,9 +69,8 @@ public final string forceCompleteTemplate = string `
                         <tr>
                           <td style="background-color:#fde8e8; border-left:4px solid #d9534f; padding:14px 16px; border-radius:4px;">
                             <p style="margin:0; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#721c24;">
-                              <strong>Action Taken by Scheduler</strong> &mdash;
-                              This visit was automatically completed because the scheduled departure time passed
-                              without the reception marking it as complete.
+                              <strong>Immediate Action Required</strong> &mdash;
+                              The scheduled departure time for this visit has passed and it has not been marked as complete. Please complete this visit immediately.
                             </p>
                           </td>
                         </tr>
@@ -79,7 +78,7 @@ public final string forceCompleteTemplate = string `
                     </table>
 
                     <p style="font-family:'Roboto', Helvetica, sans-serif; font-size:16px; color:#465868; margin-top:24px;">
-                      The following visit has been <strong>force-completed</strong> by the scheduler. Please review the details below.
+                      The following visit has not been completed. Please review the details below and complete it manually.
                     </p>
 
                     <!-- Visit Details Table -->
@@ -152,11 +151,11 @@ public final string forceCompleteTemplate = string `
 `;
 
 # Email template for visits that have been active for more than one week
-# with no departure recorded — auto-completed by the scheduler.
+# with no departure recorded — reminder that action is required.
 # Placeholders: VISIT_ID, VISITOR_NAME, COMPANY, VISIT_DATE,
 # TIME_OF_ENTRY, WHOM_THEY_MEET, PASS_NUMBER,
 # PURPOSE_OF_VISIT, YEAR
-public final string expiredVisitTemplate = string `
+public final string longRunningVisitTemplate = string `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -206,9 +205,8 @@ public final string expiredVisitTemplate = string `
                         <tr>
                           <td style="background-color:#fde8e8; border-left:4px solid #d9534f; padding:14px 16px; border-radius:4px;">
                             <p style="margin:0; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#721c24;">
-                              <strong>Action Taken by Scheduler</strong> &mdash;
-                              This visit had no scheduled departure time and has been active for <strong>more than one week</strong>.
-                              It was automatically completed by the scheduler because the reception did not mark it as complete.
+                              <strong>Immediate Action Required</strong> &mdash;
+                              This visit has been active for more than one week with no departure recorded. Please review and complete it immediately.
                             </p>
                           </td>
                         </tr>
@@ -216,7 +214,7 @@ public final string expiredVisitTemplate = string `
                     </table>
 
                     <p style="font-family:'Roboto', Helvetica, sans-serif; font-size:16px; color:#465868; margin-top:24px;">
-                      The following visit has been <strong>force-completed</strong> by the scheduler. Please review the details below.
+                      The following visit has not been completed. Please review the details below and complete it manually.
                     </p>
 
                     <!-- Visit Details Table -->
