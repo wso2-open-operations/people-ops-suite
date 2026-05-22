@@ -39,15 +39,8 @@ public function main() returns error? {
         if timeOfDeparture is string {
             string departureDate = string:substring(timeOfDeparture, 0, 10);
 
-            // If the visit has a departure time and it's today, we consider it for force-completion and sending the force-complete email.
-            if departureDate == today {
-                // Force complete the visit in the backend
-                error? completeError = visitor:completeVisit(visit.id);
-                if completeError is error {
-                    log:printError("Failed to force complete visit, skipping email", completeError, id = visit.id);
-                    continue;
-                }
-
+            // Send a reminder email if the departure date is today or in the past.
+            if departureDate <= today {
                 // Format the departure time for the email content
                 string formattedDepartureTime = timeOfDeparture + " UTC";
                 string|error formattedDepartureTimeResult = formatDateTime(timeOfDeparture, "Asia/Colombo");
@@ -72,7 +65,7 @@ public function main() returns error? {
                     formattedTimeOfEntry = ();
                 }
 
-                error? emailError = email:sendForceCompleteEmail({
+                error? emailError = email:sendDepartureOverdueReminderEmail({
                                                                      id: visit.id,
                                                                      visitorName: buildVisitorName(visit.firstName, visit.lastName),
                                                                      visitDate: visit.visitDate,
@@ -84,9 +77,9 @@ public function main() returns error? {
                                                                      purposeOfVisit: visit.purposeOfVisit
                                                                  });
                 if emailError is error {
-                    log:printError("Failed to send force-complete email", emailError, id = visit.id);
+                    log:printError("Failed to send departure-overdue reminder email", emailError, id = visit.id);
                 } else {
-                    log:printInfo("Force-complete email sent successfully", id = visit.id);
+                    log:printInfo("Departure-overdue reminder email sent successfully", id = visit.id);
                 }
             }
         } else {
@@ -105,13 +98,6 @@ public function main() returns error? {
 
             if time:utcDiffSeconds(oneWeekAgo, entryUtc) >= 0d {
 
-                // Force complete the visit in the backend
-                error? completeError = visitor:completeVisit(visit.id);
-                if completeError is error {
-                    log:printError("Failed to expire the visit, skipping email", completeError, id = visit.id);
-                    continue;
-                }
-
                 // Format the time of entry for the email content
                 string? formattedTimeOfEntry = visit.timeOfEntry;
                 if formattedTimeOfEntry is string {
@@ -126,7 +112,7 @@ public function main() returns error? {
                     formattedTimeOfEntry = ();
                 }
 
-                error? emailError = email:sendExpiredVisitEmail({
+                error? emailError = email:sendLongRunningVisitReminderEmail({
                                                                     id: visit.id,
                                                                     visitorName: buildVisitorName(visit.firstName, visit.lastName),
                                                                     visitDate: visit.visitDate,
@@ -138,9 +124,9 @@ public function main() returns error? {
                                                                     purposeOfVisit: visit.purposeOfVisit
                                                                 });
                 if emailError is error {
-                    log:printError("Failed to send expired-visit email", emailError, id = visit.id);
+                    log:printError("Failed to send long-running visit reminder email", emailError, id = visit.id);
                 } else {
-                    log:printInfo("Expired-visit email sent successfully", id = visit.id);
+                    log:printInfo("Long-running visit reminder email sent successfully", id = visit.id);
                 }
             }
         }
