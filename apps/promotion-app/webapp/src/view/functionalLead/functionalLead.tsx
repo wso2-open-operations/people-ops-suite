@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -18,6 +18,7 @@ import CommonPage from "../../layout/pages/CommonPage";
 import HistoryIcon from "@mui/icons-material/History";
 import Requests from "./panel/functionalLeadPromotions";
 import History from "./panel/functionalLeadHistory";
+import TimeBased from "./panel/functionalLeadTimeBased";
 import GroupsIcon from '@mui/icons-material/Groups';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 
@@ -38,6 +39,12 @@ export default function FunctionalLead() {
           tabPath: "Promotion History",
           icon: <HistoryIcon />,
           page: <History />,
+        },
+        {
+          tabTitle: "Time Based",
+          tabPath: "TimeBased Promotions",
+          icon: <HistoryIcon />,
+          page: <TimeBased />,
         },
       ]}
     />

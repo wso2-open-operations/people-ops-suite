@@ -16,35 +16,21 @@
 
 import CommonPage from "../../layout/pages/CommonPage";
 import HistoryIcon from "@mui/icons-material/History";
-import Requests from "./panel/promotionBoardPromotions";
-import History from "./panel/promotionBoardHistory";
-import FL_Rejected from "./panel/promotionBoardFLRejects";
+import PromotionCycleHistoryPage from "./panel/cycleHistory";
 import GroupsIcon from '@mui/icons-material/Groups';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 
-export default function PromotionBoard() {
+export default function PromotionCycleHistory() {
   return (
     <CommonPage
-      title="Promotion Board Portal"
+      title="Promotion Cycle History"
       icon={<GroupsIcon />}
       commonPageTabs={[
         {
-          tabTitle: "Requests",
-          tabPath: "Promotion Requests",
+          tabTitle: "promotionCycleHistory",
+          tabPath: "Promotion Cycle History",
           icon: <DriveFileMoveIcon />,
-          page: <Requests />,
-        },
-        {
-          tabTitle: "History",
-          tabPath: "Promotion History",
-          icon: <HistoryIcon />,
-          page: <History />,
-        },
-        {
-          tabTitle: "FLRejected",
-          tabPath: "Functional Lead Rejected",
-          icon: <HistoryIcon />,
-          page: <FL_Rejected />,
+          page: <PromotionCycleHistoryPage />,
         },
       ]}
     />

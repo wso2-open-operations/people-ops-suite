@@ -15,36 +15,42 @@
 // under the License.
 
 import CommonPage from "../../layout/pages/CommonPage";
-import HistoryIcon from "@mui/icons-material/History";
-import Requests from "./panel/promotionBoardPromotions";
-import History from "./panel/promotionBoardHistory";
-import FL_Rejected from "./panel/promotionBoardFLRejects";
 import GroupsIcon from '@mui/icons-material/Groups';
+import Dashboard from "./panel/dashboard";
+import Timebase from "./panel/timabase";
+import IndividualContributor from "./panel/individualContributor";
+import UserManagement from "./panel/userManagement";
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 
-export default function PromotionBoard() {
+export default function Admin() {
   return (
     <CommonPage
-      title="Promotion Board Portal"
+      title="Admin Portal"
       icon={<GroupsIcon />}
       commonPageTabs={[
         {
-          tabTitle: "Requests",
-          tabPath: "Promotion Requests",
+          tabTitle: "Dashboard",
+          tabPath: "Admin Dashboard",
           icon: <DriveFileMoveIcon />,
-          page: <Requests />,
+          page: <Dashboard />,
         },
         {
-          tabTitle: "History",
-          tabPath: "Promotion History",
-          icon: <HistoryIcon />,
-          page: <History />,
+          tabTitle: "Timebase",
+          tabPath: "Timebase Promotion",
+          icon: <DriveFileMoveIcon />,
+          page: <Timebase />,
         },
         {
-          tabTitle: "FLRejected",
-          tabPath: "Functional Lead Rejected",
-          icon: <HistoryIcon />,
-          page: <FL_Rejected />,
+          tabTitle: "Individual Contributor",
+          tabPath: "Individual Contributor",
+          icon: <DriveFileMoveIcon />,
+          page: <IndividualContributor />,
+        },
+        {
+          tabTitle: "User Management",
+          tabPath: "User Management",
+          icon: <DriveFileMoveIcon />,
+          page: <UserManagement />,
         },
       ]}
     />

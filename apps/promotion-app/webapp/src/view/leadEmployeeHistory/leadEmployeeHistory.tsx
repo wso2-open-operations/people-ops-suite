@@ -15,36 +15,29 @@
 // under the License.
 
 import CommonPage from "../../layout/pages/CommonPage";
+import EmployeeHistory from "./panels/employeesHistory";
+import IndirectReports from "./panels/indirectReports";
 import HistoryIcon from "@mui/icons-material/History";
-import Requests from "./panel/promotionBoardPromotions";
-import History from "./panel/promotionBoardHistory";
-import FL_Rejected from "./panel/promotionBoardFLRejects";
 import GroupsIcon from '@mui/icons-material/Groups';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 
-export default function PromotionBoard() {
+export default function LeadEmployeeHistory() {
   return (
     <CommonPage
-      title="Promotion Board Portal"
+      title="Lead Employee History"
       icon={<GroupsIcon />}
       commonPageTabs={[
         {
-          tabTitle: "Requests",
-          tabPath: "Promotion Requests",
+          tabTitle: "employeeHistory",
+          tabPath: "Lead Employees History",
           icon: <DriveFileMoveIcon />,
-          page: <Requests />,
+          page: <EmployeeHistory />,
         },
         {
-          tabTitle: "History",
-          tabPath: "Promotion History",
-          icon: <HistoryIcon />,
-          page: <History />,
-        },
-        {
-          tabTitle: "FLRejected",
-          tabPath: "Functional Lead Rejected",
-          icon: <HistoryIcon />,
-          page: <FL_Rejected />,
+          tabTitle: "indirectReports",
+          tabPath: "Indirect Reports History",
+          icon: <DriveFileMoveIcon />,
+          page: <IndirectReports />,
         },
       ]}
     />
