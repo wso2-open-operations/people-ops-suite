@@ -45,7 +45,7 @@ import { RootState, useAppDispatch, useAppSelector } from '@root/src/slices/stor
 import StateWithImage from '@root/src/component/ui/StateWithImage';
 import { LoadingEffect } from "@component/ui/Loading";
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import { fetchActivePromotionCycle } from "@slices/promotionCycleSlice/promotionCycle";
+import { fetchPromotionCycles } from "@slices/promotionCycleSlice/promotionCycle";
 import { fetchEmployeeHistory } from "@slices/timelineSlice/timeline";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -74,13 +74,16 @@ export default function Pending() {
   const loadData = async () => {
     setSelectedEmployee(null);
     
-    const resultAction = await dispatch(fetchActivePromotionCycle());
+    const resultAction = await dispatch(fetchPromotionCycles({
+      statusArray: ["OPEN"]
+    }));
 
-    if (fetchActivePromotionCycle.fulfilled.match(resultAction)) {
+    if (fetchPromotionCycles.fulfilled.match(resultAction) &&
+         resultAction.payload.PromotionCycles) {
       const promotionCycleId =
-        resultAction.payload.activePromotionCycles?.id ?? 1;
+        resultAction.payload.PromotionCycles[0].id;
 
-      if (auth.userInfo?.email) {
+      if (auth.userInfo?.email && resultAction.payload.PromotionCycles) {
         dispatch(fetchRecommendation({
           leadEmail: auth.userInfo.email,
           statusArray: ["REQUESTED"],
@@ -91,13 +94,13 @@ export default function Pending() {
   };
 
   useEffect(() => {
-  void (async () => {
-       try {
-         await loadData();
-       } catch (error) {
-         console.error("Failed to fetch promotion requests:", error);
-       }
-     })();
+    void (async () => {
+      try {
+        await loadData();
+      } catch (error) {
+        console.error("Failed to fetch promotion requests:", error);
+      }
+    })();
   }, [dispatch, auth.userInfo?.email]);
 
   const handleClose = () => {
@@ -155,7 +158,6 @@ export default function Pending() {
     }
   };
 
-  // Base64 Decode function (reverse of your encode logic)
   const safeBase64Decode = (base64Str: string): string => {
     try {
       // Decode base64 to binary string
@@ -233,7 +235,6 @@ export default function Pending() {
     }else{
       loadData();
     }
-
   }
 
   const handleReject= () => {
@@ -271,7 +272,8 @@ export default function Pending() {
           p: 5
         }}
       >
-        {recommendation.state != "loading" && (
+        {recommendation.state != "loading" &&
+         promotionCycle.state != "loading" && (
           <Box 
             sx={{ 
                 display: "flex", 
@@ -284,22 +286,43 @@ export default function Pending() {
             >
                 <RefreshRoundedIcon />
             </IconButton>
-        </Box>
+          </Box>
         )}
 
-        {recommendation.state === "loading" &&
-         !openSubmissionPage && (
+        {(recommendation.state === "loading" || 
+          promotionCycle.state === "loading") &&
+          !openSubmissionPage && (
             <LoadingEffect message={"Loading Time Base Promotions"} />
+        )}
+
+        {promotionCycle.state === "success" && 
+         !promotionCycle.promotionCycles && (
+            <Box
+                sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "50vh",
+                "& img": {
+                    width: 360,
+                    height: "auto",
+                },
+                }}
+            >
+                <StateWithImage
+                    imageUrl={require("@root/src/assets/images/error.svg").default}
+                    message="There is no Active Promotion Cycle."
+                />
+            </Box>
         )}
 
         {recommendation.state === "success" &&
          promotionCycle.state === "success" &&
+         recommendation.recommendations &&
+         recommendation.recommendations.length > 0 &&
          !openSubmissionPage && (
           <Box>
             <Box sx={{ px: 7, py: 7 }}>
-
-              {recommendation.recommendations &&
-              recommendation.recommendations.length > 0 ? (
                 <>
                   <Typography variant="h5" sx={{ mb: 3 }}>
                     Pending Promotions
@@ -453,25 +476,6 @@ export default function Pending() {
                     </Box>
                   </Modal>
                 </>
-              ) : (
-                   <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        height: "50vh",
-                        "& img": {
-                            width: 360,
-                            height: "auto",
-                        },
-                    }}
-                >
-                    <StateWithImage
-                        imageUrl={require("@assets/images/not-found.svg").default}
-                        message="No records found"
-                    />
-                </Box>
-              )}
             </Box>
           </Box>
         )}
@@ -637,6 +641,30 @@ export default function Pending() {
               </Box>
             </Box>
           </>
+        )}
+
+        {recommendation.state === "success" &&
+         promotionCycle.state === "success" &&
+         recommendation.recommendations &&
+         recommendation.recommendations.length == 0 &&
+         !openSubmissionPage && (
+          <Box
+            sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "70vh",
+                "& img": {
+                    width: 360,
+                    height: "auto",
+                },
+            }}
+          >
+            <StateWithImage
+              imageUrl={require("@assets/images/not-found.svg").default}
+              message="No Promotions Found!"
+            />
+          </Box>
         )}
 
         {openSubmissionPage && 

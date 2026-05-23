@@ -55,65 +55,63 @@ const statusColorMap: Record<string, string> = {
 
 export default function TimeBaseHistory() {
 
-    const dispatch = useAppDispatch();
-    const recommendation  = useAppSelector((state: RootState) => state.recommendation);
-    const [selectedNoteHtml, setSelectedNoteHtml] = useState<string>('');
-    const [open, setOpen] = useState(false);
-    const auth = useAppSelector((state: RootState) => state.auth);
+  const dispatch = useAppDispatch();
+  const recommendation  = useAppSelector((state: RootState) => state.recommendation);
+  const [selectedNoteHtml, setSelectedNoteHtml] = useState<string>('');
+  const [open, setOpen] = useState(false);
+  const auth = useAppSelector((state: RootState) => state.auth);
 
 
-    const fetchPromotions = async () => {
-      try {
-        if (auth.userInfo?.email){
-          dispatch(fetchRecommendation({
-            leadEmail: auth.userInfo?.email,
-            statusArray: ["SUBMITTED", "DECLINED", "EXPIRED"]
-          }));
-        }
-      } catch (error) {
-        console.error("Failed to fetch promotion requests:", error);
+  const fetchPromotions = async () => {
+    try {
+      if (auth.userInfo?.email){
+        dispatch(fetchRecommendation({
+          leadEmail: auth.userInfo?.email,
+          statusArray: ["SUBMITTED", "DECLINED", "EXPIRED"]
+        }));
       }
-      
-    };
-  
-    useEffect(() => {
-      if (!auth.userInfo?.email) return;
-
-      fetchPromotions();
-    }, [auth.userInfo?.email, dispatch]);
-    
-    const filteredRecs = recommendation.recommendations?.filter(
-      (rec) => rec.promotionType === "TIME_BASED"
-    ) || [];
-
-
-    // Optional: reuse your encoding function for generating test data
-    const  safeBase64Encode = (str: string): string => {
-      try {
-        const utf8Bytes = new TextEncoder().encode(str);
-        const binaryString = Array.from(utf8Bytes).map((byte) => String.fromCharCode(byte)).join('');
-        return btoa(binaryString);
-      } catch (e) {
-        console.error("Encoding error:", e);
-        const cleanStr = str.replace(/[^\x00-\x7F]/g, "");
-        return btoa(cleanStr);
-      }
+    } catch (error) {
+      console.error("Failed to fetch promotion requests:", error);
     }
+    
+  };
+  
+  useEffect(() => {
+    if (!auth.userInfo?.email) return;
 
-    // Base64 Decode function (reverse of your encode logic)
-    const safeBase64Decode = (base64Str: string): string => {
-        try {
-          // Decode base64 to binary string
-          const binaryString = atob(base64Str);
-          // Convert binary string to Uint8Array
-          const bytes = Uint8Array.from(binaryString, (char) => char.charCodeAt(0));
-          // Decode UTF-8 bytes back to string
-          return new TextDecoder().decode(bytes);
-        } catch (error) {
-          console.error('Decoding error:', error);
-          return 'Invalid content';
-        }
-    };
+    fetchPromotions();
+  }, [auth.userInfo?.email, dispatch]);
+  
+  const filteredRecs = recommendation.recommendations?.filter(
+    (rec) => rec.promotionType === "TIME_BASED"
+  ) || [];
+
+
+  const  safeBase64Encode = (str: string): string => {
+    try {
+      const utf8Bytes = new TextEncoder().encode(str);
+      const binaryString = Array.from(utf8Bytes).map((byte) => String.fromCharCode(byte)).join('');
+      return btoa(binaryString);
+    } catch (e) {
+      console.error("Encoding error:", e);
+      const cleanStr = str.replace(/[^\x00-\x7F]/g, "");
+      return btoa(cleanStr);
+    }
+  }
+
+  const safeBase64Decode = (base64Str: string): string => {
+      try {
+        // Decode base64 to binary string
+        const binaryString = atob(base64Str);
+        // Convert binary string to Uint8Array
+        const bytes = Uint8Array.from(binaryString, (char) => char.charCodeAt(0));
+        // Decode UTF-8 bytes back to string
+        return new TextDecoder().decode(bytes);
+      } catch (error) {
+        console.error('Decoding error:', error);
+        return 'Invalid content';
+      }
+  };
 
   const handleOpen = (base64EncodedNote: string) => {
     const decodedHtml = safeBase64Decode(base64EncodedNote);
@@ -151,168 +149,166 @@ export default function TimeBaseHistory() {
             <IconButton 
                 onClick={handleRefresh}
             >
-                <RefreshRoundedIcon />
+              <RefreshRoundedIcon />
             </IconButton>
-        </Box>
+          </Box>
         )}
 
         {recommendation.state === "loading" && (
             <LoadingEffect message={"Loading Time Base Promotion History"} />
         )}
 
-        {recommendation.state === "success" && (
+        {recommendation.state === "success" && 
+         recommendation.recommendations && 
+         recommendation.recommendations.length > 0 &&(
           <>
-            {recommendation.recommendations && 
-            recommendation.recommendations?.length > 0 ? (
-              <>
-                <Typography variant="h5" sx={{ mb: 3 }}>
-                  Promotion History
-                </Typography>
-                <TableContainer component={Paper}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell><strong>Full Name</strong></TableCell>
-                        <TableCell><strong>Email</strong></TableCell>
-                        <TableCell><strong>Promotion Cycle</strong></TableCell>
-                        <TableCell><strong>Lead Status</strong></TableCell>
-                        <TableCell><strong>Promotion Status</strong></TableCell>
-                        <TableCell><strong>Recommendation</strong></TableCell>
+            <Typography variant="h5" sx={{ mb: 3 }}>
+              Promotion History
+            </Typography>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell><strong>Full Name</strong></TableCell>
+                    <TableCell><strong>Email</strong></TableCell>
+                    <TableCell><strong>Promotion Cycle</strong></TableCell>
+                    <TableCell><strong>Lead Status</strong></TableCell>
+                    <TableCell><strong>Promotion Status</strong></TableCell>
+                    <TableCell><strong>Recommendation</strong></TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {filteredRecs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">
+                        No submissions found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRecs.map((rec) => (
+                      <TableRow key={rec.recommendationID}>
+                        <TableCell>{rec.employeeName}</TableCell>
+                        <TableCell>{rec.employeeEmail}</TableCell>
+                        <TableCell>{rec.promotionCycle}</TableCell>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              backgroundColor:
+                                statusColorMap[rec.recommendationStatus] || '#eeeeee',
+                              color: '#000',
+                              px: 2,
+                              py: 0.5,
+                              borderRadius: '12px',
+                              display: 'inline-block',
+                              fontSize: '0.85rem',
+                              fontWeight: 500,
+                              textTransform: 'capitalize',
+                            }}
+                          >
+                            {rec.recommendationStatus}
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              backgroundColor:
+                                statusColorMap[rec.promotionRequestStatus] || '#eeeeee',
+                              color: '#000',
+                              px: 2,
+                              py: 0.5,
+                              borderRadius: '12px',
+                              display: 'inline-block',
+                              fontSize: '0.85rem',
+                              fontWeight: 500,
+                              textTransform: 'capitalize',
+                            }}
+                          >
+                            {rec.promotionRequestStatus}
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <IconButton
+                            onClick={() =>
+                              handleOpen(
+                                rec.recommendationStatement
+                                  ? rec.recommendationStatement
+                                  : safeBase64Encode(
+                                      '<strong>User does not have any recommendations!</strong>'
+                                    )
+                              )
+                            }
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                        </TableCell>
                       </TableRow>
-                    </TableHead>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
-                    <TableBody>
-                      {filteredRecs.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} align="center">
-                            No submissions found
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredRecs.map((rec) => (
-                          <TableRow key={rec.recommendationID}>
-                            <TableCell>{rec.employeeName}</TableCell>
-                            <TableCell>{rec.employeeEmail}</TableCell>
-                            <TableCell>{rec.promotionCycle}</TableCell>
-                            <TableCell>
-                              <Box
-                                sx={{
-                                  backgroundColor:
-                                    statusColorMap[rec.recommendationStatus] || '#eeeeee',
-                                  color: '#000',
-                                  px: 2,
-                                  py: 0.5,
-                                  borderRadius: '12px',
-                                  display: 'inline-block',
-                                  fontSize: '0.85rem',
-                                  fontWeight: 500,
-                                  textTransform: 'capitalize',
-                                }}
-                              >
-                                {rec.recommendationStatus}
-                              </Box>
-                            </TableCell>
-                            <TableCell>
-                              <Box
-                                sx={{
-                                  backgroundColor:
-                                    statusColorMap[rec.promotionRequestStatus] || '#eeeeee',
-                                  color: '#000',
-                                  px: 2,
-                                  py: 0.5,
-                                  borderRadius: '12px',
-                                  display: 'inline-block',
-                                  fontSize: '0.85rem',
-                                  fontWeight: 500,
-                                  textTransform: 'capitalize',
-                                }}
-                              >
-                                {rec.promotionRequestStatus}
-                              </Box>
-                            </TableCell>
-                            <TableCell>
-                              <IconButton
-                                onClick={() =>
-                                  handleOpen(
-                                    rec.recommendationStatement
-                                      ? rec.recommendationStatement
-                                      : safeBase64Encode(
-                                          '<strong>User does not have any recommendations!</strong>'
-                                        )
-                                  )
-                                }
-                              >
-                                <VisibilityIcon />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+            <Modal open={open} onClose={handleClose}>
+                <Box
+                sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 500,
+                    backgroundColor: 'background.paper',
+                    boxShadow: 24,
+                    p: 4,
+                    borderRadius: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    maxHeight: '80vh',
+                    overflowY: 'auto'
+                }}
+                >
+                <Typography variant="h6">Recommendation</Typography>
 
-                <Modal open={open} onClose={handleClose}>
-                    <Box
-                    sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: 500,
-                        backgroundColor: 'background.paper',
-                        boxShadow: 24,
-                        p: 4,
-                        borderRadius: 2,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 2,
-                        maxHeight: '80vh',
-                        overflowY: 'auto'
-                    }}
-                    >
-                    <Typography variant="h6">Recommendation</Typography>
-
-                    <Box
-                      sx={{
-                        border: '1px solid #ccc',
-                        borderRadius: 1,
-                        padding: 2,
-                        backgroundColor: '#fafafa',
-                        fontSize: '0.95rem'
-                      }}
-                      dangerouslySetInnerHTML={{ __html: selectedNoteHtml }}
-                    />
-
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <Button variant="contained" onClick={handleClose}>Close</Button>
-                      </Box>
-                    </Box>
-                </Modal> 
-              </>
-              ) : (
                 <Box
                   sx={{
-                    display:"flex",
-                    flexDirection:"column",
-                    alignItems:"center",
-                    justifyContent:"center",
-                    height:"300px",
-                    textAlign:"center",
-                    mt: 10
+                    border: '1px solid #ccc',
+                    borderRadius: 1,
+                    padding: 2,
+                    backgroundColor: '#fafafa',
+                    fontSize: '0.95rem'
                   }}
-                >
-                  <img
-                    src={""}
-                    alt="No records found"
-                    style={{ width: '250px', opacity: 0.8 }}
-                  />
-                  <Typography variant="subtitle1" color="text.secondary" mt={2}>
-                    No records found
-                  </Typography>
+                  dangerouslySetInnerHTML={{ __html: selectedNoteHtml }}
+                />
+
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <Button variant="contained" onClick={handleClose}>Close</Button>
+                  </Box>
                 </Box>
-              )} 
+            </Modal> 
           </>    
+        )}
+
+        {recommendation.state === "success" && 
+          recommendation.recommendations && 
+          recommendation.recommendations.length == 0 &&(
+          <Box
+            sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "70vh",
+                "& img": {
+                    width: 360,
+                    height: "auto",
+                },
+            }}
+          >
+              <StateWithImage
+                imageUrl={require("@assets/images/not-found.svg").default}
+                message="No Promotions Found!"
+              />
+          </Box>
         )}
 
         {recommendation.state === "failed" && (
