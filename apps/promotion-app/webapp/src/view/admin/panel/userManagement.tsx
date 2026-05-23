@@ -306,7 +306,7 @@ export default function UserManagement() {
                     roles: user.roles,
                     functionalLeadAccessLevels:
                         user.roles.includes(Role.FUNCTIONAL_LEAD) &&
-                        user.functionalLeadAccessLevels?.businessUnits.length || 0 > 0
+                        (user.functionalLeadAccessLevels?.businessUnits?.length ?? 0) > 0
                             ? {
                                 businessUnits: user.functionalLeadAccessLevels?.businessUnits || [],
                             }
