@@ -89,9 +89,11 @@ public isolated function getEmployee(string workEmail) returns Employee|error {
 # + filterLeads - Leads are filtered or not  
 # + jobBandArray - Array of job bands  
 # + employmentTypesArray - Array of employment types
+# + managerEmail - Email of the manager
+# + additionalManagerEmail - Email of the additional manager
 # + return - Array of employees
 public isolated function getEmployees(boolean? filterLeads = (), int[]? jobBandArray = (),
-        EmploymentType[]? employmentTypesArray = ()) returns EmployeeInfo[]|error {
+        EmploymentType[]? employmentTypesArray = (), string? managerEmail = (), string? additionalManagerEmail = ()) returns EmployeeInfo[]|error {
 
     string document = string `
         query employeeQuery ($filter: EmployeeFilter!) {
@@ -120,7 +122,9 @@ public isolated function getEmployees(boolean? filterLeads = (), int[]? jobBandA
         employmentType: employmentTypesArray is EmploymentType[] ? employmentTypesArray :
             [PERMANENT, CONSULTANCY, PART\ TIME\ CONSULTANCY],
         lead: (filterLeads is boolean && filterLeads == false) ? () : filterLeads,
-        jobBand: jobBandArray is int[] ? jobBandArray : []
+        jobBand: jobBandArray is int[] ? jobBandArray : [],
+        managerEmail,
+        additionalManagerEmail
     };
 
     EmployeeInfoResult employeeData = check hrClient->execute(document, {filter});
