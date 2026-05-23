@@ -118,6 +118,10 @@ public type EmployeeFilter record {
     boolean? lead = ();
     # Array of job bands
     int[]? jobBand = ();
+    # Email of the manager
+    string? managerEmail = ();
+    # Email of the additional manager
+    string? additionalManagerEmail = ();
 };
 
 # Basic employee information.
