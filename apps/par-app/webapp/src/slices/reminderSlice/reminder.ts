@@ -19,12 +19,12 @@ import { HttpStatusCode } from "axios";
 
 import { AppConfig } from "@config/config";
 import { SnackMessage, sliceErrorMessages } from "@config/constant";
-import { RequestState } from "@utils/types";
 
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
 
 import { ApiService } from "@utils/apiService";
+import { RequestState } from "@utils/types";
 import { getErrorMessage } from "@utils/utils";
 
 export interface reminderState {
@@ -177,7 +177,7 @@ const reminderSlice = createSlice({
       .addCase(sendAllLeadReminder.pending, (state) => {
         state.state = RequestState.LOADING;
       })
-      .addCase(sendAllLeadReminder.fulfilled, (state, action) => {
+      .addCase(sendAllLeadReminder.fulfilled, (state) => {
         state.state = RequestState.SUCCEEDED;
       })
       .addCase(sendAllLeadReminder.rejected, (state) => {
@@ -186,7 +186,7 @@ const reminderSlice = createSlice({
       .addCase(sendAllEmployeeReminder.pending, (state) => {
         state.state = RequestState.LOADING;
       })
-      .addCase(sendAllEmployeeReminder.fulfilled, (state, action) => {
+      .addCase(sendAllEmployeeReminder.fulfilled, (state) => {
         state.state = RequestState.SUCCEEDED;
       })
       .addCase(sendAllEmployeeReminder.rejected, (state) => {
@@ -195,7 +195,7 @@ const reminderSlice = createSlice({
       .addCase(sendAllSpecialRatingReminder.pending, (state) => {
         state.state = RequestState.LOADING;
       })
-      .addCase(sendAllSpecialRatingReminder.fulfilled, (state, action) => {
+      .addCase(sendAllSpecialRatingReminder.fulfilled, (state) => {
         state.state = RequestState.SUCCEEDED;
       })
       .addCase(sendAllSpecialRatingReminder.rejected, (state) => {
@@ -204,7 +204,7 @@ const reminderSlice = createSlice({
       .addCase(sendAllThreeSixtyReminder.pending, (state) => {
         state.state = RequestState.LOADING;
       })
-      .addCase(sendAllThreeSixtyReminder.fulfilled, (state, action) => {
+      .addCase(sendAllThreeSixtyReminder.fulfilled, (state) => {
         state.state = RequestState.SUCCEEDED;
       })
       .addCase(sendAllThreeSixtyReminder.rejected, (state) => {
