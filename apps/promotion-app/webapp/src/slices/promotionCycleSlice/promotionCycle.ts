@@ -32,40 +32,58 @@ interface PromotionCycle {
     status: string
 }
 
+interface InsertPromotionCyclePaylod {
+    name: string,
+    startDate: string,
+    endDate: string,
+    leadDeadline: string,
+    functionalLeadDeadline: string,
+    promotionBoardDeadline: string,
+}
+
 interface PromotionCycleState {
   state: State;
+  createState: State;
   stateMessage: string | null;
   errorMessage: string | null;
-  activePromotionCycle: PromotionCycle | null;
+  promotionCycles: PromotionCycle[] | null;
 }
 
 const initialState: PromotionCycleState = {
   state: State.idle,
+  createState: State.idle,
   stateMessage: null,
   errorMessage: null,
-  activePromotionCycle: null,
+  promotionCycles: null,
 };
 
-export const fetchActivePromotionCycle = createAsyncThunk(
-  "promotionCycle/fetchActivePromotionCycle",
-  async (_, { dispatch, rejectWithValue }
+export const fetchPromotionCycles = createAsyncThunk(
+  "promotionCycle/fetchPromotionCycles",
+  async ({
+      statusArray
+    }: {
+      statusArray?: string[];
+    }, { dispatch, rejectWithValue }
   ) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
 
-    return new Promise<{ activePromotionCycles: PromotionCycle | null }>((resolve, reject) => {
+    return new Promise<{ PromotionCycles: PromotionCycle[] | null }>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.getPromotionCycle + "?statusArray=OPEN", {
+        .get(AppConfig.serviceUrls.getPromotionCycle, {
+          params: {
+            statusArray: statusArray?.join(",")
+          },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
             if (response.data.promotionCycles[0]){
                 resolve({
-                    activePromotionCycles: response.data.promotionCycles[0],
+                    PromotionCycles: response.data.promotionCycles,
                 });
             }else{
                 resolve({
-                    activePromotionCycles: null
+                    PromotionCycles: null
                 });
             }
         })
@@ -89,6 +107,96 @@ export const fetchActivePromotionCycle = createAsyncThunk(
   }
 );
 
+export const createPromotionCycle = createAsyncThunk(
+  "promotionCycle/createPromotionCycle",
+  async (payload: InsertPromotionCyclePaylod,
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken(); 
+    return new Promise<{ cycleID: number }>((resolve, reject) => {
+      APIService.getInstance()
+        .post(AppConfig.serviceUrls.promotionCycle, payload,{
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve({
+            cycleID: response.data
+          })
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Successfully Create a Promotion Cycle!",
+              type: "success",
+            })
+          );
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            reject(rejectWithValue("Request canceled"));
+            return;
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? "Failed to Create a Promotion Cycle!"
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error.response?.data?.message);
+        });
+    });
+  }
+);
+
+export const endPromotionCycle = createAsyncThunk(
+  "promotionCycle/endPromotionCycle",
+  async ({
+      id,
+    }: {
+      id: number;
+    }, { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+
+    return new Promise<{ status: string }>((resolve, reject) => {
+      APIService.getInstance()
+        .get(AppConfig.serviceUrls.promotionCycle + "/" + id + "/end", {
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve({
+              status: response.data,
+          });
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Successfully Ended the Promotion Cycle!",
+              type: "success",
+            })
+          );
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            reject(rejectWithValue("Request canceled"));
+            return;
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? "Failed to End the  active Promotion Cycles."
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error.response?.data?.message);
+        });
+    });
+  }
+);
+
 const PromotionCycleSlice = createSlice({
   name: "promotionCycle",
   initialState,
@@ -99,18 +207,42 @@ const PromotionCycleSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchActivePromotionCycle.pending, (state) => {
+      .addCase(fetchPromotionCycles.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Fetching promotion cycle data...";
       })
-      .addCase(fetchActivePromotionCycle.fulfilled, (state, action) => {
+      .addCase(fetchPromotionCycles.fulfilled, (state, action) => {
         state.state = State.success;
         state.stateMessage = "Successfully fetched!";
-        state.activePromotionCycle = action.payload.activePromotionCycles;
+        state.promotionCycles = action.payload.PromotionCycles;
       })
-      .addCase(fetchActivePromotionCycle.rejected, (state) => {
+      .addCase(fetchPromotionCycles.rejected, (state) => {
         state.state = State.failed;
         state.stateMessage = "Failed to fetch!";
+      })
+      .addCase(createPromotionCycle.pending, (state) => {
+        state.createState = State.loading;
+        state.stateMessage = "Craeting a Promotion Cycle...";
+      })
+      .addCase(createPromotionCycle.fulfilled, (state, action) => {
+        state.createState = State.success;
+        state.stateMessage = "Successfully Created a Promotion Cycle!";
+      })
+      .addCase(createPromotionCycle.rejected, (state) => {
+        state.createState = State.failed;
+        state.stateMessage = "Failed to create a promotion cycle";
+      })
+      .addCase(endPromotionCycle.pending, (state) => {
+        state.createState = State.loading;
+        state.stateMessage = "Ending the Promotion Cycle...";
+      })
+      .addCase(endPromotionCycle.fulfilled, (state, action) => {
+        state.createState = State.success;
+        state.stateMessage = "Successfully Ended the Promotion Cycle!";
+      })
+      .addCase(endPromotionCycle.rejected, (state) => {
+        state.createState = State.failed;
+        state.stateMessage = "Failed to Ended the promotion cycle";
       })
   },
 });
