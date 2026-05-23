@@ -103,18 +103,6 @@ export default function UserManagement() {
         try {
             const resultAction = await dispatch(fetchAllUsers());
             dispatch(fetchAllBUs());
-            if (fetchAllUsers.fulfilled.match(resultAction)) {
-                    const users: User[] =
-                resultAction.payload || [];
-                    const emails = users.map((p) => p.email);
-                    const employeeHistories: EmployeeJoinedDetails[] = [];
-                        for (const email of emails) {
-                            const employeeHistory = await dispatch(
-                                fetchEmployeeHistory({ employeeWorkEmail: email })
-                            ).unwrap();
-                            employeeHistories.push(employeeHistory);
-                        }
-            }
         } catch (error) {
             console.error("Error fetching data:", error);
         }
