@@ -129,12 +129,14 @@ export default function IndividualContributor() {
             if (!selectedRecommendation) {
                 return;
             }
+            if (!selectedRecommendation.id) {
+                return;
+            }
             setIsEditingComment(true);
             try {
-                console.log(updatedComment);
                 await dispatch(
                     updatePromotion({
-                        id: selectedRecommendation.id ?? 1,
+                        id: selectedRecommendation.id,
                         reasonForRejection: updatedComment
                     })
                 ).unwrap();
