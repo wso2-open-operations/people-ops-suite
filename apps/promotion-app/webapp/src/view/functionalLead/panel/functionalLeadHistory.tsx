@@ -21,12 +21,15 @@ import { Avatar,
     Button, 
     Card, 
     CardContent, 
+    Collapse, 
     Divider, 
+    Grid, 
     IconButton, 
     MenuItem, 
     Modal, 
     Paper, 
     Select, 
+    Stack, 
     Table, 
     TableBody, 
     TableCell, 
@@ -37,13 +40,16 @@ import { Avatar,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ClearIcon from '@mui/icons-material/Clear';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { FilterAlt as FilterAltIcon } from "@mui/icons-material";
 import CustomizedTimeline from "../../../component/common/TimeLine";
 import StateWithImage from '../../../component/ui/StateWithImage';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import { fetchActivePromotionCycle } from "@slices/promotionCycleSlice/promotionCycle";
+import { fetchPromotionCycles } from "@slices/promotionCycleSlice/promotionCycle";
 import { fetchPromotions } from "@slices/promotionSlice/promotion";
 import { PromotionRequest } from '@root/src/utils/types';
 import { EmployeeJoinedDetails, fetchEmployeeHistory } from "@slices/employeeSlice/employee";
+import NumberFilter, { Header, Filter } from "@src/component/common/stringFilter";
 import { LoadingEffect } from "@component/ui/Loading";
 import DOMPurify from 'dompurify';
 
@@ -76,61 +82,105 @@ export default function History() {
     const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
     const auth = useAppSelector((state: RootState) => state.auth);
     const promotions = useAppSelector((state: RootState) => state.promotion);
-    const promotionCycle  = useAppSelector((state: RootState) => state.promotionCycle);
     const [employeeHistories, setEmployeeHistories] = useState<EmployeeJoinedDetails[]>([]);
+    const [filters, setFilters] = useState<Filter[]>([]);
+    const [showFilters, setShowFilters] = useState(false);
 
 
-    const fetchAllPromotions = async () => {
-
-        try {
-
-            const resultAction = await dispatch(fetchActivePromotionCycle());
-
-            if (fetchActivePromotionCycle.fulfilled.match(resultAction)) {
-                const promotionCycleId = resultAction.payload.activePromotionCycles?.id ?? 1;
-
-                const promotionsAction = await dispatch(fetchPromotions({
-                    employeeEmail: auth.userInfo?.email,
-                    statusArray: ["FL_APPROVED","FL_REJECTED","APPROVED","REJECTED"],
-                    enableBuFilter: true,
-                    cycleId: promotionCycleId
-                }));
-
-                if (fetchPromotions.fulfilled.match(promotionsAction)) {
-                    const promotions: PromotionRequest[] =
-                    promotionsAction.payload.promotions || [];
-                    const emails = promotions.map((p) => p.employeeEmail);
-                    const employeeHistoryPromises = emails.map((email) =>
-                        dispatch(fetchEmployeeHistory({ employeeWorkEmail: email })).unwrap()
-                    );
-                    const employeeHistories = await Promise.all(employeeHistoryPromises);
-                    setEmployeeHistories(employeeHistories);
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching data:", error);
-        }
+    const applyFilters = (data: PromotionRequest[]) => {
+      if (!filters || filters.length === 0) return data;
+    
+      return data.filter((item) => {
+        return filters.every((filter) => {
+          const fieldValue = item[filter.key as keyof PromotionRequest];
+    
+          if (filter.operation === "EMTY") {
+            return fieldValue === null || fieldValue === undefined || fieldValue === "";
+          }
+    
+          if (filter.operation === "DEMTY") {
+            return fieldValue !== null && fieldValue !== undefined && fieldValue !== "";
+          }
+    
+          if (filter.value === "" || filter.value === undefined) {
+            return true;
+          }
+    
+          const value = String(fieldValue ?? "").toLowerCase();
+          const filterVal = String(filter.value).toLowerCase();
+    
+          switch (filter.operation) {
+            case "CON":
+              return value.includes(filterVal);
+            case "DNCON":
+              return !value.includes(filterVal);
+            case "EQ":
+              return value === filterVal;
+            case "DNEQ":
+              return value !== filterVal;
+            case "SW":
+              return value.startsWith(filterVal);
+            case "EW":
+              return value.endsWith(filterVal);
+            default:
+              return true;
+          }
+        });
+      });
     };
-        
-    useEffect(() => {
-        fetchAllPromotions();
-        
-    }, []);
 
-    const allPromotions = promotions?.promotions || [];
+    const filterHeaders: Header[] = [
+      {
+        id: "employeeEmail",
+        label: "Email",
+        type: "string",
+        width: 250,
+        align: "left",
+      },
+      {
+        id: "promotionType",
+        label: "Promotion Type",
+        type: "string",
+        width: 180,
+        align: "left",
+      },
+      {
+        id: "location",
+        label: "Location",
+        type: "string",
+        width: 180,
+        align: "left",
+      },
+      {
+        id: "currentJobRole",
+        label: "Current Designation",
+        type: "string",
+        width: 220,
+        align: "left",
+      },
+      {
+        id: "businessUnit",
+        label: "Business Unit",
+        type: "string",
+        width: 180,
+        align: "left",
+      },
+      {
+        id: "department",
+        label: "Department",
+        type: "string",
+        width: 180,
+        align: "left",
+      },
+      {
+        id: "team",
+        label: "Team",
+        type: "string",
+        width: 160,
+        align: "left",
+      },
+    ];
 
-    const totalCount = allPromotions.length;
-
-    const approvedCount = allPromotions.filter(
-    (p) => p?.status === "APPROVED"
-    ).length;
-
-    const rejectedCount = allPromotions.filter(
-    (p) => p?.status === "REJECTED"
-    ).length;
-
-
-    // Base64 Decode function (reverse of your encode logic)
     const safeBase64Decode = (base64Str: string): string => {
         try {
             // Decode base64 to binary string
@@ -144,6 +194,95 @@ export default function History() {
             return 'Invalid content';
         }
     };
+
+    const handleExportCSV = () => {
+        if (!promotions?.promotions || promotions.promotions.length === 0) {
+            return;
+        }
+
+        const headers = [
+            "Employee Email",
+            "Lead Status",
+            "Lead Email",
+            "Team",
+            "Current Job Band",
+            "Next Job Band",
+        ];
+
+        const rows = promotions.promotions.map((req: any) => {
+            const recommendation = req.recommendations?.[0];
+
+            return [
+                req.employeeEmail || "",
+                recommendation?.promotionRequestStatus || "",
+                recommendation?.leadEmail || "",
+                req.team || "",
+                req.currentJobBand || "",
+                req.nextJobBand || "",
+            ];
+        });
+
+        const csvContent = [
+            headers.join(","),
+            ...rows.map((row: any) =>
+                row.map((field: any) => `"${field}"`).join(",")
+            ),
+        ].join("\n");
+
+        const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;",
+        });
+
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", "promotions.csv");
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+
+    const fetchAllPromotions = async () => {
+        try {
+                const promotionsAction = await dispatch(fetchPromotions({
+                    employeeEmail: auth.userInfo?.email,
+                    statusArray: ["FL_APPROVED","FL_REJECTED","APPROVED","REJECTED"],
+                    enableBuFilter: true,
+                }));
+
+                if (fetchPromotions.fulfilled.match(promotionsAction)) {
+                    const promotions: PromotionRequest[] =
+                    promotionsAction.payload.promotions || [];
+                    const emails = promotions.map((p) => p.employeeEmail);
+                    const employeeHistoryPromises = emails.map((email) =>
+                        dispatch(fetchEmployeeHistory({ employeeWorkEmail: email })).unwrap()
+                    );
+                    const employeeHistories = await Promise.all(employeeHistoryPromises);
+                    setEmployeeHistories(employeeHistories);
+                }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    };
+        
+    useEffect(() => {
+        fetchAllPromotions();
+    }, []);
+
+    const allPromotions = promotions?.promotions || [];
+
+    const totalCount = allPromotions.length;
+
+    const approvedCount = allPromotions.filter(
+    (p) => p?.status === "APPROVED"
+    ).length;
+
+    const rejectedCount = allPromotions.filter(
+    (p) => p?.status === "REJECTED"
+    ).length;
 
     const handleOpenMore = (emp : any, history : any) => {
         setOpenMore(true);
@@ -180,6 +319,8 @@ export default function History() {
         fetchAllPromotions();
     }
 
+    const handleToggleFilters = () => setShowFilters((prev) => !prev);
+
     return (
         <>
             <Box
@@ -187,8 +328,7 @@ export default function History() {
                     p: 5
                 }}
             >
-                {promotionCycle.state != "loading" && 
-                    promotions.state != "loading" && (
+                {(promotions.state != "loading") && (
                     <Box 
                         sx={{ 
                             display: "flex", 
@@ -204,49 +344,84 @@ export default function History() {
                     </Box>
                 )}
 
-                {promotionCycle.state === "loading" || 
-                    promotions.state === "loading" && (
+                {promotions.state === "loading" && (
                     <LoadingEffect message={"Loading Promotion History"} />
                 )}
 
-                {promotionCycle.state === "success" && 
-                    promotions.state === "success"&& (
+                {promotions.state === "success"&& 
+                 promotions.promotions &&
+                 promotions.promotions.length > 0 &&(
                     <>
-                        <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            mb: 3,
-                        }}
-                        >
-                        <Typography variant="h5">Promotion History</Typography>
-
                         <Box
                             sx={{
                                 display: "flex",
                                 justifyContent: "space-between",
-                                alignItems: "center",
-                                mb: 3,
+                                alignItems: "center"
                             }}
                         >
+                            <Typography variant="h5">Promotion History</Typography>
 
-                            <Typography variant="body1" sx={{ fontWeight: 500, mr: 6 }}>
-                                All : {totalCount} | Promotion Board Approval : {approvedCount} | Promotion Board Rejections : {rejectedCount}
-                            </Typography>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    mb: 3,
+                                }}
+                            >
 
-                        <Select
-                            value={filter}
-                            onChange={(e) => setFilter(e.target.value)}
-                            size="small"
-                            sx={{ width: 160 }}
-                        >
-                            <MenuItem value="All">All</MenuItem>
-                            <MenuItem value="APPROVED">Approved</MenuItem>
-                            <MenuItem value="FL_REJECTED">Rejected</MenuItem>
-                        </Select>
+                                <Typography variant="body1" sx={{ fontWeight: 500, mr: 6 }}>
+                                    All : {totalCount} | Promotion Board Approval : {approvedCount} | Promotion Board Rejections : {rejectedCount}
+                                </Typography>
+
+                                <Select
+                                    value={filter}
+                                    onChange={(e) => setFilter(e.target.value)}
+                                    size="small"
+                                    sx={{ width: 160 }}
+                                >
+                                    <MenuItem value="All">All</MenuItem>
+                                    <MenuItem value="APPROVED">Approved</MenuItem>
+                                    <MenuItem value="FL_REJECTED">Rejected</MenuItem>
+                                </Select>
+                            </Box>
                         </Box>
-                        </Box>
+                        <Stack direction="row" spacing={3} sx={{ mb: 2 }}>
+                            <IconButton onClick={handleToggleFilters} color="primary">
+                                <FilterAltIcon />
+                            </IconButton>
+                            <IconButton
+                                onClick={handleExportCSV}
+                                color="primary"
+                                disabled={!promotions?.promotions || promotions.promotions.length === 0}
+                            >
+                                <FileDownloadIcon />
+                            </IconButton>
+                        </Stack>
+
+                        <Collapse in={showFilters}>
+                            <Paper
+                                elevation={3}
+                                sx={{
+                                mb: 2,
+                                p: 2,
+                                borderRadius: 2,
+                                backgroundColor: "#fafafa",
+                                }}
+                            >
+                                <Grid container spacing={2}>
+                                {filterHeaders.map((header) => (
+                                    <Grid item xs={12} sm={6} md={3} lg={2} key={header.id}>
+                                    <NumberFilter
+                                        header={header}
+                                        filters={filters}
+                                        setFilters={setFilters}
+                                    />
+                                    </Grid>
+                                ))}
+                                </Grid>
+                            </Paper>
+                        </Collapse>
 
                         <TableContainer component={Paper}>
                             <Table>
@@ -270,8 +445,8 @@ export default function History() {
 
                                 <TableBody>
                                     {filteredRequests &&
-                                    filteredRequests.length > 0 ? (
-                                    filteredRequests.map((req: any) => 
+                                     applyFilters(filteredRequests || []).length  > 0 ? (
+                                     applyFilters(filteredRequests || []).map((req: any) => 
                                         {const history = employeeHistoryMap[req.employeeEmail];
                                             return(
                                                 <TableRow key={req.id}>
@@ -527,8 +702,7 @@ export default function History() {
                     </>
                 )}
 
-                {promotionCycle.state === "failed" || 
-                    promotions.state === "failed"&& (
+                {promotions.state === "failed"&& (
                     <Box
                         sx={{
                         display: "flex",
