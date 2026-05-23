@@ -24,23 +24,21 @@ import { setMaintenanceStatus } from "@slices/healthSlice/health";
 
 export class ApiService {
   private static _instance: AxiosInstance;
-  private static _idToken: string;
   private static _cancelTokenSource = axios.CancelToken.source();
   private static callback: () => Promise<{ idToken: string }>;
 
-  constructor(idToken: string, callback: () => Promise<{ idToken: string }>, dispatch: Dispatch) {
+  constructor(callback: () => Promise<{ idToken: string }>, dispatch: Dispatch) {
     ApiService._instance = axios.create();
     rax.attach(ApiService._instance);
 
-    ApiService._idToken = idToken;
-    ApiService.updateRequestInterceptor();
     ApiService.callback = callback;
+    ApiService.updateRequestInterceptor();
 
     ApiService._instance.interceptors.response.use(
       (response: AxiosResponse) => response,
       (error: AxiosError) => {
         if (error.response && error.response.status === 503) {
-          const responseData = error.response?.data as { message: string };
+          const responseData = error.response.data as { message: string };
           try {
             const message = JSON.parse(responseData.message) as {
               isMaintenanceMode?: boolean;
@@ -48,7 +46,12 @@ export class ApiService {
             };
 
             if (message.isMaintenanceMode && message.maintenanceMessage) {
-              dispatch(setMaintenanceStatus({ maintenanceStatus: true, maintenanceMessage: message.maintenanceMessage }));
+              dispatch(
+                setMaintenanceStatus({
+                  maintenanceStatus: true,
+                  maintenanceMessage: message.maintenanceMessage,
+                }),
+              );
             }
           } catch (parseError) {
             ShowSnackBarMessage(SnackMessage.error.maintenanceMessageParseError, "error");
@@ -64,9 +67,7 @@ export class ApiService {
       statusCodesToRetry: [[401]],
       retryDelay: 100,
 
-      onRetryAttempt: async (err) => {
-        var res = await callback();
-        ApiService.updateTokens(res.idToken);
+      onRetryAttempt: async (_err) => {
         ApiService._instance.interceptors.request.clear();
         ApiService.updateRequestInterceptor();
       },
@@ -86,21 +87,17 @@ export class ApiService {
     return ApiService._cancelTokenSource;
   }
 
-  private static updateTokens(idToken: string) {
-    ApiService._idToken = idToken;
-  }
-
   private static updateRequestInterceptor() {
     ApiService._instance.interceptors.request.use(
       async (config) => {
-        let res = await this.callback();
+        const res = await this.callback();
         config.headers.set("Authorization", "Bearer " + res.idToken);
         config.headers.set("x-jwt-assertion", res.idToken);
         config.headers.set("x-user-timezone-offset", USER_TIMEZONE_OFFSET);
         return config;
       },
       (error) => {
-        Promise.reject(error);
+        return Promise.reject(error);
       },
     );
   }

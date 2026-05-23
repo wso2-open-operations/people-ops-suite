@@ -105,7 +105,6 @@ const AppAuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     new ApiService(
-      idToken,
       async () => {
         const freshIdToken = await getIDToken();
         return { idToken: freshIdToken };
