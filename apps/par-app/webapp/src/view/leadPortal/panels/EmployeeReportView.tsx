@@ -14,11 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DateRangeIcon from "@mui/icons-material/DateRange";
-import RateReviewIcon from "@mui/icons-material/RateReview";
-import SearchIcon from "@mui/icons-material/Search";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import React, { useEffect, useRef, useState } from "react";
+
+import dayjs from "dayjs";
+
 import {
   Avatar,
   Box,
@@ -31,34 +30,30 @@ import {
   Typography,
 } from "@mui/material";
 import { DataGrid, GridRenderCellParams, GridRowSelectionModel } from "@mui/x-data-grid";
-import dayjs from "dayjs";
 
-import React from "react";
-import { useEffect, useRef, useState } from "react";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DateRangeIcon from "@mui/icons-material/DateRange";
+import RateReviewIcon from "@mui/icons-material/RateReview";
+import SearchIcon from "@mui/icons-material/Search";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+
+import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+
+import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParRatingShort } from "@root/src/slices/teamSlice/team";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
+import { fetchCurrentParCycleOfEmployee, selectEmployeeStatus } from "@slices/employeeSlice/employee";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { fetchDirectAndIndirectReports, selectReportData, selectReportStatus } from "@slices/reportSlice/report";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
 import NoDataView from "@component/common/NoDataView";
 import ParStatusChip from "@component/common/ParStatusChip";
 import { LoadingEffect } from "@component/ui/Loading";
-import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
-import { ParRatingShort } from "@root/src/slices/teamSlice/team";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import { ShowSnackBarMessage } from "@slices/commonSlice/common";
-import {
-  fetchCurrentParCycleOfEmployee,
-  selectEmployeeStatus,
-} from "@slices/employeeSlice/employee";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import {
-  fetchDirectAndIndirectReports,
-  selectReportData,
-  selectReportStatus,
-} from "@slices/reportSlice/report";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { RequestState } from "@utils/types";
-
 import { Review } from "../components/Review";
 
 const EmployeeReportView = () => {

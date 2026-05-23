@@ -44,6 +44,7 @@ import { ProvideFeedbackTab } from "@component/common/ProvideFeedbackTab";
 import { RequestFeedbackTab } from "@component/common/RequestFeedbackTab";
 import Title from "@component/common/Title";
 import { LoadingEffect } from "@component/ui/Loading";
+
 import EmployeePanel from "./panels/EmployeePanel";
 
 const OngoingCycleView = () => {

@@ -14,13 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DateRangeIcon from "@mui/icons-material/DateRange";
-import Groups3Icon from "@mui/icons-material/Groups3";
-import NavigateNextIcon from "@mui/icons-material/NavigateNext";
-import RateReviewIcon from "@mui/icons-material/RateReview";
-import SearchIcon from "@mui/icons-material/Search";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import React, { useEffect, useRef, useState } from "react";
+
+import dayjs from "dayjs";
+
 import {
   Avatar,
   Box,
@@ -36,34 +33,32 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { DataGrid, GridRenderCellParams, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
-import dayjs from "dayjs";
+import { DataGrid, GridRenderCellParams, GridRowSelectionModel } from "@mui/x-data-grid";
 
-import React from "react";
-import { useEffect, useRef, useState } from "react";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DateRangeIcon from "@mui/icons-material/DateRange";
+import Groups3Icon from "@mui/icons-material/Groups3";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import RateReviewIcon from "@mui/icons-material/RateReview";
+import SearchIcon from "@mui/icons-material/Search";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+
+import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+
+import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
+import { fetchCurrentParCycleOfEmployee, selectEmployeeStatus } from "@slices/employeeSlice/employee";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { fetchDirectEmployeePars, selectDirectEmployeePars, selectReportStatus } from "@slices/reportSlice/report";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
 import NoDataView from "@component/common/NoDataView";
 import ParStatusChip from "@component/common/ParStatusChip";
 import { LoadingEffect } from "@component/ui/Loading";
-import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import { ShowSnackBarMessage } from "@slices/commonSlice/common";
-import {
-  fetchCurrentParCycleOfEmployee,
-  selectEmployeeStatus,
-} from "@slices/employeeSlice/employee";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import {
-  fetchDirectEmployeePars,
-  selectDirectEmployeePars,
-  selectReportStatus,
-} from "@slices/reportSlice/report";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { RequestState } from "@utils/types";
-
 import { Review } from "../components/Review";
 
 const ReportChainView = () => {
@@ -75,7 +70,6 @@ const ReportChainView = () => {
   const currentCycle = useAppSelector(selectCurrentCycle);
   const reportStatus = useAppSelector(selectReportStatus);
 
-  // FIX 1: Explicitly type as an array of GridRowIds
   const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({
     type: "include",
     ids: new Set(),

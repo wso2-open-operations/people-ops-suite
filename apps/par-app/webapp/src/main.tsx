@@ -14,8 +14,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { StyledEngineProvider } from "@mui/material/styles";
 import ReactDOM from "react-dom/client";
+
+import { StyledEngineProvider } from "@mui/material/styles";
 
 import App from "./App";
 

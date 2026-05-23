@@ -14,11 +14,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import EditIcon from "@mui/icons-material/Edit";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import LaunchIcon from "@mui/icons-material/Launch";
-import LinkIcon from "@mui/icons-material/Link";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import { useEffect, useRef, useState } from "react";
+
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import { useFormik } from "formik";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import autoTable, { RowInput } from "jspdf-autotable";
+import * as yup from "yup";
+
 import {
   Accordion,
   AccordionDetails,
@@ -27,6 +32,7 @@ import {
   Box,
   Button,
   Card,
+  CardContent,
   CardHeader,
   Checkbox,
   Chip,
@@ -40,25 +46,17 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import CardContent from "@mui/material/CardContent";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import { useFormik } from "formik";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
-import autoTable, { RowInput } from "jspdf-autotable";
-import { set } from "lodash";
-import * as yup from "yup";
 
-import { useEffect, useRef, useState } from "react";
+import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import LaunchIcon from "@mui/icons-material/Launch";
+import LinkIcon from "@mui/icons-material/Link";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 
-import CommentPaper from "@component/common/CommentPaper";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import CustomRichTextField from "@component/common/CustomRichText";
-import NoDataView from "@component/common/NoDataView";
-import { LoadingEffect } from "@component/ui/Loading";
 import { evidenceEnabledRating, top5p20pEnabledRating } from "@config/config";
 import { SnackMessage, base64Regex, uiMessages } from "@config/constant";
+import { RequestState } from "@root/src/utils/types";
+
 import {
   ParEmployeeStatus,
   ParLeadStatus,
@@ -66,7 +64,6 @@ import {
   parRatingNotAssigned,
 } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
-import { RequestState } from "@root/src/utils/types";
 import { selectUserEmail } from "@slices/authSlice/auth";
 import { ShowSnackBarMessage, enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import {
@@ -83,6 +80,11 @@ import {
   selectThreeSixtyReviews,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 
+import CommentPaper from "@component/common/CommentPaper";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import CustomRichTextField from "@component/common/CustomRichText";
+import NoDataView from "@component/common/NoDataView";
+import { LoadingEffect } from "@component/ui/Loading";
 import ThreeSixtyFeedbackSection from "../components/FeedbackComponent";
 
 dayjs.extend(utc);
@@ -137,27 +139,27 @@ export const LeadReviewPanel = ({
   const validationSchema = yup.object().shape({
     parLeadComment: isAdminAuditViewOn
       ? yup
-          .string()
-          .trim()
-          .test("is-not-empty-html", "Required", (value) => {
-            const textContent = value
-              ?.replace(/<[^>]*>/g, "")
-              .replace(/&nbsp;/g, " ")
-              .trim();
-            return textContent !== "" && textContent !== null && textContent !== undefined;
-          })
-          .notRequired()
+        .string()
+        .trim()
+        .test("is-not-empty-html", "Required", (value) => {
+          const textContent = value
+            ?.replace(/<[^>]*>/g, "")
+            .replace(/&nbsp;/g, " ")
+            .trim();
+          return textContent !== "" && textContent !== null && textContent !== undefined;
+        })
+        .notRequired()
       : yup
-          .string()
-          .trim()
-          .test("is-not-empty-html", "Required", (value) => {
-            const textContent = value
-              ?.replace(/<[^>]*>/g, "")
-              .replace(/&nbsp;/g, " ")
-              .trim();
-            return textContent !== "" && textContent !== null && textContent !== undefined;
-          })
-          .required("Required"),
+        .string()
+        .trim()
+        .test("is-not-empty-html", "Required", (value) => {
+          const textContent = value
+            ?.replace(/<[^>]*>/g, "")
+            .replace(/&nbsp;/g, " ")
+            .trim();
+          return textContent !== "" && textContent !== null && textContent !== undefined;
+        })
+        .required("Required"),
     parRating: yup.string().trim().required("Required"),
     parAdminComment: yup
       .string()
@@ -584,9 +586,9 @@ export const LeadReviewPanel = ({
 
     setIsReadOnly(
       employeeParRating?.parLeadStatus === ParLeadStatus.SHARED ||
-        isAdminHistoryViewOn ||
-        isAdminAuditViewOn ||
-        isDeadlinePassed,
+      isAdminHistoryViewOn ||
+      isAdminAuditViewOn ||
+      isDeadlinePassed,
     );
 
     return () => {
@@ -816,23 +818,19 @@ export const LeadReviewPanel = ({
       head: [
         [
           {
-            content: ` - Employee: ${
-              employeeMap[employeeParRating.parEmployeeEmail]?.employeeName ??
+            content: ` - Employee: ${employeeMap[employeeParRating.parEmployeeEmail]?.employeeName ??
               employeeParRating.parEmployeeEmail
-            }\n - PAR Rating: ${
-              employeeParRating.parRating === parRatingNotAssigned
+              }\n - PAR Rating: ${employeeParRating.parRating === parRatingNotAssigned
                 ? "Not Assigned"
                 : employeeParRating.parRating
-            }\n - Top 5%/20% Rating: ${
-              employeeParRating.parSpecialRating !== ParSpecialRating.NONE
+              }\n - Top 5%/20% Rating: ${employeeParRating.parSpecialRating !== ParSpecialRating.NONE
                 ? employeeParRating.parSpecialRating
                 : "Not Assigned"
-            }\n - PAR Shared By: ${
-              employeeParRating.parRatingSharedBy
+              }\n - PAR Shared By: ${employeeParRating.parRatingSharedBy
                 ? employeeMap[employeeParRating.parRatingSharedBy]?.employeeName ||
-                  employeeParRating.parRatingSharedBy
+                employeeParRating.parRatingSharedBy
                 : "Not Provided"
-            }`,
+              }`,
             colSpan: 3,
             styles: {
               halign: "left",
@@ -1243,10 +1241,10 @@ export const LeadReviewPanel = ({
                                 size="small"
                                 label={
                                   employeeParRating.parSpecialRating ===
-                                  ParSpecialRating.TOP_FIVE_PERCENT
+                                    ParSpecialRating.TOP_FIVE_PERCENT
                                     ? "Top 5%"
                                     : employeeParRating.parSpecialRating ===
-                                        ParSpecialRating.TOP_TWENTY_PERCENT
+                                      ParSpecialRating.TOP_TWENTY_PERCENT
                                       ? "Top 20%"
                                       : "N/A"
                                 }
@@ -1325,9 +1323,8 @@ export const LeadReviewPanel = ({
                     open={parShareDialogOpen}
                     onClose={closeParShareDialog}
                     title={uiMessages.dialog.leadParShare.title}
-                    message={`If you share this review, your feedback will be made available to ${
-                      employeeMap[employeeId]?.employeeName ?? employeeId
-                    }. Do you wish to continue?`}
+                    message={`If you share this review, your feedback will be made available to ${employeeMap[employeeId]?.employeeName ?? employeeId
+                      }. Do you wish to continue?`}
                     okText={uiMessages.dialog.leadParShare.okText}
                     onConfirm={handleConfirmationProceed}
                     ariaLabelledby="alert-lead-par-share-title"
@@ -1340,9 +1337,8 @@ export const LeadReviewPanel = ({
                     open={employeeParShareDialogOpen}
                     onClose={() => setIsEmployeeParShareDialogOpen(false)}
                     title={uiMessages.dialog.employeeParShare.title}
-                    message={`If you share this review, your will be share on behalf of ${
-                      employeeMap[employeeId]?.employeeName ?? employeeId
-                    }. Do you wish to continue?`}
+                    message={`If you share this review, your will be share on behalf of ${employeeMap[employeeId]?.employeeName ?? employeeId
+                      }. Do you wish to continue?`}
                     okText={uiMessages.dialog.leadParShare.okText}
                     onConfirm={handleEmployeeParConfirmationProceed}
                     ariaLabelledby="alert-lead-par-share-title"

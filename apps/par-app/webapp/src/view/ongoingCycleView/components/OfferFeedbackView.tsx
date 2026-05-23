@@ -14,7 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import PlaylistAddIcon from "@mui/icons-material/PlaylistAdd";
+import { useEffect, useMemo, useState } from "react";
+
 import {
   Autocomplete,
   Avatar,
@@ -25,10 +26,11 @@ import {
   Typography,
 } from "@mui/material";
 
-import { useEffect, useMemo, useState } from "react";
+import PlaylistAddIcon from "@mui/icons-material/PlaylistAdd";
 
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
 import { tooltipVisibilityDelay } from "@config/constant";
+import { RequestState } from "@utils/types";
+
 import { selectUserEmail } from "@slices/authSlice/auth";
 import {
   Employee,
@@ -45,7 +47,8 @@ import {
   selectThreeSixtyReviewRequests,
   selectThreeSixtyReviewStatus,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { RequestState } from "@utils/types";
+
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
 
 interface OfferFeedbackViewProps {
   onClose: (emailToOfferFeedback: string) => void;

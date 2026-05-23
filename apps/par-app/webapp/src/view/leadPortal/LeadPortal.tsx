@@ -14,26 +14,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import React, { SyntheticEvent, useEffect } from "react";
+
+import { useSearchParams } from "react-router-dom";
+
+import { Box, Fade, Paper, Stack, Tab, Tabs, useTheme } from "@mui/material";
+
 import DataUsageIcon from "@mui/icons-material/DataUsage";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import GroupsIcon from "@mui/icons-material/Groups";
 import HistoryToggleOffIcon from "@mui/icons-material/HistoryToggleOff";
 import LinkIcon from "@mui/icons-material/Link";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
-import { Box, Fade, Paper, Stack, Tab, Tabs, useTheme } from "@mui/material";
-import { useSearchParams } from "react-router-dom";
 
-import React from "react";
-import { SyntheticEvent, useEffect } from "react";
-
-import EmployeeHistoryView from "@component/common/EmployeeHistoryView";
-import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
-import Title from "@component/common/Title";
 import { gradients } from "@config/constant";
+
 import { selectUserEmail } from "@slices/authSlice/auth";
 import { resetSelectedEmployeeParState } from "@slices/employeeSlice/employee";
 import { useAppSelector } from "@slices/store";
 
+import EmployeeHistoryView from "@component/common/EmployeeHistoryView";
+import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
+import Title from "@component/common/Title";
 import EmployeeReportView from "./panels/EmployeeReportView";
 import LeadOngoingPanel from "./panels/LeadOngoingPanel";
 import ReportChainView from "./panels/ReportChainView";

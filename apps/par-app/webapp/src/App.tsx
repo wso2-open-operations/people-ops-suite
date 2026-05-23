@@ -14,14 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import AppHandler from "@app/AppHandler";
+import { createContext, useEffect, useMemo, useState } from "react";
+
 import { AuthProvider } from "@asgardeo/auth-react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { SnackbarProvider } from "notistack";
 import { Provider } from "react-redux";
 
-import { createContext, useEffect, useMemo, useState } from "react";
-
+import AppHandler from "@app/AppHandler";
 import { APP_NAME, AsgardeoConfig } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
 import { themeSettings } from "@root/src/theme";
@@ -32,7 +32,7 @@ import "./index.css";
 
 export const ColorModeContext = createContext({
   mode: ThemeMode.Light,
-  toggleColorMode: () => {},
+  toggleColorMode: () => { },
 });
 
 function App() {

@@ -19,9 +19,8 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { Box, Chip, IconButton, Stack, Tooltip, alpha, useTheme } from "@mui/material";
-import { GridRenderCellParams, GridRowParams } from "@mui/x-data-grid";
-
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import { GridRenderCellParams, GridRowParams } from "@mui/x-data-grid";
 
 import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
 import { RequestState } from "@utils/types";
@@ -30,13 +29,7 @@ import { selectUserEmail } from "@slices/authSlice/auth";
 import { fetchCurrentParCycleOfEmployee, selectEmployeeStatus } from "@slices/employeeSlice/employee";
 import { ParCycle } from "@slices/parCycleSlice/parCycle";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import {
-  Team,
-  fetchTeams,
-  selectAllTeams,
-  selectAllTeamsSummary,
-  selectTeamStatus,
-} from "@slices/teamSlice/team";
+import { Team, fetchTeams, selectAllTeams, selectAllTeamsSummary, selectTeamStatus } from "@slices/teamSlice/team";
 
 import NoDataView from "@component/common/NoDataView";
 import { LoadingEffect } from "@component/ui/Loading";

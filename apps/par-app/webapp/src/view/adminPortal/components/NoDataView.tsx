@@ -14,10 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Groups3Icon from "@mui/icons-material/Groups3";
+import React from "react";
+
 import { Box, Typography } from "@mui/material";
 
-import React from "react";
+import Groups3Icon from "@mui/icons-material/Groups3";
 
 interface NoDataViewProps {
   text: string;

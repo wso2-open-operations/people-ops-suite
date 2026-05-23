@@ -45,21 +45,21 @@ import RateReviewIcon from "@mui/icons-material/RateReview";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
 import { SnackMessage, tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { RequestState } from "@utils/types";
-
 import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import { RequestState } from "@utils/types";
+
 import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import { bulkUpdateParRatingOfEmployee } from "@slices/employeeSlice/employee";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
 import { sendAllThreeSixtyReminder } from "@slices/reminderSlice/reminder";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
-  ParRatingShort,
-  TeamReport,
   fetchTeamReport,
+  ParRatingShort,
   selectTeamReport,
   selectTeamReportStatus,
+  TeamReport,
 } from "@slices/teamSlice/team";
 
 import { CompletionStatusSection } from "@component/common/CompletionStatusSection";
@@ -68,6 +68,7 @@ import { CustomModal } from "@component/common/CustomModal";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
 import ParStatusChip from "@component/common/ParStatusChip";
 import { LoadingEffect } from "@component/ui/Loading";
+
 import EmployeeSyncModal from "./EmployeeSyncModal";
 
 interface DashboardProps {

@@ -14,14 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import React from "react";
+
+import { SettingsIcon } from "lucide-react";
+import type { RouteObject } from "react-router-dom";
+
 import DataUsageIcon from "@mui/icons-material/DataUsage";
 import GroupsIcon from "@mui/icons-material/Groups";
 import HistoryIcon from "@mui/icons-material/History";
 import ShieldIcon from "@mui/icons-material/Shield";
-import { SettingsIcon } from "lucide-react";
-import type { RouteObject } from "react-router-dom";
-
-import React from "react";
 
 import { Role } from "@utils/types";
 import { View } from "@view/index";

@@ -14,16 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Grid, Typography } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
+
 import { useFormik } from "formik";
 import * as yup from "yup";
 
-import { useEffect, useRef, useState } from "react";
+import { Box, Button, Grid, Typography } from "@mui/material";
 
-import CommentPaper from "@component/common/CommentPaper";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import CustomRichTextField from "@component/common/CustomRichText";
 import { SnackMessage, parUiText, uiMessages } from "@config/constant";
+
 import {
   ParEmployeeStatus,
   ParRating,
@@ -38,6 +37,10 @@ import {
 } from "@slices/employeeSlice/employee";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
 import { useAppDispatch, useAppSelector } from "@slices/store";
+
+import CommentPaper from "@component/common/CommentPaper";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import CustomRichTextField from "@component/common/CustomRichText";
 
 export const ParInputForm = ({
   employeeRatings,
@@ -284,8 +287,8 @@ export const ParInputForm = ({
               If you share this review, your feedback will be made available to{" "}
               <b>
                 {employeeInfo?.leadEmail &&
-                employeeMap[employeeInfo.leadEmail] &&
-                employeeMap[employeeInfo.leadEmail].employeeName
+                  employeeMap[employeeInfo.leadEmail] &&
+                  employeeMap[employeeInfo.leadEmail].employeeName
                   ? employeeMap[employeeInfo.leadEmail].employeeName
                   : employeeInfo?.leadEmail || "your lead"}
               </b>

@@ -15,9 +15,9 @@
 // under the License.
 
 import React, { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import dayjs from "dayjs";
-import { useLocation } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 
 import {
@@ -87,7 +87,6 @@ import { DataGridToolbar } from "@component/common/DataGridToolbar";
 import NoDataView from "@component/common/NoDataView";
 import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
 import { LoadingEffect } from "@component/ui/Loading";
-
 import { BulkReminderModal } from "@view/adminPortal/components/BulkReminderModal";
 import { Completion } from "@view/adminPortal/components/Completion";
 import { Report } from "@view/adminPortal/components/Report";

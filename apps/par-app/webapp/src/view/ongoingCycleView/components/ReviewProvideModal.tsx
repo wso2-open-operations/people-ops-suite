@@ -41,12 +41,12 @@ import {
 } from "@config/constant";
 import { RequestState } from "@root/src/utils/types";
 
+import { parRatingNotAssigned } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import { selectUserEmail } from "@slices/authSlice/auth";
 import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
 import { ParCycle } from "@slices/parCycleSlice/parCycle";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { parRatingNotAssigned } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import {
   ParThreeSixtyReviewStatus,
   fetchSelectedReview,

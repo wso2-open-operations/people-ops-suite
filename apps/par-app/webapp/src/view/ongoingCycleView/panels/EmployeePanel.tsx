@@ -16,13 +16,14 @@
 
 import { Alert, Box } from "@mui/material";
 
-import { LoadingEffect } from "@component/ui/Loading";
 import { uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+
 import { selectEmployeeStatus } from "@slices/employeeSlice/employee";
 import { selectCurrentCycle, selectParCycleState } from "@slices/parCycleSlice/parCycle";
 import { useAppSelector } from "@slices/store";
-import { RequestState } from "@utils/types";
 
+import { LoadingEffect } from "@component/ui/Loading";
 import { ParStatusView } from "../components/ParStatusView";
 
 const EmployeePanel = () => {
@@ -34,8 +35,8 @@ const EmployeePanel = () => {
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
       {(employeeParCyclesLoadingState === RequestState.LOADING ||
         parCycleLoadingState === RequestState.LOADING) && (
-        <LoadingEffect message={uiMessages.loading.pageLoading} />
-      )}
+          <LoadingEffect message={uiMessages.loading.pageLoading} />
+        )}
 
       {employeeParCyclesLoadingState === RequestState.SUCCEEDED &&
         parCycleLoadingState === RequestState.SUCCEEDED && (

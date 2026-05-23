@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import React from "react";
+
 import {
   Accordion,
   AccordionDetails,
@@ -28,12 +28,12 @@ import {
   useTheme,
 } from "@mui/material";
 
-import React from "react";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
-import CommentPaper from "@component/common/CommentPaper";
-import NoDataView from "@component/common/NoDataView";
-import { LoadingEffect } from "@component/ui/Loading";
 import { base64Regex, uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import {
   selectEmployeeHistoryReviewStatus,
@@ -45,7 +45,10 @@ import {
   ParThreeSixtyReviewStatus,
   ThreeSixtyReview,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { RequestState } from "@utils/types";
+
+import CommentPaper from "@component/common/CommentPaper";
+import NoDataView from "@component/common/NoDataView";
+import { LoadingEffect } from "@component/ui/Loading";
 
 interface ThreeSixtyHistoryFeedbackSectionProps {
   isAdminsSelfProfile: boolean;

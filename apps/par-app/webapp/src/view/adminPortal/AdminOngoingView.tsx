@@ -14,15 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ShieldIcon from "@mui/icons-material/Shield";
-import { Box, Button, Fade, Stack, Typography } from "@mui/material";
-
 import { useEffect, useState } from "react";
 
-import { FormContainer } from "@component/common/FormContainer";
-import Title from "@component/common/Title";
-import { LoadingEffect } from "@component/ui/Loading";
+import { Box, Button, Fade, Stack, Typography } from "@mui/material";
+
+import ShieldIcon from "@mui/icons-material/Shield";
+
 import { SnackMessage, uiMessages } from "@config/constant";
+import { ParCycleStatus, RequestState } from "@utils/types";
+
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { fetchConfigurations, selectConfigStatus } from "@slices/metaSlice/meta";
 import {
@@ -35,7 +35,10 @@ import {
   selectParCycleState,
 } from "@slices/parCycleSlice/parCycle";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { ParCycleStatus, RequestState } from "@utils/types";
+
+import { FormContainer } from "@component/common/FormContainer";
+import Title from "@component/common/Title";
+import { LoadingEffect } from "@component/ui/Loading";
 import { AssignQuota } from "@view/adminPortal/components/AssignQuota";
 import { OrgSummary } from "@view/adminPortal/components/OrgSummary";
 import { ParCreationForm } from "@view/adminPortal/components/ParCreationForm";

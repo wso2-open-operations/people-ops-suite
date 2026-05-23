@@ -14,7 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import SyncIcon from "@mui/icons-material/Sync";
+import { useEffect, useMemo, useState } from "react";
+
 import {
   Autocomplete,
   Avatar,
@@ -25,11 +26,11 @@ import {
   Typography,
 } from "@mui/material";
 
-import { useEffect, useMemo, useState } from "react";
+import SyncIcon from "@mui/icons-material/Sync";
 
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { LoadingEffect } from "@component/ui/Loading";
 import { SnackMessage, tooltipVisibilityDelay } from "@config/constant";
+import { RequestState } from "@utils/types";
+
 import { selectUserEmail } from "@slices/authSlice/auth";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import {
@@ -45,7 +46,9 @@ import {
 } from "@slices/metaSlice/meta";
 import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { RequestState } from "@utils/types";
+
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import { LoadingEffect } from "@component/ui/Loading";
 
 type Props = {
   leadonly?: boolean;

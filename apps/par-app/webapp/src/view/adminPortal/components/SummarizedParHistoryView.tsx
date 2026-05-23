@@ -14,15 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import {
-  ArrowForward as ArrowForwardIcon,
-  CalendarToday as CalendarIcon,
-  CheckCircle as CheckCircleIcon,
-  Person as PersonIcon,
-  Share as ShareIcon,
-  Timeline as TimelineIcon,
-} from "@mui/icons-material";
-import CloseIcon from "@mui/icons-material/Close";
+import React from "react";
+
 import {
   Avatar,
   Box,
@@ -41,11 +34,19 @@ import {
   useTheme,
 } from "@mui/material";
 
-import React from "react";
+import {
+  ArrowForward as ArrowForwardIcon,
+  CalendarToday as CalendarIcon,
+  CheckCircle as CheckCircleIcon,
+  Person as PersonIcon,
+  Share as ShareIcon,
+  Timeline as TimelineIcon,
+} from "@mui/icons-material";
+import CloseIcon from "@mui/icons-material/Close";
 
-import NoDataView from "@component/common/NoDataView";
-import { LoadingEffect } from "@component/ui/Loading";
 import { uiMessages } from "@config/constant";
+import { ParCycleStatus, RequestState } from "@utils/types";
+
 import {
   ParLeadStatus,
   ParRatingSummary,
@@ -54,7 +55,9 @@ import {
 } from "@slices/employeeHistorySlice/employeeHistory";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
 import { useAppSelector } from "@slices/store";
-import { ParCycleStatus, RequestState } from "@utils/types";
+
+import NoDataView from "@component/common/NoDataView";
+import { LoadingEffect } from "@component/ui/Loading";
 
 interface SummarizedParHistoryViewProps {
   empName: string;

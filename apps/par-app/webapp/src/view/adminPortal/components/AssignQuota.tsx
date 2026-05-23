@@ -387,8 +387,8 @@ export const AssignQuota = () => {
 
   const openConfirmChoiceDialog = () => {
     const message = `${uiMessages.dialog.confirmQuotaAssign.message}${groupsWithIssuesRef.current.length > 0
-        ? ` Under Served Groups : ${groupsWithIssuesRef.current.join(", ")}`
-        : ""
+      ? ` Under Served Groups : ${groupsWithIssuesRef.current.join(", ")}`
+      : ""
       }`;
     dialogContext.showConfirmation(
       uiMessages.dialog.confirmQuotaAssign.title,
