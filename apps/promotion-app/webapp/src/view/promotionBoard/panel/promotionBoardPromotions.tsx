@@ -377,7 +377,7 @@ export default function Requests() {
     const handleBulkApprove = async () => {
         dialogContext.showConfirmation(
             "Confirm Acceptance",
-            `Are you sure you want to Approve this Promotion?`,
+            `Are you sure you want to Approve those Promotions?`,
             ConfirmationType.accept,
             async () => {
                 try {
@@ -406,7 +406,7 @@ export default function Requests() {
     const handleBulkReject = async () => {
         dialogContext.showConfirmation(
             "Confirm Acceptance",
-            `Are you sure you want to Approve this Promotion?`,
+            `Are you sure you want to Reject those Promotions?`,
             ConfirmationType.accept,
             async () => {
                 try {

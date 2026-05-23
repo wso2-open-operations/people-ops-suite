@@ -122,7 +122,7 @@ export default function IndividualContributor() {
   const handleSaveComment = async (updatedComment: string) => {
     dialogContext.showConfirmation(
         "Confirm Acceptance",
-        `Are you sure you want to Approve this Promotion?`,
+        `Are you sure you want to Save the comment?`,
         ConfirmationType.accept,
         async () => {
             if (!selectedRecommendation) {

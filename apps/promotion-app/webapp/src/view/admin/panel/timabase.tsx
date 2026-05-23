@@ -175,7 +175,7 @@ export default function Timebase() {
 
         dialogContext.showConfirmation(
             "Confirm Acceptance",
-            `Are you sure you want to Approve this Promotion?`,
+            `Are you sure you want to save the comment?`,
             ConfirmationType.accept,
             async () => {
                 if (!selectedRecommendation) {

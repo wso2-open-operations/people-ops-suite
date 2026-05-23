@@ -168,7 +168,7 @@ export default function UserManagement() {
     const handleAddUser = () => {
         dialogContext.showConfirmation(
             "Confirm Acceptance",
-            `Are you sure you want to Approve this Promotion?`,
+            `Are you sure you want to add this user?`,
             ConfirmationType.accept,
             async () => {
                 const resultAction = await dispatch(insertUser({
@@ -199,7 +199,7 @@ export default function UserManagement() {
     const handleStatusChange = (user: User, active: boolean) => {
         dialogContext.showConfirmation(
             "Confirm Acceptance",
-            `Are you sure you want to Approve this Promotion?`,
+            `Are you sure you want to change the status of this user?`,
             ConfirmationType.accept,
             async () => {
                 const resultAction = await dispatch(updateUser({
@@ -226,7 +226,7 @@ export default function UserManagement() {
         console.log(id)
         dialogContext.showConfirmation(
             "Confirm Acceptance",
-            `Are you sure you want to Approve this Promotion?`,
+            `Are you sure you want to delete this user?`,
             ConfirmationType.accept,
             async () => {
                 const resultAction = await dispatch(deleteUser({
@@ -245,7 +245,7 @@ export default function UserManagement() {
     const handleUpdateUser = (userId: number) => {
         dialogContext.showConfirmation(
             "Confirm Acceptance",
-            `Are you sure you want to Approve this Promotion?`,
+            `Are you sure you want to save this changes?`,
             ConfirmationType.accept,
             async () => {
                 const resultAction = await dispatch(updateUser({
@@ -297,7 +297,7 @@ export default function UserManagement() {
 
         dialogContext.showConfirmation(
             "Confirm Acceptance",
-            `Are you sure you want to Approve this Promotion?`,
+            `Are you sure you want to make thsi transfer?`,
             ConfirmationType.accept,
             async () => {
                 const resultAction = await dispatch(updateUser({

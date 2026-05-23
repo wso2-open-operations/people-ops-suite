@@ -106,7 +106,7 @@ export default function Request() {
     const handleSubmit = async () => {
         dialogContext.showConfirmation(
               "Confirm Acceptance",
-              `Are you sure you want to Approve this Promotion?`,
+              `Are you sure you want to Create this promotion?`,
               ConfirmationType.accept,
               async () => {
                 const encodedStatement = safeBase64Encode(recommendationText);

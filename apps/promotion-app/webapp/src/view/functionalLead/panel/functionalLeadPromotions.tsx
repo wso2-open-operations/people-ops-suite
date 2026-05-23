@@ -382,7 +382,7 @@ export default function Requests() {
     const handleBulkApprove = async () => {
         dialogContext.showConfirmation(
             "Confirm Acceptance",
-            `Are you sure you want to Approve this Promotion?`,
+            `Are you sure you want to Approve those Promotions?`,
             ConfirmationType.accept,
             async () => {
                 try {
@@ -411,7 +411,7 @@ export default function Requests() {
     const handleBulkReject = async () => {
         dialogContext.showConfirmation(
             "Confirm Acceptance",
-            `Are you sure you want to Approve this Promotion?`,
+            `Are you sure you want to Reject those Promotions?`,
             ConfirmationType.accept,
             async () => {
                 try {
@@ -702,10 +702,10 @@ export default function Requests() {
                                         <TableCell>
                                             <Stack direction="row" spacing={1}>
                                                 <IconButton onClick={() => handleAcceptOpen(emp)}>
-                                                <CheckIcon sx={{ color: '#14AB00' }} />
+                                                    <CheckIcon sx={{ color: '#14AB00' }} />
                                                 </IconButton>
                                                 <IconButton onClick={() => handleReject(emp)}>
-                                                <ClearIcon sx={{ color: '#FF0000' }} />
+                                                    <ClearIcon sx={{ color: '#FF0000' }} />
                                                 </IconButton>
                                             </Stack>
                                         </TableCell>
