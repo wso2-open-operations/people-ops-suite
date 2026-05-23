@@ -44,6 +44,7 @@ import { RootState, useAppDispatch, useAppSelector } from '@root/src/slices/stor
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CheckIcon from '@mui/icons-material/Check';
 import ClearIcon from '@mui/icons-material/Clear';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import EditIcon from '@mui/icons-material/Edit';
 import { FilterAlt as FilterAltIcon } from "@mui/icons-material";
 import StateWithImage from '@root/src/component/ui/StateWithImage';
@@ -52,7 +53,7 @@ import { ConfirmationType } from "@/types/types";
 import { PromotionRequest, TimeLineData } from '@root/src/utils/types';
 import { LoadingEffect } from "@component/ui/Loading";
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import { fetchActivePromotionCycle } from "@slices/promotionCycleSlice/promotionCycle";
+import { fetchPromotionCycles } from "@slices/promotionCycleSlice/promotionCycle";
 import { fetchPromotions, updatePromotion, approvePromotions, rejectPromotions } from "@slices/promotionSlice/promotion";
 import { EmployeeJoinedDetails, fetchEmployeeHistory } from "@slices/employeeSlice/employee";
 import NumberFilter from "@src/component/common/stringFilter";
@@ -84,7 +85,6 @@ export default function Requests() {
     const promotion  = useAppSelector((state: RootState) => state.promotion);
     const dialogContext = useConfirmationModalContext();
     const promotions = promotion.promotions ?? [];
-
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [open, setOpen] = useState(false);
     const [openMore, setOpenMore] = useState(false);
@@ -100,108 +100,153 @@ export default function Requests() {
     const [employeeHistories, setEmployeeHistories] = useState<EmployeeJoinedDetails[]>([]);
     const [filters, setFilters] = useState<Filter[]>([]);
 
+    const handleExportCSV = () => {
+        if (!promotion?.promotions || promotion.promotions.length === 0) {
+            return;
+        }
 
-const filterHeaders: Header[] = [
-  {
-    id: "employeeEmail",
-    label: "Email",
-    type: "string",
-    width: 250,
-    align: "left",
-  },
-  {
-    id: "promotionType",
-    label: "Promotion Type",
-    type: "string",
-    width: 180,
-    align: "left",
-  },
-  {
-    id: "location",
-    label: "Location",
-    type: "string",
-    width: 180,
-    align: "left",
-  },
-  {
-    id: "currentJobRole",
-    label: "Current Designation",
-    type: "string",
-    width: 220,
-    align: "left",
-  },
-  {
-    id: "businessUnit",
-    label: "Business Unit",
-    type: "string",
-    width: 180,
-    align: "left",
-  },
-  {
-    id: "department",
-    label: "Department",
-    type: "string",
-    width: 180,
-    align: "left",
-  },
-  {
-    id: "team",
-    label: "Team",
-    type: "string",
-    width: 160,
-    align: "left",
-  },
-];
+        const headers = [
+            "Employee Email",
+            "Lead Status",
+            "Lead Email",
+            "Team",
+            "Current Job Band",
+            "Next Job Band",
+        ];
 
-const applyFilters = (data: PromotionRequest[]) => {
-  if (!filters || filters.length === 0) return data;
+        const rows = promotion.promotions.map((req: any) => {
+            const recommendation = req.recommendations?.[0];
 
-  return data.filter((item) => {
-    return filters.every((filter) => {
-      const fieldValue = item[filter.key as keyof PromotionRequest];
+            return [
+                req.employeeEmail || "",
+                recommendation?.promotionRequestStatus || "",
+                recommendation?.leadEmail || "",
+                req.team || "",
+                req.currentJobBand || "",
+                req.nextJobBand || "",
+            ];
+        });
 
-      if (filter.operation === "EMTY") {
-        return fieldValue === null || fieldValue === undefined || fieldValue === "";
-      }
+        const csvContent = [
+            headers.join(","),
+            ...rows.map((row: any) =>
+                row.map((field: any) => `"${field}"`).join(",")
+            ),
+        ].join("\n");
 
-      if (filter.operation === "DEMTY") {
-        return fieldValue !== null && fieldValue !== undefined && fieldValue !== "";
-      }
+        const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;",
+        });
 
-      if (filter.value === "" || filter.value === undefined) {
-        return true;
-      }
+        const url = window.URL.createObjectURL(blob);
 
-      const value = String(fieldValue ?? "").toLowerCase();
-      const filterVal = String(filter.value).toLowerCase();
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", "promotions.csv");
 
-      switch (filter.operation) {
-        case "CON":
-          return value.includes(filterVal);
-        case "DNCON":
-          return !value.includes(filterVal);
-        case "EQ":
-          return value === filterVal;
-        case "DNEQ":
-          return value !== filterVal;
-        case "SW":
-          return value.startsWith(filterVal);
-        case "EW":
-          return value.endsWith(filterVal);
-        default:
-          return true;
-      }
-    });
-  });
-};
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
-    const isAllSelected =
-    promotions.length > 0 &&
-    selectedIds.length === promotions.length;
 
-    const isIndeterminate =
-    selectedIds.length > 0 &&
-    selectedIds.length < promotions.length;
+    const filterHeaders: Header[] = [
+    {
+        id: "employeeEmail",
+        label: "Email",
+        type: "string",
+        width: 250,
+        align: "left",
+    },
+    {
+        id: "promotionType",
+        label: "Promotion Type",
+        type: "string",
+        width: 180,
+        align: "left",
+    },
+    {
+        id: "location",
+        label: "Location",
+        type: "string",
+        width: 180,
+        align: "left",
+    },
+    {
+        id: "currentJobRole",
+        label: "Current Designation",
+        type: "string",
+        width: 220,
+        align: "left",
+    },
+    {
+        id: "businessUnit",
+        label: "Business Unit",
+        type: "string",
+        width: 180,
+        align: "left",
+    },
+    {
+        id: "department",
+        label: "Department",
+        type: "string",
+        width: 180,
+        align: "left",
+    },
+    {
+        id: "team",
+        label: "Team",
+        type: "string",
+        width: 160,
+        align: "left",
+    },
+    ];
+
+    const applyFilters = (data: PromotionRequest[]) => {
+        if (!filters || filters.length === 0) return data;
+
+        return data.filter((item) => {
+            return filters.every((filter) => {
+            const fieldValue = item[filter.key as keyof PromotionRequest];
+
+            if (filter.operation === "EMTY") {
+                return fieldValue === null || fieldValue === undefined || fieldValue === "";
+            }
+
+            if (filter.operation === "DEMTY") {
+                return fieldValue !== null && fieldValue !== undefined && fieldValue !== "";
+            }
+
+            if (filter.value === "" || filter.value === undefined) {
+                return true;
+            }
+
+            const value = String(fieldValue ?? "").toLowerCase();
+            const filterVal = String(filter.value).toLowerCase();
+
+            switch (filter.operation) {
+                case "CON":
+                return value.includes(filterVal);
+                case "DNCON":
+                return !value.includes(filterVal);
+                case "EQ":
+                return value === filterVal;
+                case "DNEQ":
+                return value !== filterVal;
+                case "SW":
+                return value.startsWith(filterVal);
+                case "EW":
+                return value.endsWith(filterVal);
+                default:
+                return true;
+            }
+            });
+        });
+    };
+
+    const isAllSelected = promotions.length > 0 && selectedIds.length === promotions.length;
+
+    const isIndeterminate = selectedIds.length > 0 && selectedIds.length < promotions.length;
 
     const jobBandOptions = Array.from({ length: 14 }, (_, i) => i + 1);
 
@@ -214,6 +259,55 @@ const applyFilters = (data: PromotionRequest[]) => {
 
         return map;
     }, [employeeHistories]);
+
+    const safeBase64Decode = (base64Str: string): string => {
+        try {
+            // Decode base64 to binary string
+            const binaryString = atob(base64Str);
+            // Convert binary string to Uint8Array
+            const bytes = Uint8Array.from(binaryString, (char) => char.charCodeAt(0));
+            // Decode UTF-8 bytes back to string
+            return new TextDecoder().decode(bytes);
+        } catch (error) {
+            console.error('Decoding error:', error);
+            return 'Invalid content';
+        }
+    };
+
+     const fetchAllPromotions = async () => {
+        try {
+            const resultAction = await dispatch(fetchPromotionCycles({
+                statusArray: ["OPEN"]
+            }));
+            if (fetchPromotionCycles.fulfilled.match(resultAction) &&
+                 resultAction.payload.PromotionCycles) {
+                const promotionCycleId =
+                    resultAction.payload.PromotionCycles[0].id;
+
+                const promotionsAction = await dispatch(fetchPromotions({
+                    employeeEmail: auth.userInfo?.email,
+                    statusArray: ["FL_APPROVED"],
+                    enableBuFilter: true,
+                    cycleId: promotionCycleId
+                }));
+                if (fetchPromotions.fulfilled.match(promotionsAction)) {
+                    const promotions: PromotionRequest[] =
+                     promotionsAction.payload.promotions || [];
+                    const emails = promotions.map((p) => p.employeeEmail);
+                    const employeeHistories: EmployeeJoinedDetails[] = [];
+                    for (const email of emails) {
+                        const employeeHistory = await dispatch(
+                            fetchEmployeeHistory({ employeeWorkEmail: email })
+                        ).unwrap();
+                        employeeHistories.push(employeeHistory);
+                    }
+                    setEmployeeHistories(employeeHistories);
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    };
 
     useEffect(() => {
         fetchAllPromotions();
@@ -233,21 +327,6 @@ const applyFilters = (data: PromotionRequest[]) => {
             setSelectedIds(allIds);
         } else {
             setSelectedIds([]);
-        }
-    };
-
-    // Base64 Decode function (reverse of your encode logic)
-    const safeBase64Decode = (base64Str: string): string => {
-        try {
-            // Decode base64 to binary string
-            const binaryString = atob(base64Str);
-            // Convert binary string to Uint8Array
-            const bytes = Uint8Array.from(binaryString, (char) => char.charCodeAt(0));
-            // Decode UTF-8 bytes back to string
-            return new TextDecoder().decode(bytes);
-        } catch (error) {
-            console.error('Decoding error:', error);
-            return 'Invalid content';
         }
     };
 
@@ -356,40 +435,6 @@ const applyFilters = (data: PromotionRequest[]) => {
         );
     };
 
-    const fetchAllPromotions = async () => {
-        try {
-
-            const resultAction = await dispatch(fetchActivePromotionCycle());
-
-            if (fetchActivePromotionCycle.fulfilled.match(resultAction)) {
-                const promotionCycleId =
-                    resultAction.payload.activePromotionCycles?.id ?? 1;
-
-                const promotionsAction = await dispatch(fetchPromotions({
-                    employeeEmail: auth.userInfo?.email,
-                    statusArray: ["FL_APPROVED"],
-                    enableBuFilter: true,
-                    cycleId: promotionCycleId
-                }));
-                if (fetchPromotions.fulfilled.match(promotionsAction)) {
-                        const promotions: PromotionRequest[] =
-                         promotionsAction.payload.promotions || [];
-                     const emails = promotions.map((p) => p.employeeEmail);
-                     const employeeHistories: EmployeeJoinedDetails[] = [];
-                     for (const email of emails) {
-                         const employeeHistory = await dispatch(
-                             fetchEmployeeHistory({ employeeWorkEmail: email })
-                         ).unwrap();
-                         employeeHistories.push(employeeHistory);
-                     }
-                     setEmployeeHistories(employeeHistories);
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching data:", error);
-        }
-    };
-
     const handleAcceptOpen = (employee: any) => {
         setSelectedEmployee(employee);
         dialogContext.showConfirmation(
@@ -441,20 +486,21 @@ const applyFilters = (data: PromotionRequest[]) => {
           p: 5
         }}
       >
-        {promotionCycle.state != "loading" && (
-          <Box 
-            sx={{ 
-                display: "flex", 
-                justifyContent: "flex-start", 
-                mb: 2 
-            }}
-          >
-            <IconButton 
-                onClick={handleRefresh}
+        {(promotionCycle.state != "loading" &&
+            promotion.state != "loading") && (
+            <Box 
+                sx={{ 
+                    display: "flex", 
+                    justifyContent: "flex-start", 
+                    mb: 2 
+                }}
             >
-                <RefreshRoundedIcon />
-            </IconButton>
-        </Box>
+                <IconButton 
+                    onClick={handleRefresh}
+                >
+                    <RefreshRoundedIcon />
+                </IconButton>
+            </Box>
         )}
 
         {(promotionCycle.state === "loading" ||
@@ -463,7 +509,30 @@ const applyFilters = (data: PromotionRequest[]) => {
         )}
 
         {promotionCycle.state === "success" &&
-         promotion.state === "success" && (
+         !promotionCycle.promotionCycles && (
+            <Box
+                sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "50vh",
+                "& img": {
+                    width: 360,
+                    height: "auto",
+                },
+                }}
+            >
+                <StateWithImage
+                    imageUrl={require("@root/src/assets/images/error.svg").default}
+                    message="There is no Active Promotion Cycle."
+                />
+            </Box>
+        )}
+
+        {promotionCycle.state === "success" &&
+         promotion.state === "success" && 
+         promotion.promotions &&
+         promotion.promotions.length > 0 && (
             <>
                 <Typography variant="h5" sx={{ mb: 3 }}>
                     Promotion Request
@@ -511,6 +580,13 @@ const applyFilters = (data: PromotionRequest[]) => {
                     </Button>
                     <IconButton onClick={handleToggleFilters} color="primary">
                         <FilterAltIcon />
+                    </IconButton>
+                    <IconButton
+                        onClick={handleExportCSV}
+                        color="primary"
+                        disabled={!promotion?.promotions || promotion.promotions.length === 0}
+                    >
+                        <FileDownloadIcon />
                     </IconButton>
                 </Stack>
 
@@ -889,7 +965,31 @@ const applyFilters = (data: PromotionRequest[]) => {
             </>
         )}
 
-        {promotionCycle.state === "failed" && (
+        {promotionCycle.state === "success" &&
+         promotion.state === "success" && 
+         promotion.promotions &&
+         promotion.promotions.length == 0 && (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "70vh",
+                    "& img": {
+                        width: 360,
+                        height: "auto",
+                    },
+                }}
+            >
+                <StateWithImage
+                imageUrl={require("@assets/images/not-found.svg").default}
+                message="No Promotions Found!"
+                />
+            </Box>
+        )}
+
+        {(promotionCycle.state === "failed" ||
+         promotion.state === "failed") && (
             <Box
                 sx={{
                 display: "flex",
