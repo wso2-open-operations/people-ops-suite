@@ -17,6 +17,9 @@
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { AppConfig } from "@config/config";
+
+import { RootState } from "@slices/store";
+
 import { ApiService } from "@utils/apiService";
 import { RequestState } from "@utils/types";
 
@@ -53,19 +56,9 @@ const initialState: UserState = {
   userInfo: null,
 };
 
-// 2. The Thunk to fetch User Info (including the numbers)
 export const getUserInfo = createAsyncThunk("user/getUserInfo", async () => {
-  return new Promise<{ UserInfo: UserInfoInterface }>((resolve, reject) => {
-    // Assuming 'userInfo' is the endpoint in your config
-    ApiService.getInstance()
-      .get(AppConfig.serviceUrls.userInfo || "/user-info")
-      .then((resp) => {
-        resolve({ UserInfo: resp.data });
-      })
-      .catch((error) => {
-        reject(error);
-      });
-  });
+  const resp = await ApiService.getInstance().get(AppConfig.serviceUrls.userInfo || "/user-info");
+  return { UserInfo: resp.data as UserInfoInterface };
 });
 
 export const UserSlice = createSlice({
@@ -85,14 +78,16 @@ export const UserSlice = createSlice({
       .addCase(getUserInfo.fulfilled, (state, action) => {
         state.userInfo = action.payload.UserInfo;
         state.state = RequestState.SUCCEEDED;
+        state.stateMessage = null;
       })
-      .addCase(getUserInfo.rejected, (state, action) => {
+      .addCase(getUserInfo.rejected, (state) => {
         state.state = RequestState.FAILED;
+        state.stateMessage = null;
         state.errorMessage = "Failed to fetch user info.";
       });
   },
 });
 
 export const { updateStateMessage } = UserSlice.actions;
-export const selectUserInfoData = (state: any) => state.user.userInfo;
+export const selectUserInfoData = (state: RootState) => state.user.userInfo;
 export default UserSlice.reducer;
