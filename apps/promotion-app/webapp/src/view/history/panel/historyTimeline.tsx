@@ -11,13 +11,20 @@ export default function History() {
             {user.userInfo?.workEmail && (
                 <Box
                     sx={{
-                        flex: 1,
-                        height: '70vh', 
-                        display: 'flex',
-                        alignItems: 'center'
+                        height: '70vh',
+                        position: 'relative',
                     }}
                 >
-                    <CustomizedTimeline employeeEmail={user.userInfo.workEmail} />
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            width: '100%',
+                        }}
+                    >
+                        <CustomizedTimeline employeeEmail={user.userInfo.workEmail} />
+                    </Box>
                 </Box>
             )}
         </>
