@@ -13,21 +13,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { lazy } from "react";
 
 const OngoingCycleView = lazy(() => import("./ongoingCycleView/OngoingCycleView"));
 const ParHistory = lazy(() => import("./parHistory/ParHistory"));
-// const AdminPortal = lazy(() => import("./adminPortal/AdminPortal"));
 const LeadPortal = lazy(() => import("./leadPortal/LeadPortal"));
 const GlobalSettings = lazy(() => import("./globalSettings/GlobalSettings"));
-
 const AdminOngoingView = lazy(() => import("./adminPortal/AdminOngoingView"));
 const AdminHistoryView = lazy(() => import("./adminPortal/AdminHistoryView"));
 
 export const View = {
   OngoingCycleView,
   ParHistory,
-  // AdminPortal,
   LeadPortal,
   GlobalSettings,
   AdminOngoingView,
