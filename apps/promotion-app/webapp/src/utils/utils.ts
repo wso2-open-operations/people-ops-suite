@@ -14,8 +14,22 @@
 // specific language governing permissions and limitations
 // under the License. 
 
+import { PromotionRequest,  } from "./types";
+import { ApplicationState } from "../types/types";
+
 export const isIncludedRole = (a: string[], b: string[]): boolean => {
   return [...getCrossItems(a, b), ...getCrossItems(b, a)].length > 0;
+};
+
+export const capitalizedFLWords = (str: string) => {
+  str = str.toLowerCase();
+  const arr = str.split(" ");
+
+  for (var i = 0; i < arr.length; i++) {
+    arr[i] = arr[i].charAt(0).toUpperCase() + arr[i].slice(1);
+  }
+
+  return arr.join(" ");
 };
 
 function getCrossItems<Role>(a: Role[], b: Role[]): Role[] {
@@ -23,3 +37,18 @@ function getCrossItems<Role>(a: Role[], b: Role[]): Role[] {
     return b.includes(element);
   });
 }
+
+export const getApplicationCountBasedOnState = (
+  requests: PromotionRequest[] | null,
+  statuses: ApplicationState[],
+) => {
+  if (requests === null) return 0;
+
+  let count = 0;
+  requests.forEach((request) => {
+    if (statuses.includes(request.status)) {
+      count++;
+    }
+  });
+  return count;
+};
