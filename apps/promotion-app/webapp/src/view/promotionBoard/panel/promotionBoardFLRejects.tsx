@@ -234,7 +234,8 @@ export default function History() {
             }));
 
             if (fetchPromotionCycles.fulfilled.match(resultAction)&& 
-                 resultAction.payload.PromotionCycles) {
+                 resultAction.payload.PromotionCycles && 
+                 resultAction.payload.PromotionCycles.length > 0) {
                 const promotionCycleId = resultAction.payload.PromotionCycles[0].id;
 
                 const promotionsAction = await dispatch(fetchPromotions({
