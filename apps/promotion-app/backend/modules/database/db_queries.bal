@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-import ballerina/io;
 import ballerina/sql;
 
 # Retrieving users data query.
@@ -661,8 +660,6 @@ isolated function updateUserQuery(UserDbUpdatePayload payload) returns sql:Param
         `;
 
     boolean isFirstUpdate = true;
-
-    io:println("payload.functionalLeadAccessLevels is () : ", payload.functionalLeadAccessLevels is () );
 
     if payload.firstName is string {
         sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
