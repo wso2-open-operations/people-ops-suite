@@ -50,3 +50,10 @@ public enum ApprovalParties {
     promotion_board,
     functional_lead
 }
+
+# List of sync process statuses.
+public enum BuSyncStatus {
+    IN_PROGRESS,
+    ERROR,
+    SUCCESS
+}
