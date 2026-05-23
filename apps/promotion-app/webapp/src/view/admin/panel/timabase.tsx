@@ -181,14 +181,16 @@ export default function Timebase() {
                 if (!selectedRecommendation) {
                     return;
                 }
+                if (!selectedRecommendation.id) {
+                    return;
+                }
                 setIsEditingComment(true);
                 try {
-                    console.log(updatedComment);
                     await dispatch(
                         patchRecommendation({
-                        id: selectedRecommendation.recommendationID ?? 1,
-                        statement: null,
-                        comment: updatedComment,
+                            id: selectedRecommendation.recommendationID,
+                            statement: null,
+                            comment: updatedComment,
                         })
                     ).unwrap();
                     setIsEditingComment(false);
