@@ -13,9 +13,17 @@ export type PromotionRequestType =
   | "TIME_BASED"
   | "INDIVIDUAL_CONTRIBUTOR";
 
+export enum Role {
+  HR_ADMIN = "HR_ADMIN",
+  PROMOTION_BOARD_MEMBER = "PROMOTION_BOARD_MEMBER",
+  FUNCTIONAL_LEAD = "FUNCTIONAL_LEAD",
+  EMPLOYEE = "EMPLOYEE",
+  LEAD = "LEAD"
+}
+
 export interface TimeLineData{
   Title: string;
-  Date: string;
+  PromotionCycle: string;
   BusinessUnit: string;
   Team: string;
   SubTeam: string;
@@ -97,4 +105,53 @@ export interface RecommendationInterface {
   recommendationStatus: RecommendationState;
   reportingLead: boolean;
   isSample: boolean;
+}
+
+export interface Entity {
+  id: number;
+  name: string;
+}
+
+export interface User {
+  id: number;
+  firstName: string;
+  lastName: string;
+  jobBand?: number;
+  email: string;
+  roles: Role[];
+  businessUnit: boolean;
+  employeeThumbnail: string;
+  functionalLeadAccessLevels: {
+    businessUnits: BUAccessLevel[];
+  } | null;
+  active: boolean;
+}
+
+export interface BUAccessLevel extends Entity {
+  departments?: DepartmentAccess[];
+}
+
+export interface DepartmentAccess extends Entity {
+  teams?: TeamAccess[];
+}
+
+export interface TeamAccess extends Entity {
+  subTeams?: Entity[];
+}
+
+export interface EmployeeData {
+  firstName: string,
+  lastName: string,
+  workEmail: string,
+  jobBand: number | null,
+  jobRole: string,
+  employeeThumbnail: string,
+  lastPromotedDate: string | null,
+  managerEmail: string,
+  startDate: string,
+  employmentType: string,
+  businessUnit: string,
+  department: string,
+  team: string,
+  subTeam: string
 }
