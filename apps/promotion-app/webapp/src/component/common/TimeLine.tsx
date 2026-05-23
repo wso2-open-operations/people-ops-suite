@@ -54,7 +54,7 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
     if (employeeHistory.employeeHistoryState === "success" && employeeHistory.employeeHistory) {
         timelineData.push({
             Title: "Joined the Company",
-            Date: employeeHistory.employeeHistory.startDate
+            PromotionCycle: employeeHistory.employeeHistory.startDate
                 ? new Date(employeeHistory.employeeHistory.startDate).toLocaleDateString()
                 : "",
             BusinessUnit: employeeHistory.employeeHistory.joinedBusinessUnit || "",
@@ -68,13 +68,12 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
             const recommendation = request.recommendations?.[0];
             timelineData.push({
                 Title: `Promoted to Band ${request.nextJobBand}`,
-                Date: request.updatedOn
-                ? new Date(request.updatedOn).toLocaleDateString()
-                : "",
-                BusinessUnit: request.businessUnit || "",
-                Team: request.department || "",
-                SubTeam: request.team || "",
-                Lead: recommendation?.leadEmail || "",
+                PromotionCycle: request.promotionCycle ??
+                 "-",
+                BusinessUnit: request.businessUnit || "-",
+                Team: request.department || "-",
+                SubTeam: request.team || "-",
+                Lead: recommendation?.leadEmail || "-",
             });
         });
     }
@@ -155,7 +154,7 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
                                         }}
                                     >
                                         <Typography variant="body2" color="text.secondary">
-                                            {item.Date}
+                                            {item.PromotionCycle}
                                         </Typography>
                                     </Box>
 
