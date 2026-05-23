@@ -14,8 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React from "react";
-
 import {
   Accordion,
   AccordionDetails,
@@ -52,16 +50,14 @@ interface ThreeSixtyFeedbackSectionProps {
   isAdminsSelfProfile: boolean;
 }
 
-const ThreeSixtyFeedbackSection: React.FC<ThreeSixtyFeedbackSectionProps> = ({
-  isAdminsSelfProfile,
-}) => {
+const ThreeSixtyFeedbackSection = ({ isAdminsSelfProfile }: ThreeSixtyFeedbackSectionProps) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const employeeMap = useAppSelector(selectEmployeeMap);
   const threeSixtyReviewStatus = useAppSelector(selectThreeSixtyReviewStatus);
   const threeSixtyReviews = useAppSelector(selectThreeSixtyReviews);
 
-  const copyReviewToClipboard = (review: ThreeSixtyReview) => {
+  const copyReviewToClipboard = async (review: ThreeSixtyReview) => {
     const reviewerName = employeeMap[review.reviewerEmail]?.employeeName;
     const reviewerEmail = review.reviewerEmail;
     const rating = review.reviewRating;
@@ -71,24 +67,22 @@ const ThreeSixtyFeedbackSection: React.FC<ThreeSixtyFeedbackSectionProps> = ({
 
     const textToCopy = `${reviewerName} (${reviewerEmail}):\nRating: ${rating}\nFeedback: ${comment}`;
 
-    navigator.clipboard
-      .writeText(textToCopy)
-      .then(() => {
-        dispatch(
-          enqueueSnackbarMessage({
-            message: "Review copied to clipboard",
-            type: "info",
-          }),
-        );
-      })
-      .catch((err) => {
-        dispatch(
-          enqueueSnackbarMessage({
-            message: "Unable to copy review to clipboard",
-            type: "error",
-          }),
-        );
-      });
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "Review copied to clipboard",
+          type: "info",
+        }),
+      );
+    } catch {
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "Unable to copy review to clipboard",
+          type: "error",
+        }),
+      );
+    }
   };
 
   const renderReviews = () => {
@@ -183,20 +177,12 @@ const ThreeSixtyFeedbackSection: React.FC<ThreeSixtyFeedbackSectionProps> = ({
         {threeSixtyReviewStatus === RequestState.LOADING && (
           <LoadingEffect message={uiMessages.loading.pageLoading} />
         )}
-        {threeSixtyReviewStatus === RequestState.SUCCEEDED && !isAdminsSelfProfile ? (
-          <>
-            {threeSixtyReviews.length > 0 ? (
-              renderReviews()
-            ) : (
-              <NoDataView text="No 360° feedback received" />
-            )}
-          </>
-        ) : (
-          <>
-            {threeSixtyReviewStatus === RequestState.SUCCEEDED && (
-              <NoDataView text="Self profile restricted" />
-            )}
-          </>
+        {threeSixtyReviewStatus === RequestState.SUCCEEDED && (
+          isAdminsSelfProfile
+            ? <NoDataView text="Self profile restricted" />
+            : threeSixtyReviews.length > 0
+              ? renderReviews()
+              : <NoDataView text="No 360° feedback received" />
         )}
       </AccordionDetails>
     </Accordion>

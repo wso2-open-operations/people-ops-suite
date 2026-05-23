@@ -414,7 +414,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               options={[]}
               value={values.parRatings}
               freeSolo
-              onChange={(event, newValue) => setFieldValue("parRatings", newValue)}
+              onChange={(_event, newValue) => setFieldValue("parRatings", newValue)}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
                   <Chip variant="outlined" label={option} {...getTagProps({ index })} />
@@ -439,7 +439,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               options={[]}
               value={values.threeSixtyReviewRatings}
               freeSolo
-              onChange={(event, newValue) => setFieldValue("threeSixtyReviewRatings", newValue)}
+              onChange={(_event, newValue) => setFieldValue("threeSixtyReviewRatings", newValue)}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
                   <Chip variant="outlined" label={option} {...getTagProps({ index })} />

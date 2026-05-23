@@ -260,7 +260,7 @@ const GlobalSettingsView = () => {
                               options={[]}
                               value={values.parRatings}
                               freeSolo
-                              onChange={(event, newValue) => {
+                              onChange={(_event, newValue) => {
                                 setFieldValue("parRatings", newValue);
                               }}
                               renderTags={(value, getTagProps) =>
@@ -298,7 +298,7 @@ const GlobalSettingsView = () => {
                               options={[]}
                               value={values.threeSixtyReviewRatings}
                               freeSolo
-                              onChange={(event, newValue) => {
+                              onChange={(_event, newValue) => {
                                 setFieldValue("threeSixtyReviewRatings", newValue);
                               }}
                               renderTags={(value, getTagProps) =>
