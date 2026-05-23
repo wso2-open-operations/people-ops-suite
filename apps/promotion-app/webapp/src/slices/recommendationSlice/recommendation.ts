@@ -32,7 +32,8 @@ interface Recommendation {
 
 interface UpdateRecommendationPaylod {
   id: number;
-  statement?: string;
+  statement?: string|null;
+  rejectionReason? : string;
   comment?: string|null;
 }
 
