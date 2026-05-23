@@ -101,14 +101,20 @@ export const loadPrivileges = createAsyncThunk(
     const userPrivileges = userInfo?.privileges || [];
     const roles: Role[] = [];
 
-    if (userPrivileges.includes(762)) {
+    if (userPrivileges.includes(987)) {
       roles.push(Role.HR_ADMIN);
     }
-    if (userPrivileges.includes(987)) {
-      roles.push(Role.FUNCTIONAL_LEAD);
+    if (userPrivileges.includes(724)) {
+      roles.push(Role.PROMOTION_BOARD_MEMBER);
     }
     if (userPrivileges.includes(624)) {
+      roles.push(Role.FUNCTIONAL_LEAD);
+    }
+    if (userPrivileges.includes(562)) {
       roles.push(Role.LEAD);
+    }
+    if (userPrivileges.includes(424)) {
+      roles.push(Role.EMPLOYEE);
     }
 
     if (roles.length === 0) {

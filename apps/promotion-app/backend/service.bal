@@ -96,6 +96,15 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.LEAD_ROLE], userInfo.groups) {
             privileges.push(authorization:LEAD_PRIVILEGE);
         }
+        if authorization:checkPermissions([authorization:authorizedRoles.FUNCTIONAL_LEAD], userInfo.groups) {
+            privileges.push(authorization:FUNCTIONAL_LEAD_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.PROMOTION_BOARD_MEMBER], userInfo.groups) {
+            privileges.push(authorization:PROMOTION_BOARD_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.HR_ADMIN], userInfo.groups) {
+            privileges.push(authorization:HR_ADMIN_PRIVILEGE);
+        }
 
         UserInfoResponse userInfoResponse = {
             employeeId: loggedInUser.employeeId,
