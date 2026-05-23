@@ -19,3 +19,7 @@ const EMPLOYEES_CACHE_KEY = "employees";
 
 # Error message for header not found.
 const USER_INFORMATION_HEADER_NOT_FOUND = "user information header not found";
+
+const UTC_DEFAULT_STRING = "T00:00:00.00Z";
+
+const TIME_BASED_PROMOTION_KEY = "TIME_BASED_PROMOTION_STATE";
