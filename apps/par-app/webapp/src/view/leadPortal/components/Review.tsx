@@ -116,7 +116,7 @@ export const Review = ({
 
   // Handles tabs
   const [value, setValue] = useState<number>(0);
-  const handleTabChange = (event: SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
 

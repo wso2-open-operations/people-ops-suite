@@ -84,7 +84,7 @@ const ThreeSixtyHistoryFeedbackSection: React.FC<ThreeSixtyHistoryFeedbackSectio
           }),
         );
       })
-      .catch((err) => {
+      .catch(() => {
         dispatch(
           enqueueSnackbarMessage({
             message: "Unable to copy review to clipboard",
