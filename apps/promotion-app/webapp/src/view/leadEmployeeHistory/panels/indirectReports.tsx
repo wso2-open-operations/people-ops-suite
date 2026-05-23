@@ -46,7 +46,7 @@ export default function EmployeesHistory() {
     const fetchEmployeePromotions = () => {
         if (!employeeEmail) return;
         dispatch(fetchEmployees({
-            additionalManagerEmail: "chanuka@wso2.com"
+            additionalManagerEmail: employeeEmail
         }));
     };
 
