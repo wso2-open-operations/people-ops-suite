@@ -21,6 +21,7 @@ import ballerina/cache;
 import ballerina/http;
 import ballerina/log;
 import ballerina/lang.regexp;
+import ballerina/time;
 
 public configurable AppConfig appConfig = ?;
 
@@ -139,7 +140,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + ctx - Request Context 
     # + return - Employees list or error
-    resource function GET employees(http:RequestContext ctx, boolean? filterLeads)
+    resource function GET employees(http:RequestContext ctx, boolean? filterLeads, string? managerEmail, string? additionalManagerEmail)
         returns Employees|http:Forbidden|http:InternalServerError {
 
         // Check if the employees are already cached.
@@ -185,7 +186,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Get all Employees.
-        people:EmployeeInfo[]|error employees = people:getEmployees();
+        people:EmployeeInfo[]|error employees = people:getEmployees(
+            filterLeads = filterLeads,
+            managerEmail = managerEmail,
+            additionalManagerEmail = additionalManagerEmail
+        );
 
         if employees is error {
             string customError = (filterLeads is boolean && filterLeads == true) ? "Error while retrieving lead list!" : "Error while retrieving employee list!";
@@ -219,6 +224,59 @@ service http:InterceptableService / on new http:Listener(9090) {
         return {
             employees: employees
         };
+    }
+
+    # Retrieve list of  active business units
+    #
+    # + ctx - Request Context 
+    # + return - Internal Server Error or Business units list object
+    resource function GET business\-units(http:RequestContext ctx)
+        returns BusinessUnits|http:InternalServerError|http:Unauthorized|error {
+
+        // "RequestedBy" is the email of the user access this resource
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        // [Start] Resource level authorization 
+         authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error occurred while retrieving User Privileges!"
+                }
+            };
+        }
+
+        // Only the HR Admin can retrieve the BU list
+        if !(database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles)) {
+
+            return <http:Unauthorized>{
+                body: {
+                    message: "You are not authorized to access Business Units."
+                }
+            };
+        }
+
+        database:BusinessUnit[]|error businessUnits = database:getBusinessUnitMapping();
+
+        if businessUnits is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error occurred while retrieving Business Unit Mapping!"
+                }
+            };
+        }
+
+        return {businessUnits};
     }
 
     # Get employee joined deatails.
@@ -1014,7 +1072,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             statement: payload.statement,
             comments: payload.comment,
             updatedBy: userInfo.email,
-            expectedStatus: database:REQUESTED,
+            expectedStatus: (),
             expectedCycleId: promotionCycles[0].id
         });
 
@@ -1347,8 +1405,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Update promotion recommendation status 
         error? updateRecommendation = database:updatePromotionRecommendation({
             id: id,
-            status: database:SUBMITTED,
+            status: database:DECLINED,
             updatedBy: userInfo.email,
+            comments: comment,
             expectedStatus: database:REQUESTED,
             expectedCycleId: promotionCycles[0].id
         });
@@ -1646,7 +1705,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + reason - Reason for the rejection
     # + return - Internal Server Error or application submit results
     resource function GET promotions/[int id]/reject(http:RequestContext ctx, string 'from, string reason)
-        returns ApplicationStatus|http:Forbidden|http:NotFound|http:InternalServerError|http:BadRequest|error {
+        returns ApplicationStatus|http:Forbidden|http:NotFound|http:InternalServerError|http:BadRequest {
 
         if 'from !is database:ApprovalParties {
             // return error("Invalid rejector!");
@@ -1763,6 +1822,626 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return {
             status: "Successfully rejected the application."
+        };
+    }
+
+    # Create new promotion cycle
+    #
+    # + ctx - Request Context  
+    # + payload - Promotion cycle insert payload
+    # + return - Internal Server Error or recommendation create results
+    resource function POST promotion/cycles(http:RequestContext ctx, PromotionCycleCreateData payload)
+        returns http:Created|http:Forbidden|http:InternalServerError {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            string customError = "Error occurred while retrieving User Privileges!";
+            log:printError(customError, userAppPrivileges);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        if !database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) {
+            string customError = "Insufficient privileges!";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Validating dates 
+        time:Utc|time:Error startDate = time:utcFromString(payload.startDate + UTC_DEFAULT_STRING);
+        time:Utc|time:Error endDate = time:utcFromString(payload.endDate + UTC_DEFAULT_STRING);
+        time:Utc|time:Error leadDeadline = time:utcFromString(payload.leadDeadline + UTC_DEFAULT_STRING);
+        time:Utc|time:Error functionalLeadDeadline = time:utcFromString(payload.functionalLeadDeadline + UTC_DEFAULT_STRING);
+        time:Utc|time:Error promotionBoardDeadline = time:utcFromString(payload.promotionBoardDeadline + UTC_DEFAULT_STRING);
+
+        if startDate is time:Error || endDate is time:Error ||
+            leadDeadline is time:Error || functionalLeadDeadline is time:Error || promotionBoardDeadline is time:Error {
+            string customError = "Invalid date format in one or more date fields. Date format should be YYYY-MM-DD.";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if <int>time:utcDiffSeconds(endDate, startDate) < 0 {
+            string customError = "The end date should be greater than the start date.";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if <int>time:utcDiffSeconds(endDate, leadDeadline) < 0 {
+            string customError = "The end date should be greater than the lead deadline date.";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if <int>time:utcDiffSeconds(endDate, functionalLeadDeadline) < 0 {
+            string customError = "The end date should be greater than the functional lead deadline.";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if <int>time:utcDiffSeconds(endDate, promotionBoardDeadline) < 0 {
+            string customError = "The end date should be greater than the promotion board deadline.";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if <int>time:utcDiffSeconds(promotionBoardDeadline, functionalLeadDeadline) < 0 {
+            string customError = "The promotion board deadline should be greater than the functional lead deadline.";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if <int>time:utcDiffSeconds(leadDeadline, startDate) <= 0 {
+            string customError = "The lead deadline should be after the start date.";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        if <int>time:utcDiffSeconds(functionalLeadDeadline, leadDeadline) <= 0 {
+            string customError = "The functional lead deadline should be after the lead deadline.";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        int|error cretaedPromotionCycle = database:insertPromotionCycle({
+            name: payload.name,
+            startDate: payload.startDate,
+            endDate: payload.endDate,
+            leadDeadline: payload.leadDeadline,
+            functionalLeadDeadline: payload.functionalLeadDeadline,
+            promotionBoardDeadline: payload.promotionBoardDeadline,
+            status: database:OPEN,
+            createdBy: userInfo.email
+        });
+
+        if cretaedPromotionCycle is error {
+            if cretaedPromotionCycle.message().includes("insert failed due to there is a active promotion-cycle", 0) {
+                string customError = "An error occurred while creating a promotion cycle.there is an active promotion cycle";
+                log:printError(customError, cretaedPromotionCycle);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+            string customError = "An error occurred during the insertion of promotion cycle data!";
+            log:printError(customError, cretaedPromotionCycle);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        database:Config[]|error configs = database:getConfigs(key = TIME_BASED_PROMOTION_KEY);
+
+        if configs is error {
+            string customError = "An error occurred while retrieving the app configs!";
+            log:printError(customError, configs);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // When multiple or no process config is returned, it is an error
+        if configs.length() != 1 {
+            string customError = "We were not able to retrieve the Time-based promotion status. Please contact app support!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Check whether the process is already running
+        if configs.length() == 1 {
+            database:Config config = configs[0];
+            if config.value == database:IN_PROGRESS {
+                string customError = "Process is already running!";
+                log:printError(customError);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+        }
+
+        database:PromotionCycle[]|error promotionCycles = database:getPromotionCyclesByStatus([database:OPEN]);
+
+        if promotionCycles is error {
+            string customError = "Error while retrieving Promotion Cycles!";
+            log:printError(customError, promotionCycles);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {id: promotionCycles[0].id}
+        };
+    }
+
+    # End promotion cycle
+    #
+    # + id - Promotion cycle id  
+    # + ctx - Request Context appended from the interceptor
+    # + return - Status or error
+    resource function GET promotion/cycles/[int id]/end(http:RequestContext ctx)
+        returns PromotionCycleStatus|http:Forbidden|http:NotFound|http:InternalServerError {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        // After introducing ballerina resource level authorization we can remove this section
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            string customError = "Error occurred while retrieving User Privileges!";
+            log:printError(customError, userAppPrivileges);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if !database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) {
+            string customError = "Insufficient privileges!";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        int|error affectedRowCount = database:updatePromotionCycle({
+            id: id,
+            status: database:END,
+            updatedBy: userInfo.email
+        });
+
+        if affectedRowCount is error {
+            string customError = "An error occurred while updating promotion cycle";
+            log:printError(customError, affectedRowCount);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if affectedRowCount == 0 {
+            string customError = "There is no promotion cycle to end!";
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Expiring all the pending applications and recommendations
+        int|error?  expirePendingRequests = database:expirePendingRequests(promotionCycleId = id, updatedBy = userInfo.email);
+
+        if expirePendingRequests is error {
+            string customError = "An error occurred during expiring the promotion requests!";
+            log:printError(customError, expirePendingRequests);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        int|error? expirePendingRecommendations = database:expirePendingRecommendations(promotionCycleId = id, updatedBy = userInfo.email);
+
+        if expirePendingRecommendations is error {
+            string customError = "An error occurred during expiring the promotion recommendations!";
+            log:printError(customError, expirePendingRecommendations);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return {status: "The promotion cycle ended successfully!"};
+    }
+
+    # get users
+    #
+    # + ctx - Request Context appended from the interceptor
+    # + return - Internal Server Error or user create results
+    resource function get users(http:RequestContext ctx) returns http:InternalServerError|http:Unauthorized|Users {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        // // After introducing ballerina resource level authorization we can remove this section
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            string customError = "Error occurred while retrieving User Privileges!";
+            log:printError(customError, userAppPrivileges);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if !database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) {
+            string customError = "Insufficient privilege to access the user list.";
+            log:printError(customError);
+            return <http:Unauthorized>{
+                body: {
+                    message: customError
+                }
+            }; 
+        }
+
+        database:User[]|error users = database:getUsers();
+
+        if users is error {
+            string customError = "Error occurred while retrieving Users";
+            log:printError(customError, users);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return {users};
+    }
+
+    # Create new user
+    #
+    # + ctx - Request Context appended from the interceptor
+    # + payload - User Insert Payload
+    # + return - Internal Server Error or user create results
+    resource function post users(http:RequestContext ctx, @http:Payload UserInsertPayload payload)
+        returns UserStatus|http:InternalServerError|http:Unauthorized {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        // After introducing ballerina resource level authorization we can remove this section
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            string customError = "Error occurred while retrieving User Privileges!";
+            log:printError(customError, userAppPrivileges);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if !database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) {
+            string customError = "Insufficient privilege to access the user list.";
+            log:printError(customError);
+            return <http:Unauthorized>{
+                body: {
+                    message: customError
+                }
+            }; 
+        }
+
+        people:Employee|error employeeData = people:getEmployee(workEmail = payload.email);
+
+        if employeeData is error {
+            string customError = "Employee not found for given email!";
+            log:printError(customError, employeeData);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        int|error cretaedUser = database:insertUser({
+            firstName: employeeData.firstName,
+            lastName: employeeData.lastName,
+            jobBand: employeeData.jobBand,
+            email: payload.email,
+            functionalLeadAccessLevels: payload.functionalLeadAccessLevels,
+            roles: payload.roles,
+            businessUnit: employeeData.businessUnit,
+            createdBy: userInfo.email
+        });
+
+        if cretaedUser is error {
+            string customError = "An error occurred during the insertion of promotion cycle data!";
+            log:printError(customError, cretaedUser);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return {
+            status: "Successfully created the user."
+        };
+    }
+
+    # Update user : HR admin
+    #
+    # + ctx - Request Context appended from the interceptor
+    # + payload - User Update Payload
+    # + return - Internal Server Error / Unauthorized
+    resource function patch users(http:RequestContext ctx, @http:Payload UserUpdatePayload payload)
+        returns UserStatus|http:InternalServerError|http:Unauthorized|http:NotFound {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        // After introducing ballerina resource level authorization we can remove this section
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            string customError = "Error occurred while retrieving User Privileges!";
+            log:printError(customError, userAppPrivileges);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if !database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) {
+            string customError = "Insufficient privilege to access the user list.";
+            log:printError(customError);
+            return <http:Unauthorized>{
+                body: {
+                    message: customError
+                }
+            }; 
+        }
+
+        // when change email of the user update first and last name of the user according to the new email
+        people:Employee|error? employeeData = ();
+        string? userEmail = payload.email;
+        if userEmail is string {
+            employeeData = people:getEmployee(workEmail = userEmail);
+
+            if employeeData is error {
+                string customError = "Employee not found for given email!";
+                log:printError(customError, employeeData);
+                return <http:NotFound>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+        }
+
+        database:UserDbUpdatePayload updateUserData = {
+            id: payload.id,
+            email: payload.email,
+            firstName: employeeData is people:Employee ? employeeData.firstName : (),
+            lastName: employeeData is people:Employee ? employeeData.lastName : (),
+            roles: payload.roles,
+            active: payload.active,
+            functionalLeadAccessLevels: payload.functionalLeadAccessLevels,
+            updatedBy: userInfo.email
+        };
+
+        int|error? affectedRowCount = database:updateUser(updateUserData);
+
+        if affectedRowCount is error {
+            string customError = "Error occurred while updating the user!";
+            log:printError(customError, affectedRowCount);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if affectedRowCount == 0 {
+            string customError = "No matching user found to update.";
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return {
+            status: "Successfully updated the user."
+        };
+    }
+
+    # delete user by userId
+    #
+    # + id - User id  
+    # + ctx - Request Context appended from the interceptor
+    # + return - Internal Server Error or user create results
+    resource function delete users/[int id](http:RequestContext ctx) 
+        returns UserStatus|http:InternalServerError|http:Unauthorized|http:NotFound {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        // After introducing ballerina resource level authorization we can remove this section
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            string customError = "Error occurred while retrieving User Privileges!";
+            log:printError(customError, userAppPrivileges);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if !database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) {
+            string customError = "Insufficient privilege to delete the user.";
+            log:printError(customError);
+            return <http:Unauthorized>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        int|error? affectedRowCount = database:deleteUserById(id);
+
+        if affectedRowCount is error {
+            string customError = "Error occurred while deleting the user!";
+            log:printError(customError, affectedRowCount);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if affectedRowCount == 0 {
+            string customError = "No matching user found to delete.";
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return {
+            status: "Successfully deleted the user."
         };
     }
 }
