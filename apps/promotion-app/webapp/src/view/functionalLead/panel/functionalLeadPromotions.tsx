@@ -324,6 +324,7 @@ export default function Requests() {
                         ).unwrap();
                         employeeHistories.push(employeeHistory);
                     }
+                    setEmployeeHistories(employeeHistories);
                 }
             }
         } catch (error) {

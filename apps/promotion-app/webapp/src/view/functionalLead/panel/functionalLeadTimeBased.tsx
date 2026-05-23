@@ -486,8 +486,8 @@ export default function Timebased() {
                     </Box>
                 )}
 
-                {promotionCycle.state === "failed" || 
-                    promotions.state === "failed"&& (
+                {(promotionCycle.state === "failed" || 
+                    promotions.state === "failed") && (
                     <Box
                         sx={{
                         display: "flex",
