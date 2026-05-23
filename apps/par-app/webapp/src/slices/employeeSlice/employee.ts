@@ -160,40 +160,34 @@ export const fetchParRatingOfEmployee = createAsyncThunk(
       if (response.status === HttpStatusCode.Ok) {
         const parRating = response.data;
 
-        try {
-          if (base64Regex.test(parRating?.parEmployeeComment)) {
-            try {
-              parRating.parEmployeeComment = decodeURIComponent(
-                atob(parRating?.parEmployeeComment),
-              );
-            } catch (decodeError) {
-              parRating.parEmployeeComment = "";
-            }
-          } else {
+        if (base64Regex.test(parRating?.parEmployeeComment)) {
+          try {
+            parRating.parEmployeeComment = decodeURIComponent(atob(parRating?.parEmployeeComment));
+          } catch {
             parRating.parEmployeeComment = "";
           }
+        } else {
+          parRating.parEmployeeComment = "";
+        }
 
-          if (base64Regex.test(parRating?.parLeadComment)) {
-            try {
-              parRating.parLeadComment = decodeURIComponent(atob(parRating?.parLeadComment));
-            } catch (decodeError) {
-              parRating.parLeadComment = "";
-            }
-          } else {
+        if (base64Regex.test(parRating?.parLeadComment)) {
+          try {
+            parRating.parLeadComment = decodeURIComponent(atob(parRating?.parLeadComment));
+          } catch {
             parRating.parLeadComment = "";
           }
+        } else {
+          parRating.parLeadComment = "";
+        }
 
-          if (base64Regex.test(parRating?.parAdminComment)) {
-            try {
-              parRating.parAdminComment = decodeURIComponent(atob(parRating?.parAdminComment));
-            } catch (decodeError) {
-              parRating.parAdminComment = "";
-            }
-          } else {
+        if (base64Regex.test(parRating?.parAdminComment)) {
+          try {
+            parRating.parAdminComment = decodeURIComponent(atob(parRating?.parAdminComment));
+          } catch {
             parRating.parAdminComment = "";
           }
-        } catch (commentProcessingError) {
-          throw commentProcessingError;
+        } else {
+          parRating.parAdminComment = "";
         }
         return parRating;
       } else {
@@ -252,7 +246,7 @@ export const bulkUpdateParRatingOfEmployee = createAsyncThunk(
   "employee/bulkUpdateParRatingOfEmployee",
   async (
     objects: UpdateEmployeeRatingsParams[],
-    { dispatch },
+    _thunkApi,
   ): Promise<{
     passedCount: number;
     failedCount: number;
@@ -406,6 +400,5 @@ export const selectPreviousParCycleOfEmployee = (state: RootState) => state.empl
 export const selectEmployeeRatings = (state: RootState) => state.employee.selectedRating;
 export const selectEmployeeStatus = (state: RootState) => state.employee.status;
 export const selectEmployeeRatingStatus = (state: RootState) => state.employee.ratingStatus;
-export const selectEmployeeRatingError = (state: RootState) => state.employee.errorMessage;
 
 export default employeeSlice.reducer;
