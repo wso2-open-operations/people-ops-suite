@@ -19,6 +19,7 @@ export default function Search(props: {
         sx={{ ml: 1, flex: 1 }}
         placeholder="Search"
         inputProps={{ 'aria-label': 'search' }}
+        value={props.value}
         onChange={props.onChange}
       />
       <IconButton type="button" size="small" aria-label="search">

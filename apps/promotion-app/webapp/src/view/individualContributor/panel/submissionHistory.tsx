@@ -61,7 +61,6 @@ export default function SubmissionHistory() {
     const dispatch = useAppDispatch();
     const auth = useAppSelector((state: RootState) => state.auth);
     const submissionHistory = useAppSelector((state: RootState) => state.promotion);
-
     const [open, setOpen] = useState(false);
     const [selectedNoteHtml, setSelectedNoteHtml] = useState<string>('');
 

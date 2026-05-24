@@ -71,14 +71,11 @@ const statusColorMap: Record<string, string> = {
 export default function History() {
 
     const dispatch = useAppDispatch();
-    const [selectedNoteHtml, setSelectedNoteHtml] = useState<string>('');
-    const [open, setOpen] = useState(false);
-    const [openMore, setOpenMore] = useState(false);
-    const [filter, setFilter] = useState("All");
-    const [selectedHistory, setSelectedHistory] = useState<any>(null)
-    const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
     const promotions = useAppSelector((state: RootState) => state.promotion);
     const promotionCycle  = useAppSelector((state: RootState) => state.promotionCycle);
+    const [openMore, setOpenMore] = useState(false);
+    const [selectedHistory, setSelectedHistory] = useState<any>(null)
+    const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
     const [employeeHistories, setEmployeeHistories] = useState<EmployeeJoinedDetails[]>([]);
     const [filters, setFilters] = useState<Filter[]>([]);
     const [showFilters, setShowFilters] = useState(false);
@@ -288,16 +285,6 @@ export default function History() {
         setOpenMore(false);
     }
 
-    const handleClose = () => {
-        setOpen(false);
-        setSelectedNoteHtml('');
-    };
-
-    const filteredRequests = promotions.promotions?.filter(req => {
-        if (filter === "All") return true;
-        return req.status === filter;
-    });
-
     const employeeHistoryMap = React.useMemo(() => {
         const map: Record<string, any> = {};
 
@@ -417,9 +404,9 @@ export default function History() {
                                 </TableHead>
 
                                 <TableBody>
-                                    {filteredRequests &&
-                                    applyFilters(filteredRequests || []).length > 0 ? (
-                                    applyFilters(filteredRequests || []).map((req: any) => 
+                                    {promotions.promotions &&
+                                    applyFilters(promotions.promotions || []).length > 0 ? (
+                                    applyFilters(promotions.promotions || []).map((req: any) => 
                                         {const history = employeeHistoryMap[req.employeeEmail];
                                             return(
                                                 <TableRow key={req.id}>

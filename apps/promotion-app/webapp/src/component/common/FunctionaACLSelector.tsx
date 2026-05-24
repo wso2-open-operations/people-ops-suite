@@ -373,13 +373,6 @@ const setSelected = props.setValue;
     }
   };
 
-  useEffect(() => {
-    setBu(userManagement?.businessUnits || []);
-    if (props.value) {
-      setSelected(props.value);
-    }
-  }, [userManagement.businessUnits]);
-
   const BuList = (items: readonly BUAccessLevel[]) => (
     <Card variant="outlined" square sx={{ m: 0, p: 0 }}>
       <CardHeader sx={{ px: 2, py: 1 }} title={<>Business Units</>} />

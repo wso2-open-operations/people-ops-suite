@@ -57,9 +57,9 @@ export default function TimeBaseHistory() {
 
   const dispatch = useAppDispatch();
   const recommendation  = useAppSelector((state: RootState) => state.recommendation);
+  const auth = useAppSelector((state: RootState) => state.auth);
   const [selectedNoteHtml, setSelectedNoteHtml] = useState<string>('');
   const [open, setOpen] = useState(false);
-  const auth = useAppSelector((state: RootState) => state.auth);
 
 
   const fetchPromotions = async () => {

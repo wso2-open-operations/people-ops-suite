@@ -54,14 +54,16 @@ import { useConfirmationModalContext } from "@context/DialogContext";
 import { ConfirmationType } from "@src/types/types";
 
 export default function Pending() {
+
   const dispatch = useAppDispatch();
+  const dialogContext = useConfirmationModalContext();
   const auth = useAppSelector((state: RootState) => state.auth);
   const promotionCycle  = useAppSelector((state: RootState) => state.promotionCycle);
   const recommendation  = useAppSelector((state: RootState) => state.recommendation);
   const employee  = useAppSelector((state: RootState) => state.timeline);
+  const isLoading = recommendation.updateState === "loading";
   const [selectedNoteHtml, setSelectedNoteHtml] = useState<string>('');
   const [open, setOpen] = useState(false);
-  const dialogContext = useConfirmationModalContext();
   const [rejectReason, setRejectReason] = useState("");
   const [confirmRejectOpen, setConfirmRejectOpen] = useState(false);
   const [openSubmissionPage, setOpenSubmissionPage] = useState(false);
@@ -69,7 +71,6 @@ export default function Pending() {
   const [selectedRecommendationId, setRecommendationID] = useState<number|null>(null);
   const [recommendationText, setRecommendationText] = useState<string>("");
   const [lastSavedText, setLastSavedText] = useState("");
-  const isLoading = recommendation.updateState === "loading";
 
   const loadData = async () => {
     setSelectedEmployee(null);

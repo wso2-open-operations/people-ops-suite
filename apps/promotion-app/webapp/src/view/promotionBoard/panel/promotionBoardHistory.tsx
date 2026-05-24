@@ -74,16 +74,14 @@ const statusColorMap: Record<string, string> = {
 export default function History() {
 
     const dispatch = useAppDispatch();
-    const [selectedNoteHtml, setSelectedNoteHtml] = useState<string>('');
+    const auth = useAppSelector((state: RootState) => state.auth);
+    const promotions = useAppSelector((state: RootState) => state.promotion);
     const [open, setOpen] = useState(false);
     const [openMore, setOpenMore] = useState(false);
     const [promotionJobBand, setPromotionJobBand] = useState('');
     const [filter, setFilter] = useState("All");
     const [selectedHistory, setSelectedHistory] = useState<any>(null)
     const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
-    const auth = useAppSelector((state: RootState) => state.auth);
-    const promotions = useAppSelector((state: RootState) => state.promotion);
-    const promotionCycle  = useAppSelector((state: RootState) => state.promotionCycle);
     const [employeeHistories, setEmployeeHistories] = useState<EmployeeJoinedDetails[]>([]);
     const [filters, setFilters] = useState<Filter[]>([]);
     const [showFilters, setShowFilters] = useState(false);
@@ -297,7 +295,6 @@ export default function History() {
 
     const handleClose = () => {
         setOpen(false);
-        setSelectedNoteHtml('');
     };
 
     const filteredRequests = promotions.promotions?.filter(req => {
@@ -711,7 +708,7 @@ export default function History() {
                         />
                     </Box>
                 )}
-                
+
                 {promotions.state === "failed"&& (
                     <Box
                         sx={{

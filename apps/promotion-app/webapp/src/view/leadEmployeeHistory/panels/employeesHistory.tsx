@@ -35,10 +35,11 @@ import { LoadingEffect } from "@root/src/component/ui/Loading";
 import TimeLine from "@root/src/component/common/TimeLine";
 
 export default function EmployeesHistory() {
+
+    const dispatch = useAppDispatch();
     const auth = useAppSelector((state: RootState) => state.auth);
     const employees = useAppSelector((state: RootState) => state.employee);
     const employeeEmail = auth.userInfo?.email;
-    const dispatch = useAppDispatch();
     const [selectedEmployee, setSelectedEmployee] = React.useState<EmployeeData | null>(null);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [searchKey, setSearchKey] = React.useState<string>("");

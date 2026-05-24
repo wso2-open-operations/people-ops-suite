@@ -45,7 +45,6 @@ import { FilterAlt as FilterAltIcon } from "@mui/icons-material";
 import CustomizedTimeline from "../../../component/common/TimeLine";
 import StateWithImage from '../../../component/ui/StateWithImage';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import { fetchPromotionCycles } from "@slices/promotionCycleSlice/promotionCycle";
 import { fetchPromotions } from "@slices/promotionSlice/promotion";
 import { PromotionRequest } from '@root/src/utils/types';
 import { EmployeeJoinedDetails, fetchEmployeeHistory } from "@slices/employeeSlice/employee";
@@ -73,7 +72,6 @@ const statusColorMap: Record<string, string> = {
 export default function History() {
 
     const dispatch = useAppDispatch();
-    const [selectedNoteHtml, setSelectedNoteHtml] = useState<string>('');
     const [open, setOpen] = useState(false);
     const [openMore, setOpenMore] = useState(false);
     const [promotionJobBand, setPromotionJobBand] = useState('');
@@ -297,7 +295,6 @@ export default function History() {
 
     const handleClose = () => {
         setOpen(false);
-        setSelectedNoteHtml('');
     };
 
     const filteredRequests = promotions.promotions?.filter(req => {

@@ -41,18 +41,15 @@ import { LoadingEffect } from "@root/src/component/ui/Loading";
 import StateWithImage from "@root/src/component/ui/StateWithImage";
 
 export default function CycleHistory() {
+
+  const dispatch = useAppDispatch();
   const auth = useAppSelector((state: RootState) => state.auth);
+  const promotionCycle = useAppSelector( (state: RootState) => state.promotionCycle);
+  const promotons = useAppSelector((state: RootState) => state.promotion);
   const employeeEmail = auth.userInfo?.email;
   const userRole = auth.roles;
   const theme = useTheme();
-  const dispatch = useAppDispatch();
   const [selectedCycleID, setSelectedCycleID] = useState<number|null>(null);
-  const promotionCycle = useAppSelector(
-      (state: RootState) => state.promotionCycle
-  );
-  const promotons = useAppSelector(
-      (state: RootState) => state.promotion
-  );
 
   const fetchRequest = () => {
     if (!employeeEmail) return;
@@ -91,7 +88,6 @@ export default function CycleHistory() {
   };
 
   const handleRefresh = () => {
-    // dispatch(reset());
     fetchRequest();
   };
 

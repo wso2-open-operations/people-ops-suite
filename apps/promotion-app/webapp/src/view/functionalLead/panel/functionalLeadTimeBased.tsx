@@ -66,17 +66,13 @@ const statusColorMap: Record<string, string> = {
 export default function Timebased() {
 
     const dispatch = useAppDispatch();
-    const [selectedNoteHtml, setSelectedNoteHtml] = useState<string>('');
     const [open, setOpen] = useState(false);
     const [openMore, setOpenMore] = useState(false);
     const [promotionJobBand, setPromotionJobBand] = useState('');
-    const [filter, setFilter] = useState("All");
     const [selectedHistory, setSelectedHistory] = useState<any>(null)
     const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
-    const auth = useAppSelector((state: RootState) => state.auth);
     const promotions = useAppSelector((state: RootState) => state.promotion);
     const promotionCycle  = useAppSelector((state: RootState) => state.promotionCycle);
-    const [employeeHistories, setEmployeeHistories] = useState<EmployeeJoinedDetails[]>([]);
 
 
     const fetchAllPromotions = async () => {
@@ -120,16 +116,6 @@ export default function Timebased() {
         }
     };
 
-    const employeeHistoryMap = React.useMemo(() => {
-        const map: Record<string, any> = {};
-
-        employeeHistories.forEach((emp) => {
-            map[emp.workEmail] = emp;
-        });
-
-        return map;
-    }, [employeeHistories]);
-
     const handleOpenMore = (emp : any, history : any) => {
         setOpenMore(true);
         setSelectedEmployee(emp);
@@ -143,7 +129,6 @@ export default function Timebased() {
 
     const handleClose = () => {
         setOpen(false);
-        setSelectedNoteHtml('');
     };
 
     const handleRefresh = () => {
@@ -244,7 +229,6 @@ export default function Timebased() {
 
                                 <TableBody>
                                 {promotions.promotions.map((req: any) => {
-                                    const history = employeeHistoryMap[req.employeeEmail];
                                     const recommendation = req.recommendations?.[0];
 
                                     return (
@@ -287,7 +271,7 @@ export default function Timebased() {
                                 sx={{
                                     top: "50%",
                                     left: "50%",
-                                    transform: "translate(-50%, -50%)",
+                                    // transform: "translate(-50%, -50%)",
                                     width: "80%",
                                     bgcolor: "background.paper",
                                     boxShadow: 24,
@@ -296,7 +280,7 @@ export default function Timebased() {
                                     maxHeight: "90vh",
                                     display: "flex",
                                     flexDirection: "column",
-                                    position: "relative",
+                                    position: "absolute"
                                 }}
                             >
                                 <Box

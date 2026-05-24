@@ -46,7 +46,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { fetchAllUsers, updateUser, fetchAllBUs, insertUser, deleteUser } from "@slices/userManagementSlice/userManagementSlice";
 import { BUAccessLevel, Role, User } from "@root/src/utils/types";
-import { EmployeeJoinedDetails, fetchEmployeeHistory } from "@root/src/slices/employeeSlice/employee";
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { useConfirmationModalContext } from '@root/src/context/DialogContext';
 import { ConfirmationType } from "@root/src/types/types";
@@ -101,7 +100,7 @@ export default function UserManagement() {
 
     const fetchPromotionCycle = async () => {
         try {
-            const resultAction = await dispatch(fetchAllUsers());
+            await dispatch(fetchAllUsers());
             dispatch(fetchAllBUs());
         } catch (error) {
             console.error("Error fetching data:", error);

@@ -22,12 +22,18 @@ const individualContributor = lazy(() => import("@view/individualContributor/ind
 const timeBased = lazy(() => import("@view/timeBased/timeBased"));
 const functionalLead = lazy(() => import("@view/functionalLead/functionalLead"));
 const promotionBoard = lazy(() => import("@view/promotionBoard/promotionBoard"));
+const admin = lazy(() => import("@view/admin/admin"));
+const employeesHistory = lazy(() => import("@view/leadEmployeeHistory/leadEmployeeHistory"));
+const promotionCycleHistory = lazy(() => import("@view/promotionCycleHistory/promotionCycleHistory"));
 
 export const View = {
   help,
   history,
   individualContributor,
   timeBased,
+  employeesHistory,
+  promotionCycleHistory,
   functionalLead,
   promotionBoard,
+  admin,
 };

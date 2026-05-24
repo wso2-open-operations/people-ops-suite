@@ -59,8 +59,8 @@ export default function Request() {
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [recommendedJobBand, setRecommendedJobBand] = useState<number | null>(null);
     const [recommendationText, setRecommendationText] = useState<string>("");
-    const isSubmitDisabled = recommendedJobBand === null;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const isSubmitDisabled = recommendedJobBand === null;
     const isLoading = promotion.postState === "loading";
 
     const fetchAllEmployees = async () => {

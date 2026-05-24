@@ -85,7 +85,6 @@ export default function Requests() {
     const promotion  = useAppSelector((state: RootState) => state.promotion);
     const dialogContext = useConfirmationModalContext();
     const promotions = promotion.promotions ?? [];
-
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [open, setOpen] = useState(false);
     const [openMore, setOpenMore] = useState(false);
@@ -97,7 +96,6 @@ export default function Requests() {
     const [rejectReason, setRejectReason] = useState("");
     const [showFilters, setShowFilters] = useState(false);
     const auth = useAppSelector((state: RootState) => state.auth);
-    const [data, setData] = useState<TimeLineData[]>([]);
     const [employeeHistories, setEmployeeHistories] = useState<EmployeeJoinedDetails[]>([]);
     const [filters, setFilters] = useState<Filter[]>([]);
 
@@ -344,7 +342,6 @@ export default function Requests() {
     }
 
     const handleCloseMore = () => {
-        setData([]);
         setSelectedEmployee(null);
         setOpenMore(false);
     }

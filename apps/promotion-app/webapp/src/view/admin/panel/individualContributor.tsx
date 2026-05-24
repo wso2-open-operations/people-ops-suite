@@ -51,13 +51,12 @@ export default function IndividualContributor() {
   const promotions = useAppSelector((state: RootState) => state.promotion);
   const promotionCycle  = useAppSelector((state: RootState) => state.promotionCycle);
   const recommendation  = useAppSelector((state: RootState) => state.recommendation);
-  const [selectedRecommendation, setSelectedRecommendation] = useState<any>(null);
+  const [selectedPromotion, setSelectedPromotion] = useState<any>(null);
   const [editedComment, setEditedComment] = useState("");
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [openCommentPopup, setOpenCommentPopup] = useState(false);
   const dialogContext = useConfirmationModalContext();
   const [searchKey, setSearchKey] = useState<string>("");
-  const [isChecked, setIsChecked] = useState(false);
   const [sheetValue, setSheetValue] = useState("");
 
   const fetchAllPromotions = async () => {
@@ -91,7 +90,7 @@ export default function IndividualContributor() {
 
   const handlePopUpOpen = (req: any) => {
       const comment = req.reasonForRejection;
-      setSelectedRecommendation(req);
+      setSelectedPromotion(req);
       setEditedComment(comment || "");
       setIsEditingComment(false);
       setOpenCommentPopup(true);
@@ -99,7 +98,7 @@ export default function IndividualContributor() {
 
   const handlePopUpClose = () => {
       setOpenCommentPopup(false);
-      setSelectedRecommendation(null);
+      setSelectedPromotion(null);
       setEditedComment("");
       setIsEditingComment(false);
   };
@@ -113,7 +112,7 @@ export default function IndividualContributor() {
       setSheetValue(event.target.value);
   };
 
-  const originalComment = selectedRecommendation?.reasonForRejection || "";
+  const originalComment = selectedPromotion?.reasonForRejection || "";
 
   const isSaveDisabled = 
         editedComment.trim() === originalComment.trim() ||
@@ -126,23 +125,23 @@ export default function IndividualContributor() {
         `Are you sure you want to Save the comment?`,
         ConfirmationType.accept,
         async () => {
-            if (!selectedRecommendation) {
+            if (!selectedPromotion) {
                 return;
             }
-            if (!selectedRecommendation.id) {
+            if (!selectedPromotion.id) {
                 return;
             }
             setIsEditingComment(true);
             try {
                 await dispatch(
                     updatePromotion({
-                        id: selectedRecommendation.id,
+                        id: selectedPromotion.id,
                         reasonForRejection: updatedComment
                     })
                 ).unwrap();
                 setIsEditingComment(false);
                 setOpenCommentPopup(false);
-                setSelectedRecommendation(null);
+                setSelectedPromotion(null);
                 setEditedComment("");
                 handleRefresh();
             } catch (error) {
@@ -378,7 +377,7 @@ export default function IndividualContributor() {
                             <Box sx={{ mt: 2, mb: 3 }}>
                               {!(recommendation?.state === "loading") && (
                                 <Typography sx={{ mb: 2 }}>
-                                  {selectedRecommendation?.reasonForRejection ||
+                                  {selectedPromotion?.reasonForRejection ||
                                     "No additional comment provided."}
                                 </Typography>
                               )}
@@ -406,7 +405,7 @@ export default function IndividualContributor() {
                               <>
                                 <Button
                                   onClick={() => {
-                                    setEditedComment(selectedRecommendation?.reasonForRejection || "");
+                                    setEditedComment(selectedPromotion?.reasonForRejection || "");
                                     setIsEditingComment(false);
                                   }}
                                   sx={{ mr: 1 }}
