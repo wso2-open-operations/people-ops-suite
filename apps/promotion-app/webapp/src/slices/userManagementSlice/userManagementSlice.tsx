@@ -67,7 +67,7 @@ export const fetchAllUsers = createAsyncThunk(
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<User[]>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.getuser, {
+        .get(AppConfig.serviceUrls.user, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -103,7 +103,7 @@ export const updateUser = createAsyncThunk(
     const newCancelTokenSource = APIService.updateCancelToken(); 
     return new Promise<{ status: string }>((resolve, reject) => {
       APIService.getInstance()
-        .patch(AppConfig.serviceUrls.getuser, payload,{
+        .patch(AppConfig.serviceUrls.user, payload,{
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -181,7 +181,7 @@ export const insertUser = createAsyncThunk(
     const newCancelTokenSource = APIService.updateCancelToken(); 
     return new Promise<{ status: string }>((resolve, reject) => {
       APIService.getInstance()
-        .post(AppConfig.serviceUrls.getuser, payload,{
+        .post(AppConfig.serviceUrls.user, payload,{
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -228,7 +228,7 @@ export const deleteUser = createAsyncThunk(
 
     return new Promise<{ status: string }>((resolve, reject) => {
       APIService.getInstance()
-        .delete(AppConfig.serviceUrls.getuser + "/" + id, {
+        .delete(AppConfig.serviceUrls.user + "/" + id, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {

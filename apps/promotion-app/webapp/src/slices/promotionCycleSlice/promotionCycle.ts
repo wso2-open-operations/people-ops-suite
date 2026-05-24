@@ -70,7 +70,7 @@ export const fetchPromotionCycles = createAsyncThunk(
 
     return new Promise<{ PromotionCycles: PromotionCycle[] | null }>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.getPromotionCycle, {
+        .get(AppConfig.serviceUrls.promotionCycle, {
           params: {
             statusArray: statusArray?.join(",")
           },

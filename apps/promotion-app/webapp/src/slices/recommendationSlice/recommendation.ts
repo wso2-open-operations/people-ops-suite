@@ -62,7 +62,7 @@ export const fetchRecommendation = createAsyncThunk(
 
     return new Promise<{ recommendations: RecommendationInterface[] }>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.getPromotionRecommendations, {
+        .get(AppConfig.serviceUrls.promotionRecommendations, {
             params: {
                 leadEmail: leadEmail,
                 statusArray: statusArray?.join(","),
@@ -104,7 +104,7 @@ export const patchRecommendation = createAsyncThunk(
     const newCancelTokenSource = APIService.updateCancelToken(); 
     return new Promise<{ status: string }>((resolve, reject) => {
       APIService.getInstance()
-        .patch(AppConfig.serviceUrls.getPromotionRecommendations, payload,{
+        .patch(AppConfig.serviceUrls.promotionRecommendations, payload,{
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -151,7 +151,7 @@ export const approveRecommendation = createAsyncThunk(
     const newCancelTokenSource = APIService.updateCancelToken(); 
     return new Promise<{ status: string }>((resolve, reject) => {
       APIService.getInstance()
-        .get(`${AppConfig.serviceUrls.getPromotionRecommendations}/${id}/submit`,{
+        .get(`${AppConfig.serviceUrls.promotionRecommendations}/${id}/submit`,{
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -200,7 +200,7 @@ export const declineRecommendation = createAsyncThunk(
     const newCancelTokenSource = APIService.updateCancelToken(); 
     return new Promise<{ status: string }>((resolve, reject) => {
       APIService.getInstance()
-        .get(`${AppConfig.serviceUrls.getPromotionRecommendations}/${id}/decline`,{
+        .get(`${AppConfig.serviceUrls.promotionRecommendations}/${id}/decline`,{
           params: {
             comment: comment
           },

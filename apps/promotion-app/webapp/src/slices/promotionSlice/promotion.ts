@@ -78,7 +78,7 @@ export const fetchPromotions = createAsyncThunk(
 
     return new Promise<{ promotions: PromotionRequest[] }>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.retrieveAllPromotionRequests, {
+        .get(AppConfig.serviceUrls.promotions, {
           params: {
             employeeEmail,
             type,
@@ -123,7 +123,7 @@ export const insertPromotions = createAsyncThunk(
     const newCancelTokenSource = APIService.updateCancelToken(); 
     return new Promise<{ applicationID: number }>((resolve, reject) => {
       APIService.getInstance()
-        .post(AppConfig.serviceUrls.retrieveAllPromotionRequests, payload,{
+        .post(AppConfig.serviceUrls.promotions, payload,{
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -174,7 +174,7 @@ export const approvePromotions = createAsyncThunk(
 
     return new Promise<{ status: string}>((resolve, reject) => {
       APIService.getInstance()
-        .get(`${AppConfig.serviceUrls.retrieveAllPromotionRequests}/${id}/approve?from=${from}`, {
+        .get(`${AppConfig.serviceUrls.promotions}/${id}/approve?from=${from}`, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -227,7 +227,7 @@ export const rejectPromotions = createAsyncThunk(
 
     return new Promise<{ status: string}>((resolve, reject) => {
       APIService.getInstance()
-        .get(`${AppConfig.serviceUrls.retrieveAllPromotionRequests}/${id}/reject?from=${from}&reason=${reason}`, {
+        .get(`${AppConfig.serviceUrls.promotions}/${id}/reject?from=${from}&reason=${reason}`, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -270,7 +270,7 @@ export const updatePromotion = createAsyncThunk(
     const newCancelTokenSource = APIService.updateCancelToken(); 
     return new Promise<{ status: string }>((resolve, reject) => {
       APIService.getInstance()
-        .patch(AppConfig.serviceUrls.retrieveAllPromotionRequests, payload,{
+        .patch(AppConfig.serviceUrls.promotions, payload,{
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {

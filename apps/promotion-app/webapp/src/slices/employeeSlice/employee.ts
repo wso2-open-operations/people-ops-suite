@@ -115,7 +115,7 @@ export const fetchEmployeeHistory = createAsyncThunk(
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<EmployeeJoinedDetails>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.getEmployeeHistory, {
+        .get(AppConfig.serviceUrls.employeeHistory, {
           params: {
             employeeWorkEmail,
           },
