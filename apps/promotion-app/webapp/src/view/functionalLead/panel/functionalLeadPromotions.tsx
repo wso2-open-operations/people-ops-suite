@@ -60,6 +60,7 @@ import NumberFilter from "@src/component/common/stringFilter";
 import { Header, Filter } from "@src/component/common/stringFilter";
 import CustomizedTimeline from '@root/src/component/common/TimeLine';
 import DOMPurify from 'dompurify';
+import dayjs from 'dayjs';
  
 const statusColorMap: Record<string, string> = {
   TIMEBASE: '#0c0c0cff',
@@ -98,6 +99,7 @@ export default function Requests() {
     const auth = useAppSelector((state: RootState) => state.auth);
     const [employeeHistories, setEmployeeHistories] = useState<EmployeeJoinedDetails[]>([]);
     const [filters, setFilters] = useState<Filter[]>([]);
+    const [isFunctionalLeadDeadlinePassed, setIsFunctionalLeadDeadlinePassed] = useState<boolean| null>(null);
 
 
     const filterHeaders: Header[] = [
@@ -305,6 +307,14 @@ export default function Requests() {
                  resultAction.payload.PromotionCycles.length > 0) {
                 const promotionCycleId =
                     resultAction.payload.PromotionCycles[0].id ;
+
+                const now = dayjs();
+                const functionalLeadDeadline = dayjs(resultAction.payload.PromotionCycles[0].functionalLeadDeadline).endOf("day");
+                const isFunctionalLeadDeadlinePassed = now.isAfter(functionalLeadDeadline);
+                setIsFunctionalLeadDeadlinePassed(isFunctionalLeadDeadlinePassed);
+                if (isFunctionalLeadDeadlinePassed){
+                    return
+                }
 
                 const promotionsAction = await dispatch(fetchPromotions({
                     employeeEmail: auth.userInfo?.email,
@@ -536,7 +546,8 @@ export default function Requests() {
         {promotionCycle.state === "success" &&
          promotion.state === "success" && 
          promotion.promotions &&
-         promotion.promotions.length > 0 && (
+         promotion.promotions.length > 0 && 
+         !isFunctionalLeadDeadlinePassed &&(
             <>
                 <Typography variant="h5" sx={{ mb: 3 }}>
                     Promotion Request
@@ -970,6 +981,7 @@ export default function Requests() {
         )}
 
         {promotionCycle.state === "success" &&
+         !isFunctionalLeadDeadlinePassed &&
          promotion.state === "success" && 
          promotion.promotions &&
          promotion.promotions.length == 0 && (
@@ -988,6 +1000,27 @@ export default function Requests() {
                 <StateWithImage
                 imageUrl={require("@assets/images/not-found.svg").default}
                 message="No Promotions Found!"
+                />
+            </Box>
+        )}
+
+        {promotionCycle.state === "success" &&
+         isFunctionalLeadDeadlinePassed && (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "70vh",
+                    "& img": {
+                        width: 360,
+                        height: "auto",
+                    },
+                }}
+            >
+                <StateWithImage
+                imageUrl={require("@assets/images/not-found.svg").default}
+                message="The Functional Lead Deadline has passed."
                 />
             </Box>
         )}

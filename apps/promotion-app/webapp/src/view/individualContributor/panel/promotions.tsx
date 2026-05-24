@@ -47,6 +47,7 @@ import { ConfirmationType } from "@src/types/types";
 import { fetchPromotionCycles } from "@slices/promotionCycleSlice/promotionCycle";
 import { RootState, useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import StateWithImage from "@root/src/component/ui/StateWithImage";
+import dayjs from "dayjs";
 
 export default function Request() {
         
@@ -59,6 +60,7 @@ export default function Request() {
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [recommendedJobBand, setRecommendedJobBand] = useState<number | null>(null);
     const [recommendationText, setRecommendationText] = useState<string>("");
+    const [isLeadDeadlinePassed, setIsLeadDeadlinePassed] = useState<boolean| null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const isSubmitDisabled = recommendedJobBand === null;
     const isLoading = promotion.postState === "loading";
@@ -68,11 +70,29 @@ export default function Request() {
         setRecommendedJobBand(null);
         setRecommendationText('');
 
-        dispatch(fetchPromotionCycles({
+        const resultAction = await dispatch(fetchPromotionCycles({
             statusArray: ["OPEN"]
         }));
-    
-        dispatch(fetchEmployees({}));
+
+        if (fetchPromotionCycles.fulfilled.match(resultAction) && 
+             resultAction.payload.PromotionCycles &&
+             resultAction.payload.PromotionCycles.length > 0){
+            const now = dayjs();
+
+            // Lead deadline set to end of the day
+            const leadDeadline = dayjs(resultAction.payload.PromotionCycles[0].leadDeadline).endOf("day");
+            // Check if current time is after the lead deadline
+            const isLeadDeadlinePassed = now.isAfter(leadDeadline);
+
+            setIsLeadDeadlinePassed(isLeadDeadlinePassed);
+
+            if (isLeadDeadlinePassed){
+                return
+            }
+
+
+            dispatch(fetchEmployees({}));
+        }
     };
 
     useEffect(() => {
@@ -189,7 +209,9 @@ export default function Request() {
                     </IconButton>
                 </Tooltip>
             </Box>
-            {promotionCycle.promotionCycles && (
+            {promotionCycle.promotionCycles &&
+             promotionCycle.promotionCycles.length > 0 && 
+             !isLeadDeadlinePassed &&(
                 <>
                     <Box
                         sx={{
@@ -568,6 +590,29 @@ export default function Request() {
                     <StateWithImage
                         imageUrl={require("@assets/images/not-found.svg").default}
                         message="There is no Active Promotion Cycle"
+                    />
+                </Box>
+            )}
+
+            {promotionCycle.state === "success" &&
+             promotionCycle.promotionCycles && 
+             promotionCycle.promotionCycles.length > 0 &&
+             isLeadDeadlinePassed &&(
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        height: "70vh",
+                        "& img": {
+                            width: 360,
+                            height: "auto",
+                        },
+                    }}
+                >
+                    <StateWithImage
+                        imageUrl={require("@assets/images/not-found.svg").default}
+                        message="The Lead Deadline has passed."
                     />
                 </Box>
             )}

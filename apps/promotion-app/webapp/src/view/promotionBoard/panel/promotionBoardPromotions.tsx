@@ -60,6 +60,7 @@ import NumberFilter from "@src/component/common/stringFilter";
 import { Header, Filter } from "@src/component/common/stringFilter";
 import CustomizedTimeline from '@root/src/component/common/TimeLine';
 import DOMPurify from 'dompurify';
+import dayjs from 'dayjs';
  
 const statusColorMap: Record<string, string> = {
   TIMEBASE: '#0c0c0cff',
@@ -98,6 +99,7 @@ export default function Requests() {
     const [showFilters, setShowFilters] = useState(false);
     const [employeeHistories, setEmployeeHistories] = useState<EmployeeJoinedDetails[]>([]);
     const [filters, setFilters] = useState<Filter[]>([]);
+    const [isPromotionBoardDeadlinePassed, setIsPromotionBoardDeadlinePassed] = useState<boolean| null>(null);
 
     const handleExportCSV = () => {
         if (!promotion?.promotions || promotion.promotions.length === 0) {
@@ -283,7 +285,14 @@ export default function Requests() {
                  resultAction.payload.PromotionCycles.length > 0) {
                 const promotionCycleId =
                     resultAction.payload.PromotionCycles[0].id;
-
+                    
+                const now = dayjs();
+                const promotionBoardDeadline = dayjs(resultAction.payload.PromotionCycles[0].promotionBoardDeadline).endOf("day");
+                const isPromotionBoardDeadlinePassed = now.isAfter(promotionBoardDeadline);
+                setIsPromotionBoardDeadlinePassed(isPromotionBoardDeadlinePassed);
+                if (isPromotionBoardDeadlinePassed){
+                    return
+                }
                 const promotionsAction = await dispatch(fetchPromotions({
                     employeeEmail: auth.userInfo?.email,
                     statusArray: ["FL_APPROVED"],
@@ -531,7 +540,8 @@ export default function Requests() {
         {promotionCycle.state === "success" &&
          promotion.state === "success" && 
          promotion.promotions &&
-         promotion.promotions.length > 0 && (
+         promotion.promotions.length > 0 && 
+         !isPromotionBoardDeadlinePassed &&(
             <>
                 <Typography variant="h5" sx={{ mb: 3 }}>
                     Promotion Request
@@ -965,6 +975,7 @@ export default function Requests() {
         )}
 
         {promotionCycle.state === "success" &&
+         !isPromotionBoardDeadlinePassed &&
          promotion.state === "success" && 
          promotion.promotions &&
          promotion.promotions.length == 0 && (
@@ -983,6 +994,29 @@ export default function Requests() {
                 <StateWithImage
                 imageUrl={require("@assets/images/not-found.svg").default}
                 message="No Promotions Found!"
+                />
+            </Box>
+        )}
+
+        {promotionCycle.state === "success" && 
+         promotionCycle.promotionCycles &&
+         promotionCycle.promotionCycles.length > 0 &&
+         isPromotionBoardDeadlinePassed &&(
+            <Box
+                sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "50vh",
+                "& img": {
+                    width: 360,
+                    height: "auto",
+                },
+                }}
+            >
+                <StateWithImage
+                    imageUrl={require("@root/src/assets/images/error.svg").default}
+                    message="The Promotion Board Deadline has passed."
                 />
             </Box>
         )}

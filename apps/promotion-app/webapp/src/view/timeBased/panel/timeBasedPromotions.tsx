@@ -52,6 +52,7 @@ import "react-quill/dist/quill.snow.css";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { ConfirmationType } from "@src/types/types";
+import dayjs from 'dayjs';
 
 export default function Pending() {
 
@@ -71,6 +72,7 @@ export default function Pending() {
   const [selectedRecommendationId, setRecommendationID] = useState<number|null>(null);
   const [recommendationText, setRecommendationText] = useState<string>("");
   const [lastSavedText, setLastSavedText] = useState("");
+  const [isLeadDeadlinePassed, setIsLeadDeadlinePassed] = useState<boolean| null>(null);
 
   const loadData = async () => {
     setSelectedEmployee(null);
@@ -82,9 +84,18 @@ export default function Pending() {
     if (fetchPromotionCycles.fulfilled.match(resultAction) &&
          resultAction.payload.PromotionCycles &&
          resultAction.payload.PromotionCycles.length > 0) {
+
       const promotionCycleId =
         resultAction.payload.PromotionCycles[0].id;
-
+      const now = dayjs();
+      // Lead deadline set to end of the day
+      const leadDeadline = dayjs(resultAction.payload.PromotionCycles[0].leadDeadline).endOf("day");
+      // Check if current time is after the lead deadline
+      const isLeadDeadlinePassed = now.isAfter(leadDeadline);
+      setIsLeadDeadlinePassed(isLeadDeadlinePassed);
+      if (isLeadDeadlinePassed){
+          return
+      }
       if (auth.userInfo?.email && resultAction.payload.PromotionCycles) {
         dispatch(fetchRecommendation({
           leadEmail: auth.userInfo.email,
@@ -322,6 +333,7 @@ export default function Pending() {
          promotionCycle.state === "success" &&
          recommendation.recommendations &&
          recommendation.recommendations.length > 0 &&
+         !isLeadDeadlinePassed &&
          !openSubmissionPage && (
           <Box>
             <Box sx={{ px: 7, py: 7 }}>
@@ -649,6 +661,7 @@ export default function Pending() {
          promotionCycle.state === "success" &&
          recommendation.recommendations &&
          recommendation.recommendations.length == 0 &&
+         !isLeadDeadlinePassed &&
          !openSubmissionPage && (
           <Box
             sx={{
@@ -667,6 +680,30 @@ export default function Pending() {
               message="No Promotions Found!"
             />
           </Box>
+        )}
+
+
+        {promotionCycle.state === "success" && 
+         promotionCycle.promotionCycles &&
+         promotionCycle.promotionCycles.length > 0 &&
+         isLeadDeadlinePassed &&(
+            <Box
+                sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "50vh",
+                "& img": {
+                    width: 360,
+                    height: "auto",
+                },
+                }}
+            >
+                <StateWithImage
+                    imageUrl={require("@root/src/assets/images/error.svg").default}
+                    message="The Lead Deadline has passed."
+                />
+            </Box>
         )}
 
         {openSubmissionPage && 
