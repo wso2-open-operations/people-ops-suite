@@ -34,6 +34,12 @@ const URL_PATTERN_STRING = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
 @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
 public type Email string;
 
+# Distinct error returned when a PATCH targets an entity ID that does not exist.
+public type EntityNotFoundError distinct error;
+
+# Distinct error returned when a PATCH payload carries no fields to update.
+public type NoFieldsToUpdateError distinct error;
+
 # [Configurable] Database configs.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
@@ -452,7 +458,7 @@ public type ContinuousServiceRecordInfo record {|
 |};
 
 # Base record for org structure nodes (id and name only).
-type OrgEntityBase record {|
+public type OrgEntityBase record {|
     # Entity ID.
     int id;
     # Entity name.
@@ -468,9 +474,6 @@ public type OrgStructureBase record {|
     # Whether the entity is active.
     @sql:Column {name: "is_active"}
     boolean isActive;
-    # Number of active employees currently assigned to this entity.
-    @sql:Column {name: "active_employee_count"}
-    int activeEmployeeCount;
 |};
 
 # Business unit — a company org chart entity.
@@ -1090,8 +1093,9 @@ public type CreateCompanyOrgChartEntityPayload record {|
     # Name of the entity
     @constraint:String {maxLength: 45}
     string name;
-    # Head email of the entity (optional)
-    Email? headEmail = ();
+    # Head email of the entity (optional, empty string treated as no head)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
 |};
 
 # Payload to update a company org chart entity (all fields optional for PATCH).
@@ -1099,8 +1103,9 @@ public type UpdateCompanyOrgChartEntityPayload record {|
     # Name of the entity
     @constraint:String {maxLength: 45}
     string? name = ();
-    # Head email of the entity
-    Email? headEmail = ();
+    # Head email of the entity (empty string clears the value)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
     # Whether the entity is active
     boolean? isActive = ();
 |};
@@ -1112,7 +1117,8 @@ public type CreateBusinessUnitTeamPayload record {|
     # Team ID
     int teamId;
     # Head email for this specific BU+Team combination (optional)
-    Email? headEmail = ();
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
 |};
 
 # Payload to create a business-unit-team → sub-team mapping.
@@ -1122,7 +1128,8 @@ public type CreateBusinessUnitTeamSubTeamPayload record {|
     # Sub-team ID
     int subTeamId;
     # Head email for this specific BU+Team+SubTeam combination (optional)
-    Email? headEmail = ();
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
 |};
 
 # Payload to create a business-unit-team-sub-team → unit mapping.
@@ -1132,19 +1139,21 @@ public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
     # Unit ID
     int unitId;
     # Head email for this specific BU+Team+SubTeam+Unit combination (optional)
-    Email? headEmail = ();
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
 |};
 
 # Payload to update any mapping (all fields optional for PATCH).
 public type UpdateMappingPayload record {|
     # Head email for the mapping combination (empty string clears the value)
+    @constraint:String {maxLength: 254}
     string? headEmail = ();
     # Whether the mapping is active
     boolean? isActive = ();
 |};
 
 # Base fields for company org chart nodes: entity metadata + mapping metadata.
-type CompanyOrgChartNode record {|
+public type CompanyOrgChartNode record {|
     # Entity ID.
     int id;
     # Entity name.

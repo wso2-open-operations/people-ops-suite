@@ -21,7 +21,6 @@ import people.wso2_coin;
 
 import ballerina/http;
 import ballerina/log;
-import ballerina/regex;
 import ballerina/time;
 
 @display {
@@ -586,7 +585,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+        if !workEmail.matches(re `${database:EMAIL_PATTERN_STRING}`) {
             string customErr = "Invalid work email format";
             log:printWarn(customErr, workEmail = workEmail);
             return <http:BadRequest>{
@@ -667,10 +666,27 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get business units.
-    # + includeInactive - If true return all including inactive
+    #
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
+    # + includeInactive - If true return all including inactive (ADMIN-only)
     # + return - Business units
-    resource function get business\-units(boolean includeInactive = false)
-            returns database:BusinessUnit[]|http:InternalServerError {
+    resource function get business\-units(http:RequestContext ctx, boolean includeInactive = false)
+            returns database:BusinessUnit[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive business units",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive business units"}
+                };
+            }
+        }
 
         database:BusinessUnit[]|error businessUnits = database:getBusinessUnits(includeInactive);
         if businessUnits is error {
@@ -687,11 +703,27 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get teams.
     #
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
     # + buId - Business unit ID (optional)
-    # + includeInactive - If true return all including inactive
+    # + includeInactive - If true return all including inactive (ADMIN-only)
     # + return - Teams
-    resource function get teams(int? buId = (), boolean includeInactive = false)
-            returns database:Team[]|http:InternalServerError {
+    resource function get teams(http:RequestContext ctx, int? buId = (), boolean includeInactive = false)
+            returns database:Team[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive teams",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive teams"}
+                };
+            }
+        }
 
         database:Team[]|error teams = database:getTeams(buId, includeInactive);
         if teams is error {
@@ -708,11 +740,27 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get sub teams.
     #
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
     # + teamId - Team ID (optional)
-    # + includeInactive - If true return all including inactive
+    # + includeInactive - If true return all including inactive (ADMIN-only)
     # + return - Sub teams
-    resource function get sub\-teams(int? teamId = (), boolean includeInactive = false)
-            returns database:SubTeam[]|http:InternalServerError {
+    resource function get sub\-teams(http:RequestContext ctx, int? teamId = (), boolean includeInactive = false)
+            returns database:SubTeam[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive sub-teams",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive sub-teams"}
+                };
+            }
+        }
 
         database:SubTeam[]|error subTeams = database:getSubTeams(teamId, includeInactive);
         if subTeams is error {
@@ -729,11 +777,27 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get units.
     #
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
     # + subTeamId - Sub team ID (optional)
-    # + includeInactive - If true return all including inactive
+    # + includeInactive - If true return all including inactive (ADMIN-only)
     # + return - Units
-    resource function get units(int? subTeamId = (), boolean includeInactive = false)
-            returns database:Unit[]|http:InternalServerError {
+    resource function get units(http:RequestContext ctx, int? subTeamId = (), boolean includeInactive = false)
+            returns database:Unit[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive units",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive units"}
+                };
+            }
+        }
 
         database:Unit[]|error units = database:getUnits(subTeamId, includeInactive);
         if units is error {
@@ -1384,7 +1448,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !regex:matches(date, database:DATE_PATTERN_STRING) {
+        if !date.matches(re `${database:DATE_PATTERN_STRING}`) {
             return <http:BadRequest>{
                 body: {message: "Query parameter 'date' must be in YYYY-MM-DD format."}
             };
@@ -1753,6 +1817,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
         int|error newId = database:createBusinessUnit(payload, userInfo.email);
         if newId is error {
             string customErr = "Error occurred while creating business unit";
@@ -1795,7 +1865,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
         error? updateResult = database:updateBusinessUnit(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
         if updateResult is error {
             log:printError("Error occurred while updating business unit", updateResult, id = id);
             return <http:InternalServerError>{body: {message: "Error occurred while updating business unit"}};
@@ -1819,6 +1901,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to create team", invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
         }
 
         int|error newId = database:createTeam(payload, userInfo.email);
@@ -1863,7 +1951,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
         error? updateResult = database:updateTeam(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
         if updateResult is error {
             log:printError("Error occurred while updating team", updateResult, id = id);
             return <http:InternalServerError>{body: {message: "Error occurred while updating team"}};
@@ -1887,6 +1987,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to create sub-team", invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
         }
 
         int|error newId = database:createSubTeam(payload, userInfo.email);
@@ -1931,7 +2037,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
         error? updateResult = database:updateSubTeam(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
         if updateResult is error {
             log:printError("Error occurred while updating sub-team", updateResult, id = id);
             return <http:InternalServerError>{body: {message: "Error occurred while updating sub-team"}};
@@ -1955,6 +2073,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to create unit", invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
         }
 
         int|error newId = database:createUnit(payload, userInfo.email);
@@ -1999,7 +2123,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
         error? updateResult = database:updateUnit(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
         if updateResult is error {
             log:printError("Error occurred while updating unit", updateResult, id = id);
             return <http:InternalServerError>{body: {message: "Error occurred while updating unit"}};
@@ -2024,6 +2160,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to create business unit team mapping", invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
         }
 
         int|error newId = database:createBusinessUnitTeam(payload, userInfo.email);
@@ -2071,7 +2213,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
         error? updateResult = database:updateBusinessUnitTeam(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
         if updateResult is error {
             log:printError("Error occurred while updating business unit team mapping", updateResult, id = id);
             return <http:InternalServerError>{
@@ -2099,6 +2253,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             log:printWarn("Unauthorized attempt to create business unit team sub-team mapping",
                 invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
         }
 
         int|error newId = database:createBusinessUnitTeamSubTeam(payload, userInfo.email);
@@ -2147,7 +2307,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
         error? updateResult = database:updateBusinessUnitTeamSubTeam(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
         if updateResult is error {
             log:printError("Error occurred while updating business unit team sub-team mapping",
                 updateResult, id = id);
@@ -2176,6 +2348,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             log:printWarn("Unauthorized attempt to create business unit team sub-team unit mapping",
                 invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
         }
 
         int|error newId = database:createBusinessUnitTeamSubTeamUnit(payload, userInfo.email);
@@ -2224,7 +2402,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
         error? updateResult = database:updateBusinessUnitTeamSubTeamUnit(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
         if updateResult is error {
             log:printError("Error occurred while updating business unit team sub-team unit mapping",
                 updateResult, id = id);

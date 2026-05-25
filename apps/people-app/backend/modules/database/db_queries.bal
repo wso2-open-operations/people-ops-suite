@@ -504,9 +504,7 @@ isolated function getEmergencyContactsByEmployeeIdQuery(string employeeId) retur
 # + includeInactive - If true, return all entities including inactive; otherwise active-only
 # + return - Business units query
 isolated function getBusinessUnitsQuery(boolean includeInactive = false) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `SELECT bu.id, bu.name, bu.head_email, bu.is_active,
-        (SELECT COUNT(*) FROM employee
-            WHERE business_unit_id = bu.id AND employee_status = 'Active') AS active_employee_count
+    sql:ParameterizedQuery query = `SELECT bu.id, bu.name, bu.head_email, bu.is_active
         FROM business_unit bu`;
     if !includeInactive {
         query = sql:queryConcat(query, ` WHERE bu.is_active = 1`);
@@ -522,8 +520,7 @@ isolated function getBusinessUnitsQuery(boolean includeInactive = false) returns
 isolated function getTeamsQuery(int? buId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT
-            t.id, t.name, t.head_email, t.is_active,
-            (SELECT COUNT(*) FROM employee WHERE team_id = t.id AND employee_status = 'Active') AS active_employee_count
+            t.id, t.name, t.head_email, t.is_active
         FROM
             team t`;
 
@@ -534,7 +531,7 @@ isolated function getTeamsQuery(int? buId = (), boolean includeInactive = false)
             WHERE
                 but.business_unit_id = ${buId}`);
         if !includeInactive {
-            query = sql:queryConcat(query, ` AND t.is_active = 1`);
+            query = sql:queryConcat(query, ` AND t.is_active = 1 AND but.is_active = 1`);
         }
     } else if !includeInactive {
         query = sql:queryConcat(query, ` WHERE t.is_active = 1`);
@@ -550,20 +547,21 @@ isolated function getTeamsQuery(int? buId = (), boolean includeInactive = false)
 # + return - Sub teams query
 isolated function getSubTeamsQuery(int? teamId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
-        SELECT
-            st.id, st.name, st.head_email, st.is_active,
-            (SELECT COUNT(*) FROM employee
-                WHERE sub_team_id = st.id AND employee_status = 'Active') AS active_employee_count
+        SELECT DISTINCT
+            st.id, st.name, st.head_email, st.is_active
         FROM
             sub_team st`;
     if teamId is int {
         query = sql:queryConcat(query, `
-            LEFT JOIN
+            INNER JOIN
                 business_unit_team_sub_team butst ON butst.sub_team_id = st.id
+            INNER JOIN
+                business_unit_team but ON but.id = butst.business_unit_team_id
             WHERE
-                butst.business_unit_team_id = ${teamId}`);
+                but.team_id = ${teamId}`);
         if !includeInactive {
-            query = sql:queryConcat(query, ` AND st.is_active = 1`);
+            query = sql:queryConcat(query,
+                ` AND st.is_active = 1 AND butst.is_active = 1 AND but.is_active = 1`);
         }
     } else if !includeInactive {
         query = sql:queryConcat(query, ` WHERE st.is_active = 1`);
@@ -579,19 +577,21 @@ isolated function getSubTeamsQuery(int? teamId = (), boolean includeInactive = f
 # + return - Units query
 isolated function getUnitsQuery(int? subTeamId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
-        SELECT
-            u.id, u.name, u.head_email, u.is_active,
-            (SELECT COUNT(*) FROM employee WHERE unit_id = u.id AND employee_status = 'Active') AS active_employee_count
+        SELECT DISTINCT
+            u.id, u.name, u.head_email, u.is_active
         FROM
             unit u`;
     if subTeamId is int {
         query = sql:queryConcat(query, `
-            LEFT JOIN
+            INNER JOIN
                 business_unit_team_sub_team_unit butstu ON butstu.unit_id = u.id
+            INNER JOIN
+                business_unit_team_sub_team butst ON butst.id = butstu.business_unit_team_sub_team_id
             WHERE
-                butstu.business_unit_team_sub_team_id = ${subTeamId}`);
+                butst.sub_team_id = ${subTeamId}`);
         if !includeInactive {
-            query = sql:queryConcat(query, ` AND u.is_active = 1`);
+            query = sql:queryConcat(query,
+                ` AND u.is_active = 1 AND butstu.is_active = 1 AND butst.is_active = 1`);
         }
     } else if !includeInactive {
         query = sql:queryConcat(query, ` WHERE u.is_active = 1`);
@@ -632,7 +632,7 @@ isolated function updateBusinessUnitQuery(int id, string? name, string? headEmai
         updates.push(`is_active = ${isActive}`);
     }
     if updates.length() == 0 {
-        return error(ERROR_NO_FIELDS_TO_UPDATE);
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
     }
     updates.push(`updated_by = ${updatedBy}`);
     return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit SET `, updates), ` WHERE id = ${id};`);
@@ -670,7 +670,7 @@ isolated function updateTeamQuery(int id, string? name, string? headEmail, boole
         updates.push(`is_active = ${isActive}`);
     }
     if updates.length() == 0 {
-        return error(ERROR_NO_FIELDS_TO_UPDATE);
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
     }
     updates.push(`updated_by = ${updatedBy}`);
     return sql:queryConcat(buildSqlUpdateQuery(`UPDATE team SET `, updates), ` WHERE id = ${id};`);
@@ -708,7 +708,7 @@ isolated function updateSubTeamQuery(int id, string? name, string? headEmail, bo
         updates.push(`is_active = ${isActive}`);
     }
     if updates.length() == 0 {
-        return error(ERROR_NO_FIELDS_TO_UPDATE);
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
     }
     updates.push(`updated_by = ${updatedBy}`);
     return sql:queryConcat(buildSqlUpdateQuery(`UPDATE sub_team SET `, updates), ` WHERE id = ${id};`);
@@ -746,7 +746,7 @@ isolated function updateUnitQuery(int id, string? name, string? headEmail, boole
         updates.push(`is_active = ${isActive}`);
     }
     if updates.length() == 0 {
-        return error(ERROR_NO_FIELDS_TO_UPDATE);
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
     }
     updates.push(`updated_by = ${updatedBy}`);
     return sql:queryConcat(buildSqlUpdateQuery(`UPDATE unit SET `, updates), ` WHERE id = ${id};`);
@@ -762,7 +762,13 @@ isolated function updateUnitQuery(int id, string? name, string? headEmail, boole
 isolated function createBusinessUnitTeamQuery(int businessUnitId, int teamId, string headEmail, string createdBy)
         returns sql:ParameterizedQuery =>
     `INSERT INTO business_unit_team (business_unit_id, team_id, head_email, created_by, updated_by)
-     VALUES (${businessUnitId}, ${teamId}, ${headEmail}, ${createdBy}, ${createdBy});`;
+     VALUES (${businessUnitId}, ${teamId}, ${headEmail}, ${createdBy}, ${createdBy})
+     ON DUPLICATE KEY UPDATE
+        id = LAST_INSERT_ID(id),
+        is_active = 1,
+        head_email = VALUES(head_email),
+        updated_by = VALUES(updated_by),
+        updated_on = CURRENT_TIMESTAMP(6);`;
 
 # Update business-unit → team mapping query.
 #
@@ -781,7 +787,7 @@ isolated function updateBusinessUnitTeamQuery(int id, string? headEmail, boolean
         updates.push(`is_active = ${isActive}`);
     }
     if updates.length() == 0 {
-        return error(ERROR_NO_FIELDS_TO_UPDATE);
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
     }
     updates.push(`updated_by = ${updatedBy}`);
     return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team SET `, updates), ` WHERE id = ${id};`);
@@ -797,7 +803,13 @@ isolated function updateBusinessUnitTeamQuery(int id, string? headEmail, boolean
 isolated function createBusinessUnitTeamSubTeamQuery(int businessUnitTeamId, int subTeamId, string headEmail,
         string createdBy) returns sql:ParameterizedQuery =>
     `INSERT INTO business_unit_team_sub_team (business_unit_team_id, sub_team_id, head_email, created_by, updated_by)
-     VALUES (${businessUnitTeamId}, ${subTeamId}, ${headEmail}, ${createdBy}, ${createdBy});`;
+     VALUES (${businessUnitTeamId}, ${subTeamId}, ${headEmail}, ${createdBy}, ${createdBy})
+     ON DUPLICATE KEY UPDATE
+        id = LAST_INSERT_ID(id),
+        is_active = 1,
+        head_email = VALUES(head_email),
+        updated_by = VALUES(updated_by),
+        updated_on = CURRENT_TIMESTAMP(6);`;
 
 # Update business-unit-team → sub-team mapping query.
 #
@@ -816,7 +828,7 @@ isolated function updateBusinessUnitTeamSubTeamQuery(int id, string? headEmail, 
         updates.push(`is_active = ${isActive}`);
     }
     if updates.length() == 0 {
-        return error(ERROR_NO_FIELDS_TO_UPDATE);
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
     }
     updates.push(`updated_by = ${updatedBy}`);
     return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team_sub_team SET `, updates),
@@ -834,7 +846,13 @@ isolated function createBusinessUnitTeamSubTeamUnitQuery(int businessUnitTeamSub
         string createdBy) returns sql:ParameterizedQuery =>
     `INSERT INTO business_unit_team_sub_team_unit
          (business_unit_team_sub_team_id, unit_id, head_email, created_by, updated_by)
-     VALUES (${businessUnitTeamSubTeamId}, ${unitId}, ${headEmail}, ${createdBy}, ${createdBy});`;
+     VALUES (${businessUnitTeamSubTeamId}, ${unitId}, ${headEmail}, ${createdBy}, ${createdBy})
+     ON DUPLICATE KEY UPDATE
+        id = LAST_INSERT_ID(id),
+        is_active = 1,
+        head_email = VALUES(head_email),
+        updated_by = VALUES(updated_by),
+        updated_on = CURRENT_TIMESTAMP(6);`;
 
 # Update business-unit-team-sub-team → unit mapping query.
 #
@@ -853,7 +871,7 @@ isolated function updateBusinessUnitTeamSubTeamUnitQuery(int id, string? headEma
         updates.push(`is_active = ${isActive}`);
     }
     if updates.length() == 0 {
-        return error(ERROR_NO_FIELDS_TO_UPDATE);
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
     }
     updates.push(`updated_by = ${updatedBy}`);
     return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team_sub_team_unit SET `, updates),

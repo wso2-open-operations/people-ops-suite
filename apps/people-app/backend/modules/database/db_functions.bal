@@ -786,7 +786,7 @@ public isolated function updateBusinessUnit(int id, UpdateCompanyOrgChartEntityP
 
     sql:ExecutionResult result = check databaseClient->execute(query);
     if result.affectedRowCount == 0 {
-        return error(string `Business unit with ID ${id} not found`);
+        return error EntityNotFoundError(string `Business unit with ID ${id} not found`);
     }
 }
 
@@ -813,7 +813,7 @@ public isolated function updateTeam(int id, UpdateCompanyOrgChartEntityPayload p
             updatedBy);
     sql:ExecutionResult result = check databaseClient->execute(query);
     if result.affectedRowCount == 0 {
-        return error(string `Team with ID ${id} not found`);
+        return error EntityNotFoundError(string `Team with ID ${id} not found`);
     }
 }
 
@@ -841,7 +841,7 @@ public isolated function updateSubTeam(int id, UpdateCompanyOrgChartEntityPayloa
             updatedBy);
     sql:ExecutionResult result = check databaseClient->execute(query);
     if result.affectedRowCount == 0 {
-        return error(string `Sub-team with ID ${id} not found`);
+        return error EntityNotFoundError(string `Sub-team with ID ${id} not found`);
     }
 }
 
@@ -868,7 +868,7 @@ public isolated function updateUnit(int id, UpdateCompanyOrgChartEntityPayload p
             updatedBy);
     sql:ExecutionResult result = check databaseClient->execute(query);
     if result.affectedRowCount == 0 {
-        return error(string `Unit with ID ${id} not found`);
+        return error EntityNotFoundError(string `Unit with ID ${id} not found`);
     }
 }
 
@@ -895,7 +895,7 @@ public isolated function updateBusinessUnitTeam(int id, UpdateMappingPayload pay
             updatedBy);
     sql:ExecutionResult result = check databaseClient->execute(query);
     if result.affectedRowCount == 0 {
-        return error(string `Business unit team mapping with ID ${id} not found`);
+        return error EntityNotFoundError(string `Business unit team mapping with ID ${id} not found`);
     }
 }
 
@@ -924,7 +924,7 @@ public isolated function updateBusinessUnitTeamSubTeam(int id, UpdateMappingPayl
             updatedBy);
     sql:ExecutionResult result = check databaseClient->execute(query);
     if result.affectedRowCount == 0 {
-        return error(string `Business unit team sub-team mapping with ID ${id} not found`);
+        return error EntityNotFoundError(string `Business unit team sub-team mapping with ID ${id} not found`);
     }
 }
 
@@ -953,7 +953,7 @@ public isolated function updateBusinessUnitTeamSubTeamUnit(int id, UpdateMapping
             updatedBy);
     sql:ExecutionResult result = check databaseClient->execute(query);
     if result.affectedRowCount == 0 {
-        return error(string `Business unit team sub-team unit mapping with ID ${id} not found`);
+        return error EntityNotFoundError(string `Business unit team sub-team unit mapping with ID ${id} not found`);
     }
 }
 
@@ -969,7 +969,6 @@ public isolated function getCompanyOrgChartStructure() returns CompanyOrgChartBu
             name: row.name,
             headEmail: row.headEmail,
             isActive: row.isActive,
-            activeEmployeeCount: 0,
             teams: check row.teams.fromJsonWithType()
         };
 }
