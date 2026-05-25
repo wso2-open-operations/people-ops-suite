@@ -15,4 +15,4 @@
 // under the License.
 
 public const DEPARTURE_OVERDUE_SUBJECT = "Visitor Departure Overdue — Immediate Action Required";
-public const LONG_RUNNING_VISIT_SUBJECT = "Visit Active for 7+ Days — Immediate Action Required";
+public const LONG_RUNNING_VISIT_SUBJECT = "Visit Active for 2+ Days — Immediate Action Required";
