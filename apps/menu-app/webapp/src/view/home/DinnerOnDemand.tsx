@@ -16,14 +16,11 @@
 import { Box, Typography, useTheme } from "@mui/material";
 import { SerializedError } from "@reduxjs/toolkit";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
-import Lottie from "lottie-react";
 
 import { useCallback, useState } from "react";
 
 import { DinnerRequest } from "@/types/types";
-import emptyLogo from "@assets/animations/clock-time.json";
 import ErrorHandler from "@component/common/ErrorHandler";
-import { useRecolorLottie } from "@hooks/useRecolorLottie";
 import { RootState, useAppSelector } from "@slices/store";
 
 import CancelModal from "./components/dod/CancelModal";
@@ -51,15 +48,6 @@ export default function DinnerOnDemand({ dinner, error }: DinnerOnDemandProps) {
   const handleOpenCancelDialog = useCallback(() => setIsCancelDialogOpen(true), []);
   const handleCloseCancelDialog = useCallback(() => setIsCancelDialogOpen(false), []);
 
-  const coloredLogo = useRecolorLottie(emptyLogo, {
-    "#020F30": theme.palette.customText.primary.p2.active,
-    "#F57800": "F57800",
-  });
-
-  const logoStyle = {
-    height: "150px",
-  };
-
   if (error && !is404) {
     return <ErrorHandler message="Failed to load dinner request" />;
   }
@@ -72,13 +60,12 @@ export default function DinnerOnDemand({ dinner, error }: DinnerOnDemandProps) {
           flexDirection: "column",
           gap: 3,
           alignItems: "center",
+          pt: 6
         }}
       >
         <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p2.active }}>
           Dinner On Demand
         </Typography>
-
-        <Lottie animationData={coloredLogo} style={logoStyle} />
 
         <DodInfoMessage />
       </Box>
