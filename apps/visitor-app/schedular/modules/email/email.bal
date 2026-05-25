@@ -46,11 +46,12 @@ public function sendDepartureOverdueReminderEmail(CompletedVisitInfo visit, stri
 }
 
 # Sends a reminder email to the admin/reception group for a visit that has
-# been active for more than one week with no departure recorded.
+# been active for more than 2 days with no departure recorded.
 #
 # + visit - Details of the visit
+# + daysActive - Human-readable active duration, e.g. "2 days", "3 days"
 # + return - An error if sending fails
-public function sendLongRunningVisitReminderEmail(CompletedVisitInfo visit) returns error? {
+public function sendLongRunningVisitReminderEmail(CompletedVisitInfo visit, string daysActive) returns error? {
     string template = check bindKeyValues(
             longRunningVisitTemplate,
             {
@@ -62,6 +63,7 @@ public function sendLongRunningVisitReminderEmail(CompletedVisitInfo visit) retu
                 "WHOM_THEY_MEET": visit.whomTheyMeet ?: "N/A",
                 "PASS_NUMBER": visit.passNumber ?: "N/A",
                 "PURPOSE_OF_VISIT": visit.purposeOfVisit ?: "N/A",
+                "DAYS_ACTIVE": daysActive,
                 "YEAR": time:utcToCivil(time:utcNow()).year.toString()
             });
     return sendEmail(LONG_RUNNING_VISIT_SUBJECT, template, visit.id);

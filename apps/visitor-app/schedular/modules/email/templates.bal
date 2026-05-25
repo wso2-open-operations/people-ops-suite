@@ -150,11 +150,11 @@ public final string departureOverdueTemplate = string `
 </html>
 `;
 
-# Email template for visits that have been active for more than one week
+# Email template for visits that have been active for more than 2 days
 # with no departure recorded — reminder that action is required.
 # Placeholders: VISIT_ID, VISITOR_NAME, COMPANY, VISIT_DATE,
 # TIME_OF_ENTRY, WHOM_THEY_MEET, PASS_NUMBER,
-# PURPOSE_OF_VISIT, YEAR
+# PURPOSE_OF_VISIT, DAYS_ACTIVE, YEAR
 public final string longRunningVisitTemplate = string `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -206,7 +206,7 @@ public final string longRunningVisitTemplate = string `
                           <td style="background-color:#fde8e8; border-left:4px solid #d9534f; padding:14px 16px; border-radius:4px;">
                             <p style="margin:0; font-family:'Roboto', Helvetica, sans-serif; font-size:14px; color:#721c24;">
                               <strong>Immediate Action Required</strong> &mdash;
-                              This visit has been active for more than one week with no departure recorded. Please review and complete it immediately.
+                              This visit has been active for <!-- [DAYS_ACTIVE] --> with no scheduled departure time. Please review and complete it immediately.
                             </p>
                           </td>
                         </tr>

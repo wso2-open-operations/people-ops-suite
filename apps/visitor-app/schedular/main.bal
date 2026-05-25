@@ -32,7 +32,7 @@ public function main() returns error? {
 
     time:Utc now = time:utcNow();
     string today = string:substring(time:utcToString(now), 0, 10);
-    time:Utc oneWeekAgo = time:utcAddSeconds(now, -7.0 * 24.0 * 60.0 * 60.0);
+    time:Utc twoDaysAgo = time:utcAddSeconds(now, -2.0 * 24.0 * 60.0 * 60.0);
 
     foreach visitor:Visit visit in activeVisits {
         string? timeOfDeparture = visit.timeOfDeparture;
@@ -80,16 +80,16 @@ public function main() returns error? {
                 }
 
                 error? emailError = email:sendDepartureOverdueReminderEmail({
-                    id: visit.id,
-                    visitorName: buildVisitorName(visit.firstName, visit.lastName),
-                    visitDate: visit.visitDate,
-                    timeOfEntry: formattedTimeOfEntry,
-                    timeOfDeparture: formattedDepartureTime,
-                    whomTheyMeet: visit.whomTheyMeet,
-                    passNumber: visit.passNumber,
-                    companyName: visit.companyName,
-                    purposeOfVisit: visit.purposeOfVisit
-                }, daysOverdue);
+                                                                                id: visit.id,
+                                                                                visitorName: buildVisitorName(visit.firstName, visit.lastName),
+                                                                                visitDate: visit.visitDate,
+                                                                                timeOfEntry: formattedTimeOfEntry,
+                                                                                timeOfDeparture: formattedDepartureTime,
+                                                                                whomTheyMeet: visit.whomTheyMeet,
+                                                                                passNumber: visit.passNumber,
+                                                                                companyName: visit.companyName,
+                                                                                purposeOfVisit: visit.purposeOfVisit
+                                                                            }, daysOverdue);
                 if emailError is error {
                     log:printError("Failed to send departure-overdue reminder email", emailError, id = visit.id);
                 } else {
@@ -97,7 +97,7 @@ public function main() returns error? {
                 }
             }
         } else {
-            // If there's no departure time, send a long-running visit reminder once the visit has been active for more than a week.
+            // If there's no departure time, send a long-running visit reminder once the visit has been active for more than 2 days.
             string? entry = visit.timeOfEntry;
             if entry is () {
                 log:printError("Visit has no entry time, skipping", id = visit.id);
@@ -110,7 +110,9 @@ public function main() returns error? {
                 continue;
             }
 
-            if time:utcDiffSeconds(oneWeekAgo, entryUtc) >= 0d {
+            if time:utcDiffSeconds(twoDaysAgo, entryUtc) >= 0d {
+                int daysActiveCount = <int>(time:utcDiffSeconds(now, entryUtc) / 86400d);
+                string daysActive = daysActiveCount == 1 ? "1 day" : daysActiveCount.toString() + " days";
 
                 // Format the time of entry for the email content
                 string? formattedTimeOfEntry = visit.timeOfEntry;
@@ -129,16 +131,16 @@ public function main() returns error? {
                 }
 
                 error? emailError = email:sendLongRunningVisitReminderEmail({
-                    id: visit.id,
-                    visitorName: buildVisitorName(visit.firstName, visit.lastName),
-                    visitDate: visit.visitDate,
-                    timeOfEntry: formattedTimeOfEntry,
-                    timeOfDeparture: (),
-                    whomTheyMeet: visit.whomTheyMeet,
-                    passNumber: visit.passNumber,
-                    companyName: visit.companyName,
-                    purposeOfVisit: visit.purposeOfVisit
-                });
+                                                                                id: visit.id,
+                                                                                visitorName: buildVisitorName(visit.firstName, visit.lastName),
+                                                                                visitDate: visit.visitDate,
+                                                                                timeOfEntry: formattedTimeOfEntry,
+                                                                                timeOfDeparture: (),
+                                                                                whomTheyMeet: visit.whomTheyMeet,
+                                                                                passNumber: visit.passNumber,
+                                                                                companyName: visit.companyName,
+                                                                                purposeOfVisit: visit.purposeOfVisit
+                                                                            }, daysActive);
                 if emailError is error {
                     log:printError("Failed to send long-running visit reminder email", emailError, id = visit.id);
                 } else {
