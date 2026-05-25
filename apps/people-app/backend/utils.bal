@@ -306,7 +306,7 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
     }
 
     if row.additionalManagerEmails.trim().length() > 0 {
-        string[] parts = re `;`.split(row.additionalManagerEmails);
+        string[] parts = re `,`.split(row.additionalManagerEmails);
         foreach string part in parts {
             string email = part.trim();
             if email.length() > 0 && !database:EMAIL_PATTERN.isFullMatch(email) {
@@ -398,7 +398,7 @@ isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData r
 
     database:Email[] additionalManagerEmails = [];
     if row.additionalManagerEmails.trim().length() > 0 {
-        string[] parts = re `;`.split(row.additionalManagerEmails);
+        string[] parts = re `,`.split(row.additionalManagerEmails);
         foreach string part in parts {
             string email = part.trim();
             if email.length() > 0 {

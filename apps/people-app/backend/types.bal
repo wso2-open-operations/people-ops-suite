@@ -220,7 +220,7 @@ type BulkEmployeeCsvRow record {|
     string probationEndDate = "";
     # Agreement end date (YYYY-MM-DD, optional)
     string agreementEndDate = "";
-    # Semicolon-separated additional manager emails (optional)
+    # Comma-separated additional manager emails (optional)
     string additionalManagerEmails = "";
     # Emergency contact name (optional — mobile and relationship required if provided)
     string emergencyContactName = "";

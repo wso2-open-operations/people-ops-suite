@@ -404,7 +404,7 @@ export const BULK_TEMPLATE_EXAMPLE_ROW = [
   "",
   "",
   "",
-  "manager1@wso2.com;manager2@wso2.com",
+  "manager1@wso2.com,manager2@wso2.com",
   "John Perera",
   "+94771111111",
   "Spouse",

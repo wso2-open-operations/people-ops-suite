@@ -14,14 +14,27 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# Provision a user in the internal org via the SCIM operations service.
-# The upstream service exposes only a bulk endpoint, which returns HTTP 200
-# even when individual operations failed — the per-operation status is
-# inspected here so callers can treat any failure as a Ballerina error.
+# SCIM client functions for user and group management in the internal org.
+#
+# + email - Work email address of the user
+# + firstName - User's first name
+# + lastName - User's last name
+# + return - Error if creation fails, otherwise nil
+public isolated function createUser(string email, string firstName, string lastName) returns error? {
+    UserCreateInput input = {
+        userName: string `${asgardeoUserStoreDomain}/${email}`,
+        emails: [email],
+        name: {givenName: firstName, familyName: lastName},
+        urn\:scim\:wso2\:schema: {askPassword: true}
+    };
+    return createUserWithInput(input);
+}
+
+# Create a user in the internal org with a custom SCIM payload.
 #
 # + input - User creation payload
 # + return - Error if creation fails, otherwise nil
-public isolated function createUser(UserCreateInput input) returns error? {
+isolated function createUserWithInput(UserCreateInput input) returns error? {
     BulkResponse response = check scimOperationsClient->/organizations/internal/users/bulk.post(
         {failOnErrors: 1, data: [input]}
     );

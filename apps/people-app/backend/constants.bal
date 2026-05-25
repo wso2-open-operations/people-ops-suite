@@ -19,7 +19,7 @@ const ERROR_PERSONAL_INFO_UPDATE_FAILED = "Failed to update personal information
 const ERROR_EMPLOYEE_INFO_UPDATE_FAILED = "Failed to update employee job information";
 const ERROR_EMPLOYEE_CREATION_FAILED = "Error occurred while creating a new employee";
 const WARNING_GROUP_ASSIGNMENT_FAILED = "Employee created successfully, but some group assignments failed";
-const MAX_BULK_ROWS = 1000;
+const MAX_BULK_ROWS = 100;
 
 // Bulk user information CSV field names
 const CSV_FIELD_FIRST_NAME = "firstName";

@@ -999,6 +999,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         byte[]|http:BadRequest fileBytes = extractCsvFileBytes(req);
         if fileBytes is http:BadRequest {
+            log:printWarn("Failed to extract CSV file bytes from request");
             return fileBytes;
         }
 
@@ -1013,6 +1014,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if rows.length() > MAX_BULK_ROWS {
+            log:printWarn("CSV file exceeds maximum row limit", rowCount = rows.length(), maxLimit = MAX_BULK_ROWS);
             return <http:BadRequest>{ body: { message: string `CSV exceeds ${MAX_BULK_ROWS}-row limit` }};
         }
 
@@ -1082,12 +1084,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         database:OrphanedScimUser[] orphanedScimUsers = [];
 
         foreach ResolvedEmployee emp in payloadResult.employees {
-            error? scimResult = scim:createUser({
-                userName: string `${scim:asgardeoUserStoreDomain}/${emp.payload.workEmail}`,
-                emails: [emp.payload.workEmail],
-                name: {givenName: emp.payload.firstName, familyName: emp.payload.lastName},
-                urn\:scim\:wso2\:schema: {askPassword: true}
-            });
+            error? scimResult = scim:createUser(
+                emp.payload.workEmail,
+                emp.payload.firstName,
+                emp.payload.lastName
+            );
 
             if scimResult is error {
                 log:printError("Failed to provision user in Asgardeo during bulk onboarding; rolling back employee record",
@@ -1248,12 +1249,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? scimUserResult = scim:createUser({
-            userName: string `${scim:asgardeoUserStoreDomain}/${payload.workEmail}`,
-            emails: [payload.workEmail],
-            name: {givenName: payload.firstName, familyName: payload.lastName},
-            urn\:scim\:wso2\:schema: {askPassword: true}
-        });
+        error? scimUserResult = scim:createUser(
+            payload.workEmail,
+            payload.firstName,
+            payload.lastName
+        );
         if scimUserResult is error {
             log:printError("Failed to provision user in Asgardeo; rolling back employee record",
                     scimUserResult, workEmail = payload.workEmail, employeeId = employeeId);
