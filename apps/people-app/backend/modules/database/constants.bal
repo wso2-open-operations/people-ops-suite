@@ -20,6 +20,9 @@ public const DEFAULT_LIMIT = 100;
 # A constant error message for no rows updated
 const ERROR_NO_ROWS_UPDATED = "No rows were updated";
 
+# A constant error message for an update payload that carries no fields to update
+const ERROR_NO_FIELDS_TO_UPDATE = "No fields to update";
+
 # A constant max token count for search operations
 const MAX_TOKEN_COUNT = 10;
 

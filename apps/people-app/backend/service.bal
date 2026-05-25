@@ -667,9 +667,12 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get business units.
+    # + includeInactive - If true return all including inactive
     # + return - Business units
-    resource function get business\-units() returns database:BusinessUnit[]|http:InternalServerError {
-        database:BusinessUnit[]|error businessUnits = database:getBusinessUnits();
+    resource function get business\-units(boolean includeInactive = false)
+            returns database:BusinessUnit[]|http:InternalServerError {
+
+        database:BusinessUnit[]|error businessUnits = database:getBusinessUnits(includeInactive);
         if businessUnits is error {
             string customErr = "Error while fetching Business Units";
             log:printError(customErr, businessUnits);
@@ -685,9 +688,12 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get teams.
     #
     # + buId - Business unit ID (optional)
+    # + includeInactive - If true return all including inactive
     # + return - Teams
-    resource function get teams(int? buId = ()) returns database:Team[]|http:InternalServerError {
-        database:Team[]|error teams = database:getTeams(buId);
+    resource function get teams(int? buId = (), boolean includeInactive = false)
+            returns database:Team[]|http:InternalServerError {
+
+        database:Team[]|error teams = database:getTeams(buId, includeInactive);
         if teams is error {
             string customErr = "Error while fetching Teams";
             log:printError(customErr, teams);
@@ -703,9 +709,12 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get sub teams.
     #
     # + teamId - Team ID (optional)
+    # + includeInactive - If true return all including inactive
     # + return - Sub teams
-    resource function get sub\-teams(int? teamId = ()) returns database:SubTeam[]|http:InternalServerError {
-        database:SubTeam[]|error subTeams = database:getSubTeams(teamId);
+    resource function get sub\-teams(int? teamId = (), boolean includeInactive = false)
+            returns database:SubTeam[]|http:InternalServerError {
+
+        database:SubTeam[]|error subTeams = database:getSubTeams(teamId, includeInactive);
         if subTeams is error {
             string customErr = "Error while fetching Sub Teams";
             log:printError(customErr, subTeams);
@@ -721,9 +730,12 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get units.
     #
     # + subTeamId - Sub team ID (optional)
+    # + includeInactive - If true return all including inactive
     # + return - Units
-    resource function get units(int? subTeamId = ()) returns database:Unit[]|http:InternalServerError {
-        database:Unit[]|error units = database:getUnits(subTeamId);
+    resource function get units(int? subTeamId = (), boolean includeInactive = false)
+            returns database:Unit[]|http:InternalServerError {
+
+        database:Unit[]|error units = database:getUnits(subTeamId, includeInactive);
         if units is error {
             string customErr = "Error while fetching Units";
             log:printError(customErr, units);
@@ -1721,5 +1733,534 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         return confirmedReservation;
+    }
+
+    # Create a business unit.
+    #
+    # + ctx - Request context
+    # + payload - Business unit creation payload
+    # + return - ID of the new business unit, or HTTP errors
+    resource function post business\-units(http:RequestContext ctx, database:CreateCompanyOrgChartEntityPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create business unit", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        int|error newId = database:createBusinessUnit(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating business unit";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a business unit.
+    #
+    # + ctx - Request context
+    # + id - Business unit ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch business\-units/[int id](http:RequestContext ctx,
+            database:UpdateCompanyOrgChartEntityPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update business unit", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInBusinessUnit(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in business unit", hasEmployees, id = id);
+                return <http:InternalServerError>{body: {message: "Error occurred while updating business unit"}};
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this business unit"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateBusinessUnit(id, payload, userInfo.email);
+        if updateResult is error {
+            log:printError("Error occurred while updating business unit", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating business unit"}};
+        }
+        return http:OK;
+    }
+
+    # Create a team.
+    #
+    # + ctx - Request context
+    # + payload - Team creation payload
+    # + return - ID of the new team, or HTTP errors
+    resource function post teams(http:RequestContext ctx, database:CreateCompanyOrgChartEntityPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create team", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        int|error newId = database:createTeam(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating team";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a team.
+    #
+    # + ctx - Request context
+    # + id - Team ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch teams/[int id](http:RequestContext ctx,
+            database:UpdateCompanyOrgChartEntityPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update team", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInTeam(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in team", hasEmployees, id = id);
+                return <http:InternalServerError>{body: {message: "Error occurred while updating team"}};
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this team"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateTeam(id, payload, userInfo.email);
+        if updateResult is error {
+            log:printError("Error occurred while updating team", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating team"}};
+        }
+        return http:OK;
+    }
+
+    # Create a sub-team.
+    #
+    # + ctx - Request context
+    # + payload - Sub-team creation payload
+    # + return - ID of the new sub-team, or HTTP errors
+    resource function post sub\-teams(http:RequestContext ctx, database:CreateCompanyOrgChartEntityPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create sub-team", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        int|error newId = database:createSubTeam(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating sub-team";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a sub-team.
+    #
+    # + ctx - Request context
+    # + id - Sub-team ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch sub\-teams/[int id](http:RequestContext ctx,
+            database:UpdateCompanyOrgChartEntityPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update sub-team", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInSubTeam(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in sub-team", hasEmployees, id = id);
+                return <http:InternalServerError>{body: {message: "Error occurred while updating sub-team"}};
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this sub-team"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateSubTeam(id, payload, userInfo.email);
+        if updateResult is error {
+            log:printError("Error occurred while updating sub-team", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating sub-team"}};
+        }
+        return http:OK;
+    }
+
+    # Create a unit.
+    #
+    # + ctx - Request context
+    # + payload - Unit creation payload
+    # + return - ID of the new unit, or HTTP errors
+    resource function post units(http:RequestContext ctx, database:CreateCompanyOrgChartEntityPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create unit", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        int|error newId = database:createUnit(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating unit";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a unit.
+    #
+    # + ctx - Request context
+    # + id - Unit ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch units/[int id](http:RequestContext ctx,
+            database:UpdateCompanyOrgChartEntityPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update unit", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInUnit(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in unit", hasEmployees, id = id);
+                return <http:InternalServerError>{body: {message: "Error occurred while updating unit"}};
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this unit"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateUnit(id, payload, userInfo.email);
+        if updateResult is error {
+            log:printError("Error occurred while updating unit", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating unit"}};
+        }
+        return http:OK;
+    }
+
+    # Create a business-unit → team mapping.
+    #
+    # + ctx - Request context
+    # + payload - Mapping creation payload
+    # + return - ID of the new mapping, or HTTP errors
+    resource function post business\-unit\-teams(http:RequestContext ctx,
+            database:CreateBusinessUnitTeamPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create business unit team mapping", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        int|error newId = database:createBusinessUnitTeam(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating business unit team mapping";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a business-unit → team mapping.
+    #
+    # + ctx - Request context
+    # + id - Mapping ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch business\-unit\-teams/[int id](http:RequestContext ctx,
+            database:UpdateMappingPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update business unit team mapping", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamMapping(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in business unit team mapping",
+                    hasEmployees, id = id);
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while updating business unit team mapping"}
+                };
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateBusinessUnitTeam(id, payload, userInfo.email);
+        if updateResult is error {
+            log:printError("Error occurred while updating business unit team mapping", updateResult, id = id);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while updating business unit team mapping"}
+            };
+        }
+        return http:OK;
+    }
+
+    # Create a business-unit-team → sub-team mapping.
+    #
+    # + ctx - Request context
+    # + payload - Mapping creation payload
+    # + return - ID of the new mapping, or HTTP errors
+    resource function post business\-unit\-team\-sub\-teams(http:RequestContext ctx,
+            database:CreateBusinessUnitTeamSubTeamPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create business unit team sub-team mapping",
+                invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        int|error newId = database:createBusinessUnitTeamSubTeam(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating business unit team sub-team mapping";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a business-unit-team → sub-team mapping.
+    #
+    # + ctx - Request context
+    # + id - Mapping ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch business\-unit\-team\-sub\-teams/[int id](http:RequestContext ctx,
+            database:UpdateMappingPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update business unit team sub-team mapping",
+                invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamSubTeamMapping(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in business unit team sub-team mapping",
+                    hasEmployees, id = id);
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while updating business unit team sub-team mapping"}
+                };
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateBusinessUnitTeamSubTeam(id, payload, userInfo.email);
+        if updateResult is error {
+            log:printError("Error occurred while updating business unit team sub-team mapping",
+                updateResult, id = id);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while updating business unit team sub-team mapping"}
+            };
+        }
+        return http:OK;
+    }
+
+    # Create a business-unit-team-sub-team → unit mapping.
+    #
+    # + ctx - Request context
+    # + payload - Mapping creation payload
+    # + return - ID of the new mapping, or HTTP errors
+    resource function post business\-unit\-team\-sub\-team\-units(http:RequestContext ctx,
+            database:CreateBusinessUnitTeamSubTeamUnitPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create business unit team sub-team unit mapping",
+                invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        int|error newId = database:createBusinessUnitTeamSubTeamUnit(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating business unit team sub-team unit mapping";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a business-unit-team-sub-team → unit mapping.
+    #
+    # + ctx - Request context
+    # + id - Mapping ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch business\-unit\-team\-sub\-team\-units/[int id](http:RequestContext ctx,
+            database:UpdateMappingPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update business unit team sub-team unit mapping",
+                invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamSubTeamUnitMapping(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in business unit team sub-team unit mapping",
+                    hasEmployees, id = id);
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while updating business unit team sub-team unit mapping"}
+                };
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateBusinessUnitTeamSubTeamUnit(id, payload, userInfo.email);
+        if updateResult is error {
+            log:printError("Error occurred while updating business unit team sub-team unit mapping",
+                updateResult, id = id);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while updating business unit team sub-team unit mapping"}
+            };
+        }
+        return http:OK;
+    }
+
+    # Get the company org chart structure (ADMIN only).
+    #
+    # + ctx - Request context
+    # + return - Company org chart structure with full mapping metadata, or HTTP errors
+    resource function get company\-org\-structure(http:RequestContext ctx)
+            returns database:CompanyOrgChartBusinessUnit[]|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to access company org chart structure",
+                invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to access the company org chart structure"}
+            };
+        }
+
+        database:CompanyOrgChartBusinessUnit[]|error orgStructure = database:getCompanyOrgChartStructure();
+        if orgStructure is error {
+            string customErr = "Error occurred while fetching the company org chart structure";
+            log:printError(customErr, orgStructure);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return orgStructure;
     }
 }

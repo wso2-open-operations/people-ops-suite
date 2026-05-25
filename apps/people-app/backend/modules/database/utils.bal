@@ -295,7 +295,7 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
         "jobRole"               => {
             string? secTitle = e.secondaryJobTitle;
             string jobRole = secTitle is string && secTitle.trim() != ""
-                ? e.designation + " / " + secTitle
+                ? e.designation + " " + secTitle
                 : e.designation;
             return csvEscape(jobRole);
         }

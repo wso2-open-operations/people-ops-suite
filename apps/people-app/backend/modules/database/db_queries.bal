@@ -501,73 +501,446 @@ isolated function getEmergencyContactsByEmployeeIdQuery(string employeeId) retur
       AND is_active = 1;`;
 
 # Get business units query.
+# + includeInactive - If true, return all entities including inactive; otherwise active-only
 # + return - Business units query
-isolated function getBusinessUnitsQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
-        id,
-        name
-    FROM business_unit;`;
+isolated function getBusinessUnitsQuery(boolean includeInactive = false) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `SELECT bu.id, bu.name, bu.head_email, bu.is_active,
+        (SELECT COUNT(*) FROM employee
+            WHERE business_unit_id = bu.id AND employee_status = 'Active') AS active_employee_count
+        FROM business_unit bu`;
+    if !includeInactive {
+        query = sql:queryConcat(query, ` WHERE bu.is_active = 1`);
+    }
+    return sql:queryConcat(query, ` ORDER BY bu.name;`);
+}
 
 # Get teams query.
 #
 # + buId - Business unit ID (optional)
+# + includeInactive - If true, return all entities including inactive; otherwise active-only
 # + return - Teams query
-isolated function getTeamsQuery(int? buId = ()) returns sql:ParameterizedQuery {
+isolated function getTeamsQuery(int? buId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT
-            t.id, t.name
+            t.id, t.name, t.head_email, t.is_active,
+            (SELECT COUNT(*) FROM employee WHERE team_id = t.id AND employee_status = 'Active') AS active_employee_count
         FROM
             team t`;
 
     if buId is int {
         query = sql:queryConcat(query, `
-            LEFT JOIN 
+            LEFT JOIN
                 business_unit_team but ON but.team_id = t.id
-            WHERE 
+            WHERE
                 but.business_unit_id = ${buId}`);
+        if !includeInactive {
+            query = sql:queryConcat(query, ` AND t.is_active = 1`);
+        }
+    } else if !includeInactive {
+        query = sql:queryConcat(query, ` WHERE t.is_active = 1`);
     }
-    return sql:queryConcat(query, `;`);
+    return sql:queryConcat(query, `
+        ORDER BY t.name;`);
 }
 
 # Get sub teams query.
 #
 # + teamId - Team ID (optional)
+# + includeInactive - If true, return all entities including inactive; otherwise active-only
 # + return - Sub teams query
-isolated function getSubTeamsQuery(int? teamId = ()) returns sql:ParameterizedQuery {
+isolated function getSubTeamsQuery(int? teamId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT
-            st.id, st.name
+            st.id, st.name, st.head_email, st.is_active,
+            (SELECT COUNT(*) FROM employee
+                WHERE sub_team_id = st.id AND employee_status = 'Active') AS active_employee_count
         FROM
             sub_team st`;
     if teamId is int {
-        query = sql:queryConcat(query, ` 
-            LEFT JOIN 
+        query = sql:queryConcat(query, `
+            LEFT JOIN
                 business_unit_team_sub_team butst ON butst.sub_team_id = st.id
-            WHERE 
+            WHERE
                 butst.business_unit_team_id = ${teamId}`);
+        if !includeInactive {
+            query = sql:queryConcat(query, ` AND st.is_active = 1`);
+        }
+    } else if !includeInactive {
+        query = sql:queryConcat(query, ` WHERE st.is_active = 1`);
     }
-    return sql:queryConcat(query, `;`);
+    return sql:queryConcat(query, `
+        ORDER BY st.name;`);
 }
 
 # Get units query.
 #
 # + subTeamId - Sub team ID (optional)
+# + includeInactive - If true, return all entities including inactive; otherwise active-only
 # + return - Units query
-isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQuery {
+isolated function getUnitsQuery(int? subTeamId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT
-            u.id, u.name
+            u.id, u.name, u.head_email, u.is_active,
+            (SELECT COUNT(*) FROM employee WHERE unit_id = u.id AND employee_status = 'Active') AS active_employee_count
         FROM
             unit u`;
     if subTeamId is int {
-        query = sql:queryConcat(query, ` 
-            LEFT JOIN 
+        query = sql:queryConcat(query, `
+            LEFT JOIN
                 business_unit_team_sub_team_unit butstu ON butstu.unit_id = u.id
-            WHERE 
+            WHERE
                 butstu.business_unit_team_sub_team_id = ${subTeamId}`);
+        if !includeInactive {
+            query = sql:queryConcat(query, ` AND u.is_active = 1`);
+        }
+    } else if !includeInactive {
+        query = sql:queryConcat(query, ` WHERE u.is_active = 1`);
     }
-    return sql:queryConcat(query, `;`);
+    return sql:queryConcat(query, `
+        ORDER BY u.name;`);
 }
+
+# Create business unit query.
+#
+# + name - Business unit name
+# + headEmail - Head email
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createBusinessUnitQuery(string name, string headEmail, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO business_unit (name, head_email, created_by, updated_by)
+     VALUES (${name}, ${headEmail}, ${createdBy}, ${createdBy});`;
+
+# Update business unit query.
+#
+# + id - Business unit ID
+# + name - Updated name (optional)
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateBusinessUnitQuery(int id, string? name, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+    sql:ParameterizedQuery[] updates = [];
+    if name is string {
+        updates.push(`name = ${name}`);
+    }
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit SET `, updates), ` WHERE id = ${id};`);
+}
+
+# Create team query.
+#
+# + name - Team name
+# + headEmail - Head email
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createTeamQuery(string name, string headEmail, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO team (name, head_email, created_by, updated_by)
+     VALUES (${name}, ${headEmail}, ${createdBy}, ${createdBy});`;
+
+# Update team query.
+#
+# + id - Team ID
+# + name - Updated name (optional)
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateTeamQuery(int id, string? name, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+    sql:ParameterizedQuery[] updates = [];
+    if name is string {
+        updates.push(`name = ${name}`);
+    }
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE team SET `, updates), ` WHERE id = ${id};`);
+}
+
+# Create sub-team query.
+#
+# + name - Sub-team name
+# + headEmail - Head email
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createSubTeamQuery(string name, string headEmail, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO sub_team (name, head_email, created_by, updated_by)
+     VALUES (${name}, ${headEmail}, ${createdBy}, ${createdBy});`;
+
+# Update sub-team query.
+#
+# + id - Sub-team ID
+# + name - Updated name (optional)
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateSubTeamQuery(int id, string? name, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+    sql:ParameterizedQuery[] updates = [];
+    if name is string {
+        updates.push(`name = ${name}`);
+    }
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE sub_team SET `, updates), ` WHERE id = ${id};`);
+}
+
+# Create unit query.
+#
+# + name - Unit name
+# + headEmail - Head email
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createUnitQuery(string name, string headEmail, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO unit (name, head_email, created_by, updated_by)
+     VALUES (${name}, ${headEmail}, ${createdBy}, ${createdBy});`;
+
+# Update unit query.
+#
+# + id - Unit ID
+# + name - Updated name (optional)
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateUnitQuery(int id, string? name, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+    sql:ParameterizedQuery[] updates = [];
+    if name is string {
+        updates.push(`name = ${name}`);
+    }
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE unit SET `, updates), ` WHERE id = ${id};`);
+}
+
+# Create business-unit → team mapping query.
+#
+# + businessUnitId - Business unit ID
+# + teamId - Team ID
+# + headEmail - Head email for this mapping
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createBusinessUnitTeamQuery(int businessUnitId, int teamId, string headEmail, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO business_unit_team (business_unit_id, team_id, head_email, created_by, updated_by)
+     VALUES (${businessUnitId}, ${teamId}, ${headEmail}, ${createdBy}, ${createdBy});`;
+
+# Update business-unit → team mapping query.
+#
+# + id - Mapping ID
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateBusinessUnitTeamQuery(int id, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+    sql:ParameterizedQuery[] updates = [];
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team SET `, updates), ` WHERE id = ${id};`);
+}
+
+# Create business-unit-team → sub-team mapping query.
+#
+# + businessUnitTeamId - Business unit team mapping ID
+# + subTeamId - Sub-team ID
+# + headEmail - Head email for this mapping
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createBusinessUnitTeamSubTeamQuery(int businessUnitTeamId, int subTeamId, string headEmail,
+        string createdBy) returns sql:ParameterizedQuery =>
+    `INSERT INTO business_unit_team_sub_team (business_unit_team_id, sub_team_id, head_email, created_by, updated_by)
+     VALUES (${businessUnitTeamId}, ${subTeamId}, ${headEmail}, ${createdBy}, ${createdBy});`;
+
+# Update business-unit-team → sub-team mapping query.
+#
+# + id - Mapping ID
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateBusinessUnitTeamSubTeamQuery(int id, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+    sql:ParameterizedQuery[] updates = [];
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team_sub_team SET `, updates),
+        ` WHERE id = ${id};`);
+}
+
+# Create business-unit-team-sub-team → unit mapping query.
+#
+# + businessUnitTeamSubTeamId - Business unit team sub-team mapping ID
+# + unitId - Unit ID
+# + headEmail - Head email for this mapping
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createBusinessUnitTeamSubTeamUnitQuery(int businessUnitTeamSubTeamId, int unitId, string headEmail,
+        string createdBy) returns sql:ParameterizedQuery =>
+    `INSERT INTO business_unit_team_sub_team_unit
+         (business_unit_team_sub_team_id, unit_id, head_email, created_by, updated_by)
+     VALUES (${businessUnitTeamSubTeamId}, ${unitId}, ${headEmail}, ${createdBy}, ${createdBy});`;
+
+# Update business-unit-team-sub-team → unit mapping query.
+#
+# + id - Mapping ID
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateBusinessUnitTeamSubTeamUnitQuery(int id, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+    sql:ParameterizedQuery[] updates = [];
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team_sub_team_unit SET `, updates),
+        ` WHERE id = ${id};`);
+}
+
+# Get the company org chart structure query (includes all mapping metadata).
+# Returns all BUs (active and inactive) with their nested teams, sub-teams, and units,
+# enriched with mapping IDs and head emails for admin management.
+#
+# + return - Company org chart structure query
+isolated function getCompanyOrgChartStructureQuery() returns sql:ParameterizedQuery =>
+    `SELECT
+        bu.id,
+        bu.name,
+        bu.head_email,
+        bu.is_active,
+        COALESCE(
+            (
+                SELECT JSON_ARRAYAGG(team_sub.obj)
+                FROM LATERAL (
+                    SELECT JSON_OBJECT(
+                        'id', t.id,
+                        'name', t.name,
+                        'headEmail', t.head_email,
+                        'isActive', IF(t.is_active = 1, CAST('true' AS JSON), CAST('false' AS JSON)),
+                        'mappingId', but.id,
+                        'mappingHeadEmail', but.head_email,
+                        'mappingIsActive', IF(but.is_active = 1, CAST('true' AS JSON), CAST('false' AS JSON)),
+                        'subTeams',
+                        COALESCE(
+                            (
+                                SELECT JSON_ARRAYAGG(subteam_sub.obj)
+                                FROM LATERAL (
+                                    SELECT JSON_OBJECT(
+                                        'id', st.id,
+                                        'name', st.name,
+                                        'headEmail', st.head_email,
+                                        'isActive', IF(st.is_active = 1, CAST('true' AS JSON), CAST('false' AS JSON)),
+                                        'mappingId', butst.id,
+                                        'mappingHeadEmail', butst.head_email,
+                                        'mappingIsActive', IF(butst.is_active = 1,
+                                            CAST('true' AS JSON), CAST('false' AS JSON)),
+                                        'units',
+                                        COALESCE(
+                                            (
+                                                SELECT JSON_ARRAYAGG(unit_sub.obj)
+                                                FROM LATERAL (
+                                                    SELECT JSON_OBJECT(
+                                                        'id', u.id,
+                                                        'name', u.name,
+                                                        'headEmail', u.head_email,
+                                                        'isActive', IF(u.is_active = 1,
+                                                            CAST('true' AS JSON), CAST('false' AS JSON)),
+                                                        'mappingId', butstu.id,
+                                                        'mappingHeadEmail', butstu.head_email,
+                                                        'mappingIsActive', IF(butstu.is_active = 1,
+                                                            CAST('true' AS JSON), CAST('false' AS JSON))
+                                                    ) AS obj
+                                                    FROM business_unit_team_sub_team_unit butstu
+                                                    INNER JOIN unit u ON u.id = butstu.unit_id
+                                                    WHERE butstu.business_unit_team_sub_team_id = butst.id
+                                                    ORDER BY u.name
+                                                ) AS unit_sub
+                                            ),
+                                            JSON_ARRAY()
+                                        )
+                                    ) AS obj
+                                    FROM business_unit_team_sub_team butst
+                                    INNER JOIN sub_team st ON st.id = butst.sub_team_id
+                                    WHERE butst.business_unit_team_id = but.id
+                                    ORDER BY st.name
+                                ) AS subteam_sub
+                            ),
+                            JSON_ARRAY()
+                        )
+                    ) AS obj
+                    FROM business_unit_team but
+                    INNER JOIN team t ON t.id = but.team_id
+                    WHERE but.business_unit_id = bu.id
+                    ORDER BY t.name
+                ) AS team_sub
+            ),
+            JSON_ARRAY()
+        ) AS teams
+    FROM business_unit bu
+    ORDER BY bu.name;`;
 
 # Get full organization structure query.
 #
@@ -1642,3 +2015,63 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
 # + return - Parameterized query returning work_email and full_name columns
 isolated function getEmployeeEmailToNameMapQuery() returns sql:ParameterizedQuery =>
     `SELECT work_email, CONCAT(first_name, ' ', last_name) AS full_name FROM employee;`;
+
+# Count active employees in a business unit.
+#
+# + id - Business unit ID
+# + return - Query counting active employees with business_unit_id = id
+isolated function countActiveEmployeesInBusinessUnitQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee WHERE business_unit_id = ${id} AND employee_status = 'Active'`;
+
+# Count active employees in a business-unit–team mapping.
+#
+# + id - business_unit_team mapping ID
+# + return - Query counting active employees matching that BU+Team combination
+isolated function countActiveEmployeesInBUTeamMappingQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee e
+     JOIN business_unit_team but ON but.id = ${id}
+     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id AND e.employee_status = 'Active'`;
+
+# Count active employees in a business-unit–team–sub-team mapping.
+#
+# + id - business_unit_team_sub_team mapping ID
+# + return - Query counting active employees matching that BU+Team+SubTeam combination
+isolated function countActiveEmployeesInBUTeamSubTeamMappingQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee e
+     JOIN business_unit_team_sub_team butst ON butst.id = ${id}
+     JOIN business_unit_team but ON but.id = butst.business_unit_team_id
+     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id
+       AND e.sub_team_id = butst.sub_team_id AND e.employee_status = 'Active'`;
+
+# Count active employees in a business-unit–team–sub-team–unit mapping.
+#
+# + id - business_unit_team_sub_team_unit mapping ID
+# + return - Query counting active employees matching that BU+Team+SubTeam+Unit combination
+isolated function countActiveEmployeesInBUTeamSubTeamUnitMappingQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee e
+     JOIN business_unit_team_sub_team_unit butstu ON butstu.id = ${id}
+     JOIN business_unit_team_sub_team butst ON butst.id = butstu.business_unit_team_sub_team_id
+     JOIN business_unit_team but ON but.id = butst.business_unit_team_id
+     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id
+       AND e.sub_team_id = butst.sub_team_id AND e.unit_id = butstu.unit_id AND e.employee_status = 'Active'`;
+
+# Count active employees in a team.
+#
+# + id - Team ID
+# + return - Query counting active employees with team_id = id
+isolated function countActiveEmployeesInTeamQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee WHERE team_id = ${id} AND employee_status = 'Active'`;
+
+# Count active employees in a sub-team.
+#
+# + id - Sub-team ID
+# + return - Query counting active employees with sub_team_id = id
+isolated function countActiveEmployeesInSubTeamQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee WHERE sub_team_id = ${id} AND employee_status = 'Active'`;
+
+# Count active employees in a unit.
+#
+# + id - Unit ID
+# + return - Query counting active employees with unit_id = id
+isolated function countActiveEmployeesInUnitQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee WHERE unit_id = ${id} AND employee_status = 'Active'`;
