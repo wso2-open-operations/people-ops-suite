@@ -32,16 +32,3 @@ Config.toml
 .devcontainer.json
 .env
 node_modules
-
-apps/leave-app/.claude/settings.local.json
-apps/leave-app/skills.md
-apps/leave-app/backend/Dependencies.toml
-apps/leave-app/webapp/.claude/settings.local.json
-apps/visitor-app/backend/Dependencies.toml
-apps/visitor-app/backend/Dependencies.toml
-apps/visitor-app/backend/Dependencies.toml
-apps/visitor-app/schedular/CLAUDE.md
-apps/visitor-app/schedular/Dependencies.toml
-apps/visitor-app/webapp/src/react-app-env.d.ts
-apps/visitor-app/schedular/.claude/settings.local.json
-apps/visitor-app/backend/Dependencies.toml
