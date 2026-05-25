@@ -192,7 +192,7 @@ const LeadOngoingPanel = () => {
               color: "white",
             },
           }}
-          onClick={() => handleTeamChange}
+          onClick={() => handleTeamChange(params as unknown as GridRowParams)}
         >
           <Tooltip
             arrow

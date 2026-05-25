@@ -93,7 +93,7 @@ const LeadPortal = () => {
     resetSelectedEmployeeParState();
   }, []);
 
-  const handleChange = (event: SyntheticEvent, newValue: number) => {
+  const handleChange = (_event: SyntheticEvent, newValue: number) => {
     const tabValue = tabsAndPanelsData[newValue].value;
     setSearchParams({ tab: tabValue });
   };

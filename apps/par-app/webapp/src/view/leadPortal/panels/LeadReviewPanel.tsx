@@ -311,11 +311,16 @@ export const LeadReviewPanel = ({
 
     const parLeadComment = btoa(encodeURIComponent(values.parLeadComment));
     const formValues: {
+      parLeadStatus: ParLeadStatus;
+      parLeadComment: string;
       parAdminComment?: string;
       parEmployeeComment?: string;
       parEmployeeStatus?: ParEmployeeStatus;
       parPerformanceNoticeAck?: string;
-    } = {};
+    } = {
+      parLeadStatus: status,
+      parLeadComment,
+    };
 
     if (isAdminAuditViewOn) {
       if (values.parAdminComment?.trim()) {
