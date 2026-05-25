@@ -37,7 +37,8 @@ import {
 } from "@mui/material";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
 import { toSentenceCase, sortAndFormatOptions } from "@utils/utils";
-import { EmployeeSearchPayload, EmployeeStatus, Filters } from "@slices/employeeSlice/employee";
+import { EmployeeStatus } from "@/types/types";
+import { EmployeeSearchPayload, Filters } from "@slices/employeeSlice/employee";
 import {
   BusinessUnit,
   CareerFunction,

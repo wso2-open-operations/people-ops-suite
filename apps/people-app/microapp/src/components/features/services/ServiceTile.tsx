@@ -29,21 +29,28 @@ import type { ServiceInfo } from "@/types";
  * Props (from ServiceInfo type):
  * - name: string – name/title of the service
  * - description: string – brief info or summary of the service
- * - icon: JSX.Element – visual icon representing the service
+ * - icon: ReactNode – visual icon representing the service
+ * - iconBg: string – CSS color string applied as the icon container background (e.g. "#FFE1C9")
  * - route: string – path to navigate to when the tile is clicked
  */
 function ServiceTile(props: ServiceInfo) {
   return (
     <Link to={props.route}>
-      <div className="flex items-center justify-between py-[0.88rem] border-b-[1px] border-[#E5E5E5]">
-        <div className="mr-5">
-          <h3 className="font-semibold text-lg">{props.name}</h3>
-          <p className="font-medium text-sm text-[#808080]">
+      <div className="flex items-center gap-4 bg-white rounded-[1.6rem] px-5 py-4 shadow-[0_1px_8px_rgba(0,0,0,0.06)]">
+        <div
+          className="w-[4.4rem] h-[4.4rem] rounded-[1.1rem] relative overflow-hidden shrink-0"
+          style={{ backgroundColor: props.iconBg }}
+        >
+          {props.icon}
+        </div>
+        <div className="flex-1">
+          <h3 className="font-bold text-[1rem] text-[#1A2340] leading-snug">{props.name}</h3>
+          <p className="font-normal text-[0.82rem] text-[#6B7280] mt-1 leading-snug">
             {props.description}
           </p>
         </div>
-        <div className="w-[3.7rem] h-[3.7rem] bg-[#FFE1C9] rounded-[1.3rem] relative overflow-hidden shrink-0">
-          {props.icon}
+        <div className="w-[2rem] h-[2rem] rounded-full border border-[#DEDEDE] grid place-items-center shrink-0 text-[#ADADAD] text-base">
+          <span aria-hidden="true">›</span>
         </div>
       </div>
     </Link>

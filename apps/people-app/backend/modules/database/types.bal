@@ -105,6 +105,14 @@ public type EmployeeIdSequence record {|
     decimal lastNumericId;
 |};
 
+# IDs fetched from the employee row before a compensating delete.
+type EmployeeDeleteIds record {|
+    # Primary key of the employee row
+    int id;
+    # Foreign key to the personal_info row
+    int personalInfoId;
+|};
+
 # TODO: Add structured types for org structure fields and company details
 # Employee information.
 public type Employee record {|
@@ -654,6 +662,13 @@ type EmployeeNameRow record {|
     string fullName;
 |};
 
+# [Database] Work email row mapping for employee lookups.
+type WorkEmailRow record {|
+    # Work email of the employee
+    @sql:Column {name: "work_email"}
+    string workEmail;
+|};
+
 # Additional manager email row mapping.
 public type AdditionalManagerEmailRow record {|
     # Additional manager email
@@ -895,6 +910,14 @@ public type UpdateEmployeeJobInfoPayload record {|
     string? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus? employeeStatus = ();
+    # Final day in office
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? finalDayInOffice = ();
+    # Final day of employment 
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? finalDayOfEmployment = ();
+    # Resignation reason
+    string? resignationReason = ();
 |};
 
 # [Database] Insert type for vehicle.

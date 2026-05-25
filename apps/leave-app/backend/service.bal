@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import leave_service.authorization;
 import leave_service.calendar_events;
 import leave_service.database;
@@ -45,6 +44,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         do {
             readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
             employee:Employee empInfo = check employee:getEmployee(userInfo.email);
+            if empInfo.leadEmail is () {
+                string errMsg = "Employee lead email not available";
+                log:printError(errMsg);
+                return <http:InternalServerError>{body: {message: errMsg}};
+            }
 
             // Fetch the user's privileges based on the roles.
             int[] privileges = [];
@@ -59,9 +63,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             employee:Employee[]|error subordinates = employee:getEmployees(
                     {
-                        status: ["Active"],
-                        leadEmail: empInfo.workEmail
-                    });
+                status: ["Active"],
+                leadEmail: empInfo.workEmail
+            });
             if subordinates is error {
                 string errorMsg = "Error occurred while fetching employee subordinates. Lead privilege will not be" +
                 " assigned";
@@ -251,9 +255,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         if subordinatesLeaves {
             // Resolve subordinate emails from the HR system using the logged-in user as manager
             employee:Employee[]|error subordinates = employee:getEmployees({
-                                                                               status: effectiveStatuses,
-                                                                               leadEmail: userInfo.email
-                                                                           });
+                status: effectiveStatuses,
+                leadEmail: userInfo.email
+            });
             if subordinates is error {
                 log:printError(ERR_MSG_LEAVES_RETRIEVAL_FAILED, subordinates);
                 return <http:InternalServerError>{
@@ -272,9 +276,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             effectiveApproverEmail = ();
         } else if effectiveStatuses is EmployeeStatus[] {
             employee:Employee[]|error filteredEmployees = employee:getEmployees({
-                                                                                    status: effectiveStatuses,
-                                                                                    leadEmail: approverEmail
-                                                                                });
+                status: effectiveStatuses,
+                leadEmail: approverEmail
+            });
             if filteredEmployees is error {
                 log:printError(ERR_MSG_LEAVES_RETRIEVAL_FAILED, filteredEmployees);
                 return <http:InternalServerError>{
@@ -296,14 +300,14 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         database:Leave[]|error leaves = database:getLeaves({
-                                                               emails,
-                                                               statuses,
-                                                               startDate,
-                                                               endDate,
-                                                               approverEmail: effectiveApproverEmail,
-                                                               leaveTypes: leaveCategory,
-                                                               orderBy: orderBy
-                                                           }, 'limit);
+            emails,
+            statuses,
+            startDate,
+            endDate,
+            approverEmail: effectiveApproverEmail,
+            leaveTypes: leaveCategory,
+            orderBy: orderBy
+        }, 'limit);
         if leaves is error {
             log:printError(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
             return <http:InternalServerError>{
@@ -493,15 +497,15 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
 
                 error? response = processSabbaticalLeaveRequest({
-                                                                    action: APPLY,
-                                                                    applicantEmail: email,
-                                                                    approverEmail: leadMail,
-                                                                    leaveStartDate: payload.startDate,
-                                                                    leaveEndDate: payload.endDate,
-                                                                    location,
-                                                                    comment: payload.comment,
-                                                                    numberOfDays: <float>differenceInDays
-                                                                });
+                    action: APPLY,
+                    applicantEmail: email,
+                    approverEmail: leadMail,
+                    leaveStartDate: payload.startDate,
+                    leaveEndDate: payload.endDate,
+                    location,
+                    comment: payload.comment,
+                    numberOfDays: <float>differenceInDays
+                });
 
                 if response is error {
                     string errMsg = "Error occurred while processing sabbatical leave application request";
@@ -721,17 +725,17 @@ service http:InterceptableService / on new http:Listener(9090) {
                     };
                 }
                 error? cancellationResult = processSabbaticalLeaveRequest({
-                                                                              action: CANCEL,
-                                                                              applicantEmail:
+                    action: CANCEL,
+                    applicantEmail:
                                                                             cancelledLeaveDetails.email,
-                                                                              approverEmail,
-                                                                              leaveStartDate:
+                    approverEmail,
+                    leaveStartDate:
                                                                             cancelledLeaveDetails.
                                                                             startDate.substring(0, 10),
-                                                                              leaveEndDate: cancelledLeaveDetails.
+                    leaveEndDate: cancelledLeaveDetails.
                                                                             endDate.substring(0, 10),
-                                                                              leaveId: id
-                                                                          });
+                    leaveId: id
+                });
                 if cancellationResult is error {
                     log:printError("Failed to process sabbatical leave cancellation notification", cancellationResult);
                     return <http:InternalServerError>{
@@ -788,13 +792,13 @@ service http:InterceptableService / on new http:Listener(9090) {
         do {
             Employee[] employees = check employee:getEmployees(
                     {
-                        location,
-                        businessUnit,
-                        team,
-                        unit,
-                        status: employeeStatuses,
-                        leadEmail
-                    }
+                location,
+                businessUnit,
+                team,
+                unit,
+                status: employeeStatuses,
+                leadEmail
+            }
             );
 
             MinimalEmployeeInfo[] employeesToReturn = from Employee employee in employees
@@ -886,7 +890,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                         authorization:authorizedRoles.peopleOpsTeamRoles);
                 if !validateForSingleRole {
                     log:printWarn(string `The user ${userInfo.email} was not privileged to access the${false ?
-                                " admin " : " "}resource /leave-entitlement with email=${email.toString()}`);
+                        " admin " : " "}resource /leave-entitlement with email=${email.toString()}`);
                     return <http:Forbidden>{
                         body: {
                             message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
@@ -963,9 +967,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             Employee[] employees;
             employees = check employee:getEmployees(
                     {
-                        status: payload.employeeStatuses,
-                        leadEmail: (isAdmin && payload.isAdminView) ? () : email
-                    }
+                status: payload.employeeStatuses,
+                leadEmail: (isAdmin && payload.isAdminView) ? () : email
+            }
                 );
             string[] emails = from Employee employee in employees
                 select employee.workEmail;
@@ -989,11 +993,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             final database:Leave[]|error leaves = database:getLeaves(
                     {
-                        emails,
-                        startDate: payload.startDate,
-                        endDate: payload.endDate,
-                        statuses: [database:APPROVED]
-                    }
+                emails,
+                startDate: payload.startDate,
+                endDate: payload.endDate,
+                statuses: [database:APPROVED]
+            }
                     );
             if leaves is error {
                 fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
@@ -1090,13 +1094,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         error? approvalResult = processSabbaticalLeaveRequest({
-                                                                  action: actionToProcess,
-                                                                  applicantEmail: leave.email,
-                                                                  leaveStartDate: leave.startDate.substring(0, 10),
-                                                                  leaveEndDate: leave.endDate.substring(0, 10),
-                                                                  approverEmail: email,
-                                                                  leaveId: id
-                                                              });
+            action: actionToProcess,
+            applicantEmail: leave.email,
+            leaveStartDate: leave.startDate.substring(0, 10),
+            leaveEndDate: leave.endDate.substring(0, 10),
+            approverEmail: email,
+            leaveId: id
+        });
         if approvalResult is error {
             log:printError("Failed to process sabbatical leave approval notification", approvalResult);
             return <http:InternalServerError>{

@@ -18,6 +18,7 @@ import ballerina/jwt;
 import ballerina/log;
 
 public configurable AppRoles authorizedRoles = ?;
+configurable string AUTHORIZED_CLIENT_ID = ?;
 
 # To handle authorization for each resource function invocation.
 public isolated service class JwtInterceptor {
@@ -58,7 +59,7 @@ public isolated service class JwtInterceptor {
             };
         }
 
-        CustomJwtPayload|error userInfo = result[1].cloneWithType(CustomJwtPayload);
+        CustomJwtPayload|ClientCredentialJwtPayload|error userInfo = result[1].cloneWithType();
         if userInfo is error {
             string errorMsg = "Malformed Invoker info object!";
             log:printError(errorMsg, userInfo);
@@ -69,20 +70,47 @@ public isolated service class JwtInterceptor {
             };
         }
 
-        foreach anydata role in authorizedRoles.toArray() {
-            if userInfo.groups.some(r => r === role) {
-                ctx.set(HEADER_USER_INFO, userInfo);
-                return ctx.next();
+        // If the token belongs to a client credential flow, we skip group checks as there won't be any groups in the token. We can add more checks here in the future if needed, such as checking the client_id against a list of allowed client IDs.
+        if userInfo is ClientCredentialJwtPayload {
+            log:printInfo("Client credential flow detected, skipping group checks");
+            if userInfo.client_id != AUTHORIZED_CLIENT_ID {
+                string errorMsg = "Unauthorized client: " + userInfo.client_id;
+                log:printError(errorMsg);
+                return <http:Forbidden>{
+                    body: {
+                        message: "Unauthorized client!"
+                    }
+                };
             }
+            CustomJwtPayload clientAsUserInfo = {
+                email: "Client ID: " + userInfo.client_id,
+                groups: [authorizedRoles.ADMIN_ROLE] // Assuming client credentials should have admin privileges, adjust as necessary
+            };
+            ctx.set(HEADER_USER_INFO, clientAsUserInfo);
+            return ctx.next();
         }
 
-        log:printError(
-                string `${userInfo.email} is missing required permissions, only has ${userInfo.groups.toBalString()}`);
-
-        return <http:Forbidden>{
-            body: {
-                message: "Insufficient privileges!"
+        // For regular user tokens, we check if they have the required roles to access the resource.
+        if userInfo is CustomJwtPayload {
+            foreach anydata role in authorizedRoles.toArray() {
+                if userInfo.groups.some(r => r === role) {
+                    CustomJwtPayload authorizedUserInfo = {
+                        email: userInfo.email,
+                        groups: userInfo.groups
+                    };
+                    ctx.set(HEADER_USER_INFO, authorizedUserInfo);
+                    return ctx.next();
+                }
             }
-        };
+
+            log:printError(
+                    string `${userInfo.email} is missing required permissions, only has ${userInfo.groups.toBalString()}`);
+
+            return <http:Forbidden>{
+                body: {
+                    message: "Insufficient privileges!"
+                }
+            };
+        }
     }
 }
