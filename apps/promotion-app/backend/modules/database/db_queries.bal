@@ -60,6 +60,9 @@ isolated function getPromotionCyclesByStatusQuery(PromotionCyclesStatus[]? statu
             promotion_cycle_name as name, 
             promotion_cycle_start as startDate,
             promotion_cycle_end as endDate,
+            promotion_cycle_lead_deadline as leadDeadline,
+            promotion_cycle_functional_lead_deadline as functionalLeadDeadline,
+            promotion_cycle_promotion_board_deadline as promotionBoardDeadline,
             promotion_cycle_status as status,
             promotion_cycle_created_by as createdBy,
             promotion_cycle_created_on as createdOn,
@@ -703,12 +706,18 @@ isolated function updateUserQuery(UserDbUpdatePayload payload) returns sql:Param
         isFirstUpdate = false;
     }
 
+    if payload.functionalLeadAccessLevels !is () {
+        sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
+            `user_functional_lead_access_levels = ${payload.functionalLeadAccessLevels.toString()}`);
+        isFirstUpdate = false;
+    }
+
     sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery, `user_updated_by = ${payload.updatedBy}`);
 
-    isFirstUpdate = false;
-    sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
-            `user_functional_lead_access_levels = ${payload.functionalLeadAccessLevels is () ?
-        "{}" : payload.functionalLeadAccessLevels.toString()}`);
+    // isFirstUpdate = false;
+    // sqlQuery = buildSqlUpdateQuery(isFirstUpdate, sqlQuery,
+    //         `user_functional_lead_access_levels = ${payload.functionalLeadAccessLevels is () ?
+    //     "{}" : payload.functionalLeadAccessLevels.toString()}`);
 
     sqlQuery = sql:queryConcat(sqlQuery, `WHERE user_id = ${payload.id}`);
 

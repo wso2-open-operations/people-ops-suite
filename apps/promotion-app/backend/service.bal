@@ -601,7 +601,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + application - Application data
     # + return - Internal Server Error or Forbidden or Apply Promotion Service Results
     resource function POST promotions(http:RequestContext ctx, @http:Payload Application application)
-        returns ApplicationInfo|http:Forbidden|http:InternalServerError {
+        returns ApplicationInfo|http:BadRequest|http:Forbidden|http:InternalServerError {
 
         // "HEADER_USER_INFO" is the email of the user access this resource.
         // Interceptor set this value after validating the jwt.
@@ -688,6 +688,54 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{
                 body: {
                     message: customError
+                }
+            };
+        }
+
+        string leadDeadline = promotionCycles[0].leadDeadline;
+
+        string|error ctxUserTimezoneOffset = ctx.getWithType(USER_TIMEZONE_OFFSET);
+
+        if ctxUserTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while retrieving time zone offset header."
+                }
+            };
+        }
+
+        decimal|error userTimezoneOffset = decimal:fromString(ctxUserTimezoneOffset);
+
+        if userTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while converting time zone offset header."
+                }
+            };
+        }
+
+        if userTimezoneOffset < -12.0d || userTimezoneOffset > 14.0d {
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid timezone offset."
+                }
+            };
+        }
+
+        boolean|error isLeadDeadlinePast = isFutureDate(leadDeadline, userTimezoneOffset);
+
+        if isLeadDeadlinePast is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while checking deadline."
+                }
+            };
+        }
+
+        if (!isLeadDeadlinePast && !database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles)) {
+            return <http:Forbidden>{
+                body: {
+                    message: "The Lead deadline has passed."
                 }
             };
         }
@@ -1021,6 +1069,54 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string leadDeadline = promotionCycles[0].leadDeadline;
+
+        string|error ctxUserTimezoneOffset = ctx.getWithType(USER_TIMEZONE_OFFSET);
+
+        if ctxUserTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while retrieving time zone offset header."
+                }
+            };
+        }
+
+        decimal|error userTimezoneOffset = decimal:fromString(ctxUserTimezoneOffset);
+
+        if userTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while converting time zone offset header."
+                }
+            };
+        }
+
+        if userTimezoneOffset < -12.0d || userTimezoneOffset > 14.0d {
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid timezone offset."
+                }
+            };
+        }
+
+        boolean|error isLeadDeadlinePast = isFutureDate(leadDeadline, userTimezoneOffset);
+
+        if isLeadDeadlinePast is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while checking deadline."
+                }
+            };
+        }
+
+        if (!isLeadDeadlinePast && !database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles)) {
+            return <http:Forbidden>{
+                body: {
+                    message: "The Lead deadline has passed."
+                }
+            };
+        }
+
         database:FullPromotionRecommendation[]|error recommendationsArray = database:getFullPromotionRecommendations(
                 id = payload.id);
 
@@ -1139,6 +1235,54 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{
                 body: {
                     message: customError
+                }
+            };
+        }
+
+        string leadDeadline = promotionCycles[0].leadDeadline;
+
+        string|error ctxUserTimezoneOffset = ctx.getWithType(USER_TIMEZONE_OFFSET);
+
+        if ctxUserTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while retrieving time zone offset header."
+                }
+            };
+        }
+
+        decimal|error userTimezoneOffset = decimal:fromString(ctxUserTimezoneOffset);
+
+        if userTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while converting time zone offset header."
+                }
+            };
+        }
+
+        if userTimezoneOffset < -12.0d || userTimezoneOffset > 14.0d {
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid timezone offset."
+                }
+            };
+        }
+
+        boolean|error isLeadDeadlinePast = isFutureDate(leadDeadline, userTimezoneOffset);
+
+        if isLeadDeadlinePast is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while checking deadline."
+                }
+            };
+        }
+
+        if (!isLeadDeadlinePast) {
+            return <http:Forbidden>{
+                body: {
+                    message: "The Lead deadline has passed."
                 }
             };
         }
@@ -1284,20 +1428,31 @@ service http:InterceptableService / on new http:Listener(9090) {
                                 }
                             }
                         }else{
-                            // TODO: Send the email
-
-                            // _ = check email:recommendationAlert({
+                            // TODO: add send email alert
+                            // error? recommendationAlert = email:recommendationAlert({
                             //     receiverName: employeeName.firstName,
                             //     receiverEmail: recommendation.employeeEmail,
                             //     senderName: leadName.firstName + " " + leadName.lastName,
-                            //     senderEmail: requestedBy,
+                            //     senderEmail: userInfo.email,
                             //     closingDate: promotionCycles[0].endDate,
                             //     templateId: email:hrisPromotionRecommendationRequestSubmission
                             // });
-                            check commit;
-                            return {
-                                status: "Successfully submitted the recommendation."
-                            };
+
+                            // if recommendationAlert is error {
+                            //     rollback;
+                            //     string customError = string `Error while Updating the Promotion Request!`;
+                            //     log:printError(customError, recommendationAlert);
+                            //     return <http:InternalServerError>{
+                            //         body: {
+                            //             message: customError
+                            //         }
+                            //     };
+                            // }else{
+                                check commit;
+                                return {
+                                    status: "Successfully submitted the recommendation."
+                                };
+                            // }
                         }
                     }
                 }
@@ -1352,6 +1507,54 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{
                 body: {
                     message: customError
+                }
+            };
+        }
+
+        string leadDeadline = promotionCycles[0].leadDeadline;
+
+        string|error ctxUserTimezoneOffset = ctx.getWithType(USER_TIMEZONE_OFFSET);
+
+        if ctxUserTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while retrieving time zone offset header."
+                }
+            };
+        }
+
+        decimal|error userTimezoneOffset = decimal:fromString(ctxUserTimezoneOffset);
+
+        if userTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while converting time zone offset header."
+                }
+            };
+        }
+
+        if userTimezoneOffset < -12.0d || userTimezoneOffset > 14.0d {
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid timezone offset."
+                }
+            };
+        }
+
+        boolean|error isLeadDeadlinePast = isFutureDate(leadDeadline, userTimezoneOffset);
+
+        if isLeadDeadlinePast is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while checking deadline."
+                }
+            };
+        }
+
+        if (!isLeadDeadlinePast) {
+            return <http:Forbidden>{
+                body: {
+                    message: "The Lead deadline has passed."
                 }
             };
         }
@@ -1683,6 +1886,73 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string functionalLeadDeadline = openedPromotionCycles[0].functionalLeadDeadline;
+        string promotionBoardDeadline = openedPromotionCycles[0].promotionBoardDeadline;
+
+        string|error ctxUserTimezoneOffset = ctx.getWithType(USER_TIMEZONE_OFFSET);
+
+        if ctxUserTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while retrieving time zone offset header."
+                }
+            };
+        }
+
+        decimal|error userTimezoneOffset = decimal:fromString(ctxUserTimezoneOffset);
+
+        if userTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while converting time zone offset header."
+                }
+            };
+        }
+
+        if userTimezoneOffset < -12.0d || userTimezoneOffset > 14.0d {
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid timezone offset."
+                }
+            };
+        }
+
+        boolean|error isFunctionalLeadDeadlinePast = isFutureDate(functionalLeadDeadline, userTimezoneOffset);
+
+        if isFunctionalLeadDeadlinePast is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while checking deadline."
+                }
+            };
+        }
+
+        boolean|error isPromotionBoardDeadlinePast = isFutureDate(promotionBoardDeadline, userTimezoneOffset);
+
+        if isPromotionBoardDeadlinePast is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while checking deadline."
+                }
+            };
+        }
+
+        if ('from == "functional_lead" && !isFunctionalLeadDeadlinePast) {
+            return <http:Forbidden>{
+                body: {
+                    message: "The Functional Lead deadline has passed."
+                }
+            };
+        }
+
+        if ('from == "promotion_board" && !isPromotionBoardDeadlinePast) {
+            return <http:Forbidden>{
+                body: {
+                    message: "The Promotion Board deadline has passed."
+                }
+            };
+        }
+
         // Update promotion request status 
         error? updatePromotion = database:updatePromotionRequest({
             id: promotionRequestArray[0].id,
@@ -1784,6 +2054,73 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{
                 body: {
                     message: customError
+                }
+            };
+        }
+
+        string functionalLeadDeadline = openedPromotionCycles[0].functionalLeadDeadline;
+        string promotionBoardDeadline = openedPromotionCycles[0].promotionBoardDeadline;
+
+        string|error ctxUserTimezoneOffset = ctx.getWithType(USER_TIMEZONE_OFFSET);
+
+        if ctxUserTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while retrieving time zone offset header."
+                }
+            };
+        }
+
+        decimal|error userTimezoneOffset = decimal:fromString(ctxUserTimezoneOffset);
+
+        if userTimezoneOffset is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while converting time zone offset header."
+                }
+            };
+        }
+
+        if userTimezoneOffset < -12.0d || userTimezoneOffset > 14.0d {
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid timezone offset."
+                }
+            };
+        }
+
+        boolean|error isFunctionalLeadDeadlinePast = isFutureDate(functionalLeadDeadline, userTimezoneOffset);
+
+        if isFunctionalLeadDeadlinePast is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while checking deadline."
+                }
+            };
+        }
+
+        boolean|error isPromotionBoardDeadlinePast = isFutureDate(promotionBoardDeadline, userTimezoneOffset);
+
+        if isPromotionBoardDeadlinePast is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "An error occurred while checking deadline."
+                }
+            };
+        }
+
+        if ('from == "functional_lead" && !isFunctionalLeadDeadlinePast) {
+            return <http:Forbidden>{
+                body: {
+                    message: "The Functional Lead deadline has passed."
+                }
+            };
+        }
+
+        if ('from == "promotion_board" && !isPromotionBoardDeadlinePast) {
+            return <http:Forbidden>{
+                body: {
+                    message: "The Promotion Board deadline has passed."
                 }
             };
         }

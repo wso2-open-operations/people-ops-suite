@@ -215,6 +215,12 @@ public type PromotionCycle record {|
     string startDate;
     # Promotion Cycle End Date
     string endDate;
+    # Promotion Cycle lead deadline
+    string leadDeadline;
+    # Promotion Cycle functional lead deadline
+    string functionalLeadDeadline;
+    # Promotion Cycle promotion board deadline
+    string promotionBoardDeadline;
     # Promotion Cycle status
     string status;
     # Person who creates the  record
