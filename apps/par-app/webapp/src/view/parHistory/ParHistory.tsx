@@ -171,7 +171,7 @@ const ParHistory = () => {
               <Box sx={{ mx: 4, mt: 2 }}>
                 <TableContainer
                   component="div"
-                  sx={{ background: "transparent", height: "calc(100vh - 430px)" }}
+                  sx={{ background: "transparent", height: "calc(100vh - 240px)" }}
                 >
                   <Table size="small">
                     <TableHead>
@@ -183,7 +183,7 @@ const ParHistory = () => {
                             borderBottom: "none",
                             fontWeight: 600,
                             fontSize: "0.8rem",
-                            color: "text.Primary",
+                            color: "text.primary",
                             pb: 2,
                           }}
                         >
@@ -195,7 +195,7 @@ const ParHistory = () => {
                             borderBottom: "none",
                             fontWeight: 600,
                             fontSize: "0.8rem",
-                            color: "text.Primary",
+                            color: "text.primary",
                           }}
                         >
                           Start Date
@@ -206,7 +206,7 @@ const ParHistory = () => {
                             borderBottom: "none",
                             fontWeight: 600,
                             fontSize: "0.8rem",
-                            color: "text.Primary",
+                            color: "text.primary",
                           }}
                         >
                           End Date

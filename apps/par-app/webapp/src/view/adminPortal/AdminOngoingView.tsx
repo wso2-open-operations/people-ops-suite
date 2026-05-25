@@ -148,7 +148,7 @@ export default function AdminOngoingView() {
                       alignItems="center"
                       sx={{ height: "100%", textAlign: "center" }}
                     >
-                      <Typography variant="body1" sx={{ mb: 2 }}>
+                      <Typography variant="body1" color="text.primary" sx={{ mb: 2 }}>
                         No ongoing PAR cycles found.
                       </Typography>
                       <Button variant="contained" onClick={handleFormOpen}>
