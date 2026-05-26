@@ -73,7 +73,7 @@ export default function Toolbar({
   const employeesLoading = employeeState === State.loading;
 
   const [employeeOptions, setEmployeeOptions] = useState<
-    Array<{ label: string; displayName: string; email: string; thumbnail: string | null }>
+    Array<{ label: string; displayName: string; email: string; thumbnail: string | null; employeeStatus?: string | null }>
   >([{ label: "All Employees", displayName: "All Employees", email: "", thumbnail: null }]);
 
   useEffect(() => {
@@ -85,6 +85,7 @@ export default function Toolbar({
           displayName: `${emp.firstName} ${emp.lastName}`.trim(),
           email: emp.workEmail,
           thumbnail: emp.employeeThumbnail ?? null,
+          employeeStatus: emp.employeeStatus,
         })),
       ];
       setEmployeeOptions(options);
@@ -128,7 +129,15 @@ export default function Toolbar({
                 <Box>
                   <Typography variant="body2" noWrap>{option.displayName}</Typography>
                   {option.email && (
-                    <Typography variant="caption" color="text.secondary" noWrap>{option.email}</Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                      <Typography variant="caption" color="text.secondary" noWrap>{option.email}</Typography>
+                      {option.employeeStatus === "Marked leaver" && (
+                        <Chip label="Marked Leaver" color="warning" size="small" sx={{ height: 16, fontSize: "0.65rem" }} />
+                      )}
+                      {option.employeeStatus === "Left" && (
+                        <Chip label="Left" size="small" sx={{ height: 16, fontSize: "0.65rem", opacity: 0.7 }} />
+                      )}
+                    </Box>
                   )}
                 </Box>
               </li>
