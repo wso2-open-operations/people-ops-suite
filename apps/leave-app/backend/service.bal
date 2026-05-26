@@ -806,7 +806,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     firstName: employee.firstName ?: "",
                     lastName: employee.lastName ?: "",
                     workEmail: employee.workEmail,
-                    employeeThumbnail: employee.employeeThumbnail ?: ""
+                    employeeThumbnail: employee.employeeThumbnail ?: "",
+                    employeeStatus: employee.employeeStatus
                 };
 
             return employeesToReturn;
