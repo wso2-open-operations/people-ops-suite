@@ -118,6 +118,8 @@ public type Employee record {|
     string? leadEmail;
     # Final day of employment of the employee
     string? finalDayOfEmployment;
+    # Status of the employee (e.g. Active, Marked leaver, Left)
+    string? employeeStatus;
     # Employee is a lead or not
     boolean? lead;
     # Subordinate count of the employee
