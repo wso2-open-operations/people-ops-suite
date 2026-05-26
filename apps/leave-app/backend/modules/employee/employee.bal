@@ -47,6 +47,7 @@ public isolated function getEmployee(string? email)
                 jobRole
                 managerEmail
                 finalDayOfEmployment
+                employeeStatus
                 lead
                 subordinateCount
             }
@@ -96,6 +97,7 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
                 jobRole
                 managerEmail
                 finalDayOfEmployment
+                employeeStatus
                 lead
             }
         }
