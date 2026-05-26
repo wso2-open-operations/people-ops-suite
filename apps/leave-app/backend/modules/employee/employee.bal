@@ -106,12 +106,11 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
     Employee[] employees = [];
     boolean fetchMore = true;
     int offset = 0;
-    int defaultLimit = 1000;
 
     while fetchMore {
         MultipleEmployeesResponse|graphql:ClientError response = hrClient->execute(
             document,
-            {filter: gqlFilter, 'limit: defaultLimit, offset: offset}
+            {filter: gqlFilter, 'limit: DEFAULT_LIMIT, offset: offset}
         );
 
         if response is graphql:ClientError {
@@ -123,7 +122,7 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
         employees.push(...from EmployeeResponse empResp in batch
             select toEmployee(empResp));
         fetchMore = batch.length() > 0;
-        offset += defaultLimit;
+        offset += DEFAULT_LIMIT;
     }
     return employees;
 }
