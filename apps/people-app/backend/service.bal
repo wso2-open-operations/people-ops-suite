@@ -1015,7 +1015,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if rows.length() > MAX_BULK_ROWS {
             log:printWarn("CSV file exceeds maximum row limit", rowCount = rows.length(), maxLimit = MAX_BULK_ROWS);
-            return <http:BadRequest>{ body: { message: string `CSV exceeds ${MAX_BULK_ROWS}-row limit` }};
+            return <http:BadRequest>{
+                body: {
+                    message: string `CSV exceeds ${MAX_BULK_ROWS}-row limit`
+                }
+            };
         }
 
         BulkRefData|error refData = loadBulkReferenceData();
@@ -1051,32 +1055,27 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         BulkPayloadResult payloadResult = buildBulkPayloads(firstPass.rowInfos, refData);
 
-        string[]|error generatedIds = database:addEmployeesBulk(
+        [string, int][] bulkResults = database:addEmployeesBulk(
                 payloadResult.employees.map(e => e.payload),
                 userInfo.email);
-        
-        if generatedIds is error {
-            log:printError("Error occurred while bulk creating employees", generatedIds);
-            
-            if generatedIds.message().includes("Duplicate entry") || generatedIds.message().includes("Unique constraint") {
-                 return <http:InternalServerError>{
-                     body: {
-                         message: "Concurrent upload conflict — please retry"
-                     }
-                 };
-            }
+
+        int batchStatus = bulkResults.length() > 0 ? bulkResults[0][1] : database:BULK_INSERT_FAILED;
+
+        if batchStatus != database:BULK_INSERT_SUCCESS {
+            string errorMessage = batchStatus == database:BULK_INSERT_DUPLICATE
+                ? "Concurrent upload conflict — please retry"
+                : ERROR_EMPLOYEE_CREATION_FAILED;
 
             return <http:InternalServerError>{
                 body: {
-                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                    message: errorMessage
                 }
             };
         }
 
-        foreach int i in 0 ..< generatedIds.length() {
-            payloadResult.employees[i].employeeId = generatedIds[i];
+        foreach int i in 0 ..< bulkResults.length() {
+            payloadResult.employees[i].employeeId = bulkResults[i][0];
         }
-
         int created = 0;
 
         database:BulkProvisioningError[] provisioningErrors = [];
@@ -1085,9 +1084,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         foreach ResolvedEmployee emp in payloadResult.employees {
             error? scimResult = scim:createUser(
-                emp.payload.workEmail,
-                emp.payload.firstName,
-                emp.payload.lastName
+                    emp.payload.workEmail,
+                    emp.payload.firstName,
+                    emp.payload.lastName
             );
 
             if scimResult is error {
@@ -1250,9 +1249,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? scimUserResult = scim:createUser(
-            payload.workEmail,
-            payload.firstName,
-            payload.lastName
+                payload.workEmail,
+                payload.firstName,
+                payload.lastName
         );
         if scimUserResult is error {
             log:printError("Failed to provision user in Asgardeo; rolling back employee record",

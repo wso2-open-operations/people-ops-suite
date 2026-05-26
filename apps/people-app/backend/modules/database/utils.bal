@@ -171,6 +171,20 @@ public isolated function isValidOptionalPatternString(string? value, string patt
     return value.matches(compiled);
 }
 
+# Maps a database error to a bulk insert status code.
+#
+# + err - The error to map
+# + return - BULK_INSERT_DUPLICATE for MySQL duplicate entry,
+#            BULK_INSERT_FAILED for all other errors
+public isolated function getErrorCode(error err) returns int {
+    if err is sql:DatabaseError {
+        if err.detail().errorCode == 1062 {
+            return BULK_INSERT_DUPLICATE;
+        }
+    }
+    return BULK_INSERT_FAILED;
+}
+
 # Escape a value for CSV (RFC 4180).
 #
 # + value - The string value to escape

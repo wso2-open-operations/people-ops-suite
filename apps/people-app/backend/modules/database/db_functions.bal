@@ -407,34 +407,61 @@ public isolated function deleteEmployeeById(string employeeId) returns error? {
     }
 }
 
-# Add multiple employees in a single transaction.
+# Add multiple employees in a single transaction with retry on concurrent ID conflicts.
 #
 # + payloads - Create employee payloads
 # + createdBy - Creator of the employee records
-# + return - Array of generated employee IDs or error
+# + return - Ordered array of [employeeId, statusCode] tuples, or error
 public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, string createdBy)
-        returns string[]|error {
+        returns [string, int][] {
 
-    string[] generatedIds = [];
+    int maxRetries = 3;
+    int attempt = 0;
 
-    retry transaction {
-        generatedIds = [];
+    while attempt < maxRetries {
+        attempt += 1;
+        [string, int][] attemptResults = [];
         map<EmployeeIdContext> contextCache = {};
         map<int> sequenceCache = {};
+        error? txErr = ();
 
-        foreach int i in 0 ..< payloads.length() {
-            CreateEmployeePayload payload = payloads[i];
-            string employeeId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
-            generatedIds.push(employeeId);
-
-            int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
-            _ = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
-            check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
-            check syncAdditionalManagers(employeeId, payload.additionalManagerEmails, createdBy);
+        transaction {
+            foreach CreateEmployeePayload payload in payloads {
+                string employeeId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
+                int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
+                _ = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
+                check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
+                check syncAdditionalManagers(employeeId, payload.additionalManagerEmails, createdBy);
+                attemptResults.push([employeeId, BULK_INSERT_SUCCESS]);
+            }
+            check commit;
+        } on fail error err {
+            txErr = err;
         }
-        check commit;
+
+        if txErr is () {
+            return attemptResults;
+        }
+
+        int errorCode = getErrorCode(txErr);
+        int finalStatus = errorCode == 1062 ? BULK_INSERT_DUPLICATE : BULK_INSERT_FAILED;
+
+        if finalStatus == BULK_INSERT_DUPLICATE && attempt < maxRetries {
+            continue;
+        }
+
+        [string, int][] result = [];
+        foreach var _ in payloads {
+            result.push(["", finalStatus]);
+        }
+        return result;
     }
-    return generatedIds;
+
+    [string, int][] result = [];
+    foreach var _ in payloads {
+        result.push(["", BULK_INSERT_FAILED]);
+    }
+    return result;
 }
 
 # Generates an employee ID for a single CSV row during bulk onboarding.
