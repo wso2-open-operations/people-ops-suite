@@ -131,11 +131,11 @@ export default function Toolbar({
                   {option.email && (
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
                       <Typography variant="caption" color="text.secondary" noWrap>{option.email}</Typography>
-                      {option.employeeStatus === "Marked leaver" && (
-                        <Chip label="Marked Leaver" color="warning" size="small" sx={{ height: 16, fontSize: "0.65rem" }} />
+                      {option.employeeStatus === EmployeeStatus.MARKED_LEAVER && (
+                        <Chip label={EmployeeStatus.MARKED_LEAVER} color="warning" size="small" sx={{ height: 16, fontSize: "0.65rem" }} />
                       )}
-                      {option.employeeStatus === "Left" && (
-                        <Chip label="Left" size="small" sx={{ height: 16, fontSize: "0.65rem", opacity: 0.7 }} />
+                      {option.employeeStatus === EmployeeStatus.LEFT && (
+                        <Chip label={EmployeeStatus.LEFT} size="small" sx={{ height: 16, fontSize: "0.65rem", opacity: 0.7 }} />
                       )}
                     </Box>
                   )}
