@@ -56,6 +56,13 @@ isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
 isolated function getEmployeeIdByEpfQuery(string epf) returns sql:ParameterizedQuery =>
     `SELECT employee_id FROM employee WHERE epf = ${epf} LIMIT 1;`;
 
+# Fetch employee work email by employee ID.
+#
+# + employeeId - Employee ID
+# + return - Query to get employee work email
+isolated function getEmployeeWorkEmailQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT work_email FROM employee WHERE employee_id = ${employeeId};`;
+
 # Fetch employee detailed information.
 #
 # + employeeId - Employee ID
@@ -87,6 +94,10 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         csr.start_date AS continuousServiceDate,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
+        r.date AS resignationDate,
+        r.final_day_in_office AS finalDayInOffice,
+        r.final_day_of_employment AS finalDayOfEmployment,
+        r.reason AS resignationReason,
         et.name AS employmentType,
         e.employment_type_id AS employmentTypeId,
         d.career_function_id AS careerFunctionId,
@@ -128,6 +139,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         LEFT JOIN personal_info pi ON pi.id = e.personal_info_id
         LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
         LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
+        LEFT JOIN resignation r ON r.employee_id = e.id
     WHERE
         e.employee_id = ${employeeId};`;
 
@@ -160,6 +172,10 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             csr.start_date AS continuousServiceDate,
             e.probation_end_date AS probationEndDate,
             e.agreement_end_date AS agreementEndDate,
+            r.date AS resignationDate,
+            r.final_day_in_office AS finalDayInOffice,
+            r.final_day_of_employment AS finalDayOfEmployment,
+            r.reason AS resignationReason,
             et.name AS employmentType,
             e.employment_type_id AS employmentTypeId,
             d.career_function_id AS careerFunctionId,
@@ -181,10 +197,6 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.company_id AS companyId,
             h.name AS house,
             e.house_id AS houseId,
-            r.date                    AS resignationDate,
-            r.final_day_in_office     AS finalDayInOffice,
-            r.final_day_of_employment AS finalDayOfEmployment,
-            r.reason                  AS resignationReason,
             pi.gender AS gender,
             COUNT(*) OVER() AS totalCount
         FROM
@@ -218,9 +230,9 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             INNER JOIN sub_team st ON st.id = e.sub_team_id
             LEFT JOIN unit u ON u.id = e.unit_id
             LEFT JOIN house h ON h.id = e.house_id
-            LEFT JOIN resignation r ON r.employee_id = e.id
             LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
             LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
+            LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 
     sql:ParameterizedQuery[] filters = [];
@@ -1111,6 +1123,15 @@ isolated function getEmploymentTypesQuery() returns sql:ParameterizedQuery =>
         name
     FROM employment_type;`;
 
+# Fetch IDP group names mapped to a given employment type.
+#
+# + employmentTypeId - Employment type ID
+# + return - Parameterized query returning group_name rows
+isolated function getAsgardeoGroupsForEmploymentTypeQuery(int employmentTypeId) returns sql:ParameterizedQuery =>
+    `SELECT group_name AS groupName
+     FROM employment_type_idp_group
+     WHERE employment_type_id = ${employmentTypeId};`;
+
 # Get houses query.
 #
 # + return - Houses query
@@ -1616,6 +1637,10 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         }
     }
 
+    if payload.employeeStatus is EmployeeStatus {
+        updates.push(`employee_status = ${payload.employeeStatus}`);
+    }
+
     updates.push(`updated_by = ${updatedBy}`);
 
     sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
@@ -1625,6 +1650,49 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
     `);
 
     return finalQuery;
+}
+
+# Upsert the resignation record for an employee.
+# Fields not provided in the payload (null) preserve the existing DB value.
+#
+# + employeeId - Employee ID string
+# + payload - Job information update payload containing leaver fields
+# + updatedBy - User performing the update
+# + return - sql:ParameterizedQuery - Upsert query for the resignation table
+isolated function upsertResignationQuery(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns sql:ParameterizedQuery {
+
+    string? finalDayInOffice = payload.finalDayInOffice;
+    string? finalDayOfEmployment = payload.finalDayOfEmployment;
+    string? resignationReason = payload.resignationReason;
+
+    return `INSERT INTO resignation
+        (
+            employee_id,
+            date,
+            final_day_in_office,
+            final_day_of_employment,
+            reason,
+            created_by,
+            updated_by
+        )
+    SELECT
+        e.id,
+        CURRENT_TIMESTAMP(6),
+        ${finalDayInOffice},
+        ${finalDayOfEmployment},
+        ${resignationReason},
+        ${updatedBy},
+        ${updatedBy}
+    FROM employee e
+    WHERE e.employee_id = ${employeeId}
+    ON DUPLICATE KEY UPDATE
+        date                    = IF(date IS NULL, CURRENT_TIMESTAMP(6), date),
+        final_day_in_office     = IF(VALUES(final_day_in_office) IS NOT NULL, VALUES(final_day_in_office), final_day_in_office),
+        final_day_of_employment = IF(VALUES(final_day_of_employment) IS NOT NULL, VALUES(final_day_of_employment), final_day_of_employment),
+        reason                  = IF(VALUES(reason) IS NOT NULL, VALUES(reason), reason),
+        updated_by              = ${updatedBy},
+        updated_on              = CURRENT_TIMESTAMP(6)`;
 }
 
 # Add an additional manager for an employee.
@@ -1684,6 +1752,21 @@ isolated function deleteAdditionalManagerQuery(string employeeId, string email, 
       WHERE e.employee_id = ${employeeId}
         AND LOWER(eam.additional_manager_email) = LOWER(${email})
         AND eam.is_active = 1;`;
+
+# Inactivate all additional-manager relationships where the leaving
+# employee's email is recorded as the additional manager for other employees.
+#
+# + managerEmail - Work email of the employee who is leaving
+# + actor - User performing the operation
+# + return - Parameterized query
+isolated function inactivateAdditionalManagerRelationshipsQuery(string managerEmail, string actor)
+    returns sql:ParameterizedQuery =>
+    `UPDATE employee_additional_managers eam
+     SET eam.is_active = 0,
+         eam.updated_by = ${actor},
+         eam.updated_on = CURRENT_TIMESTAMP(6)
+     WHERE LOWER(eam.additional_manager_email) = LOWER(${managerEmail})
+       AND eam.is_active = 1;`;
 
 # Build query to fetch vehicles.
 #
@@ -2103,3 +2186,45 @@ isolated function countActiveEmployeesInSubTeamQuery(int id) returns sql:Paramet
 # + return - Query counting active employees with unit_id = id
 isolated function countActiveEmployeesInUnitQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count FROM employee WHERE unit_id = ${id} AND employee_status = 'Active'`;
+
+# Delete an employee record.
+#
+# + employeeId - Employee ID string
+# + return - Parameterized query to delete an employee
+isolated function deleteEmployeeQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee WHERE employee_id = ${employeeId};`;
+
+# Delete a personal info record.
+#
+# + personalInfoId - Primary key of the personal_info row
+# + return - Parameterized query to delete a personal info record
+isolated function deletePersonalInfoQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `DELETE FROM personal_info WHERE id = ${personalInfoId};`;
+
+# Delete employee audit rows for an employee.
+#
+# + employeePkId - Primary key of the employee row
+# + return - Parameterized query to delete employee audit rows
+isolated function deleteEmployeeAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_audit WHERE employee_pk_id = ${employeePkId};`;
+
+# Delete additional managers audit rows for an employee.
+#
+# + employeePkId - Primary key of the employee row
+# + return - Parameterized query to delete additional managers audit rows
+isolated function deleteEmployeeAdditionalManagersAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_additional_managers_audit WHERE employee_pk_id = ${employeePkId};`;
+
+# Delete emergency contacts audit rows for a personal info record.
+#
+# + personalInfoId - Primary key of the personal_info row
+# + return - Parameterized query to delete emergency contacts audit rows
+isolated function deleteEmployeeEmergencyContactsAuditQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `DELETE FROM personal_info_emergency_contacts_audit WHERE personal_info_id = ${personalInfoId};`;
+
+# Delete personal info audit rows for a personal info record.
+#
+# + personalInfoId - Primary key of the personal_info row
+# + return - Parameterized query to delete personal info audit rows
+isolated function deletePersonalInfoAuditQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `DELETE FROM personal_info_audit WHERE personal_info_pk_id = ${personalInfoId};`;

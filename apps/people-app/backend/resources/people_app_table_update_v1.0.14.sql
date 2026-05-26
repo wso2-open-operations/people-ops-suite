@@ -1,27 +1,16 @@
--- Add uniqueness constraints to the company org chart mapping tables.
--- Prevents duplicate (parent, child) rows and enables INSERT ... ON DUPLICATE KEY UPDATE
--- to cleanly re-activate previously soft-deleted mappings during admin CRUD.
---
--- Pre-flight: if production already contains duplicate active rows for the same
--- (business_unit_id, team_id) etc. pair, these ALTER TABLE statements will fail.
--- Inspect with the SELECT statements below before running and deduplicate manually
--- if needed.
---
---   SELECT business_unit_id, team_id, COUNT(*)
---     FROM business_unit_team
---    GROUP BY business_unit_id, team_id HAVING COUNT(*) > 1;
---   SELECT business_unit_team_id, sub_team_id, COUNT(*)
---     FROM business_unit_team_sub_team
---    GROUP BY business_unit_team_id, sub_team_id HAVING COUNT(*) > 1;
---   SELECT business_unit_team_sub_team_id, unit_id, COUNT(*)
---     FROM business_unit_team_sub_team_unit
---    GROUP BY business_unit_team_sub_team_id, unit_id HAVING COUNT(*) > 1;
-
-ALTER TABLE `business_unit_team`
-  ADD UNIQUE KEY `uk_but_bu_team` (`business_unit_id`, `team_id`);
-
-ALTER TABLE `business_unit_team_sub_team`
-  ADD UNIQUE KEY `uk_butst_but_st` (`business_unit_team_id`, `sub_team_id`);
-
-ALTER TABLE `business_unit_team_sub_team_unit`
-  ADD UNIQUE KEY `uk_butstu_butst_u` (`business_unit_team_sub_team_id`, `unit_id`);
+-- Employment Type IDP Group Mapping Table
+CREATE TABLE `employment_type_idp_group` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `employment_type_id` INT NOT NULL,
+  `group_name` VARCHAR(255) NOT NULL,
+  `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_etag_employment_type_group` (`employment_type_id`, `group_name`),
+  KEY `idx_etag_employment_type_id` (`employment_type_id`),
+  CONSTRAINT `fk_etag_employment_type`
+    FOREIGN KEY (`employment_type_id`) REFERENCES `employment_type` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

@@ -139,3 +139,15 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
         }
     }
 }
+
+# Roll back an employee record after a downstream provisioning step fails.
+#
+# + employeeId - Employee ID to delete
+# + workEmail - Work email of the affected user
+isolated function rollbackEmployeeCreation(string employeeId, string workEmail) {
+    error? rollbackErr = database:deleteEmployeeById(employeeId);
+    if rollbackErr is error {
+        log:printError("Failed to roll back employee record; manual cleanup required",
+                rollbackErr, employeeId = employeeId, workEmail = workEmail);
+    }
+}

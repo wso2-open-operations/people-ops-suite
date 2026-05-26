@@ -18,3 +18,4 @@ const ERROR_USER_INFORMATION_HEADER_NOT_FOUND = "User information header not fou
 const ERROR_PERSONAL_INFO_UPDATE_FAILED = "Failed to update personal information";
 const ERROR_EMPLOYEE_INFO_UPDATE_FAILED = "Failed to update employee job information";
 const ERROR_EMPLOYEE_CREATION_FAILED = "Error occurred while creating a new employee";
+const WARNING_GROUP_ASSIGNMENT_FAILED = "Employee created successfully, but some group assignments failed";

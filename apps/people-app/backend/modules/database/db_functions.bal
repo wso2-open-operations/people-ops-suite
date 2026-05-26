@@ -249,6 +249,17 @@ public isolated function getEmploymentTypes() returns EmploymentType[]|error {
         select employmentType;
 }
 
+# Fetch IDP group names mapped to an employment type.
+#
+# + employmentTypeId - Employment type ID
+# + return - Group names, or error
+public isolated function getAsgardeoGroupsByEmploymentType(int employmentTypeId) returns string[]|error {
+    stream<record {|string groupName;|}, error?> rows =
+        databaseClient->query(getAsgardeoGroupsForEmploymentTypeQuery(employmentTypeId));
+    return from var row in rows
+        select row.groupName;
+}
+
 # Get houses.
 #
 # + return - Houses
@@ -324,6 +335,26 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
         check commit;
     }
     return lastInsertedId;
+}
+
+# Compensating delete used to roll back `addEmployee` when downstream provisioning fails.
+#
+# + employeeId - Employee ID string
+# + return - Nil on success or error
+public isolated function deleteEmployeeById(string employeeId) returns error? {
+    retry transaction {
+        EmployeeDeleteIds ids = check databaseClient->queryRow(
+            `SELECT id, personal_info_id as personalInfoId FROM employee WHERE employee_id = ${employeeId}`);
+        int employeePkId = ids.id;
+        int personalInfoId = ids.personalInfoId;
+        _ = check databaseClient->execute(deleteEmployeeAdditionalManagersAuditQuery(employeePkId));
+        _ = check databaseClient->execute(deleteEmployeeEmergencyContactsAuditQuery(personalInfoId));
+        _ = check databaseClient->execute(deleteEmployeeAuditQuery(employeePkId));
+        _ = check databaseClient->execute(deletePersonalInfoAuditQuery(personalInfoId));
+        _ = check databaseClient->execute(deleteEmployeeQuery(employeeId));
+        _ = check databaseClient->execute(deletePersonalInfoQuery(personalInfoId));
+        check commit;
+    }
 }
 
 # Fetch employee ID generation context.
@@ -529,7 +560,54 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
         if additionalManagerEmails is Email[] {
             check syncAdditionalManagers(employeeId, additionalManagerEmails, updatedBy);
         }
+        check syncResignationRecord(employeeId, payload, updatedBy);
         check commit;
+    }
+}
+
+# Check whether the job-info update payload contains any leaver-specific fields.
+#
+# + payload - Job information update payload
+# + return - True if any resignation field is present
+public isolated function hasLeaverFields(UpdateEmployeeJobInfoPayload payload) returns boolean =>
+    payload.finalDayInOffice is string
+    || payload.finalDayOfEmployment is string
+    || payload.resignationReason is string;
+
+# Inactivate any additional-manager relationships where the employee is listed as the additional manager for others.
+#
+# + employeeId - Employee ID of the employee who is leaving
+# + actor - User performing the operation
+# + return - Nil or error
+isolated function inactivateEmployeeRelationshipsOnOffboarding(string employeeId, string actor)
+    returns error? {
+
+    WorkEmailRow|error workEmailRow =
+        databaseClient->queryRow(getEmployeeWorkEmailQuery(employeeId));
+    if workEmailRow is sql:NoRowsError {
+        return ();
+    }
+    if workEmailRow is error {
+        return workEmailRow;
+    }
+
+    string employeeEmail = workEmailRow.workEmail;
+    _ = check databaseClient->execute(inactivateAdditionalManagerRelationshipsQuery(employeeEmail, actor));
+}
+
+# Sync the resignation table row for an employee based on the job-info update payload.
+# Retains any existing resignation record when the employee is reactivated, so historical details are preserved.
+#
+# + employeeId - Employee ID
+# + payload - Job information update payload
+# + updatedBy - User performing the operation
+# + return - Nil or error
+isolated function syncResignationRecord(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns error? {
+
+    if hasLeaverFields(payload) {
+        _ = check databaseClient->execute(upsertResignationQuery(employeeId, payload, updatedBy));
+        check inactivateEmployeeRelationshipsOnOffboarding(employeeId, updatedBy);
     }
 }
 

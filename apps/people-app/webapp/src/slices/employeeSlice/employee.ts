@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { EmergencyContact, State } from "@/types/types";
+import { EmergencyContact, EmployeeStatus, State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import {
   DEFAULT_LIMIT_VALUE,
@@ -42,7 +42,7 @@ export interface Employee {
   gender: string | null;
   continuousServiceDate: string | null;
   jobBand: number | null;
-  employeeStatus: string;
+  employeeStatus: EmployeeStatus;
   probationEndDate: string | null;
   agreementEndDate: string | null;
   resignationDate: string | null;
@@ -69,12 +69,6 @@ export interface Employee {
   unitId: number | null;
   house: string | null;
   houseId: number | null;
-}
-
-export enum EmployeeStatus {
-  Active = "Active",
-  Left = "Left",
-  MarkedLeaver = "Marked leaver",
 }
 
 export interface EmployeeBasicInfo {
@@ -124,7 +118,7 @@ export interface EmployeeQrInfo {
   employeeThumbnail: string | null;
   house: string | null;
   houseId: number | null;
-  employeeStatus: string;
+  employeeStatus: EmployeeStatus;
 }
 
 export type QrEmployeesResponse = {
@@ -133,7 +127,7 @@ export type QrEmployeesResponse = {
 };
 
 export type QrCodeSearchFilters = {
-  employeeStatus?: string;
+  employeeStatus?: EmployeeStatus;
 };
 
 export type QrCodeSearchPayload = {
@@ -207,6 +201,12 @@ export type CreateEmployeePayload = {
   personalInfo: CreatePersonalInfoPayload;
 };
 
+export type CreateEmployeeResponse = {
+  employeeId: number;
+  message: string;
+  hasGroupAssignmentWarning: boolean;
+};
+
 export type UpdateEmployeeJobInfoPayload = {
   epf?: string | null;
   workLocation?: string;
@@ -228,6 +228,10 @@ export type UpdateEmployeeJobInfoPayload = {
   unitId?: number | null;
   houseId?: number | null;
   continuousServiceRecord?: string | null;
+  employeeStatus?: EmployeeStatus | null;
+  finalDayInOffice?: string | null;
+  finalDayOfEmployment?: string | null;
+  resignationReason?: string | null;
 };
 
 export interface ContinuousServiceRecordInfo {
@@ -460,11 +464,14 @@ export const createEmployee = createAsyncThunk(
         AppConfig.serviceUrls.employees,
         payload,
       );
-      const employeeId = response.data as number;
+      const data = response.data as CreateEmployeeResponse;
+      const employeeId = data.employeeId;
+      const message = data.message || "Employee created successfully!";
+      const messageType = data.hasGroupAssignmentWarning ? "warning" : "success";
       dispatch(
         enqueueSnackbarMessage({
-          message: "Employee created successfully!",
-          type: "success",
+          message,
+          type: messageType,
         }),
       );
       return employeeId;
@@ -543,7 +550,9 @@ export const downloadEmployeeReportByStatus = createAsyncThunk(
       if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.data?.message ?? "Failed to download report";
-      dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
+      dispatch(
+        enqueueSnackbarMessage({ message: errorMessage, type: "error" }),
+      );
       return rejectWithValue(errorMessage);
     }
   },
@@ -622,7 +631,9 @@ export const fetchEmployeeQrCode = createAsyncThunk(
       if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.data?.message ?? "Failed to generate QR code";
-      dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
+      dispatch(
+        enqueueSnackbarMessage({ message: errorMessage, type: "error" }),
+      );
       return rejectWithValue(errorMessage);
     }
   },
