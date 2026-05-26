@@ -474,6 +474,9 @@ public type OrgStructureBase record {|
     # Whether the entity is active.
     @sql:Column {name: "is_active"}
     boolean isActive;
+    # Number of active employees currently assigned to this entity.
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
 |};
 
 # Business unit — a company org chart entity.
@@ -1211,6 +1214,9 @@ type CompanyOrgChartBusinessUnitRow record {|
     # Whether the business unit is active.
     @sql:Column {name: "is_active"}
     boolean isActive;
+    # Number of active employees currently assigned to this business unit.
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
     # Teams with nested sub-teams and units as raw JSON.
     json teams;
 |};

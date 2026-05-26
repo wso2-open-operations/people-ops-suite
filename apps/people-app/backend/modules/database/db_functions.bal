@@ -969,6 +969,7 @@ public isolated function getCompanyOrgChartStructure() returns CompanyOrgChartBu
             name: row.name,
             headEmail: row.headEmail,
             isActive: row.isActive,
+            activeEmployeeCount: row.activeEmployeeCount,
             teams: check row.teams.fromJsonWithType()
         };
 }

@@ -504,7 +504,9 @@ isolated function getEmergencyContactsByEmployeeIdQuery(string employeeId) retur
 # + includeInactive - If true, return all entities including inactive; otherwise active-only
 # + return - Business units query
 isolated function getBusinessUnitsQuery(boolean includeInactive = false) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `SELECT bu.id, bu.name, bu.head_email, bu.is_active
+    sql:ParameterizedQuery query = `SELECT bu.id, bu.name, bu.head_email, bu.is_active,
+        (SELECT COUNT(*) FROM employee
+            WHERE business_unit_id = bu.id AND employee_status = 'Active') AS active_employee_count
         FROM business_unit bu`;
     if !includeInactive {
         query = sql:queryConcat(query, ` WHERE bu.is_active = 1`);
@@ -520,7 +522,9 @@ isolated function getBusinessUnitsQuery(boolean includeInactive = false) returns
 isolated function getTeamsQuery(int? buId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT
-            t.id, t.name, t.head_email, t.is_active
+            t.id, t.name, t.head_email, t.is_active,
+            (SELECT COUNT(*) FROM employee
+                WHERE team_id = t.id AND employee_status = 'Active') AS active_employee_count
         FROM
             team t`;
 
@@ -548,7 +552,9 @@ isolated function getTeamsQuery(int? buId = (), boolean includeInactive = false)
 isolated function getSubTeamsQuery(int? teamId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT DISTINCT
-            st.id, st.name, st.head_email, st.is_active
+            st.id, st.name, st.head_email, st.is_active,
+            (SELECT COUNT(*) FROM employee
+                WHERE sub_team_id = st.id AND employee_status = 'Active') AS active_employee_count
         FROM
             sub_team st`;
     if teamId is int {
@@ -578,7 +584,9 @@ isolated function getSubTeamsQuery(int? teamId = (), boolean includeInactive = f
 isolated function getUnitsQuery(int? subTeamId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT DISTINCT
-            u.id, u.name, u.head_email, u.is_active
+            u.id, u.name, u.head_email, u.is_active,
+            (SELECT COUNT(*) FROM employee
+                WHERE unit_id = u.id AND employee_status = 'Active') AS active_employee_count
         FROM
             unit u`;
     if subTeamId is int {
@@ -889,6 +897,8 @@ isolated function getCompanyOrgChartStructureQuery() returns sql:ParameterizedQu
         bu.name,
         bu.head_email,
         bu.is_active,
+        (SELECT COUNT(*) FROM employee
+            WHERE business_unit_id = bu.id AND employee_status = 'Active') AS active_employee_count,
         COALESCE(
             (
                 SELECT JSON_ARRAYAGG(team_sub.obj)
