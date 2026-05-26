@@ -189,7 +189,7 @@ public type EmployeeResponse record {
     # Final day of employment of the employee
     string? finalDayOfEmployment;
     # Status of the employee
-    string? employeeStatus?;
+    string employeeStatus;
     # Employee is a lead or not
     boolean? lead;
     # Job band of the employee

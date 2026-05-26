@@ -106,13 +106,14 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
     Employee[] employees = [];
     boolean fetchMore = true;
     int offset = 0;
-    int defaultLimit = 100;
+    int defaultLimit = 1000;
 
     while fetchMore {
         MultipleEmployeesResponse|graphql:ClientError response = hrClient->execute(
             document,
             {filter: gqlFilter, 'limit: defaultLimit, offset: offset}
         );
+
         if response is graphql:ClientError {
             string customError = "An error occurred while retrieving employee data!";
             log:printError(customError, response);
