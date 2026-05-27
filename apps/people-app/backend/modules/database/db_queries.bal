@@ -641,6 +641,7 @@ isolated function createBusinessUnitQuery(string name, string headEmail, string 
 # + return - Update query or error if nothing to update
 isolated function updateBusinessUnitQuery(int id, string? name, string? headEmail, boolean? isActive,
         string updatedBy) returns sql:ParameterizedQuery|error {
+
     sql:ParameterizedQuery[] updates = [];
     if name is string {
         updates.push(`name = ${name}`);
@@ -679,6 +680,7 @@ isolated function createTeamQuery(string name, string headEmail, string createdB
 # + return - Update query or error if nothing to update
 isolated function updateTeamQuery(int id, string? name, string? headEmail, boolean? isActive,
         string updatedBy) returns sql:ParameterizedQuery|error {
+
     sql:ParameterizedQuery[] updates = [];
     if name is string {
         updates.push(`name = ${name}`);
@@ -717,6 +719,7 @@ isolated function createSubTeamQuery(string name, string headEmail, string creat
 # + return - Update query or error if nothing to update
 isolated function updateSubTeamQuery(int id, string? name, string? headEmail, boolean? isActive,
         string updatedBy) returns sql:ParameterizedQuery|error {
+
     sql:ParameterizedQuery[] updates = [];
     if name is string {
         updates.push(`name = ${name}`);
@@ -755,6 +758,7 @@ isolated function createUnitQuery(string name, string headEmail, string createdB
 # + return - Update query or error if nothing to update
 isolated function updateUnitQuery(int id, string? name, string? headEmail, boolean? isActive,
         string updatedBy) returns sql:ParameterizedQuery|error {
+
     sql:ParameterizedQuery[] updates = [];
     if name is string {
         updates.push(`name = ${name}`);
@@ -799,6 +803,7 @@ isolated function createBusinessUnitTeamQuery(int businessUnitId, int teamId, st
 # + return - Update query or error if nothing to update
 isolated function updateBusinessUnitTeamQuery(int id, string? headEmail, boolean? isActive,
         string updatedBy) returns sql:ParameterizedQuery|error {
+
     sql:ParameterizedQuery[] updates = [];
     if headEmail is string {
         updates.push(`head_email = ${headEmail}`);
@@ -840,6 +845,7 @@ isolated function createBusinessUnitTeamSubTeamQuery(int businessUnitTeamId, int
 # + return - Update query or error if nothing to update
 isolated function updateBusinessUnitTeamSubTeamQuery(int id, string? headEmail, boolean? isActive,
         string updatedBy) returns sql:ParameterizedQuery|error {
+
     sql:ParameterizedQuery[] updates = [];
     if headEmail is string {
         updates.push(`head_email = ${headEmail}`);
@@ -883,6 +889,7 @@ isolated function createBusinessUnitTeamSubTeamUnitQuery(int businessUnitTeamSub
 # + return - Update query or error if nothing to update
 isolated function updateBusinessUnitTeamSubTeamUnitQuery(int id, string? headEmail, boolean? isActive,
         string updatedBy) returns sql:ParameterizedQuery|error {
+
     sql:ParameterizedQuery[] updates = [];
     if headEmail is string {
         updates.push(`head_email = ${headEmail}`);

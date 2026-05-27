@@ -869,6 +869,7 @@ public isolated function createBusinessUnit(CreateCompanyOrgChartEntityPayload p
 # + return - Nil or error
 public isolated function updateBusinessUnit(int id, UpdateCompanyOrgChartEntityPayload payload, string updatedBy)
         returns error? {
+
     sql:ParameterizedQuery query = check updateBusinessUnitQuery(id, payload.name, payload.headEmail, payload.isActive,
             updatedBy);
 
@@ -1045,6 +1046,7 @@ public isolated function createBusinessUnitTeamSubTeamUnit(CreateBusinessUnitTea
 # + return - Nil or error
 public isolated function updateBusinessUnitTeamSubTeamUnit(int id, UpdateMappingPayload payload, string updatedBy)
         returns error? {
+
     sql:ParameterizedQuery query = check updateBusinessUnitTeamSubTeamUnitQuery(id, payload.headEmail, payload.isActive,
             updatedBy);
     sql:ExecutionResult result = check databaseClient->execute(query);
