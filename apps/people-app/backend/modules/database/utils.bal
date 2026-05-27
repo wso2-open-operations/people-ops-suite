@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 
+import ballerina/lang.regexp;
 import ballerina/sql;
 import ballerina/time;
 
@@ -150,6 +151,24 @@ public isolated function checkAffectedCount(int? affectedRowCount) returns error
         return error(ERROR_NO_ROWS_UPDATED);
     }
     return;
+}
+
+# Validate an optional string against a regex pattern. Nil and empty string
+# are accepted (interpreted as "absent" or "cleared"); any non-empty value
+# must match the supplied pattern.
+#
+# + value - Optional string value to validate
+# + pattern - Regex pattern that non-empty values must satisfy
+# + return - True if the value is nil/empty or matches the pattern, false otherwise
+public isolated function isValidOptionalPatternString(string? value, string pattern) returns boolean {
+    if value is () || value == "" {
+        return true;
+    }
+    regexp:RegExp|error compiled = regexp:fromString(pattern);
+    if compiled is error {
+        return false;
+    }
+    return value.matches(compiled);
 }
 
 # Escape a value for CSV (RFC 4180).
@@ -295,7 +314,7 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
         "jobRole"               => {
             string? secTitle = e.secondaryJobTitle;
             string jobRole = secTitle is string && secTitle.trim() != ""
-                ? e.designation + " / " + secTitle
+                ? e.designation + " " + secTitle
                 : e.designation;
             return csvEscape(jobRole);
         }

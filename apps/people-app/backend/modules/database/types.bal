@@ -12,7 +12,7 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 
 import ballerina/constraint;
 import ballerina/sql;
@@ -33,6 +33,12 @@ const URL_PATTERN_STRING = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
 # Constrained email string type.
 @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
 public type Email string;
+
+# Distinct error returned when a PATCH targets an entity ID that does not exist.
+public type EntityNotFoundError distinct error;
+
+# Distinct error returned when a PATCH payload carries no fields to update.
+public type NoFieldsToUpdateError distinct error;
 
 # [Configurable] Database configs.
 type DatabaseConfig record {|
@@ -459,68 +465,61 @@ public type ContinuousServiceRecordInfo record {|
     string? unit;
 |};
 
-# Business unit.
-public type BusinessUnit record {|
-    # Business unit ID
+# Base record for org structure nodes (id and name only).
+public type OrgEntityBase record {|
+    # Entity ID.
     int id;
-    # Business unit name
+    # Entity name.
     string name;
 |};
 
-# Team.
-public type Team record {|
-    # Team ID
-    int id;
-    # Team name
-    string name;
+# Base record for company org chart entities (business unit, team, sub-team, unit).
+public type OrgStructureBase record {|
+    *OrgEntityBase;
+    # Email of the entity head.
+    @sql:Column {name: "head_email"}
+    string headEmail;
+    # Whether the entity is active.
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # Number of active employees currently assigned to this entity.
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
 |};
 
-# Sub team.
-public type SubTeam record {|
-    # Sub team ID
-    int id;
-    # Sub team name
-    string name;
-|};
+# Business unit — a company org chart entity.
+public type BusinessUnit OrgStructureBase;
 
-# Unit.
-public type Unit record {|
-    # Unit ID
-    int id;
-    # Unit name
-    string name;
-|};
+# Team — a company org chart entity.
+public type Team OrgStructureBase;
 
-# Organization structure unit.
-public type OrgStructureUnit Unit;
+# Sub-team — a company org chart entity.
+public type SubTeam OrgStructureBase;
 
-# Organization structure sub-team.
+# Unit — a company org chart entity.
+public type Unit OrgStructureBase;
+
+# Organization structure unit (read-only public hierarchy).
+public type OrgStructureUnit OrgEntityBase;
+
+# Organization structure sub-team (read-only public hierarchy).
 public type OrgStructureSubTeam record {|
-    # SubTeam ID
-    int id;
-    # SubTeam name
-    string name;
-    # Units under this sub-team
+    *OrgEntityBase;
+    # Units under this sub-team.
     OrgStructureUnit[] units = [];
 |};
 
-# Organization structure team.
+# Organization structure team (read-only public hierarchy).
 public type OrgStructureTeam record {|
-    # Team ID
-    int id;
-    # Team name
-    string name;
-    # Sub-teams under this team
+    *OrgEntityBase;
+    # Sub-teams under this team.
     OrgStructureSubTeam[] subTeams = [];
 |};
 
-# Organization structure business unit.
+# Organization structure business unit (read-only public hierarchy).
 public type OrgStructureBusinessUnit record {|
-    # Business unit ID
-    int id;
-    # Business unit name
-    string name;
-    # Teams under this business unit
+    *OrgEntityBase;
+    # Teams under this business unit.
     OrgStructureTeam[] teams = [];
 |};
 
@@ -551,7 +550,7 @@ public type Designation record {|
     string designation;
     # Job band
     @sql:Column {name: "job_band"}
-    int jobBand;
+    int? jobBand;
 |};
 
 # [Database] Company record with allowed locations as a JSON string.
@@ -870,13 +869,13 @@ public type UpdateEmployeeJobInfoPayload record {|
     string? epf = ();
     # Company ID
     int? companyId = ();
-    # Work location   
+    # Work location
     @constraint:String {maxLength: 100}
     string? workLocation = ();
     # Work email - WARNING: Identity key used for authorization checks
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? workEmail = ();
-    # Start date    
+    # Start date
     @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
     string? startDate = ();
     # Secondary job title
@@ -1085,7 +1084,7 @@ public type ParkingReservationDetails record {|
     string bookingDate;
     # Employee email
     string employeeEmail;
-    # Registered vehicle ID 
+    # Registered vehicle ID
     int vehicleId;
     # Vehicle registration number
     string vehicleRegistrationNumber;
@@ -1113,4 +1112,134 @@ public type ParkingReservationDetails record {|
 public type ReservationIdRow record {|
     # Reservation identifier
     int id;
+|};
+
+# Payload to create a company org chart entity (business unit, team, sub-team, or unit).
+public type CreateCompanyOrgChartEntityPayload record {|
+    # Name of the entity
+    @constraint:String {maxLength: 45}
+    string name;
+    # Head email of the entity (optional, empty string treated as no head)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+|};
+
+# Payload to update a company org chart entity (all fields optional for PATCH).
+public type UpdateCompanyOrgChartEntityPayload record {|
+    # Name of the entity
+    @constraint:String {maxLength: 45}
+    string? name = ();
+    # Head email of the entity (empty string clears the value)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+    # Whether the entity is active
+    boolean? isActive = ();
+|};
+
+# Payload to create a business-unit → team mapping.
+public type CreateBusinessUnitTeamPayload record {|
+    # Business unit ID
+    int businessUnitId;
+    # Team ID
+    int teamId;
+    # Head email for this specific BU+Team combination (optional)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+|};
+
+# Payload to create a business-unit-team → sub-team mapping.
+public type CreateBusinessUnitTeamSubTeamPayload record {|
+    # Business unit team mapping ID
+    int businessUnitTeamId;
+    # Sub-team ID
+    int subTeamId;
+    # Head email for this specific BU+Team+SubTeam combination (optional)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+|};
+
+# Payload to create a business-unit-team-sub-team → unit mapping.
+public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
+    # Business unit team sub-team mapping ID
+    int businessUnitTeamSubTeamId;
+    # Unit ID
+    int unitId;
+    # Head email for this specific BU+Team+SubTeam+Unit combination (optional)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+|};
+
+# Payload to update any mapping (all fields optional for PATCH).
+public type UpdateMappingPayload record {|
+    # Head email for the mapping combination (empty string clears the value)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+    # Whether the mapping is active
+    boolean? isActive = ();
+|};
+
+# Base fields for company org chart nodes: entity metadata + mapping metadata.
+public type CompanyOrgChartNode record {|
+    # Entity ID.
+    int id;
+    # Entity name.
+    string name;
+    # Email of the entity head.
+    @sql:Column {name: "head_email"}
+    string headEmail;
+    # Whether the entity is active.
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # ID of the mapping record linking this entity to its parent.
+    @sql:Column {name: "mapping_id"}
+    int mappingId;
+    # Email of the head responsible for this mapping.
+    @sql:Column {name: "mapping_head_email"}
+    string mappingHeadEmail;
+    # Whether the mapping is active.
+    @sql:Column {name: "mapping_is_active"}
+    boolean mappingIsActive;
+|};
+
+# Company org chart: unit node.
+public type CompanyOrgChartUnit CompanyOrgChartNode;
+
+# Company org chart: sub-team node with its child units.
+public type CompanyOrgChartSubTeam record {|
+    *CompanyOrgChartNode;
+    # Units belonging to this sub-team.
+    CompanyOrgChartUnit[] units = [];
+|};
+
+# Company org chart: team node with its child sub-teams.
+public type CompanyOrgChartTeam record {|
+    *CompanyOrgChartNode;
+    # Sub-teams belonging to this team.
+    CompanyOrgChartSubTeam[] subTeams = [];
+|};
+
+# Company org chart: business unit node (top level) with its child teams.
+public type CompanyOrgChartBusinessUnit record {|
+    *OrgStructureBase;
+    # Teams belonging to this business unit.
+    CompanyOrgChartTeam[] teams = [];
+|};
+
+# [Database] Company org chart business unit row with teams as a JSON string.
+type CompanyOrgChartBusinessUnitRow record {|
+    # Business unit ID.
+    int id;
+    # Business unit name.
+    string name;
+    # Email of the entity head.
+    @sql:Column {name: "head_email"}
+    string headEmail;
+    # Whether the business unit is active.
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # Number of active employees currently assigned to this business unit.
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
+    # Teams with nested sub-teams and units as raw JSON.
+    json teams;
 |};
