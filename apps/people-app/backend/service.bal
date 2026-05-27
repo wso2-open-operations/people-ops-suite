@@ -2093,7 +2093,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2141,7 +2141,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2179,7 +2179,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2227,7 +2227,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2265,7 +2265,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2313,7 +2313,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2351,7 +2351,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2399,7 +2399,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2438,7 +2438,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2489,7 +2489,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2531,7 +2531,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2583,7 +2583,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2626,7 +2626,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
@@ -2678,7 +2678,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
             string customErr = "Invalid head email format";
             log:printWarn(customErr, headEmail = payload.headEmail);
             return <http:BadRequest>{body: {message: customErr}};
