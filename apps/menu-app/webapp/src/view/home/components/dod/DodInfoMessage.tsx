@@ -29,7 +29,7 @@ export default function DodInfoMessage() {
         sx={{ width: 14, height: 14, alignContent: "center" }}
       />
       <Typography variant="body2" sx={{ color: theme.palette.customText.primary.p3.active }}>
-        Dinner request option is only available from <strong>04:00pm till 07:00pm</strong> for the
+        Dinner request option is only available from <strong>04:00pm to 07:00pm</strong> for the
         given day.
       </Typography>
     </Box>

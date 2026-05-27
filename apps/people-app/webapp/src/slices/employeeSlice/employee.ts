@@ -26,7 +26,6 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
 import { HttpStatusCode, isCancel } from "axios";
 
-
 export interface Employee {
   employeeId: string;
   firstName: string;
@@ -200,6 +199,12 @@ export type CreateEmployeePayload = {
   houseId?: number;
   continuousServiceRecord?: string | null;
   personalInfo: CreatePersonalInfoPayload;
+};
+
+export type CreateEmployeeResponse = {
+  employeeId: number;
+  message: string;
+  hasGroupAssignmentWarning: boolean;
 };
 
 export type UpdateEmployeeJobInfoPayload = {
@@ -459,11 +464,14 @@ export const createEmployee = createAsyncThunk(
         AppConfig.serviceUrls.employees,
         payload,
       );
-      const employeeId = response.data as number;
+      const data = response.data as CreateEmployeeResponse;
+      const employeeId = data.employeeId;
+      const message = data.message || "Employee created successfully!";
+      const messageType = data.hasGroupAssignmentWarning ? "warning" : "success";
       dispatch(
         enqueueSnackbarMessage({
-          message: "Employee created successfully!",
-          type: "success",
+          message,
+          type: messageType,
         }),
       );
       return employeeId;
@@ -542,7 +550,9 @@ export const downloadEmployeeReportByStatus = createAsyncThunk(
       if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.data?.message ?? "Failed to download report";
-      dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
+      dispatch(
+        enqueueSnackbarMessage({ message: errorMessage, type: "error" }),
+      );
       return rejectWithValue(errorMessage);
     }
   },
@@ -621,7 +631,9 @@ export const fetchEmployeeQrCode = createAsyncThunk(
       if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.data?.message ?? "Failed to generate QR code";
-      dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
+      dispatch(
+        enqueueSnackbarMessage({ message: errorMessage, type: "error" }),
+      );
       return rejectWithValue(errorMessage);
     }
   },

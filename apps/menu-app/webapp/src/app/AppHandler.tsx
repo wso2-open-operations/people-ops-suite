@@ -20,13 +20,13 @@ import { FC, memo, useMemo } from "react";
 import { AppState } from "@/types/types";
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
-import { useMicroApp } from "@hooks/useMicroApp";
 import Layout from "@layout/Layout";
 import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
 import { RootState } from "@slices/store";
 import { useAppSelector } from "@slices/store";
 
+import { isMicroApp } from "../config/config";
 import { getActiveRoutesV2, getAllActiveRoutes, routes } from "../route";
 
 const getAppState = (authStatus: string, authMode: string): AppState => {
@@ -38,7 +38,6 @@ const getAppState = (authStatus: string, authMode: string): AppState => {
 
 const AppHandler: FC = () => {
   const { status, mode, roles, statusMessage } = useAppSelector((state: RootState) => state.auth);
-  const isValidMicroApp = useMicroApp();
 
   const appState = useMemo(() => getAppState(status, mode), [status, mode]);
 
@@ -48,19 +47,19 @@ const AppHandler: FC = () => {
         path: "/",
         element: <Layout />,
         errorElement: <NotFoundPage />,
-        children: isValidMicroApp ? getAllActiveRoutes(routes) : getActiveRoutesV2(routes, roles),
+        children: isMicroApp ? getAllActiveRoutes(routes) : getActiveRoutesV2(routes, roles),
       },
     ],
-    [isValidMicroApp, roles],
+    [isMicroApp, roles],
   );
 
   const router = useMemo(
-    () => (isValidMicroApp ? createHashRouter(appRoutes) : createBrowserRouter(appRoutes)),
-    [isValidMicroApp, appRoutes],
+    () => (isMicroApp ? createHashRouter(appRoutes) : createBrowserRouter(appRoutes)),
+    [isMicroApp, appRoutes],
   );
 
   const renderApp = () => {
-    if (isValidMicroApp) {
+    if (isMicroApp) {
       return <RouterProvider router={router} />;
     }
 

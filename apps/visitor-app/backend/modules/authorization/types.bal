@@ -22,6 +22,12 @@ public type CustomJwtPayload record {
     string[] groups;
 };
 
+# Client Credential JWT payload type.
+public type ClientCredentialJwtPayload record {
+    # Client ID
+    string client_id;
+};
+
 # Application specific role mapping.
 public type AppRoles record {|
     # Role for the employee

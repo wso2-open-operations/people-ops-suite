@@ -13,16 +13,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { useMemo } from "react";
 
-import { MicroAppType } from "@/types/types";
-import { isMicroApp } from "@config/config";
+import ballerina/http;
 
-export const useMicroApp = (): boolean => {
-  const isValidMicroApp = useMemo(
-    () => Object.values(MicroAppType).includes(isMicroApp as MicroAppType),
-    [],
-  );
+public configurable EmailServiceConfig emailServiceConfig = ?;
+public configurable string appName = ?;
 
-  return isValidMicroApp;
-};
+final http:Client emailClient = check new (emailServiceConfig.emailServiceEndpoint, {
+    auth: {
+        ...emailServiceConfig.oauthConfig
+    },
+    timeout: 15.0,
+    httpVersion: http:HTTP_1_1,
+    http1Settings: {
+        keepAlive: http:KEEPALIVE_NEVER
+    },
+    retryConfig: {
+        count: 3,
+        interval: 3.0,
+        statusCodes: [
+            http:STATUS_BAD_GATEWAY,
+            http:STATUS_SERVICE_UNAVAILABLE,
+            http:STATUS_GATEWAY_TIMEOUT
+        ]
+    }
+});

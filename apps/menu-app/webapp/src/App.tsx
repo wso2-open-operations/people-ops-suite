@@ -21,11 +21,10 @@ import { Provider } from "react-redux";
 
 import { useMemo } from "react";
 
-import { APP_NAME, AsgardeoConfig } from "@config/config";
+import { APP_NAME, AsgardeoConfig, isMicroApp } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
 import { MicroAppAuthProvider } from "@context/AuthContext";
 import { ColorModeContext, useColorMode } from "@hooks/useColorMode";
-import { useMicroApp } from "@hooks/useMicroApp";
 import { themeSettings } from "@root/src/theme";
 import { store } from "@slices/store";
 import { ThemeMode } from "@utils/types";
@@ -73,7 +72,6 @@ function MicroApp() {
 }
 
 export default function App() {
-  const isValidMicroApp = useMicroApp();
 
-  return isValidMicroApp ? <MicroApp /> : <WebApp />;
+  return isMicroApp ? <MicroApp /> : <WebApp />;
 }

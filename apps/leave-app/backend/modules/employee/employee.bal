@@ -47,6 +47,7 @@ public isolated function getEmployee(string? email)
                 jobRole
                 managerEmail
                 finalDayOfEmployment
+                employeeStatus
                 lead
                 subordinateCount
             }
@@ -96,6 +97,7 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
                 jobRole
                 managerEmail
                 finalDayOfEmployment
+                employeeStatus
                 lead
             }
         }
@@ -104,13 +106,13 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
     Employee[] employees = [];
     boolean fetchMore = true;
     int offset = 0;
-    int defaultLimit = 100;
 
     while fetchMore {
         MultipleEmployeesResponse|graphql:ClientError response = hrClient->execute(
             document,
-            {filter: gqlFilter, 'limit: defaultLimit, offset: offset}
+            {filter: gqlFilter, 'limit: DEFAULT_LIMIT, offset: offset}
         );
+
         if response is graphql:ClientError {
             string customError = "An error occurred while retrieving employee data!";
             log:printError(customError, response);
@@ -120,7 +122,7 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
         employees.push(...from EmployeeResponse empResp in batch
             select toEmployee(empResp));
         fetchMore = batch.length() > 0;
-        offset += defaultLimit;
+        offset += DEFAULT_LIMIT;
     }
     return employees;
 }

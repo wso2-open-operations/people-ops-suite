@@ -193,6 +193,8 @@ public type Employee record {|
 # Minimal Employee information.
 public type MinimalEmployeeInfo record {|
     *employee:BasicEmployeeInfo;
+    # Status of the employee (e.g. Active, Marked leaver, Left)
+    string? employeeStatus;
 |};
 
 # Leaves report content.
