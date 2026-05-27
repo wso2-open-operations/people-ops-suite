@@ -325,6 +325,7 @@ public isolated function isLead(string leadEmail) returns boolean|error {
 # + return - Created employee record ID or error
 public isolated function addEmployee(CreateEmployeePayload payload, string createdBy, string employeeId)
         returns int|error {
+
     int lastInsertedId = 0;
 
     retry transaction {
@@ -364,6 +365,7 @@ public isolated function deleteEmployeeById(string employeeId) returns error? {
 # + return - EmployeeIdContext or error
 public isolated function getEmployeeIdContext(int companyId, int employmentTypeId)
         returns EmployeeIdContext|error {
+
     return databaseClient->queryRow(getEmployeeIdContextQuery(companyId, employmentTypeId));
 }
 
@@ -374,6 +376,7 @@ public isolated function getEmployeeIdContext(int companyId, int employmentTypeI
 # + return - EmployeeIdSequence or error
 public isolated function getLastEmployeeNumericSuffix(string prefix, EmploymentTypeName[] employmentTypes)
         returns EmployeeIdSequence|error {
+
     return databaseClient->queryRow(getAndLockLastEmployeeNumericSuffixQuery(prefix, employmentTypes));
 }
 
@@ -396,6 +399,7 @@ isolated function addPersonalInfo(CreatePersonalInfoPayload personalInfo, string
 # + return - Created employee ID or error
 isolated function addEmployeeRecord(CreateEmployeePayload payload, string createdBy, int personalInfoId, string employeeId)
     returns int|error {
+
     sql:ExecutionResult result = check databaseClient->execute(addEmployeeQuery(payload, createdBy, personalInfoId, employeeId));
     return check result.lastInsertId.ensureType(int);
 }
@@ -703,6 +707,7 @@ public isolated function getParkingFloors() returns ParkingFloor[]|error {
 # + return - Parking slots (with isBooked)
 public isolated function getParkingSlotsByFloor(int floorId, string bookingDate, int pendingExpiryMinutes)
         returns ParkingSlot[]|error {
+
     stream<ParkingSlotRow, error?> slotStream = databaseClient->query(
         getParkingSlotsByFloorQuery(floorId, bookingDate, pendingExpiryMinutes));
     return from ParkingSlotRow r in slotStream
@@ -745,6 +750,7 @@ public isolated function getParkingSlotById(string slotId) returns ParkingSlot|e
 # otherwise, or error
 public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate, int pendingExpiryMinutes)
         returns boolean|error {
+
     ReservationIdRow|error row = databaseClient->queryRow(
         getActiveParkingReservationForSlotDateQuery(slotId, bookingDate, pendingExpiryMinutes));
     if row is sql:NoRowsError {
@@ -764,6 +770,7 @@ public isolated function isParkingSlotBookedForDate(string slotId, string bookin
 # + return - True if any rows updated
 public isolated function expireStalePendingParkingReservationForSlotDate(string slotId, string bookingDate,
         int expiryMinutes) returns boolean|error {
+
     sql:ExecutionResult result = check databaseClient->execute(
         expireStalePendingParkingReservationForSlotDateQuery(slotId, bookingDate, expiryMinutes));
     return result.affectedRowCount > 0;
@@ -793,6 +800,7 @@ public isolated function getParkingReservationById(int reservationId) returns Pa
 # + return - Reservation id or nil
 public isolated function getParkingReservationByTransactionHash(string transactionHash)
         returns ReservationIdRow|error? {
+
     ReservationIdRow|error row = databaseClient->queryRow(
         getParkingReservationByTransactionHashQuery(transactionHash));
     if row is sql:NoRowsError {
@@ -833,6 +841,7 @@ public isolated function getEmployeeEmailToNameMap() returns map<string>|error {
 # + return - Reservations
 public isolated function getParkingReservationsByEmployee(string employeeEmail, string? fromDate = (),
         string? toDate = ()) returns ParkingReservationDetails[]|error {
+
     stream<ParkingReservationDetails, error?> resStream = databaseClient->query(
         getParkingReservationsByEmployeeQuery(employeeEmail, fromDate, toDate));
     return from ParkingReservationDetails r in resStream
@@ -846,6 +855,7 @@ public isolated function getParkingReservationsByEmployee(string employeeEmail, 
 # + return - ID of the newly created business unit, or error
 public isolated function createBusinessUnit(CreateCompanyOrgChartEntityPayload payload, string createdBy)
         returns int|error {
+
     sql:ExecutionResult result = check databaseClient->execute(
         createBusinessUnitQuery(payload.name, payload.headEmail ?: "", createdBy));
     return check result.lastInsertId.ensureType(int);
@@ -887,6 +897,7 @@ public isolated function createTeam(CreateCompanyOrgChartEntityPayload payload, 
 # + return - Nil or error
 public isolated function updateTeam(int id, UpdateCompanyOrgChartEntityPayload payload, string updatedBy)
         returns error? {
+
     sql:ParameterizedQuery query = check updateTeamQuery(id, payload.name, payload.headEmail, payload.isActive,
             updatedBy);
     sql:ExecutionResult result = check databaseClient->execute(query);
@@ -902,6 +913,7 @@ public isolated function updateTeam(int id, UpdateCompanyOrgChartEntityPayload p
 # + return - ID of the newly created sub-team, or error
 public isolated function createSubTeam(CreateCompanyOrgChartEntityPayload payload, string createdBy)
         returns int|error {
+
     sql:ExecutionResult result = check databaseClient->execute(
         createSubTeamQuery(payload.name, payload.headEmail ?: "", createdBy));
     return check result.lastInsertId.ensureType(int);
@@ -915,6 +927,7 @@ public isolated function createSubTeam(CreateCompanyOrgChartEntityPayload payloa
 # + return - Nil or error
 public isolated function updateSubTeam(int id, UpdateCompanyOrgChartEntityPayload payload, string updatedBy)
         returns error? {
+
     sql:ParameterizedQuery query = check updateSubTeamQuery(id, payload.name, payload.headEmail, payload.isActive,
             updatedBy);
     sql:ExecutionResult result = check databaseClient->execute(query);
@@ -942,6 +955,7 @@ public isolated function createUnit(CreateCompanyOrgChartEntityPayload payload, 
 # + return - Nil or error
 public isolated function updateUnit(int id, UpdateCompanyOrgChartEntityPayload payload, string updatedBy)
         returns error? {
+
     sql:ParameterizedQuery query = check updateUnitQuery(id, payload.name, payload.headEmail, payload.isActive,
             updatedBy);
     sql:ExecutionResult result = check databaseClient->execute(query);
@@ -957,6 +971,7 @@ public isolated function updateUnit(int id, UpdateCompanyOrgChartEntityPayload p
 # + return - ID of the newly created mapping, or error
 public isolated function createBusinessUnitTeam(CreateBusinessUnitTeamPayload payload, string createdBy)
         returns int|error {
+
     sql:ExecutionResult result = check databaseClient->execute(
         createBusinessUnitTeamQuery(payload.businessUnitId, payload.teamId, payload.headEmail ?: "", createdBy));
     return check result.lastInsertId.ensureType(int);
@@ -984,6 +999,7 @@ public isolated function updateBusinessUnitTeam(int id, UpdateMappingPayload pay
 # + return - ID of the newly created mapping, or error
 public isolated function createBusinessUnitTeamSubTeam(CreateBusinessUnitTeamSubTeamPayload payload, string createdBy)
         returns int|error {
+
     sql:ExecutionResult result = check databaseClient->execute(
         createBusinessUnitTeamSubTeamQuery(payload.businessUnitTeamId, payload.subTeamId, payload.headEmail ?: "",
             createdBy));
@@ -998,6 +1014,7 @@ public isolated function createBusinessUnitTeamSubTeam(CreateBusinessUnitTeamSub
 # + return - Nil or error
 public isolated function updateBusinessUnitTeamSubTeam(int id, UpdateMappingPayload payload, string updatedBy)
         returns error? {
+
     sql:ParameterizedQuery query = check updateBusinessUnitTeamSubTeamQuery(id, payload.headEmail, payload.isActive,
             updatedBy);
     sql:ExecutionResult result = check databaseClient->execute(query);
@@ -1013,6 +1030,7 @@ public isolated function updateBusinessUnitTeamSubTeam(int id, UpdateMappingPayl
 # + return - ID of the newly created mapping, or error
 public isolated function createBusinessUnitTeamSubTeamUnit(CreateBusinessUnitTeamSubTeamUnitPayload payload,
         string createdBy) returns int|error {
+
     sql:ExecutionResult result = check databaseClient->execute(
         createBusinessUnitTeamSubTeamUnitQuery(payload.businessUnitTeamSubTeamId, payload.unitId,
             payload.headEmail ?: "", createdBy));
