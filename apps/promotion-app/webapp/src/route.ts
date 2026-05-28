@@ -51,7 +51,7 @@ export const routes: RouteObjectWithRole[] = [
     text: "History",
     icon: React.createElement(EmojiEventsIcon),
     element: React.createElement(View.history),
-    allowRoles: [Role.ADMIN, Role.TEAM],
+    allowRoles: [Role.EMPLOYEE],
     bottomNav: false,
   },
   {
@@ -71,11 +71,27 @@ export const routes: RouteObjectWithRole[] = [
     bottomNav: false,
   },
   {
+    path: "/promotionCycleHistory",
+    text: "Promotion Cycle History",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.promotionCycleHistory),
+    allowRoles: [Role.FUNCTIONAL_LEAD, Role.HR_ADMIN],
+    bottomNav: false,
+  },
+  {
+    path: "/employeesHistory",
+    text: "Employees History",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.employeesHistory),
+    allowRoles: [Role.LEAD],
+    bottomNav: false,
+  },
+  {
     path: "/functionalLead",
     text: "Functional Lead",
     icon: React.createElement(GroupsIcon),
     element: React.createElement(View.functionalLead),
-    allowRoles: [Role.LEAD],
+    allowRoles: [Role.FUNCTIONAL_LEAD],
     bottomNav: false,
   },
   {
@@ -83,7 +99,15 @@ export const routes: RouteObjectWithRole[] = [
     text: "Promotion Board",
     icon: React.createElement(GroupsIcon),
     element: React.createElement(View.promotionBoard),
-    allowRoles: [Role.LEAD],
+    allowRoles: [Role.PROMOTION_BOARD_MEMBER],
+    bottomNav: false,
+  },
+  {
+    path: "/admin",
+    text: "Admin Portal",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.admin),
+    allowRoles: [Role.HR_ADMIN],
     bottomNav: false,
   },
   {
@@ -91,7 +115,7 @@ export const routes: RouteObjectWithRole[] = [
     text: "Help",
     icon: React.createElement(HelpOutlineIcon),
     element: React.createElement(View.help),
-    allowRoles: [Role.ADMIN, Role.TEAM],
+    allowRoles: [Role.EMPLOYEE],
     bottomNav: true,
   },
 ];
