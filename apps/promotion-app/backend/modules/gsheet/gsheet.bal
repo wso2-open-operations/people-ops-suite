@@ -29,10 +29,6 @@ public isolated function getSheetData(string sheetURL) returns (int|string|decim
     string a1Notation = A1_NOTATION + (spreadsheet.sheets[0].properties.gridProperties.rowCount).toString();
     string workSheetName = spreadsheet.sheets[0].properties.title;
     sheets:Range openRes = check spreadsheetClient->getRange(spreadsheet.spreadsheetId, workSheetName, a1Notation);
-    // if openRes is error {
-    //     log:printError(openRes.toString());
-    //     return error("An error occurred while reading the spreadsheet!");
-    // }
 
     return openRes.values;
 }
@@ -46,17 +42,8 @@ public isolated function getSheetData(string sheetURL) returns (int|string|decim
 public isolated function appendData(string sheetURL, int sheetNumber, (int|string|decimal)[] dataRow) returns error? {
 
     sheets:Spreadsheet spreadsheet = check spreadsheetClient->openSpreadsheetByUrl(sheetURL);
-    // if spreadsheet is error {
-    //     log:printError(spreadsheet.toString());
-    //     return error("Spreadsheet not found!");
-    // }
 
     _ = check spreadsheetClient->appendValue(spreadsheet.spreadsheetId,
             dataRow, {sheetName: spreadsheet.sheets[sheetNumber - 1].properties.title});
-
-    // if appendRowToSheet is error {
-    //     log:printError(spreadsheet.toString());
-    //     return error("Sheet data append error!");
-    // }
 }
 
