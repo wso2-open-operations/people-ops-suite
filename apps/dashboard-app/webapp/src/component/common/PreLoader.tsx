@@ -14,11 +14,16 @@
 // specific language governing permissions and limitations
 // under the License.
 import { Box, Container, LinearProgress, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
-import Wso2Logo from "@assets/images/wso2-logo-white.webp";
+import Wso2LogoBlack from "@assets/images/wso2-logo-black.webp";
+import Wso2LogoWhite from "@assets/images/wso2-logo-white.webp";
 import type { PreLoaderProps } from "@utils/types";
 
 const PreLoader = (props: PreLoaderProps) => {
+  const theme = useTheme();
+  const logo = theme.palette.mode === "light" ? Wso2LogoBlack : Wso2LogoWhite;
+
   return (
     <Box
       sx={{
@@ -44,7 +49,7 @@ const PreLoader = (props: PreLoaderProps) => {
           >
             <Box
               component="img"
-              src={Wso2Logo}
+              src={logo}
               alt="WSO2"
               sx={{
                 width: "110px",

@@ -14,13 +14,18 @@
 // specific language governing permissions and limitations
 // under the License.
 import { Box, Container } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 import ErrorSvg from "@assets/images/error.svg";
-import Wso2Logo from "@assets/images/wso2-logo.svg";
+import Wso2LogoBlack from "@assets/images/wso2-logo-black.webp";
+import Wso2LogoWhite from "@assets/images/wso2-logo-white.webp";
 import StateWithImage from "@component/ui/StateWithImage";
 import { ErrorHandlerProps } from "@root/src/utils/types";
 
 const ErrorHandler = (props: ErrorHandlerProps) => {
+  const theme = useTheme();
+  const logo = theme.palette.mode === "light" ? Wso2LogoBlack : Wso2LogoWhite;
+
   return (
     <Box
       sx={{
@@ -30,7 +35,7 @@ const ErrorHandler = (props: ErrorHandlerProps) => {
     >
       <Container maxWidth="md">
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-          <img alt="logo" width="150" height="auto" src={Wso2Logo} />
+          <img alt="logo" width="150" height="auto" src={logo} />
           <StateWithImage
             message={props.message || "Something went wrong! Please try again later."}
             imageUrl={ErrorSvg}

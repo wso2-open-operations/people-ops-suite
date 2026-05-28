@@ -17,6 +17,7 @@ import LoadingButton from "@mui/lab/LoadingButton";
 import { Box, Card, CardContent, Container, Divider, Stack } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
 
 import { useState } from "react";
 
@@ -25,9 +26,12 @@ import { APP_NAME } from "@root/src/config/config";
 import { APP_DESC } from "@root/src/config/constant";
 import BackgroundImage from "@src/assets/images/app-login-background.png";
 import ProductLogos from "@src/assets/images/app-login-logos.png";
-import logo from "@src/assets/images/wso2-logo-black.png";
+import Wso2LogoBlack from "@src/assets/images/wso2-logo-black.webp";
+import Wso2LogoWhite from "@src/assets/images/wso2-logo-white.webp";
 
 const LoginScreen = () => {
+  const theme = useTheme();
+  const logo = theme.palette.mode === "light" ? Wso2LogoBlack : Wso2LogoWhite;
   const { appSignIn, appSignOut } = useAppAuthContext();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
