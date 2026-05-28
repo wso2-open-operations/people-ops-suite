@@ -25,3 +25,17 @@ const UTC_DEFAULT_STRING = "T00:00:00.00Z";
 const TIME_BASED_PROMOTION_KEY = "TIME_BASED_PROMOTION_STATE";
 
 const USER_TIMEZONE_OFFSET = "user-timezone-offset";
+
+// Seconds threshold used as a tolerance window when evaluating time-based reminders.
+const SECONDS_THRESHOLD = 3600;
+
+// Seconds for three days
+const SECONDS_FOR_ONE_DAY = 86400;
+
+// Seconds for three days
+const SECONDS_FOR_THREE_DAYS = 259200;
+
+// Seconds for seven days
+const SECONDS_FOR_SEVEN_DAYS = 604800;
+
+const BATCH_SIZE = 100;

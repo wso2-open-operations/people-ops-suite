@@ -18,13 +18,14 @@ import ballerina/jwt;
 import ballerina/log;
 
 public configurable AppRoles authorizedRoles = ?;
+const X_USER_TIMEZONE_OFFSET = "x-user-timezone-offset";
 
 # To handle authorization for each resource function invocation.
 public isolated service class JwtInterceptor {
 
     *http:RequestInterceptor;
     isolated resource function default [string... path](http:RequestContext ctx, http:Request req)
-        returns http:NextService|http:Forbidden|http:InternalServerError|error? {
+        returns http:NextService|http:BadRequest|http:Forbidden|http:InternalServerError|error? {
 
         string|error idToken = req.getHeader(JWT_ASSERTION_HEADER);
         if idToken is error {
@@ -36,6 +37,20 @@ public isolated service class JwtInterceptor {
                 }
             };
         }
+
+        string|error userTimezoneOffset = req.getHeader(X_USER_TIMEZONE_OFFSET);
+
+        if userTimezoneOffset is error {
+            string errorMsg = "Missing userTimezoneOffset info header!";
+            log:printError(errorMsg, userTimezoneOffset);
+            return <http:BadRequest>{
+                body:  {
+                    message: userTimezoneOffset.message()
+                }
+            };
+        }
+
+        ctx.set("user-timezone-offset", userTimezoneOffset);
 
         [jwt:Header, jwt:Payload]|jwt:Error result = jwt:decode(idToken);
         if result is jwt:Error {

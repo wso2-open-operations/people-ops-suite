@@ -15,54 +15,52 @@
 // under the License. 
 import ballerina/lang.regexp as regex;
 import ballerina/sql;
+import ballerina/lang.array;
 
-# Retrieving user by id.
+# Retrieving users 
 #
-# + id - User id 
-# + email - User email 
-# + return - User  or Error
-public isolated function getUser(int? id = (), string? email = ()) returns User|error? {
+# + return - User Array or Error
+public isolated function getUsers() returns User[]|error {
 
-    // Get the user by id and email.
-    DbUser|error user = databaseClient->queryRow(getUsersQuery(id, email));
+    stream<DbUser, error?> resultStream = databaseClient->query(getUsersQuery());
 
-    // Handle error.
-    if user is error {
-        // Handle sql errors.
-        if user is sql:NoRowsError {
-            return;
-        }
-        return user;
-    }
+    User[] users = [];
+    error? queryError = from DbUser user in resultStream
+        do {
+            // mapping CSV to role[]
+            Role[] roles = [];
 
-    // Initialize an empty array to store roles assigned to the user.
-    Role[] roles = [];
-    // Retrieve the user's roles, which are stored in a string (user.roles).
-    string? userRoles = user.roles;
-    // Check if userRoles is a string (to ensure that it contains role data).
-    if userRoles is string {
-        // Split the string by commas to create an array of role strings.
-        string[] rolesList = regex:split(re `,`, userRoles);
-        foreach string role in rolesList {
-            // If the current role is valid and of type Role, push it to the roles array.
-            if role is Role {
-                roles.push(role);
+            string? user_roles = user.roles;
+            if user_roles is string {
+                string[] rolesList = regex:split(re `,`, user_roles);
+
+                foreach string role in rolesList {
+                    if role is Role {
+                        roles.push(role);
+                    }
+                }
             }
-        }
+
+            users.push(
+                {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                jobBand: user.jobBand,
+                email: user.email,
+                roles: roles,
+                functionalLeadAccessLevels: check processPermissions(user.functionalLeadAccessLevels),
+                active: user.active == 1
+            }
+            );
+        };
+
+    if queryError is error {
+        _ = check resultStream.close();
+        return error("An error occurred while retrieving users");
     }
 
-    User userRes = {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        jobBand: user.jobBand,
-        email: user.email,
-        roles: roles,
-        functionalLeadAccessLevels: check processPermissions(user.functionalLeadAccessLevels),
-        active: user.active == 1
-    };
-
-    return userRes;
+    return users;
 }
 
 # Get Promotion Cycles By Status.
@@ -76,6 +74,25 @@ public isolated function getPromotionCycles(PromotionCyclesStatus[]? statusArray
 
     return from PromotionCycle promotionCycle in resultStream
         select promotionCycle;
+}
+
+# Get Promotion Cycles By Id
+#
+# + PromotionId - Promotion Cycle Id
+# + return - Promotion Cycle or Error
+public isolated function getPromotionCycleById(int PromotionId) returns PromotionCycle|error {
+
+    PromotionCycle|error promotionCycle = databaseClient->queryRow(getPromotionCyclesByIdQuery(PromotionId));
+
+    if promotionCycle is error {
+        if promotionCycle is sql:NoRowsError {
+            return error("No promotion cycle found!");
+        }
+
+        return error("An error occurred while retrieving the promotion cycle!");
+    }
+
+    return promotionCycle;
 }
 
 # Retrieving full promotion.  
@@ -241,4 +258,233 @@ public isolated function updatePromotionRequest(ApplicationDbUpdatePayload paylo
     if result.affectedRowCount == 0 {
         return error("No editable promotion request found for update!");
     }
+}
+
+# Insert New Promotion Cycle
+#
+# + payload - Promotion Cycle Data
+# + return - Promotion Cycle ID
+public isolated function insertPromotionCycle(PromotionCycleInsertData payload)
+        returns int|error {
+
+    sql:ExecutionResult result = check databaseClient->execute(insertPromotionCycleQuery(payload));
+
+    return <int>result.lastInsertId;
+}
+
+# Get app configs from hris_config table
+#
+# + key - Specific the key of the config record
+# + return - Array of App configs
+public isolated function getConfigs(string? key = ()) returns Config[]|error {
+
+    stream<Config, error?> resultStream = databaseClient->query(getConfigsQuery(key));
+
+    return from Config config in resultStream
+        select config;
+}
+
+# Update Promotion Cycle
+#
+# + payload - Promotion cycle update payload
+# + return - error, if available
+public isolated function updatePromotionCycle(PromotionCycleDbUpdateData payload)
+        returns int|error {
+
+    sql:ExecutionResult result = check databaseClient->execute(updatePromotionCycleQuery(payload));
+
+    return result.affectedRowCount ?: 0;
+}
+
+# Expire Pending Promotion Requests
+#
+# + promotionCycleId - Promotion cycle id  
+# + updatedBy - Person who updated the request
+# + return - Error if any
+public isolated function expirePendingRequests(int promotionCycleId, string updatedBy) returns int|error? {
+
+    sql:ExecutionResult result = check databaseClient->execute(
+        expirePendingRequestsQuery(promotionCycleId = promotionCycleId, updatedBy = updatedBy)
+    );
+
+    return result.affectedRowCount ?: 0;
+}
+
+# Expire Pending Promotion Recommendations
+#
+# + promotionCycleId - Promotion cycle id  
+# + updatedBy - Person who updated the recommendation
+# + return - Error if any
+public isolated function expirePendingRecommendations(int promotionCycleId, string updatedBy) returns int|error? {
+
+    sql:ExecutionResult result = check databaseClient->execute(expirePendingRecommendationsQuery(
+            promotionCycleId = promotionCycleId, updatedBy = updatedBy)
+    );
+
+    return result.affectedRowCount ?: 0;
+}
+
+# Retrieving user by id
+#
+# + id - User id 
+# + email - User email 
+# + return - User  or Error
+public isolated function getUserBy(int? id = (), string? email = ()) returns User|error? {
+
+    DbUser user = check databaseClient->queryRow(getUsersQuery(id, email));
+
+    // mapping CSV to role[]
+    Role[] roles = [];
+    string? user_roles = user.roles;
+    if user_roles is string {
+        string[] rolesList = regex:split(re `,`, user_roles);
+
+        foreach string role in rolesList {
+            if role is Role {
+                roles.push(role);
+            }
+        }
+    }
+
+    return {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        jobBand: user.jobBand,
+        email: user.email,
+        roles: roles,
+        functionalLeadAccessLevels: check processPermissions(user.functionalLeadAccessLevels),
+        active: user.active == 1
+    };
+}
+
+# Update User
+#
+# + payload - User Update Data
+# + return - error if any
+public isolated function updateUser(UserDbUpdatePayload payload) returns int|error? {
+
+    // cleaning function lead access level when functional lead role is not there
+    if array:indexOf(payload.roles ?: [], <Role>FUNCTIONAL_LEAD) === () {
+        payload.functionalLeadAccessLevels = ();
+    }
+
+    sql:ExecutionResult result = check databaseClient->execute(updateUserQuery(payload));
+
+    return result.affectedRowCount ?: 0;
+}
+
+# Obtain Business unit mapping
+#
+# + return - Formatted list of business units, departments and teams
+public isolated function getBusinessUnitMapping() returns BusinessUnit[]|error {
+
+    stream<DbBusinessUnit, error?> resultStream = databaseClient->query(getBusinessUnitMappingQuery());
+
+    return from DbBusinessUnit bu in resultStream
+        select {
+                id: bu.id,
+                name: bu.businessUnit,
+                departments: check bu.departments.fromJsonStringWithType()
+            };
+}
+
+# Insert a new Users
+#
+# + payload - User Insert Data
+# + return - User ID
+public isolated function insertUser(UserDbInsertPayload payload) returns int|error {
+
+    // cleaning function lead access level when functional lead role is not there
+    if array:indexOf(payload.roles, <Role>FUNCTIONAL_LEAD) === () {
+        payload.functionalLeadAccessLevels = ();
+    }
+
+    sql:ExecutionResult result = check databaseClient->execute(insertUserQuery(payload));
+
+    return <int>result.lastInsertId;
+}
+
+# Delete user by id
+#
+# + id - User id  
+# + return - User  or Error
+public isolated function deleteUserById(int id) returns int|error? {
+
+    sql:ExecutionResult result = check databaseClient->execute(deleteUserQuery(id));
+
+    return result.affectedRowCount ?: 0;
+}
+
+# Get EmailNotifications for a given email status and count.
+#
+# + emailStatus - Email status
+# + count - The count of the email notifications
+# + return - A list of EmailNotification objects or an error if the operation failed
+public isolated function getEmailNotifications(EmailStatus emailStatus, int count)
+        returns InsertEmailData[]|error {
+    stream<InsertEmailData, error?> resultStream = databaseClient->query(getEmailNotificationsQuery(emailStatus, count));
+    return from InsertEmailData emailNotification in resultStream
+        select emailNotification;
+}
+
+# Update the status of EmailNotifications.
+#
+# + notificationIds - The notification IDs
+# + emailStatus - Email status
+# + return - An error if the operation failed or nil if successful
+public isolated function updateEmailNotifications(int[] notificationIds, EmailStatus emailStatus) returns error? {
+    if notificationIds.length() > 0 {
+        _ = check databaseClient->execute(updateEmailNotificationsStateQuery(notificationIds, emailStatus));
+    }
+}
+
+# Insert EmailNotifications in bulk.
+#
+# + emailNotifications - EmailNotification array
+# + return - An error if the operation failed or nil if successful
+public isolated function insertEmailNotificationsBulk(InsertEmailData[] emailNotifications) returns error? =>
+    emailNotifications.length() > 0 ? check batchExecute(insertEmailNotificationQuery(emailNotifications)) : ();
+
+# Execute queries in batch.
+#
+# + queries - Array of ParameterizedQuerys
+# + return - An error if the operation failed or nil if successful
+isolated function batchExecute(sql:ParameterizedQuery[] queries) returns error? {
+    int index = 0;
+    int length = queries.length();
+    while index < length {
+        int safeLastIndexForBatch = int:min(index + BATCH_SIZE, length);
+        sql:ParameterizedQuery[] chunk = queries.slice(index, safeLastIndexForBatch);
+        _ = check databaseClient->batchExecute(chunk);
+        index = safeLastIndexForBatch;
+    }
+}
+
+# Insert or Update hris_config
+#
+# + payload - Key,Value and the metadata for create or update config record
+# + return - error if any
+public isolated function insertOrUpdateConfig(ConfigUpdatePayload payload) returns int|error? {
+
+    sql:ExecutionResult result = check databaseClient->execute(insertOrUpdateConfigQuery(payload));
+
+
+    return result.affectedRowCount ?: 0;
+}
+
+# Retrieving user promotion requests.
+#
+# + cycleID - Cycle ID  
+# + 'type - Type of the promotion request
+# + return - Array of Promotion Requests
+public isolated function getRecommendedLeads(int? cycleID = (), PromotionRequestType? 'type = ())
+    returns string[]|error {
+
+    stream<LeadEmail, sql:Error?> resultStream = databaseClient->query(
+        getRecommendedLeadsQuery(cycleID = cycleID, 'type = 'type)
+        );
+
+    return from LeadEmail lead in resultStream
+        select lead.leadEmail;
 }

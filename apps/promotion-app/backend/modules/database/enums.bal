@@ -57,3 +57,23 @@ public enum BuSyncStatus {
     ERROR,
     SUCCESS
 }
+
+# Reminder Email Status.
+public enum EmailStatus {
+    PENDING,
+    PROCESSING,
+    SENT,
+    FAILED
+}
+
+# Promotion Application User Roles
+public enum EmailTypes {
+    FUNCTIONAL_LEAD_REMINDER,
+    LEAD_REMINDER
+}
+
+# Time-based promotion types.
+public enum TimeBasedPromotion {
+    PAR,
+    SHEET
+}

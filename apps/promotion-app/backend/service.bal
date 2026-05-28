@@ -15,6 +15,8 @@
 // under the License.
 import promotion_app.authorization;
 import promotion_app.database;
+import promotion_app.email;
+import promotion_app.gsheet;
 import promotion_app.people;
 
 import ballerina/cache;
@@ -896,6 +898,165 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     }
 
+    # Initiates time-based promotions.
+    #
+    # + ctx - Request Context  
+    # + return - Internal Server Error or business unit sync results results
+    resource function POST promotion/requests/time\-based(http:RequestContext ctx, TimeBasedPromotionPayload payload)
+        returns ProcessStatus|http:InternalServerError|error|http:Forbidden {
+
+        // "HEADER_USER_INFO" is the email of the user access this resource.
+        // Interceptor set this value ater validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        // [Start] Custom Resource level authorization 
+         authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error occurred while retrieving User Privileges!"
+                }
+            };
+        }
+
+        if !database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) {
+            return <http:Forbidden>{
+                body:  {
+                    message: "Insufficient privileges!"
+                }
+            };
+        }
+        // [End] Custom Resource level authorization
+
+        // Check the current status of the process
+        database:Config[]|error configs = database:getConfigs(key = TIME_BASED_PROMOTION_KEY);
+
+        if configs is error {
+            string customError = "An error occurred while retrieving the app configs!";
+            log:printError(customError, configs);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // When multiple or no process config is returned, it is an error
+        if configs.length() != 1 {
+            return error("We were not able to retrieve the Time-based promotion status. Please contact app support!");
+        }
+
+        database:PromotionCycle[]|error promotionCycles = database:getPromotionCyclesByStatus([database:OPEN]);
+
+        if promotionCycles is error {
+            string customError = "Error while retrieving Promotion Cycles!";
+            log:printError(customError, promotionCycles);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        
+        if promotionCycles.length() == 0 {
+            string customError = "There is no open promotion cycle!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        //Retrieve the list of eligible employees from google sheet and process
+        (int|string|decimal)[][]|error sheetData = gsheet:getSheetData(check payload.sheet.ensureType());
+        if sheetData is error {
+            string customError = "Error occurred while accessing the google sheet";
+            log:printError(customError, sheetData);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Check whether the process is already running
+        database:Config config = configs[0];
+        if config.value == database:IN_PROGRESS {
+            string customError = "Process is already running!";
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Thread to run sync process in background
+        worker syncWorker returns http:InternalServerError|error? {
+            database:PromotionCycle[]|error promotionCycles = database:getPromotionCyclesByStatus([database:OPEN]);
+
+            if promotionCycles is error {
+                string customError = "Error while retrieving Promotion Cycles!";
+                log:printError(customError, promotionCycles);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+
+            if promotionCycles.length() == 0 {
+                string customError = "There is no open promotion cycle!";
+                log:printError(customError);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+            log:printInfo(string `The process of creating time-based promotions for ${
+                    promotionCycles[0].name} has started in the background...`);
+
+            string|error sheetType = payload.sheet.ensureType();
+
+            if sheetType is error {
+                string customError = "Error while retrieving ensure type of the sheet!";
+                log:printError(customError);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+
+            //Create automatic promotion requests for jb 5 to 6
+        error? result = createAutomaticPromotionRequests(promotionCycles[0].id, sheetType);
+            if result is error {
+                string customError = "Error while retrieving creating promotions!";
+                log:printError(customError, result);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+            log:printInfo("The process of creating time-based promotions has successfully completed");
+        }
+
+        return {status: "Successfully started the TIME-BASED promotion process!"};
+    }
+
     # Retrieve specific users' promotion recommendations.
     #
     # + ctx - Request Context appended from the interceptor
@@ -1428,31 +1589,32 @@ service http:InterceptableService / on new http:Listener(9090) {
                                 }
                             }
                         }else{
-                            // TODO: add send email alert
-                            // error? recommendationAlert = email:recommendationAlert({
-                            //     receiverName: employeeName.firstName,
-                            //     receiverEmail: recommendation.employeeEmail,
-                            //     senderName: leadName.firstName + " " + leadName.lastName,
-                            //     senderEmail: userInfo.email,
-                            //     closingDate: promotionCycles[0].endDate,
-                            //     templateId: email:hrisPromotionRecommendationRequestSubmission
-                            // });
+                            error? recommendationAlert = email:recommendationAlert({
+                                receiverName: employeeName.firstName,
+                                receiverEmail: recommendation.employeeEmail,
+                                senderName: leadName.firstName + " " + leadName.lastName,
+                                senderEmail: userInfo.email,
+                                closingDate: promotionCycles[0].endDate,
+                                templateId: email:hrisPromotionRecommendationRequestSubmission
+                            });
 
-                            // if recommendationAlert is error {
-                            //     rollback;
-                            //     string customError = string `Error while Updating the Promotion Request!`;
-                            //     log:printError(customError, recommendationAlert);
-                            //     return <http:InternalServerError>{
-                            //         body: {
-                            //             message: customError
-                            //         }
-                            //     };
-                            // }else{
+                            if recommendationAlert is error {
+                                rollback;
+                                string customError = string `An error occurred during sending the promotion recommendation alert!`;
+                                log:printError(customError, recommendationAlert);
+                                return <http:InternalServerError>{
+                                    body: {
+                                        message: customError
+                                    }
+                                };
+                            }else{
                                 check commit;
+                                string timestamp = time:utcToString(time:utcNow()).substring(0, 19);
+                                log:printInfo("Recommendation Alert sent at " + timestamp);
                                 return {
                                     status: "Successfully submitted the recommendation."
                                 };
-                            // }
+                            }
                         }
                     }
                 }

@@ -493,3 +493,48 @@ public type UserDbInsertPayload record {
     # used to identify the creator or author
     string createdBy;
 };
+
+# Reminder Email record.
+public type InsertEmailData record {
+    # The unique identifier for the email notification
+    @sql:Column {name: "promotion_email_id"}
+    int? promotionEmailId = ();
+    # The unique identifier for the promotion cycle
+    @sql:Column {name: "promotion_cycle_id"}
+    int cycleId;
+    # The email recipient's email
+    @sql:Column {name: "promotion_email_recipient_email"}
+    string recipientEmail;
+    # The email recipient's name
+    @sql:Column {name: "promotion_email_recipient_name"}
+    string recipientName;
+    # The type of the email
+    @sql:Column {name: "promotion_email_type"}
+    string emailType;
+    # The status of the email
+    @sql:Column {name: "promotion_email_status"}
+    string status;
+    # The email template data
+    @sql:Column {name: "promotion_email_template_data"}
+    string templateData;
+};
+
+# HRIS Config Update Payload.
+public type ConfigUpdatePayload record {
+    # Key of the config
+    string key;
+    # value of the config
+    string value;
+    # Additional information
+    string? additionalInfo = ();
+    # Person who created the record
+    string createdBy;
+    # Person who updated the record
+    string updatedBy;
+};
+
+# Return record for single recommendation lead email.
+public type LeadEmail record {|
+    # Email of the lead
+    string leadEmail;
+|};

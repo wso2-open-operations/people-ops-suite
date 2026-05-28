@@ -818,3 +818,165 @@ isolated function insertUserQuery(UserDbInsertPayload payload) returns sql:Param
 isolated function deleteUserQuery(int id) returns sql:ParameterizedQuery {
     return `DELETE FROM hris_user WHERE ( user_id = ${id} )`;
 }
+
+isolated function getBlobFieldQuery(sql:ParameterizedQuery fieldName) returns sql:ParameterizedQuery =>
+    fieldName;
+
+isolated function getEmailNotificationsQuery(EmailStatus emailStatus, int count) returns sql:ParameterizedQuery =>
+    sql:queryConcat(`
+        SELECT
+            promotion_email_id,
+            promotion_cycle_id,
+            promotion_email_recipient_email,
+            promotion_email_recipient_name,
+            promotion_email_type,
+            promotion_email_status,`,
+        getBlobFieldQuery(`promotion_email_template_data`), ` AS promotion_email_template_data`, `
+        FROM
+            hris_promotion_email
+        WHERE
+            promotion_email_status = ${emailStatus}
+        LIMIT ${count}
+        FOR UPDATE
+    `);
+
+isolated function updateEmailNotificationsStateQuery(int[] ids, EmailStatus emailStatus)
+        returns sql:ParameterizedQuery =>
+    sql:queryConcat(`
+        UPDATE
+            hris_promotion_email
+        SET
+            promotion_email_status = ${emailStatus}
+        WHERE promotion_email_id in (`, sql:arrayFlattenQuery(ids), `)
+    `);
+
+# Get Promotion cycle by id
+#
+# + id - Promotion Cycle id
+# + return - sql:ParameterizedQuery - Get promotion cycle by given id 
+isolated function getPromotionCyclesByIdQuery(int id) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+        SELECT 
+            promotion_cycle_id as id,
+            promotion_cycle_name as name, 
+            promotion_cycle_start as startDate,
+            promotion_cycle_end as endDate,
+            promotion_cycle_status as status,
+            promotion_cycle_created_by as createdBy,
+            promotion_cycle_created_on as createdOn,
+            promotion_cycle_updated_by as updatedBy,
+            promotion_cycle_updated_on as updatedOn
+        FROM 
+            hris_promotion_cycle
+        WHERE promotion_cycle_id = ${id}`;
+
+    return sqlQuery;
+}
+
+isolated function insertEmailNotificationQuery(InsertEmailData[] emailNotifications)
+        returns sql:ParameterizedQuery[] => from InsertEmailData emailNotification in emailNotifications
+    let InsertEmailData {cycleId, recipientEmail, recipientName, emailType, status, templateData} = emailNotification
+    select `
+        INSERT IGNORE INTO hris_promotion_email (
+            promotion_cycle_id,
+            promotion_email_recipient_email,
+            promotion_email_recipient_name,
+            promotion_email_type,
+            promotion_email_status,
+            promotion_email_template_data
+        )
+        VALUES (
+            ${cycleId},
+            ${recipientEmail},
+            ${recipientName},
+            ${emailType},
+            ${status},
+            ${templateData}
+        )
+    `;
+
+# Insert or update record to hris_config Query
+#
+# + payload - Key,Value and the metadata for create config record
+# + return - sql:ParameterizedQuery - Inset or update query for the hris_config table
+isolated function insertOrUpdateConfigQuery(ConfigUpdatePayload payload) returns sql:ParameterizedQuery {
+    return `
+        INSERT INTO 
+            hris_config
+            (
+                config_key,
+                config_value,
+                config_additional_info,
+                config_created_by,
+                config_updated_by
+            ) 
+        VALUES 
+            (
+                ${payload.key},
+                ${payload.value},
+                ${payload.additionalInfo},
+                ${payload.updatedBy},
+                ${payload.updatedBy}
+            )
+        ON DUPLICATE KEY 
+        UPDATE 
+            config_key = ${payload.key},
+            config_value = ${payload.value},
+            config_additional_info = ${payload.additionalInfo},
+            config_created_by = ${payload.updatedBy},
+            config_updated_by = ${payload.updatedBy}
+        `;
+}
+
+# Retire list of recommended leads for give promotion type and cycle.
+#
+# + cycleID - Promotion cycle ID  
+# + 'type - Type of the promotion request
+# + return - sql:ParameterizedQuery - Retire promotion requests with recommendations Query.
+isolated function getRecommendedLeadsQuery(int? cycleID = (), PromotionRequestType? 'type = ())
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery sqlQuery = `
+            SELECT 
+                distinct (prc.promotion_recommendation_lead_email) AS 'leadEmail'
+                
+            FROM 
+                hris.hris_promotion_request pr
+            LEFT JOIN
+                hris.hris_promotion_recommendation prc
+            ON
+                pr.promotion_request_id = prc.promotion_request_id
+        `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if cycleID is int {
+        sql:ParameterizedQuery secondQuery = `pr.promotion_cycle_id = ${cycleID}`;
+        filters.push(secondQuery);
+    }
+
+    if 'type is PromotionRequestType {
+        sql:ParameterizedQuery secondQuery = `pr.promotion_request_type = ${'type}`;
+        filters.push(secondQuery);
+    }
+
+    if filters.length() > 0 {
+        boolean firstCondition = true;
+        foreach sql:ParameterizedQuery secondQuery in filters {
+            if firstCondition {
+                sqlQuery = sql:queryConcat(sqlQuery, ` WHERE `, secondQuery);
+                firstCondition = false;
+                continue;
+            }
+            sqlQuery = sql:queryConcat(sqlQuery, ` AND `, secondQuery);
+        }
+    }
+
+    sql:ParameterizedQuery groupingQuery = `
+            GROUP BY 
+                prc.promotion_recommendation_lead_email
+            `;
+
+    return sql:queryConcat(sqlQuery, ` `, groupingQuery);
+
+}

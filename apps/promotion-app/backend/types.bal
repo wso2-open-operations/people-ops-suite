@@ -217,3 +217,17 @@ public type UserInsertPayload record {
     # Role List
     database:Role[] roles;
 };
+
+# Time-based promotion payload.
+public type TimeBasedPromotionPayload record {
+    # Time-based promotion type
+    database:TimeBasedPromotion 'type;
+    # Sheet URL
+    string sheet?;
+};
+
+# Response type for initiate the time based promotion response.
+public type ProcessStatus record {|
+    # Status of the  process
+    string status;
+|};
