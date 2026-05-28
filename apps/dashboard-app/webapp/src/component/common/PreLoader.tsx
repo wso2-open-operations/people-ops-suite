@@ -15,7 +15,7 @@
 // under the License.
 import { Box, Container, LinearProgress, Typography } from "@mui/material";
 
-import Wso2Logo from "@assets/images/wso2-logo.svg";
+import Wso2Logo from "@assets/images/wso2-logo-white.webp";
 import type { PreLoaderProps } from "@utils/types";
 
 const PreLoader = (props: PreLoaderProps) => {
