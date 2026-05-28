@@ -53,6 +53,7 @@ export const AppConfig = {
     promotionCycle: SERVICE_BASE_URL + "/promotion/cycles",
     appConfig: SERVICE_BASE_URL + "/app-config",
     promotions: SERVICE_BASE_URL + "/promotions",
+    timebasePromotion: SERVICE_BASE_URL + "/promotion/requests/time-based",
     promotionRecommendations: SERVICE_BASE_URL + "/promotion/recommendations",
     employeeInfo: SERVICE_BASE_URL + "/employee-info",
   },

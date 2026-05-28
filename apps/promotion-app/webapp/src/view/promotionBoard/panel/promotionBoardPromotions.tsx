@@ -294,9 +294,7 @@ export default function Requests() {
                     return
                 }
                 const promotionsAction = await dispatch(fetchPromotions({
-                    employeeEmail: auth.userInfo?.email,
                     statusArray: ["FL_APPROVED"],
-                    enableBuFilter: true,
                     cycleId: promotionCycleId
                 }));
                 if (fetchPromotions.fulfilled.match(promotionsAction)) {

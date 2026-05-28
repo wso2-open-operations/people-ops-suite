@@ -51,9 +51,16 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
         fetchTimelinePromotions();
     }, [employeeEmail, dispatch]);
 
-    if (employeeHistory.employeeHistoryState === "success" && employeeHistory.employeeHistory) {
+    if (employeeHistory.employeeHistoryState === "success" && 
+         employeeHistory.employeeHistory) {
         timelineData.push({
-            Title: "Joined the Company",
+            Title: `Joined Job band: ${
+                        (employeeHistory.promotions === null|| employeeHistory.promotions.length === 0 )
+                            ? employeeHistory.employeeHistory.jobBand || "-"
+                            : employeeHistory.promotions[
+                                employeeHistory.promotions.length - 1
+                            ]?.currentJobBand || "-"
+                        }`,
             PromotionCycle: employeeHistory.employeeHistory.startDate
                 ? new Date(employeeHistory.employeeHistory.startDate).toLocaleDateString()
                 : "",

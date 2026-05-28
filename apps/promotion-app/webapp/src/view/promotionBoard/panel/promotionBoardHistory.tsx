@@ -71,6 +71,12 @@ const statusColorMap: Record<string, string> = {
     PROCESSING: '#fff9c4',
 };
 
+const promotionTypeColorMap: Record<string, string> = {
+    TIME_BASED: '#f0f4c3',
+    INDIVIDUAL_CONTRIBUTOR: '#b2dfdb',
+    NORMAL: '#a5d6a7',
+};
+
 export default function History() {
 
     const dispatch = useAppDispatch();
@@ -233,9 +239,7 @@ export default function History() {
     const fetchAllPromotions = async () => {
         try {
             const promotionsAction = await dispatch(fetchPromotions({
-                employeeEmail: auth.userInfo?.email,
                 statusArray: ["APPROVED","REJECTED"],
-                enableBuFilter: true,
             }));
 
             if (fetchPromotions.fulfilled.match(promotionsAction)) {
@@ -441,7 +445,7 @@ export default function History() {
                                             <TableCell>
                                             <Box
                                                 sx={{
-                                                backgroundColor: '#eeeeee',
+                                                backgroundColor: promotionTypeColorMap[req.promotionType] || '#eeeeee',
                                                 color: '#000',
                                                 px: 2,
                                                 py: 0.5,

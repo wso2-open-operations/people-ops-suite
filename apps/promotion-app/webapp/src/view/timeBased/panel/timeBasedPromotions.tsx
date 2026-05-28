@@ -687,7 +687,7 @@ export default function Pending() {
          promotionCycle.promotionCycles &&
          promotionCycle.promotionCycles.length > 0 &&
          isLeadDeadlinePassed &&(
-            <Box
+          <Box 
                 sx={{
                 display: "flex",
                 justifyContent: "center",

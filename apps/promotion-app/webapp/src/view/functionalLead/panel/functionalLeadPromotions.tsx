@@ -317,7 +317,6 @@ export default function Requests() {
                 }
 
                 const promotionsAction = await dispatch(fetchPromotions({
-                    employeeEmail: auth.userInfo?.email,
                     statusArray: ["SUBMITTED"],
                     enableBuFilter: true,
                     cycleId: promotionCycleId

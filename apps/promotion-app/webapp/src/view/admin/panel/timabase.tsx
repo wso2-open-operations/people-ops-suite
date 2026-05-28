@@ -14,11 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Chip, CircularProgress, Collapse, IconButton, Modal, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, Chip, CircularProgress, Collapse, IconButton, Modal, Paper, Radio, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Tooltip, Typography } from "@mui/material";
 import React, { useEffect, useState } from 'react';
 import { RootState, useAppDispatch, useAppSelector } from '@root/src/slices/store';
 import { fetchPromotionCycles } from "@slices/promotionCycleSlice/promotionCycle";
-import { fetchPromotions } from "@slices/promotionSlice/promotion";
+import { fetchPromotions, createTimebasePormotions } from "@slices/promotionSlice/promotion";
 import { patchRecommendation } from "@slices/recommendationSlice/recommendation";
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { LoadingEffect } from "@root/src/component/ui/Loading";
@@ -29,6 +29,7 @@ import { ConfirmationType, RecommendationState } from "@root/src/types/types";
 import { useConfirmationModalContext } from '@root/src/context/DialogContext';
 import { Download } from "@mui/icons-material";
 import Search from "@component/ui/search";
+import * as yup from "yup";
 import exportFromJSON from "export-from-json";
 
 const statusColorMap: Record<string, string> = {
@@ -48,6 +49,16 @@ const statusColorMap: Record<string, string> = {
     PROCESSING: '#fff9c4',
 };
 
+const validationSchema = yup.object().shape({
+  sheetLink: yup
+    .string()
+    .required("Google Sheet link is required")
+    .matches(
+      /^https:\/\/docs\.google\.com\/spreadsheets\/d\/.+$/,
+      "Enter a valid Google Sheet link"
+    ),
+});
+
 export default function Timebase() {
     const dispatch = useAppDispatch();
     const promotions = useAppSelector((state: RootState) => state.promotion);
@@ -61,6 +72,62 @@ export default function Timebase() {
     const [searchKey, setSearchKey] = useState<string>("");
     const [isChecked, setIsChecked] = useState(false);
     const [sheetValue, setSheetValue] = useState("");
+  const [selected, setSelected] = useState("par-app");
+  const [openModal, setOpenModal] = useState(false);
+
+  const [sheetLink, setSheetLink] = useState("");
+  const [error, setError] = useState("");
+
+  const handleImport = () => {
+    if (selected === "google-sheet") {
+      setOpenModal(true);
+    }
+  };
+
+  const validateField = async (value: any) => {
+    try {
+      await validationSchema.validate({
+        sheetLink: value,
+      });
+
+      setError("");
+      return true;
+    } catch (err: any) {
+      setError(err.message);
+      return false;
+    }
+  };
+
+  const handleChange = async (e: any) => {
+    const value = e.target.value;
+
+    setSheetLink(value);
+
+    if (value.trim() === "") {
+      setError("Google Sheet link is required");
+      return;
+    }
+
+    await validateField(value);
+  };
+
+  const handleSubmitSheet = async () => {
+    const isValid = await validateField(sheetLink);
+
+    if (!isValid) return;
+    dispatch(createTimebasePormotions({
+        type: "SHEET",
+        sheet: sheetLink
+    }));
+
+    setOpenModal(false);
+    setSheetLink("");
+  };
+
+  const isButtonDisabled =
+    !sheetLink || error !== "";
+
+
 
     const fetchAllPromotions = async () => {
         try {
@@ -533,23 +600,332 @@ export default function Timebase() {
                  promotionCycle.promotionCycles &&
                  promotions.promotions &&
                  promotions.promotions.length == 0 && (
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            height: "70vh",
-                            "& img": {
-                                width: 360,
-                                height: "auto",
-                            },
-                        }}
-                    >
-                        <StateWithImage
-                            imageUrl={require("@assets/images/not-found.svg").default}
-                            message="No Promotions Found!"
-                        />
-                    </Box>
+                    <>
+                        <Box
+                            sx={{
+                            width: "100%",
+                            minHeight: "75vh",
+                            backgroundColor: "#ffffff",
+                            pt: 8,
+                            }}
+                        >
+                            <Box
+                            sx={{
+                                width: "82%",
+                                margin: "0 auto",
+                            }}
+                            >
+                            <Typography
+                                sx={{
+                                fontSize: "18px",
+                                color: "#555",
+                                mb: 4,
+                                }}
+                            >
+                                Set time-based promotions from:
+                            </Typography>
+
+                            <Box
+                                sx={{
+                                display: "flex",
+                                gap: 4,
+                                }}
+                            >
+                                <Card
+                                onClick={() => setSelected("par-app")}
+                                sx={{
+                                    flex: 1,
+                                    height: 175,
+                                    border:
+                                    selected === "par-app"
+                                        ? "2px solid #ff6d00"
+                                        : "1px solid #dddddd",
+                                    borderRadius: "4px",
+                                    boxShadow: "none",
+                                    cursor: "pointer",
+                                }}
+                                >
+                                <CardContent
+                                    sx={{
+                                    height: "100%",
+                                    px: 4,
+                                    }}
+                                >
+                                    <Box
+                                    sx={{
+                                        display: "flex",
+                                        height: "100%",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                    }}
+                                    >
+                                    <Box>
+                                        <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            mb: 2,
+                                        }}
+                                        >
+                                        <Radio
+                                            checked={selected === "par-app"}
+                                            sx={{
+                                            color: "#999",
+                                            p: 0,
+                                            mr: 2,
+                                            "&.Mui-checked": {
+                                                color: "#ff6d00",
+                                            },
+                                            }}
+                                        />
+
+                                        <Typography
+                                            sx={{
+                                            fontSize: "20px",
+                                            fontWeight: 400,
+                                            color: "#222",
+                                            }}
+                                        >
+                                            PAR App
+                                        </Typography>
+                                        </Box>
+
+                                        <Typography
+                                        sx={{
+                                            ml: 5,
+                                            maxWidth: 260,
+                                            fontSize: "16px",
+                                            lineHeight: 1.8,
+                                            color: "#666",
+                                        }}
+                                        >
+                                        Import employees whom have 3
+                                        consecutive successful ratings or
+                                        above.
+                                        </Typography>
+                                    </Box>
+
+                                    <Box
+                                        component="img"
+                                        src={require("@root/src/assets/images/save-as-draft.svg").default}
+                                        alt="PAR App"
+                                        sx={{
+                                        width: 150,
+                                        height: 150,
+                                        objectFit: "contain",
+                                        }}
+                                    />
+                                    </Box>
+                                </CardContent>
+                                </Card>
+
+                                <Card
+                                onClick={() => setSelected("google-sheet")}
+                                sx={{
+                                    flex: 1,
+                                    height: 175,
+                                    border:
+                                    selected === "google-sheet"
+                                        ? "2px solid #ff6d00"
+                                        : "1px solid #dddddd",
+                                    borderRadius: "4px",
+                                    boxShadow: "none",
+                                    cursor: "pointer",
+                                }}
+                                >
+                                <CardContent
+                                    sx={{
+                                    height: "100%",
+                                    px: 4,
+                                    }}
+                                >
+                                    <Box
+                                    sx={{
+                                        display: "flex",
+                                        height: "100%",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                    }}
+                                    >
+                                    <Box>
+                                        <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            mb: 2,
+                                        }}
+                                        >
+                                        <Radio
+                                            checked={selected === "google-sheet"}
+                                            sx={{
+                                            color: "#999",
+                                            p: 0,
+                                            mr: 2,
+                                            "&.Mui-checked": {
+                                                color: "#ff6d00",
+                                            },
+                                            }}
+                                        />
+
+                                        <Typography
+                                            sx={{
+                                            fontSize: "20px",
+                                            fontWeight: 400,
+                                            color: "#222",
+                                            }}
+                                        >
+                                            Google Sheet
+                                        </Typography>
+                                        </Box>
+
+                                        <Typography
+                                        sx={{
+                                            ml: 5,
+                                            maxWidth: 260,
+                                            fontSize: "16px",
+                                            lineHeight: 1.8,
+                                            color: "#666",
+                                        }}
+                                        >
+                                        Import list of employees from
+                                        google sheet.
+                                        </Typography>
+                                    </Box>
+
+                                    <Box
+                                        component="img"
+                                        src={require("@root/src/assets/images/loading.svg").default}
+                                        alt="Google Sheet"
+                                        sx={{
+                                        width: 150,
+                                        height: 150,
+                                        objectFit: "contain",
+                                        }}
+                                    />
+                                    </Box>
+                                </CardContent>
+                                </Card>
+                            </Box>
+
+                            <Box
+                                sx={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                mt: 5,
+                                }}
+                            >
+                                <Button
+                                variant="contained"
+                                onClick={handleImport}
+                                sx={{
+                                    width: 175,
+                                    height: 50,
+                                    backgroundColor: "#ff6d00",
+                                    fontSize: "18px",
+                                    fontWeight: 500,
+                                    borderRadius: "4px",
+                                    textTransform: "uppercase",
+                                    boxShadow: "none",
+                                    "&:hover": {
+                                    backgroundColor: "#e65c00",
+                                    boxShadow: "none",
+                                    },
+                                }}
+                                >
+                                IMPORT
+                                </Button>
+                            </Box>
+                            </Box>
+                        </Box>
+
+                        <Modal
+                            open={openModal}
+                            onClose={() => setOpenModal(false)}
+                        >
+                            <Box
+                            sx={{
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
+                                transform: "translate(-50%, -50%)",
+                                width: 500,
+                                backgroundColor: "#fff",
+                                borderRadius: "8px",
+                                p: 4,
+                                boxShadow: 24,
+                            }}
+                            >
+                            <Typography
+                                sx={{
+                                fontSize: "24px",
+                                fontWeight: 500,
+                                mb: 3,
+                                color: "#222",
+                                }}
+                            >
+                                Import Google Sheet
+                            </Typography>
+
+                            <Typography
+                                sx={{
+                                mb: 1,
+                                fontSize: "15px",
+                                color: "#555",
+                                }}
+                            >
+                                Google Sheet Link
+                            </Typography>
+
+                            <TextField
+                                fullWidth
+                                placeholder="Paste your Google Sheet link here"
+                                value={sheetLink}
+                                onChange={handleChange}
+                                error={!!error}
+                                helperText={error}
+                            />
+
+                            <Box
+                                sx={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: 2,
+                                mt: 4,
+                                }}
+                            >
+                                <Button
+                                onClick={() => setOpenModal(false)}
+                                sx={{
+                                    color: "#666",
+                                }}
+                                >
+                                Cancel
+                                </Button>
+
+                                <Button
+                                variant="contained"
+                                disabled={isButtonDisabled}
+                                onClick={handleSubmitSheet}
+                                sx={{
+                                    backgroundColor: "#ff6d00",
+                                    px: 4,
+                                    boxShadow: "none",
+                                    "&:hover": {
+                                    backgroundColor: "#e65c00",
+                                    boxShadow: "none",
+                                    },
+                                    "&.Mui-disabled": {
+                                    backgroundColor: "#ccc",
+                                    color: "#777",
+                                    },
+                                }}
+                                >
+                                Import
+                                </Button>
+                            </Box>
+                            </Box>
+                        </Modal>
+                    </>
                 )}
 
                 {(promotionCycle.state === "failed" || 

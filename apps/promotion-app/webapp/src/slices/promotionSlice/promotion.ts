@@ -38,6 +38,11 @@ interface InsertPromotionPaylod {
   statement: string,
 }
 
+interface CreateTimebasePromotionPaylod {
+  type:string,
+  sheet: string
+}
+
 interface UpdatePromotionPaylod {
   id: number,
   statement? : string,
@@ -251,6 +256,49 @@ export const rejectPromotions = createAsyncThunk(
               message:
                 error.response?.status === HttpStatusCode.InternalServerError
                   ? "Failed to Reject the Promotion."
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error.response?.data?.message);
+        });
+    });
+  }
+);
+
+export const createTimebasePormotions = createAsyncThunk(
+  "promotion/createTimebasePormotions",
+  async (payload: CreateTimebasePromotionPaylod,
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken(); 
+    return new Promise<{ status: string }>((resolve, reject) => {
+      APIService.getInstance()
+        .post(AppConfig.serviceUrls.timebasePromotion, payload,{
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve({
+            status: response.data
+          })
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Successfully Create the Timebase Promotions!",
+              type: "success",
+            })
+          );
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            reject(rejectWithValue("Request canceled"));
+            return;
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? "Failed to Create Timebase Promotions!"
                   : "An unknown error occurred.",
               type: "error",
             })

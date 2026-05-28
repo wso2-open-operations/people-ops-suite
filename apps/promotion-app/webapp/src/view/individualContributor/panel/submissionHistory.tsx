@@ -51,7 +51,7 @@ const statusColorMap: Record<string, string> = {
   FL_REJECTED: '#f8bbd0',
   REJECTED: '#ef9a9a',
   EXPIRED: '#d7ccc8',
-  PROCESSING: '#fff9c4',
+  IN_PROGRESS: '#fff9c4',
 };
 
 
@@ -71,7 +71,6 @@ export default function SubmissionHistory() {
     const fetchHistory = () => {
 
         dispatch(fetchPromotions({
-            employeeEmail: auth.userInfo?.email,
             type: "INDIVIDUAL_CONTRIBUTOR",
             recommendedBy: auth.userInfo?.email,
         }));
@@ -175,7 +174,9 @@ export default function SubmissionHistory() {
                                     <TableCell>
                                         <Box
                                             sx={{
-                                                backgroundColor: statusColorMap[row.status] || '#eeeeee',
+                                                backgroundColor: row.status === "APPROVED" || row.status === "REJECTED"
+                                                        ? statusColorMap[row.status]
+                                                        : statusColorMap["IN_PROGRESS"] || "#eeeeee",
                                                 color: '#000',
                                                 px: 2,
                                                 py: 0.5,
@@ -186,7 +187,7 @@ export default function SubmissionHistory() {
                                                 textTransform: 'capitalize',
                                             }}
                                         >
-                                            {row.status}
+                                            {row.status === "APPROVED" || row.status === "REJECTED" ? row.status : "IN_PROGRESS"}
                                         </Box>
                                     </TableCell>
                                     <TableCell>{row.nextJobBand}</TableCell>

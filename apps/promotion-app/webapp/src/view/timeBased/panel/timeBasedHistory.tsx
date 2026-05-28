@@ -160,7 +160,8 @@ export default function TimeBaseHistory() {
 
         {recommendation.state === "success" && 
          recommendation.recommendations && 
-         recommendation.recommendations.length > 0 &&(
+         recommendation.recommendations.length > 0 &&
+         filteredRecs.length > 0 &&(
           <>
             <Typography variant="h5" sx={{ mb: 3 }}>
               Promotion History
@@ -179,14 +180,7 @@ export default function TimeBaseHistory() {
                 </TableHead>
 
                 <TableBody>
-                  {filteredRecs.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        No submissions found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredRecs.map((rec) => (
+                    {filteredRecs.map((rec) => (
                       <TableRow key={rec.recommendationID}>
                         <TableCell>{rec.employeeName}</TableCell>
                         <TableCell>{rec.employeeEmail}</TableCell>
@@ -243,7 +237,7 @@ export default function TimeBaseHistory() {
                           </IconButton>
                         </TableCell>
                       </TableRow>
-                    ))
+                    )
                   )}
                 </TableBody>
               </Table>
@@ -287,6 +281,29 @@ export default function TimeBaseHistory() {
                 </Box>
             </Modal> 
           </>    
+        )}
+
+        {recommendation.state === "success" &&
+         recommendation.recommendations &&
+         (recommendation.recommendations.length == 0 ||
+         filteredRecs.length == 0) && (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "70vh",
+                    "& img": {
+                        width: 360,
+                        height: "auto",
+                    },
+                }}
+            >
+                <StateWithImage
+                imageUrl={require("@assets/images/not-found.svg").default}
+                message="No Promotions Found!"
+                />
+            </Box>
         )}
 
         {recommendation.state === "success" && 

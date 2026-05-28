@@ -33,3 +33,6 @@ export const SnackMessage = {
   },
   warning: {},
 };
+
+// Negating as getTimezoneOffset() returns a negative value
+export const USER_TIMEZONE_OFFSET = -(new Date().getTimezoneOffset() / 60);
