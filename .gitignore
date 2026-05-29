@@ -30,5 +30,17 @@ Config.toml
 .gitsecret/keys/random_seed
 !*.secret
 .devcontainer.json
+
+# --- General Ignores ---
 .env
 node_modules
+react-app-env.d.ts
+
+# --- WSO2 leave-app Ignores ---
+apps/leave-app/.claude/settings.local.json
+apps/leave-app/skills.md
+apps/leave-app/backend/Dependencies.toml
+apps/leave-app/webapp/.claude/settings.local.json
+
+# --- Your Private App Ignores ---
+apps/leave/microapp/.env
