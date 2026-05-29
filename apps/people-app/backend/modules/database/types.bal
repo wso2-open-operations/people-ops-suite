@@ -15,23 +15,24 @@
 // under the License.
 
 import ballerina/constraint;
+import ballerina/lang.regexp;
 import ballerina/sql;
 import ballerinax/mysql;
 
-# Email validation regex pattern
-public const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+# Email validation pattern.
+public final regexp:RegExp EMAIL_PATTERN = re `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`;
 
-# Phone number validation regex pattern
-const PHONE_PATTERN_STRING = "^[0-9+\\-()\\s]*[0-9][0-9+\\-()\\s]*$";
+# Phone number validation pattern.
+public final regexp:RegExp PHONE_PATTERN = re `^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$`;
 
-# Date validation regex pattern (YYYY-MM-DD format), e.g. for parking booking_date.
-public const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
+# Date validation pattern (YYYY-MM-DD).
+public final regexp:RegExp DATE_PATTERN = re `^\d{4}-\d{2}-\d{2}$`;
 
-# URL validation regex pattern
-const URL_PATTERN_STRING = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
+# URL validation pattern.
+public final regexp:RegExp URL_PATTERN = re `^(https?|ftp)://[^\s/$.?#].[^\s]*$`;
 
 # Constrained email string type.
-@constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+@constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
 public type Email string;
 
 # Distinct error returned when a PATCH targets an entity ID that does not exist.
@@ -618,6 +619,17 @@ public type House record {|
     string name;
 |};
 
+# House with active employee count.
+public type HouseWithCount record {|
+    # House ID
+    int id;
+    # House name
+    string name;
+    # Number of currently active employees assigned to this house
+    @sql:Column {name: "active_count"}
+    int activeCount;
+|};
+
 # Manager payload.
 public type Manager record {|
     # Employee ID of the manager
@@ -626,6 +638,26 @@ public type Manager record {|
     # Manager work email
     @sql:Column {name: "work_email"}
     string workEmail;
+|};
+
+# Work email row mapping.
+public type WorkEmailRow record {|
+    # Work email address
+    @sql:Column {name: "work_email"}
+    string workEmail;
+|};
+
+# NIC or passport row mapping.
+public type NicOrPassportRow record {|
+    # NIC or passport value
+    @sql:Column {name: "nic_or_passport"}
+    string nicOrPassport;
+|};
+
+# EPF row mapping.
+public type EpfRow record {|
+    # EPF number
+    string epf;
 |};
 
 # Search employee personal information payload.
@@ -668,18 +700,68 @@ type EmployeeNameRow record {|
     string fullName;
 |};
 
-# [Database] Work email row mapping for employee lookups.
-type WorkEmailRow record {|
-    # Work email of the employee
-    @sql:Column {name: "work_email"}
-    string workEmail;
-|};
-
 # Additional manager email row mapping.
 public type AdditionalManagerEmailRow record {|
     # Additional manager email
     @sql:Column {name: "additional_manager_email"}
     string additionalManagerEmail;
+|};
+
+# Bulk onboarding validation error.
+public type BulkEmployeeError record {|
+    # CSV row number (1-based, including header row)
+    int row;
+    # Field name that failed validation
+    string 'field;
+    # Validation error message
+    string message;
+|};
+
+# Records an employee whose SCIM provisioning failed during bulk onboarding.
+public type BulkProvisioningError record {|
+    # Employee ID of the affected record
+    string employeeId;
+    # Work email of the affected record
+    string workEmail;
+    # Failure reason from the provisioning step
+    string reason;
+|};
+
+# Records an employee who was created successfully but whose group assignment was partially or fully skipped.
+public type BulkGroupAssignmentWarning record {|
+    # Employee ID of the affected employee
+    string employeeId;
+    # Work email of the affected employee
+    string workEmail;
+    # Groups that could not be assigned
+    string[] failedGroups;
+|};
+
+public type OrphanedScimUser record {|
+    string employeeId;
+    string workEmail;
+    string reason;
+|};
+
+public type BulkOnboardingResult record {|
+    int created;
+    int failed;
+|};
+
+# Bulk onboarding response payload.
+public type BulkUploadResponse record {|
+    # Number of employees created
+    int created;
+    # Number of rows skipped (empty rows)
+    int skipped;
+    # Validation errors (empty when success)
+    BulkEmployeeError[] errors;
+    # Employees for whom SCIM provisioning failed and whose DB records were rolled back
+    BulkProvisioningError[] provisioningErrors = [];
+    # Asgardeo users created but DB rows were rolled back due to downstream failures
+    OrphanedScimUser[] orphanedScimUsers = [];
+    # Employees who were created in the DB and Asgardeo but had one or more group-assignment failures
+    BulkGroupAssignmentWarning[] groupAssignmentWarnings = [];
 |};
 
 # Create personal info payload.
@@ -705,13 +787,13 @@ public type CreatePersonalInfoPayload record {|
     @constraint:String {maxLength: 20}
     string gender;
     # Personal email address
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string? personalEmail = ();
     # Personal phone number
-    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN}`}
     string? personalPhone = ();
     # Resident number
-    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN}`}
     string? residentNumber = ();
     # Address line 1
     @constraint:String {maxLength: 255}
@@ -755,27 +837,27 @@ public type CreateEmployeePayload record {|
     @constraint:String {maxLength: 100}
     string workLocation;
     # Work email of the user
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string workEmail;
     # Start date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string startDate;
     # Secondary job title
     @constraint:String {maxLength: 100}
     string? secondaryJobTitle = ();
     # Manager email
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string managerEmail;
     # Additional manager emails
     Email[] additionalManagerEmails = [];
     # Employee thumbnail URL
-    @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN}`}
     string? employeeThumbnail = ();
     # Probation end date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? probationEndDate = ();
     # Agreement end date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? agreementEndDate = ();
     # Employment type ID
     int employmentTypeId;
@@ -832,13 +914,13 @@ public type UpdateEmployeePersonalInfoPayload record {|
     @constraint:String {maxLength: 100}
     string? nationality = ();
     # Personal email address
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string? personalEmail = ();
     # Personal phone number
-    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN}`}
     string? personalPhone = ();
     # Resident number
-    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN}`}
     string? residentNumber = ();
     # Address line 1
     @constraint:String {maxLength: 255}
@@ -873,27 +955,27 @@ public type UpdateEmployeeJobInfoPayload record {|
     @constraint:String {maxLength: 100}
     string? workLocation = ();
     # Work email - WARNING: Identity key used for authorization checks
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string? workEmail = ();
-    # Start date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    # Start date    
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? startDate = ();
     # Secondary job title
     @constraint:String {maxLength: 100}
     string? secondaryJobTitle = ();
     # Manager email
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string? managerEmail = ();
     # Additional manager emails
     Email[]? additionalManagerEmails = ();
     # Employee thumbnail URL
-    @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN}`}
     string? employeeThumbnail = ();
     # Probation end date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? probationEndDate = ();
     # Agreement end date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? agreementEndDate = ();
     # Employment type ID
     int? employmentTypeId = ();
@@ -917,10 +999,10 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Employee Status
     EmployeeStatus? employeeStatus = ();
     # Final day in office
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? finalDayInOffice = ();
     # Final day of employment 
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? finalDayOfEmployment = ();
     # Resignation reason
     string? resignationReason = ();

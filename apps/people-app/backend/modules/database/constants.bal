@@ -34,3 +34,8 @@ const DEFAULT_RECORDS_PER_PAGE = 20;
 
 # Prefix shared by all consultancy-type employee IDs 
 public const CONSULTANCY_ID_PREFIX = "CON";
+
+# Constants for bulk insert operation status codes
+public const BULK_INSERT_SUCCESS = 1000;
+public const BULK_INSERT_DUPLICATE = 1001;
+public const BULK_INSERT_FAILED = 1002;

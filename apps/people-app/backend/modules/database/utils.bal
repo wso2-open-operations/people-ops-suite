@@ -160,15 +160,25 @@ public isolated function checkAffectedCount(int? affectedRowCount) returns error
 # + value - Optional string value to validate
 # + pattern - Regex pattern that non-empty values must satisfy
 # + return - True if the value is nil/empty or matches the pattern, false otherwise
-public isolated function isValidOptionalPatternString(string? value, string pattern) returns boolean {
+public isolated function isValidOptionalPatternString(string? value, regexp:RegExp pattern) returns boolean {
     if value is () || value == "" {
         return true;
     }
-    regexp:RegExp|error compiled = regexp:fromString(pattern);
-    if compiled is error {
-        return false;
+    return value.matches(pattern);
+}
+
+# Maps a database error to a bulk insert status code.
+#
+# + err - The error to map
+# + return - BULK_INSERT_DUPLICATE for MySQL duplicate entry,
+#            BULK_INSERT_FAILED for all other errors
+public isolated function getErrorCode(error err) returns int {
+    if err is sql:DatabaseError {
+        if err.detail().errorCode == 1062 {
+            return BULK_INSERT_DUPLICATE;
+        }
     }
-    return value.matches(compiled);
+    return BULK_INSERT_FAILED;
 }
 
 # Escape a value for CSV (RFC 4180).

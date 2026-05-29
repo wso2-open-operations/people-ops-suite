@@ -154,6 +154,46 @@ public isolated function getSubTeams(int? teamId = (), boolean includeInactive =
         select subTeam;
 }
 
+# Fetch existing work emails from the employee table.
+#
+# + emails - List of lowercased work emails
+# + return - Existing work emails
+public isolated function getExistingWorkEmails(string[] emails) returns string[]|error {
+    if emails.length() == 0 {
+        return [];
+    }
+    stream<WorkEmailRow, error?> emailStream = databaseClient->query(getExistingWorkEmailsQuery(emails));
+    return from WorkEmailRow row in emailStream
+        select row.workEmail;
+}
+
+# Fetch existing NIC or passport values from personal_info.
+#
+# + nics - List of NIC or passport values
+# + return - Existing NIC or passport values
+public isolated function getExistingNicOrPassport(string[] nics) returns string[]|error {
+    if nics.length() == 0 {
+        return [];
+    }
+    stream<NicOrPassportRow, error?> nicStream =
+        databaseClient->query(getExistingNicOrPassportQuery(nics));
+    return from NicOrPassportRow row in nicStream
+        select row.nicOrPassport;
+}
+
+# Fetch existing EPF values from the employee table.
+#
+# + epfs - List of EPF values to check
+# + return - Existing EPF values found in the DB, or error
+public isolated function getExistingEpfs(string[] epfs) returns string[]|error {
+    if epfs.length() == 0 {
+        return [];
+    }
+    stream<EpfRow, error?> epfStream = databaseClient->query(getExistingEpfsQuery(epfs));
+    return from EpfRow row in epfStream
+        select row.epf;
+}
+
 # Get units.
 #
 # + subTeamId - Sub team ID (optional)
@@ -260,6 +300,18 @@ public isolated function getAsgardeoGroupsByEmploymentType(int employmentTypeId)
         select row.groupName;
 }
 
+# Fetch Asgardeo group names assigned to a specific team and employment type.
+#
+# + teamId - The team ID to look up
+# + employmentTypeId - The employment type ID to look up
+# + return - Array of Asgardeo group names, or error
+public isolated function getAsgardeoGroupsByTeam(int teamId, int employmentTypeId) returns string[]|error {
+    stream<record {|string groupName;|}, error?> rows =
+        databaseClient->query(getAsgardeoGroupsForTeamQuery(teamId, employmentTypeId));
+    return from var groupRow in rows
+        select groupRow.groupName;
+}
+
 # Get houses.
 #
 # + return - Houses
@@ -275,6 +327,15 @@ public isolated function getHouses() returns House[]|error {
 public isolated function getHouseWithLeastActiveEmployees() returns House|error? {
     House|error result = databaseClient->queryRow(getHouseWithLeastActiveEmployeesQuery());
     return result is sql:NoRowsError ? () : result;
+}
+
+# Get all active houses with their active employee counts, ordered ascending.
+#
+# + return - Houses with active employee counts, or error
+public isolated function getHousesWithActiveEmployeeCounts() returns HouseWithCount[]|error {
+    stream<HouseWithCount, error?> resultStream = databaseClient->query(getHousesWithActiveEmployeeCountsQuery());
+    return from HouseWithCount house in resultStream
+        select house;
 }
 
 # Get managers.
@@ -355,6 +416,113 @@ public isolated function deleteEmployeeById(string employeeId) returns error? {
         _ = check databaseClient->execute(deleteEmployeeQuery(employeeId));
         _ = check databaseClient->execute(deletePersonalInfoQuery(personalInfoId));
         check commit;
+    }
+}
+
+# Add multiple employees in a single transaction with retry on concurrent ID conflicts.
+#
+# + payloads - Create employee payloads
+# + createdBy - Creator of the employee records
+# + return - Ordered array of [employeeId, statusCode] tuples, or error
+public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, string createdBy)
+        returns [string, int][] {
+
+    int maxRetries = 3;
+    int attempt = 0;
+
+    while attempt < maxRetries {
+        attempt += 1;
+        [string, int][] attemptResults = [];
+        map<EmployeeIdContext> contextCache = {};
+        map<int> sequenceCache = {};
+        error? txErr = ();
+
+        transaction {
+            foreach CreateEmployeePayload payload in payloads {
+                string employeeId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
+                int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
+                _ = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
+                check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
+                check syncAdditionalManagers(employeeId, payload.additionalManagerEmails, createdBy);
+                attemptResults.push([employeeId, BULK_INSERT_SUCCESS]);
+            }
+            check commit;
+        } on fail error err {
+            txErr = err;
+        }
+
+        if txErr is () {
+            return attemptResults;
+        }
+
+        int errorCode = getErrorCode(txErr);
+        int finalStatus = errorCode == 1062 ? BULK_INSERT_DUPLICATE : BULK_INSERT_FAILED;
+
+        if finalStatus == BULK_INSERT_DUPLICATE && attempt < maxRetries {
+            continue;
+        }
+
+        [string, int][] result = [];
+        foreach var _ in payloads {
+            result.push(["", finalStatus]);
+        }
+        return result;
+    }
+
+    [string, int][] result = [];
+    foreach var _ in payloads {
+        result.push(["", BULK_INSERT_FAILED]);
+    }
+    return result;
+}
+
+# Generates an employee ID for a single CSV row during bulk onboarding.
+#
+# + payload - Partially built payload for the current row
+# + contextCache - Cache mapping `"companyId:employmentTypeId"` to `EmployeeIdContext`
+# + sequenceCache - Cache mapping sequence key to last used numeric suffix
+# + return - Auto-generated employee ID, or an error on DB failure
+isolated function generateBulkEmployeeId(CreateEmployeePayload payload,
+        map<EmployeeIdContext> contextCache, map<int> sequenceCache) returns string|error {
+
+    string ctxKey = string `${payload.companyId}:${payload.employmentTypeId}`;
+
+    EmployeeIdContext context;
+    EmployeeIdContext? cached = contextCache[ctxKey];
+    if cached is EmployeeIdContext {
+        context = cached;
+    } else {
+        context = check getEmployeeIdContext(payload.companyId, payload.employmentTypeId);
+        contextCache[ctxKey] = context;
+    }
+
+    match context.employmentType {
+        PERMANENT|INTERNSHIP => {
+            string seqKey = context.companyPrefix + ":" + context.employmentType.toString();
+            if !sequenceCache.hasKey(seqKey) {
+                EmployeeIdSequence seq = check getLastEmployeeNumericSuffix(
+                        context.companyPrefix, [context.employmentType]);
+                sequenceCache[seqKey] = <int>seq.lastNumericId;
+            }
+            int next = (sequenceCache[seqKey] ?: 0) + 1;
+            sequenceCache[seqKey] = next;
+            return string `${context.companyPrefix}${next}`;
+        }
+        CONSULTANCY|ADVISORY_CONSULTANCY|PART_TIME_CONSULTANCY => {
+            string seqKey = CONSULTANCY_ID_PREFIX;
+            if !sequenceCache.hasKey(seqKey) {
+                EmployeeIdSequence seq = check getLastEmployeeNumericSuffix(
+                        CONSULTANCY_ID_PREFIX,
+                        [CONSULTANCY, ADVISORY_CONSULTANCY, PART_TIME_CONSULTANCY]);
+                sequenceCache[seqKey] = <int>seq.lastNumericId;
+            }
+            int next = (sequenceCache[seqKey] ?: 0) + 1;
+            sequenceCache[seqKey] = next;
+            return string `${CONSULTANCY_ID_PREFIX}${next}`;
+        }
+        _ => {
+            return error("Unsupported employment type: " + context.employmentType.toString());
+        }
     }
 }
 
