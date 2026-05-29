@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -28,11 +28,12 @@ const PreLoader = (props: PreLoaderProps) => {
   return (
     <Box
       sx={{
-        background: "#E7EBF0",
+        background: "#e7ebf0af",
         display: "flex",
-        pt: "20vh",
         flexDirection: "column",
         height: "100vh",
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
       <Container maxWidth="md">
@@ -48,10 +49,10 @@ const PreLoader = (props: PreLoaderProps) => {
               {!props.hideLogo && (
                 <img
                   alt="logo"
-                  width="250"
+                  width="550"
                   height="auto"
                   src={require("@assets/images/visitor.svg").default}
-                ></img>
+                />
               )}
             </Grid>
             <Grid item xs={12}></Grid>
@@ -61,7 +62,6 @@ const PreLoader = (props: PreLoaderProps) => {
                 {props.message || "Visitor App"}
               </Typography>
             </Grid>
-            <Grid item xs={12}></Grid>
             <Grid item xs={12}>
               {props.isLoading && <LinearProgress sx={{ width: "100px" }} />}
             </Grid>

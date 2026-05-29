@@ -16,14 +16,16 @@
 
 import { lazy } from "react";
 
+const admin = lazy(() => import("@view/admin/admin"));
 const employee = lazy(() => import("@view/employee/employee"));
 const help = lazy(() => import("@view/help/help"));
-const admin = lazy(() => import("@view/admin/admin"));
+const wifi = lazy(() => import("@view/wifi/wifi"));
 const scanner = lazy(() => import("@view/scanner/scanner"));
 
 export const View = {
+  admin,
   employee,
   help,
-  admin,
+  wifi,
   scanner,
 };

@@ -81,7 +81,7 @@ export const loadPrivileges = createAsyncThunk(
         enqueueSnackbarMessage({
           message: SnackMessage.error.fetchPrivileges,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
@@ -100,12 +100,12 @@ export const loadPrivileges = createAsyncThunk(
         enqueueSnackbarMessage({
           message: SnackMessage.error.insufficientPrivileges,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue("No roles found");
     }
     return { roles };
-  }
+  },
 );
 
 export const authSlice = createSlice({
@@ -115,7 +115,6 @@ export const authSlice = createSlice({
     setUserAuthData: (state, action: PayloadAction<AuthData>) => {
       state.userInfo = action.payload.userInfo;
       state.decodedIdToken = action.payload.decodedIdToken;
-      state.status = State.success;
     },
   },
   extraReducers: (builder) => {

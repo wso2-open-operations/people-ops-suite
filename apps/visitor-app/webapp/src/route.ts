@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -23,6 +23,7 @@ import { isIncludedRole } from "@utils/utils";
 // import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import WifiPasswordIcon from "@mui/icons-material/WifiPassword";
 import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
@@ -65,6 +66,13 @@ export const routes: RouteObjectWithRole[] = [
     text: "Scanner",
     icon: React.createElement(QrCodeScannerIcon),
     element: React.createElement(View.scanner),
+    allowRoles: [Role.ADMIN],
+  },
+  {
+    path: "/wi-fi",
+    text: "Wi-Fi",
+    icon: React.createElement(WifiPasswordIcon),
+    element: React.createElement(View.wifi),
     allowRoles: [Role.ADMIN],
   },
   // Temporarily hiding the Help route until we have the content ready
