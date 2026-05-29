@@ -1121,8 +1121,21 @@ service http:InterceptableService / on new http:Listener(9090) {
                 continue;
             }
 
+            string[] allGroups = [...groupNames];
+            string[]|error teamGroupNames = database:getAsgardeoGroupsByTeam(emp.payload.teamId, emp.payload.employmentTypeId);
+            if teamGroupNames is string[] {
+                allGroups.push(...teamGroupNames);
+            } else {
+                log:printError("Failed to fetch Asgardeo groups for team during bulk onboarding; skipping team group assignment",
+                        teamGroupNames, workEmail = emp.payload.workEmail, employeeId = emp.employeeId, teamId = emp.payload.teamId);
+            }
+
+            string[] uniqueGroups = from var groupName in allGroups
+                group by groupName
+                select groupName;
+
             string[] failedGroups = [];
-            foreach string groupName in groupNames {
+            foreach string groupName in uniqueGroups {
                 scim:AddUsersToGroupResponse|error addResult =
                         scim:addUserToGroup(groupName, emp.payload.workEmail);
                 if addResult is error || addResult.failedUsers.length() > 0 {
@@ -1284,8 +1297,22 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+
+        string[] allGroups = [...groupNames];
+        string[]|error teamGroupNames = database:getAsgardeoGroupsByTeam(payload.teamId, payload.employmentTypeId);
+        if teamGroupNames is string[] {
+            allGroups.push(...teamGroupNames);
+        } else {
+            log:printError("Failed to fetch Asgardeo groups for team; skipping team group assignment",
+                    teamGroupNames, workEmail = payload.workEmail, employeeId = employeeId, teamId = payload.teamId);
+        }
+
+        string[] uniqueGroups = from var groupName in allGroups
+            group by groupName
+            select groupName;
+
         string[] failedGroups = [];
-        foreach string groupName in groupNames {
+        foreach string groupName in uniqueGroups {
             scim:AddUsersToGroupResponse|error addResult =
                     scim:addUserToGroup(groupName, payload.workEmail);
             if addResult is error || addResult.failedUsers.length() > 0 {

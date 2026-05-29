@@ -300,6 +300,18 @@ public isolated function getAsgardeoGroupsByEmploymentType(int employmentTypeId)
         select row.groupName;
 }
 
+# Fetch Asgardeo group names assigned to a specific team and employment type.
+#
+# + teamId - The team ID to look up
+# + employmentTypeId - The employment type ID to look up
+# + return - Array of Asgardeo group names, or error
+public isolated function getAsgardeoGroupsByTeam(int teamId, int employmentTypeId) returns string[]|error {
+    stream<record {|string groupName;|}, error?> rows =
+        databaseClient->query(getAsgardeoGroupsForTeamQuery(teamId, employmentTypeId));
+    return from var groupRow in rows
+        select groupRow.groupName;
+}
+
 # Get houses.
 #
 # + return - Houses

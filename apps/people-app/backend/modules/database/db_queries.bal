@@ -1192,6 +1192,16 @@ isolated function getAsgardeoGroupsForEmploymentTypeQuery(int employmentTypeId) 
      FROM employment_type_idp_group
      WHERE employment_type_id = ${employmentTypeId};`;
 
+# Fetch Asgardeo group names mapped to a given team and employment type.
+#
+# + teamId - Team ID
+# + employmentTypeId - Employment type ID
+# + return - Parameterized query returning group_name rows
+isolated function getAsgardeoGroupsForTeamQuery(int teamId, int employmentTypeId) returns sql:ParameterizedQuery =>
+    `SELECT group_name AS groupName
+     FROM team_asgardeo_groups
+     WHERE team_id = ${teamId} AND employment_type_id = ${employmentTypeId};`;
+
 # Get houses query.
 #
 # + return - Houses query
