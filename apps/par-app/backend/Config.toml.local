@@ -1,0 +1,70 @@
+[wso2.par_app]
+eligibilityEvaluationDate = ""
+specialRatingEligibilityList = [""]
+reportingChainMaxDepth = 
+
+[par_app.database]
+encryptionKey = ""
+
+[par_app.database.dbClientConfig]
+host = ""
+port = 
+user = ""
+password = ""
+database = ""
+
+[par_app.entity]
+hrEntityBaseUrl = ""
+hrEntityAppConfig.tokenUrl = ""
+hrEntityAppConfig.clientId = ""
+hrEntityAppConfig.clientSecret = ""
+employeeTypes = [""]
+allowedEmployeeStatusTypes = [""]
+
+[par_app.entity.retryConfig]
+count = 
+interval = 
+backOffFactor = 
+maxWaitInterval = 
+
+[par_app.meet]
+    meetBaseUrl = ""
+    [par_app.meet.oauthConfig]
+        tokenUrl = ""
+        clientId = ""
+        clientSecret = ""
+
+    [par_app.meet.retryConfig]
+        count = 
+        interval = 
+        backOffFactor = 
+        maxWaitInterval = 
+
+[par_app.email]
+emailAppUuid = ""
+fromEmail = ""
+allowedEmailAddressesOnly = 
+allowedEmailAddresses = [""]
+emailService.emailServiceEndpoint = ""
+emailService.authConfig.tokenUrl = ""
+emailService.authConfig.clientId = ""
+emailService.authConfig.clientSecret = ""
+allowedEmailTemplateTypes = [""]
+userGuideLink = ""
+slidesLink = ""
+
+[par_app.email.retryConfig]
+count = 
+
+[par_app.calendar.googleCalendarClientConfig]
+refreshUrl= ""
+clientId = ""
+clientSecret = ""
+refreshToken = ""
+
+[appConfig]
+sampleAppConfig = ""
+
+[par_app.authorization.authorizedRoles]
+employeeRole = ""
+headPeopleOperationsRole = ""
