@@ -15,7 +15,7 @@
 // under the License.
 
 import { useParams } from "react-router-dom";
-import Me from "../../me";
+import Me from "@view/me";
 
 export default function EmployeeDetail() {
   const { employeeId } = useParams<{ employeeId: string }>();

@@ -12,27 +12,34 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 
 import ballerina/constraint;
+import ballerina/lang.regexp;
 import ballerina/sql;
 import ballerinax/mysql;
 
-# Email validation regex pattern
-public const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+# Email validation pattern.
+public final regexp:RegExp EMAIL_PATTERN = re `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`;
 
-# Phone number validation regex pattern
-const PHONE_PATTERN_STRING = "^[0-9+\\-()\\s]*[0-9][0-9+\\-()\\s]*$";
+# Phone number validation pattern.
+public final regexp:RegExp PHONE_PATTERN = re `^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$`;
 
-# Date validation regex pattern (YYYY-MM-DD format), e.g. for parking booking_date.
-public const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
+# Date validation pattern (YYYY-MM-DD).
+public final regexp:RegExp DATE_PATTERN = re `^\d{4}-\d{2}-\d{2}$`;
 
-# URL validation regex pattern
-const URL_PATTERN_STRING = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
+# URL validation pattern.
+public final regexp:RegExp URL_PATTERN = re `^(https?|ftp)://[^\s/$.?#].[^\s]*$`;
 
 # Constrained email string type.
-@constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+@constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
 public type Email string;
+
+# Distinct error returned when a PATCH targets an entity ID that does not exist.
+public type EntityNotFoundError distinct error;
+
+# Distinct error returned when a PATCH payload carries no fields to update.
+public type NoFieldsToUpdateError distinct error;
 
 # [Configurable] Database configs.
 type DatabaseConfig record {|
@@ -459,68 +466,61 @@ public type ContinuousServiceRecordInfo record {|
     string? unit;
 |};
 
-# Business unit.
-public type BusinessUnit record {|
-    # Business unit ID
+# Base record for org structure nodes (id and name only).
+public type OrgEntityBase record {|
+    # Entity ID.
     int id;
-    # Business unit name
+    # Entity name.
     string name;
 |};
 
-# Team.
-public type Team record {|
-    # Team ID
-    int id;
-    # Team name
-    string name;
+# Base record for company org chart entities (business unit, team, sub-team, unit).
+public type OrgStructureBase record {|
+    *OrgEntityBase;
+    # Email of the entity head.
+    @sql:Column {name: "head_email"}
+    string headEmail;
+    # Whether the entity is active.
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # Number of active employees currently assigned to this entity.
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
 |};
 
-# Sub team.
-public type SubTeam record {|
-    # Sub team ID
-    int id;
-    # Sub team name
-    string name;
-|};
+# Business unit — a company org chart entity.
+public type BusinessUnit OrgStructureBase;
 
-# Unit.
-public type Unit record {|
-    # Unit ID
-    int id;
-    # Unit name
-    string name;
-|};
+# Team — a company org chart entity.
+public type Team OrgStructureBase;
 
-# Organization structure unit.
-public type OrgStructureUnit Unit;
+# Sub-team — a company org chart entity.
+public type SubTeam OrgStructureBase;
 
-# Organization structure sub-team.
+# Unit — a company org chart entity.
+public type Unit OrgStructureBase;
+
+# Organization structure unit (read-only public hierarchy).
+public type OrgStructureUnit OrgEntityBase;
+
+# Organization structure sub-team (read-only public hierarchy).
 public type OrgStructureSubTeam record {|
-    # SubTeam ID
-    int id;
-    # SubTeam name
-    string name;
-    # Units under this sub-team
+    *OrgEntityBase;
+    # Units under this sub-team.
     OrgStructureUnit[] units = [];
 |};
 
-# Organization structure team.
+# Organization structure team (read-only public hierarchy).
 public type OrgStructureTeam record {|
-    # Team ID
-    int id;
-    # Team name
-    string name;
-    # Sub-teams under this team
+    *OrgEntityBase;
+    # Sub-teams under this team.
     OrgStructureSubTeam[] subTeams = [];
 |};
 
-# Organization structure business unit.
+# Organization structure business unit (read-only public hierarchy).
 public type OrgStructureBusinessUnit record {|
-    # Business unit ID
-    int id;
-    # Business unit name
-    string name;
-    # Teams under this business unit
+    *OrgEntityBase;
+    # Teams under this business unit.
     OrgStructureTeam[] teams = [];
 |};
 
@@ -551,7 +551,7 @@ public type Designation record {|
     string designation;
     # Job band
     @sql:Column {name: "job_band"}
-    int jobBand;
+    int? jobBand;
 |};
 
 # [Database] Company record with allowed locations as a JSON string.
@@ -619,6 +619,17 @@ public type House record {|
     string name;
 |};
 
+# House with active employee count.
+public type HouseWithCount record {|
+    # House ID
+    int id;
+    # House name
+    string name;
+    # Number of currently active employees assigned to this house
+    @sql:Column {name: "active_count"}
+    int activeCount;
+|};
+
 # Manager payload.
 public type Manager record {|
     # Employee ID of the manager
@@ -627,6 +638,26 @@ public type Manager record {|
     # Manager work email
     @sql:Column {name: "work_email"}
     string workEmail;
+|};
+
+# Work email row mapping.
+public type WorkEmailRow record {|
+    # Work email address
+    @sql:Column {name: "work_email"}
+    string workEmail;
+|};
+
+# NIC or passport row mapping.
+public type NicOrPassportRow record {|
+    # NIC or passport value
+    @sql:Column {name: "nic_or_passport"}
+    string nicOrPassport;
+|};
+
+# EPF row mapping.
+public type EpfRow record {|
+    # EPF number
+    string epf;
 |};
 
 # Search employee personal information payload.
@@ -669,18 +700,68 @@ type EmployeeNameRow record {|
     string fullName;
 |};
 
-# [Database] Work email row mapping for employee lookups.
-type WorkEmailRow record {|
-    # Work email of the employee
-    @sql:Column {name: "work_email"}
-    string workEmail;
-|};
-
 # Additional manager email row mapping.
 public type AdditionalManagerEmailRow record {|
     # Additional manager email
     @sql:Column {name: "additional_manager_email"}
     string additionalManagerEmail;
+|};
+
+# Bulk onboarding validation error.
+public type BulkEmployeeError record {|
+    # CSV row number (1-based, including header row)
+    int row;
+    # Field name that failed validation
+    string 'field;
+    # Validation error message
+    string message;
+|};
+
+# Records an employee whose SCIM provisioning failed during bulk onboarding.
+public type BulkProvisioningError record {|
+    # Employee ID of the affected record
+    string employeeId;
+    # Work email of the affected record
+    string workEmail;
+    # Failure reason from the provisioning step
+    string reason;
+|};
+
+# Records an employee who was created successfully but whose group assignment was partially or fully skipped.
+public type BulkGroupAssignmentWarning record {|
+    # Employee ID of the affected employee
+    string employeeId;
+    # Work email of the affected employee
+    string workEmail;
+    # Groups that could not be assigned
+    string[] failedGroups;
+|};
+
+public type OrphanedScimUser record {|
+    string employeeId;
+    string workEmail;
+    string reason;
+|};
+
+public type BulkOnboardingResult record {|
+    int created;
+    int failed;
+|};
+
+# Bulk onboarding response payload.
+public type BulkUploadResponse record {|
+    # Number of employees created
+    int created;
+    # Number of rows skipped (empty rows)
+    int skipped;
+    # Validation errors (empty when success)
+    BulkEmployeeError[] errors;
+    # Employees for whom SCIM provisioning failed and whose DB records were rolled back
+    BulkProvisioningError[] provisioningErrors = [];
+    # Asgardeo users created but DB rows were rolled back due to downstream failures
+    OrphanedScimUser[] orphanedScimUsers = [];
+    # Employees who were created in the DB and Asgardeo but had one or more group-assignment failures
+    BulkGroupAssignmentWarning[] groupAssignmentWarnings = [];
 |};
 
 # Create personal info payload.
@@ -706,13 +787,13 @@ public type CreatePersonalInfoPayload record {|
     @constraint:String {maxLength: 20}
     string gender;
     # Personal email address
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string? personalEmail = ();
     # Personal phone number
-    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN}`}
     string? personalPhone = ();
     # Resident number
-    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN}`}
     string? residentNumber = ();
     # Address line 1
     @constraint:String {maxLength: 255}
@@ -756,27 +837,27 @@ public type CreateEmployeePayload record {|
     @constraint:String {maxLength: 100}
     string workLocation;
     # Work email of the user
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string workEmail;
     # Start date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string startDate;
     # Secondary job title
     @constraint:String {maxLength: 100}
     string? secondaryJobTitle = ();
     # Manager email
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string managerEmail;
     # Additional manager emails
     Email[] additionalManagerEmails = [];
     # Employee thumbnail URL
-    @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN}`}
     string? employeeThumbnail = ();
     # Probation end date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? probationEndDate = ();
     # Agreement end date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? agreementEndDate = ();
     # Employment type ID
     int employmentTypeId;
@@ -833,13 +914,13 @@ public type UpdateEmployeePersonalInfoPayload record {|
     @constraint:String {maxLength: 100}
     string? nationality = ();
     # Personal email address
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string? personalEmail = ();
     # Personal phone number
-    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN}`}
     string? personalPhone = ();
     # Resident number
-    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN}`}
     string? residentNumber = ();
     # Address line 1
     @constraint:String {maxLength: 255}
@@ -870,31 +951,31 @@ public type UpdateEmployeeJobInfoPayload record {|
     string? epf = ();
     # Company ID
     int? companyId = ();
-    # Work location   
+    # Work location
     @constraint:String {maxLength: 100}
     string? workLocation = ();
     # Work email - WARNING: Identity key used for authorization checks
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string? workEmail = ();
     # Start date    
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? startDate = ();
     # Secondary job title
     @constraint:String {maxLength: 100}
     string? secondaryJobTitle = ();
     # Manager email
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string? managerEmail = ();
     # Additional manager emails
     Email[]? additionalManagerEmails = ();
     # Employee thumbnail URL
-    @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN}`}
     string? employeeThumbnail = ();
     # Probation end date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? probationEndDate = ();
     # Agreement end date
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? agreementEndDate = ();
     # Employment type ID
     int? employmentTypeId = ();
@@ -918,10 +999,10 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Employee Status
     EmployeeStatus? employeeStatus = ();
     # Final day in office
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? finalDayInOffice = ();
     # Final day of employment 
-    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? finalDayOfEmployment = ();
     # Resignation reason
     string? resignationReason = ();
@@ -1085,7 +1166,7 @@ public type ParkingReservationDetails record {|
     string bookingDate;
     # Employee email
     string employeeEmail;
-    # Registered vehicle ID 
+    # Registered vehicle ID
     int vehicleId;
     # Vehicle registration number
     string vehicleRegistrationNumber;
@@ -1113,4 +1194,134 @@ public type ParkingReservationDetails record {|
 public type ReservationIdRow record {|
     # Reservation identifier
     int id;
+|};
+
+# Payload to create a company org chart entity (business unit, team, sub-team, or unit).
+public type CreateCompanyOrgChartEntityPayload record {|
+    # Name of the entity
+    @constraint:String {maxLength: 45}
+    string name;
+    # Head email of the entity (optional, empty string treated as no head)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+|};
+
+# Payload to update a company org chart entity (all fields optional for PATCH).
+public type UpdateCompanyOrgChartEntityPayload record {|
+    # Name of the entity
+    @constraint:String {maxLength: 45}
+    string? name = ();
+    # Head email of the entity (empty string clears the value)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+    # Whether the entity is active
+    boolean? isActive = ();
+|};
+
+# Payload to create a business-unit → team mapping.
+public type CreateBusinessUnitTeamPayload record {|
+    # Business unit ID
+    int businessUnitId;
+    # Team ID
+    int teamId;
+    # Head email for this specific BU+Team combination (optional)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+|};
+
+# Payload to create a business-unit-team → sub-team mapping.
+public type CreateBusinessUnitTeamSubTeamPayload record {|
+    # Business unit team mapping ID
+    int businessUnitTeamId;
+    # Sub-team ID
+    int subTeamId;
+    # Head email for this specific BU+Team+SubTeam combination (optional)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+|};
+
+# Payload to create a business-unit-team-sub-team → unit mapping.
+public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
+    # Business unit team sub-team mapping ID
+    int businessUnitTeamSubTeamId;
+    # Unit ID
+    int unitId;
+    # Head email for this specific BU+Team+SubTeam+Unit combination (optional)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+|};
+
+# Payload to update any mapping (all fields optional for PATCH).
+public type UpdateMappingPayload record {|
+    # Head email for the mapping combination (empty string clears the value)
+    @constraint:String {maxLength: 254}
+    string? headEmail = ();
+    # Whether the mapping is active
+    boolean? isActive = ();
+|};
+
+# Base fields for company org chart nodes: entity metadata + mapping metadata.
+public type CompanyOrgChartNode record {|
+    # Entity ID.
+    int id;
+    # Entity name.
+    string name;
+    # Email of the entity head.
+    @sql:Column {name: "head_email"}
+    string headEmail;
+    # Whether the entity is active.
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # ID of the mapping record linking this entity to its parent.
+    @sql:Column {name: "mapping_id"}
+    int mappingId;
+    # Email of the head responsible for this mapping.
+    @sql:Column {name: "mapping_head_email"}
+    string mappingHeadEmail;
+    # Whether the mapping is active.
+    @sql:Column {name: "mapping_is_active"}
+    boolean mappingIsActive;
+|};
+
+# Company org chart: unit node.
+public type CompanyOrgChartUnit CompanyOrgChartNode;
+
+# Company org chart: sub-team node with its child units.
+public type CompanyOrgChartSubTeam record {|
+    *CompanyOrgChartNode;
+    # Units belonging to this sub-team.
+    CompanyOrgChartUnit[] units = [];
+|};
+
+# Company org chart: team node with its child sub-teams.
+public type CompanyOrgChartTeam record {|
+    *CompanyOrgChartNode;
+    # Sub-teams belonging to this team.
+    CompanyOrgChartSubTeam[] subTeams = [];
+|};
+
+# Company org chart: business unit node (top level) with its child teams.
+public type CompanyOrgChartBusinessUnit record {|
+    *OrgStructureBase;
+    # Teams belonging to this business unit.
+    CompanyOrgChartTeam[] teams = [];
+|};
+
+# [Database] Company org chart business unit row with teams as a JSON string.
+type CompanyOrgChartBusinessUnitRow record {|
+    # Business unit ID.
+    int id;
+    # Business unit name.
+    string name;
+    # Email of the entity head.
+    @sql:Column {name: "head_email"}
+    string headEmail;
+    # Whether the business unit is active.
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # Number of active employees currently assigned to this business unit.
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
+    # Teams with nested sub-teams and units as raw JSON.
+    json teams;
 |};
