@@ -91,7 +91,6 @@ type Employees record {
     people:EmployeeInfo[] employees;
 };
 
-// Response type for POST promotion/request/
 # Result object of the Update promotion request resource function.
 type ApplicationInfo record {
     # New Application ID
@@ -113,3 +112,122 @@ public type Application record {
     # Promotion recommendation comment for the special promotion
     string? comment = ();
 };
+
+# Return record for full recommendation.
+public type FullPromotionRecommendation record {|
+    *database:FullPromotionRecommendation;
+    # Name of the employee
+    string employeeName;
+|};
+
+# Promotion recommendation update payload.
+public type RecommendationUpdateData record {
+    # Promotion Recommendation ID 
+    int id;
+    # Promotion Recommendation statement
+    string? statement;
+    # Promotion Recommendation comment
+    string? comment;
+};
+
+# Result object of the Update promotion recommendation resource function.
+type RecommendationStatus record {
+    # Recommendation Status
+    string status;
+};
+
+# Result object of the Update promotion request resource function.
+type ApplicationStatus record {
+    # Application Status
+    string status;
+};
+
+# Promotion Request Update Payload.
+public type ApplicationUpdateData record {
+    # Promotion Request ID
+    int id;
+    # Promotion Request statement
+    string? statement = ();
+    # Promotion Reason for rejection
+    string? reasonForRejection = ();
+    # Job band of the promotion
+    int? promotingJobBand = ();
+};
+
+# Insert Promotion cycle payload.
+public type PromotionCycleCreateData record {
+    # Promotion cycle name 
+    string name;
+    # Promotion cycle start date
+    string startDate;
+    # Promotion cycle end date
+    string endDate;
+    # Lead Deadline
+    string leadDeadline;
+    #  Functional Lead Deadline
+    string functionalLeadDeadline;
+    # Promotion Board Deadline
+    string promotionBoardDeadline;
+};
+
+# Result object of the insert promotion cycles resource function.
+type PromotionCycleStatus record {
+    # Promotion Cycle Status
+    string status;
+};
+
+# Result object of the get users resource function.
+type Users record {
+    # array of users
+    database:User[] users;
+};
+
+# User update payload.
+public type UserUpdatePayload record {
+    # User id 
+    int id;
+    # User email
+    string? email = ();
+    # functional lead permission 
+    database:FunctionalLeadAccessLevels? functionalLeadAccessLevels = ();
+    # Role list 
+    database:Role[]? roles = ();
+    # User active state
+    boolean? active = ();
+};
+
+# Result object of the Update/Insert user status.
+public type UserStatus record {
+    # User Status
+    string status;
+};
+
+# Response type for GET business\-units.
+public type BusinessUnits record {|
+    # Array of business units
+    database:BusinessUnit[] businessUnits;
+|};
+
+# User insert payload.
+public type UserInsertPayload record {
+    # Email 
+    string email;
+    # functional lead permission
+    database:FunctionalLeadAccessLevels? functionalLeadAccessLevels = ();
+    # Role List
+    database:Role[] roles;
+};
+
+# Time-based promotion payload.
+public type TimeBasedPromotionPayload record {
+    # Time-based promotion type
+    database:TimeBasedPromotion 'type;
+    # Sheet URL
+    string sheet?;
+};
+
+# Response type for initiate the time based promotion response.
+public type ProcessStatus record {|
+    # Status of the  process
+    string status;
+|};

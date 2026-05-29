@@ -22,8 +22,10 @@ import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 
 export enum Role {
-  ADMIN = "ADMIN",
-  TEAM = "TEAM",
+  HR_ADMIN = "HR_ADMIN",
+  PROMOTION_BOARD_MEMBER = "PROMOTION_BOARD_MEMBER",
+  FUNCTIONAL_LEAD = "FUNCTIONAL_LEAD",
+  EMPLOYEE = "EMPLOYEE",
   LEAD = "LEAD"
 }
 
@@ -99,14 +101,20 @@ export const loadPrivileges = createAsyncThunk(
     const userPrivileges = userInfo?.privileges || [];
     const roles: Role[] = [];
 
-    if (userPrivileges.includes(762)) {
-      roles.push(Role.ADMIN);
-    }
     if (userPrivileges.includes(987)) {
-      roles.push(Role.TEAM);
+      roles.push(Role.HR_ADMIN);
+    }
+    if (userPrivileges.includes(724)) {
+      roles.push(Role.PROMOTION_BOARD_MEMBER);
     }
     if (userPrivileges.includes(624)) {
+      roles.push(Role.FUNCTIONAL_LEAD);
+    }
+    if (userPrivileges.includes(562)) {
       roles.push(Role.LEAD);
+    }
+    if (userPrivileges.includes(424)) {
+      roles.push(Role.EMPLOYEE);
     }
 
     if (roles.length === 0) {

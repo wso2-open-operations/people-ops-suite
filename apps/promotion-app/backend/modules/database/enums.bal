@@ -44,3 +44,36 @@ public enum PromotionRecommendationStatus {
     DECLINED,
     EXPIRED
 }
+
+# User Roles that have the permission to approve the promotion applications.
+public enum ApprovalParties {
+    promotion_board,
+    functional_lead
+}
+
+# List of sync process statuses.
+public enum BuSyncStatus {
+    IN_PROGRESS,
+    ERROR,
+    SUCCESS
+}
+
+# Reminder Email Status.
+public enum EmailStatus {
+    PENDING,
+    PROCESSING,
+    SENT,
+    FAILED
+}
+
+# Promotion Application User Roles
+public enum EmailTypes {
+    FUNCTIONAL_LEAD_REMINDER,
+    LEAD_REMINDER
+}
+
+# Time-based promotion types.
+public enum TimeBasedPromotion {
+    PAR,
+    SHEET
+}

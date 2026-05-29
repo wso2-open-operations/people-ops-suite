@@ -47,9 +47,14 @@ export const AppConfig = {
   serviceUrls: {
     userInfo: SERVICE_BASE_URL + "/user-info",
     employees: SERVICE_BASE_URL + "/employees",
-    getEmployeeHistory: SERVICE_BASE_URL + "/employee/history",
-    getPromotionCycle: SERVICE_BASE_URL + "/promotion/cycles",
+    employeeHistory: SERVICE_BASE_URL + "/employee/history",
+    user: SERVICE_BASE_URL + "/users",
+    getBUs: SERVICE_BASE_URL + "/business-units",
+    promotionCycle: SERVICE_BASE_URL + "/promotion/cycles",
     appConfig: SERVICE_BASE_URL + "/app-config",
-    retrieveAllPromotionRequests: SERVICE_BASE_URL + "/promotions",
+    promotions: SERVICE_BASE_URL + "/promotions",
+    timebasePromotion: SERVICE_BASE_URL + "/promotion/requests/time-based",
+    promotionRecommendations: SERVICE_BASE_URL + "/promotion/recommendations",
+    employeeInfo: SERVICE_BASE_URL + "/employee-info",
   },
 };

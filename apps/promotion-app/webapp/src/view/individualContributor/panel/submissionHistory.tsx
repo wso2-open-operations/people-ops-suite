@@ -51,7 +51,7 @@ const statusColorMap: Record<string, string> = {
   FL_REJECTED: '#f8bbd0',
   REJECTED: '#ef9a9a',
   EXPIRED: '#d7ccc8',
-  PROCESSING: '#fff9c4',
+  IN_PROGRESS: '#fff9c4',
 };
 
 
@@ -61,7 +61,6 @@ export default function SubmissionHistory() {
     const dispatch = useAppDispatch();
     const auth = useAppSelector((state: RootState) => state.auth);
     const submissionHistory = useAppSelector((state: RootState) => state.promotion);
-
     const [open, setOpen] = useState(false);
     const [selectedNoteHtml, setSelectedNoteHtml] = useState<string>('');
 
@@ -72,7 +71,6 @@ export default function SubmissionHistory() {
     const fetchHistory = () => {
 
         dispatch(fetchPromotions({
-            employeeEmail: auth.userInfo?.email,
             type: "INDIVIDUAL_CONTRIBUTOR",
             recommendedBy: auth.userInfo?.email,
         }));
@@ -127,130 +125,167 @@ export default function SubmissionHistory() {
         }}
     >
         {submissionHistory.state != "loading" && (
-          <Box 
-            sx={{ 
-                display: "flex", 
-                justifyContent: "flex-start", 
-                mb: 2 
-            }}
-          >
-            <IconButton 
-                onClick={handleRefresh}
+            <Box 
+                sx={{ 
+                    display: "flex", 
+                    justifyContent: "flex-start", 
+                    mb: 2 
+                }}
             >
-                <RefreshRoundedIcon />
-            </IconButton>
-        </Box>
+                <IconButton 
+                    onClick={handleRefresh}
+                >
+                    <RefreshRoundedIcon />
+                </IconButton>
+            </Box>
         )}
-            {submissionHistory.state === "loading" && (
-                <LoadingEffect message={"Loading Promotion History"} />
-            )}
+        {submissionHistory.state === "loading" && (
+            <LoadingEffect message={"Loading Promotion History"} />
+        )}
 
-            {submissionHistory.state === "success" &&
-             submissionHistory.promotions &&
-             submissionHistory.promotions?.length > 0 && (
-                <Box>
-                    <TableContainer component={Paper}>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Promotion Cycle</TableCell>
-                                    <TableCell>Employee Email</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell>Recommendation To</TableCell>
-                                    <TableCell>Actions</TableCell>
+        {submissionHistory.state === "success" &&
+         submissionHistory.promotions &&
+         submissionHistory.promotions.length > 0 && (
+            <Box>
+                <TableContainer component={Paper}>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Promotion Cycle</TableCell>
+                                <TableCell>Employee Email</TableCell>
+                                <TableCell>Status</TableCell>
+                                <TableCell>Recommendation To</TableCell>
+                                <TableCell>Actions</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {submissionHistory.promotions.map((row) => (
+                                <TableRow
+                                    key={row.id}
+                                    sx={{
+                                        '&:hover': {
+                                        backgroundColor: theme.palette.background.dataGrid,
+                                        cursor: 'pointer',
+                                        },
+                                    }}
+                                >
+                                    <TableCell>{row.promotionCycle}</TableCell>
+                                    <TableCell>{row.employeeEmail}</TableCell>
+                                    <TableCell>
+                                        <Box
+                                            sx={{
+                                                backgroundColor: row.status === "APPROVED" || row.status === "REJECTED"
+                                                        ? statusColorMap[row.status]
+                                                        : statusColorMap["IN_PROGRESS"] || "#eeeeee",
+                                                color: '#000',
+                                                px: 2,
+                                                py: 0.5,
+                                                borderRadius: '12px',
+                                                display: 'inline-block',
+                                                fontSize: '0.85rem',
+                                                fontWeight: 500,
+                                                textTransform: 'capitalize',
+                                            }}
+                                        >
+                                            {row.status === "APPROVED" || row.status === "REJECTED" ? row.status : "IN_PROGRESS"}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell>{row.nextJobBand}</TableCell>
+                                    <TableCell>
+                                    <IconButton onClick={() => handleOpen(
+                                        row.recommendations.length > 0 && row.recommendations[0].recommendationStatement
+                                        ? row.recommendations[0].recommendationStatement
+                                        : safeBase64Encode("<strong>User does not have any recommendations!</strong>"))}>
+                                        <VisibilityIcon />
+                                    </IconButton>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {submissionHistory.promotions.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        sx={{
-                                            '&:hover': {
-                                            backgroundColor: theme.palette.background.dataGrid,
-                                            cursor: 'pointer',
-                                            },
-                                        }}
-                                    >
-                                        <TableCell>{row.promotionCycle}</TableCell>
-                                        <TableCell>{row.employeeEmail}</TableCell>
-                                        <TableCell>
-                                            <Box
-                                                sx={{
-                                                    backgroundColor: statusColorMap[row.status] || '#eeeeee',
-                                                    color: '#000',
-                                                    px: 2,
-                                                    py: 0.5,
-                                                    borderRadius: '12px',
-                                                    display: 'inline-block',
-                                                    fontSize: '0.85rem',
-                                                    fontWeight: 500,
-                                                    textTransform: 'capitalize',
-                                                }}
-                                            >
-                                                {row.status}
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>{row.nextJobBand}</TableCell>
-                                        <TableCell>
-                                        <IconButton onClick={() => handleOpen(
-                                            row.recommendations.length > 0 && row.recommendations[0].recommendationStatement
-                                            ? row.recommendations[0].recommendationStatement
-                                            : safeBase64Encode("<strong>User does not have any recommendations!</strong>"))}>
-                                            <VisibilityIcon />
-                                        </IconButton>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
 
-                    <Modal open={open} onClose={handleClose}>
-                        <Box
+                <Modal open={open} onClose={handleClose}>
+                    <Box
+                    sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 500,
+                        backgroundColor: 'background.paper',
+                        boxShadow: 24,
+                        p: 4,
+                        borderRadius: 2,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                        maxHeight: '80vh',
+                        overflowY: 'auto'
+                    }}
+                    >
+                    <Typography variant="h6">Recommendation</Typography>
+
+                    <Box
                         sx={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            width: 500,
-                            backgroundColor: 'background.paper',
-                            boxShadow: 24,
-                            p: 4,
-                            borderRadius: 2,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 2,
-                            maxHeight: '80vh',
-                            overflowY: 'auto'
+                        border: '1px solid #ccc',
+                        borderRadius: 1,
+                        padding: 2,
+                        backgroundColor: theme.palette.background.default,
+                        fontSize: '0.95rem'
                         }}
-                        >
-                        <Typography variant="h6">Recommendation</Typography>
+                        dangerouslySetInnerHTML={{ __html: selectedNoteHtml }}
+                    />
 
-                        <Box
-                          sx={{
-                            border: '1px solid #ccc',
-                            borderRadius: 1,
-                            padding: 2,
-                            backgroundColor: theme.palette.background.default,
-                            fontSize: '0.95rem'
-                          }}
-                          dangerouslySetInnerHTML={{ __html: selectedNoteHtml }}
-                        />
-
-                          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                              <Button variant="contained" onClick={handleClose}>Close</Button>
-                          </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button variant="contained" onClick={handleClose}>Close</Button>
                         </Box>
-                    </Modal>
-                </Box>
-            )}
+                    </Box>
+                </Modal>
+            </Box>
+        )}
 
-            {submissionHistory.state === "failed" && (
+        {submissionHistory.state === "success" &&
+         submissionHistory.promotions &&
+         submissionHistory.promotions.length == 0 &&  (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "70vh",
+                    "& img": {
+                        width: 360,
+                        height: "auto",
+                    },
+                }}
+            >
                 <StateWithImage
-                    imageUrl=""
+                    imageUrl={require("@assets/images/not-found.svg").default}
+                    message="No Promotions Found!"
+                />
+            </Box>
+        )}
+
+        {submissionHistory.state === "failed" && (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "50vh",
+                    "& img": {
+                        width: 360,
+                        height: "auto",
+                    },
+                }}
+            >
+                <StateWithImage
+                    imageUrl={require("@root/src/assets/images/error.svg").default}
                     message="Unable to load promotion history."
                 />
-            )}
+            </Box>
+        )}
     </Box>
   );
 }

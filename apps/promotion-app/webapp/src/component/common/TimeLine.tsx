@@ -21,8 +21,7 @@ import StarsIcon from '@mui/icons-material/Stars';
 import { TimeLineData } from '@root/src/utils/types';
 import { RootState, useAppDispatch, useAppSelector } from '@root/src/slices/store';
 import { useEffect } from 'react';
-import { fetchPromotions } from '@slices/promotionSlice/promotion';
-import { fetchEmployeeHistory } from "@slices/employeeSlice/employee";
+import { fetchPromotions, fetchEmployeeHistory } from '@slices/timelineSlice/timeline';
 import ErrorHandler from './ErrorHandler';
 import { LoadingEffect } from '../ui/Loading';
 
@@ -32,34 +31,37 @@ type CustomizedTimelineProps = {
 
 export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineProps ) {
 
-    const employeeHistory = useAppSelector((state: RootState) => state.employee);
-    const promotions  = useAppSelector((state: RootState) => state.promotion);
+    const employeeHistory = useAppSelector((state: RootState) => state.timeline);
     const dispatch = useAppDispatch();
     const timelineData: TimeLineData[] = [];
 
-    useEffect(() => {
+    const fetchTimelinePromotions = async () => {
         if (!employeeEmail) return;
-        
-        (async () => {
-            try {
-                dispatch(fetchEmployeeHistory({
-                    employeeWorkEmail: employeeEmail
-                }));
 
-                dispatch(fetchPromotions({
+        const promotionsAction = await dispatch(fetchEmployeeHistory({ employeeWorkEmail: employeeEmail }));
+            if (fetchEmployeeHistory.fulfilled.match(promotionsAction)) {
+                    dispatch(fetchPromotions({
                     employeeEmail: employeeEmail,
                     statusArray: ["APPROVED"]
-                }));
-            } catch (error) {
-                console.error("Failed to fetch promotion requests:", error);
+                    }));
             }
-        })();
-    }, [employeeEmail]);
+    }
 
-    if (employeeHistory.state === "success" && employeeHistory.employeeHistory) {
+    useEffect(() => {
+        fetchTimelinePromotions();
+    }, [employeeEmail, dispatch]);
+
+    if (employeeHistory.employeeHistoryState === "success" && 
+         employeeHistory.employeeHistory) {
         timelineData.push({
-            Title: "Joined the Company",
-            Date: employeeHistory.employeeHistory.startDate
+            Title: `Joined Job band: ${
+                        (employeeHistory.promotions === null|| employeeHistory.promotions.length === 0 )
+                            ? employeeHistory.employeeHistory.jobBand || "-"
+                            : employeeHistory.promotions[
+                                employeeHistory.promotions.length - 1
+                            ]?.currentJobBand || "-"
+                        }`,
+            PromotionCycle: employeeHistory.employeeHistory.startDate
                 ? new Date(employeeHistory.employeeHistory.startDate).toLocaleDateString()
                 : "",
             BusinessUnit: employeeHistory.employeeHistory.joinedBusinessUnit || "",
@@ -68,36 +70,33 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
             Lead: employeeHistory.employeeHistory.reportingLead || "",
         });
     }
-    if (promotions.promotions && promotions.promotions?.length > 0) {
-        promotions.promotions.forEach((request) => {
+    if (employeeHistory.promotions && employeeHistory.promotions?.length > 0) {
+        employeeHistory.promotions.forEach((request) => {
             const recommendation = request.recommendations?.[0];
             timelineData.push({
                 Title: `Promoted to Band ${request.nextJobBand}`,
-                Date: request.updatedOn
-                ? new Date(request.updatedOn).toLocaleDateString()
-                : "",
-                BusinessUnit: request.businessUnit || "",
-                Team: request.department || "",
-                SubTeam: request.team || "",
-                Lead: recommendation?.leadEmail || "",
+                PromotionCycle: request.promotionCycle ??
+                 "-",
+                BusinessUnit: request.businessUnit || "-",
+                Team: request.department || "-",
+                SubTeam: request.team || "-",
+                Lead: recommendation?.leadEmail || "-",
             });
         });
     }
     return (
         <>
-            {promotions.state === "loading" || 
-            employeeHistory.state === "loading" &&(
+            {(employeeHistory.promotionsState === "loading" || 
+            employeeHistory.employeeHistoryState === "loading") &&(
                 <LoadingEffect
                     message="Loading Employee History"
                 />
             )}
 
-            {promotions.state === "success" && 
-            employeeHistory.state === "success" &&(
+            {employeeHistory.promotionsState === "success" && 
+            employeeHistory.employeeHistoryState === "success" &&(
                 <Box
                     sx={{
-                        // Set height to 70% of the viewport height
-                        height: '70vh',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -109,7 +108,6 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
                         <Box
                             sx={{
                                 position: 'relative',
-                                // Minimum width based on number of items
                                 minWidth: timelineData.length * 250,
                                 display: 'flex',
                                 flexDirection: 'row',
@@ -163,7 +161,7 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
                                         }}
                                     >
                                         <Typography variant="body2" color="text.secondary">
-                                            {item.Date}
+                                            {item.PromotionCycle}
                                         </Typography>
                                     </Box>
 
@@ -283,8 +281,8 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
                     </Box>
                 </Box>
             )}
-            {(promotions.state === "failed" || 
-            employeeHistory.state === "failed") && (
+            {(employeeHistory.promotionsState === "failed" || 
+            employeeHistory.employeeHistoryState === "failed") && (
                 <ErrorHandler
                     message="Unable to load promotion history."
                 />

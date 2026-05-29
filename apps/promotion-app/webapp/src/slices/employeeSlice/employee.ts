@@ -24,7 +24,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { Employee } from "@root/src/utils/types";
 
-interface EmployeeJoinedDetails {
+export interface EmployeeJoinedDetails {
   workEmail: string;
   startDate: string;
   jobBand: number | null;
@@ -56,13 +56,26 @@ const initialState: EmployeesState = {
 
 export const fetchEmployees = createAsyncThunk(
   "employee/fetchEmployees",
-  async (_, { getState, dispatch, rejectWithValue }) => {
+  async ({
+    filterLeads,
+    managerEmail,
+    additionalManagerEmail
+  }:{
+    filterLeads?: boolean,
+    managerEmail?: string,
+    additionalManagerEmail?: string,
+  }, { getState, dispatch, rejectWithValue }) => {
     const { userInfo } = (getState() as { user: UserState }).user;
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<Employee[]>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.employees, {
+          params: {
+            filterLeads,
+            managerEmail,
+            additionalManagerEmail
+          },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -102,7 +115,7 @@ export const fetchEmployeeHistory = createAsyncThunk(
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<EmployeeJoinedDetails>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.getEmployeeHistory, {
+        .get(AppConfig.serviceUrls.employeeHistory, {
           params: {
             employeeWorkEmail,
           },

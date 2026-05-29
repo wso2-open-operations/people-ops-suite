@@ -118,6 +118,10 @@ public type EmployeeFilter record {
     boolean? lead = ();
     # Array of job bands
     int[]? jobBand = ();
+    # Email of the manager
+    string? managerEmail = ();
+    # Email of the additional manager
+    string? additionalManagerEmail = ();
 };
 
 # Basic employee information.
@@ -271,4 +275,24 @@ public type EmployeeInfo record {
     string? team = ();
     # Sub team of the employee
     string? subTeam = ();
+};
+
+# Return record for single employee Name.
+public type EmployeeName record {
+    # First Name
+    string firstName;
+    # Last Name
+    string lastName;
+};
+
+# Return record for single employee Name.
+type EmployeeNameData record {
+    # Employee Name Object
+    EmployeeName employee;
+};
+
+# Return record for single employee Name.
+type EmployeeNameResult record {
+    # Employee Name Data Object
+    EmployeeNameData data;
 };

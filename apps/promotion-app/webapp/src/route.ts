@@ -20,6 +20,8 @@ import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import SafetyCheckIcon from '@mui/icons-material/SafetyCheck';
+import GroupsIcon from '@mui/icons-material/Groups';
 import PersonPinIcon from '@mui/icons-material/PersonPin';
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
 
@@ -49,7 +51,7 @@ export const routes: RouteObjectWithRole[] = [
     text: "History",
     icon: React.createElement(EmojiEventsIcon),
     element: React.createElement(View.history),
-    allowRoles: [Role.ADMIN, Role.TEAM],
+    allowRoles: [Role.EMPLOYEE],
     bottomNav: false,
   },
   {
@@ -61,11 +63,59 @@ export const routes: RouteObjectWithRole[] = [
     bottomNav: false,
   },
   {
+    path: "/timeBased",
+    text: "Time Based",
+    icon: React.createElement(SafetyCheckIcon),
+    element: React.createElement(View.timeBased),
+    allowRoles: [Role.LEAD],
+    bottomNav: false,
+  },
+  {
+    path: "/promotionCycleHistory",
+    text: "Promotion Cycle History",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.promotionCycleHistory),
+    allowRoles: [Role.FUNCTIONAL_LEAD, Role.HR_ADMIN],
+    bottomNav: false,
+  },
+  {
+    path: "/employeesHistory",
+    text: "Employees History",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.employeesHistory),
+    allowRoles: [Role.LEAD],
+    bottomNav: false,
+  },
+  {
+    path: "/functionalLead",
+    text: "Functional Lead",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.functionalLead),
+    allowRoles: [Role.FUNCTIONAL_LEAD],
+    bottomNav: false,
+  },
+  {
+    path: "/promotionBoard",
+    text: "Promotion Board",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.promotionBoard),
+    allowRoles: [Role.PROMOTION_BOARD_MEMBER],
+    bottomNav: false,
+  },
+  {
+    path: "/admin",
+    text: "Admin Portal",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.admin),
+    allowRoles: [Role.HR_ADMIN],
+    bottomNav: false,
+  },
+  {
     path: "/help",
     text: "Help",
     icon: React.createElement(HelpOutlineIcon),
     element: React.createElement(View.help),
-    allowRoles: [Role.ADMIN, Role.TEAM],
+    allowRoles: [Role.EMPLOYEE],
     bottomNav: true,
   },
 ];

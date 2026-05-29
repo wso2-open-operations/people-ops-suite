@@ -31,6 +31,12 @@ public type AppRoles record {|
     string EMPLOYEE_ROLE;
     # Role for the lead
     string LEAD_ROLE;
+    # Role for the functional lead
+    string FUNCTIONAL_LEAD;
+    # Role for the promotion board member
+    string PROMOTION_BOARD_MEMBER;
+    # Role for the hr admin
+    string HR_ADMIN;
 |};
 
 # Return record for user privileges.

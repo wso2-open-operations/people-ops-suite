@@ -39,6 +39,20 @@ isolated function buildSqlSelectQuery(sql:ParameterizedQuery mainQuery, sql:Para
     return updatedQuery;
 }
 
+# Build the database update query with dynamic attributes.
+#
+# + isFirstUpdate - Check if the first update parameter  
+# + mainQuery - Main query without the new sub query  
+# + subQuery - New Sub Query which needed to be appended with the main query
+# + return - Dynamically build sql:ParameterizedQuery
+isolated function buildSqlUpdateQuery(boolean isFirstUpdate, sql:ParameterizedQuery mainQuery,
+        sql:ParameterizedQuery subQuery) returns sql:ParameterizedQuery {
+
+    return isFirstUpdate == false
+        ? sql:queryConcat(mainQuery, ` , `, subQuery)
+        : sql:queryConcat(mainQuery, subQuery);
+}
+
 # use for process user permissions
 #
 # + permissions - user permission string
