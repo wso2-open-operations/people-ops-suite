@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { ServiceLength } from "../types/types";
-import { DATE_FMT } from "../config/constant";
+import { ServiceLength } from "@src/types/types";
+import { DATE_FMT } from "@config/constant";
 import {
   differenceInMonths,
   differenceInYears,
@@ -23,6 +23,7 @@ import {
   isMatch,
   isValid,
   parse,
+  format,
 } from "date-fns";
 
 export const isIncludedRole = (a: string[], b: string[]): boolean => {
@@ -103,12 +104,33 @@ export const formatServiceLength = (length: ServiceLength | null): string => {
   if (years === 0 && months === 0) return "Less than 1 month";
 
   if (years > 0 && months > 0) {
-    return `${years} ${years === 1 ? "year" : "years"} ${months} ${months === 1 ? "month" : "months"
-      }`;
+    return `${years} ${years === 1 ? "year" : "years"} ${months} ${
+      months === 1 ? "month" : "months"
+    }`;
   }
 
   if (years > 0) return `${years} ${years === 1 ? "year" : "years"}`;
   return `${months} ${months === 1 ? "month" : "months"}`;
+};
+
+export const formatDate = (
+  isoDate?: string | null,
+  fallback?: string | null,
+): string | null => {
+  if (!isoDate) return fallback ?? null;
+  const parsedDate = parseStrictYyyyMmDd(isoDate);
+  if (!parsedDate) return fallback ?? null;
+  return format(parsedDate, "dd/MM/yyyy");
+};
+
+export const isPresentOrFuture = (isoDate?: string | null): boolean => {
+  if (!isoDate) return false;
+  const parsedDate = parseStrictYyyyMmDd(isoDate);
+  if (!parsedDate) return false;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  parsedDate.setHours(0, 0, 0, 0);
+  return parsedDate >= todayStart;
 };
 
 export const toSentenceCase = (value: string): string => {
@@ -145,3 +167,70 @@ export function getEmployeeStatusColor(
       return "default";
   }
 }
+
+// Escapes a string for safe inclusion in a CSV cell, handling commas, quotes, and newlines.
+export const escapeCsvCell = (value: string): string => {
+  if (/[",\r\n]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+};
+
+// Parses CSV text into a 2D array of strings, correctly handling quoted cells with commas and newlines.
+export const parseCsvRows = (csvText: string): string[][] => {
+  const rows: string[][] = [];
+  let cell = "";
+  let inQuotes = false;
+  let currentRow: string[] = [];
+
+  for (let i = 0; i < csvText.length; i += 1) {
+    const ch = csvText[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (csvText[i + 1] === '"') {
+          cell += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cell += ch;
+      }
+      continue;
+    }
+    if (ch === '"' && cell.length === 0) {
+      inQuotes = true;
+    } else if (ch === '"') {
+      cell += ch;
+    } else if (ch === ",") {
+      currentRow.push(cell);
+      cell = "";
+    } else if (ch === "\n") {
+      currentRow.push(cell);
+      rows.push(currentRow);
+      currentRow = [];
+      cell = "";
+    } else if (ch !== "\r") {
+      cell += ch;
+    }
+  }
+
+  if (cell.length > 0 || currentRow.length > 0) {
+    currentRow.push(cell);
+    rows.push(currentRow);
+  }
+
+  return rows;
+};
+
+// Counts the number of non-empty data rows in a CSV, excluding the header and any completely empty rows.
+export const countCsvDataRows = (rows: string[][]): number => {
+  if (rows.length <= 1) return 0;
+  return rows
+    .slice(1)
+    .filter((row) => row.some((cell) => cell.trim().length > 0)).length;
+};
+
+// Strips the Byte Order Mark (BOM) from the beginning of a string if it exists.
+export const stripBom = (text: string): string =>
+  text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;

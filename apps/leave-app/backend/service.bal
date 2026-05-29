@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import leave_service.authorization;
 import leave_service.calendar_events;
 import leave_service.database;
@@ -45,6 +44,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         do {
             readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
             employee:Employee empInfo = check employee:getEmployee(userInfo.email);
+            if empInfo.leadEmail is () {
+                string errMsg = "Employee lead email not available";
+                log:printError(errMsg);
+                return <http:InternalServerError>{body: {message: errMsg}};
+            }
 
             // Fetch the user's privileges based on the roles.
             int[] privileges = [];
@@ -802,7 +806,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     firstName: employee.firstName ?: "",
                     lastName: employee.lastName ?: "",
                     workEmail: employee.workEmail,
-                    employeeThumbnail: employee.employeeThumbnail ?: ""
+                    employeeThumbnail: employee.employeeThumbnail ?: "",
+                    employeeStatus: employee.employeeStatus
                 };
 
             return employeesToReturn;
@@ -833,33 +838,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        do {
-            Employee & readonly employee = check employee:getEmployee(email);
+        Employee|error employee = employee:getEmployee(email);
 
-            return {
-                employeeId: employee.employeeId,
-                firstName: employee.firstName,
-                lastName: employee.lastName,
-                workEmail: employee.workEmail,
-                employeeThumbnail: employee.employeeThumbnail,
-                location: employee.location,
-                leadEmail: employee.leadEmail,
-                jobRole: employee.jobRole,
-                startDate: employee.startDate,
-                finalDayOfEmployment: employee.finalDayOfEmployment,
-                lead: employee.lead,
-                subordinateCount: employee.subordinateCount
-            };
-
-        } on fail error internalErr {
-            string errMsg = "Error occurred while fetching employee";
-            log:printError(errMsg, internalErr);
+        if employee is error {
+            string errMsg = "Error occurred while fetching employee!";
+            log:printError(errMsg, employee);
             return <http:InternalServerError>{
                 body: {
                     message: errMsg
                 }
             };
         }
+
+        return employee;
     }
 
     # Fetch legally entitled leave for the given employee.

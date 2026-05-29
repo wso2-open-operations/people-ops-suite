@@ -23,6 +23,7 @@ import {
 import { getToken } from "../components/microapp-bridge";
 import { jwtDecode } from "jwt-decode";
 import { Logger } from "./logger";
+import { ErrorMessages } from "./constants";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -39,9 +40,44 @@ export interface RequestOptions {
 
 const tokenRequestQueue: (() => void)[] = [];
 let isTokenRequestInProgress = false;
+const RETRY_BASE_DELAY_MS = 300;
 
 const useHttp = () => {
   const MAX_TRIES = 4;
+  const getRetryDelay = (currentTry: number): number =>
+    RETRY_BASE_DELAY_MS * 2 ** (currentTry - 1);
+  const waitForRetry = (delayMs: number) =>
+    new Promise((resolve) => setTimeout(resolve, delayMs));
+  const isIdempotentMethod = (httpMethod: string): boolean => {
+    const normalizedMethod = httpMethod.toUpperCase();
+    return (
+      normalizedMethod === "GET" ||
+      normalizedMethod === "HEAD" ||
+      normalizedMethod === "OPTIONS" ||
+      normalizedMethod === "PUT"
+    );
+  };
+  const hasIdempotencyKey = (requestHeaders?: HeadersInit): boolean => {
+    if (!requestHeaders) return false;
+
+    if (requestHeaders instanceof Headers) {
+      return requestHeaders.has("Idempotency-Key");
+    }
+
+    if (Array.isArray(requestHeaders)) {
+      return requestHeaders.some(
+        ([key]) => key.toLowerCase() === "idempotency-key",
+      );
+    }
+
+    return Object.keys(requestHeaders).some(
+      (key) => key.toLowerCase() === "idempotency-key",
+    );
+  };
+  const isRetryableRequest = (
+    httpMethod: HttpMethod,
+    requestHeaders?: HeadersInit,
+  ): boolean => isIdempotentMethod(httpMethod) || hasIdempotencyKey(requestHeaders);
 
   const handleRequest = async ({
     url,
@@ -61,66 +97,104 @@ const useHttp = () => {
       const token = getAccessToken();
       if (!token) throw new Error("Token not found");
 
-      const encodedUrl = encodeURI(url);
       const defaultHeaders: Record<string, string> = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       };
+      const requestHeaders = { ...defaultHeaders, ...headers };
 
-      const response = await fetch(encodedUrl, {
+      const response = await fetch(url, {
         method,
         body: body ? JSON.stringify(body) : null,
-        headers: { ...defaultHeaders, ...headers },
+        headers: requestHeaders,
       });
 
-      let responseBody: any = "";
+      const responseText = await response.text();
 
-      try {
-        responseBody = await response.json();
-      } catch (e) {
-        Logger.error("Failed to parse JSON response", e);
-      } finally {
-        if (response.status >= 200 && response.status < 300) {
-          successFn(responseBody);
-          if (loadingFn) loadingFn(false);
+      let responseBody: any = "";
+      if (responseText) {
+        try {
+          responseBody = JSON.parse(responseText);
+        } catch (e) {
+          Logger.error("Failed to parse JSON response", e);
+          responseBody = responseText;
+        }
+      }
+
+      if (response.status >= 200 && response.status < 300) {
+        successFn(responseBody);
+        if (loadingFn) loadingFn(false);
+      } else {
+        if (
+          currentTry < MAX_TRIES &&
+          isRetryableRequest(method, requestHeaders) &&
+          (response.status >= 500 || response.status === 429)
+        ) {
+          await waitForRetry(getRetryDelay(currentTry));
+          return handleRequest({
+            url,
+            method,
+            body,
+            successFn,
+            failFn,
+            loadingFn,
+            headers,
+            currentTry: currentTry + 1,
+          });
         } else {
-          if (response.status === 401 && currentTry < MAX_TRIES) {
-            handleRequestWithNewToken(() => {
-              handleRequest({
-                url,
-                method,
-                body,
-                successFn,
-                failFn,
-                loadingFn,
-                headers,
-                currentTry: currentTry + 1,
-              });
-            });
-          } else if (currentTry < MAX_TRIES && response.status !== 404) {
-            handleRequest({
-              url,
-              method,
-              body,
-              successFn,
-              failFn,
-              loadingFn,
-              headers,
-              currentTry: currentTry + 1,
-            });
-          } else {
-            Logger.error(
-              (responseBody && responseBody.error) || response.status,
-            );
-            if (failFn)
-              failFn((responseBody && responseBody.error) || response.status);
-            if (loadingFn) loadingFn(false);
-          }
+          const errorMessage = (() => {
+            if (responseBody && typeof responseBody === "object") {
+              const body = responseBody as Record<string, unknown>;
+              const backendError = body.error;
+              const backendMessage = body.message;
+              const backendDetail = body.detail ?? body.details;
+              const backendDescription = body.description;
+
+              const candidate =
+                (typeof backendError === "string" && backendError) ||
+                (typeof backendMessage === "string" && backendMessage) ||
+                (typeof backendDetail === "string" && backendDetail) ||
+                (typeof backendDescription === "string" && backendDescription);
+
+              if (candidate) return candidate;
+            }
+
+            return ErrorMessages.ERROR_MSG;
+          })();
+
+          Logger.error(errorMessage);
+          if (failFn) failFn(errorMessage);
+          if (loadingFn) loadingFn(false);
         }
       }
     } catch (err) {
-      Logger.error(err as string);
-      if (failFn) failFn();
+      const errorMessage = String(err);
+      const isMissingAuthError =
+        errorMessage.includes("Token not found") ||
+        errorMessage.includes("Token refresh failed");
+
+      if (isMissingAuthError) {
+        Logger.error(errorMessage);
+        if (failFn) failFn(errorMessage);
+        if (loadingFn) loadingFn(false);
+        return;
+      }
+
+      if (currentTry < MAX_TRIES && isRetryableRequest(method, headers)) {
+        await waitForRetry(getRetryDelay(currentTry));
+        return handleRequest({
+          url,
+          method,
+          body,
+          successFn,
+          failFn,
+          loadingFn,
+          headers,
+          currentTry: currentTry + 1,
+        });
+      }
+      Logger.error(errorMessage);
+      if (failFn) failFn(errorMessage);
       if (loadingFn) loadingFn(false);
     }
   };
@@ -174,7 +248,6 @@ const useHttp = () => {
 
   const processTokenQueue = () => {
     if (isTokenRequestInProgress || tokenRequestQueue.length === 0) return;
-
     isTokenRequestInProgress = true;
 
     const callback = tokenRequestQueue.shift();

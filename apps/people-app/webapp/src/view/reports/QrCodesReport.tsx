@@ -19,8 +19,10 @@ import QrCode2Icon from "@mui/icons-material/QrCode2";
 import DownloadIcon from "@mui/icons-material/Download";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   Alert,
+  alpha,
   Autocomplete,
   Avatar,
   Box,
@@ -36,10 +38,10 @@ import {
 } from "@mui/material";
 import { AppConfig } from "@config/config";
 import { SEARCH_MAX_LENGTH, SEARCH_REGEX } from "@config/constant";
+import { EmployeeStatus } from "@/types/types";
 import {
-  Employee,
-  EmployeeStatus,
-  fetchFilteredEmployees,
+  EmployeeQrInfo,
+  fetchQrCodeEmployees,
 } from "@slices/employeeSlice/employee";
 import { useAppDispatch } from "@slices/store";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
@@ -58,9 +60,9 @@ function QrCodesReportContent() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
 
-  const [selected, setSelected] = useState<Employee[]>([]);
+  const [selected, setSelected] = useState<EmployeeQrInfo[]>([]);
   const [autocompleteKey, setAutocompleteKey] = useState(0);
-  const [searchOptions, setSearchOptions] = useState<Employee[]>([]);
+  const [searchOptions, setSearchOptions] = useState<EmployeeQrInfo[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -68,21 +70,21 @@ function QrCodesReportContent() {
 
   const selectedIds = new Set(selected.map((e) => e.employeeId));
   const atLimit = selected.length >= QR_EXPORT_LIMIT;
+  const hasUnexportable = selected.some((e) => !e.house);
 
   async function performSearch(inputValue: string) {
     const seq = ++searchSequenceRef.current;
     setSearchLoading(true);
     const action = await dispatch(
-      fetchFilteredEmployees({
+      fetchQrCodeEmployees({
         ...(inputValue ? { searchString: inputValue } : {}),
         filters: { employeeStatus: EmployeeStatus.Active },
         pagination: { limit: SEARCH_LIMIT, offset: 0 },
         sort: { sortField: "startDate", sortOrder: "DESC" },
-        leadOnly: false,
       }),
     );
     if (seq !== searchSequenceRef.current) return;
-    if (fetchFilteredEmployees.fulfilled.match(action)) {
+    if (fetchQrCodeEmployees.fulfilled.match(action)) {
       setSearchOptions(action.payload.employees);
     }
     setSearchLoading(false);
@@ -107,7 +109,7 @@ function QrCodesReportContent() {
     debounceRef.current = setTimeout(() => performSearch(sanitized), SEARCH_DEBOUNCE_MS);
   }
 
-  function handleSelect(_: unknown, value: Employee | null) {
+  function handleSelect(_: unknown, value: EmployeeQrInfo | null) {
     if (!value || selectedIds.has(value.employeeId) || atLimit) return;
     setSelected((prev) => [...prev, value]);
     setAutocompleteKey((k) => k + 1);
@@ -274,49 +276,72 @@ function QrCodesReportContent() {
             <Divider />
 
             {/* Employee rows */}
-            {selected.map((emp, index) => (
-              <Box key={emp.employeeId}>
-                <Box
-                  sx={{
-                    px: 2,
-                    py: 1.25,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                    bgcolor: "background.paper",
-                    transition: "background-color 0.15s ease",
-                    "&:hover": { bgcolor: theme.palette.action.hover },
-                  }}
-                >
-                  <Avatar
-                    src={emp.employeeThumbnail ?? undefined}
+            {selected.map((emp, index) => {
+              const missingHouse = !emp.house;
+              return (
+                <Box key={emp.employeeId}>
+                  <Box
                     sx={{
-                      width: 36,
-                      height: 36,
-                      fontSize: "0.8rem",
-                      bgcolor: theme.palette.secondary.main,
-                      flexShrink: 0,
+                      px: 2,
+                      py: 1.25,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                      bgcolor: missingHouse
+                        ? alpha(theme.palette.error.main, 0.06)
+                        : "background.paper",
+                      transition: "background-color 0.15s ease",
+                      "&:hover": {
+                        bgcolor: missingHouse
+                          ? alpha(theme.palette.error.main, 0.1)
+                          : theme.palette.action.hover,
+                      },
                     }}
                   >
-                    {getInitials(emp.firstName, emp.lastName)}
-                  </Avatar>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="body2" fontWeight={600} noWrap>
-                      {emp.firstName} {emp.lastName}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap>
-                      {emp.workEmail} · {emp.employeeId}
-                    </Typography>
+                    <Avatar
+                      src={emp.employeeThumbnail ?? undefined}
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        fontSize: "0.8rem",
+                        bgcolor: missingHouse
+                          ? theme.palette.error.main
+                          : theme.palette.secondary.main,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {missingHouse
+                        ? <WarningAmberIcon sx={{ fontSize: 20 }} />
+                        : getInitials(emp.firstName, emp.lastName)}
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" fontWeight={600} noWrap>
+                        {emp.firstName} {emp.lastName}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {emp.workEmail} · {emp.employeeId}
+                      </Typography>
+                      {missingHouse && (
+                        <Typography
+                          variant="caption"
+                          color="error"
+                          sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25 }}
+                        >
+                          <WarningAmberIcon sx={{ fontSize: 13 }} />
+                          No house assigned — QR code cannot be generated
+                        </Typography>
+                      )}
+                    </Box>
+                    <Tooltip title="Remove">
+                      <IconButton size="small" onClick={() => handleRemove(emp.employeeId)}>
+                        <CloseIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
-                  <Tooltip title="Remove">
-                    <IconButton size="small" onClick={() => handleRemove(emp.employeeId)}>
-                      <CloseIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  </Tooltip>
+                  {index < selected.length - 1 && <Divider />}
                 </Box>
-                {index < selected.length - 1 && <Divider />}
-              </Box>
-            ))}
+              );
+            })}
           </Paper>
         )}
 
@@ -334,22 +359,28 @@ function QrCodesReportContent() {
               Clear All
             </Button>
           )}
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={
-              isDownloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />
-            }
-            onClick={handleDownload}
-            disabled={selected.length === 0 || isDownloading}
-            sx={{ textTransform: "none" }}
+          <Tooltip
+            title={hasUnexportable ? "Remove employees with no house assigned before exporting" : ""}
           >
-            {isDownloading
-              ? "Exporting..."
-              : selected.length > 0
-                ? `Export QR Codes (${selected.length})`
-                : "Export QR Codes"}
-          </Button>
+            <span>
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={
+                  isDownloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />
+                }
+                onClick={handleDownload}
+                disabled={selected.length === 0 || isDownloading || hasUnexportable}
+                sx={{ textTransform: "none" }}
+              >
+                {isDownloading
+                  ? "Exporting..."
+                  : selected.length > 0
+                    ? `Export QR Codes (${selected.length})`
+                    : "Export QR Codes"}
+              </Button>
+            </span>
+          </Tooltip>
         </Box>
       </Box>
     </Box>

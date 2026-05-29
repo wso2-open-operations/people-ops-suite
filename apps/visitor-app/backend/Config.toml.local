@@ -1,6 +1,9 @@
 [visitor]
 webAppUrl = ""
 
+[visitor.authorization]
+AUTHORIZED_CLIENT_ID = ""
+
 [visitor.authorization.authorizedRoles]
 ADMIN_ROLE = ""
 EMPLOYEE_ROLE = ["", ""]
@@ -42,6 +45,14 @@ fromEmailAddress = ""
 receptionEmail = ""
 
 [visitor.email.clientAuthConfig]
+clientId = ""
+clientSecret = ""
+tokenUrl = ""
+
+[visitor.sms]
+smsServiceEndpoint = ""
+
+[visitor.sms.clientAuthConfig]
 clientId = ""
 clientSecret = ""
 tokenUrl = ""

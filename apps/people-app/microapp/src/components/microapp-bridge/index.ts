@@ -15,10 +15,13 @@
 // under the License.
 
 import { ErrorMessages } from "@/utils/constants";
-import { TOPIC, type LogLevel, type TopicType } from "./types";
+import { TOPIC, type EdgeInsets, type LogLevel, type TopicType } from "./types";
 import { Logger } from "@/utils/logger";
 
 type Callback<T> = (data?: T) => void;
+
+let isNativeTokenRequestInProgress = false;
+let nativeTokenCallbackQueue: Callback<string>[] = [];
 
 declare global {
   interface Window {
@@ -35,6 +38,7 @@ declare global {
       rejectGetLocalData: (error: string) => void;
       // Cross-microapp bridge API (provided by SuperApp).
       requestOpenMicroApp: (targetAppId: string, launchData?: unknown) => void;
+      resolveDeviceSafeAreaInsets?: (data: { insets: EdgeInsets }) => void;
     };
     ReactNativeWebView?: {
       postMessage: (message: string) => void;
@@ -44,14 +48,49 @@ declare global {
 
 // Function to get token from React Native
 export const getToken = (callback: Callback<string>): void => {
-  if (window.nativebridge) {
-    window.nativebridge.requestToken();
-    window.nativebridge.resolveToken = (token: string) => {
-      callback(token);
-    };
-  } else {
+
+  if (!window.nativebridge) {
     Logger.error("Native bridge is not available");
     callback();
+    return;
+  }
+
+  nativeTokenCallbackQueue.push(callback);
+  if (isNativeTokenRequestInProgress) return;
+
+  isNativeTokenRequestInProgress = true;
+  window.nativebridge.resolveToken = (token: string) => {
+    const queue = nativeTokenCallbackQueue;
+    nativeTokenCallbackQueue = [];
+    isNativeTokenRequestInProgress = false;
+
+    queue.forEach((cb) => {
+      try {
+        cb(token);
+      } catch (error) {
+        Logger.error("Error while executing native token callback", error);
+      }
+    });
+  };
+
+  try {
+    window.nativebridge.requestToken();
+  } catch (error) {
+    Logger.error("Failed to request token from native bridge", error);
+    const queue = nativeTokenCallbackQueue;
+    nativeTokenCallbackQueue = [];
+    isNativeTokenRequestInProgress = false;
+    window.nativebridge.resolveToken = () => {};
+    queue.forEach((cb) => {
+      try {
+        cb();
+      } catch (callbackError) {
+        Logger.error(
+          "Error while executing native token callback after request failure",
+          callbackError,
+        );
+      }
+    });
   }
 };
 
@@ -91,6 +130,28 @@ export const sendNativeLog = (
     });
   } else {
     Logger.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
+  }
+};
+
+export const goToMyAppsScreen = (): void => {
+  if (window.nativebridge) {
+    triggerSuperAppAction(TOPIC.NAVIGATE_TO_MY_APPS);
+  }
+};
+
+export const requestDeviceSafeAreaInsets = (
+  callback: Callback<{ insets: EdgeInsets }>,
+): void => {
+  if (window.nativebridge) {
+    triggerSuperAppAction(TOPIC.DEVICE_SAFE_AREA_INSETS);
+    window.nativebridge.resolveDeviceSafeAreaInsets = (data) => {
+      callback(data);
+    };
+  } else {
+    Logger.error(
+      ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE + " to fetch device safe area insets",
+    );
+    callback();
   }
 };
 
@@ -178,7 +239,7 @@ export const getLocalDataAsync = async <T = unknown>(key: string) => {
 
 /**
  * Request the super app to open another micro app.
- * Used for switching to the Wallet microapp for stage 2 payment.
+ * Used for switching to the Wallet microapp for payment.
  */
 export const requestOpenMicroApp = (
   targetAppId: string,

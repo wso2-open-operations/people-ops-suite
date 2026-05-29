@@ -17,18 +17,31 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { AccessTimeSharp, KeyboardBackspaceSharp, Search } from "@mui/icons-material";
+import {
+  AccessTimeSharp,
+  KeyboardBackspaceSharp,
+  WarningAmberSharp,
+} from "@mui/icons-material";
 import { CircularProgress, IconButton } from "@mui/material";
 
 import { PageTransitionWrapper, BottomNav } from "@/components/shared";
-import type { ParkingFloor, ParkingSlot, VehicleResponse } from "@/types";
+import type {
+  CarParkConfigResponse,
+  ParkingFloor,
+  ParkingSlot,
+  VehicleResponse,
+} from "@/types";
 import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 import { serviceUrls } from "@/config/config";
-import { getTodayBookingDate } from "@/utils/helpers/date";
+import {
+  formatHour12WithMinutes,
+  getTodayBookingDate,
+  isWithinParkingReservationWindow,
+} from "@/utils/helpers/date";
 import { formatCoins } from "@/utils/helpers/coins";
 import {
-  clearPaymentStage2State,
-  setPaymentStage2State,
+  clearParkingPaymentContextState,
+  setParkingPaymentContextState,
 } from "@/utils/parkingStorage";
 
 function ParkingSlotSelectionPage() {
@@ -46,13 +59,36 @@ function ParkingSlotSelectionPage() {
     undefined,
   );
 
-  const [search, setSearch] = useState("");
   const [loadingFloors, setLoadingFloors] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [busyPayment, setBusyPayment] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [vehiclesSetupRequired, setVehiclesSetupRequired] = useState(false);
+
+  const [reservationWindowStartHour, setReservationWindowStartHour] =
+    useState(5);
+  const [reservationWindowEndHour, setReservationWindowEndHour] = useState(7);
+  const [reservationConfigLoaded, setReservationConfigLoaded] = useState(false);
+  const [bookingWindowTick, setBookingWindowTick] = useState(0);
+
+  const isBookingWindowActive = useMemo(() => {
+    void bookingWindowTick;
+    return isWithinParkingReservationWindow(
+      reservationWindowStartHour,
+      reservationWindowEndHour,
+    );
+  }, [
+    bookingWindowTick,
+    reservationWindowStartHour,
+    reservationWindowEndHour,
+  ]);
+
+  const reservationWindowMessage = useMemo(
+    () =>
+      `Bookings must be made between ${formatHour12WithMinutes(reservationWindowStartHour)} and ${formatHour12WithMinutes(reservationWindowEndHour)} on the day of parking`,
+    [reservationWindowStartHour, reservationWindowEndHour],
+  );
 
   const fetchFloors = () => {
     setLoadingFloors(true);
@@ -94,7 +130,53 @@ function ParkingSlotSelectionPage() {
   };
 
   useEffect(() => {
-    clearPaymentStage2State();
+    const bump = () => setBookingWindowTick((t) => t + 1);
+    const id = window.setInterval(bump, 10_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") bump();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
+  useEffect(() => {
+    executeWithTokenHandling(
+      handleRequest,
+      handleRequestWithNewToken,
+      serviceUrls.fetchCarParkConfigs(),
+      "GET",
+      null,
+      (data) => {
+        const c = data as CarParkConfigResponse;
+        if (typeof c.reservationWindowStartHour === "number") {
+          setReservationWindowStartHour(c.reservationWindowStartHour);
+        }
+        if (typeof c.reservationWindowEndHour === "number") {
+          setReservationWindowEndHour(c.reservationWindowEndHour);
+        }
+        setReservationConfigLoaded(true);
+      },
+      () => {
+        /* keep defaults */
+      },
+      () => {
+        /* no loading UI for config */
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!isBookingWindowActive) {
+      setSelectedSlot(undefined);
+    }
+  }, [isBookingWindowActive]);
+
+  useEffect(() => {
+    clearParkingPaymentContextState();
     fetchFloors();
     let cancelled = false;
 
@@ -150,14 +232,14 @@ function ParkingSlotSelectionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFloorId]);
 
-  const filteredSlots = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return slots;
-    return slots.filter((s) => s.slotId.toLowerCase().includes(q));
-  }, [search, slots]);
-
   const handleProceedToPayment = () => {
-    if (!selectedSlot || busyPayment || vehiclesLoading || vehiclesSetupRequired) {
+    if (
+      !isBookingWindowActive ||
+      !selectedSlot ||
+      busyPayment ||
+      vehiclesLoading ||
+      vehiclesSetupRequired
+    ) {
       if (!vehiclesLoading && vehiclesSetupRequired) {
         navigate("/services/vehicles");
       }
@@ -167,7 +249,7 @@ function ParkingSlotSelectionPage() {
     setError(undefined);
 
     // Stage 1 UI step: persist chosen slot and navigate to summary.
-    setPaymentStage2State({
+    setParkingPaymentContextState({
       slotId: selectedSlot.slotId,
       floorName: selectedSlot.floorName,
       coinsAmount: selectedSlot.coinsPerSlot,
@@ -181,40 +263,37 @@ function ParkingSlotSelectionPage() {
   return (
     <PageTransitionWrapper type="secondary">
       <div className="h-screen bg-white relative">
-        <section className="px-4 pt-6">
-          <IconButton onClick={() => navigate(-1)} aria-label="Back">
-            <KeyboardBackspaceSharp className="text-black" />
-          </IconButton>
-
-          <h2 className="text-center text-lg font-semibold -mt-7">
-            Select Parking Slot
-          </h2>
-
-          <div className="mt-6 relative">
-            <div className="flex items-center gap-2 w-full bg-[#EFEFEF] px-3 py-2 rounded-lg">
-              <Search style={{ color: "#787878", fontSize: 23 }} />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search slot ID..."
-                className="flex-1 bg-transparent outline-none text-lg font-medium placeholder:text-[#8F8F8F]"
-              />
-            </div>
+        <header className="pt-[calc(var(--safe-top)+12px)] px-5">
+          <div className="flex items-center justify-between">
+            <IconButton
+              onClick={() => navigate("/")}
+              aria-label="Back"
+              size="small"
+            >
+              <KeyboardBackspaceSharp className="text-black" />
+            </IconButton>
+            <h2 className="flex-1 text-center text-[18px] font-bold text-[#1F2A44]">
+              Book Parking Slot
+            </h2>
+            <div className="w-[40px]" />
           </div>
+        </header>
 
-          <div className="mt-4 border border-[#8FC4FF] bg-[#EAF3FF] rounded-lg px-3 py-2 flex items-start gap-2">
-            <div className="mt-0.5">
-              <div className="w-7 h-7 rounded-full bg-white grid place-items-center border border-[#8FC4FF]">
-                <AccessTimeSharp style={{ color: "#0B64C0" }} />
+        <section className="px-4">
+          {isBookingWindowActive && (
+            <div className="mt-6 border border-[#8FC4FF] bg-[#EAF3FF] rounded-lg px-3 py-2 flex items-start gap-2">
+              <div className="mt-0.5">
+                <div className="w-7 h-7 rounded-full bg-white grid place-items-center border border-[#8FC4FF]">
+                  <AccessTimeSharp style={{ color: "#0B64C0" }} />
+                </div>
+              </div>
+              <div className="text-[14.5px] font-medium text-[#0B64C0]">
+                {reservationWindowMessage}
               </div>
             </div>
-            <div className="text-[14.5px] font-medium text-[#0B64C0]">
-              Bookings must be made between 5:00 AM and 7:00 AM on the day of
-              parking
-            </div>
-          </div>
+          )}
 
-          <div className="flex gap-3 mt-4">
+          <div className="flex gap-3 mt-5">
             {floors.map((f) => {
               const isActive = f.id === selectedFloorId;
               return (
@@ -235,7 +314,7 @@ function ParkingSlotSelectionPage() {
           </div>
         </section>
 
-        <section className="px-4 mt-4 pb-28">
+        <section className="px-4 mt-4 pb-[calc(7rem+var(--safe-bottom))]">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-red-800 text-sm font-medium">
               {error}
@@ -249,20 +328,23 @@ function ParkingSlotSelectionPage() {
           )}
 
           {!loadingFloors && !loadingSlots && (
-            <div className="grid grid-cols-3 gap-3">
-              {filteredSlots.map((slot) => {
+            <div className="grid grid-cols-2 gap-3">
+              {slots.map((slot) => {
                 const isSelected = slot.slotId === selectedSlot?.slotId;
                 const isBooked = slot.isBooked;
+                const selectionDisabled = isBooked || !isBookingWindowActive;
+                const isViewOnly = !isBookingWindowActive && !isBooked;
 
                 const borderColor = isSelected
                   ? "#ff7300"
                   : isBooked
                     ? "transparent"
                     : "#E5E5E5";
+                const borderStyle: "solid" | "dashed" = isViewOnly ? "dashed" : "solid";
                 const iconColor = isSelected
                   ? "#ff7300"
                   : isBooked
-                    ? "#BDBDBD"
+                    ? "#616161"
                     : "#BDBDBD";
                 const bg = isBooked ? "#F2F2F2" : "white";
 
@@ -270,23 +352,32 @@ function ParkingSlotSelectionPage() {
                   <button
                     key={slot.slotId}
                     type="button"
-                    disabled={isBooked}
-                    onClick={() => setSelectedSlot(slot)}
+                    disabled={selectionDisabled}
+                    onClick={() => {
+                      if (!isBookingWindowActive || isBooked) return;
+                      if (isSelected) {
+                        setSelectedSlot(undefined);
+                      } else {
+                        setSelectedSlot(slot);
+                      }
+                    }}
                     className={`rounded-[1.2rem] border p-3 min-h-[102px] transition-colors ${
                       isSelected ? "shadow-[0_0_0_2px_rgba(255,115,0,0.15)]" : ""
-                    }`}
+                    } ${isViewOnly ? "cursor-not-allowed" : ""}`}
                     style={{
                       borderColor,
-                      opacity: isBooked ? 0.7 : 1,
+                      borderStyle,
                       backgroundColor: bg,
                     }}
                   >
                     <div
                       className="w-[42px] h-[42px] rounded-full grid place-items-center mx-auto"
                       style={{
-                        border: `3px solid ${borderColor}`,
+                        border: `3px solid ${
+                          isSelected ? borderColor : isBooked ? "#9E9E9E" : borderColor
+                        }`,
                         color: iconColor,
-                        backgroundColor: isBooked ? "#F6F6F6" : "white",
+                        backgroundColor: isBooked ? "#EEEEEE" : "white",
                       }}
                     >
                       <span className="font-extrabold text-xl">P</span>
@@ -295,19 +386,23 @@ function ParkingSlotSelectionPage() {
                     <div className="mt-3 text-center">
                       <div
                         className="font-semibold"
-                        style={{ color: isBooked ? "#BDBDBD" : "#1F2A44" }}
+                        style={{
+                          color: isBooked ? "#3D3D3D" : "#1F2A44",
+                        }}
                       >
                         {slot.slotId}
                       </div>
                       <div
                         className="text-[11.5px] font-medium mt-0.5"
-                        style={{ color: isBooked ? "#BDBDBD" : "#6B6B6B" }}
+                        style={{
+                          color: isBooked ? "#595959" : "#6B6B6B",
+                        }}
                       >
                         {formatCoins(slot.coinsPerSlot)} O2C
                       </div>
                       {isBooked && (
-                        <div className="text-[10.5px] font-bold mt-1 tracking-wide text-[#9B9B9B]">
-                          BOOKED
+                        <div className="text-[10.5px] font-bold mt-1 tracking-wide text-[#595959]">
+                          Unavailable
                         </div>
                       )}
                     </div>
@@ -318,8 +413,30 @@ function ParkingSlotSelectionPage() {
           )}
         </section>
 
-        <div className="fixed left-4 right-4 bottom-[84px]">
-          {selectedSlot && (
+        <div className="fixed left-4 right-4 bottom-[calc(84px+var(--safe-bottom))]">
+          {reservationConfigLoaded && !isBookingWindowActive && (
+            <div className="bg-[#FFF7EB] rounded-[1rem] shadow-[0_8px_24px_rgba(0,0,0,0.08)] border border-[#FFB74D] px-4 py-3">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-[#FFE4C4] grid place-items-center border border-[#FFB74D]">
+                    <WarningAmberSharp
+                      style={{ color: "#E65100", fontSize: 22 }}
+                    />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="text-[14px] font-semibold text-[#E65100] leading-snug">
+                    {reservationWindowMessage}
+                  </div>
+                  <div className="mt-1 text-[12px] text-[#A75A2A] font-medium">
+                    Slots are view-only right now. You can select and book a slot once the booking window opens.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isBookingWindowActive && selectedSlot && (
             <div className="bg-white rounded-[1rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-[#E5E5E5] p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -386,7 +503,7 @@ function ParkingSlotSelectionPage() {
           )}
         </div>
 
-        <BottomNav active="home" />
+        <BottomNav active="parking" />
       </div>
     </PageTransitionWrapper>
   );

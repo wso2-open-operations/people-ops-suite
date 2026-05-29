@@ -56,6 +56,13 @@ isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
 isolated function getEmployeeIdByEpfQuery(string epf) returns sql:ParameterizedQuery =>
     `SELECT employee_id FROM employee WHERE epf = ${epf} LIMIT 1;`;
 
+# Fetch employee work email by employee ID.
+#
+# + employeeId - Employee ID
+# + return - Query to get employee work email
+isolated function getEmployeeWorkEmailQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT work_email FROM employee WHERE employee_id = ${employeeId};`;
+
 # Fetch employee detailed information.
 #
 # + employeeId - Employee ID
@@ -73,7 +80,9 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         e.work_location AS workLocation,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
+        COALESCE(CONCAT(mgr.first_name, ' ', mgr.last_name), '') AS managerName,
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
+        pi.gender AS gender,
         (
             SELECT COUNT(1)
             FROM employee e2
@@ -82,8 +91,13 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         ) AS subordinateCount,
         e.employee_status AS employeeStatus,
         e.continuous_service_record AS continuousServiceRecord,
+        csr.start_date AS continuousServiceDate,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
+        r.date AS resignationDate,
+        r.final_day_in_office AS finalDayInOffice,
+        r.final_day_of_employment AS finalDayOfEmployment,
+        r.reason AS resignationReason,
         et.name AS employmentType,
         e.employment_type_id AS employmentTypeId,
         d.career_function_id AS careerFunctionId,
@@ -110,6 +124,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
                 GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',')
                 AS additionalManagerEmails
             FROM employee_additional_managers
+            WHERE is_active = 1
             GROUP BY employee_pk_id
         ) eam ON eam.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
@@ -121,6 +136,10 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN unit u ON e.unit_id = u.id
         LEFT JOIN house h ON e.house_id = h.id
+        LEFT JOIN personal_info pi ON pi.id = e.personal_info_id
+        LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
+        LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
+        LEFT JOIN resignation r ON r.employee_id = e.id
     WHERE
         e.employee_id = ${employeeId};`;
 
@@ -145,17 +164,24 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.work_location AS workLocation,
             e.start_date AS startDate,
             e.manager_email AS managerEmail,
+            COALESCE(CONCAT(mgr.first_name, ' ', mgr.last_name), '') AS managerName,
             COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
             COALESCE(sc.subordinateCount, 0) AS subordinateCount,
             e.employee_status AS employeeStatus,
             e.continuous_service_record AS continuousServiceRecord,
+            csr.start_date AS continuousServiceDate,
             e.probation_end_date AS probationEndDate,
             e.agreement_end_date AS agreementEndDate,
+            r.date AS resignationDate,
+            r.final_day_in_office AS finalDayInOffice,
+            r.final_day_of_employment AS finalDayOfEmployment,
+            r.reason AS resignationReason,
             et.name AS employmentType,
             e.employment_type_id AS employmentTypeId,
             d.career_function_id AS careerFunctionId,
             d.designation AS designation,
             e.designation_id AS designationId,
+            d.job_band AS jobBand,
             e.secondary_job_title AS secondaryJobTitle,
             o.name AS office,
             e.office_id AS officeId,
@@ -169,31 +195,31 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.unit_id AS unitId,
             c.name AS company,
             e.company_id AS companyId,
-            r.date                    AS resignationDate,
-            r.final_day_in_office     AS finalDayInOffice,
-            r.final_day_of_employment AS finalDayOfEmployment,
-            r.reason                  AS resignationReason,
+            h.name AS house,
+            e.house_id AS houseId,
+            pi.gender AS gender,
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
             LEFT JOIN (
-                SELECT 
+                SELECT
                     employee_pk_id,
-                    GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                    GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',')
                     AS additionalManagerEmails
                 FROM employee_additional_managers
+                WHERE is_active = 1
                 GROUP BY employee_pk_id
             ) eam ON eam.employee_pk_id = e.id
 
             LEFT JOIN (
-                SELECT 
+                SELECT
                     LOWER(manager_email) AS managerEmail,
                     COUNT(*) AS subordinateCount
                 FROM employee
                 WHERE manager_email IS NOT NULL AND manager_email <> ''
                 GROUP BY LOWER(manager_email)
             ) sc ON sc.managerEmail = LOWER(e.work_email)
-            
+
             INNER JOIN personal_info pi ON pi.id = e.personal_info_id
             INNER JOIN employment_type et ON et.id = e.employment_type_id
             INNER JOIN designation d ON d.id = e.designation_id
@@ -203,6 +229,9 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             INNER JOIN team t ON t.id = e.team_id
             INNER JOIN sub_team st ON st.id = e.sub_team_id
             LEFT JOIN unit u ON u.id = e.unit_id
+            LEFT JOIN house h ON h.id = e.house_id
+            LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
+            LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
             LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 
@@ -259,7 +288,14 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     appendStringFilter(filters, payload.filters.residentNumber, `pi.resident_number = ${payload.filters.residentNumber}`);
     appendStringFilter(filters, payload.filters.city, `LOWER(pi.city) = LOWER(${payload.filters.city})`);
     appendStringFilter(filters, payload.filters.country, `LOWER(pi.country) = LOWER(${payload.filters.country})`);
-    appendStringFilter(filters, payload.filters.employeeStatus, `LOWER(e.employee_status) = LOWER(${payload.filters.employeeStatus})`);
+    string? statusFilter = payload.filters.employeeStatus;
+    if statusFilter is string {
+        if payload.filters.includeMarkedLeavers == true {
+            filters.push(`(LOWER(e.employee_status) = LOWER(${statusFilter}) OR e.employee_status = 'Marked leaver')`);
+        } else {
+            filters.push(`LOWER(e.employee_status) = LOWER(${statusFilter})`);
+        }
+    }
 
     if payload.filters.managerEmail is string {
         filters.push(`LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${payload.filters.managerEmail}, '%'))`);
@@ -278,6 +314,10 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     appendIntFilter(filters, payload.filters.subTeamId, `e.sub_team_id = ${payload.filters.subTeamId}`);
     appendIntFilter(filters, payload.filters.unitId, `e.unit_id = ${payload.filters.unitId}`);
     appendIntFilter(filters, payload.filters.employmentTypeId, `e.employment_type_id = ${payload.filters.employmentTypeId}`);
+
+    if payload.filters.excludeFutureStartDate == true {
+        filters.push(`e.start_date <= CURDATE()`);
+    }
 
     string? searchString = payload.searchString;
 
@@ -380,6 +420,7 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
                 GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
                 AS additionalManagerEmails
             FROM employee_additional_managers
+            WHERE is_active = 1
             GROUP BY employee_pk_id
         ) eam ON eam.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
@@ -468,76 +509,538 @@ isolated function getEmergencyContactsByEmployeeIdQuery(string employeeId) retur
         piec.telephone
     FROM personal_info_emergency_contacts piec
     INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
-    WHERE e.employee_id = ${employeeId};`;
+    WHERE e.employee_id = ${employeeId}
+      AND is_active = 1;`;
 
 # Get business units query.
+# + includeInactive - If true, return all entities including inactive; otherwise active-only
 # + return - Business units query
-isolated function getBusinessUnitsQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
-        id,
-        name
-    FROM business_unit;`;
+isolated function getBusinessUnitsQuery(boolean includeInactive = false) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `SELECT bu.id, bu.name, bu.head_email, bu.is_active,
+        (SELECT COUNT(*) FROM employee
+            WHERE business_unit_id = bu.id AND employee_status = 'Active') AS active_employee_count
+        FROM business_unit bu`;
+    if !includeInactive {
+        query = sql:queryConcat(query, ` WHERE bu.is_active = 1`);
+    }
+    return sql:queryConcat(query, ` ORDER BY bu.name;`);
+}
 
 # Get teams query.
 #
 # + buId - Business unit ID (optional)
+# + includeInactive - If true, return all entities including inactive; otherwise active-only
 # + return - Teams query
-isolated function getTeamsQuery(int? buId = ()) returns sql:ParameterizedQuery {
+isolated function getTeamsQuery(int? buId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT
-            t.id, t.name
+            t.id, t.name, t.head_email, t.is_active,
+            (SELECT COUNT(*) FROM employee
+                WHERE team_id = t.id AND employee_status = 'Active') AS active_employee_count
         FROM
             team t`;
 
     if buId is int {
         query = sql:queryConcat(query, `
-            LEFT JOIN 
+            LEFT JOIN
                 business_unit_team but ON but.team_id = t.id
-            WHERE 
+            WHERE
                 but.business_unit_id = ${buId}`);
+        if !includeInactive {
+            query = sql:queryConcat(query, ` AND t.is_active = 1 AND but.is_active = 1`);
+        }
+    } else if !includeInactive {
+        query = sql:queryConcat(query, ` WHERE t.is_active = 1`);
     }
-    return sql:queryConcat(query, `;`);
+    return sql:queryConcat(query, `
+        ORDER BY t.name;`);
 }
 
 # Get sub teams query.
 #
 # + teamId - Team ID (optional)
+# + includeInactive - If true, return all entities including inactive; otherwise active-only
 # + return - Sub teams query
-isolated function getSubTeamsQuery(int? teamId = ()) returns sql:ParameterizedQuery {
+isolated function getSubTeamsQuery(int? teamId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
-        SELECT
-            st.id, st.name
+        SELECT DISTINCT
+            st.id, st.name, st.head_email, st.is_active,
+            (SELECT COUNT(*) FROM employee
+                WHERE sub_team_id = st.id AND employee_status = 'Active') AS active_employee_count
         FROM
             sub_team st`;
     if teamId is int {
-        query = sql:queryConcat(query, ` 
-            LEFT JOIN 
+        query = sql:queryConcat(query, `
+            INNER JOIN
                 business_unit_team_sub_team butst ON butst.sub_team_id = st.id
-            WHERE 
-                butst.business_unit_team_id = ${teamId}`);
+            INNER JOIN
+                business_unit_team but ON but.id = butst.business_unit_team_id
+            WHERE
+                but.team_id = ${teamId}`);
+        if !includeInactive {
+            query = sql:queryConcat(query,
+                ` AND st.is_active = 1 AND butst.is_active = 1 AND but.is_active = 1`);
+        }
+    } else if !includeInactive {
+        query = sql:queryConcat(query, ` WHERE st.is_active = 1`);
     }
-    return sql:queryConcat(query, `;`);
+    return sql:queryConcat(query, `
+        ORDER BY st.name;`);
+}
+
+# Fetch existing work emails.
+#
+# + emails - Work email list
+# + return - Query to fetch existing work emails
+isolated function getExistingWorkEmailsQuery(string[] emails) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildInClause(emails);
+    return sql:queryConcat(
+            `SELECT LOWER(work_email) AS work_email FROM employee WHERE LOWER(work_email) IN (`,
+            inClause,
+            `);`
+    );
+}
+
+# Fetch existing NIC or passport values.
+#
+# + nics - NIC or passport list
+# + return - Query to fetch existing NIC or passport values
+isolated function getExistingNicOrPassportQuery(string[] nics) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildInClause(nics);
+    return sql:queryConcat(
+            `SELECT LOWER(nic_or_passport) AS nic_or_passport FROM personal_info WHERE LOWER(nic_or_passport) IN (`,
+            inClause,
+            `);`
+    );
+}
+
+# Fetch existing EPF values.
+#
+# + epfs - EPF number list
+# + return - Query to fetch existing EPF values
+isolated function getExistingEpfsQuery(string[] epfs) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildInClause(epfs);
+    return sql:queryConcat(
+            `SELECT LOWER(epf) AS epf FROM employee WHERE LOWER(epf) IN (`,
+            inClause,
+            `);`
+    );
+}
+
+# Build an SQL IN clause for a list of string values.
+# 
+# + values - List of string values to include in the IN clause
+# + return - Parameterized query representing the IN clause
+isolated function buildInClause(string[] values) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery clause = ``;
+    foreach int i in 0 ..< values.length() {
+        clause = i == 0
+            ? sql:queryConcat(clause, `${values[i]}`)
+            : sql:queryConcat(clause, `, `, `${values[i]}`);
+    }
+    return clause;
 }
 
 # Get units query.
 #
 # + subTeamId - Sub team ID (optional)
+# + includeInactive - If true, return all entities including inactive; otherwise active-only
 # + return - Units query
-isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQuery {
+isolated function getUnitsQuery(int? subTeamId = (), boolean includeInactive = false) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
-        SELECT
-            u.id, u.name
+        SELECT DISTINCT
+            u.id, u.name, u.head_email, u.is_active,
+            (SELECT COUNT(*) FROM employee
+                WHERE unit_id = u.id AND employee_status = 'Active') AS active_employee_count
         FROM
             unit u`;
     if subTeamId is int {
-        query = sql:queryConcat(query, ` 
-            LEFT JOIN 
+        query = sql:queryConcat(query, `
+            INNER JOIN
                 business_unit_team_sub_team_unit butstu ON butstu.unit_id = u.id
-            WHERE 
-                butstu.business_unit_team_sub_team_id = ${subTeamId}`);
+            INNER JOIN
+                business_unit_team_sub_team butst ON butst.id = butstu.business_unit_team_sub_team_id
+            WHERE
+                butst.sub_team_id = ${subTeamId}`);
+        if !includeInactive {
+            query = sql:queryConcat(query,
+                ` AND u.is_active = 1 AND butstu.is_active = 1 AND butst.is_active = 1`);
+        }
+    } else if !includeInactive {
+        query = sql:queryConcat(query, ` WHERE u.is_active = 1`);
     }
-    return sql:queryConcat(query, `;`);
+    return sql:queryConcat(query, `
+        ORDER BY u.name;`);
 }
+
+# Create business unit query.
+#
+# + name - Business unit name
+# + headEmail - Head email
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createBusinessUnitQuery(string name, string headEmail, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO business_unit (name, head_email, created_by, updated_by)
+     VALUES (${name}, ${headEmail}, ${createdBy}, ${createdBy});`;
+
+# Update business unit query.
+#
+# + id - Business unit ID
+# + name - Updated name (optional)
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateBusinessUnitQuery(int id, string? name, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if name is string {
+        updates.push(`name = ${name}`);
+    }
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit SET `, updates), ` WHERE id = ${id};`);
+}
+
+# Create team query.
+#
+# + name - Team name
+# + headEmail - Head email
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createTeamQuery(string name, string headEmail, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO team (name, head_email, created_by, updated_by)
+     VALUES (${name}, ${headEmail}, ${createdBy}, ${createdBy});`;
+
+# Update team query.
+#
+# + id - Team ID
+# + name - Updated name (optional)
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateTeamQuery(int id, string? name, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if name is string {
+        updates.push(`name = ${name}`);
+    }
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE team SET `, updates), ` WHERE id = ${id};`);
+}
+
+# Create sub-team query.
+#
+# + name - Sub-team name
+# + headEmail - Head email
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createSubTeamQuery(string name, string headEmail, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO sub_team (name, head_email, created_by, updated_by)
+     VALUES (${name}, ${headEmail}, ${createdBy}, ${createdBy});`;
+
+# Update sub-team query.
+#
+# + id - Sub-team ID
+# + name - Updated name (optional)
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateSubTeamQuery(int id, string? name, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if name is string {
+        updates.push(`name = ${name}`);
+    }
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE sub_team SET `, updates), ` WHERE id = ${id};`);
+}
+
+# Create unit query.
+#
+# + name - Unit name
+# + headEmail - Head email
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createUnitQuery(string name, string headEmail, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO unit (name, head_email, created_by, updated_by)
+     VALUES (${name}, ${headEmail}, ${createdBy}, ${createdBy});`;
+
+# Update unit query.
+#
+# + id - Unit ID
+# + name - Updated name (optional)
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateUnitQuery(int id, string? name, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if name is string {
+        updates.push(`name = ${name}`);
+    }
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE unit SET `, updates), ` WHERE id = ${id};`);
+}
+
+# Create business-unit → team mapping query.
+#
+# + businessUnitId - Business unit ID
+# + teamId - Team ID
+# + headEmail - Head email for this mapping
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createBusinessUnitTeamQuery(int businessUnitId, int teamId, string headEmail, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO business_unit_team (business_unit_id, team_id, head_email, created_by, updated_by)
+     VALUES (${businessUnitId}, ${teamId}, ${headEmail}, ${createdBy}, ${createdBy})
+     ON DUPLICATE KEY UPDATE
+        id = LAST_INSERT_ID(id),
+        is_active = 1,
+        head_email = VALUES(head_email),
+        updated_by = VALUES(updated_by),
+        updated_on = CURRENT_TIMESTAMP(6);`;
+
+# Update business-unit → team mapping query.
+#
+# + id - Mapping ID
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateBusinessUnitTeamQuery(int id, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team SET `, updates), ` WHERE id = ${id};`);
+}
+
+# Create business-unit-team → sub-team mapping query.
+#
+# + businessUnitTeamId - Business unit team mapping ID
+# + subTeamId - Sub-team ID
+# + headEmail - Head email for this mapping
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createBusinessUnitTeamSubTeamQuery(int businessUnitTeamId, int subTeamId, string headEmail,
+        string createdBy) returns sql:ParameterizedQuery =>
+    `INSERT INTO business_unit_team_sub_team (business_unit_team_id, sub_team_id, head_email, created_by, updated_by)
+     VALUES (${businessUnitTeamId}, ${subTeamId}, ${headEmail}, ${createdBy}, ${createdBy})
+     ON DUPLICATE KEY UPDATE
+        id = LAST_INSERT_ID(id),
+        is_active = 1,
+        head_email = VALUES(head_email),
+        updated_by = VALUES(updated_by),
+        updated_on = CURRENT_TIMESTAMP(6);`;
+
+# Update business-unit-team → sub-team mapping query.
+#
+# + id - Mapping ID
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateBusinessUnitTeamSubTeamQuery(int id, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team_sub_team SET `, updates),
+        ` WHERE id = ${id};`);
+}
+
+# Create business-unit-team-sub-team → unit mapping query.
+#
+# + businessUnitTeamSubTeamId - Business unit team sub-team mapping ID
+# + unitId - Unit ID
+# + headEmail - Head email for this mapping
+# + createdBy - Creator email
+# + return - Insert query
+isolated function createBusinessUnitTeamSubTeamUnitQuery(int businessUnitTeamSubTeamId, int unitId, string headEmail,
+        string createdBy) returns sql:ParameterizedQuery =>
+    `INSERT INTO business_unit_team_sub_team_unit
+         (business_unit_team_sub_team_id, unit_id, head_email, created_by, updated_by)
+     VALUES (${businessUnitTeamSubTeamId}, ${unitId}, ${headEmail}, ${createdBy}, ${createdBy})
+     ON DUPLICATE KEY UPDATE
+        id = LAST_INSERT_ID(id),
+        is_active = 1,
+        head_email = VALUES(head_email),
+        updated_by = VALUES(updated_by),
+        updated_on = CURRENT_TIMESTAMP(6);`;
+
+# Update business-unit-team-sub-team → unit mapping query.
+#
+# + id - Mapping ID
+# + headEmail - Updated head email (optional)
+# + isActive - Updated active status (optional)
+# + updatedBy - Updater email
+# + return - Update query or error if nothing to update
+isolated function updateBusinessUnitTeamSubTeamUnitQuery(int id, string? headEmail, boolean? isActive,
+        string updatedBy) returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if headEmail is string {
+        updates.push(`head_email = ${headEmail}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError(ERROR_NO_FIELDS_TO_UPDATE);
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+    return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team_sub_team_unit SET `, updates),
+        ` WHERE id = ${id};`);
+}
+
+# Get the company org chart structure query (includes all mapping metadata).
+# Returns all BUs (active and inactive) with their nested teams, sub-teams, and units,
+# enriched with mapping IDs and head emails for admin management.
+#
+# + return - Company org chart structure query
+isolated function getCompanyOrgChartStructureQuery() returns sql:ParameterizedQuery =>
+    `SELECT
+        bu.id,
+        bu.name,
+        bu.head_email,
+        bu.is_active,
+        (SELECT COUNT(*) FROM employee
+            WHERE business_unit_id = bu.id AND employee_status = 'Active') AS active_employee_count,
+        COALESCE(
+            (
+                SELECT JSON_ARRAYAGG(team_sub.obj)
+                FROM LATERAL (
+                    SELECT JSON_OBJECT(
+                        'id', t.id,
+                        'name', t.name,
+                        'headEmail', t.head_email,
+                        'isActive', IF(t.is_active = 1, CAST('true' AS JSON), CAST('false' AS JSON)),
+                        'mappingId', but.id,
+                        'mappingHeadEmail', but.head_email,
+                        'mappingIsActive', IF(but.is_active = 1, CAST('true' AS JSON), CAST('false' AS JSON)),
+                        'subTeams',
+                        COALESCE(
+                            (
+                                SELECT JSON_ARRAYAGG(subteam_sub.obj)
+                                FROM LATERAL (
+                                    SELECT JSON_OBJECT(
+                                        'id', st.id,
+                                        'name', st.name,
+                                        'headEmail', st.head_email,
+                                        'isActive', IF(st.is_active = 1, CAST('true' AS JSON), CAST('false' AS JSON)),
+                                        'mappingId', butst.id,
+                                        'mappingHeadEmail', butst.head_email,
+                                        'mappingIsActive', IF(butst.is_active = 1,
+                                            CAST('true' AS JSON), CAST('false' AS JSON)),
+                                        'units',
+                                        COALESCE(
+                                            (
+                                                SELECT JSON_ARRAYAGG(unit_sub.obj)
+                                                FROM LATERAL (
+                                                    SELECT JSON_OBJECT(
+                                                        'id', u.id,
+                                                        'name', u.name,
+                                                        'headEmail', u.head_email,
+                                                        'isActive', IF(u.is_active = 1,
+                                                            CAST('true' AS JSON), CAST('false' AS JSON)),
+                                                        'mappingId', butstu.id,
+                                                        'mappingHeadEmail', butstu.head_email,
+                                                        'mappingIsActive', IF(butstu.is_active = 1,
+                                                            CAST('true' AS JSON), CAST('false' AS JSON))
+                                                    ) AS obj
+                                                    FROM business_unit_team_sub_team_unit butstu
+                                                    INNER JOIN unit u ON u.id = butstu.unit_id
+                                                    WHERE butstu.business_unit_team_sub_team_id = butst.id
+                                                    ORDER BY u.name
+                                                ) AS unit_sub
+                                            ),
+                                            JSON_ARRAY()
+                                        )
+                                    ) AS obj
+                                    FROM business_unit_team_sub_team butst
+                                    INNER JOIN sub_team st ON st.id = butst.sub_team_id
+                                    WHERE butst.business_unit_team_id = but.id
+                                    ORDER BY st.name
+                                ) AS subteam_sub
+                            ),
+                            JSON_ARRAY()
+                        )
+                    ) AS obj
+                    FROM business_unit_team but
+                    INNER JOIN team t ON t.id = but.team_id
+                    WHERE but.business_unit_id = bu.id
+                    ORDER BY t.name
+                ) AS team_sub
+            ),
+            JSON_ARRAY()
+        ) AS teams
+    FROM business_unit bu
+    ORDER BY bu.name;`;
 
 # Get full organization structure query.
 #
@@ -680,6 +1183,25 @@ isolated function getEmploymentTypesQuery() returns sql:ParameterizedQuery =>
         name
     FROM employment_type;`;
 
+# Fetch IDP group names mapped to a given employment type.
+#
+# + employmentTypeId - Employment type ID
+# + return - Parameterized query returning group_name rows
+isolated function getAsgardeoGroupsForEmploymentTypeQuery(int employmentTypeId) returns sql:ParameterizedQuery =>
+    `SELECT group_name AS groupName
+     FROM employment_type_idp_group
+     WHERE employment_type_id = ${employmentTypeId};`;
+
+# Fetch Asgardeo group names mapped to a given team and employment type.
+#
+# + teamId - Team ID
+# + employmentTypeId - Employment type ID
+# + return - Parameterized query returning group_name rows
+isolated function getAsgardeoGroupsForTeamQuery(int teamId, int employmentTypeId) returns sql:ParameterizedQuery =>
+    `SELECT group_name AS groupName
+     FROM team_asgardeo_groups
+     WHERE team_id = ${teamId} AND employment_type_id = ${employmentTypeId};`;
+
 # Get houses query.
 #
 # + return - Houses query
@@ -697,6 +1219,17 @@ isolated function getHouseWithLeastActiveEmployeesQuery() returns sql:Parameteri
      GROUP BY h.id, h.name
      ORDER BY COUNT(e.id) ASC
      LIMIT 1`;
+
+# Get all active houses with their active employee counts query.
+#
+# + return - Query to get all active houses ordered by active employee count ascending
+isolated function getHousesWithActiveEmployeeCountsQuery() returns sql:ParameterizedQuery =>
+    `SELECT h.id, h.name, COUNT(e.id) AS active_count
+     FROM house h
+     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
+     WHERE h.is_active = 1
+     GROUP BY h.id, h.name
+     ORDER BY active_count ASC`;
 
 # Add employee personal information query.
 #
@@ -750,35 +1283,6 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${createdBy}
         );`;
 
-# Add emergency contact query.
-#
-# + employeeId - Employee ID
-# + contact - Emergency contact details
-# + createdBy - Creator of the emergency contact record
-# + return - Emergency contact insert query
-isolated function addPersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact, string createdBy)
-    returns sql:ParameterizedQuery =>
-    `INSERT INTO personal_info_emergency_contacts
-        (
-            personal_info_id,
-            name,
-            mobile,
-            telephone,
-            relationship,
-            created_by,
-            updated_by
-        )
-     VALUES
-        (
-            (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
-            ${contact.name},
-            ${contact.mobile},
-            ${contact.telephone},
-            ${contact.relationship},
-            ${createdBy},
-            ${createdBy}
-        );`;
-
 # Fetch company prefix and employment type required for generating the next employee ID.
 #
 # + companyId - Company ID of the new employee
@@ -811,7 +1315,7 @@ isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, Employ
     }
 
     return sql:queryConcat(
-        `SELECT
+            `SELECT
             COALESCE(
                 MAX(CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
                 0
@@ -1025,44 +1529,76 @@ isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmplo
     return finalQuery;
 }
 
-# Delete emergency contacts by personal info id.
-#
-# + employeeId - Employee ID
-# + return - sql:ParameterizedQuery - Delete query for emergency contacts
-isolated function deleteEmergencyContactsByEmployeeIdQuery(string employeeId) returns sql:ParameterizedQuery =>
-    `DELETE piec
-        FROM personal_info_emergency_contacts piec
-        INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
-        WHERE e.employee_id = ${employeeId};`;
-
-# Insert an emergency contact for a personal_info id.
+# Add emergency contact query.
 #
 # + employeeId - Employee ID
 # + contact - Emergency contact details
-# + createdBy - Creator of the emergency contact record
+# + actor - User creating the emergency contact record
 # + return - sql:ParameterizedQuery - Insert query for emergency contacts
-isolated function updatePersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact,
-        string createdBy) returns sql:ParameterizedQuery => `
-        INSERT INTO personal_info_emergency_contacts
-            (
-                personal_info_id,
-                name, 
-                relationship, 
-                mobile, 
-                telephone, 
-                created_by, 
-                updated_by
-            )
-        VALUES
-            (
-                (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
-                ${contact.name},
-                ${contact.relationship},
-                ${contact.mobile},
-                ${contact.telephone},
-                ${createdBy},
-                ${createdBy}
-            );`;
+isolated function addPersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact, string actor)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO personal_info_emergency_contacts
+        (
+            personal_info_id,
+            name,
+            mobile,
+            telephone,
+            relationship,
+            is_active,
+            created_by,
+            updated_by
+        )
+    VALUES
+        (
+            (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
+            ${contact.name},
+            ${contact.mobile},
+            ${contact.telephone},
+            ${contact.relationship},
+            1,
+            ${actor},
+            ${actor}
+        )
+    ON DUPLICATE KEY UPDATE
+        is_active = 1,
+        name = ${contact.name},
+        mobile = ${contact.mobile},
+        telephone = ${contact.telephone},
+        relationship = ${contact.relationship},
+        updated_by = ${actor},
+        updated_on = CURRENT_TIMESTAMP(6);`;
+
+# Fetch active emergency contact full rows for an employee.
+#
+# + employeeId - Employee ID string
+# + return - Query to get active emergency contact rows
+isolated function getEmergencyContactRowsQuery(string employeeId)
+    returns sql:ParameterizedQuery =>
+    `SELECT piec.name,
+            piec.telephone,
+            piec.relationship,
+            piec.mobile
+     FROM personal_info_emergency_contacts piec
+     INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+     WHERE e.employee_id = ${employeeId}
+       AND piec.is_active = 1;`;
+
+# Delete emergency contact query.
+#
+# + employeeId - Employee ID string
+# + mobile - Mobile number of the contact to deactivate
+# + actor - User performing the operation
+# + return - Query to soft-delete one emergency contact
+isolated function deleteEmergencyContactQuery(string employeeId, string mobile, string actor)
+    returns sql:ParameterizedQuery =>
+    `UPDATE personal_info_emergency_contacts piec
+      INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+      SET piec.is_active = 0,
+          piec.updated_by = ${actor},
+          piec.updated_on = CURRENT_TIMESTAMP(6)
+      WHERE e.employee_id = ${employeeId}
+        AND piec.mobile = ${mobile}
+        AND piec.is_active = 1;`;
 
 # Update employee job information query.
 #
@@ -1182,6 +1718,10 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         }
     }
 
+    if payload.employeeStatus is EmployeeStatus {
+        updates.push(`employee_status = ${payload.employeeStatus}`);
+    }
+
     updates.push(`updated_by = ${updatedBy}`);
 
     sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
@@ -1193,14 +1733,48 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
     return finalQuery;
 }
 
-# Delete additional managers by employee database ID.
+# Upsert the resignation record for an employee.
+# Fields not provided in the payload (null) preserve the existing DB value.
 #
-# + employeePkId - Employee ID
-# + return - sql:ParameterizedQuery - Delete query for all additional managers
-isolated function deleteAdditionalManagersByEmployeeIdQuery(int employeePkId) returns sql:ParameterizedQuery =>
-    `DELETE FROM employee_additional_managers
-      WHERE 
-        employee_pk_id = ${employeePkId};`;
+# + employeeId - Employee ID string
+# + payload - Job information update payload containing leaver fields
+# + updatedBy - User performing the update
+# + return - sql:ParameterizedQuery - Upsert query for the resignation table
+isolated function upsertResignationQuery(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns sql:ParameterizedQuery {
+
+    string? finalDayInOffice = payload.finalDayInOffice;
+    string? finalDayOfEmployment = payload.finalDayOfEmployment;
+    string? resignationReason = payload.resignationReason;
+
+    return `INSERT INTO resignation
+        (
+            employee_id,
+            date,
+            final_day_in_office,
+            final_day_of_employment,
+            reason,
+            created_by,
+            updated_by
+        )
+    SELECT
+        e.id,
+        CURRENT_TIMESTAMP(6),
+        ${finalDayInOffice},
+        ${finalDayOfEmployment},
+        ${resignationReason},
+        ${updatedBy},
+        ${updatedBy}
+    FROM employee e
+    WHERE e.employee_id = ${employeeId}
+    ON DUPLICATE KEY UPDATE
+        date                    = IF(date IS NULL, CURRENT_TIMESTAMP(6), date),
+        final_day_in_office     = IF(VALUES(final_day_in_office) IS NOT NULL, VALUES(final_day_in_office), final_day_in_office),
+        final_day_of_employment = IF(VALUES(final_day_of_employment) IS NOT NULL, VALUES(final_day_of_employment), final_day_of_employment),
+        reason                  = IF(VALUES(reason) IS NOT NULL, VALUES(reason), reason),
+        updated_by              = ${updatedBy},
+        updated_on              = CURRENT_TIMESTAMP(6)`;
+}
 
 # Add an additional manager for an employee.
 #
@@ -1214,6 +1788,7 @@ isolated function addEmployeeAdditionalManagerQuery(int id, string email, string
         (
             employee_pk_id,
             additional_manager_email,
+            is_active,
             created_by,
             updated_by
         )
@@ -1221,9 +1796,58 @@ isolated function addEmployeeAdditionalManagerQuery(int id, string email, string
         (
             ${id}, 
             ${email}, 
+            1,
             ${actor}, 
             ${actor}
-        );`;
+        )
+    ON DUPLICATE KEY UPDATE
+        is_active = 1,
+        updated_by = ${actor},
+        updated_on = CURRENT_TIMESTAMP(6);`;
+
+# Fetch active additional manager emails for an employee.
+#
+# + employeeId - Employee ID string
+# + return - Query to get active additional manager emails
+isolated function getAdditionalManagerEmailsQuery(string employeeId)
+    returns sql:ParameterizedQuery =>
+    `SELECT eam.additional_manager_email
+     FROM employee_additional_managers eam
+     INNER JOIN employee e ON e.id = eam.employee_pk_id
+     WHERE e.employee_id = ${employeeId}
+       AND eam.is_active = 1;`;
+
+# Delete an additional manager for an employee.
+#
+# + employeeId - Employee ID string
+# + email - Additional manager email to deactivate
+# + actor - User performing the operation
+# + return - Query to soft-delete one additional manager
+isolated function deleteAdditionalManagerQuery(string employeeId, string email, string actor)
+    returns sql:ParameterizedQuery =>
+    `UPDATE employee_additional_managers eam
+      INNER JOIN employee e ON e.id = eam.employee_pk_id
+      SET eam.is_active = 0,
+          eam.updated_by = ${actor},
+          eam.updated_on = CURRENT_TIMESTAMP(6)
+      WHERE e.employee_id = ${employeeId}
+        AND LOWER(eam.additional_manager_email) = LOWER(${email})
+        AND eam.is_active = 1;`;
+
+# Inactivate all additional-manager relationships where the leaving
+# employee's email is recorded as the additional manager for other employees.
+#
+# + managerEmail - Work email of the employee who is leaving
+# + actor - User performing the operation
+# + return - Parameterized query
+isolated function inactivateAdditionalManagerRelationshipsQuery(string managerEmail, string actor)
+    returns sql:ParameterizedQuery =>
+    `UPDATE employee_additional_managers eam
+     SET eam.is_active = 0,
+         eam.updated_by = ${actor},
+         eam.updated_on = CURRENT_TIMESTAMP(6)
+     WHERE LOWER(eam.additional_manager_email) = LOWER(${managerEmail})
+       AND eam.is_active = 1;`;
 
 # Build query to fetch vehicles.
 #
@@ -1369,8 +1993,10 @@ isolated function getParkingFloorsQuery() returns sql:ParameterizedQuery =>
 #
 # + floorId - Floor id
 # + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
 # + return - Query to get parking slots with isBooked
-isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) returns sql:ParameterizedQuery =>
+isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate, int pendingExpiryMinutes)
+        returns sql:ParameterizedQuery =>
     `SELECT
         ps.slot_id as 'slotId',
         ps.floor_id as 'floorId',
@@ -1380,7 +2006,11 @@ isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) r
             SELECT 1 FROM parking_reservation pr
             WHERE pr.slot_id = ps.slot_id
               AND pr.booking_date = ${bookingDate}
-              AND pr.status IN (${PENDING}, ${CONFIRMED})
+              AND (
+                pr.status = ${CONFIRMED}
+                OR (pr.status = ${PENDING}
+                    AND pr.created_on >= DATE_SUB(NOW(), INTERVAL ${pendingExpiryMinutes} MINUTE))
+              )
         ) THEN 1 ELSE 0 END) as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
@@ -1407,15 +2037,36 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
 #
 # + slotId - Slot id
 # + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
 # + return - Query to get reservation id if slot is unavailable
-isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, string bookingDate)
+isolated function getActiveParkingReservationForSlotDateQuery(string slotId, string bookingDate,
+        int pendingExpiryMinutes)
     returns sql:ParameterizedQuery =>
     `SELECT id
     FROM parking_reservation
     WHERE slot_id = ${slotId}
       AND booking_date = ${bookingDate}
-      AND status IN (${PENDING}, ${CONFIRMED})
+      AND (
+        status = ${CONFIRMED}
+        OR (status = ${PENDING}
+            AND created_on >= DATE_SUB(NOW(), INTERVAL ${pendingExpiryMinutes} MINUTE))
+      )
     LIMIT 1`;
+
+# Expire stale pending reservations (PENDING -> EXPIRED) for slot/date.
+#
+# + slotId - Slot id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + expiryMinutes - Expiry duration in minutes
+# + return - Query to mark stale pending reservation as EXPIRED
+isolated function expireStalePendingParkingReservationForSlotDateQuery(string slotId, string bookingDate,
+        int expiryMinutes) returns sql:ParameterizedQuery =>
+    `UPDATE parking_reservation
+    SET status = ${EXPIRED}
+    WHERE slot_id = ${slotId}
+      AND booking_date = ${bookingDate}
+      AND status = ${PENDING}
+      AND created_on < DATE_SUB(NOW(), INTERVAL ${expiryMinutes} MINUTE)`;
 
 # Insert parking reservation (PENDING).
 #
@@ -1550,3 +2201,111 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
 
     return sql:queryConcat(mainQuery, ` ORDER BY pr.booking_date DESC, pr.created_on DESC`);
 }
+
+# Fetch a mapping of work email to full name for all employees.
+#
+# + return - Parameterized query returning work_email and full_name columns
+isolated function getEmployeeEmailToNameMapQuery() returns sql:ParameterizedQuery =>
+    `SELECT work_email, CONCAT(first_name, ' ', last_name) AS full_name FROM employee;`;
+
+# Count active employees in a business unit.
+#
+# + id - Business unit ID
+# + return - Query counting active employees with business_unit_id = id
+isolated function countActiveEmployeesInBusinessUnitQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee WHERE business_unit_id = ${id} AND employee_status = 'Active'`;
+
+# Count active employees in a business-unit–team mapping.
+#
+# + id - business_unit_team mapping ID
+# + return - Query counting active employees matching that BU+Team combination
+isolated function countActiveEmployeesInBUTeamMappingQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee e
+     JOIN business_unit_team but ON but.id = ${id}
+     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id AND e.employee_status = 'Active'`;
+
+# Count active employees in a business-unit–team–sub-team mapping.
+#
+# + id - business_unit_team_sub_team mapping ID
+# + return - Query counting active employees matching that BU+Team+SubTeam combination
+isolated function countActiveEmployeesInBUTeamSubTeamMappingQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee e
+     JOIN business_unit_team_sub_team butst ON butst.id = ${id}
+     JOIN business_unit_team but ON but.id = butst.business_unit_team_id
+     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id
+       AND e.sub_team_id = butst.sub_team_id AND e.employee_status = 'Active'`;
+
+# Count active employees in a business-unit–team–sub-team–unit mapping.
+#
+# + id - business_unit_team_sub_team_unit mapping ID
+# + return - Query counting active employees matching that BU+Team+SubTeam+Unit combination
+isolated function countActiveEmployeesInBUTeamSubTeamUnitMappingQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee e
+     JOIN business_unit_team_sub_team_unit butstu ON butstu.id = ${id}
+     JOIN business_unit_team_sub_team butst ON butst.id = butstu.business_unit_team_sub_team_id
+     JOIN business_unit_team but ON but.id = butst.business_unit_team_id
+     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id
+       AND e.sub_team_id = butst.sub_team_id AND e.unit_id = butstu.unit_id AND e.employee_status = 'Active'`;
+
+# Count active employees in a team.
+#
+# + id - Team ID
+# + return - Query counting active employees with team_id = id
+isolated function countActiveEmployeesInTeamQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee WHERE team_id = ${id} AND employee_status = 'Active'`;
+
+# Count active employees in a sub-team.
+#
+# + id - Sub-team ID
+# + return - Query counting active employees with sub_team_id = id
+isolated function countActiveEmployeesInSubTeamQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee WHERE sub_team_id = ${id} AND employee_status = 'Active'`;
+
+# Count active employees in a unit.
+#
+# + id - Unit ID
+# + return - Query counting active employees with unit_id = id
+isolated function countActiveEmployeesInUnitQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee WHERE unit_id = ${id} AND employee_status = 'Active'`;
+
+# Delete an employee record.
+#
+# + employeeId - Employee ID string
+# + return - Parameterized query to delete an employee
+isolated function deleteEmployeeQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee WHERE employee_id = ${employeeId};`;
+
+# Delete a personal info record.
+#
+# + personalInfoId - Primary key of the personal_info row
+# + return - Parameterized query to delete a personal info record
+isolated function deletePersonalInfoQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `DELETE FROM personal_info WHERE id = ${personalInfoId};`;
+
+# Delete employee audit rows for an employee.
+#
+# + employeePkId - Primary key of the employee row
+# + return - Parameterized query to delete employee audit rows
+isolated function deleteEmployeeAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_audit WHERE employee_pk_id = ${employeePkId};`;
+
+# Delete additional managers audit rows for an employee.
+#
+# + employeePkId - Primary key of the employee row
+# + return - Parameterized query to delete additional managers audit rows
+isolated function deleteEmployeeAdditionalManagersAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_additional_managers_audit WHERE employee_pk_id = ${employeePkId};`;
+
+# Delete emergency contacts audit rows for a personal info record.
+#
+# + personalInfoId - Primary key of the personal_info row
+# + return - Parameterized query to delete emergency contacts audit rows
+isolated function deleteEmployeeEmergencyContactsAuditQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `DELETE FROM personal_info_emergency_contacts_audit WHERE personal_info_id = ${personalInfoId};`;
+
+# Delete personal info audit rows for a personal info record.
+#
+# + personalInfoId - Primary key of the personal_info row
+# + return - Parameterized query to delete personal info audit rows
+isolated function deletePersonalInfoAuditQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `DELETE FROM personal_info_audit WHERE personal_info_pk_id = ${personalInfoId};`;

@@ -23,12 +23,6 @@ declare global {
       ASGARDEO_BASE_URL: string;
       IS_MICROAPP: boolean;
       BACKEND_BASE_URL: string;
-      // Wallet micro app (used for parking payments).
-      WALLET_MICROAPP_WEBVIEW_URI?: string;
-      WALLET_MICROAPP_APP_NAME?: string;
-      WALLET_MICROAPP_CLIENT_ID?: string;
-      WALLET_MICROAPP_APP_ID?: string;
-      WALLET_MICROAPP_DISPLAY_MODE?: string;
     };
   }
 }

@@ -22,14 +22,10 @@ export const services: ServiceInfo[] = [
     name: "Book Parking Slot",
     description: "Reserve a secure parking spot for your vehicle.",
     route: "/services/parking",
+    iconBg: "#FFE1C9",
     icon: (
-      <div className="w-full h-full grid place-items-center text-primary">
-        <div
-          className="w-[1.65rem] h-[1.65rem] rounded-full border-2 grid place-items-center"
-          style={{ borderColor: "#ff7300" }}
-        >
-          <span className="font-extrabold text-[18px]">P</span>
-        </div>
+      <div className="w-full h-full grid place-items-center text-[#ff7300]">
+        <span className="font-extrabold text-[34px] leading-none">P</span>
       </div>
     ),
   },
@@ -37,8 +33,9 @@ export const services: ServiceInfo[] = [
     name: "Manage Personal Vehicles",
     description: "Register and manage your personal vehicles.",
     route: "/services/vehicles",
+    iconBg: "#DBEAFE",
     icon: (
-      <VehicleServiceIcon width="100%" height="100%" className="scale-[1.16]" />
+      <VehicleServiceIcon width="100%" height="100%" className="scale-[0.72] text-[#4A90D9]" />
     ),
   },
 ];

@@ -28,3 +28,6 @@ public configurable int reservationWindowStartHour = 5;
 
 # Reservation end hour in Sri Lanka time.
 public configurable int reservationWindowEndHour = 7;
+
+# Expiry time (in minutes) for stale PENDING parking reservations.
+public configurable int pendingReservationExpiryMinutes = 15;

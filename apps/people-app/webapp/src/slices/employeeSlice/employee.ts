@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { EmergencyContact, State } from "@/types/types";
+import { EmergencyContact, EmployeeStatus, State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import {
   DEFAULT_LIMIT_VALUE,
@@ -37,10 +37,18 @@ export interface Employee {
   workLocation: string;
   startDate: string;
   managerEmail: string;
+  managerName: string | null;
   additionalManagerEmails: string | null;
-  employeeStatus: string;
+  gender: string | null;
+  continuousServiceDate: string | null;
+  jobBand: number | null;
+  employeeStatus: EmployeeStatus;
   probationEndDate: string | null;
   agreementEndDate: string | null;
+  resignationDate: string | null;
+  finalDayInOffice: string | null;
+  finalDayOfEmployment: string | null;
+  resignationReason: string | null;
   employmentType: string;
   designation: string;
   company: string;
@@ -61,12 +69,6 @@ export interface Employee {
   unitId: number | null;
   house: string | null;
   houseId: number | null;
-}
-
-export enum EmployeeStatus {
-  Active = "Active",
-  Left = "Left",
-  MarkedLeaver = "Marked leaver",
 }
 
 export interface EmployeeBasicInfo {
@@ -108,6 +110,33 @@ export type FilteredEmployeesResponse = {
   totalCount: number;
 };
 
+export interface EmployeeQrInfo {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  workEmail: string;
+  employeeThumbnail: string | null;
+  house: string | null;
+  houseId: number | null;
+  employeeStatus: EmployeeStatus;
+}
+
+export type QrEmployeesResponse = {
+  employees: EmployeeQrInfo[];
+  totalCount: number;
+};
+
+export type QrCodeSearchFilters = {
+  employeeStatus?: EmployeeStatus;
+};
+
+export type QrCodeSearchPayload = {
+  searchString?: string;
+  filters: QrCodeSearchFilters;
+  pagination: { limit: number; offset: number };
+  sort: { sortField: string; sortOrder: string };
+};
+
 export type Filters = {
   businessUnitId?: number;
   teamId?: number;
@@ -122,6 +151,8 @@ export type Filters = {
   gender?: string;
   employeeStatus?: EmployeeStatus;
   directReports?: boolean;
+  excludeFutureStartDate?: boolean;
+  includeMarkedLeavers?: boolean;
 };
 
 export type Pagination = {
@@ -170,6 +201,12 @@ export type CreateEmployeePayload = {
   personalInfo: CreatePersonalInfoPayload;
 };
 
+export type CreateEmployeeResponse = {
+  employeeId: number;
+  message: string;
+  hasGroupAssignmentWarning: boolean;
+};
+
 export type UpdateEmployeeJobInfoPayload = {
   epf?: string | null;
   workLocation?: string;
@@ -191,6 +228,10 @@ export type UpdateEmployeeJobInfoPayload = {
   unitId?: number | null;
   houseId?: number | null;
   continuousServiceRecord?: string | null;
+  employeeStatus?: EmployeeStatus | null;
+  finalDayInOffice?: string | null;
+  finalDayOfEmployment?: string | null;
+  resignationReason?: string | null;
 };
 
 export interface ContinuousServiceRecordInfo {
@@ -240,6 +281,7 @@ const initialState: EmployeesState = {
   employeeFilter: {
     filters: {
       employeeStatus: EmployeeStatus.Active,
+      excludeFutureStartDate: true,
     },
     pagination: {
       limit: DEFAULT_LIMIT_VALUE,
@@ -384,6 +426,36 @@ export const fetchFilteredEmployees = createAsyncThunk<
   },
 );
 
+export const fetchQrCodeEmployees = createAsyncThunk<
+  QrEmployeesResponse,
+  QrCodeSearchPayload
+>(
+  "employees/fetchQrCodeEmployees",
+  async (filterAttributes, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().post(
+        AppConfig.serviceUrls.qrCodesSearch,
+        filterAttributes,
+      );
+      return response.data as QrEmployeesResponse;
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? SnackMessage.error.fetchEmployees
+          : error.response?.data?.message ||
+            "An unknown error occurred while fetching employees.";
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 export const createEmployee = createAsyncThunk(
   "employees/createEmployee",
   async (payload: CreateEmployeePayload, { dispatch, rejectWithValue }) => {
@@ -392,11 +464,14 @@ export const createEmployee = createAsyncThunk(
         AppConfig.serviceUrls.employees,
         payload,
       );
-      const employeeId = response.data as number;
+      const data = response.data as CreateEmployeeResponse;
+      const employeeId = data.employeeId;
+      const message = data.message || "Employee created successfully!";
+      const messageType = data.hasGroupAssignmentWarning ? "warning" : "success";
       dispatch(
         enqueueSnackbarMessage({
-          message: "Employee created successfully!",
-          type: "success",
+          message,
+          type: messageType,
         }),
       );
       return employeeId;
@@ -460,11 +535,14 @@ export const updateEmployeeJobInfo = createAsyncThunk(
 
 export const downloadEmployeeReportByStatus = createAsyncThunk(
   "employee/downloadEmployeeReportByStatus",
-  async (status: EmployeeStatus | undefined, { dispatch, rejectWithValue }) => {
+  async (
+    { filters, columns }: { filters: Filters; columns?: string[] },
+    { dispatch, rejectWithValue },
+  ) => {
     try {
       const response = await APIService.getInstance().post(
-        AppConfig.serviceUrls.reportsEmployees(status),
-        {},
+        AppConfig.serviceUrls.reportsEmployees,
+        { filters, ...(columns && columns.length > 0 ? { columns } : {}) },
         { responseType: "text" },
       );
       return response.data as string;
@@ -472,7 +550,9 @@ export const downloadEmployeeReportByStatus = createAsyncThunk(
       if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.data?.message ?? "Failed to download report";
-      dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
+      dispatch(
+        enqueueSnackbarMessage({ message: errorMessage, type: "error" }),
+      );
       return rejectWithValue(errorMessage);
     }
   },
@@ -551,7 +631,9 @@ export const fetchEmployeeQrCode = createAsyncThunk(
       if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.data?.message ?? "Failed to generate QR code";
-      dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
+      dispatch(
+        enqueueSnackbarMessage({ message: errorMessage, type: "error" }),
+      );
       return rejectWithValue(errorMessage);
     }
   },
@@ -655,7 +737,7 @@ const EmployeeSlice = createSlice({
           !searchString &&
           filters.employeeStatus === EmployeeStatus.Active &&
           Object.entries(filters).every(([key, value]) => {
-            return key === "employeeStatus" || value === undefined;
+            return key === "employeeStatus" || key === "excludeFutureStartDate" || value === undefined;
           });
         if (isTotalActiveQuery) {
           state.totalActiveEmployeeCount = action.payload.totalCount;

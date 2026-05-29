@@ -16,12 +16,13 @@
 
 import people.authorization;
 import people.database;
+import people.email;
 import people.qr;
+import people.scim;
 import people.wso2_coin;
 
 import ballerina/http;
 import ballerina/log;
-import ballerina/regex;
 import ballerina/time;
 
 @display {
@@ -89,7 +90,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if employeeBasicInfo is () {
             string customErr = "Employee basic information not found";
             log:printWarn(customErr, user = userInfo.email);
-            return <http:InternalServerError>{
+            return <http:NotFound>{
                 body: {
                     message: customErr
                 }
@@ -102,6 +103,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             privileges.push(authorization:ADMIN_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups) {
+            privileges.push(authorization:SERVICE_DESK_PRIVILEGE);
         }
         boolean|error isLeadUser = database:isLead(userInfo.email);
         if isLeadUser is error {
@@ -303,8 +307,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions(
-                [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasQrExportAccess
+                = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+                || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
 
         database:Employee|error? employee = database:getEmployeeInfo(employeeId);
         if employee is error {
@@ -316,7 +321,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:NotFound>{body: {message: string `Employee not found: ${employeeId}`}};
         }
 
-        if !hasAdminAccess {
+        if !hasQrExportAccess {
             boolean isSelf = employee.workEmail == userInfo.email;
             if !isSelf {
                 boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
@@ -337,8 +342,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string? house = employee.house;
         if house is () {
-            return <http:BadRequest>{body: {
-                message: string `Employee ${employeeId} has no house assigned`}};
+            return <http:BadRequest>{
+                body: {
+                    message: string `Employee ${employeeId} has no house assigned`
+                }
+            };
         }
 
         byte[]|error imageBytes = qr:generateEmployeeQrCode({
@@ -418,9 +426,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         boolean hasAdminAccess
             = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
 
-        if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
-            string customErr = "Invalid sort field: " + payload.sort.sortField;
-            log:printWarn(customErr, sortField = payload.sort.sortField);
+        string sortField = payload.sort.sortField;
+        if !database:EmployeeSortField.hasKey(sortField) {
+            string customErr = string `Invalid sort field ${sortField}`;
+            log:printWarn(customErr, sortField = sortField);
             return <http:BadRequest>{
                 body: {
                     message: customErr
@@ -428,9 +437,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !database:SortOrder.hasKey(payload.sort.sortOrder) {
-            string customErr = "Invalid sort order: " + payload.sort.sortOrder;
-            log:printWarn(customErr, sortOrder = payload.sort.sortOrder);
+        string sortOrder = payload.sort.sortOrder;
+        if !database:SortOrder.hasKey(sortOrder) {
+            string customErr = string `Invalid sort order ${sortOrder}`;
+            log:printWarn(customErr, sortOrder = sortOrder);
             return <http:BadRequest>{
                 body: {
                     message: customErr
@@ -486,6 +496,80 @@ service http:InterceptableService / on new http:Listener(9090) {
         return <http:Ok>{body: employees};
     }
 
+    # Search employees for QR code export.
+    #
+    # + payload - QR code search payload
+    # + return - Lean employee list for QR export, or HTTP errors
+    resource function post reports/qr\-codes/search(http:RequestContext ctx, database:QrCodeSearchPayload payload)
+            returns http:Ok|http:InternalServerError|http:BadRequest|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        boolean hasQrSearchAccess
+            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+            || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
+
+        if !hasQrSearchAccess {
+            log:printWarn("User is not authorized to search employees for QR export",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to search employees for QR export"}
+            };
+        }
+
+        if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
+            string customErr = "Invalid sort field: " + payload.sort.sortField;
+            log:printWarn(customErr, sortField = payload.sort.sortField);
+            return <http:BadRequest>{
+                body: {message: customErr}
+            };
+        }
+
+        if !database:SortOrder.hasKey(payload.sort.sortOrder) {
+            string customErr = "Invalid sort order: " + payload.sort.sortOrder;
+            log:printWarn(customErr, sortOrder = payload.sort.sortOrder);
+            return <http:BadRequest>{
+                body: {message: customErr}
+            };
+        }
+
+        database:EmployeesResponse|error result = database:getEmployees({
+            searchString: payload.searchString,
+            filters: {employeeStatus: payload.filters.employeeStatus},
+            pagination: payload.pagination,
+            sort: payload.sort
+        });
+        if result is error {
+            string customErr = "Error occurred while fetching employees for QR export";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {message: customErr}
+            };
+        }
+        database:EmployeeQrInfo[] qrInfoList = from database:Employee e in result.employees
+            select {
+                employeeId: e.employeeId,
+                firstName: e.firstName,
+                lastName: e.lastName,
+                workEmail: e.workEmail,
+                employeeThumbnail: e.employeeThumbnail,
+                house: e.house,
+                houseId: e.houseId,
+                employeeStatus: e.employeeStatus
+            };
+        return <http:Ok>{
+            body: {
+                employees: qrInfoList,
+                totalCount: result.totalCount
+            }
+        };
+    }
+
     # Fetch continuous service record by work email.
     #
     # + workEmail - Work email of the employee
@@ -503,7 +587,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+        if !database:EMAIL_PATTERN.isFullMatch(workEmail) {
             string customErr = "Invalid work email format";
             log:printWarn(customErr, workEmail = workEmail);
             return <http:BadRequest>{
@@ -584,9 +668,29 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get business units.
+    #
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
+    # + includeInactive - If true return all including inactive (ADMIN-only)
     # + return - Business units
-    resource function get business\-units() returns database:BusinessUnit[]|http:InternalServerError {
-        database:BusinessUnit[]|error businessUnits = database:getBusinessUnits();
+    resource function get business\-units(http:RequestContext ctx, boolean includeInactive = false)
+            returns database:BusinessUnit[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive business units",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive business units"}
+                };
+            }
+        }
+
+        database:BusinessUnit[]|error businessUnits = database:getBusinessUnits(includeInactive);
         if businessUnits is error {
             string customErr = "Error while fetching Business Units";
             log:printError(customErr, businessUnits);
@@ -601,10 +705,29 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get teams.
     #
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
     # + buId - Business unit ID (optional)
+    # + includeInactive - If true return all including inactive (ADMIN-only)
     # + return - Teams
-    resource function get teams(int? buId = ()) returns database:Team[]|http:InternalServerError {
-        database:Team[]|error teams = database:getTeams(buId);
+    resource function get teams(http:RequestContext ctx, int? buId = (), boolean includeInactive = false)
+            returns database:Team[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive teams",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive teams"}
+                };
+            }
+        }
+
+        database:Team[]|error teams = database:getTeams(buId, includeInactive);
         if teams is error {
             string customErr = "Error while fetching Teams";
             log:printError(customErr, teams);
@@ -619,10 +742,29 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get sub teams.
     #
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
     # + teamId - Team ID (optional)
+    # + includeInactive - If true return all including inactive (ADMIN-only)
     # + return - Sub teams
-    resource function get sub\-teams(int? teamId = ()) returns database:SubTeam[]|http:InternalServerError {
-        database:SubTeam[]|error subTeams = database:getSubTeams(teamId);
+    resource function get sub\-teams(http:RequestContext ctx, int? teamId = (), boolean includeInactive = false)
+            returns database:SubTeam[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive sub-teams",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive sub-teams"}
+                };
+            }
+        }
+
+        database:SubTeam[]|error subTeams = database:getSubTeams(teamId, includeInactive);
         if subTeams is error {
             string customErr = "Error while fetching Sub Teams";
             log:printError(customErr, subTeams);
@@ -637,10 +779,29 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get units.
     #
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
     # + subTeamId - Sub team ID (optional)
+    # + includeInactive - If true return all including inactive (ADMIN-only)
     # + return - Units
-    resource function get units(int? subTeamId = ()) returns database:Unit[]|http:InternalServerError {
-        database:Unit[]|error units = database:getUnits(subTeamId);
+    resource function get units(http:RequestContext ctx, int? subTeamId = (), boolean includeInactive = false)
+            returns database:Unit[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive units",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive units"}
+                };
+            }
+        }
+
+        database:Unit[]|error units = database:getUnits(subTeamId, includeInactive);
         if units is error {
             string customErr = "Error while fetching Units";
             log:printError(customErr, units);
@@ -807,11 +968,219 @@ service http:InterceptableService / on new http:Listener(9090) {
         return house;
     }
 
+    # Bulk-creates employees from an uploaded CSV file.
+    #
+    # Processes the request in two passes:
+    # - First pass: validates all rows, checks for within-CSV and DB-level
+    # duplicates. Returns 400 with per-row errors if any row fails.
+    # - Second pass: builds payloads, generates employee IDs, and inserts
+    # all records in a single DB transaction.
+    #
+    # + return - Bulk upload result with created/skipped counts, or an HTTP error
+    resource function post employees/bulk(http:RequestContext ctx, http:Request req)
+            returns database:BulkUploadResponse|http:BadRequest|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to bulk create employees", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to bulk create employees"
+                }
+            };
+        }
+
+        byte[]|http:BadRequest fileBytes = extractCsvFileBytes(req);
+        if fileBytes is http:BadRequest {
+            log:printWarn("Failed to extract CSV file bytes from request");
+            return fileBytes;
+        }
+
+        BulkEmployeeCsvRow[]|error rows = parseCsvBytes(fileBytes);
+        if rows is error {
+            log:printError("Error parsing bulk upload CSV", rows);
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid CSV file"
+                }
+            };
+        }
+
+        if rows.length() > MAX_BULK_ROWS {
+            log:printWarn("CSV file exceeds maximum row limit", rowCount = rows.length(), maxLimit = MAX_BULK_ROWS);
+            return <http:BadRequest>{
+                body: {
+                    message: string `CSV exceeds ${MAX_BULK_ROWS}-row limit`
+                }
+            };
+        }
+
+        BulkRefData|error refData = loadBulkReferenceData();
+        if refData is error {
+            log:printError("Error loading reference data for bulk upload", refData);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error validating bulk upload"
+                }
+            };
+        }
+
+        BulkFirstPassResult firstPass = processBulkCsvRows(rows, refData);
+
+        database:BulkEmployeeError[]|error dbErrors = detectDbDuplicates(
+                firstPass.rowByEmail, firstPass.rowByNic, firstPass.rowByEpf,
+                firstPass.candidateEmails, firstPass.candidateNics, firstPass.candidateEpfs);
+        if dbErrors is error {
+            log:printError("Error checking duplicates during bulk upload", dbErrors);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error validating bulk upload"
+                }
+            };
+        }
+
+        database:BulkEmployeeError[] allErrors = [...firstPass.errors, ...dbErrors];
+        if allErrors.length() > 0 {
+            return <http:BadRequest>{
+                body: allErrors
+            };
+        }
+
+        BulkPayloadResult payloadResult = buildBulkPayloads(firstPass.rowInfos, refData);
+
+        [string, int][] bulkResults = database:addEmployeesBulk(
+                payloadResult.employees.map(e => e.payload),
+                userInfo.email);
+
+        int batchStatus = bulkResults.length() > 0 ? bulkResults[0][1] : database:BULK_INSERT_FAILED;
+
+        if batchStatus != database:BULK_INSERT_SUCCESS {
+            string errorMessage = batchStatus == database:BULK_INSERT_DUPLICATE
+                ? "Concurrent upload conflict — please retry"
+                : ERROR_EMPLOYEE_CREATION_FAILED;
+
+            return <http:InternalServerError>{
+                body: {
+                    message: errorMessage
+                }
+            };
+        }
+
+        foreach int i in 0 ..< bulkResults.length() {
+            payloadResult.employees[i].employeeId = bulkResults[i][0];
+        }
+        int created = 0;
+
+        database:BulkProvisioningError[] provisioningErrors = [];
+        database:BulkGroupAssignmentWarning[] groupAssignmentWarnings = [];
+        database:OrphanedScimUser[] orphanedScimUsers = [];
+
+        foreach ResolvedEmployee emp in payloadResult.employees {
+            error? scimResult = scim:createUser(
+                    emp.payload.workEmail,
+                    emp.payload.firstName,
+                    emp.payload.lastName
+            );
+
+            if scimResult is error {
+                log:printError("Failed to provision user in Asgardeo during bulk onboarding; rolling back employee record",
+                        scimResult, workEmail = emp.payload.workEmail, employeeId = emp.employeeId);
+                rollbackEmployeeCreation(emp.employeeId, emp.payload.workEmail);
+                provisioningErrors.push({
+                    employeeId: emp.employeeId,
+                    workEmail: emp.payload.workEmail,
+                    reason: scimResult.message()
+                });
+                continue;
+            }
+
+            string[]|error groupNames = database:getAsgardeoGroupsByEmploymentType(emp.payload.employmentTypeId);
+            if groupNames is error {
+                log:printError("Failed to fetch Asgardeo groups during bulk onboarding; rolling back employee record. " +
+                        "Asgardeo user was already created and requires manual cleanup",
+                        groupNames, workEmail = emp.payload.workEmail, employeeId = emp.employeeId,
+                        employmentTypeId = emp.payload.employmentTypeId);
+                rollbackEmployeeCreation(emp.employeeId, emp.payload.workEmail);
+                provisioningErrors.push({
+                    employeeId: emp.employeeId,
+                    workEmail: emp.payload.workEmail,
+                    reason: groupNames.message()
+                });
+                orphanedScimUsers.push({
+                    employeeId: emp.employeeId,
+                    workEmail: emp.payload.workEmail,
+                    reason: groupNames.message()
+                });
+                continue;
+            }
+
+            string[] allGroups = [...groupNames];
+            string[]|error teamGroupNames = database:getAsgardeoGroupsByTeam(emp.payload.teamId, emp.payload.employmentTypeId);
+            if teamGroupNames is string[] {
+                allGroups.push(...teamGroupNames);
+            } else {
+                log:printError("Failed to fetch Asgardeo groups for team during bulk onboarding; skipping team group assignment",
+                        teamGroupNames, workEmail = emp.payload.workEmail, employeeId = emp.employeeId, teamId = emp.payload.teamId);
+            }
+
+            string[] uniqueGroups = from var groupName in allGroups
+                group by groupName
+                select groupName;
+
+            string[] failedGroups = [];
+            foreach string groupName in uniqueGroups {
+                scim:AddUsersToGroupResponse|error addResult =
+                        scim:addUserToGroup(groupName, emp.payload.workEmail);
+                if addResult is error || addResult.failedUsers.length() > 0 {
+                    log:printError("Failed to add user to Asgardeo group during bulk onboarding. " +
+                            "Asgardeo user was already created and requires manual cleanup",
+                                addResult is error ? addResult : (),
+                            workEmail = emp.payload.workEmail, group = groupName, employeeId = emp.employeeId,
+                            failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
+                    failedGroups.push(groupName);
+                }
+            }
+
+            if failedGroups.length() > 0 {
+                error? notificationResult = email:notifyGroupAssignmentFailure(emp.employeeId, emp.payload.firstName,
+                        emp.payload.lastName, emp.payload.workEmail, failedGroups);
+                if notificationResult is error {
+                    log:printError("Failed to send group assignment failure notification during bulk onboarding",
+                            notificationResult, employeeId = emp.employeeId, workEmail = emp.payload.workEmail);
+                }
+                groupAssignmentWarnings.push({
+                    employeeId: emp.employeeId,
+                    workEmail: emp.payload.workEmail,
+                    failedGroups
+                });
+            }
+
+            created += 1;
+        }
+
+        return {
+            created,
+            skipped: firstPass.skipped,
+            errors: [],
+            provisioningErrors,
+            orphanedScimUsers,
+            groupAssignmentWarnings
+        };
+    }
+
     # Create a new employee.
     #
-    # + return - The created employee ID as an integer, or HTTP errors
+    # + payload - Employee creation payload
+    # + return - HTTP OK with created employee ID and status, or HTTP errors
     resource function post employees(http:RequestContext ctx, database:CreateEmployeePayload payload)
-        returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+        returns EmployeeCreatedResponse|http:InternalServerError|http:BadRequest|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -891,8 +1260,90 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        return newEmployeeId;
 
+        error? scimUserResult = scim:createUser(
+                payload.workEmail,
+                payload.firstName,
+                payload.lastName
+        );
+        if scimUserResult is error {
+            log:printError("Failed to provision user in Asgardeo; rolling back employee record",
+                    scimUserResult, workEmail = payload.workEmail, employeeId = employeeId);
+            rollbackEmployeeCreation(employeeId, payload.workEmail);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                }
+            };
+        }
+
+        string[]|error groupNames = database:getAsgardeoGroupsByEmploymentType(payload.employmentTypeId);
+        if groupNames is error {
+            log:printError("Failed to fetch Asgardeo groups for employment type; rolling back employee record. " +
+                    "Asgardeo user was already created and requires manual cleanup",
+                    groupNames, workEmail = payload.workEmail, employeeId = employeeId,
+                    employmentTypeId = payload.employmentTypeId);
+            rollbackEmployeeCreation(employeeId, payload.workEmail);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED,
+                    orphanedScimUsers: [
+                        {
+                            employeeId,
+                            workEmail: payload.workEmail,
+                            reason: groupNames.message()
+                        }
+                    ]
+                }
+            };
+        }
+
+        string[] allGroups = [...groupNames];
+        string[]|error teamGroupNames = database:getAsgardeoGroupsByTeam(payload.teamId, payload.employmentTypeId);
+        if teamGroupNames is string[] {
+            allGroups.push(...teamGroupNames);
+        } else {
+            log:printError("Failed to fetch Asgardeo groups for team; skipping team group assignment",
+                    teamGroupNames, workEmail = payload.workEmail, employeeId = employeeId, teamId = payload.teamId);
+        }
+
+        string[] uniqueGroups = from var groupName in allGroups
+            group by groupName
+            select groupName;
+
+        string[] failedGroups = [];
+        foreach string groupName in uniqueGroups {
+            scim:AddUsersToGroupResponse|error addResult =
+                    scim:addUserToGroup(groupName, payload.workEmail);
+            if addResult is error || addResult.failedUsers.length() > 0 {
+                log:printError("Failed to add user to Asgardeo group. " +
+                        "Asgardeo user was already created and requires manual cleanup",
+                            addResult is error ? addResult : (),
+                        workEmail = payload.workEmail, group = groupName, employeeId = employeeId,
+                        failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
+                failedGroups.push(groupName);
+            }
+        }
+
+        if failedGroups.length() > 0 {
+            error? notificationResult = email:notifyGroupAssignmentFailure(employeeId, payload.firstName,
+                    payload.lastName, payload.workEmail, failedGroups);
+            if notificationResult is error {
+                log:printError("Failed to send group assignment failure notification",
+                        notificationResult, employeeId = employeeId, workEmail = payload.workEmail);
+            }
+
+            return {
+                employeeId: newEmployeeId,
+                message: WARNING_GROUP_ASSIGNMENT_FAILED,
+                hasGroupAssignmentWarning: true
+            };
+        }
+        return {
+            employeeId: newEmployeeId,
+            message: "Employee created successfully!",
+            hasGroupAssignmentWarning: false
+        };
     }
 
     # Update employee personal information.
@@ -1071,6 +1522,17 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        if database:hasLeaverFields(payload) && payload.employeeStatus != database:EMPLOYEE_LEFT
+                && employeeInfo.employeeStatus != database:EMPLOYEE_LEFT {
+            log:printWarn("Attempt to set resignation fields on a non-Left employee",
+                    employeeId = employeeId);
+            return <http:BadRequest>{
+                body: {
+                    message: "Resignation details can only be set when employee status is 'Left'"
+                }
+            };
+        }
+
         error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);
         if updateResult is error {
             string customErr = string `Error occurred while updating employee job information for ID: ${employeeId}`;
@@ -1162,12 +1624,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error vehicleResult = database:addVehicle({
-                                                          owner: userInfo.email,
-                                                          vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
-                                                          vehicleType: vehicle.vehicleType,
-                                                          vehicleStatus: database:ACTIVE,
-                                                          createdBy: userInfo.email
-                                                      });
+            owner: userInfo.email,
+            vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
+            vehicleType: vehicle.vehicleType,
+            vehicleStatus: database:ACTIVE,
+            createdBy: userInfo.email
+        });
         if vehicleResult is error {
             string customError = string `Error occurred while adding vehicle!`;
             log:printError(customError, vehicleResult);
@@ -1204,10 +1666,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updateResult = database:updateVehicle({
-                                                                vehicleId: vehicleId,
-                                                                vehicleStatus: database:INACTIVE,
-                                                                updatedBy: userInfo.email
-                                                            });
+            vehicleId,
+            vehicleStatus: database:INACTIVE,
+            updatedBy: userInfo.email
+        });
 
         if updateResult is error {
             string customError = string `Error occurred while updating vehicle!`;
@@ -1244,7 +1706,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
-        return {publicWalletAddress: wso2_coin:masterWalletAddress};
+        return {
+            publicWalletAddress: wso2_coin:masterWalletAddress,
+            reservationWindowStartHour: wso2_coin:reservationWindowStartHour,
+            reservationWindowEndHour: wso2_coin:reservationWindowEndHour
+        };
     }
 
     # List parking floors.
@@ -1285,13 +1751,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !regex:matches(date, database:DATE_PATTERN_STRING) {
+        if !database:DATE_PATTERN.isFullMatch(date) {
             return <http:BadRequest>{
                 body: {message: "Query parameter 'date' must be in YYYY-MM-DD format."}
             };
         }
 
-        database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date);
+        database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date,
+            wso2_coin:pendingReservationExpiryMinutes);
         if slots is error {
             log:printError("Error fetching parking slots", slots);
             return <http:InternalServerError>{
@@ -1370,7 +1837,18 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate);
+        // Expire stale pending reservations so the slot/date becomes reusable.
+        boolean|error cleared = database:expireStalePendingParkingReservationForSlotDate(body.slotId, body.bookingDate,
+            wso2_coin:pendingReservationExpiryMinutes);
+        if cleared is error {
+            log:printError("Error expiring stale pending reservations", cleared);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while validating slot availability."}
+            };
+        }
+
+        boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate,
+            wso2_coin:pendingReservationExpiryMinutes);
         if booked is error {
             log:printError("Error checking slot availability", booked);
             return <http:InternalServerError>{
@@ -1379,18 +1857,22 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if booked {
             return <http:BadRequest>{
-                body: {message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. It may be temporarily reserved or already booked.`}
+                body: {
+                    message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. `
+                        + "It may be temporarily reserved or already booked."
+                }
             };
         }
 
+        // Insert a new PENDING row
         int|error reservationId = database:addParkingReservation({
-                                                                     slotId: body.slotId,
-                                                                     bookingDate: body.bookingDate,
-                                                                     employeeEmail: userInfo.email,
-                                                                     vehicleId: body.vehicleId,
-                                                                     coinsAmount: slot.coinsPerSlot,
-                                                                     createdBy: userInfo.email
-                                                                 });
+            slotId: body.slotId,
+            bookingDate: body.bookingDate,
+            employeeEmail: userInfo.email,
+            vehicleId: body.vehicleId,
+            coinsAmount: slot.coinsPerSlot,
+            createdBy: userInfo.email
+        });
         if reservationId is error {
             log:printError("Error creating parking reservation", reservationId);
             return <http:InternalServerError>{
@@ -1461,9 +1943,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Export employees as a CSV file, optionally filtered by status.
     #
-    # + status - Optional employee status query parameter (e.g. "Active", "Left"); omit to export all employees
+    # + payload - Report generation options (status filter, future-joiner exclusion, marked-leaver inclusion)
     # + return - CSV file response or HTTP errors
-    resource function post reports/employees/generate(http:RequestContext ctx, database:EmployeeStatus? status = ())
+    resource function post reports/employees/generate(http:RequestContext ctx,
+        @http:Payload database:EmployeeReportPayload payload)
         returns http:Response|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -1485,11 +1968,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
-                                                                                    searchString: (),
-                                                                                    filters: {employeeStatus: status},
-                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
-                                                                                });
+                searchString: (),
+                filters: payload.filters,
+                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                sort: {sortField: "employeeId", sortOrder: "ASC"}
+            });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
@@ -1503,10 +1986,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             offset += database:DEFAULT_LIMIT;
         }
 
-        string csvContent = status == database:EMPLOYEE_LEFT
-            ? database:buildResignationCsv(allEmployees)
-            : database:buildEmployeeCsv(allEmployees);
-        string statusLabel = status is () ? "all" : re ` `.replaceAll(status.toLowerAscii(), "_");
+        map<string>|error nameMap = database:getEmployeeEmailToNameMap();
+        if nameMap is error {
+            log:printError("Error fetching employee name map for report", nameMap);
+            return <http:InternalServerError>{
+                body: {message: "Error generating report"}
+            };
+        }
+
+        string csvContent = payload.filters.employeeStatus == database:EMPLOYEE_LEFT
+            ? database:buildResignationCsv(allEmployees, nameMap, payload.columns)
+            : database:buildEmployeeCsv(allEmployees, nameMap, payload.columns);
+        string? filterStatus = payload.filters.employeeStatus;
+        string statusLabel = filterStatus is () ? "all" : re ` `.replaceAll(filterStatus.toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
 
         http:Response response = new;
@@ -1575,11 +2067,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updated = database:updateParkingReservationStatus({
-                                                                            reservationId: reservation.id,
-                                                                            status: database:CONFIRMED,
-                                                                            transactionHash: body.transactionHash,
-                                                                            updatedBy: userInfo.email
-                                                                        });
+            reservationId: reservation.id,
+            status: database:CONFIRMED,
+            transactionHash: body.transactionHash,
+            updatedBy: userInfo.email
+        });
         if updated is error {
             log:printError("Error confirming reservation", updated);
             return <http:InternalServerError>{
@@ -1608,5 +2100,660 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         return confirmedReservation;
+    }
+
+    # Create a business unit.
+    #
+    # + ctx - Request context
+    # + payload - Business unit creation payload
+    # + return - ID of the new business unit, or HTTP errors
+    resource function post business\-units(http:RequestContext ctx, database:CreateCompanyOrgChartEntityPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create business unit", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        int|error newId = database:createBusinessUnit(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating business unit";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a business unit.
+    #
+    # + ctx - Request context
+    # + id - Business unit ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch business\-units/[int id](http:RequestContext ctx,
+            database:UpdateCompanyOrgChartEntityPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update business unit", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInBusinessUnit(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in business unit", hasEmployees, id = id);
+                return <http:InternalServerError>{body: {message: "Error occurred while updating business unit"}};
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this business unit"}
+                };
+            }
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        error? updateResult = database:updateBusinessUnit(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating business unit", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating business unit"}};
+        }
+        return http:OK;
+    }
+
+    # Create a team.
+    #
+    # + ctx - Request context
+    # + payload - Team creation payload
+    # + return - ID of the new team, or HTTP errors
+    resource function post teams(http:RequestContext ctx, database:CreateCompanyOrgChartEntityPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create team", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        int|error newId = database:createTeam(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating team";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a team.
+    #
+    # + ctx - Request context
+    # + id - Team ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch teams/[int id](http:RequestContext ctx,
+            database:UpdateCompanyOrgChartEntityPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update team", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInTeam(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in team", hasEmployees, id = id);
+                return <http:InternalServerError>{body: {message: "Error occurred while updating team"}};
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this team"}
+                };
+            }
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        error? updateResult = database:updateTeam(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating team", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating team"}};
+        }
+        return http:OK;
+    }
+
+    # Create a sub-team.
+    #
+    # + ctx - Request context
+    # + payload - Sub-team creation payload
+    # + return - ID of the new sub-team, or HTTP errors
+    resource function post sub\-teams(http:RequestContext ctx, database:CreateCompanyOrgChartEntityPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create sub-team", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        int|error newId = database:createSubTeam(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating sub-team";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a sub-team.
+    #
+    # + ctx - Request context
+    # + id - Sub-team ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch sub\-teams/[int id](http:RequestContext ctx,
+            database:UpdateCompanyOrgChartEntityPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update sub-team", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInSubTeam(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in sub-team", hasEmployees, id = id);
+                return <http:InternalServerError>{body: {message: "Error occurred while updating sub-team"}};
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this sub-team"}
+                };
+            }
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        error? updateResult = database:updateSubTeam(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating sub-team", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating sub-team"}};
+        }
+        return http:OK;
+    }
+
+    # Create a unit.
+    #
+    # + ctx - Request context
+    # + payload - Unit creation payload
+    # + return - ID of the new unit, or HTTP errors
+    resource function post units(http:RequestContext ctx, database:CreateCompanyOrgChartEntityPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create unit", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        int|error newId = database:createUnit(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating unit";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a unit.
+    #
+    # + ctx - Request context
+    # + id - Unit ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch units/[int id](http:RequestContext ctx,
+            database:UpdateCompanyOrgChartEntityPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update unit", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInUnit(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in unit", hasEmployees, id = id);
+                return <http:InternalServerError>{body: {message: "Error occurred while updating unit"}};
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this unit"}
+                };
+            }
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        error? updateResult = database:updateUnit(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating unit", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating unit"}};
+        }
+        return http:OK;
+    }
+
+    # Create a business-unit → team mapping.
+    #
+    # + ctx - Request context
+    # + payload - Mapping creation payload
+    # + return - ID of the new mapping, or HTTP errors
+    resource function post business\-unit\-teams(http:RequestContext ctx,
+            database:CreateBusinessUnitTeamPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create business unit team mapping", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        int|error newId = database:createBusinessUnitTeam(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating business unit team mapping";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a business-unit → team mapping.
+    #
+    # + ctx - Request context
+    # + id - Mapping ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch business\-unit\-teams/[int id](http:RequestContext ctx,
+            database:UpdateMappingPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update business unit team mapping", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamMapping(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in business unit team mapping",
+                    hasEmployees, id = id);
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while updating business unit team mapping"}
+                };
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                };
+            }
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        error? updateResult = database:updateBusinessUnitTeam(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating business unit team mapping", updateResult, id = id);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while updating business unit team mapping"}
+            };
+        }
+        return http:OK;
+    }
+
+    # Create a business-unit-team → sub-team mapping.
+    #
+    # + ctx - Request context
+    # + payload - Mapping creation payload
+    # + return - ID of the new mapping, or HTTP errors
+    resource function post business\-unit\-team\-sub\-teams(http:RequestContext ctx,
+            database:CreateBusinessUnitTeamSubTeamPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create business unit team sub-team mapping",
+                invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        int|error newId = database:createBusinessUnitTeamSubTeam(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating business unit team sub-team mapping";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a business-unit-team → sub-team mapping.
+    #
+    # + ctx - Request context
+    # + id - Mapping ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch business\-unit\-team\-sub\-teams/[int id](http:RequestContext ctx,
+            database:UpdateMappingPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update business unit team sub-team mapping",
+                invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamSubTeamMapping(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in business unit team sub-team mapping",
+                    hasEmployees, id = id);
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while updating business unit team sub-team mapping"}
+                };
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                };
+            }
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        error? updateResult = database:updateBusinessUnitTeamSubTeam(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating business unit team sub-team mapping",
+                updateResult, id = id);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while updating business unit team sub-team mapping"}
+            };
+        }
+        return http:OK;
+    }
+
+    # Create a business-unit-team-sub-team → unit mapping.
+    #
+    # + ctx - Request context
+    # + payload - Mapping creation payload
+    # + return - ID of the new mapping, or HTTP errors
+    resource function post business\-unit\-team\-sub\-team\-units(http:RequestContext ctx,
+            database:CreateBusinessUnitTeamSubTeamUnitPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create business unit team sub-team unit mapping",
+                invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        int|error newId = database:createBusinessUnitTeamSubTeamUnit(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating business unit team sub-team unit mapping";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a business-unit-team-sub-team → unit mapping.
+    #
+    # + ctx - Request context
+    # + id - Mapping ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch business\-unit\-team\-sub\-team\-units/[int id](http:RequestContext ctx,
+            database:UpdateMappingPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update business unit team sub-team unit mapping",
+                invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamSubTeamUnitMapping(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in business unit team sub-team unit mapping",
+                    hasEmployees, id = id);
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while updating business unit team sub-team unit mapping"}
+                };
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                };
+            }
+        }
+
+        if !database:isValidOptionalPatternString(payload.headEmail, database:EMAIL_PATTERN) {
+            string customErr = "Invalid head email format";
+            log:printWarn(customErr, headEmail = payload.headEmail);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        error? updateResult = database:updateBusinessUnitTeamSubTeamUnit(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating business unit team sub-team unit mapping",
+                updateResult, id = id);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while updating business unit team sub-team unit mapping"}
+            };
+        }
+        return http:OK;
+    }
+
+    # Get the company org chart structure (ADMIN only).
+    #
+    # + ctx - Request context
+    # + return - Company org chart structure with full mapping metadata, or HTTP errors
+    resource function get company\-org\-structure(http:RequestContext ctx)
+            returns database:CompanyOrgChartBusinessUnit[]|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to access company org chart structure",
+                invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to access the company org chart structure"}
+            };
+        }
+
+        database:CompanyOrgChartBusinessUnit[]|error orgStructure = database:getCompanyOrgChartStructure();
+        if orgStructure is error {
+            string customErr = "Error occurred while fetching the company org chart structure";
+            log:printError(customErr, orgStructure);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return orgStructure;
     }
 }

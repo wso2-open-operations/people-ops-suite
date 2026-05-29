@@ -21,12 +21,14 @@ interface LeaveSelectionIconProps {
   label: string;
   isSelected: boolean;
   onClick?: () => void;
+  info?: string;
 }
 export default function LeaveSelectionIcon({
   Icon: Icon,
   label,
   isSelected,
   onClick,
+  info,
 }: LeaveSelectionIconProps) {
   const theme = useTheme();
 
@@ -94,6 +96,20 @@ export default function LeaveSelectionIcon({
       >
         {label}
       </Typography>
+      {info && (
+        <Typography
+          variant="caption"
+          textAlign="center"
+          sx={{
+            color: theme.palette.customText.primary.p4.active,
+            fontSize: "0.65rem",
+            lineHeight: 1.2,
+            fontStyle: "italic",
+          }}
+        >
+          {info}
+        </Typography>
+      )}
     </Stack>
   );
 }

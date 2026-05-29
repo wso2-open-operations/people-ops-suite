@@ -189,6 +189,14 @@ export const themeSettings = (mode: PaletteMode) => {
           },
         },
       },
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            fontSize: 13,
+            padding: "6px 10px",
+          },
+        },
+      },
       MuiCssBaseline: {
         styleOverrides:
           mode === "dark"

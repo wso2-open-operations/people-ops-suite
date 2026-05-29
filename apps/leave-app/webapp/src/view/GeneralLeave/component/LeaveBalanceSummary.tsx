@@ -50,20 +50,14 @@ interface BalanceRow {
 const LEAVE_KEY_LABEL: Record<string, { label: string; tooltip?: string }> = {
   congesPayes: { label: LeaveLabel.CONGES_PAYES, tooltip: LeaveTooltip[LeaveType.CONGES_PAYES] },
   rtt: { label: LeaveLabel.RTT, tooltip: LeaveTooltip[LeaveType.RTT] },
-  spainAnnual: {
-    label: LeaveLabel.SPAIN_ANNUAL,
-    tooltip: LeaveTooltip[LeaveType.SPAIN_ANNUAL],
-  },
-  spainCasual: {
-    label: LeaveLabel.SPAIN_CASUAL,
-    tooltip: LeaveTooltip[LeaveType.SPAIN_CASUAL],
-  },
+  annual: { label: LeaveLabel.SPAIN_ANNUAL },
+  casual: { label: LeaveLabel.SPAIN_CASUAL },
   sick: { label: LeaveLabel.SICK },
 };
 
 const LOCATION_KEYS: Record<string, string[]> = {
   [EmployeeLocation.FR]: ["congesPayes", "rtt", "sick"],
-  [EmployeeLocation.ES]: ["spainAnnual", "spainCasual", "sick"],
+  [EmployeeLocation.ES]: ["annual", "casual", "sick"],
 };
 
 function formatPeriod(start?: string | null, end?: string | null): string | undefined {
@@ -77,7 +71,10 @@ export default function LeaveBalanceSummary() {
   const location = userInfo?.location ?? null;
   const email = userInfo?.workEmail ?? "";
 
+  const currentYear = dayjs().year();
+
   const [entitlement, setEntitlement] = useState<LeaveEntitlement | null>(null);
+  const [rttEntitlement, setRttEntitlement] = useState<LeaveEntitlement | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,17 +85,28 @@ export default function LeaveBalanceSummary() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getLeaveEntitlement(email);
-      if (data.length > 0) {
-        setEntitlement(data[0]);
+      const fetches: Promise<void>[] = [
+        getLeaveEntitlement(email).then((data) => {
+          if (data.length > 0) setEntitlement(data[0]);
+        }),
+      ];
+
+      if (location === EmployeeLocation.FR) {
+        fetches.push(
+          getLeaveEntitlement(email, [currentYear]).then((data) => {
+            if (data.length > 0) setRttEntitlement(data[0]);
+          }),
+        );
       }
+
+      await Promise.all(fetches);
     } catch (err: unknown) {
       console.error("Failed to fetch leave entitlement:", err);
       setError("Unable to load leave balance");
     } finally {
       setLoading(false);
     }
-  }, [email, location]);
+  }, [email, location, currentYear]);
 
   useEffect(() => {
     void fetchEntitlement();
@@ -132,14 +140,22 @@ export default function LeaveBalanceSummary() {
       const meta = LEAVE_KEY_LABEL[key];
       if (!meta) return null;
       const policyKey = key as keyof LeavePolicy;
-      const entitled = entitlement.leavePolicy[policyKey] ?? null;
-      const consumed = entitlement.policyAdjustedLeave[policyKey] ?? 0;
+      const isRtt = key === "rtt";
+      const isSick = key === "sick";
+      const source = isRtt && rttEntitlement ? rttEntitlement : entitlement;
+      const entitled = source.leavePolicy[policyKey] ?? null;
+      const consumed = source.policyAdjustedLeave[policyKey] ?? 0;
+      const currentYearPeriod = `${dayjs().startOf("year").format("MMM YYYY")} – ${dayjs().endOf("year").format("MMM YYYY")}`;
+      const periodLabel =
+        isRtt || isSick
+          ? currentYearPeriod
+          : formatPeriod(entitlement.periodStart, entitlement.periodEnd);
       return {
         label: meta.label,
         tooltip: meta.tooltip,
         entitled,
         consumed,
-        periodLabel: formatPeriod(entitlement.periodStart, entitlement.periodEnd),
+        periodLabel,
       } satisfies BalanceRow;
     })
     .filter(Boolean) as BalanceRow[];
@@ -159,20 +175,6 @@ export default function LeaveBalanceSummary() {
         <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p1.active }}>
           Leave Balance
         </Typography>
-        {rows[0]?.periodLabel && (
-          <Typography
-            variant="caption"
-            sx={{
-              color: theme.palette.customText.primary.p4.active,
-              backgroundColor: theme.palette.surface.territory.active,
-              px: 1,
-              py: 0.25,
-              borderRadius: "6px",
-            }}
-          >
-            {rows[0].periodLabel}
-          </Typography>
-        )}
       </Stack>
 
       <Stack direction={{ xs: "column", md: "row" }} gap={2}>
@@ -215,6 +217,21 @@ export default function LeaveBalanceSummary() {
                       }}
                     />
                   </Tooltip>
+                )}
+                {row.periodLabel && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: theme.palette.customText.primary.p4.active,
+                      backgroundColor: theme.palette.background.paper,
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: "6px",
+                      ml: "auto",
+                    }}
+                  >
+                    {row.periodLabel}
+                  </Typography>
                 )}
               </Stack>
 

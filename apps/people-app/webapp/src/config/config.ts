@@ -49,6 +49,7 @@ export const AppConfig = {
     appConfig: SERVICE_BASE_URL + "/app-config",
 
     employees: SERVICE_BASE_URL + "/employees",
+    bulkEmployees: SERVICE_BASE_URL + "/employees/bulk",
     employeesBasicInfo: SERVICE_BASE_URL + "/employees/basic-info",
     searchEmployees: SERVICE_BASE_URL + "/employees/search",
     managers: SERVICE_BASE_URL + "/employees/managers",
@@ -61,10 +62,9 @@ export const AppConfig = {
     jobInfo: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/job-info`,
     employeeQrCode: (employeeId: string) => `${SERVICE_BASE_URL}/employees/${employeeId}/qr-code`,
+    qrCodesSearch: SERVICE_BASE_URL + "/reports/qr-codes/search",
 
-    reportsEmployees: (status?: string) =>
-      SERVICE_BASE_URL + `/reports/employees/generate` +
-      (status ? `?status=${encodeURIComponent(status)}` : ""),
+    reportsEmployees: SERVICE_BASE_URL + "/reports/employees/generate",
 
     businessUnits: SERVICE_BASE_URL + "/business-units",
     careerFunctions: SERVICE_BASE_URL + "/career-functions",

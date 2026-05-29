@@ -14,8 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Stack, Tab, Tabs } from "@mui/material";
-import { alpha } from "@mui/material/styles";
+import { Box, Tab, Tabs, useTheme } from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -29,11 +28,12 @@ interface CommonPageProps {
 interface TabProps {
   tabTitle: string;
   tabPath: string;
-  icon: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
+  icon?: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
   page: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
 }
 
 const CommonPage = ({ title, commonPageTabs, icon, page }: CommonPageProps) => {
+  const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   const [value, setValue] = useState<number>(0);
   const tabs = useMemo(
@@ -50,72 +50,71 @@ const CommonPage = ({ title, commonPageTabs, icon, page }: CommonPageProps) => {
     if (currentTab && tabs.indexOf(currentTab) !== -1) {
       setValue(tabs.indexOf(currentTab));
     } else {
-      setSearchParams({ tab: tabs[0] });
+      setSearchParams((prev) => {
+        prev.set("tab", tabs[0]);
+        return prev;
+      });
       setValue(0);
     }
   }, [hasTabs, searchParams, setSearchParams, tabs]);
 
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
+    setSearchParams((prev) => {
+      prev.set("tab", tabs[newValue]);
+      return prev;
+    });
   };
 
+  const accentColor = theme.palette.secondary.contrastText;
+
   return (
-    <Box
-      sx={{
-        height: "100%",
-      }}
-    >
-      {/* -------Tabs--------- */}
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {hasTabs && (
-        <Stack flexDirection="row" sx={{ mt: 0.7 }}>
-          <Tabs
-            value={value}
-            onChange={handleChange}
-            sx={{
-              alignItems: "center",
-              "&.MuiTabs-root": {
-                minHeight: 0,
-                borderTopLeftRadius: 5,
-              },
-              ".MuiTab-root": {
-                borderTopLeftRadius: 5,
-                borderTopRightRadius: 5,
-              },
-              "& .MuiTabs-indicator": {
-                display: "none",
-              },
-            }}
-          >
-            {commonPageTabs.map((tab, index) => (
-              <Tab
-                key={index}
-                icon={tab.icon}
-                label={tab.tabTitle}
-                onClick={() => setSearchParams({ tab: tabs[index] })}
-                iconPosition="start"
-                sx={(theme) => ({
-                  minHeight: 0,
-                  lineHeight: 0,
-                  py: 0.7,
-                  background:
-                    tabs[index] === searchParams.get("tab")
-                      ? alpha(theme.palette.primary.light, 0.2)
-                      : "inherit",
-                })}
-              />
-            ))}
-          </Tabs>
-        </Stack>
+        <Tabs
+          value={value}
+          onChange={handleChange}
+          sx={{
+            minHeight: 40,
+            "& .MuiTabs-indicator": {
+              backgroundColor: accentColor,
+              height: 2.5,
+            },
+          }}
+        >
+          {commonPageTabs.map((tab, index) => (
+            <Tab
+              key={index}
+              label={tab.tabTitle}
+              icon={tab.icon}
+              iconPosition="start"
+              disableRipple
+              id={`common-tab-${index}`}
+              aria-controls={`common-tabpanel-${index}`}
+              sx={{
+                textTransform: "none",
+                fontWeight: value === index ? 600 : 400,
+                fontSize: "0.9rem",
+                color: theme.palette.text.secondary,
+                minHeight: 40,
+                px: 2,
+                "&.Mui-selected": {
+                  color: accentColor,
+                },
+              }}
+            />
+          ))}
+        </Tabs>
       )}
-      {hasTabs ? (
-        commonPageTabs.map((tab, index) => (
-          <TabPanel key={tab.tabPath || index} value={value} index={index}>
-            {tab.page}
-          </TabPanel>
-        ))
-      ) : (
-        page
-      )}
+      <Box sx={{ flex: 1, overflow: "auto", mt: 1 }}>
+        {hasTabs
+          ? commonPageTabs.map((tab, index) => (
+              <TabPanel key={tab.tabPath || index} value={value} index={index}>
+                {tab.page}
+              </TabPanel>
+            ))
+          : page}
+      </Box>
     </Box>
   );
 };
@@ -126,38 +125,18 @@ interface TabPanelProps {
   value: number;
 }
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
+function TabPanel({ children, value, index, ...other }: TabPanelProps) {
   return (
-    <div
+    <Box
       role="tabpanel"
       hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
+      id={`common-tabpanel-${index}`}
+      aria-labelledby={`common-tab-${index}`}
+      sx={{ height: "100%" }}
       {...other}
-      style={{ height: `calc(100% - 70px)` }}
     >
-      {value === index && (
-        <Box
-          sx={(theme) => ({
-            boxShadow:
-              theme.palette.mode === "dark"
-                ? "0px 3px 10px rgba(120, 125, 129, 0.5)"
-                : 10,
-            overflow: "auto",
-            height: "100%",
-            background: "background.paper",
-            borderTopRightRadius: 12,
-            borderTopLeftRadius: value === 0 ? 0 : 12,
-            borderBottomLeftRadius: 12,
-            borderBottomRightRadius: 12,
-          })}
-        >
-          {children}
-        </Box>
-      )}
-    </div>
+      {value === index && children}
+    </Box>
   );
 }
 
