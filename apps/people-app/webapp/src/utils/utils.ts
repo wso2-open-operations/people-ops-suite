@@ -16,15 +16,13 @@
 
 import { ServiceLength } from "@src/types/types";
 import { DATE_FMT } from "@config/constant";
-import {
-  differenceInMonths,
-  differenceInYears,
-  isAfter,
-  isMatch,
-  isValid,
-  parse,
-  format,
-} from "date-fns";
+import { differenceInMonths } from "date-fns/differenceInMonths";
+import { differenceInYears } from "date-fns/differenceInYears";
+import { isAfter } from "date-fns/isAfter";
+import { isMatch } from "date-fns/isMatch";
+import { isValid } from "date-fns/isValid";
+import { parse } from "date-fns/parse";
+import { format } from "date-fns/format";
 
 export const isIncludedRole = (a: string[], b: string[]): boolean => {
   return [...getCrossItems(a, b), ...getCrossItems(b, a)].length > 0;
