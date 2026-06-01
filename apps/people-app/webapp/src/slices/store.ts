@@ -25,6 +25,7 @@ import employeeReducer from "@slices/employeeSlice/employee";
 import employeePersonalInfoReducer from "@slices/employeeSlice/employeePersonalInfo";
 import userReducer from "@slices/userSlice/user";
 import organizationReducer from "@slices/organizationSlice/organization";
+import masterDataReducer from "@slices/masterDataSlice/masterData";
 
 enableMapSet();
 
@@ -37,6 +38,7 @@ export const store = configureStore({
     employeePersonalInfo: employeePersonalInfoReducer,
     appConfig: appConfigReducer,
     organization: organizationReducer,
+    masterData: masterDataReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware(),

@@ -25,6 +25,7 @@ import {
 import { useSelector } from "react-redux";
 import { selectRoles } from "@slices/authSlice/auth";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import HubIcon from "@mui/icons-material/Hub";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PersonOffIcon from "@mui/icons-material/PersonOff";
@@ -81,6 +82,7 @@ const ReportsRoot = () => {
   }
   return React.createElement(Outlet);
 };
+
 
 export const routes: RouteObjectWithRole[] = [
   {
@@ -159,6 +161,13 @@ export const routes: RouteObjectWithRole[] = [
         allowRoles: [Role.ADMIN, Role.SERVICE_DESK],
       },
     ],
+  },
+  {
+    path: "/master-data",
+    text: "Master Data",
+    icon: React.createElement(HubIcon),
+    element: React.createElement(View.masterDataView),
+    allowRoles: [Role.ADMIN],
   },
   // Todo: Uncomment when help view is ready
   // {
