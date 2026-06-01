@@ -73,10 +73,13 @@ export default function MappingDialog({
     },
     validationSchema,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
-      await onSubmit(values.entityId, values.headEmail);
-      setSubmitting(false);
-      resetForm();
-      onClose();
+      try {
+        await onSubmit(values.entityId, values.headEmail);
+        resetForm();
+        onClose();
+      } finally {
+        setSubmitting(false);
+      }
     },
   });
 

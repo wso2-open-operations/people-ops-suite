@@ -79,9 +79,12 @@ export default function EntityDialog({
             name: values.name,
             headEmail: values.headEmail,
           } satisfies CreateEntityPayload);
-      await onSubmit(payload);
-      setSubmitting(false);
-      onClose();
+      try {
+        await onSubmit(payload);
+        onClose();
+      } finally {
+        setSubmitting(false);
+      }
     },
   });
 

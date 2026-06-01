@@ -59,49 +59,49 @@ export default function MasterDataView() {
   }, [dispatch]);
 
   const handleCreateBU = async (payload: CreateEntityPayload) => {
-    await dispatch(createBusinessUnit(payload));
+    await dispatch(createBusinessUnit(payload)).unwrap();
     dispatch(fetchAllCompanyOrgChartEntities());
     dispatch(fetchCompanyOrgChartStructure());
   };
 
   const handleUpdateBU = async (id: number, payload: UpdateEntityPayload) => {
-    await dispatch(updateBusinessUnit({ id, payload }));
+    await dispatch(updateBusinessUnit({ id, payload })).unwrap();
     dispatch(fetchAllCompanyOrgChartEntities());
     dispatch(fetchCompanyOrgChartStructure());
   };
 
   const handleCreateTeam = async (payload: CreateEntityPayload) => {
-    await dispatch(createTeam(payload));
+    await dispatch(createTeam(payload)).unwrap();
     dispatch(fetchAllCompanyOrgChartEntities());
     dispatch(fetchCompanyOrgChartStructure());
   };
 
   const handleUpdateTeam = async (id: number, payload: UpdateEntityPayload) => {
-    await dispatch(updateTeam({ id, payload }));
+    await dispatch(updateTeam({ id, payload })).unwrap();
     dispatch(fetchAllCompanyOrgChartEntities());
     dispatch(fetchCompanyOrgChartStructure());
   };
 
   const handleCreateSubTeam = async (payload: CreateEntityPayload) => {
-    await dispatch(createSubTeam(payload));
+    await dispatch(createSubTeam(payload)).unwrap();
     dispatch(fetchAllCompanyOrgChartEntities());
     dispatch(fetchCompanyOrgChartStructure());
   };
 
   const handleUpdateSubTeam = async (id: number, payload: UpdateEntityPayload) => {
-    await dispatch(updateSubTeam({ id, payload }));
+    await dispatch(updateSubTeam({ id, payload })).unwrap();
     dispatch(fetchAllCompanyOrgChartEntities());
     dispatch(fetchCompanyOrgChartStructure());
   };
 
   const handleCreateUnit = async (payload: CreateEntityPayload) => {
-    await dispatch(createUnit(payload));
+    await dispatch(createUnit(payload)).unwrap();
     dispatch(fetchAllCompanyOrgChartEntities());
     dispatch(fetchCompanyOrgChartStructure());
   };
 
   const handleUpdateUnit = async (id: number, payload: UpdateEntityPayload) => {
-    await dispatch(updateUnit({ id, payload }));
+    await dispatch(updateUnit({ id, payload })).unwrap();
     dispatch(fetchAllCompanyOrgChartEntities());
     dispatch(fetchCompanyOrgChartStructure());
   };

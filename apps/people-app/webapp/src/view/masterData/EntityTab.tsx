@@ -76,7 +76,7 @@ export default function EntityTab({
       if (statusFilter === "active" && !e.isActive) return false;
       if (statusFilter === "inactive" && e.isActive) return false;
       if (!q) return true;
-      return e.name.toLowerCase().includes(q) || e.headEmail.toLowerCase().includes(q);
+      return e.name.toLowerCase().includes(q) || (e.headEmail ?? "").toLowerCase().includes(q);
     });
   }, [entities, searchText, statusFilter]);
 

@@ -88,9 +88,12 @@ function EditFunctionalHeadDialog({
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    await onSubmit(headEmail, isActive);
-    setSubmitting(false);
-    onClose();
+    try {
+      await onSubmit(headEmail, isActive);
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -470,14 +473,18 @@ export default function HierarchyView() {
 
   const handleMappingSubmit = async (entityId: number, headEmail: string) => {
     const { level, parentId } = mappingDialog;
-    if (level === "team") {
-      await dispatch(createBusinessUnitTeamMapping({ businessUnitId: parentId, teamId: entityId, headEmail }));
-    } else if (level === "sub-team") {
-      await dispatch(createBusinessUnitTeamSubTeamMapping({ businessUnitTeamId: parentId, subTeamId: entityId, headEmail }));
-    } else {
-      await dispatch(createBusinessUnitTeamSubTeamUnitMapping({ businessUnitTeamSubTeamId: parentId, unitId: entityId, headEmail }));
+    try {
+      if (level === "team") {
+        await dispatch(createBusinessUnitTeamMapping({ businessUnitId: parentId, teamId: entityId, headEmail })).unwrap();
+      } else if (level === "sub-team") {
+        await dispatch(createBusinessUnitTeamSubTeamMapping({ businessUnitTeamId: parentId, subTeamId: entityId, headEmail })).unwrap();
+      } else {
+        await dispatch(createBusinessUnitTeamSubTeamUnitMapping({ businessUnitTeamSubTeamId: parentId, unitId: entityId, headEmail })).unwrap();
+      }
+      refresh();
+    } catch (_) {
+      // error handled by the thunk (snackbar); keep dialog open for retry
     }
-    refresh();
   };
 
   // Head-edit dialog
@@ -494,19 +501,23 @@ export default function HierarchyView() {
     const { mappingId, mappingType } = headDialog;
     if (mappingId == null || mappingType == null) return;
     const update: UpdateMappingPayload = { headEmail, isActive };
-    if (mappingType === "bu-team") {
-      await dispatch(updateBusinessUnitTeamMapping({ id: mappingId, payload: update }));
-      if (!isActive && selectedTeamMappingId === mappingId) {
-        setSelectedTeamMappingId(null);
-        setSelectedSubTeamMappingId(null);
+    try {
+      if (mappingType === "bu-team") {
+        await dispatch(updateBusinessUnitTeamMapping({ id: mappingId, payload: update })).unwrap();
+        if (!isActive && selectedTeamMappingId === mappingId) {
+          setSelectedTeamMappingId(null);
+          setSelectedSubTeamMappingId(null);
+        }
+      } else if (mappingType === "bu-team-st") {
+        await dispatch(updateBusinessUnitTeamSubTeamMapping({ id: mappingId, payload: update })).unwrap();
+        if (!isActive && selectedSubTeamMappingId === mappingId) setSelectedSubTeamMappingId(null);
+      } else {
+        await dispatch(updateBusinessUnitTeamSubTeamUnitMapping({ id: mappingId, payload: update })).unwrap();
       }
-    } else if (mappingType === "bu-team-st") {
-      await dispatch(updateBusinessUnitTeamSubTeamMapping({ id: mappingId, payload: update }));
-      if (!isActive && selectedSubTeamMappingId === mappingId) setSelectedSubTeamMappingId(null);
-    } else {
-      await dispatch(updateBusinessUnitTeamSubTeamUnitMapping({ id: mappingId, payload: update }));
+      refresh();
+    } catch (_) {
+      // error handled by the thunk (snackbar); keep dialog open for retry
     }
-    refresh();
   };
 
   return (
