@@ -29,6 +29,38 @@ import {
   Tooltip,
   useTheme,
 } from "@mui/material";
+
+function SkeletonOverlay() {
+  const theme = useTheme();
+  return (
+    <Box sx={{ width: "100%", pb: 1 }}>
+      {Array.from({ length: DEFAULT_LIMIT_VALUE }).map((_, i) => (
+        <Box
+          key={i}
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 150px 110px 60px",
+            alignItems: "center",
+            height: 52,
+            px: 2,
+            gap: 2,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Skeleton variant="rectangular" height={20} width="65%" sx={{ borderRadius: 1 }} />
+          <Skeleton variant="rectangular" height={20} width="75%" sx={{ borderRadius: 1 }} />
+          <Skeleton variant="rectangular" height={20} width="40%" sx={{ borderRadius: 1 }} />
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <Skeleton variant="rounded" height={24} width={72} sx={{ borderRadius: 2 }} />
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <Skeleton variant="circular" height={28} width={28} />
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+}
 import { BaseTextField } from "@component/common/FieldInput/BasicFieldInput/BaseTextField";
 import AddIcon from "@mui/icons-material/Add";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -183,39 +215,6 @@ export default function EntityTab({
     ],
     [entityLabel, headEmailLabel, handleEdit, theme],
   );
-
-  const SkeletonOverlay = useMemo(() => {
-    return function Overlay() {
-      return (
-        <Box sx={{ width: "100%", pb: 1 }}>
-          {Array.from({ length: DEFAULT_LIMIT_VALUE }).map((_, i) => (
-            <Box
-              key={i}
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 150px 110px 60px",
-                alignItems: "center",
-                height: 52,
-                px: 2,
-                gap: 2,
-                borderBottom: `1px solid ${theme.palette.divider}`,
-              }}
-            >
-              <Skeleton variant="rectangular" height={20} width="65%" sx={{ borderRadius: 1 }} />
-              <Skeleton variant="rectangular" height={20} width="75%" sx={{ borderRadius: 1 }} />
-              <Skeleton variant="rectangular" height={20} width="40%" sx={{ borderRadius: 1 }} />
-              <Box sx={{ display: "flex", justifyContent: "center" }}>
-                <Skeleton variant="rounded" height={24} width={72} sx={{ borderRadius: 2 }} />
-              </Box>
-              <Box sx={{ display: "flex", justifyContent: "center" }}>
-                <Skeleton variant="circular" height={28} width={28} />
-              </Box>
-            </Box>
-          ))}
-        </Box>
-      );
-    };
-  }, [theme.palette.divider]);
 
   return (
     <Box sx={{ height: "100%", width: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>

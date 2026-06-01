@@ -35,7 +35,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
   createBusinessUnitTeamMapping,
@@ -74,6 +74,7 @@ function EditFunctionalHeadDialog({
   onClose: () => void;
   onSubmit: (headEmail: string, isActive: boolean) => Promise<void>;
 }) {
+  const theme = useTheme();
   const [headEmail, setHeadEmail] = useState(currentHeadEmail);
   const [isActive, setIsActive] = useState(currentIsActive);
   const [submitting, setSubmitting] = useState(false);
@@ -113,8 +114,12 @@ function EditFunctionalHeadDialog({
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
                 sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": { color: "#ff7300" },
-                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#ff7300" },
+                  "& .MuiSwitch-switchBase.Mui-checked": {
+                    color: theme.palette.secondary.contrastText,
+                  },
+                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                    backgroundColor: theme.palette.secondary.contrastText,
+                  },
                 }}
               />
             }
@@ -406,6 +411,32 @@ export default function HierarchyView() {
   const selectedSubTeam = visibleSubTeams.find((st) => st.mappingId === selectedSubTeamMappingId) ?? null;
   const visibleUnits: CompanyOrgChartUnit[] = selectedSubTeam?.units ?? [];
 
+  const sortedBUs = useMemo(
+    () => [...orgStructure].sort((a, b) => Number(b.isActive) - Number(a.isActive)),
+    [orgStructure],
+  );
+  const sortedTeams = useMemo(
+    () => {
+      const score = (t: CompanyOrgChartTeam) => (!t.isActive ? 0 : t.mappingIsActive ? 2 : 1);
+      return [...visibleTeams].sort((a, b) => score(b) - score(a));
+    },
+    [visibleTeams],
+  );
+  const sortedSubTeams = useMemo(
+    () => {
+      const score = (st: CompanyOrgChartSubTeam) => (!st.isActive ? 0 : st.mappingIsActive ? 2 : 1);
+      return [...visibleSubTeams].sort((a, b) => score(b) - score(a));
+    },
+    [visibleSubTeams],
+  );
+  const sortedUnits = useMemo(
+    () => {
+      const score = (u: CompanyOrgChartUnit) => (!u.isActive ? 0 : u.mappingIsActive ? 2 : 1);
+      return [...visibleUnits].sort((a, b) => score(b) - score(a));
+    },
+    [visibleUnits],
+  );
+
   // Dialog state
   const [mappingDialog, setMappingDialog] = useState<{
     open: boolean;
@@ -528,8 +559,7 @@ export default function HierarchyView() {
         itemCount={orgStructure.length}
         emptyMessage="No business units found."
       >
-        {[...orgStructure].sort((a, b) => Number(b.isActive) - Number(a.isActive))
-          .map((bu: CompanyOrgChartBusinessUnit) => (
+        {sortedBUs.map((bu: CompanyOrgChartBusinessUnit) => (
           <ColumnItem
             key={bu.id}
             name={bu.name}
@@ -552,11 +582,7 @@ export default function HierarchyView() {
         assignDisabled={!selectedBU}
         emptyMessage={selectedBUId ? "No teams assigned to this Business Unit." : "Select a Business Unit to view teams."}
       >
-        {[...visibleTeams].sort((a, b) => {
-            const score = (t: CompanyOrgChartTeam) => !t.isActive ? 0 : t.mappingIsActive ? 2 : 1;
-            return score(b) - score(a);
-          })
-          .map((team: CompanyOrgChartTeam) => (
+        {sortedTeams.map((team: CompanyOrgChartTeam) => (
             <ColumnItem
               key={team.mappingId}
               name={team.name}
@@ -582,11 +608,7 @@ export default function HierarchyView() {
         assignDisabled={!selectedTeam}
         emptyMessage={selectedTeamMappingId ? "No sub-teams assigned to this Team." : "Select a Team to view sub-teams."}
       >
-        {[...visibleSubTeams].sort((a, b) => {
-            const score = (st: CompanyOrgChartSubTeam) => !st.isActive ? 0 : st.mappingIsActive ? 2 : 1;
-            return score(b) - score(a);
-          })
-          .map((st: CompanyOrgChartSubTeam) => (
+        {sortedSubTeams.map((st: CompanyOrgChartSubTeam) => (
             <ColumnItem
               key={st.mappingId}
               name={st.name}
@@ -612,11 +634,7 @@ export default function HierarchyView() {
         assignDisabled={!selectedSubTeam}
         emptyMessage={selectedSubTeamMappingId ? "No units assigned to this Sub Team." : "Select a Sub Team to view units."}
       >
-        {[...visibleUnits].sort((a, b) => {
-            const score = (u: CompanyOrgChartUnit) => !u.isActive ? 0 : u.mappingIsActive ? 2 : 1;
-            return score(b) - score(a);
-          })
-          .map((unit: CompanyOrgChartUnit) => (
+        {sortedUnits.map((unit: CompanyOrgChartUnit) => (
             <ColumnItem
               key={unit.mappingId}
               name={unit.name}

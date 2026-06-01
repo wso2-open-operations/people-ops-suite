@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import CommonPage from "@layout/pages/CommonPage";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import HubIcon from "@mui/icons-material/Hub";
@@ -31,7 +31,7 @@ import {
   fetchAllCompanyOrgChartEntities,
   fetchCompanyOrgChartStructure,
   selectBusinessUnits,
-  selectMasterDataState,
+  selectEntitiesState,
   selectSubTeams,
   selectTeams,
   selectUnits,
@@ -47,63 +47,59 @@ import HierarchyView from "./HierarchyView";
 
 export default function MasterDataView() {
   const dispatch = useAppDispatch();
-  const loadingState = useAppSelector(selectMasterDataState);
+  const loadingState = useAppSelector(selectEntitiesState);
   const businessUnits = useAppSelector(selectBusinessUnits);
   const teams = useAppSelector(selectTeams);
   const subTeams = useAppSelector(selectSubTeams);
   const units = useAppSelector(selectUnits);
 
-  useEffect(() => {
+  const refreshData = useCallback(() => {
     dispatch(fetchAllCompanyOrgChartEntities());
     dispatch(fetchCompanyOrgChartStructure());
   }, [dispatch]);
 
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
+
   const handleCreateBU = async (payload: CreateEntityPayload) => {
     await dispatch(createBusinessUnit(payload)).unwrap();
-    dispatch(fetchAllCompanyOrgChartEntities());
-    dispatch(fetchCompanyOrgChartStructure());
+    refreshData();
   };
 
   const handleUpdateBU = async (id: number, payload: UpdateEntityPayload) => {
     await dispatch(updateBusinessUnit({ id, payload })).unwrap();
-    dispatch(fetchAllCompanyOrgChartEntities());
-    dispatch(fetchCompanyOrgChartStructure());
+    refreshData();
   };
 
   const handleCreateTeam = async (payload: CreateEntityPayload) => {
     await dispatch(createTeam(payload)).unwrap();
-    dispatch(fetchAllCompanyOrgChartEntities());
-    dispatch(fetchCompanyOrgChartStructure());
+    refreshData();
   };
 
   const handleUpdateTeam = async (id: number, payload: UpdateEntityPayload) => {
     await dispatch(updateTeam({ id, payload })).unwrap();
-    dispatch(fetchAllCompanyOrgChartEntities());
-    dispatch(fetchCompanyOrgChartStructure());
+    refreshData();
   };
 
   const handleCreateSubTeam = async (payload: CreateEntityPayload) => {
     await dispatch(createSubTeam(payload)).unwrap();
-    dispatch(fetchAllCompanyOrgChartEntities());
-    dispatch(fetchCompanyOrgChartStructure());
+    refreshData();
   };
 
   const handleUpdateSubTeam = async (id: number, payload: UpdateEntityPayload) => {
     await dispatch(updateSubTeam({ id, payload })).unwrap();
-    dispatch(fetchAllCompanyOrgChartEntities());
-    dispatch(fetchCompanyOrgChartStructure());
+    refreshData();
   };
 
   const handleCreateUnit = async (payload: CreateEntityPayload) => {
     await dispatch(createUnit(payload)).unwrap();
-    dispatch(fetchAllCompanyOrgChartEntities());
-    dispatch(fetchCompanyOrgChartStructure());
+    refreshData();
   };
 
   const handleUpdateUnit = async (id: number, payload: UpdateEntityPayload) => {
     await dispatch(updateUnit({ id, payload })).unwrap();
-    dispatch(fetchAllCompanyOrgChartEntities());
-    dispatch(fetchCompanyOrgChartStructure());
+    refreshData();
   };
 
   return (

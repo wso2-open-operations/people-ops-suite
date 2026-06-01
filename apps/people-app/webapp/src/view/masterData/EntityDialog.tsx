@@ -25,6 +25,7 @@ import {
   FormControlLabel,
   Switch,
   Tooltip,
+  useTheme,
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -58,6 +59,7 @@ export default function EntityDialog({
   entityLabel,
   entity,
 }: EntityDialogProps) {
+  const theme = useTheme();
   const isEdit = entity != null;
 
   const formik = useFormik({
@@ -93,6 +95,13 @@ export default function EntityDialog({
     onClose();
   };
 
+  const cannotDeactivate = isEdit && Boolean(entity?.activeEmployeeCount);
+  const activeCount = entity?.activeEmployeeCount ?? 0;
+  const employeeWord = `employee${activeCount === 1 ? "" : "s"}`;
+  const deactivateTooltip = cannotDeactivate
+    ? `This entity has ${activeCount} active ${employeeWord} and cannot be deactivated.`
+    : "";
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>{isEdit ? `Edit ${entityLabel}: ${entity?.name}` : `Add ${entityLabel}`}</DialogTitle>
@@ -119,38 +128,34 @@ export default function EntityDialog({
               error={formik.touched.headEmail && Boolean(formik.errors.headEmail)}
               helperText={formik.touched.headEmail && formik.errors.headEmail}
             />
-            {isEdit && (() => {
-              const cannotDeactivate = Boolean(entity?.activeEmployeeCount);
-              const activeCount = entity?.activeEmployeeCount ?? 0;
-              const employeeWord = `employee${activeCount === 1 ? "" : "s"}`;
-              const tooltipText = cannotDeactivate
-                ? `This entity has ${activeCount} active ${employeeWord} and cannot be deactivated.`
-                : "";
-              return (
-                <FormControlLabel
-                  control={
-                    <Tooltip title={tooltipText} arrow placement="top">
-                      <span>
-                        <Switch
-                          id="isActive"
-                          name="isActive"
-                          checked={formik.values.isActive}
-                          onChange={formik.handleChange}
-                          disabled={cannotDeactivate}
-                          sx={{
-                            ...(cannotDeactivate && { opacity: 0.5 }),
-                            "& .MuiSwitch-switchBase.Mui-checked": { color: "#ff7300" },
-                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#ff7300" },
-                          }}
-                        />
-                      </span>
-                    </Tooltip>
-                  }
-                  label={formik.values.isActive ? "Active" : "Inactive"}
-                  sx={cannotDeactivate ? { "& .MuiFormControlLabel-label": { opacity: 0.6 } } : undefined}
-                />
-              );
-            })()}
+            {isEdit && (
+              <FormControlLabel
+                control={
+                  <Tooltip title={deactivateTooltip} arrow placement="top">
+                    <span>
+                      <Switch
+                        id="isActive"
+                        name="isActive"
+                        checked={formik.values.isActive}
+                        onChange={formik.handleChange}
+                        disabled={cannotDeactivate}
+                        sx={{
+                          ...(cannotDeactivate && { opacity: 0.5 }),
+                          "& .MuiSwitch-switchBase.Mui-checked": {
+                            color: theme.palette.secondary.contrastText,
+                          },
+                          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                            backgroundColor: theme.palette.secondary.contrastText,
+                          },
+                        }}
+                      />
+                    </span>
+                  </Tooltip>
+                }
+                label={formik.values.isActive ? "Active" : "Inactive"}
+                sx={cannotDeactivate ? { "& .MuiFormControlLabel-label": { opacity: 0.6 } } : undefined}
+              />
+            )}
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

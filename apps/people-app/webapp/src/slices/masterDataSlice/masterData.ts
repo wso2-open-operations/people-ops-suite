@@ -18,7 +18,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { APIService } from "@utils/apiService";
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { isCancel } from "axios";
+import { isCancel, isAxiosError } from "axios";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
 
@@ -114,8 +114,8 @@ export interface MasterDataState {
   subTeams: CompanyOrgChartEntity[];
   units: CompanyOrgChartEntity[];
   orgStructure: CompanyOrgChartBusinessUnit[];
-  state: State;
-  stateMessage: string | null;
+  entitiesState: State;
+  orgStructureState: State;
   errorMessage: string | null;
 }
 
@@ -125,8 +125,8 @@ const initialState: MasterDataState = {
   subTeams: [],
   units: [],
   orgStructure: [],
-  state: State.idle,
-  stateMessage: null,
+  entitiesState: State.idle,
+  orgStructureState: State.idle,
   errorMessage: null,
 };
 
@@ -148,12 +148,11 @@ export const fetchAllCompanyOrgChartEntities = createAsyncThunk(
         subTeams: subTeamResp.data as CompanyOrgChartEntity[],
         units: unitResp.data as CompanyOrgChartEntity[],
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Error fetching company org chart data";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error fetching company org chart data";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -168,12 +167,11 @@ export const fetchCompanyOrgChartStructure = createAsyncThunk(
         AppConfig.serviceUrls.companyOrgChartStructure,
       );
       return resp.data as CompanyOrgChartBusinessUnit[];
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Error fetching organization structure";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error fetching organization structure";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -190,10 +188,11 @@ export const createBusinessUnit = createAsyncThunk(
       );
       dispatch(enqueueSnackbarMessage({ message: "Business unit created", type: "success" }));
       return resp.data as number;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error creating business unit";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error creating business unit";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -212,10 +211,11 @@ export const updateBusinessUnit = createAsyncThunk(
         payload,
       );
       dispatch(enqueueSnackbarMessage({ message: "Business unit updated", type: "success" }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error updating business unit";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error updating business unit";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -232,10 +232,11 @@ export const createTeam = createAsyncThunk(
       );
       dispatch(enqueueSnackbarMessage({ message: "Team created", type: "success" }));
       return resp.data as number;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error creating team";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error creating team";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -251,10 +252,11 @@ export const updateTeam = createAsyncThunk(
     try {
       await APIService.getInstance().patch(AppConfig.serviceUrls.team(id), payload);
       dispatch(enqueueSnackbarMessage({ message: "Team updated", type: "success" }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error updating team";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error updating team";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -271,10 +273,11 @@ export const createSubTeam = createAsyncThunk(
       );
       dispatch(enqueueSnackbarMessage({ message: "Sub-team created", type: "success" }));
       return resp.data as number;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error creating sub-team";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error creating sub-team";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -290,10 +293,11 @@ export const updateSubTeam = createAsyncThunk(
     try {
       await APIService.getInstance().patch(AppConfig.serviceUrls.subTeam(id), payload);
       dispatch(enqueueSnackbarMessage({ message: "Sub-team updated", type: "success" }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error updating sub-team";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error updating sub-team";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -310,10 +314,11 @@ export const createUnit = createAsyncThunk(
       );
       dispatch(enqueueSnackbarMessage({ message: "Unit created", type: "success" }));
       return resp.data as number;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error creating unit";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error creating unit";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -329,10 +334,11 @@ export const updateUnit = createAsyncThunk(
     try {
       await APIService.getInstance().patch(AppConfig.serviceUrls.unit(id), payload);
       dispatch(enqueueSnackbarMessage({ message: "Unit updated", type: "success" }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error updating unit";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error updating unit";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -349,10 +355,11 @@ export const createBusinessUnitTeamMapping = createAsyncThunk(
       );
       dispatch(enqueueSnackbarMessage({ message: "Team assigned to business unit", type: "success" }));
       return resp.data as number;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error creating mapping";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error creating mapping";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -371,10 +378,11 @@ export const updateBusinessUnitTeamMapping = createAsyncThunk(
         payload,
       );
       dispatch(enqueueSnackbarMessage({ message: "Mapping updated", type: "success" }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error updating mapping";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error updating mapping";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -391,10 +399,11 @@ export const createBusinessUnitTeamSubTeamMapping = createAsyncThunk(
       );
       dispatch(enqueueSnackbarMessage({ message: "Sub-team assigned to team", type: "success" }));
       return resp.data as number;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error creating mapping";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error creating mapping";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -413,10 +422,11 @@ export const updateBusinessUnitTeamSubTeamMapping = createAsyncThunk(
         payload,
       );
       dispatch(enqueueSnackbarMessage({ message: "Mapping updated", type: "success" }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error updating mapping";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error updating mapping";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -433,10 +443,11 @@ export const createBusinessUnitTeamSubTeamUnitMapping = createAsyncThunk(
       );
       dispatch(enqueueSnackbarMessage({ message: "Unit assigned to sub-team", type: "success" }));
       return resp.data as number;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error creating mapping";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error creating mapping";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -455,10 +466,11 @@ export const updateBusinessUnitTeamSubTeamUnitMapping = createAsyncThunk(
         payload,
       );
       dispatch(enqueueSnackbarMessage({ message: "Mapping updated", type: "success" }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isCancel(error)) return rejectWithValue("cancelled");
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error updating mapping";
+      const errorMessage = isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : "Error updating mapping";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       return rejectWithValue(errorMessage);
     }
@@ -475,11 +487,11 @@ const masterDataSlice = createSlice({
     builder
       // fetchAllCompanyOrgChartEntities
       .addCase(fetchAllCompanyOrgChartEntities.pending, (state) => {
-        state.state = State.loading;
+        state.entitiesState = State.loading;
         state.errorMessage = null;
       })
       .addCase(fetchAllCompanyOrgChartEntities.fulfilled, (state, action) => {
-        state.state = State.success;
+        state.entitiesState = State.success;
         state.businessUnits = action.payload.businessUnits;
         state.teams = action.payload.teams;
         state.subTeams = action.payload.subTeams;
@@ -487,22 +499,22 @@ const masterDataSlice = createSlice({
       })
       .addCase(fetchAllCompanyOrgChartEntities.rejected, (state, action) => {
         if (action.payload !== "cancelled") {
-          state.state = State.failed;
+          state.entitiesState = State.failed;
           state.errorMessage = action.payload as string;
         }
       })
       // fetchCompanyOrgChartStructure
       .addCase(fetchCompanyOrgChartStructure.pending, (state) => {
-        state.state = State.loading;
+        state.orgStructureState = State.loading;
         state.errorMessage = null;
       })
       .addCase(fetchCompanyOrgChartStructure.fulfilled, (state, action) => {
-        state.state = State.success;
+        state.orgStructureState = State.success;
         state.orgStructure = action.payload;
       })
       .addCase(fetchCompanyOrgChartStructure.rejected, (state, action) => {
         if (action.payload !== "cancelled") {
-          state.state = State.failed;
+          state.orgStructureState = State.failed;
           state.errorMessage = action.payload as string;
         }
       });
@@ -513,7 +525,8 @@ export default masterDataSlice.reducer;
 
 // ─── Selectors ───────────────────────────────────────────────────────────────
 
-export const selectMasterDataState = (state: RootState) => state.masterData.state;
+export const selectEntitiesState = (state: RootState) => state.masterData.entitiesState;
+export const selectOrgStructureState = (state: RootState) => state.masterData.orgStructureState;
 export const selectBusinessUnits = (state: RootState) => state.masterData.businessUnits;
 export const selectTeams = (state: RootState) => state.masterData.teams;
 export const selectSubTeams = (state: RootState) => state.masterData.subTeams;
