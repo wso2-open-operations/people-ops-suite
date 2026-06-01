@@ -182,7 +182,12 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
       case AppState.Authenticating:
         return (
-          <PreLoader hideImage={false} marqueeOn={true} isLoading message="Loading user information" />
+          <PreLoader
+            hideImage={false}
+            marqueeOn={true}
+            isLoading
+            message="Loading user information"
+          />
         );
 
       case AppState.Authenticated:
@@ -217,29 +222,53 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
 const MicroAppAuthProvider = (props: { children: React.ReactNode }) => {
   const [appState, setAppState] = useState<AppState>(AppState.Loading);
-  let mounted = true;
+  const dispatch = useAppDispatch();
+  const [triggerGetUserInfo] = useLazyGetUserInfoQuery();
 
   useEffect(() => {
-    const getIdToken = async () => {
-      getToken((token) => {
-        if (!mounted) return;
+    let mounted = true;
 
-        if (token) {
-          setTokens(token, null, null);
-          setAppState(AppState.Authenticated);
-        } else {
-          setAppState(AppState.Unauthenticated);
-          console.error("No token available");
-        }
-      });
+    const setupAuthenticatedUser = async () => {
+      const userInfoResult = await triggerGetUserInfo();
+
+      if (!mounted) return;
+
+      if (userInfoResult?.isError) {
+        console.error("Failed to fetch user info:", userInfoResult.error);
+        dispatch(setAuthError());
+      }
+      await dispatch(loadPrivileges());
     };
 
-    getIdToken();
+    getToken(async (token) => {
+      if (!mounted) return;
+
+      if (token) {
+        setTokens(token, null, null);
+        setAppState(AppState.Authenticating);
+        try {
+          await setupAuthenticatedUser();
+
+          if (mounted) {
+            setAppState(AppState.Authenticated);
+          }
+        } catch (error) {
+          console.error("Error setting up authenticated user:", error);
+          if (mounted) {
+            dispatch(setAuthError());
+            setAppState(AppState.Unauthenticated);
+          }
+        }
+      } else {
+        setAppState(AppState.Unauthenticated);
+        console.error("No token available");
+      }
+    });
 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [dispatch, triggerGetUserInfo]);
 
   const renderContent = () => {
     switch (appState) {

@@ -59,7 +59,7 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.get<Employee[]>(
-    `${AppConfig.serviceUrls.employees}?employeeStatuses=Active&employeeStatuses=Marked%20leaver`,
+    `${AppConfig.serviceUrls.employees}?employeeStatuses=Active&employeeStatuses=Marked%20leaver&employeeStatuses=Left`,
   );
 
   return response.data;
@@ -151,7 +151,9 @@ export const getLeaveHistory = async (
     queryParts.push(`offset=${encodeURIComponent(String(offset))}`);
   }
   if (Array.isArray(employeeStatuses) && employeeStatuses.length > 0) {
-    employeeStatuses.forEach((s) => queryParts.push(`employeeStatuses=${encodeURIComponent(String(s))}`));
+    employeeStatuses.forEach((s) =>
+      queryParts.push(`employeeStatuses=${encodeURIComponent(String(s))}`),
+    );
   }
   if (subordinatesLeaves) {
     queryParts.push(`subordinatesLeaves=true`);

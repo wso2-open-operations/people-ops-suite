@@ -32,3 +32,4 @@ yarn-error.log*
 config.js
 
 .agents
+.claude

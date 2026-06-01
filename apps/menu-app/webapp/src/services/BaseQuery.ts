@@ -17,7 +17,6 @@ import { fetchBaseQuery, retry } from "@reduxjs/toolkit/query";
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { Mutex } from "async-mutex";
 
-import { MicroAppType } from "@/types/types";
 import { SERVICE_BASE_URL, isMicroApp } from "@config/config";
 
 let ACCESS_TOKEN: string;
@@ -92,9 +91,8 @@ export const baseQueryWithReauth: BaseQueryFn<
  */
 export const baseQueryWithRetry = retry(
   async (args: string | FetchArgs, api, extraOptions) => {
-    const isValidMicroApp = Object.values(MicroAppType).includes(isMicroApp as MicroAppType);
 
-    const result = isValidMicroApp
+    const result = isMicroApp
       ? await baseQuery(args, api, extraOptions)
       : await baseQueryWithReauth(args, api, extraOptions);
 
@@ -108,7 +106,7 @@ export const baseQueryWithRetry = retry(
   },
   {
     maxRetries: 3,
-    backoff: async (attempt: number = 0, maxRetries: number = 3) => {
+    backoff: async (attempt: number = 0) => {
       const delay = Math.min(1000 * 2 ** attempt, 10000);
       await new Promise((resolve) => setTimeout(resolve, delay));
     },

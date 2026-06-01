@@ -146,6 +146,7 @@ export interface Employee {
   lastName: string;
   workEmail: string;
   employeeThumbnail: string | null;
+  employeeStatus?: string | null;
 }
 // Default mail type.
 export interface DefaultMail {

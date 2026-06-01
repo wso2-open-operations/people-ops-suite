@@ -15,8 +15,6 @@
 // under the License.
 import { Box, Divider } from "@mui/material";
 
-import { MicroAppType } from "@/types/types";
-import { isMicroApp } from "@config/config";
 import PreLoader from "@root/src/component/common/PreLoader";
 import { useGetDinnerRequestQuery } from "@root/src/services/dod.api";
 import { useGetMenuQuery } from "@root/src/services/menu.api";
@@ -35,11 +33,6 @@ export default function Home() {
   if (isMenuLoading || isDinnerLoading) {
     return <PreLoader />;
   }
-
-  if (isMicroApp === MicroAppType.Menu) return <Menu data={menuData} isError={isMenuError} />;
-
-  if (isMicroApp === MicroAppType.Dod)
-    return <DinnerOnDemand dinner={dinnerData} error={dinnerError} />;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>

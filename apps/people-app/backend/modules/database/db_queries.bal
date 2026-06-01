@@ -588,6 +588,59 @@ isolated function getSubTeamsQuery(int? teamId = (), boolean includeInactive = f
         ORDER BY st.name;`);
 }
 
+# Fetch existing work emails.
+#
+# + emails - Work email list
+# + return - Query to fetch existing work emails
+isolated function getExistingWorkEmailsQuery(string[] emails) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildInClause(emails);
+    return sql:queryConcat(
+            `SELECT LOWER(work_email) AS work_email FROM employee WHERE LOWER(work_email) IN (`,
+            inClause,
+            `);`
+    );
+}
+
+# Fetch existing NIC or passport values.
+#
+# + nics - NIC or passport list
+# + return - Query to fetch existing NIC or passport values
+isolated function getExistingNicOrPassportQuery(string[] nics) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildInClause(nics);
+    return sql:queryConcat(
+            `SELECT LOWER(nic_or_passport) AS nic_or_passport FROM personal_info WHERE LOWER(nic_or_passport) IN (`,
+            inClause,
+            `);`
+    );
+}
+
+# Fetch existing EPF values.
+#
+# + epfs - EPF number list
+# + return - Query to fetch existing EPF values
+isolated function getExistingEpfsQuery(string[] epfs) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildInClause(epfs);
+    return sql:queryConcat(
+            `SELECT LOWER(epf) AS epf FROM employee WHERE LOWER(epf) IN (`,
+            inClause,
+            `);`
+    );
+}
+
+# Build an SQL IN clause for a list of string values.
+# 
+# + values - List of string values to include in the IN clause
+# + return - Parameterized query representing the IN clause
+isolated function buildInClause(string[] values) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery clause = ``;
+    foreach int i in 0 ..< values.length() {
+        clause = i == 0
+            ? sql:queryConcat(clause, `${values[i]}`)
+            : sql:queryConcat(clause, `, `, `${values[i]}`);
+    }
+    return clause;
+}
+
 # Get units query.
 #
 # + subTeamId - Sub team ID (optional)
@@ -1139,6 +1192,16 @@ isolated function getAsgardeoGroupsForEmploymentTypeQuery(int employmentTypeId) 
      FROM employment_type_idp_group
      WHERE employment_type_id = ${employmentTypeId};`;
 
+# Fetch Asgardeo group names mapped to a given team and employment type.
+#
+# + teamId - Team ID
+# + employmentTypeId - Employment type ID
+# + return - Parameterized query returning group_name rows
+isolated function getAsgardeoGroupsForTeamQuery(int teamId, int employmentTypeId) returns sql:ParameterizedQuery =>
+    `SELECT group_name AS groupName
+     FROM team_asgardeo_groups
+     WHERE team_id = ${teamId} AND employment_type_id = ${employmentTypeId};`;
+
 # Get houses query.
 #
 # + return - Houses query
@@ -1156,6 +1219,17 @@ isolated function getHouseWithLeastActiveEmployeesQuery() returns sql:Parameteri
      GROUP BY h.id, h.name
      ORDER BY COUNT(e.id) ASC
      LIMIT 1`;
+
+# Get all active houses with their active employee counts query.
+#
+# + return - Query to get all active houses ordered by active employee count ascending
+isolated function getHousesWithActiveEmployeeCountsQuery() returns sql:ParameterizedQuery =>
+    `SELECT h.id, h.name, COUNT(e.id) AS active_count
+     FROM house h
+     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
+     WHERE h.is_active = 1
+     GROUP BY h.id, h.name
+     ORDER BY active_count ASC`;
 
 # Add employee personal information query.
 #

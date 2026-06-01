@@ -49,6 +49,7 @@ export const AppConfig = {
     appConfig: SERVICE_BASE_URL + "/app-config",
 
     employees: SERVICE_BASE_URL + "/employees",
+    bulkEmployees: SERVICE_BASE_URL + "/employees/bulk",
     employeesBasicInfo: SERVICE_BASE_URL + "/employees/basic-info",
     searchEmployees: SERVICE_BASE_URL + "/employees/search",
     managers: SERVICE_BASE_URL + "/employees/managers",
