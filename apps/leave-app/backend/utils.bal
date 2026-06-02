@@ -430,28 +430,16 @@ public isolated function getNumberOfDaysFromLeaveDays(LeaveDay[] leaveDays) retu
 }
 
 # Retrieves the private email recipients for a given user.
+# Private comments are visible only to the applicant and their lead.
 #
 # + email - The email of the user for whom private recipients are to be determined
-# + userAddedRecipients - A list of additional recipients added by the user
+# + userAddedRecipients - Unused for private comments
 # + token - The authorization token to retrieve user details
 # + return - A readonly array of private email recipients or an error if the operation fails
 public isolated function getPrivateRecipientsForUser(string email, string[] userAddedRecipients, string token)
     returns readonly & string[]|error {
-    map<true> recipientMap = {
-        [email]: true
-    };
     readonly & Employee employee = check employee:getEmployee(email);
-    recipientMap[<string>employee.leadEmail] = true;
-    foreach string recipient in userAddedRecipients {
-        recipientMap[recipient] = true;
-    }
-    foreach string defaultRecipient in defaultRecipients {
-        if recipientMap.hasKey(defaultRecipient) {
-            _ = recipientMap.remove(defaultRecipient);
-        }
-    }
-
-    return recipientMap.keys().cloneReadOnly();
+    return [email, <string>employee.leadEmail].cloneReadOnly();
 }
 
 # Get UTC date from a string in ISO 8601 format. This date will be timezone independent.
