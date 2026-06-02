@@ -54,7 +54,7 @@ export interface CareerFunction {
 export interface Designation {
   id: number;
   designation: string;
-  jobBand: number;
+  jobBand: number | null;
 }
 
 export interface Company {

@@ -171,7 +171,7 @@ function getColumnDefs(theme: Theme): Record<string, GridColDef<Employee>> {
       resizable: false,
       valueGetter: (_value: unknown, row: Employee) => {
         const sec = row.secondaryJobTitle;
-        return sec && sec.trim() ? `${row.designation} / ${sec}` : row.designation;
+        return sec && sec.trim() ? `${row.designation} ${sec}` : row.designation;
       },
       renderCell: (params: GridRenderCellParams<Employee>) => (
         <TextCell value={String(params.value ?? "")} />

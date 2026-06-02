@@ -735,14 +735,15 @@ export function SearchForm() {
                   <Button
                     variant="outlined"
                     color="secondary"
+                    size="small"
                     onClick={() => setDrawerOpen(true)}
                     startIcon={
                       <FilterAltOutlined sx={{ fontSize: "18px !important" }} />
                     }
                     sx={{
                       textTransform: "none",
-                      height: "40px",
                       px: 2,
+                      height: 40,
                       borderRadius: "8px",
                       fontWeight: 600,
                       letterSpacing: 0.3,
