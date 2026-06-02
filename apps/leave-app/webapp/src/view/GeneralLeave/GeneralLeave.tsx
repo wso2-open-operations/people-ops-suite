@@ -221,7 +221,7 @@ export default function GeneralLeave() {
 
     showConfirmation(
       "Do you want to submit this leave?",
-      `This will submit a ${leaveLabel} request for ${workingDays} working day${workingDays !== 1 ? "s" : ""} (${dateRange}, ${portionLabel}). This action cannot be undone.`,
+      `This will submit a ${leaveLabel} request for ${workingDays} working day${workingDays !== 1 ? "s" : ""} (${dateRange}, ${portionLabel}).`,
       ConfirmationType.send,
       () => executeSubmit(periodType, isMorningLeave),
       "Yes",
