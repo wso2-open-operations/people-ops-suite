@@ -345,7 +345,7 @@ export default function GeneralLeave() {
         <Typography variant="caption" sx={{ color: theme.palette.customText.primary.p4.active }}>
           {isPublicComment
             ? "Your comment will be visible to all email recipients."
-            : "Your comment will be visible to all email recipients except vacation-group@wso2.com."}
+            : "Your comment will be visible to all email recipients except the WSO2 Vacation Group."}
         </Typography>
         <Button
           variant="contained"
