@@ -12,3 +12,4 @@ Config.toml
 .agents
 .claude
 docs/
+claude.md
