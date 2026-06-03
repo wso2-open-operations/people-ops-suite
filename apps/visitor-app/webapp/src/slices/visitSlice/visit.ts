@@ -53,6 +53,7 @@ export interface AddVisitPayload {
   visitDate: string;
   uuid: string;
   qrCode?: number[];
+  watchList?: string[];
 }
 
 export interface Visit {
