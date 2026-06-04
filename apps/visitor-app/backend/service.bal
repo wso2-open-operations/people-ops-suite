@@ -1201,6 +1201,18 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // External users will retrieve only own details from this endpoint.
+        //TODO: enable claims and fill 
+        if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], invokerInfo.groups) {
+            return [
+                {
+                    firstName: "First Name",
+                    lastName: "Last Name",
+                    workEmail: invokerInfo.email
+                }
+            ];
+        }
+
         people:EmployeeBasic[]|error allEmployees = people:fetchEmployees(search, 'limit, offset);
         if allEmployees is error {
             string customError = "Error occurred while fetching employees!";
