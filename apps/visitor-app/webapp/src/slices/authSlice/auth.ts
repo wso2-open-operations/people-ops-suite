@@ -24,6 +24,7 @@ import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 export enum Role {
   ADMIN = "ADMIN",
   EMPLOYEE = "EMPLOYEE",
+  EXTERNAL_USER = "EXTERNAL_USER",
 }
 
 interface AuthState {
@@ -81,7 +82,7 @@ export const loadPrivileges = createAsyncThunk(
         enqueueSnackbarMessage({
           message: SnackMessage.error.fetchPrivileges,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
@@ -94,18 +95,21 @@ export const loadPrivileges = createAsyncThunk(
     if (userPrivileges.includes(987)) {
       roles.push(Role.EMPLOYEE);
     }
+    if (userPrivileges.includes(654)) {
+      roles.push(Role.EXTERNAL_USER);
+    }
 
     if (roles.length === 0) {
       dispatch(
         enqueueSnackbarMessage({
           message: SnackMessage.error.insufficientPrivileges,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue("No roles found");
     }
     return { roles };
-  }
+  },
 );
 
 export const authSlice = createSlice({

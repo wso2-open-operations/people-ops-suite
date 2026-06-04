@@ -71,21 +71,36 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        people:Employee|error? employee = people:fetchEmployee(userInfo.email);
-        if employee is error {
-            string customError = string `Error occurred while fetching user information: ${userInfo.email}`;
-            log:printError(customError, employee);
-            return <http:InternalServerError>{
-                body: customError
+        people:Employee user;
+
+        // If the user has only the external user role, bypass fetching employee details and return with basic user info.
+        if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], userInfo.groups) {
+            // TODO: Add Claims.
+            user = {
+                firstName: "First Name",
+                lastName: "Last Name",
+                workEmail: userInfo.email,
+                jobRole: "External User",
+                employeeId: "N/A"
             };
-        }
-        if employee is () {
-            log:printError(string `No employee information found for the user: ${userInfo.email}`);
-            return <http:InternalServerError>{
-                body: {
-                    message: "No information found for the user!"
-                }
-            };
+        } else { // For internal users, fetch employee details from the user store.
+            people:Employee|error? employee = people:fetchEmployee(userInfo.email);
+            if employee is error {
+                string customError = string `Error occurred while fetching user information: ${userInfo.email}`;
+                log:printError(customError, employee);
+                return <http:InternalServerError>{
+                    body: customError
+                };
+            }
+            if employee is () {
+                log:printError(string `No employee information found for the user: ${userInfo.email}`);
+                return <http:InternalServerError>{
+                    body: {
+                        message: "No information found for the user!"
+                    }
+                };
+            }
+            user = employee;
         }
 
         // Fetch the user's privileges based on the roles.
@@ -96,8 +111,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             privileges.push(authorization:SECURITY_ADMIN_PRIVILEGE);
         }
+        if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], userInfo.groups) {
+            privileges.push(authorization:EXTERNAL_USER_PRIVILEGE);
+        }
 
-        UserInfo userInfoResponse = {...employee, privileges};
+        UserInfo userInfoResponse = {...user, privileges};
 
         error? cacheError = cache.put(userInfo.email, userInfoResponse);
         if cacheError is error {

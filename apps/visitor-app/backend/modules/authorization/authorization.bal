@@ -27,6 +27,7 @@ public isolated service class JwtInterceptor {
 
     isolated resource function default [string... path](http:RequestContext ctx, http:Request req)
         returns http:NextService|http:Forbidden|http:InternalServerError|error? {
+
         // For public endpoints that bypass authorization
         if path.length() > 0 && path[0] == INVITATIONS {
             if req.method == http:POST && path.length() == 3 && path[1].length() > 0 && path[2] == AUTHORIZE {

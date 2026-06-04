@@ -19,7 +19,7 @@ public type CustomJwtPayload record {
     # User email 
     string email;
     # User groups
-    string[] groups;
+    string[] groups = []; // Default to an empty array if groups claim is not present in the token(External  user store users may not have groups claim in the token).
 };
 
 # Client Credential JWT payload type.
@@ -34,4 +34,7 @@ public type AppRoles record {|
     string EMPLOYEE_ROLE;
     # Role for the admin
     string ADMIN_ROLE;
+    # Role for external users
+    string EXTERNAL_USER_ROLE;
 |};
+

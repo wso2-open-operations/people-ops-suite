@@ -51,7 +51,7 @@ export const routes: RouteObjectWithRole[] = [
     text: "Visit",
     icon: React.createElement(DomainAddIcon),
     element: React.createElement(View.employee),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE, Role.EXTERNAL_USER],
   },
   {
     path: "/admin-panel",
