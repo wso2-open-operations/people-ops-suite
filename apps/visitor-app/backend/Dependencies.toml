@@ -198,6 +198,9 @@ dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "lang.__internal"}
 ]
+modules = [
+	{org = "ballerina", packageName = "lang.array", moduleName = "lang.array"}
+]
 
 [[package]]
 org = "ballerina"
@@ -496,6 +499,7 @@ dependencies = [
 	{org = "ballerina", name = "graphql"},
 	{org = "ballerina", name = "http"},
 	{org = "ballerina", name = "jwt"},
+	{org = "ballerina", name = "lang.array"},
 	{org = "ballerina", name = "lang.regexp"},
 	{org = "ballerina", name = "log"},
 	{org = "ballerina", name = "mime"},
@@ -513,6 +517,7 @@ modules = [
 	{org = "wso2", packageName = "visitor", moduleName = "visitor.database"},
 	{org = "wso2", packageName = "visitor", moduleName = "visitor.email"},
 	{org = "wso2", packageName = "visitor", moduleName = "visitor.people"},
-	{org = "wso2", packageName = "visitor", moduleName = "visitor.sms"}
+	{org = "wso2", packageName = "visitor", moduleName = "visitor.sms"},
+	{org = "wso2", packageName = "visitor", moduleName = "visitor.wifi"}
 ]
 
