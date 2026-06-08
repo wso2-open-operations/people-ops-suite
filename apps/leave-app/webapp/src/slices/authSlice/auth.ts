@@ -67,7 +67,7 @@ export interface UserInfoInterface {
   firstName: string;
   lastName: string;
   workEmail: string;
-  leadEmail: string;
+  leadEmail: string | null;
   employeeThumbnail: string | null;
   jobRole: string;
   isLead: boolean;
