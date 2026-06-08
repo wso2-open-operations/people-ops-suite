@@ -44,11 +44,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         do {
             readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
             employee:Employee empInfo = check employee:getEmployee(userInfo.email);
-            if empInfo.leadEmail is () {
-                string errMsg = "Employee lead email not available";
-                log:printError(errMsg);
-                return <http:InternalServerError>{body: {message: errMsg}};
-            }
 
             // Fetch the user's privileges based on the roles.
             int[] privileges = [];
