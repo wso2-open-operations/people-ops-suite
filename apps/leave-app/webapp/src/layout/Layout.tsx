@@ -42,7 +42,7 @@ export default function Layout() {
   const userInfo = useAppSelector(selectUser);
   const hasNoManager = userInfo !== null && userInfo.leadEmail == null;
   const HEADER_HEIGHT = 64;
-  const BANNER_HEIGHT = 40;
+  const BANNER_HEIGHT = 56;
   const topOffset = HEADER_HEIGHT + (hasNoManager ? BANNER_HEIGHT : 0);
 
   const showSnackbar = useCallback(() => {
