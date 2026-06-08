@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, useTheme } from "@mui/material";
+import { Alert, Box, useTheme } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -28,6 +28,7 @@ import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
 import { selectRoles } from "@slices/authSlice/auth";
 import { type RootState, useAppSelector } from "@slices/store";
+import { selectUser } from "@slices/userSlice/user";
 
 export default function Layout() {
   const { enqueueSnackbar } = useSnackbar();
@@ -38,6 +39,9 @@ export default function Layout() {
   const roles = useSelector(selectRoles);
   const theme = useTheme();
   const mainContentRef = useRef<HTMLDivElement>(null);
+  const userInfo = useAppSelector(selectUser);
+  const hasNoManager = userInfo !== null && userInfo.leadEmail == null;
+  const topOffset = 64 + (hasNoManager ? 40 : 0);
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
@@ -97,18 +101,25 @@ export default function Layout() {
         {/* Header */}
         <Box sx={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 1300 }}>
           <Header sidebarOpen={open} />
+          {hasNoManager && (
+            <Alert severity="warning" sx={{ borderRadius: 0, py: 0.5 }}>
+              Your reporting manager is not set in the HR system. You can still submit
+              leaves, but no manager will be notified. Please contact HR to update your
+              profile.
+            </Alert>
+          )}
         </Box>
 
         {/* Main content container */}
-        <Box sx={{ display: "flex", flex: 1, position: "relative", marginTop: "64px" }}>
+        <Box sx={{ display: "flex", flex: 1, position: "relative", marginTop: `${topOffset}px` }}>
           {/* Sidebar */}
           <Box
             sx={{
               position: "fixed",
-              top: "64px",
+              top: `${topOffset}px`,
               left: 0,
               width: "fit-content",
-              height: "calc(100vh - 64px)",
+              height: `calc(100vh - ${topOffset}px)`,
               zIndex: 1200,
               backgroundColor: theme.palette.surface.secondary.active,
             }}
@@ -127,7 +138,7 @@ export default function Layout() {
             sx={{
               flex: 1,
               marginLeft: open ? "200px" : "60px",
-              minHeight: "calc(100vh - 64px)",
+              minHeight: `calc(100vh - ${topOffset}px)`,
               padding: theme.spacing(3),
               overflow: "auto",
               transition:
