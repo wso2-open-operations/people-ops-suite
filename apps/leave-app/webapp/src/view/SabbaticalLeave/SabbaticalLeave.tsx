@@ -16,6 +16,8 @@
 
 import { useEffect, useState } from "react";
 
+import { Alert, AlertTitle } from "@mui/material";
+
 import Title from "@root/src/component/common/Title";
 import { RootState, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
@@ -41,6 +43,21 @@ export default function SabbaticalLeave() {
       />
     );
   }
+
+  if (!userInfo?.leadEmail) {
+    return (
+      <>
+        <Title firstWord="Sabbatical" secondWord="Leave" />
+        <Alert severity="warning" sx={{ mt: 3, maxWidth: 640 }}>
+          <AlertTitle>Reporting manager not set</AlertTitle>
+          Sabbatical leave requires a reporting manager for the approval process. Your
+          manager is currently not set in the people management system. Please contact
+          the People Operations team to update your profile before applying.
+        </Alert>
+      </>
+    );
+  }
+
   return (
     <ApplyTab
       sabbaticalPolicyUrl={appConfig?.sabbaticalLeavePolicyUrl ?? ""}

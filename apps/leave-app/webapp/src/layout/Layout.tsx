@@ -105,9 +105,9 @@ export default function Layout() {
           <Header sidebarOpen={open} />
           {hasNoManager && (
             <Alert severity="warning" sx={{ borderRadius: 0, py: 0.5 }}>
-              Your reporting manager is not set in the HR system. You can still submit
-              leaves, but no manager will be notified. Please contact HR to update your
-              profile.
+              Your reporting manager is not set in the people management system. You can
+              still submit leaves, but no manager will be notified. Please contact the
+              People Operations team to update your profile.
             </Alert>
           )}
         </Box>
