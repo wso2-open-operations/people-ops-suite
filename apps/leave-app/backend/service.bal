@@ -137,35 +137,30 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         // Add optional mails for the form
-        if empInfo.leadEmail is () {
-            return <http:InternalServerError>{body: {message: "Employee lead email not available"}};
-        }
-        employee:Employee & readonly|error empLead = employee:getEmployee(empInfo.leadEmail);
-        if empLead is error {
-            string errorMsg = "Error occurred while fetching employee lead info";
-            log:printError(errorMsg, empLead);
-            return <http:InternalServerError>{
-                body: {
-                    message: errorMsg
-                }
-            };
-        }
         employee:DefaultMail[]|error optionalMailsToNotify = getOptionalMailsToNotify(userInfo.email);
         if optionalMailsToNotify is error {
             string errorMsg = "Error occurred while fetching optional mails to notify";
             log:printError(errorMsg, optionalMailsToNotify);
         }
+        employee:DefaultMail[] mandatoryMails = [{email: emailGroupToNotify, thumbnail: ""}];
+        if empInfo.leadEmail is string {
+            employee:Employee & readonly|error empLead = employee:getEmployee(empInfo.leadEmail);
+            if empLead is error {
+                string errorMsg = "Error occurred while fetching employee lead info";
+                log:printError(errorMsg, empLead);
+                return <http:InternalServerError>{
+                    body: {
+                        message: errorMsg
+                    }
+                };
+            }
+            mandatoryMails = [
+                {email: empLead.workEmail, thumbnail: empLead.employeeThumbnail ?: ""},
+                {email: emailGroupToNotify, thumbnail: ""}
+            ];
+        }
         employee:DefaultMailResponse cachedEmails = {
-            mandatoryMails: [
-                {
-                    email: empLead.workEmail,
-                    thumbnail: empLead.employeeThumbnail ?: ""
-                },
-                {
-                    email: emailGroupToNotify,
-                    thumbnail: ""
-                }
-            ],
+            mandatoryMails,
             optionalMails: optionalMailsToNotify is employee:DefaultMail[] ? optionalMailsToNotify : []
         };
 
