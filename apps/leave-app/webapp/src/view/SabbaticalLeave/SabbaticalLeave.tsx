@@ -16,8 +16,6 @@
 
 import { useEffect, useState } from "react";
 
-import { Alert, AlertTitle } from "@mui/material";
-
 import Title from "@root/src/component/common/Title";
 import { RootState, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
@@ -41,20 +39,6 @@ export default function SabbaticalLeave() {
         firstWord="Sabbatical "
         secondWord="Leave Feature is currently not available. Please check again later."
       />
-    );
-  }
-
-  if (!userInfo?.leadEmail) {
-    return (
-      <>
-        <Title firstWord="Sabbatical" secondWord="Leave" />
-        <Alert severity="warning" sx={{ mt: 3, maxWidth: 640 }}>
-          <AlertTitle>Reporting lead not set</AlertTitle>
-          Sabbatical leave requires a reporting lead for the approval process. Your
-          lead is currently not set in the people management system. Please contact
-          the People Operations team to update your profile before applying.
-        </Alert>
-      </>
     );
   }
 
