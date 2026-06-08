@@ -47,8 +47,6 @@ export default function Layout() {
     location.pathname.includes("apply/sabbatical");
   const showManagerBanner = hasNoManager && !isBannerSuppressedRoute;
   const HEADER_HEIGHT = 64;
-  const BANNER_HEIGHT = 56;
-  const topOffset = HEADER_HEIGHT + (showManagerBanner ? BANNER_HEIGHT : 0);
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
@@ -108,24 +106,18 @@ export default function Layout() {
         {/* Header */}
         <Box sx={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 1300 }}>
           <Header sidebarOpen={open} />
-          {showManagerBanner && (
-            <Alert severity="warning" sx={{ borderRadius: 0, py: 0.5 }}>
-              Your reporting lead is not set in the people management system. Please contact the
-              People Operations team to update your profile.
-            </Alert>
-          )}
         </Box>
 
         {/* Main content container */}
-        <Box sx={{ display: "flex", flex: 1, position: "relative", marginTop: `${topOffset}px` }}>
+        <Box sx={{ display: "flex", flex: 1, position: "relative", marginTop: `${HEADER_HEIGHT}px` }}>
           {/* Sidebar */}
           <Box
             sx={{
               position: "fixed",
-              top: `${topOffset}px`,
+              top: `${HEADER_HEIGHT}px`,
               left: 0,
               width: "fit-content",
-              height: `calc(100vh - ${topOffset}px)`,
+              height: `calc(100vh - ${HEADER_HEIGHT}px)`,
               zIndex: 1200,
               backgroundColor: theme.palette.surface.secondary.active,
             }}
@@ -144,7 +136,7 @@ export default function Layout() {
             sx={{
               flex: 1,
               marginLeft: open ? "200px" : "60px",
-              minHeight: `calc(100vh - ${topOffset}px)`,
+              minHeight: `calc(100vh - ${HEADER_HEIGHT}px)`,
               padding: theme.spacing(3),
               overflow: "auto",
               transition:
@@ -170,6 +162,15 @@ export default function Layout() {
               },
             }}
           >
+            {showManagerBanner && (
+              <Alert
+                severity="warning"
+                sx={{ borderRadius: 0, mx: -3, mt: -3, mb: 3 }}
+              >
+                Your reporting lead is not set in the people management system. Please contact the
+                People Operations team to update your profile.
+              </Alert>
+            )}
             <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
               <Outlet />
             </Suspense>
