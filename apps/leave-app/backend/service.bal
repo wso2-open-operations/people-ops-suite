@@ -469,9 +469,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
                 string? leadMail = employeeDetails.leadEmail;
                 if leadMail is () {
+                    string errMsg = "A reporting manager is required to apply for sabbatical leave.";
+                    log:printWarn(errMsg);
                     return <http:BadRequest>{
                         body: {
-                            message: "A reporting manager is required to apply for sabbatical leave."
+                            message: errMsg
                         }
                     };
                 }
