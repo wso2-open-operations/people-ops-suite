@@ -15,6 +15,7 @@
 // under the License.
 import {
   Alert,
+  AlertTitle,
   Box,
   Checkbox,
   CircularProgress,
@@ -405,6 +406,15 @@ export default function ApplyTab({
                 </Link>
               </Stack>
             </Stack>
+            {!userInfo?.leadEmail ? (
+              <Alert variant="outlined" severity="warning">
+                <AlertTitle>Reporting lead not set</AlertTitle>
+                Sabbatical leave requires a reporting lead for the approval process. Your lead is
+                currently not set in the people management system. Please contact the People
+                Operations team to update your profile before applying.
+              </Alert>
+            ) : (
+            <>
             <Stack
               flexDirection={{ xs: "column", md: "row" }}
               gap="2rem"
@@ -590,6 +600,8 @@ export default function ApplyTab({
                   <CustomButton label="Apply" onClick={handleOpenDialog} disabled={isSubmitting} />
                 </Box>
               </>
+            )}
+            </>
             )}
           </FormContainer>
         </Stack>

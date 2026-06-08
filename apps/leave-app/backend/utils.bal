@@ -134,7 +134,10 @@ public isolated function getAllEmailRecipientsForUser(string email, string[] use
     }
 
     readonly & Employee employee = check employee:getEmployee(email);
-    recipientMap[<string>employee.leadEmail] = true;
+    string? leadEmail = employee.leadEmail;
+    if leadEmail is string {
+        recipientMap[leadEmail] = true;
+    }
     recipientMap[emailGroupToNotify] = true;
     foreach string recipient in userAddedRecipients {
         recipientMap[recipient] = true;
@@ -441,7 +444,10 @@ public isolated function getPrivateRecipientsForUser(string email, string[] user
         [email]: true
     };
     readonly & Employee employee = check employee:getEmployee(email);
-    recipientMap[<string>employee.leadEmail] = true;
+    string? leadEmail = employee.leadEmail;
+    if leadEmail is string {
+        recipientMap[leadEmail] = true;
+    }
     foreach string recipient in userAddedRecipients {
         recipientMap[recipient] = true;
     }

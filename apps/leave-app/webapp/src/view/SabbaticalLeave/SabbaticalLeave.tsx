@@ -41,6 +41,7 @@ export default function SabbaticalLeave() {
       />
     );
   }
+
   return (
     <ApplyTab
       sabbaticalPolicyUrl={appConfig?.sabbaticalLeavePolicyUrl ?? ""}

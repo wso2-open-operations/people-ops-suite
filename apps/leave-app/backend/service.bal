@@ -44,11 +44,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         do {
             readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
             employee:Employee empInfo = check employee:getEmployee(userInfo.email);
-            if empInfo.leadEmail is () {
-                string errMsg = "Employee lead email not available";
-                log:printError(errMsg);
-                return <http:InternalServerError>{body: {message: errMsg}};
-            }
 
             // Fetch the user's privileges based on the roles.
             int[] privileges = [];
@@ -142,35 +137,30 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         // Add optional mails for the form
-        if empInfo.leadEmail is () {
-            return <http:InternalServerError>{body: {message: "Employee lead email not available"}};
-        }
-        employee:Employee & readonly|error empLead = employee:getEmployee(empInfo.leadEmail);
-        if empLead is error {
-            string errorMsg = "Error occurred while fetching employee lead info";
-            log:printError(errorMsg, empLead);
-            return <http:InternalServerError>{
-                body: {
-                    message: errorMsg
-                }
-            };
-        }
         employee:DefaultMail[]|error optionalMailsToNotify = getOptionalMailsToNotify(userInfo.email);
         if optionalMailsToNotify is error {
             string errorMsg = "Error occurred while fetching optional mails to notify";
             log:printError(errorMsg, optionalMailsToNotify);
         }
+        employee:DefaultMail[] mandatoryMails = [{email: emailGroupToNotify, thumbnail: ""}];
+        if empInfo.leadEmail is string {
+            employee:Employee & readonly|error empLead = employee:getEmployee(empInfo.leadEmail);
+            if empLead is error {
+                string errorMsg = "Error occurred while fetching employee lead info";
+                log:printError(errorMsg, empLead);
+                return <http:InternalServerError>{
+                    body: {
+                        message: errorMsg
+                    }
+                };
+            }
+            mandatoryMails = [
+                {email: empLead.workEmail, thumbnail: empLead.employeeThumbnail ?: ""},
+                {email: emailGroupToNotify, thumbnail: ""}
+            ];
+        }
         employee:DefaultMailResponse cachedEmails = {
-            mandatoryMails: [
-                {
-                    email: empLead.workEmail,
-                    thumbnail: empLead.employeeThumbnail ?: ""
-                },
-                {
-                    email: emailGroupToNotify,
-                    thumbnail: ""
-                }
-            ],
+            mandatoryMails,
             optionalMails: optionalMailsToNotify is employee:DefaultMail[] ? optionalMailsToNotify : []
         };
 
@@ -479,8 +469,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
                 string? leadMail = employeeDetails.leadEmail;
                 if leadMail is () {
-                    string errMsg = "Employee lead email not found.";
-                    return <http:InternalServerError>{
+                    string errMsg = "A reporting lead is required to apply for sabbatical leave.";
+                    log:printWarn(errMsg);
+                    return <http:BadRequest>{
                         body: {
                             message: errMsg
                         }
@@ -1044,9 +1035,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string? applicantLeadEmail = applicantInfo.leadEmail;
         if applicantLeadEmail is () {
-            string errMsg = "Sabbatical leave applicant's manager email is not available.";
+            string errMsg = "Sabbatical leave applicant's reporting lead is not available.";
             log:printError(errMsg);
-            return <http:InternalServerError>{
+            return <http:BadRequest>{
                 body: {
                     message: errMsg
                 }
