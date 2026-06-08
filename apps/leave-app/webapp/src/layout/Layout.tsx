@@ -41,9 +41,11 @@ export default function Layout() {
   const mainContentRef = useRef<HTMLDivElement>(null);
   const userInfo = useAppSelector(selectUser);
   const hasNoManager = userInfo !== null && userInfo.leadEmail == null;
+  const isSabbaticalRoute = location.pathname.includes("sabbatical");
+  const showManagerBanner = hasNoManager && !isSabbaticalRoute;
   const HEADER_HEIGHT = 64;
   const BANNER_HEIGHT = 56;
-  const topOffset = HEADER_HEIGHT + (hasNoManager ? BANNER_HEIGHT : 0);
+  const topOffset = HEADER_HEIGHT + (showManagerBanner ? BANNER_HEIGHT : 0);
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
@@ -103,7 +105,7 @@ export default function Layout() {
         {/* Header */}
         <Box sx={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 1300 }}>
           <Header sidebarOpen={open} />
-          {hasNoManager && (
+          {showManagerBanner && (
             <Alert severity="warning" sx={{ borderRadius: 0, py: 0.5 }}>
               Your reporting manager is not set in the people management system. You can
               still submit leaves, but no manager will be notified. Please contact the
