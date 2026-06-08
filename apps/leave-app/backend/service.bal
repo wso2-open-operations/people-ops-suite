@@ -469,10 +469,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
                 string? leadMail = employeeDetails.leadEmail;
                 if leadMail is () {
-                    string errMsg = "Employee lead email not found.";
-                    return <http:InternalServerError>{
+                    return <http:BadRequest>{
                         body: {
-                            message: errMsg
+                            message: "A reporting manager is required to apply for sabbatical leave."
                         }
                     };
                 }
@@ -1034,9 +1033,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string? applicantLeadEmail = applicantInfo.leadEmail;
         if applicantLeadEmail is () {
-            string errMsg = "Sabbatical leave applicant's manager email is not available.";
+            string errMsg = "Sabbatical leave applicant's reporting manager is not available.";
             log:printError(errMsg);
-            return <http:InternalServerError>{
+            return <http:BadRequest>{
                 body: {
                     message: errMsg
                 }
