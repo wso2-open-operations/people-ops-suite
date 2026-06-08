@@ -41,7 +41,9 @@ export default function Layout() {
   const mainContentRef = useRef<HTMLDivElement>(null);
   const userInfo = useAppSelector(selectUser);
   const hasNoManager = userInfo !== null && userInfo.leadEmail == null;
-  const topOffset = 64 + (hasNoManager ? 40 : 0);
+  const HEADER_HEIGHT = 64;
+  const BANNER_HEIGHT = 40;
+  const topOffset = HEADER_HEIGHT + (hasNoManager ? BANNER_HEIGHT : 0);
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
