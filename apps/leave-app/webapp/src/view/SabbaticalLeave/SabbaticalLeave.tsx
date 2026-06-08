@@ -49,9 +49,9 @@ export default function SabbaticalLeave() {
       <>
         <Title firstWord="Sabbatical" secondWord="Leave" />
         <Alert severity="warning" sx={{ mt: 3, maxWidth: 640 }}>
-          <AlertTitle>Reporting manager not set</AlertTitle>
-          Sabbatical leave requires a reporting manager for the approval process. Your
-          manager is currently not set in the people management system. Please contact
+          <AlertTitle>Reporting lead not set</AlertTitle>
+          Sabbatical leave requires a reporting lead for the approval process. Your
+          lead is currently not set in the people management system. Please contact
           the People Operations team to update your profile before applying.
         </Alert>
       </>

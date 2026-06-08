@@ -107,8 +107,8 @@ export default function Layout() {
           <Header sidebarOpen={open} />
           {showManagerBanner && (
             <Alert severity="warning" sx={{ borderRadius: 0, py: 0.5 }}>
-              Your reporting manager is not set in the people management system. You can
-              still submit leaves, but no manager will be notified. Please contact the
+              Your reporting lead is not set in the people management system. You can
+              still submit leaves, but no lead will be notified. Please contact the
               People Operations team to update your profile.
             </Alert>
           )}
