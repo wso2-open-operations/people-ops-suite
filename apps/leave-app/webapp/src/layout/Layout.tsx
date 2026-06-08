@@ -41,8 +41,11 @@ export default function Layout() {
   const mainContentRef = useRef<HTMLDivElement>(null);
   const userInfo = useAppSelector(selectUser);
   const hasNoManager = userInfo !== null && userInfo.leadEmail == null;
-  const isSabbaticalRoute = location.pathname.includes("sabbatical");
-  const showManagerBanner = hasNoManager && !isSabbaticalRoute;
+  const isBannerSuppressedRoute =
+    location.pathname.includes("history") ||
+    location.pathname.includes("reports") ||
+    location.pathname.includes("apply/sabbatical");
+  const showManagerBanner = hasNoManager && !isBannerSuppressedRoute;
   const HEADER_HEIGHT = 64;
   const BANNER_HEIGHT = 56;
   const topOffset = HEADER_HEIGHT + (showManagerBanner ? BANNER_HEIGHT : 0);
@@ -107,8 +110,7 @@ export default function Layout() {
           <Header sidebarOpen={open} />
           {showManagerBanner && (
             <Alert severity="warning" sx={{ borderRadius: 0, py: 0.5 }}>
-              Your reporting lead is not set in the people management system. You can
-              still submit leaves, but no lead will be notified. Please contact the
+              Your reporting lead is not set in the people management system. Please contact the
               People Operations team to update your profile.
             </Alert>
           )}
