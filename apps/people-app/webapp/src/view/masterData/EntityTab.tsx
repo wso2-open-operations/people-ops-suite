@@ -284,6 +284,7 @@ export default function EntityTab({
           rows={isLoading ? [] : filteredEntities}
           columns={columns}
           loading={isLoading}
+          localeText={{ noRowsLabel: `No ${entityLabel.toLowerCase()}s` }}
           initialState={{
             pagination: { paginationModel: { pageSize: DEFAULT_LIMIT_VALUE } },
           }}

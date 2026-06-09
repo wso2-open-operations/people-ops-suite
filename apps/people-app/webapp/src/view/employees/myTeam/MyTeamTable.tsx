@@ -300,6 +300,7 @@ export default function MyTeamTable() {
           columns={columns}
           rows={isLoading ? [] : rows}
           getRowId={(row: Employee) => row.employeeId}
+          localeText={{ noRowsLabel: "No employees" }}
           pagination
           paginationMode="server"
           rowCount={employeeState.filteredEmployeesResponse.totalCount ?? 0}
