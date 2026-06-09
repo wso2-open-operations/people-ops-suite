@@ -112,3 +112,19 @@ public type DinnerRequest record {|
     # Timestamp of the request
     string timestamp?;
 |};
+
+# [Configurable] Google sheet OAuth2 application configuration.
+type SheetConfig record {|
+    # OAuth2 token endpoint
+    string tokenUrl;
+    # OAuth 2 refresh token
+    string refreshToken;
+    # OAuth2 client ID
+    string clientId;
+    # OAuth2 client secret
+    string clientSecret;
+    # Sheet ID
+    string sheetId;
+    # Sheet name
+    string sheetName;
+|};

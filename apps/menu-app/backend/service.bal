@@ -137,8 +137,17 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Add feedback to a sheet.
     #
     # + return - Successful feedback or an error
-    isolated resource function post feedback(Feedback feedback)
+    isolated resource function post feedback(http:RequestContext ctx, Feedback feedback)
         returns http:InternalServerError|http:BadRequest|http:Created {
+
+        authentication:CustomJwtPayload|error userInfo = ctx.getWithType(authentication:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "User information header not found!"
+                }
+            };
+        }
 
         Menu|error menu = sheets:getMenu();
         if menu is error {
@@ -173,7 +182,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error feedbackId = sheets:addFeedback(feedback, menu.lunch.title);
+        int|error feedbackId = sheets:addFeedback(feedback, menu.lunch.title, userInfo.email);
         if feedbackId is error {
             string customErr = "Error occurred while inserting the lunch feedback";
             log:printError(customErr, feedbackId);
