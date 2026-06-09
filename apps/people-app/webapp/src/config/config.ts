@@ -27,6 +27,7 @@ declare global {
       AUTH_SIGN_IN_REDIRECT_URL: string;
       AUTH_SIGN_OUT_REDIRECT_URL: string;
       REACT_APP_BACKEND_BASE_URL: string;
+      IS_ME_EDIT_ENABLED?: boolean;
     };
   }
 }
@@ -42,6 +43,7 @@ export const AsgardeoConfig: BaseURLAuthClientConfig = {
 export const APP_NAME = window.config?.APP_NAME ?? "";
 export const APP_DOMAIN = window.config?.APP_DOMAIN ?? "";
 export const SERVICE_BASE_URL = window.config?.REACT_APP_BACKEND_BASE_URL ?? "";
+export const IS_ME_EDIT_ENABLED = window.config?.IS_ME_EDIT_ENABLED ?? false;
 
 export const AppConfig = {
   serviceUrls: {
