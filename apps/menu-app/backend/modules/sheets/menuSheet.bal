@@ -99,12 +99,13 @@ isolated function getRowData(int sheetRange) returns string[]|error {
 #
 # + feedback - Lunch feedback
 # + vendor - Vendor name
+# + email - User email
 # + return - Return the updated row position or an error
-public isolated function addFeedback(Feedback feedback, string vendor) returns int|error {
-    sheets:ValueRange result = check menuSpreadsheetClient->appendValue(
-        menuSheetClientConfig.sheetId,
-        [getDateTimeInReadableFormat(), vendor, feedback.message],
-        {sheetName: menuSheetClientConfig.mealFeedbackSheetName}
+public isolated function addFeedback(Feedback feedback, string vendor, string email) returns int|error {
+    sheets:ValueRange result = check feedbackSpreadsheetClient->appendValue(
+        feedbackSheetClientConfig.sheetId,
+        [getDateTimeInReadableFormat(), vendor, feedback.message, email],
+        {sheetName: feedbackSheetClientConfig.sheetName}
     );
 
     return result.rowPosition;

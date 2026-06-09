@@ -50,3 +50,20 @@ final sheets:ConnectionConfig dodSheetsConfig = {
 };
 
 public final sheets:Client dodSpreadsheetClient = check new (dodSheetsConfig);
+
+configurable SheetConfig feedbackSheetClientConfig = ?;
+
+final sheets:ConnectionConfig feedbackSheetsConfig = {
+    auth: {
+        clientId: feedbackSheetClientConfig.clientId,
+        clientSecret: feedbackSheetClientConfig.clientSecret,
+        refreshToken: feedbackSheetClientConfig.refreshToken,
+        refreshUrl: feedbackSheetClientConfig.tokenUrl
+    },
+    retryConfig: {
+        count: GSHEET_CONFIG_RETRY_COUNT,
+        interval: GSHEET_CONFIG_RETRY_INTERVAL
+    }
+};
+
+public final sheets:Client feedbackSpreadsheetClient = check new (feedbackSheetsConfig);

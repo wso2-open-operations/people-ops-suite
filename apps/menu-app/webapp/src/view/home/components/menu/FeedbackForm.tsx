@@ -87,13 +87,12 @@ const FeedbackForm = (props: FeedbackFormProps) => {
           },
         }}
       >
-        Feedback is anonymous and accepted only on {"\u00A0"}
-        <span style={{ color: theme.palette.customText.brand.p1.active, fontWeight: 500 }}>
-          {date}
-        </span>
-        {"\u00A0"} from
-        <span style={{ color: theme.palette.customText.brand.p1.active, fontWeight: 500 }}>
-          {"\u00A0"} 12:00PM - 04:15PM
+        Feedback is accepted only on{" "}
+        <span style={{ color: theme.palette.customText.brand.p1.active, fontWeight: 500 }}>{date}</span>
+        {" "}from{" "}
+        <span style={{ color: theme.palette.customText.brand.p1.active, fontWeight: 500 }}>12:00PM - 04:15PM</span>.{" "}
+        <span style={{ fontStyle: "italic", color: theme.palette.customText.brand.p1.active }}>
+          Your email will be recorded along with your feedback.
         </span>
       </Typography>
     );
@@ -105,6 +104,15 @@ const FeedbackForm = (props: FeedbackFormProps) => {
       onSubmit={formik.handleSubmit}
       sx={{ display: "flex", flexDirection: "column", gap: 2 }}
     >
+      <Typography
+        variant="body2"
+        sx={{
+          fontStyle: "italic",
+          color: theme.palette.customText.brand.p1.active,
+        }}
+      >
+        Your email will be recorded along with your feedback.
+      </Typography>
       <TextField
         id="feedback-message"
         name="message"
