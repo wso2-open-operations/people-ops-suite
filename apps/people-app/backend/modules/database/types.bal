@@ -76,6 +76,8 @@ public type EmployeeBasicInfo record {|
     # Thumbnail URL of the user
     @sql:Column {name: "employee_thumbnail"}
     string? employeeThumbnail;
+    # Combined designation (designation + job role + secondary job title)
+    string designation?;
 |};
 
 # User information with privileges.
@@ -172,8 +174,10 @@ public type Employee record {|
     int designationId;
     # Job band
     int? jobBand;
-    # Job role of the user
+    # Secondary job title
     string? secondaryJobTitle;
+    # Job role
+    string? jobRole;
     # Office
     string? office;
     # Office ID
@@ -187,9 +191,9 @@ public type Employee record {|
     # Team ID
     int teamId;
     # Sub-team
-    string subTeam;
+    string? subTeam;
     # Sub-team ID
-    int subTeamId;
+    int? subTeamId;
     # Unit
     string? unit;
     # Unit ID
@@ -461,7 +465,7 @@ public type ContinuousServiceRecordInfo record {|
     # Team
     string team;
     # Sub-team
-    string subTeam;
+    string? subTeam;
     # Unit
     string? unit;
 |};
@@ -845,6 +849,9 @@ public type CreateEmployeePayload record {|
     # Secondary job title
     @constraint:String {maxLength: 100}
     string? secondaryJobTitle = ();
+    # Job role
+    @constraint:String {maxLength: 100}
+    string? jobRole = ();
     # Manager email
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string managerEmail;
@@ -963,6 +970,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Secondary job title
     @constraint:String {maxLength: 100}
     string? secondaryJobTitle = ();
+    # Job role
+    @constraint:String {maxLength: 100}
+    string? jobRole = ();
     # Manager email
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
     string? managerEmail = ();
