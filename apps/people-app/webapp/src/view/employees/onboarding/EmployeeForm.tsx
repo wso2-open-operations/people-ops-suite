@@ -110,6 +110,7 @@ const toFormValues = (
     base.careerFunctionId = employee.careerFunctionId ?? 0;
     base.designationId = employee.designationId ?? 0;
     base.secondaryJobTitle = employee.secondaryJobTitle ?? "";
+    base.jobRole = employee.jobRole ?? "";
     base.houseId = employee.houseId ?? 0;
     base.employeeId = employee.employeeId ?? "";
     base.employeeStatus = employee.employeeStatus ?? null;
@@ -164,6 +165,7 @@ const toJobUpdatePayload = (
   workEmail: values.workEmail,
   startDate: values.startDate,
   secondaryJobTitle: values.secondaryJobTitle,
+  jobRole: values.jobRole,
   managerEmail: values.managerEmail,
   additionalManagerEmails: values.additionalManagerEmail ?? [],
   probationEndDate: values.probationEndDate ?? null,
@@ -684,6 +686,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 lastName: values.personalInfo.lastName || "",
                 epf: values.epf || undefined,
                 secondaryJobTitle: values.secondaryJobTitle || "",
+                jobRole: values.jobRole || "",
                 workLocation: values.workLocation,
                 workEmail: values.workEmail,
                 startDate: values.startDate,
@@ -704,7 +707,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                     ? values.officeId
                     : undefined,
                 teamId: values.teamId,
-                subTeamId: values.subTeamId,
+                subTeamId: values.subTeamId > 0 ? values.subTeamId : undefined,
                 businessUnitId: values.businessUnitId,
                 unitId: values.unitId > 0 ? values.unitId : undefined,
                 houseId: values.houseId > 0 ? values.houseId : undefined,

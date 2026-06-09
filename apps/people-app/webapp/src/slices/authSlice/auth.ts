@@ -59,7 +59,7 @@ export interface UserInfoInterface {
   lastName: string;
   workEmail: string;
   employeeThumbnail: string | null;
-  jobRole: string;
+  designation: string | null;
   privileges: number[];
 }
 

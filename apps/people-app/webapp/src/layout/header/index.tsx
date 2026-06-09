@@ -119,7 +119,7 @@ const Header = () => {
                     {user.userInfo?.firstName + " " + user.userInfo.lastName}
                   </Typography>
                   <Typography variant="body2">
-                    {user.userInfo?.jobRole}
+                    {user.userInfo?.designation}
                   </Typography>
                 </Box>
                 <Tooltip title="Open settings">

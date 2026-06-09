@@ -22,7 +22,7 @@ bal build          # compile
 bal run            # run service (port 9090)
 ```
 
-Copy `Config.toml.local` to `Config.toml` and fill in DB credentials and role names before running. The full `Config.toml` also requires `ADMIN_ROLE`, transaction service OAuth credentials, and Google Sheets config — see the checked-in local dev `Config.toml` for the complete shape of all required sections.
+Copy `Config.toml.local` to `Config.toml` and fill in DB credentials and role names before running. The full `Config.toml` also requires `ADMIN_ROLE` and the `[people.wso2_coin]` section (blockchain `transactionEndpoint`, `clientAuthConfig` OAuth credentials, and `parkingSheetConfig` for Google Sheets) — see the checked-in `Config.toml.local` for the complete shape of all required sections.
 
 ### Webapp (Legacy CRA)
 
@@ -36,7 +36,7 @@ yarn test -- --testPathPattern=<file>   # single test file
 yarn analyze       # bundle analysis
 ```
 
-Create `.env` in `webapp/` with: `APP_NAME`, `APP_DOMAIN`, `ASGARDEO_BASE_URL`, `ASGARDEO_CLIENT_ID`, `AUTH_SIGN_IN_REDIRECT_URL`, `AUTH_SIGN_OUT_REDIRECT_URL`, `REACT_APP_BACKEND_BASE_URL`.
+Create `.env` in `webapp/` with: `APP_NAME`, `APP_DOMAIN`, `ASGARDEO_BASE_URL`, `ASGARDEO_CLIENT_ID`, `ASGARDEO_REVOKE_ENDPOINT`, `AUTH_SIGN_IN_REDIRECT_URL`, `AUTH_SIGN_OUT_REDIRECT_URL`, `REACT_APP_BACKEND_BASE_URL`.
 
 ESLint config is inlined in `package.json` (no separate `.eslintrc` file).
 
@@ -59,14 +59,15 @@ Runtime config injected via `window.config`. Required keys: `CLIENT_ID`, `SIGN_I
 ### Backend
 
 - Ballerina 2201.12.7, organized as package `wso2_open_operations/people`
-- Five modules:
-  - **`authorization`** — `JwtInterceptor` reads the `x-jwt-assertion` header, decodes the JWT, validates group membership, and stores `CustomJwtPayload` in the request context. Roles configured via `Config.toml`: `EMPLOYEE_ROLE` and `ADMIN_ROLE`.
+- Six modules:
+  - **`authorization`** — `JwtInterceptor` reads the `x-jwt-assertion` header, decodes the JWT, validates group membership, and stores `CustomJwtPayload` in the request context. Roles configured via `Config.toml`: `EMPLOYEE_ROLE`, `ADMIN_ROLE`, and `SERVICE_DESK_ROLE`.
   - **`database`** — MySQL client, all DB queries (`db_queries.bal`), DB functions (`db_functions.bal`), types, enums, and utils.
-  - **`gsheet`** — Google Sheets integration for car park booking records.
-  - **`transaction`** — Blockchain transaction integration for O2C parking payments.
+  - **`email`** — Email notification client; sends alerts via an external email service for onboarding events (e.g., failed Asgardeo group assignments).
   - **`qr`** — QR code generation for employees (`qr.bal`, `clients.bal`, `types.bal`).
+  - **`scim`** — Asgardeo SCIM client for user and group management in the internal org; used during employee onboarding and bulk provisioning.
+  - **`wso2_coin`** — Car park reservation + O2C payment integration. Bundles the blockchain transaction client (`transaction.bal`, `clients.bal`), Google Sheets parking-record sync (`parkingSheet.bal`), shared types/constants, and admin scripts. Exposes config values like `masterWalletAddress`, `reservationWindowStartHour/EndHour`, and `pendingReservationExpiryMinutes` consumed directly from `service.bal`. The microapp's parking booking flow (`/services/parking/*`) is the frontend surface for this module.
 - Every resource function in `service.bal` extracts `userInfo` from `ctx` and checks role permissions before executing business logic.
-- Three privilege levels — `EMPLOYEE_PRIVILEGE`, `LEAD_PRIVILEGE`, and `ADMIN_PRIVILEGE` — are returned to the frontend in `/user-info`.
+- Four privilege levels — `EMPLOYEE_PRIVILEGE`, `LEAD_PRIVILEGE`, `SERVICE_DESK_PRIVILEGE`, and `ADMIN_PRIVILEGE` — are returned to the frontend in `/user-info`.
 - Database schema is managed via SQL files in `backend/resources/` (initial creation script + numbered migration files).
 
 ### Webapp
@@ -77,6 +78,8 @@ Runtime config injected via `window.config`. Required keys: `CLIENT_ID`, `SIGN_I
 - `employeeSlice` — employee list, selected employee details
 - `employeePersonalInfo` — personal info for selected employee
 - `organizationSlice` — org hierarchy data (BUs, teams, sub-teams, etc.). All fetch thunks share a single `state.state` field — any pending thunk sets the entire slice to `loading`.
+- `masterDataSlice` — CRUD state for org master data (entities + parent/child mappings) backing the `view/masterData/` admin screens (`MasterDataView`, `EntityTab`, `EntityDialog`, `MappingDialog`, `HierarchyView`).
+- `bulkOnboardingSlice` — state for bulk CSV employee upload: tracks created/skipped counts, per-row validation errors, SCIM provisioning errors, and group assignment warnings.
 - `commonSlice` — snackbar/notification queue
 - `configSlice` — app config from backend
 
@@ -84,7 +87,7 @@ Runtime config injected via `window.config`. Required keys: `CLIENT_ID`, `SIGN_I
 
 **API service** (`src/utils/apiService.ts`): Singleton Axios instance with retry-axios (3 retries, 401 triggers token refresh). Uses a per-endpoint `CancelToken` map — any new request to the same URL automatically cancels the previous in-flight request to that URL.
 
-**Routing:** `src/route.ts` defines `RouteObjectWithRole[]` where each route has `allowRoles`. `getActiveRoutesV2()` filters routes by user roles. Views in `src/view/` (employees, me, cases, help, reports).
+**Routing:** `src/route.ts` defines `RouteObjectWithRole[]` where each route has `allowRoles`. `getActiveRoutesV2()` filters routes by user roles. Views in `src/view/` (employees, me, cases, help, reports, masterData).
 
 **Path aliases** (defined in `tsconfig.paths.json`, applied via `config-overrides.js` with react-app-rewired):
 - `@src/*` → `src/`
@@ -109,7 +112,7 @@ Runtime config injected via `window.config`. Required keys: `CLIENT_ID`, `SIGN_I
 
 **Data fetching:** TanStack React Query (no Redux). `QueryClientProvider` wraps the app in `main.tsx`.
 
-**Routing:** HashRouter with two pages — `HomePage` (self-service dashboard) and `VehicleManagementPage`.
+**Routing:** HashRouter with pages for the self-service dashboard (`Home`) and a multi-step parking booking flow: `VehicleManagement` (`/services/vehicles`), `ParkingSlotSelection` (`/services/parking`), `ParkingBookingSummary`, `ParkingBookingConfirmation`, and `MyParkingBookings`. A `ParkingWalletReturnResume` component handles deep-link resume after the O2C wallet flow. The parking flow consumes the backend's `wso2_coin` module endpoints.
 
 **Path alias:** `@/` → `src/` (configured in `vite.config.ts`).
 
@@ -127,6 +130,7 @@ The backend issues three privilege levels, returned as an array in the `/user-in
 |---|---|---|
 | `EMPLOYEE_PRIVILEGE` | 987 | Every authenticated user |
 | `LEAD_PRIVILEGE` | 993 | Dynamically: `database:isLead(email)` — no static IAM group |
+| `SERVICE_DESK_PRIVILEGE` | 991 | IAM group membership (`SERVICE_DESK_ROLE` in `Config.toml`) |
 | `ADMIN_PRIVILEGE` | 999 | IAM group membership (`ADMIN_ROLE` in `Config.toml`) |
 
 `LEAD_ROLE` is **not** configured in `Config.toml`; lead status is resolved at request time from the DB.
@@ -144,6 +148,7 @@ For employee-list endpoints the backend checks `leadOnly` and `directReports` in
 
 - `Role.EMPLOYEE` — always added
 - `Role.LEAD` — added when the privileges array contains `LEAD_PRIVILEGE` (993)
+- `Role.SERVICE_DESK` — added when the privileges array contains `SERVICE_DESK_PRIVILEGE` (991)
 - `Role.ADMIN` — added when the privileges array contains `ADMIN_PRIVILEGE` (999)
 
 A user may hold more than one role simultaneously (e.g., `[EMPLOYEE, LEAD]` or `[EMPLOYEE, LEAD, ADMIN]`).
@@ -155,13 +160,16 @@ A user may hold more than one role simultaneously (e.g., `[EMPLOYEE, LEAD]` or `
 | `/` (Me) | `ADMIN, EMPLOYEE` | — | Everyone |
 | `/employees` (parent) | `ADMIN` | — | Admins |
 | `/employees/view` (All) | `ADMIN` | — | Admins |
-| `/employees/onboarding` | `ADMIN` | — | Admins |
 | `/employees/my-team` *(nested)* | `LEAD` | — | Admin+Lead (nested under Employees sidebar group) |
 | `/employees/my-team` *(top-level)* | `LEAD` | `ADMIN` | Lead-only users (shown as top-level sidebar item) |
+| `/onboarding` | `ADMIN` | — | Admins |
 | `/employees/:employeeId` | `ADMIN, LEAD` | — | Admins and Leads (not in sidebar) |
 | `/employees/:employeeId/edit` | `ADMIN` | — | Admins only (not in sidebar) |
+| `/reports` (parent) | `ADMIN, SERVICE_DESK` | — | Admins and Service Desk |
 | `/reports/active-employees` | `ADMIN` | — | Admins only |
 | `/reports/inactive-employees` | `ADMIN` | — | Admins only |
+| `/reports/qr-codes` | `ADMIN, SERVICE_DESK` | — | Admins and Service Desk |
+| `/master-data` | `ADMIN` | — | Admins only |
 
 The dual `/employees/my-team` route entries ensure that lead+admin users see **My Team** nested under the **Employees** group, while lead-only users see it as a standalone top-level entry. The `excludeRoles` guard on the top-level entry prevents duplication for admin+lead users.
 

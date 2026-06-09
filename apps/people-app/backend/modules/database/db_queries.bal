@@ -20,14 +20,22 @@ import ballerina/sql;
 # + email - Employee's work email address
 # + return - Query to get employee basic information
 isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
-    `SELECT 
-        employee_id,
-        first_name,
-        last_name,
-        work_email,
-        employee_thumbnail
-    FROM employee
-    WHERE work_email = ${email};`;
+    `SELECT
+        e.employee_id,
+        e.first_name,
+        e.last_name,
+        e.work_email,
+        e.employee_thumbnail,
+        CONCAT(
+            d.designation,
+            CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
+                THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END,
+            CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
+                THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END
+        ) AS designation
+    FROM employee e
+        INNER JOIN designation d ON e.designation_id = d.id
+    WHERE e.work_email = ${email};`;
 
 # Fetch all employees' basic information.
 #
@@ -101,9 +109,16 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         et.name AS employmentType,
         e.employment_type_id AS employmentTypeId,
         d.career_function_id AS careerFunctionId,
-        d.designation AS designation,
+        CONCAT(
+            d.designation,
+            CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
+                THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END,
+            CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
+                THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END
+        ) AS designation,
         e.designation_id AS designationId,
         e.secondary_job_title AS secondaryJobTitle,
+        e.job_role AS jobRole,
         o.name AS office,
         e.office_id AS officeId,
         bu.name AS businessUnit,
@@ -132,7 +147,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         LEFT JOIN office o ON e.office_id = o.id
         INNER JOIN company c ON c.id = e.company_id
         INNER JOIN team t ON e.team_id = t.id
-        INNER JOIN sub_team st ON e.sub_team_id = st.id
+        LEFT JOIN sub_team st ON e.sub_team_id = st.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN unit u ON e.unit_id = u.id
         LEFT JOIN house h ON e.house_id = h.id
@@ -179,10 +194,17 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             et.name AS employmentType,
             e.employment_type_id AS employmentTypeId,
             d.career_function_id AS careerFunctionId,
-            d.designation AS designation,
+            CONCAT(
+                d.designation,
+                CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
+                    THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END,
+                CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
+                    THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END
+            ) AS designation,
             e.designation_id AS designationId,
             d.job_band AS jobBand,
             e.secondary_job_title AS secondaryJobTitle,
+            e.job_role AS jobRole,
             o.name AS office,
             e.office_id AS officeId,
             bu.name AS businessUnit,
@@ -227,7 +249,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             LEFT JOIN office o ON o.id = e.office_id
             INNER JOIN business_unit bu ON bu.id = e.business_unit_id
             INNER JOIN team t ON t.id = e.team_id
-            INNER JOIN sub_team st ON st.id = e.sub_team_id
+            LEFT JOIN sub_team st ON st.id = e.sub_team_id
             LEFT JOIN unit u ON u.id = e.unit_id
             LEFT JOIN house h ON h.id = e.house_id
             LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
@@ -405,7 +427,13 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
-        d.designation AS designation,
+        CONCAT(
+            d.designation,
+            CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
+                THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END,
+            CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
+                THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END
+        ) AS designation,
         e.secondary_job_title AS secondaryJobTitle,
         o.name AS office,
         bu.name AS businessUnit,
@@ -428,7 +456,7 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         LEFT JOIN office o ON e.office_id = o.id
         INNER JOIN company c ON c.id = e.company_id
         INNER JOIN team t ON e.team_id = t.id
-        INNER JOIN sub_team st ON e.sub_team_id = st.id
+        LEFT JOIN sub_team st ON e.sub_team_id = st.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN unit u ON e.unit_id = u.id
     WHERE
@@ -1354,6 +1382,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             work_email,
             start_date,
             secondary_job_title,
+            job_role,
             manager_email,
             employee_status,
             continuous_service_record,
@@ -1383,6 +1412,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.workEmail},
             ${payload.startDate},
             ${payload.secondaryJobTitle},
+            ${payload.jobRole},
             ${payload.managerEmail},
             ${payload.employeeStatus},
             ${payload.continuousServiceRecord},
@@ -1641,6 +1671,14 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
             updates.push(`secondary_job_title = NULL`);
         } else {
             updates.push(`secondary_job_title = ${payload.secondaryJobTitle}`);
+        }
+    }
+
+    if payload.jobRole is string {
+        if payload.jobRole == "" {
+            updates.push(`job_role = NULL`);
+        } else {
+            updates.push(`job_role = ${payload.jobRole}`);
         }
     }
 

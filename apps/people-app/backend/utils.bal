@@ -251,9 +251,6 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
     if row.team.trim().length() == 0 {
         errors.push({row: rowNumber, 'field: CSV_FIELD_TEAM, message: "Team is required"});
     }
-    if row.subTeam.trim().length() == 0 {
-        errors.push({row: rowNumber, 'field: CSV_FIELD_SUB_TEAM, message: "Sub team is required"});
-    }
     if row.startDate.trim().length() == 0 {
         errors.push({row: rowNumber, 'field: CSV_FIELD_START_DATE, message: "Start date is required"});
     } else if !isValidCalendarDate(row.startDate.trim()) {
@@ -392,8 +389,10 @@ isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData r
     string lastName = row.lastName.trim();
 
     string officeRaw = row.office.trim();
+    string subTeamRaw = row.subTeam.trim();
     string unitRaw = row.unit.trim();
     int? officeId = officeRaw.length() > 0 ? refData.officeIds[normalizeKey(officeRaw)] : ();
+    int? subTeamId = subTeamRaw.length() > 0 ? refData.subTeamIds[normalizeKey(subTeamRaw)] : ();
     int? unitId = unitRaw.length() > 0 ? refData.unitIds[normalizeKey(unitRaw)] : ();
 
     database:Email[] additionalManagerEmails = [];
@@ -434,7 +433,7 @@ isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData r
         employmentTypeId: refData.employmentTypeIds[normalizeKey(row.employmentType)] ?: 0,
         designationId: refData.designationIds[normalizeKey(row.designation)] ?: 0,
         teamId: refData.teamIds[normalizeKey(row.team)] ?: 0,
-        subTeamId: refData.subTeamIds[normalizeKey(row.subTeam)] ?: 0,
+        subTeamId,
         unitId,
         businessUnitId: refData.businessUnitIds[normalizeKey(row.businessUnit)] ?: 0,
         officeId,

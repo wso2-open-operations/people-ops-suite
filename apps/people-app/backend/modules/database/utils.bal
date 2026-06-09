@@ -321,13 +321,7 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
         "company"               => { return csvEscape(e.company); }
         "location"              => { return csvEscape(e.workLocation); }
         "employmentType"        => { return csvEscape(e.employmentType); }
-        "jobRole"               => {
-            string? secTitle = e.secondaryJobTitle;
-            string jobRole = secTitle is string && secTitle.trim() != ""
-                ? e.designation + " " + secTitle
-                : e.designation;
-            return csvEscape(jobRole);
-        }
+        "jobRole"               => { return csvEscape(e.designation); }
         "jobBand"               => { return csvEscape(e.jobBand != () ? e.jobBand.toString() : ()); }
         "startDate"             => { return csvEscape(e.startDate); }
         "continuousServiceDate" => { return csvEscape(e.continuousServiceDate); }

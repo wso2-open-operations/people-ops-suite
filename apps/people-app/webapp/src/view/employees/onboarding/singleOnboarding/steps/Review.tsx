@@ -417,6 +417,9 @@ export default function ReviewStep() {
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Designation" value={mappedNames.designation} />
           </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <ReviewField label="Job Role" value={values.jobRole} />
+          </Grid>
         </Grid>
       </Box>
 
