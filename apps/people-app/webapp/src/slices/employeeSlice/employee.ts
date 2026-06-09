@@ -179,7 +179,7 @@ export type CreateEmployeePayload = {
   lastName: string;
   epf?: string;
   secondaryJobTitle?: string;
-  jobRole?: string;
+  jobRole?: string | null;
   workLocation: string;
   workEmail: string;
   startDate: string;
@@ -195,7 +195,7 @@ export type CreateEmployeePayload = {
   companyId: number;
   officeId?: number;
   teamId: number;
-  subTeamId: number;
+  subTeamId?: number;
   businessUnitId: number;
   unitId?: number;
   houseId?: number;
@@ -215,7 +215,7 @@ export type UpdateEmployeeJobInfoPayload = {
   workEmail?: string;
   startDate?: string;
   secondaryJobTitle?: string;
-  jobRole?: string;
+  jobRole?: string | null;
   managerEmail?: string;
   additionalManagerEmails?: string[];
   employeeThumbnail?: string | null;

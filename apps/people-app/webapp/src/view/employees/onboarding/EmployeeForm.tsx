@@ -707,7 +707,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                     ? values.officeId
                     : undefined,
                 teamId: values.teamId,
-                subTeamId: values.subTeamId,
+                subTeamId: values.subTeamId > 0 ? values.subTeamId : undefined,
                 businessUnitId: values.businessUnitId,
                 unitId: values.unitId > 0 ? values.unitId : undefined,
                 houseId: values.houseId > 0 ? values.houseId : undefined,
