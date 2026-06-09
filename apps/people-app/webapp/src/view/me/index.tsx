@@ -35,7 +35,6 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Alert,
   Avatar,
   Box,
   Button,
@@ -88,11 +87,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { array, object, string } from "yup";
 import { Role, selectRoles } from "@slices/authSlice/auth";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { IS_ME_EDIT_ENABLED } from "@config/config";
-
-const ME_EDIT_DISABLED_MESSAGE =
-  "Editing is temporarily disabled until we fully transition to the People App. If you need to update your personal " +
-  "information, please do so in PeopleHR. Your changes will sync here within a few hours.";
 
 const ReadOnly = ({
   label,
@@ -122,7 +116,6 @@ const FieldInput = ({
   touched,
   isSavingChanges,
   isRequired = false,
-  disabled = false,
 }: {
   name: string;
   label: string;
@@ -134,7 +127,6 @@ const FieldInput = ({
   touched: { [field: string]: boolean };
   isSavingChanges: boolean;
   isRequired?: boolean;
-  disabled?: boolean;
 }) => {
   const labelWithAsterisk = isRequired ? `${label} *` : label;
   return (
@@ -151,7 +143,7 @@ const FieldInput = ({
       value={getIn(values, name) || ""}
       onChange={handleChange}
       onBlur={handleBlur}
-      disabled={isSavingChanges || disabled}
+      disabled={isSavingChanges}
       error={getIn(touched, name) && Boolean(getIn(errors, name))}
       helperText={
         getIn(touched, name) && getIn(errors, name)
@@ -233,10 +225,6 @@ export default function Me({
     isProfileMissing,
   } = useAppSelector((state) => state.user);
   const targetEmployeeId = employeeId ?? userInfo?.employeeId;
-  // Self-service profile editing is locked until fully transitioned to the People App.
-  // Only applies to the employee's own view (readOnly === false); viewing other
-  // profiles (admin/lead) is unaffected.
-  const editsLocked = !readOnly && !IS_ME_EDIT_ENABLED;
   const { employee, state: employeeState } = useAppSelector(
     (state) => state.employee,
   );
@@ -1083,19 +1071,6 @@ export default function Me({
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          {editsLocked && (
-            <Alert
-              severity="info"
-              sx={{
-                mb: 2,
-                py: 0.5,
-                fontSize: "0.875rem",
-                "& .MuiAlert-icon": { alignItems: "center" },
-              }}
-            >
-              {ME_EDIT_DISABLED_MESSAGE}
-            </Alert>
-          )}
           {personalInfoState === "loading" && !isSavingChanges ? (
             <Grid container spacing={1.5}>
               {[...Array(15)].map((_, i) => (
@@ -1111,7 +1086,7 @@ export default function Me({
               validationSchema={readOnly ? undefined : personalInfoSchema}
               enableReinitialize
               onSubmit={async (values) => {
-                if (readOnly || editsLocked) return;
+                if (readOnly) return;
                 await handleSaveChanges(values);
               }}
             >
@@ -1180,7 +1155,6 @@ export default function Me({
                           errors={errors}
                           touched={touched}
                           isSavingChanges={isSavingChanges}
-                          disabled={editsLocked}
                         />
                       )}
                     </Grid>
@@ -1201,7 +1175,6 @@ export default function Me({
                           errors={errors}
                           touched={touched}
                           isSavingChanges={isSavingChanges}
-                          disabled={editsLocked}
                         />
                       )}
                     </Grid>
@@ -1222,7 +1195,6 @@ export default function Me({
                           errors={errors}
                           touched={touched}
                           isSavingChanges={isSavingChanges}
-                          disabled={editsLocked}
                         />
                       )}
                     </Grid>
@@ -1244,7 +1216,6 @@ export default function Me({
                           errors={errors}
                           touched={touched}
                           isSavingChanges={isSavingChanges}
-                          disabled={editsLocked}
                         />
                       )}
                     </Grid>
@@ -1264,7 +1235,6 @@ export default function Me({
                           errors={errors}
                           touched={touched}
                           isSavingChanges={isSavingChanges}
-                          disabled={editsLocked}
                         />
                       )}
                     </Grid>
@@ -1283,7 +1253,6 @@ export default function Me({
                           errors={errors}
                           touched={touched}
                           isSavingChanges={isSavingChanges}
-                          disabled={editsLocked}
                         />
                       )}
                     </Grid>
@@ -1303,7 +1272,6 @@ export default function Me({
                           errors={errors}
                           touched={touched}
                           isSavingChanges={isSavingChanges}
-                          disabled={editsLocked}
                         />
                       )}
                     </Grid>
@@ -1320,7 +1288,6 @@ export default function Me({
                           errors={errors}
                           touched={touched}
                           isSavingChanges={isSavingChanges}
-                          disabled={editsLocked}
                         />
                       )}
                     </Grid>
@@ -1340,7 +1307,6 @@ export default function Me({
                           errors={errors}
                           touched={touched}
                           isSavingChanges={isSavingChanges}
-                          disabled={editsLocked}
                         />
                       )}
                     </Grid>
@@ -1459,7 +1425,6 @@ export default function Me({
                                         errors={errors}
                                         touched={touched}
                                         isSavingChanges={isSavingChanges}
-                                        disabled={editsLocked}
                                         isRequired
                                       />
                                     </Grid>
@@ -1474,7 +1439,6 @@ export default function Me({
                                         errors={errors}
                                         touched={touched}
                                         isSavingChanges={isSavingChanges}
-                                        disabled={editsLocked}
                                         isRequired
                                       />
                                     </Grid>
@@ -1490,7 +1454,6 @@ export default function Me({
                                         errors={errors}
                                         touched={touched}
                                         isSavingChanges={isSavingChanges}
-                                        disabled={editsLocked}
                                       />
                                     </Grid>
 
@@ -1512,18 +1475,15 @@ export default function Me({
                                           errors={errors}
                                           touched={touched}
                                           isSavingChanges={isSavingChanges}
-                                          disabled={editsLocked}
                                           isRequired
                                         />
 
                                         <Tooltip
                                           title={
-                                            editsLocked
-                                              ? ME_EDIT_DISABLED_MESSAGE
-                                              : (values.emergencyContacts
-                                                    ?.length ?? 0) <= 1
-                                                ? "At least one emergency contact is required"
-                                                : "Remove contact"
+                                            (values.emergencyContacts?.length ??
+                                              0) <= 1
+                                              ? "At least one emergency contact is required"
+                                              : "Remove contact"
                                           }
                                         >
                                           <span>
@@ -1537,7 +1497,6 @@ export default function Me({
                                               }
                                               disabled={
                                                 isSavingChanges ||
-                                                editsLocked ||
                                                 (values.emergencyContacts
                                                   ?.length ?? 0) === 1
                                               }
@@ -1554,37 +1513,27 @@ export default function Me({
                               )}
 
                               <>
-                                <Tooltip
-                                  title={
-                                    editsLocked ? ME_EDIT_DISABLED_MESSAGE : ""
+                                <Button
+                                  variant="outlined"
+                                  color="secondary"
+                                  startIcon={<AddCircleOutlineIcon />}
+                                  sx={{ textTransform: "none" }}
+                                  onClick={() => {
+                                    push({
+                                      name: "",
+                                      relationship: "",
+                                      telephone: "",
+                                      mobile: "",
+                                    });
+                                    setShouldRequireEmergencyContacts(true);
+                                  }}
+                                  disabled={
+                                    isSavingChanges ||
+                                    (values.emergencyContacts?.length ?? 0) >= 4
                                   }
                                 >
-                                  <span>
-                                    <Button
-                                      variant="outlined"
-                                      color="secondary"
-                                      startIcon={<AddCircleOutlineIcon />}
-                                      sx={{ textTransform: "none" }}
-                                      onClick={() => {
-                                        push({
-                                          name: "",
-                                          relationship: "",
-                                          telephone: "",
-                                          mobile: "",
-                                        });
-                                        setShouldRequireEmergencyContacts(true);
-                                      }}
-                                      disabled={
-                                        isSavingChanges ||
-                                        editsLocked ||
-                                        (values.emergencyContacts?.length ?? 0) >=
-                                          4
-                                      }
-                                    >
-                                      Add Contact
-                                    </Button>
-                                  </span>
-                                </Tooltip>
+                                  Add Contact
+                                </Button>
 
                                 {(values.emergencyContacts?.length ?? 0) >=
                                   4 && (
@@ -1619,40 +1568,28 @@ export default function Me({
                             gap: 2,
                           }}
                         >
-                          <Tooltip
-                            title={editsLocked ? ME_EDIT_DISABLED_MESSAGE : ""}
+                          <Button
+                            startIcon={<RestartAltIcon />}
+                            sx={{ textTransform: "none" }}
+                            variant="outlined"
+                            color="primary"
+                            onClick={() => {
+                              handleDiscardChanges(resetForm);
+                            }}
+                            disabled={isSavingChanges || !dirty}
                           >
-                            <span>
-                              <Button
-                                startIcon={<RestartAltIcon />}
-                                sx={{ textTransform: "none" }}
-                                variant="outlined"
-                                color="primary"
-                                onClick={() => {
-                                  handleDiscardChanges(resetForm);
-                                }}
-                                disabled={isSavingChanges || editsLocked || !dirty}
-                              >
-                                Discard Changes
-                              </Button>
-                            </span>
-                          </Tooltip>
-                          <Tooltip
-                            title={editsLocked ? ME_EDIT_DISABLED_MESSAGE : ""}
+                            Discard Changes
+                          </Button>
+                          <Button
+                            startIcon={<SaveIcon />}
+                            sx={{ textTransform: "none" }}
+                            variant="contained"
+                            color="secondary"
+                            type="submit"
+                            disabled={isSavingChanges || !dirty}
                           >
-                            <span>
-                              <Button
-                                startIcon={<SaveIcon />}
-                                sx={{ textTransform: "none" }}
-                                variant="contained"
-                                color="secondary"
-                                type="submit"
-                                disabled={isSavingChanges || editsLocked || !dirty}
-                              >
-                                {isSavingChanges ? "Saving..." : "Save Changes"}
-                              </Button>
-                            </span>
-                          </Tooltip>
+                            {isSavingChanges ? "Saving..." : "Save Changes"}
+                          </Button>
                         </Box>
                       </Grid>
                     )}
