@@ -165,6 +165,9 @@ export const themeSettings = (mode: PaletteMode) => {
           columnHeaderTitle: {
             fontWeight: 1000,
           },
+          virtualScroller: {
+            minHeight: 120,
+          },
         },
       },
       MuiButton: {
