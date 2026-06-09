@@ -111,9 +111,7 @@ export const createJobInfoValidationSchema = (
     teamId: Yup.number()
       .required("Team is required")
       .min(1, "Select a valid team"),
-    subTeamId: Yup.number()
-      .required("Sub Team is required")
-      .min(1, "Select a valid sub team"),
+    subTeamId: Yup.number().optional(),
     unitId: Yup.number().optional(),
     careerFunctionId: Yup.number()
       .required("Career function is required")
@@ -123,6 +121,10 @@ export const createJobInfoValidationSchema = (
       .min(1, "Select a valid designation"),
     secondaryJobTitle: Yup.string()
       .max(20, "Secondary job title must be at most 20 characters")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    jobRole: Yup.string()
+      .max(100, "Job role must be at most 100 characters")
       .transform((value) => (value === "" ? null : value))
       .nullable(),
     companyId: Yup.number()
@@ -164,7 +166,7 @@ export const createJobInfoValidationSchema = (
       .nullable()
       .when(
         "employmentTypeId",
-        ([employmentTypeId]: [number | undefined], schema: any) => {
+        (employmentTypeId: number | undefined, schema: any) => {
           if (!employmentTypeId) return schema;
           if (!employmentTypes || employmentTypes.length === 0) return schema;
           const selected = employmentTypes.find(
@@ -1073,7 +1075,6 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             <TextField
               select
               fullWidth
-              required
               label="Sub Team"
               name="subTeamId"
               value={values.subTeamId || ""}
@@ -1087,6 +1088,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 ...disabledSx,
               }}
             >
+              <MenuItem value={0}>
+                <em>None</em>
+              </MenuItem>
               {subTeams.length ? (
                 subTeams.map((st) => (
                   <MenuItem key={st.id} value={st.id}>
@@ -1208,6 +1212,19 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 </MenuItem>
               )}
             </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              label="Job Role"
+              name="jobRole"
+              value={values.jobRole ?? ""}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={Boolean(touched.jobRole && errors.jobRole)}
+              helperText={touched.jobRole && errors.jobRole}
+              sx={textFieldSx}
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <TextField

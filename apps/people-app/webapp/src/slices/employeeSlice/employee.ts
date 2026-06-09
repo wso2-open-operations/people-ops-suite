@@ -33,6 +33,7 @@ export interface Employee {
   workEmail: string;
   employeeThumbnail: string | null;
   secondaryJobTitle: string | null;
+  jobRole: string | null;
   epf: string;
   workLocation: string;
   startDate: string;
@@ -65,7 +66,7 @@ export interface Employee {
   officeId: number | null;
   businessUnitId: number;
   teamId: number;
-  subTeamId: number;
+  subTeamId: number | null;
   unitId: number | null;
   house: string | null;
   houseId: number | null;
@@ -178,6 +179,7 @@ export type CreateEmployeePayload = {
   lastName: string;
   epf?: string;
   secondaryJobTitle?: string;
+  jobRole?: string;
   workLocation: string;
   workEmail: string;
   startDate: string;
@@ -213,6 +215,7 @@ export type UpdateEmployeeJobInfoPayload = {
   workEmail?: string;
   startDate?: string;
   secondaryJobTitle?: string;
+  jobRole?: string;
   managerEmail?: string;
   additionalManagerEmails?: string[];
   employeeThumbnail?: string | null;

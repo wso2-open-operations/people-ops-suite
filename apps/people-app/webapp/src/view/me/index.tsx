@@ -252,13 +252,10 @@ export default function Me({
 
   const age = personalInfo?.dob ? calculateAge(personalInfo.dob) : null;
 
-  const designationText = useMemo(() => {
-    if (!employee) return "-";
-    const parts = [employee.designation, employee.secondaryJobTitle].filter(
-      Boolean,
-    );
-    return parts.length > 0 ? parts.join(" ") : "-";
-  }, [employee]);
+  const designationText = useMemo(
+    () => employee?.designation || "-",
+    [employee],
+  );
 
   useEffect(() => {
     const has = (personalInfo?.emergencyContacts?.length ?? 0) > 0;

@@ -29,6 +29,21 @@ import {
   Tooltip,
   useTheme,
 } from "@mui/material";
+import { BaseTextField } from "@component/common/FieldInput/BasicFieldInput/BaseTextField";
+import AddIcon from "@mui/icons-material/Add";
+import ClearIcon from "@mui/icons-material/Clear";
+import EditIcon from "@mui/icons-material/Edit";
+import SearchIcon from "@mui/icons-material/Search";
+import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import { useCallback, useMemo, useState } from "react";
+import { DEFAULT_LIMIT_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
+import {
+  CreateEntityPayload,
+  CompanyOrgChartEntity,
+  UpdateEntityPayload,
+} from "@slices/masterDataSlice/masterData";
+import EntityDialog from "./EntityDialog";
+import { State } from "@/types/types";
 
 function SkeletonOverlay() {
   const theme = useTheme();
@@ -61,21 +76,6 @@ function SkeletonOverlay() {
     </Box>
   );
 }
-import { BaseTextField } from "@component/common/FieldInput/BasicFieldInput/BaseTextField";
-import AddIcon from "@mui/icons-material/Add";
-import ClearIcon from "@mui/icons-material/Clear";
-import EditIcon from "@mui/icons-material/Edit";
-import SearchIcon from "@mui/icons-material/Search";
-import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import { useCallback, useMemo, useState } from "react";
-import { DEFAULT_LIMIT_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
-import {
-  CreateEntityPayload,
-  CompanyOrgChartEntity,
-  UpdateEntityPayload,
-} from "@slices/masterDataSlice/masterData";
-import EntityDialog from "./EntityDialog";
-import { State } from "@/types/types";
 
 interface EntityTabProps {
   entityLabel: string;
