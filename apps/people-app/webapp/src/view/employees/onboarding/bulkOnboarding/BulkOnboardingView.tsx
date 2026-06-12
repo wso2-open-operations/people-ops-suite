@@ -15,14 +15,14 @@
 // under the License.
 
 import CommonPage from "@layout/pages/CommonPage";
-import EmployeeForm from "@view/employees/onboarding/EmployeeForm";
+import BulkOnboarding from "@view/employees/onboarding/bulkOnboarding/BulkOnboarding";
 
-export default function EmployeeOnboarding() {
+export default function BulkOnboardingView() {
   return (
     <CommonPage
-      title="Single Onboarding"
+      title="Bulk Onboarding"
       commonPageTabs={[]}
-      page={<EmployeeForm mode="create" />}
+      page={<BulkOnboarding />}
     />
   );
 }

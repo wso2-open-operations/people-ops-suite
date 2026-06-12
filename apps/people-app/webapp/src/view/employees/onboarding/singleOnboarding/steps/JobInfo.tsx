@@ -549,6 +549,16 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     return t?.id ?? null;
   }, [employmentTypes]);
 
+  // Only active types are selectable for onboarding, but keep the currently
+  // selected type (edit mode may load an employee on a now-inactive type).
+  const selectableEmploymentTypes = useMemo(
+    () =>
+      employmentTypes.filter(
+        (t) => t.isActive || t.id === values.employmentTypeId,
+      ),
+    [employmentTypes, values.employmentTypeId],
+  );
+
   const [internshipDurationMonths, setInternshipDurationMonths] =
     useState<number>(0);
 
@@ -1387,7 +1397,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               sx={textFieldSx}
             >
               {employmentTypes.length > 0 ? (
-                employmentTypes.map((type) => (
+                selectableEmploymentTypes.map((type) => (
                   <MenuItem key={type.id} value={type.id}>
                     {type.name}
                   </MenuItem>

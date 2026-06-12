@@ -74,6 +74,7 @@ export interface Office {
 export interface EmploymentType {
   id: number;
   name: string;
+  isActive: boolean;
 }
 
 export interface House {
