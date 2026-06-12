@@ -613,6 +613,9 @@ public type EmploymentType record {|
     int id;
     # Name of the employment type
     string name;
+    # Whether the employment type is active
+    @sql:Column {name: "is_active"}
+    boolean isActive;
 |};
 
 # House.

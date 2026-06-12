@@ -1208,7 +1208,8 @@ isolated function getOfficesQuery(int? companyId = ()) returns sql:Parameterized
 isolated function getEmploymentTypesQuery() returns sql:ParameterizedQuery =>
     `SELECT
         id,
-        name
+        name,
+        is_active
     FROM employment_type;`;
 
 # Fetch IDP group names mapped to a given employment type.

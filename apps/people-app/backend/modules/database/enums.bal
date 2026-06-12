@@ -43,6 +43,7 @@ public enum EmployeeStatus {
 # [Database] Enum for employment types.
 public enum EmploymentTypeName {
     PERMANENT = "PERMANENT",
+    PROBATION = "PROBATION",
     INTERNSHIP = "INTERNSHIP",
     CONSULTANCY = "CONSULTANCY",
     ADVISORY_CONSULTANCY = "ADVISORY CONSULTANCY",

@@ -43,8 +43,24 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
 
     match ctx.employmentType {
         database:PERMANENT|database:INTERNSHIP => {
+            if ctx.companyPrefix.trim().length() == 0 {
+                string customErr = string `The selected company (ID: ${payload.companyId}) has no employee ` +
+                    "ID prefix configured. Set the company prefix before onboarding.";
+                log:printWarn(customErr, companyId = payload.companyId, employmentType = ctx.employmentType);
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+            // PERMANENT and PROBATION share one number line (an employee keeps the same ID
+            // across probation -> permanent); INTERNSHIP runs a separate line. Scope the
+            // sequence to the matching group so the two never collide.
+            database:EmploymentTypeName[] sequenceTypes = ctx.employmentType == database:PERMANENT
+                ? [database:PERMANENT, database:PROBATION]
+                : [database:INTERNSHIP];
             database:EmployeeIdSequence|error row = database:getLastEmployeeNumericSuffix(
-                    ctx.companyPrefix, [ctx.employmentType]
+                    ctx.companyPrefix, sequenceTypes
             );
             if row is error {
                 string customErr = "Error occurred while fetching last employee numeric suffix";
