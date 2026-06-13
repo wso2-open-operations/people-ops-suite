@@ -1316,12 +1316,13 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
 #
 # + companyId - Company ID of the new employee
 # + employmentTypeId - Employment type ID of the new employee
-# + return - Query returning `companyPrefix` and `employmentType` columns
+# + return - Query returning `companyPrefix`, `employmentType` and `isActive` columns
 isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
     returns sql:ParameterizedQuery =>
     `SELECT
         c.prefix        AS companyPrefix,
-        UPPER(et.name)  AS employmentType
+        UPPER(et.name)  AS employmentType,
+        et.is_active    AS isActive
     FROM employment_type et
     JOIN company c ON c.id = ${companyId}
     WHERE et.id = ${employmentTypeId}`;

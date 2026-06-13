@@ -106,6 +106,8 @@ public type EmployeeIdContext record {|
     string companyPrefix;
     # Employment type
     EmploymentTypeName employmentType;
+    # Whether the employment type is active (inactive types cannot be onboarded)
+    boolean isActive;
 |};
 
 # Result record for the last numeric suffix query used in employee ID generation.

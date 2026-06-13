@@ -16,10 +16,12 @@
 
 import people.authorization;
 import people.database;
-// import people.email;
 import people.qr;
-// import people.scim;
 import people.wso2_coin;
+// Temporarily disabled together with the Asgardeo/SCIM provisioning blocks in the onboarding
+// handlers below (see the NOTE there). Re-enable these imports when provisioning is restored.
+// import people.email;
+// import people.scim;
 
 import ballerina/http;
 import ballerina/log;
@@ -1082,6 +1084,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         database:BulkGroupAssignmentWarning[] groupAssignmentWarnings = [];
         database:OrphanedScimUser[] orphanedScimUsers = [];
 
+        // NOTE: Asgardeo/SCIM provisioning is intentionally disabled for now and will be re-enabled
+        // shortly (tracked in PR #294). The block below is kept rather than deleted so re-enabling is
+        // a straightforward uncomment. While disabled, employees are created in the DB only; the
+        // provisioning arrays above stay empty, so the response reflects DB creation without
+        // provisioning (no SCIM user/group assignment is attempted).
         // foreach ResolvedEmployee emp in payloadResult.employees {
         //     error? scimResult = scim:createUser(
         //             emp.payload.workEmail,
@@ -1261,6 +1268,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // NOTE: Asgardeo/SCIM provisioning is intentionally disabled for now and will be re-enabled
+        // shortly (tracked in PR #294). The block below is kept rather than deleted so re-enabling is
+        // a straightforward uncomment. While disabled, the employee is created in the DB only and the
+        // response returns hasGroupAssignmentWarning: false (no SCIM user/group assignment attempted).
         // error? scimUserResult = scim:createUser(
         //         payload.workEmail,
         //         payload.firstName,

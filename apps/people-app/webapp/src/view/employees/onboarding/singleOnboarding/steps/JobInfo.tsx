@@ -1396,7 +1396,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               disabled={organizationState === "loading"}
               sx={textFieldSx}
             >
-              {employmentTypes.length > 0 ? (
+              {selectableEmploymentTypes.length > 0 ? (
                 selectableEmploymentTypes.map((type) => (
                   <MenuItem key={type.id} value={type.id}>
                     {type.name}
@@ -1406,7 +1406,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 <MenuItem disabled>
                   {organizationState === "loading"
                     ? "Loading employment types..."
-                    : "No employment types available"}
+                    : "No active employment types available"}
                 </MenuItem>
               )}
             </TextField>

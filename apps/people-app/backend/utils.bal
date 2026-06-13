@@ -41,9 +41,27 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
         };
     }
 
+    // Reject inactive employment types (e.g. PROBATION). The frontend already hides them, but a
+    // direct API call could still send one; without this it would fall through to the unsupported
+    // 500 path. PROBATION stays non-onboardable here yet is still counted in the PERMANENT line below.
+    if !ctx.isActive {
+        string customErr = string `Employment type (ID: ${payload.employmentTypeId}) is inactive ` +
+            "and cannot be used for onboarding.";
+        log:printWarn(customErr, employmentTypeId = payload.employmentTypeId, employmentType = ctx.employmentType);
+        return <http:BadRequest>{
+            body: {
+                message: customErr
+            }
+        };
+    }
+
+    // Normalize the prefix once so a value like " SG " can't pass the empty-prefix guard, leak
+    // spaces into the ID, or fork a separate numeric sequence from "SG".
+    string companyPrefix = ctx.companyPrefix.trim();
+
     match ctx.employmentType {
         database:PERMANENT|database:INTERNSHIP => {
-            if ctx.companyPrefix.trim().length() == 0 {
+            if companyPrefix.length() == 0 {
                 string customErr = string `The selected company (ID: ${payload.companyId}) has no employee ` +
                     "ID prefix configured. Set the company prefix before onboarding.";
                 log:printWarn(customErr, companyId = payload.companyId, employmentType = ctx.employmentType);
@@ -53,25 +71,26 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
                     }
                 };
             }
-            // PERMANENT and PROBATION share one number line (an employee keeps the same ID
-            // across probation -> permanent); INTERNSHIP runs a separate line. Scope the
-            // sequence to the matching group so the two never collide.
+            // PERMANENT and PROBATION share one number line (an employee keeps the same ID across
+            // probation -> permanent); INTERNSHIP runs a separate line. PROBATION is intentionally
+            // counted here but not onboardable (rejected by the is_active check above) -- do not add
+            // a PROBATION match arm or re-key this ternary off it.
             database:EmploymentTypeName[] sequenceTypes = ctx.employmentType == database:PERMANENT
                 ? [database:PERMANENT, database:PROBATION]
                 : [database:INTERNSHIP];
             database:EmployeeIdSequence|error row = database:getLastEmployeeNumericSuffix(
-                    ctx.companyPrefix, sequenceTypes
+                    companyPrefix, sequenceTypes
             );
             if row is error {
                 string customErr = "Error occurred while fetching last employee numeric suffix";
-                log:printError(customErr, row, employmentType = ctx.employmentType, companyPrefix = ctx.companyPrefix);
+                log:printError(customErr, row, employmentType = ctx.employmentType, companyPrefix = companyPrefix);
                 return <http:InternalServerError>{
                     body: {
                         message: customErr
                     }
                 };
             }
-            return string `${ctx.companyPrefix}${<int>row.lastNumericId + 1}`;
+            return string `${companyPrefix}${<int>row.lastNumericId + 1}`;
         }
         database:CONSULTANCY|database:ADVISORY_CONSULTANCY|database:PART_TIME_CONSULTANCY => {
             database:EmployeeIdSequence|error row = database:getLastEmployeeNumericSuffix(
@@ -104,7 +123,7 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
                 };
             }
 
-            if manualId.startsWith(ctx.companyPrefix) && re `[0-9]+`.isFullMatch(manualId.substring(ctx.companyPrefix.length()))
+            if manualId.startsWith(companyPrefix) && re `[0-9]+`.isFullMatch(manualId.substring(companyPrefix.length()))
                 || manualId.startsWith(database:CONSULTANCY_ID_PREFIX) && re `[0-9]+`.
                     isFullMatch(manualId.substring(database:CONSULTANCY_ID_PREFIX.length())) {
                 string customErr = string `Employee ID '${manualId}' is reserved for auto-generation and cannot be assigned manually`;
@@ -218,7 +237,10 @@ isolated function loadBulkReferenceData() returns BulkRefData|error {
             select [normalizeKey(u_row.name), u_row.id],
         designationIds: map from database:Designation d_row in designations
             select [normalizeKey(d_row.designation), d_row.id],
+        // Only active types are valid for onboarding; mirrors the frontend filter so a CSV row
+        // naming an inactive type (e.g. PROBATION) is rejected during validation.
         employmentTypeIds: map from database:EmploymentType et_row in employmentTypes
+            where et_row.isActive
             select [normalizeKey(et_row.name), et_row.id],
         companyIds: map from database:CompanyResponse c_row in companies
             select [normalizeKey(c_row.name), c_row.id],
