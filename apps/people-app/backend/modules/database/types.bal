@@ -106,6 +106,8 @@ public type EmployeeIdContext record {|
     string companyPrefix;
     # Employment type
     EmploymentTypeName employmentType;
+    # Whether the employment type is active (inactive types cannot be onboarded)
+    boolean isActive;
 |};
 
 # Result record for the last numeric suffix query used in employee ID generation.
@@ -613,6 +615,9 @@ public type EmploymentType record {|
     int id;
     # Name of the employment type
     string name;
+    # Whether the employment type is active
+    @sql:Column {name: "is_active"}
+    boolean isActive;
 |};
 
 # House.

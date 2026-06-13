@@ -31,6 +31,8 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import PersonOffIcon from "@mui/icons-material/PersonOff";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
@@ -83,6 +85,14 @@ const ReportsRoot = () => {
   return React.createElement(Outlet);
 };
 
+const OnboardingRoot = () => {
+  const { pathname } = useLocation();
+  if (pathname === "/onboarding") {
+    return React.createElement(Navigate, { to: "/onboarding/single", replace: true });
+  }
+  return React.createElement(Outlet);
+};
+
 
 export const routes: RouteObjectWithRole[] = [
   {
@@ -119,8 +129,24 @@ export const routes: RouteObjectWithRole[] = [
     path: "/onboarding",
     text: "Onboarding",
     icon: React.createElement(GroupAddIcon),
-    element: React.createElement(View.employeeOnboarding),
+    element: React.createElement(OnboardingRoot),
     allowRoles: [Role.ADMIN],
+    children: [
+      {
+        path: "/onboarding/single",
+        text: "Single",
+        icon: React.createElement(PersonAddAlt1Icon),
+        element: React.createElement(View.employeeOnboarding),
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/onboarding/bulk",
+        text: "Bulk",
+        icon: React.createElement(UploadFileIcon),
+        element: React.createElement(View.bulkOnboarding),
+        allowRoles: [Role.ADMIN],
+      },
+    ],
   },
   // Top-level My Team entry shown only for lead-only users (hidden when the user also has admin
   // access, since admin+lead users see My Team nested under Employees instead).

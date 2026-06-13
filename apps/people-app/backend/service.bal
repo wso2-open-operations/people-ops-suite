@@ -16,10 +16,12 @@
 
 import people.authorization;
 import people.database;
-import people.email;
 import people.qr;
-import people.scim;
 import people.wso2_coin;
+// Temporarily disabled together with the Asgardeo/SCIM provisioning blocks in the onboarding
+// handlers below (see the NOTE there). Re-enable these imports when provisioning is restored.
+// import people.email;
+// import people.scim;
 
 import ballerina/http;
 import ballerina/log;
@@ -1076,94 +1078,99 @@ service http:InterceptableService / on new http:Listener(9090) {
         foreach int i in 0 ..< bulkResults.length() {
             payloadResult.employees[i].employeeId = bulkResults[i][0];
         }
-        int created = 0;
+        int created = payloadResult.employees.length();
 
         database:BulkProvisioningError[] provisioningErrors = [];
         database:BulkGroupAssignmentWarning[] groupAssignmentWarnings = [];
         database:OrphanedScimUser[] orphanedScimUsers = [];
 
-        foreach ResolvedEmployee emp in payloadResult.employees {
-            error? scimResult = scim:createUser(
-                    emp.payload.workEmail,
-                    emp.payload.firstName,
-                    emp.payload.lastName
-            );
-
-            if scimResult is error {
-                log:printError("Failed to provision user in Asgardeo during bulk onboarding; rolling back employee record",
-                        scimResult, workEmail = emp.payload.workEmail, employeeId = emp.employeeId);
-                rollbackEmployeeCreation(emp.employeeId, emp.payload.workEmail);
-                provisioningErrors.push({
-                    employeeId: emp.employeeId,
-                    workEmail: emp.payload.workEmail,
-                    reason: scimResult.message()
-                });
-                continue;
-            }
-
-            string[]|error groupNames = database:getAsgardeoGroupsByEmploymentType(emp.payload.employmentTypeId);
-            if groupNames is error {
-                log:printError("Failed to fetch Asgardeo groups during bulk onboarding; rolling back employee record. " +
-                        "Asgardeo user was already created and requires manual cleanup",
-                        groupNames, workEmail = emp.payload.workEmail, employeeId = emp.employeeId,
-                        employmentTypeId = emp.payload.employmentTypeId);
-                rollbackEmployeeCreation(emp.employeeId, emp.payload.workEmail);
-                provisioningErrors.push({
-                    employeeId: emp.employeeId,
-                    workEmail: emp.payload.workEmail,
-                    reason: groupNames.message()
-                });
-                orphanedScimUsers.push({
-                    employeeId: emp.employeeId,
-                    workEmail: emp.payload.workEmail,
-                    reason: groupNames.message()
-                });
-                continue;
-            }
-
-            string[] allGroups = [...groupNames];
-            string[]|error teamGroupNames = database:getAsgardeoGroupsByTeam(emp.payload.teamId, emp.payload.employmentTypeId);
-            if teamGroupNames is string[] {
-                allGroups.push(...teamGroupNames);
-            } else {
-                log:printError("Failed to fetch Asgardeo groups for team during bulk onboarding; skipping team group assignment",
-                        teamGroupNames, workEmail = emp.payload.workEmail, employeeId = emp.employeeId, teamId = emp.payload.teamId);
-            }
-
-            string[] uniqueGroups = from var groupName in allGroups
-                group by groupName
-                select groupName;
-
-            string[] failedGroups = [];
-            foreach string groupName in uniqueGroups {
-                scim:AddUsersToGroupResponse|error addResult =
-                        scim:addUserToGroup(groupName, emp.payload.workEmail);
-                if addResult is error || addResult.failedUsers.length() > 0 {
-                    log:printError("Failed to add user to Asgardeo group during bulk onboarding. " +
-                            "Asgardeo user was already created and requires manual cleanup",
-                                addResult is error ? addResult : (),
-                            workEmail = emp.payload.workEmail, group = groupName, employeeId = emp.employeeId,
-                            failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
-                    failedGroups.push(groupName);
-                }
-            }
-
-            if failedGroups.length() > 0 {
-                error? notificationResult = email:notifyGroupAssignmentFailure(emp.employeeId, emp.payload.firstName,
-                        emp.payload.lastName, emp.payload.workEmail, failedGroups);
-                if notificationResult is error {
-                    log:printError("Failed to send group assignment failure notification during bulk onboarding",
-                            notificationResult, employeeId = emp.employeeId, workEmail = emp.payload.workEmail);
-                }
-                groupAssignmentWarnings.push({
-                    employeeId: emp.employeeId,
-                    workEmail: emp.payload.workEmail,
-                    failedGroups
-                });
-            }
-
-            created += 1;
-        }
+        // NOTE: Asgardeo/SCIM provisioning is intentionally disabled for now and will be re-enabled
+        // shortly (tracked in PR #294). The block below is kept rather than deleted so re-enabling is
+        // a straightforward uncomment. While disabled, employees are created in the DB only; the
+        // provisioning arrays above stay empty, so the response reflects DB creation without
+        // provisioning (no SCIM user/group assignment is attempted).
+        // foreach ResolvedEmployee emp in payloadResult.employees {
+        //     error? scimResult = scim:createUser(
+        //             emp.payload.workEmail,
+        //             emp.payload.firstName,
+        //             emp.payload.lastName
+        //     );
+        //
+        //     if scimResult is error {
+        //         log:printError("Failed to provision user in Asgardeo during bulk onboarding; rolling back employee record",
+        //                 scimResult, workEmail = emp.payload.workEmail, employeeId = emp.employeeId);
+        //         rollbackEmployeeCreation(emp.employeeId, emp.payload.workEmail);
+        //         provisioningErrors.push({
+        //             employeeId: emp.employeeId,
+        //             workEmail: emp.payload.workEmail,
+        //             reason: scimResult.message()
+        //         });
+        //         continue;
+        //     }
+        //
+        //     string[]|error groupNames = database:getAsgardeoGroupsByEmploymentType(emp.payload.employmentTypeId);
+        //     if groupNames is error {
+        //         log:printError("Failed to fetch Asgardeo groups during bulk onboarding; rolling back employee record. " +
+        //                 "Asgardeo user was already created and requires manual cleanup",
+        //                 groupNames, workEmail = emp.payload.workEmail, employeeId = emp.employeeId,
+        //                 employmentTypeId = emp.payload.employmentTypeId);
+        //         rollbackEmployeeCreation(emp.employeeId, emp.payload.workEmail);
+        //         provisioningErrors.push({
+        //             employeeId: emp.employeeId,
+        //             workEmail: emp.payload.workEmail,
+        //             reason: groupNames.message()
+        //         });
+        //         orphanedScimUsers.push({
+        //             employeeId: emp.employeeId,
+        //             workEmail: emp.payload.workEmail,
+        //             reason: groupNames.message()
+        //         });
+        //         continue;
+        //     }
+        //
+        //     string[] allGroups = [...groupNames];
+        //     string[]|error teamGroupNames = database:getAsgardeoGroupsByTeam(emp.payload.teamId, emp.payload.employmentTypeId);
+        //     if teamGroupNames is string[] {
+        //         allGroups.push(...teamGroupNames);
+        //     } else {
+        //         log:printError("Failed to fetch Asgardeo groups for team during bulk onboarding; skipping team group assignment",
+        //                 teamGroupNames, workEmail = emp.payload.workEmail, employeeId = emp.employeeId, teamId = emp.payload.teamId);
+        //     }
+        //
+        //     string[] uniqueGroups = from var groupName in allGroups
+        //         group by groupName
+        //         select groupName;
+        //
+        //     string[] failedGroups = [];
+        //     foreach string groupName in uniqueGroups {
+        //         scim:AddUsersToGroupResponse|error addResult =
+        //                 scim:addUserToGroup(groupName, emp.payload.workEmail);
+        //         if addResult is error || addResult.failedUsers.length() > 0 {
+        //             log:printError("Failed to add user to Asgardeo group during bulk onboarding. " +
+        //                     "Asgardeo user was already created and requires manual cleanup",
+        //                         addResult is error ? addResult : (),
+        //                     workEmail = emp.payload.workEmail, group = groupName, employeeId = emp.employeeId,
+        //                     failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
+        //             failedGroups.push(groupName);
+        //         }
+        //     }
+        //
+        //     if failedGroups.length() > 0 {
+        //         error? notificationResult = email:notifyGroupAssignmentFailure(emp.employeeId, emp.payload.firstName,
+        //                 emp.payload.lastName, emp.payload.workEmail, failedGroups);
+        //         if notificationResult is error {
+        //             log:printError("Failed to send group assignment failure notification during bulk onboarding",
+        //                     notificationResult, employeeId = emp.employeeId, workEmail = emp.payload.workEmail);
+        //         }
+        //         groupAssignmentWarnings.push({
+        //             employeeId: emp.employeeId,
+        //             workEmail: emp.payload.workEmail,
+        //             failedGroups
+        //         });
+        //     }
+        //
+        //     created += 1;
+        // }
 
         return {
             created,
@@ -1261,84 +1268,88 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? scimUserResult = scim:createUser(
-                payload.workEmail,
-                payload.firstName,
-                payload.lastName
-        );
-        if scimUserResult is error {
-            log:printError("Failed to provision user in Asgardeo; rolling back employee record",
-                    scimUserResult, workEmail = payload.workEmail, employeeId = employeeId);
-            rollbackEmployeeCreation(employeeId, payload.workEmail);
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_EMPLOYEE_CREATION_FAILED
-                }
-            };
-        }
+        // NOTE: Asgardeo/SCIM provisioning is intentionally disabled for now and will be re-enabled
+        // shortly (tracked in PR #294). The block below is kept rather than deleted so re-enabling is
+        // a straightforward uncomment. While disabled, the employee is created in the DB only and the
+        // response returns hasGroupAssignmentWarning: false (no SCIM user/group assignment attempted).
+        // error? scimUserResult = scim:createUser(
+        //         payload.workEmail,
+        //         payload.firstName,
+        //         payload.lastName
+        // );
+        // if scimUserResult is error {
+        //     log:printError("Failed to provision user in Asgardeo; rolling back employee record",
+        //             scimUserResult, workEmail = payload.workEmail, employeeId = employeeId);
+        //     rollbackEmployeeCreation(employeeId, payload.workEmail);
+        //     return <http:InternalServerError>{
+        //         body: {
+        //             message: ERROR_EMPLOYEE_CREATION_FAILED
+        //         }
+        //     };
+        // }
 
-        string[]|error groupNames = database:getAsgardeoGroupsByEmploymentType(payload.employmentTypeId);
-        if groupNames is error {
-            log:printError("Failed to fetch Asgardeo groups for employment type; rolling back employee record. " +
-                    "Asgardeo user was already created and requires manual cleanup",
-                    groupNames, workEmail = payload.workEmail, employeeId = employeeId,
-                    employmentTypeId = payload.employmentTypeId);
-            rollbackEmployeeCreation(employeeId, payload.workEmail);
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_EMPLOYEE_CREATION_FAILED,
-                    orphanedScimUsers: [
-                        {
-                            employeeId,
-                            workEmail: payload.workEmail,
-                            reason: groupNames.message()
-                        }
-                    ]
-                }
-            };
-        }
+        // string[]|error groupNames = database:getAsgardeoGroupsByEmploymentType(payload.employmentTypeId);
+        // if groupNames is error {
+        //     log:printError("Failed to fetch Asgardeo groups for employment type; rolling back employee record. " +
+        //             "Asgardeo user was already created and requires manual cleanup",
+        //             groupNames, workEmail = payload.workEmail, employeeId = employeeId,
+        //             employmentTypeId = payload.employmentTypeId);
+        //     rollbackEmployeeCreation(employeeId, payload.workEmail);
+        //     return <http:InternalServerError>{
+        //         body: {
+        //             message: ERROR_EMPLOYEE_CREATION_FAILED,
+        //             orphanedScimUsers: [
+        //                 {
+        //                     employeeId,
+        //                     workEmail: payload.workEmail,
+        //                     reason: groupNames.message()
+        //                 }
+        //             ]
+        //         }
+        //     };
+        // }
 
-        string[] allGroups = [...groupNames];
-        string[]|error teamGroupNames = database:getAsgardeoGroupsByTeam(payload.teamId, payload.employmentTypeId);
-        if teamGroupNames is string[] {
-            allGroups.push(...teamGroupNames);
-        } else {
-            log:printError("Failed to fetch Asgardeo groups for team; skipping team group assignment",
-                    teamGroupNames, workEmail = payload.workEmail, employeeId = employeeId, teamId = payload.teamId);
-        }
+        // string[] allGroups = [...groupNames];
+        // string[]|error teamGroupNames = database:getAsgardeoGroupsByTeam(payload.teamId, payload.employmentTypeId);
+        // if teamGroupNames is string[] {
+        //     allGroups.push(...teamGroupNames);
+        // } else {
+        //     log:printError("Failed to fetch Asgardeo groups for team; skipping team group assignment",
+        //             teamGroupNames, workEmail = payload.workEmail, employeeId = employeeId, teamId = payload.teamId);
+        // }
 
-        string[] uniqueGroups = from var groupName in allGroups
-            group by groupName
-            select groupName;
+        // string[] uniqueGroups = from var groupName in allGroups
+        //     group by groupName
+        //     select groupName;
 
-        string[] failedGroups = [];
-        foreach string groupName in uniqueGroups {
-            scim:AddUsersToGroupResponse|error addResult =
-                    scim:addUserToGroup(groupName, payload.workEmail);
-            if addResult is error || addResult.failedUsers.length() > 0 {
-                log:printError("Failed to add user to Asgardeo group. " +
-                        "Asgardeo user was already created and requires manual cleanup",
-                            addResult is error ? addResult : (),
-                        workEmail = payload.workEmail, group = groupName, employeeId = employeeId,
-                        failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
-                failedGroups.push(groupName);
-            }
-        }
+        // string[] failedGroups = [];
+        // foreach string groupName in uniqueGroups {
+        //     scim:AddUsersToGroupResponse|error addResult =
+        //             scim:addUserToGroup(groupName, payload.workEmail);
+        //     if addResult is error || addResult.failedUsers.length() > 0 {
+        //         log:printError("Failed to add user to Asgardeo group. " +
+        //                 "Asgardeo user was already created and requires manual cleanup",
+        //                     addResult is error ? addResult : (),
+        //                 workEmail = payload.workEmail, group = groupName, employeeId = employeeId,
+        //                 failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
+        //         failedGroups.push(groupName);
+        //     }
+        // }
 
-        if failedGroups.length() > 0 {
-            error? notificationResult = email:notifyGroupAssignmentFailure(employeeId, payload.firstName,
-                    payload.lastName, payload.workEmail, failedGroups);
-            if notificationResult is error {
-                log:printError("Failed to send group assignment failure notification",
-                        notificationResult, employeeId = employeeId, workEmail = payload.workEmail);
-            }
+        // if failedGroups.length() > 0 {
+        //     error? notificationResult = email:notifyGroupAssignmentFailure(employeeId, payload.firstName,
+        //             payload.lastName, payload.workEmail, failedGroups);
+        //     if notificationResult is error {
+        //         log:printError("Failed to send group assignment failure notification",
+        //                 notificationResult, employeeId = employeeId, workEmail = payload.workEmail);
+        //     }
 
-            return {
-                employeeId: newEmployeeId,
-                message: WARNING_GROUP_ASSIGNMENT_FAILED,
-                hasGroupAssignmentWarning: true
-            };
-        }
+        //     return {
+        //         employeeId: newEmployeeId,
+        //         message: WARNING_GROUP_ASSIGNMENT_FAILED,
+        //         hasGroupAssignmentWarning: true
+        //     };
+        // }
         return {
             employeeId: newEmployeeId,
             message: "Employee created successfully!",

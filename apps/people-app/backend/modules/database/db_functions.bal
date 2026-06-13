@@ -498,15 +498,27 @@ isolated function generateBulkEmployeeId(CreateEmployeePayload payload,
 
     match context.employmentType {
         PERMANENT|INTERNSHIP => {
-            string seqKey = context.companyPrefix + ":" + context.employmentType.toString();
+            // Normalize the prefix once so a value like " SG " can't pass the guard, leak spaces
+            // into the ID, or fork a separate sequence from "SG".
+            string companyPrefix = context.companyPrefix.trim();
+            if companyPrefix.length() == 0 {
+                return error(string `Company (ID: ${payload.companyId}) has no employee ID prefix configured`);
+            }
+            // PERMANENT and PROBATION share one number line; INTERNSHIP runs a separate one.
+            // Scope both the MAX query and the in-batch cache key to the matching group. PROBATION
+            // never reaches this path (inactive types are rejected during bulk validation).
+            EmploymentTypeName[] sequenceTypes = context.employmentType == PERMANENT
+                ? [PERMANENT, PROBATION]
+                : [INTERNSHIP];
+            string seqKey = companyPrefix + ":" + context.employmentType.toString();
             if !sequenceCache.hasKey(seqKey) {
                 EmployeeIdSequence seq = check getLastEmployeeNumericSuffix(
-                        context.companyPrefix, [context.employmentType]);
+                        companyPrefix, sequenceTypes);
                 sequenceCache[seqKey] = <int>seq.lastNumericId;
             }
             int next = (sequenceCache[seqKey] ?: 0) + 1;
             sequenceCache[seqKey] = next;
-            return string `${context.companyPrefix}${next}`;
+            return string `${companyPrefix}${next}`;
         }
         CONSULTANCY|ADVISORY_CONSULTANCY|PART_TIME_CONSULTANCY => {
             string seqKey = CONSULTANCY_ID_PREFIX;
