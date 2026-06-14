@@ -255,6 +255,7 @@ export function FilterDrawer({
                       employmentTypeIds: selected.length
                         ? selected.map((s) => s.id)
                         : undefined,
+                      employmentTypeId: undefined,
                     })
                   }
                   ListboxProps={{ style: { maxHeight: 240, overflow: "auto" } }}
@@ -274,7 +275,10 @@ export function FilterDrawer({
                   autoHighlight
                   autoSelect
                   onChange={(_, selected) =>
-                    set({ employmentTypeId: selected?.id || undefined })
+                    set({
+                      employmentTypeId: selected?.id || undefined,
+                      employmentTypeIds: undefined,
+                    })
                   }
                   ListboxProps={{ style: { maxHeight: 240, overflow: "auto" } }}
                   renderInput={(params) => (
@@ -321,7 +325,11 @@ export function FilterDrawer({
                     isOptionEqualToValue={(opt, val) => opt === val}
                     autoHighlight
                     onChange={(_, selected) =>
-                      set({ employeeStatuses: selected.length ? selected : undefined })
+                      set({
+                        employeeStatuses: selected.length ? selected : undefined,
+                        employeeStatus: undefined,
+                        includeMarkedLeavers: undefined,
+                      })
                     }
                     renderInput={(params) => (
                       <BaseTextField {...params} size="small" label="Employee Status" />
@@ -335,7 +343,10 @@ export function FilterDrawer({
                     autoHighlight
                     autoSelect
                     onChange={(_, selected) =>
-                      set({ employeeStatus: selected || undefined })
+                      set({
+                        employeeStatus: selected || undefined,
+                        employeeStatuses: undefined,
+                      })
                     }
                     renderInput={(params) => (
                       <BaseTextField {...params} size="small" label="Employee Status" />

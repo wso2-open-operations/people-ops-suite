@@ -104,9 +104,10 @@ export default function MyTeamTable() {
   // Capture team count when only the baseline (Active + Marked leaver) filter is applied.
   // directReports is intentionally excluded: toggling it should still refresh the count.
   const isBaselineFilter = useMemo(() => {
-    const { employeeStatuses, directReports: _dr, excludeFutureStartDate: _efd, ...rest } = filterState.filters;
+    const { employeeStatuses, directReports: _dr, excludeFutureStartDate, ...rest } = filterState.filters;
     const statuses = employeeStatuses ?? [];
     return (
+      excludeFutureStartDate === true &&
       statuses.length === 2 &&
       statuses.includes(EmployeeStatus.Active) &&
       statuses.includes(EmployeeStatus.MarkedLeaver) &&

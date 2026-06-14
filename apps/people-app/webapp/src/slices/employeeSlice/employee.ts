@@ -742,6 +742,7 @@ const EmployeeSlice = createSlice({
         const statuses = filters.employeeStatuses ?? [];
         const isBaselineQuery =
           !searchString &&
+          filters.excludeFutureStartDate === true &&
           statuses.length === 2 &&
           statuses.includes(EmployeeStatus.Active) &&
           statuses.includes(EmployeeStatus.MarkedLeaver) &&

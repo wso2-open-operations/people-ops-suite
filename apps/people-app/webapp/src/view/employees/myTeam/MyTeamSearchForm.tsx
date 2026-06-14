@@ -183,10 +183,17 @@ export function MyTeamSearchForm({
 
   const activeFilterCount = useMemo(() => {
     const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatuses, directReports, excludeFutureStartDate } = filterPayload.filters;
-    // employeeStatuses is always applied (Active + Marked leaver by default) — count it so the badge reflects it.
+    // Baseline (Active + Marked leaver, exclude future joiners) is the default — don't count it as an active filter.
+    const baselineStatuses = [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver];
+    const isBaselineStatuses =
+      (employeeStatuses?.length ?? 0) === baselineStatuses.length &&
+      baselineStatuses.every((status) => employeeStatuses?.includes(status));
+    const statusCount = isBaselineStatuses ? 0 : (employeeStatuses?.length ?? 0);
     // directReports defaults to false (show all); turning it on (Direct Reports Only) is an active filter.
     const directReportsOn = directReports === true;
-    return [businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatuses?.length, directReportsOn || undefined, excludeFutureStartDate].filter(Boolean).length;
+    // excludeFutureStartDate defaults to true; only count it when the user opts to include future joiners.
+    const includeFutureStartDateFilter = excludeFutureStartDate === false;
+    return [businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, statusCount || undefined, directReportsOn || undefined, includeFutureStartDateFilter || undefined].filter(Boolean).length;
   }, [filterPayload.filters]);
 
   const active = activeFilterCount > 0;
