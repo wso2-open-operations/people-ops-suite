@@ -29,7 +29,7 @@ import { State } from "@src/types/types";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SearchForm } from "../searchForm/SearchForm";
-import { getEmployeeStatusColor } from "@utils/utils";
+import { formatDate, getEmployeeStatusColor } from "@utils/utils";
 
 export default function EmployeesTable() {
   const theme = useTheme();
@@ -106,23 +106,18 @@ export default function EmployeesTable() {
             width: "100%",
           }}
         >
-          {params.row.employeeThumbnail ? (
-            <Avatar
-              src={params.row.employeeThumbnail}
-              alt={getFullName(params.row.firstName, params.row.lastName)}
-              sx={{ width: 32, height: 32 }}
-            />
-          ) : (
-            <Avatar
-              sx={{
-                width: 32,
-                height: 32,
-                bgcolor: theme.palette.primary.main,
-              }}
-            >
-              {params.row.firstName?.[0]?.toUpperCase() || "E"}
-            </Avatar>
-          )}
+          <Avatar
+            src={params.row.employeeThumbnail ?? undefined}
+            alt={getFullName(params.row.firstName, params.row.lastName)}
+            imgProps={{ referrerPolicy: "no-referrer" }}
+            sx={{
+              width: 32,
+              height: 32,
+              bgcolor: theme.palette.primary.main,
+            }}
+          >
+            {params.row.firstName?.[0]?.toUpperCase() || "E"}
+          </Avatar>
           <Box
             sx={{
               fontWeight: 600,
@@ -168,36 +163,6 @@ export default function EmployeesTable() {
       ),
     },
     {
-      field: "businessUnit",
-      headerName: "Business Unit",
-      flex: 0.8,
-      minWidth: 140,
-      resizable: false,
-      renderCell: (params: GridRenderCellParams<Employee>) => (
-        <Tooltip title={params.value || "N/A"} arrow>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5,
-              overflow: "hidden",
-            }}
-          >
-            <Box
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                color: theme.palette.text.primary,
-              }}
-            >
-              {params.value || "N/A"}
-            </Box>
-          </Box>
-        </Tooltip>
-      ),
-    },
-    {
       field: "team",
       headerName: "Team",
       flex: 0.8,
@@ -219,11 +184,56 @@ export default function EmployeesTable() {
       ),
     },
     {
+      field: "designation",
+      headerName: "Designation",
+      flex: 0.9,
+      minWidth: 150,
+      resizable: false,
+      renderCell: (params: GridRenderCellParams<Employee>) => (
+        <Tooltip title={params.value || "N/A"} arrow>
+          <Box
+            sx={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              color: theme.palette.text.primary,
+            }}
+          >
+            {params.value || "N/A"}
+          </Box>
+        </Tooltip>
+      ),
+    },
+    {
+      field: "startDate",
+      headerName: "Start Date",
+      width: 120,
+      resizable: false,
+      valueGetter: (_value, row) => formatDate(row.startDate, "-"),
+      renderCell: (params: GridRenderCellParams<Employee>) => (
+        <Box sx={{ color: theme.palette.text.primary }}>{params.value}</Box>
+      ),
+    },
+    {
       field: "employmentType",
       headerName: "Employment Type",
       flex: 0.7,
       minWidth: 130,
       resizable: false,
+      renderCell: (params: GridRenderCellParams<Employee>) => (
+        <Tooltip title={params.value || "N/A"} arrow>
+          <Box
+            sx={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              color: theme.palette.text.primary,
+            }}
+          >
+            {params.value || "N/A"}
+          </Box>
+        </Tooltip>
+      ),
     },
     {
       field: "employeeStatus",
@@ -293,8 +303,8 @@ export default function EmployeesTable() {
                   );
                 }
                 
-                // Email and Business Unit columns
-                if (col.field === "workEmail" || col.field === "businessUnit") {
+                // Email and other text columns
+                if (col.field === "workEmail" || col.field === "designation") {
                   return (
                     <Box key={colIndex} sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
                       <Skeleton variant="rectangular" width="70%" height={24} sx={{ borderRadius: 3 }} />

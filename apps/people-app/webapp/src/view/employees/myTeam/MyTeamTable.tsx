@@ -51,7 +51,11 @@ export default function MyTeamTable() {
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
   const [filterState, setFilterState] = useState<Pick<EmployeeSearchPayload, "filters" | "searchString">>({
-    filters: { employeeStatus: EmployeeStatus.Active, directReports: false, excludeFutureStartDate: true },
+    filters: {
+      employeeStatuses: [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver],
+      directReports: false,
+      excludeFutureStartDate: true,
+    },
     searchString: undefined,
   });
 
@@ -97,12 +101,15 @@ export default function MyTeamTable() {
     dispatch(fetchFilteredEmployees(appliedFilter));
   }, [dispatch, appliedFilter]);
 
-  // Capture team active count when only the baseline Active filter is applied.
+  // Capture team count when only the baseline (Active + Marked leaver) filter is applied.
   // directReports is intentionally excluded: toggling it should still refresh the count.
   const isBaselineFilter = useMemo(() => {
-    const { employeeStatus, directReports: _dr, excludeFutureStartDate: _efd, ...rest } = filterState.filters;
+    const { employeeStatuses, directReports: _dr, excludeFutureStartDate: _efd, ...rest } = filterState.filters;
+    const statuses = employeeStatuses ?? [];
     return (
-      employeeStatus === EmployeeStatus.Active &&
+      statuses.length === 2 &&
+      statuses.includes(EmployeeStatus.Active) &&
+      statuses.includes(EmployeeStatus.MarkedLeaver) &&
       !Object.values(rest).some(Boolean) &&
       !filterState.searchString?.trim()
     );
@@ -141,17 +148,14 @@ export default function MyTeamTable() {
         resizable: false,
         renderCell: (params: GridRenderCellParams<Employee>) => (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
-            {params.row.employeeThumbnail ? (
-              <Avatar
-                src={params.row.employeeThumbnail}
-                alt={getFullName(params.row.firstName, params.row.lastName)}
-                sx={{ width: 32, height: 32 }}
-              />
-            ) : (
-              <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main }}>
-                {params.row.firstName?.[0]?.toUpperCase() || "E"}
-              </Avatar>
-            )}
+            <Avatar
+              src={params.row.employeeThumbnail ?? undefined}
+              alt={getFullName(params.row.firstName, params.row.lastName)}
+              imgProps={{ referrerPolicy: "no-referrer" }}
+              sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main }}
+            >
+              {params.row.firstName?.[0]?.toUpperCase() || "E"}
+            </Avatar>
             <Box
               sx={{
                 fontWeight: 600,

@@ -34,6 +34,7 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  Skeleton,
   Stack,
   Switch,
   Tooltip,
@@ -85,7 +86,6 @@ type ChipConfig =
   | ChipMeta<"company", Company>
   | ChipMeta<"office", Office>
   | ChipMeta<"employmentType", EmploymentType>
-  | ChipMeta<"employeeStatus", EmployeeStatus>
   | ChipMeta<"gender", string>;
 
 interface MyTeamSearchFormProps {
@@ -165,7 +165,11 @@ export function MyTeamSearchForm({
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     onFilterChange({
       searchString: normalizeSearchString(searchText),
-      filters: { directReports: false },
+      filters: {
+        employeeStatuses: [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver],
+        directReports: false,
+        excludeFutureStartDate: true,
+      },
       pagination: { limit: DEFAULT_LIMIT_VALUE, offset: DEFAULT_OFFSET_VALUE },
       sort: filterRef.current.sort,
     });
@@ -178,15 +182,31 @@ export function MyTeamSearchForm({
   }
 
   const activeFilterCount = useMemo(() => {
-    const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatus, directReports, excludeFutureStartDate } = filterPayload.filters;
-    // employeeStatus is always applied (Active by default) — count it so the badge reflects it.
+    const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatuses, directReports, excludeFutureStartDate } = filterPayload.filters;
+    // employeeStatuses is always applied (Active + Marked leaver by default) — count it so the badge reflects it.
     // directReports defaults to false (show all); turning it on (Direct Reports Only) is an active filter.
     const directReportsOn = directReports === true;
-    return [businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatus, directReportsOn || undefined, excludeFutureStartDate].filter(Boolean).length;
+    return [businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatuses?.length, directReportsOn || undefined, excludeFutureStartDate].filter(Boolean).length;
   }, [filterPayload.filters]);
 
   const active = activeFilterCount > 0;
   const managerEmails = useMemo(() => employeeState.managers.map((m) => m.workEmail), [employeeState.managers]);
+
+  // Shared style for the multi-select Status filter chips.
+  const accentColor = theme.palette.secondary.contrastText;
+  const multiFilterChipSx = {
+    height: "32px",
+    borderRadius: "50px",
+    fontSize: "12px",
+    fontWeight: 600,
+    color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[800],
+    backgroundColor: alpha(accentColor, theme.palette.mode === "dark" ? 0.12 : 0.06),
+    border: `1.5px solid ${accentColor}`,
+    "& .MuiChip-deleteIcon": {
+      color: theme.palette.text.disabled,
+      "&:hover": { color: theme.palette.error.main },
+    },
+  };
 
   const filterChipConfigs = useMemo<ChipConfig[]>(
     () => [
@@ -281,15 +301,6 @@ export function MyTeamSearchForm({
         onClear: () => updateSearchPayload({ filters: { managerEmail: undefined } }),
       },
       {
-        kind: "employeeStatus",
-        label: "Employee Status",
-        value: toSentenceCase(filterPayload.filters.employeeStatus ?? ""),
-        options: sortAndFormatOptions(Object.values(EmployeeStatus), (s) => s),
-        getLabel: (s: EmployeeStatus) => toSentenceCase(s),
-        onChange: (s: EmployeeStatus) => updateSearchPayload({ filters: { employeeStatus: s } }),
-        onClear: () => updateSearchPayload({ filters: { employeeStatus: undefined } }),
-      },
-      {
         kind: "gender",
         label: "Gender",
         value: toSentenceCase(filterPayload.filters.gender ?? ""),
@@ -303,7 +314,7 @@ export function MyTeamSearchForm({
       businessUnits, careerFunctions, companies, designations, employmentTypes,
       filterPayload.filters.businessUnitId, filterPayload.filters.careerFunctionId,
       filterPayload.filters.companyId, filterPayload.filters.designationId,
-      filterPayload.filters.employeeStatus, filterPayload.filters.employmentTypeId,
+      filterPayload.filters.employmentTypeId,
       filterPayload.filters.gender, filterPayload.filters.managerEmail,
       filterPayload.filters.officeId, filterPayload.filters.subTeamId,
       filterPayload.filters.teamId, filterPayload.filters.unitId,
@@ -347,7 +358,7 @@ export function MyTeamSearchForm({
                           textTransform: "capitalize",
                         }}
                       >
-                        Total Active
+                        Total
                       </Box>
                       <Box
                         component="span"
@@ -358,7 +369,11 @@ export function MyTeamSearchForm({
                           color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[800],
                         }}
                       >
-                        {isLoading && teamActiveCount === null ? "—" : (teamActiveCount ?? "—")}
+                        {isLoading ? (
+                          <Skeleton variant="rounded" width={24} height={14} />
+                        ) : (
+                          (teamActiveCount ?? "—")
+                        )}
                       </Box>
                     </>
                   }
@@ -400,7 +415,11 @@ export function MyTeamSearchForm({
                             color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[800],
                           }}
                         >
-                          {isLoading ? "—" : employeeState.filteredEmployeesResponse.totalCount}
+                          {isLoading ? (
+                            <Skeleton variant="rounded" width={24} height={14} />
+                          ) : (
+                            employeeState.filteredEmployeesResponse.totalCount
+                          )}
                         </Box>
                       </>
                     }
@@ -593,12 +612,27 @@ export function MyTeamSearchForm({
                   case "company": { const { kind, ...props } = config; return <FilterChipSelect<Company> key={kind} {...props} />; }
                   case "office": { const { kind, ...props } = config; return <FilterChipSelect<Office> key={kind} {...props} />; }
                   case "employmentType": { const { kind, ...props } = config; return <FilterChipSelect<EmploymentType> key={kind} {...props} />; }
-                  case "employeeStatus": { const { kind, ...props } = config; return <FilterChipSelect<EmployeeStatus> key={kind} {...props} />; }
                   case "manager":
                   case "gender": { const { kind, ...props } = config; return <FilterChipSelect<string> key={kind} {...props} />; }
                   default: return assertNever(config);
                 }
               })}
+              {(filterPayload.filters.employeeStatuses ?? []).map((status) => (
+                <Chip
+                  key={`employeeStatus-${status}`}
+                  label={`Status: ${toSentenceCase(status)}`}
+                  variant="outlined"
+                  onDelete={() => {
+                    const next = (filterPayload.filters.employeeStatuses ?? []).filter(
+                      (s) => s !== status,
+                    );
+                    updateSearchPayload({
+                      filters: { employeeStatuses: next.length ? next : undefined },
+                    });
+                  }}
+                  sx={multiFilterChipSx}
+                />
+              ))}
               {hasActiveFilters && (
                 <Button
                   variant="text"
@@ -646,6 +680,7 @@ export function MyTeamSearchForm({
         companies={companies}
         offices={offices}
         showDirectReportsFilter
+        multiSelectStatus
       />
     </Box>
   );

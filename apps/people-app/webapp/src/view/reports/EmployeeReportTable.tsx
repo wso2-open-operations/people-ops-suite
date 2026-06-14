@@ -689,9 +689,11 @@ export default function EmployeeReportTable({
                       : theme.palette.grey[800],
                 }}
               >
-                {isLoading
-                  ? "—"
-                  : (totalCount ?? "—")}
+                {isLoading ? (
+                  <Skeleton variant="rounded" width={24} height={14} />
+                ) : (
+                  (totalCount ?? "—")
+                )}
               </Box>
             </>
           }

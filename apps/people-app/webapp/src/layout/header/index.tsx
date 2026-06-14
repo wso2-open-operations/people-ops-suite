@@ -132,6 +132,7 @@ const Header = () => {
                     }}
                     src={user.userInfo?.employeeThumbnail || ""}
                     alt={user.userInfo?.firstName || "Avatar"}
+                    imgProps={{ referrerPolicy: "no-referrer" }}
                   >
                     {user.userInfo?.firstName?.charAt(0)}
                   </Avatar>

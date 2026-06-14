@@ -215,6 +215,7 @@ function QrCodesReportContent() {
             >
               <Avatar
                 src={option.employeeThumbnail ?? undefined}
+                imgProps={{ referrerPolicy: "no-referrer" }}
                 sx={{
                   width: 32,
                   height: 32,
@@ -300,6 +301,7 @@ function QrCodesReportContent() {
                   >
                     <Avatar
                       src={emp.employeeThumbnail ?? undefined}
+                      imgProps={{ referrerPolicy: "no-referrer" }}
                       sx={{
                         width: 36,
                         height: 36,

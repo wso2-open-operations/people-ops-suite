@@ -89,6 +89,10 @@ type FilterDrawerProps = {
   showExcludeFutureFilter?: boolean;
   /** When true, renders an "Include marked leavers" toggle (Active Employees report). Default false. */
   showIncludeMarkedLeaversFilter?: boolean;
+  /** When true, the Employment Type filter is a multi-select bound to `employmentTypeIds`. Default false. */
+  multiSelectEmploymentType?: boolean;
+  /** When true, the Employee Status filter is a multi-select bound to `employeeStatuses`. Default false. */
+  multiSelectStatus?: boolean;
 };
 
 export function FilterDrawer({
@@ -112,6 +116,8 @@ export function FilterDrawer({
   showEmployeeStatusFilter = true,
   showExcludeFutureFilter = true,
   showIncludeMarkedLeaversFilter = false,
+  multiSelectEmploymentType = false,
+  multiSelectStatus = false,
 }: FilterDrawerProps) {
   const theme = useTheme();
   const [draft, setDraft] = useState<EmployeeSearchPayload>(appliedFilter);
@@ -234,24 +240,48 @@ export function FilterDrawer({
               Other
             </Typography>
             <Stack spacing={2}>
-              <Autocomplete<EmploymentType, false, false, false>
-                options={sortAndFormatOptions(employmentTypes, (et) => et.name)}
-                getOptionLabel={(o) => toSentenceCase(o.name)}
-                value={
-                  employmentTypes.find(
-                    (et) => et.id === draft.filters.employmentTypeId,
-                  ) ?? null
-                }
-                autoHighlight
-                autoSelect
-                onChange={(_, selected) =>
-                  set({ employmentTypeId: selected?.id || undefined })
-                }
-                ListboxProps={{ style: { maxHeight: 240, overflow: "auto" } }}
-                renderInput={(params) => (
-                  <BaseTextField {...params} size="small" label="Employment Type" />
-                )}
-              />
+              {multiSelectEmploymentType ? (
+                <Autocomplete<EmploymentType, true, false, false>
+                  multiple
+                  options={sortAndFormatOptions(employmentTypes, (et) => et.name)}
+                  getOptionLabel={(o) => toSentenceCase(o.name)}
+                  value={employmentTypes.filter((et) =>
+                    (draft.filters.employmentTypeIds ?? []).includes(et.id),
+                  )}
+                  isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                  autoHighlight
+                  onChange={(_, selected) =>
+                    set({
+                      employmentTypeIds: selected.length
+                        ? selected.map((s) => s.id)
+                        : undefined,
+                    })
+                  }
+                  ListboxProps={{ style: { maxHeight: 240, overflow: "auto" } }}
+                  renderInput={(params) => (
+                    <BaseTextField {...params} size="small" label="Employment Type" />
+                  )}
+                />
+              ) : (
+                <Autocomplete<EmploymentType, false, false, false>
+                  options={sortAndFormatOptions(employmentTypes, (et) => et.name)}
+                  getOptionLabel={(o) => toSentenceCase(o.name)}
+                  value={
+                    employmentTypes.find(
+                      (et) => et.id === draft.filters.employmentTypeId,
+                    ) ?? null
+                  }
+                  autoHighlight
+                  autoSelect
+                  onChange={(_, selected) =>
+                    set({ employmentTypeId: selected?.id || undefined })
+                  }
+                  ListboxProps={{ style: { maxHeight: 240, overflow: "auto" } }}
+                  renderInput={(params) => (
+                    <BaseTextField {...params} size="small" label="Employment Type" />
+                  )}
+                />
+              )}
               <Autocomplete<string, false, false, false>
                 options={managerEmails}
                 getOptionLabel={(email) => email}
@@ -281,21 +311,37 @@ export function FilterDrawer({
                   <BaseTextField {...params} size="small" label="Gender" />
                 )}
               />
-              {showEmployeeStatusFilter && (
-                <Autocomplete<EmployeeStatus, false, false, false>
-                  options={sortAndFormatOptions(Object.values(EmployeeStatus), (s) => s)}
-                  getOptionLabel={(o) => toSentenceCase(o)}
-                  value={Object.values(EmployeeStatus).find((es) => es === draft.filters.employeeStatus) ?? null}
-                  autoHighlight
-                  autoSelect
-                  onChange={(_, selected) =>
-                    set({ employeeStatus: selected || undefined })
-                  }
-                  renderInput={(params) => (
-                    <BaseTextField {...params} size="small" label="Employee Status" />
-                  )}
-                />
-              )}
+              {showEmployeeStatusFilter &&
+                (multiSelectStatus ? (
+                  <Autocomplete<EmployeeStatus, true, false, false>
+                    multiple
+                    options={sortAndFormatOptions(Object.values(EmployeeStatus), (s) => s)}
+                    getOptionLabel={(o) => toSentenceCase(o)}
+                    value={draft.filters.employeeStatuses ?? []}
+                    isOptionEqualToValue={(opt, val) => opt === val}
+                    autoHighlight
+                    onChange={(_, selected) =>
+                      set({ employeeStatuses: selected.length ? selected : undefined })
+                    }
+                    renderInput={(params) => (
+                      <BaseTextField {...params} size="small" label="Employee Status" />
+                    )}
+                  />
+                ) : (
+                  <Autocomplete<EmployeeStatus, false, false, false>
+                    options={sortAndFormatOptions(Object.values(EmployeeStatus), (s) => s)}
+                    getOptionLabel={(o) => toSentenceCase(o)}
+                    value={Object.values(EmployeeStatus).find((es) => es === draft.filters.employeeStatus) ?? null}
+                    autoHighlight
+                    autoSelect
+                    onChange={(_, selected) =>
+                      set({ employeeStatus: selected || undefined })
+                    }
+                    renderInput={(params) => (
+                      <BaseTextField {...params} size="small" label="Employee Status" />
+                    )}
+                  />
+                ))}
               {showDirectReportsFilter && (
                 <FormControlLabel
                   control={
