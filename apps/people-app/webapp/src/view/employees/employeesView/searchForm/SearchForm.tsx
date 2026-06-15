@@ -33,6 +33,7 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  Skeleton,
   Stack,
   Tooltip,
   Typography,
@@ -52,7 +53,6 @@ import {
   CareerFunction,
   Company,
   Designation,
-  EmploymentType,
   fetchBusinessUnits,
   fetchCareerFunctions,
   fetchCompanies,
@@ -87,8 +87,6 @@ type ChipConfig =
   | ChipMeta<"manager", string>
   | ChipMeta<"company", Company>
   | ChipMeta<"office", Office>
-  | ChipMeta<"employmentType", EmploymentType>
-  | ChipMeta<"employeeStatus", EmployeeStatus>
   | ChipMeta<"gender", string>;
 
 export function SearchForm() {
@@ -174,7 +172,10 @@ export function SearchForm() {
     dispatch(
       setEmployeeFilter({
         searchString: normalizedSearchString,
-        filters: {},
+        filters: {
+          employeeStatuses: [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver],
+          excludeFutureStartDate: true,
+        },
         pagination: {
           limit: DEFAULT_LIMIT_VALUE,
           offset: DEFAULT_OFFSET_VALUE,
@@ -195,11 +196,11 @@ export function SearchForm() {
       careerFunctionId,
       designationId,
       gender,
-      employmentTypeId,
+      employmentTypeIds,
       managerEmail,
       companyId,
       officeId,
-      employeeStatus,
+      employeeStatuses,
       excludeFutureStartDate,
     } = filters;
 
@@ -211,11 +212,11 @@ export function SearchForm() {
       careerFunctionId ||
       gender ||
       designationId ||
-      employmentTypeId ||
+      employmentTypeIds?.length ||
       managerEmail ||
       companyId ||
       officeId ||
-      employeeStatus ||
+      employeeStatuses?.length ||
       excludeFutureStartDate,
     );
   }
@@ -230,11 +231,11 @@ export function SearchForm() {
       careerFunctionId,
       designationId,
       gender,
-      employmentTypeId,
+      employmentTypeIds,
       managerEmail,
       companyId,
       officeId,
-      employeeStatus,
+      employeeStatuses,
       excludeFutureStartDate,
     } = filterPayload.filters;
     return [
@@ -245,17 +246,33 @@ export function SearchForm() {
       careerFunctionId,
       designationId,
       gender,
-      employmentTypeId,
+      employmentTypeIds?.length,
       managerEmail,
       companyId,
       officeId,
-      employeeStatus,
+      employeeStatuses?.length,
       excludeFutureStartDate,
     ].filter(Boolean).length;
   }, [filterPayload.filters]);
 
   // Check if any of the filters are active
   const active = activeFilterCount > 0;
+
+  // Shared style for the multi-select filter chips (Employment Type, Status).
+  const accentColor = theme.palette.secondary.contrastText;
+  const multiFilterChipSx = {
+    height: "32px",
+    borderRadius: "50px",
+    fontSize: "12px",
+    fontWeight: 600,
+    color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[800],
+    backgroundColor: alpha(accentColor, theme.palette.mode === "dark" ? 0.12 : 0.06),
+    border: `1.5px solid ${accentColor}`,
+    "& .MuiChip-deleteIcon": {
+      color: theme.palette.text.disabled,
+      "&:hover": { color: theme.palette.error.main },
+    },
+  };
 
   // Derive manager emails
   const managerEmails = useMemo(() => {
@@ -375,23 +392,6 @@ export function SearchForm() {
           updateSearchPayload({ filters: { officeId: undefined } }),
       },
       {
-        kind: "employmentType",
-        label: "Employment Type",
-        value: toSentenceCase(employmentTypes.find(
-          (et) => et.id === filterPayload.filters.employmentTypeId,
-        )?.name ?? ""),
-        options: sortAndFormatOptions(employmentTypes, (et) => et.name),
-        getLabel: (employeeType: EmploymentType) => toSentenceCase(employeeType.name),
-        onChange: (employeeType: EmploymentType) =>
-          updateSearchPayload({
-            filters: { employmentTypeId: employeeType.id },
-          }),
-        onClear: () =>
-          updateSearchPayload({
-            filters: { employmentTypeId: undefined },
-          }),
-      },
-      {
         kind: "manager",
         label: "Manager",
         value: managerEmails.find(
@@ -403,17 +403,6 @@ export function SearchForm() {
           updateSearchPayload({ filters: { managerEmail } }),
         onClear: () =>
           updateSearchPayload({ filters: { managerEmail: undefined } }),
-      },
-      {
-        kind: "employeeStatus",
-        label: "Employee Status",
-        value: toSentenceCase(filterPayload.filters.employeeStatus ?? ""),
-        options: sortAndFormatOptions(Object.values(EmployeeStatus), (s) => s),
-        getLabel: (status: EmployeeStatus) => toSentenceCase(status),
-        onChange: (status: EmployeeStatus) =>
-          updateSearchPayload({ filters: { employeeStatus: status } }),
-        onClear: () =>
-          updateSearchPayload({ filters: { employeeStatus: undefined } }),
       },
       {
         kind: "gender",
@@ -431,13 +420,10 @@ export function SearchForm() {
       careerFunctions,
       companies,
       designations,
-      employmentTypes,
       filterPayload.filters.businessUnitId,
       filterPayload.filters.careerFunctionId,
       filterPayload.filters.companyId,
       filterPayload.filters.designationId,
-      filterPayload.filters.employeeStatus,
-      filterPayload.filters.employmentTypeId,
       filterPayload.filters.gender,
       filterPayload.filters.managerEmail,
       filterPayload.filters.officeId,
@@ -515,7 +501,7 @@ export function SearchForm() {
                           textTransform: "capitalize",
                         }}
                       >
-                        Total Active
+                        Total
                       </Box>
                       <Box
                         component="span"
@@ -529,10 +515,11 @@ export function SearchForm() {
                               : theme.palette.grey[800],
                         }}
                       >
-                        {isLoading &&
-                        employeeState.totalActiveEmployeeCount === null
-                          ? "—"
-                          : (employeeState.totalActiveEmployeeCount ?? "—")}
+                        {isLoading ? (
+                          <Skeleton variant="rounded" width={24} height={14} />
+                        ) : (
+                          (employeeState.totalActiveEmployeeCount ?? "—")
+                        )}
                       </Box>
                     </>
                   }
@@ -588,10 +575,11 @@ export function SearchForm() {
                                 : theme.palette.grey[800],
                           }}
                         >
-                          {isLoading
-                            ? "—"
-                            : employeeState.filteredEmployeesResponse
-                                .totalCount}
+                          {isLoading ? (
+                            <Skeleton variant="rounded" width={24} height={14} />
+                          ) : (
+                            employeeState.filteredEmployeesResponse.totalCount
+                          )}
                         </Box>
                       </>
                     }
@@ -821,18 +809,6 @@ export function SearchForm() {
                     const { kind, ...props } = config;
                     return <FilterChipSelect<Office> key={kind} {...props} />;
                   }
-                  case "employmentType": {
-                    const { kind, ...props } = config;
-                    return (
-                      <FilterChipSelect<EmploymentType> key={kind} {...props} />
-                    );
-                  }
-                  case "employeeStatus": {
-                    const { kind, ...props } = config;
-                    return (
-                      <FilterChipSelect<EmployeeStatus> key={kind} {...props} />
-                    );
-                  }
                   case "manager":
                   case "gender": {
                     const { kind, ...props } = config;
@@ -842,6 +818,42 @@ export function SearchForm() {
                     return assertNever(config);
                 }
               })}
+              {(filterPayload.filters.employmentTypeIds ?? []).map((id) => {
+                const employmentType = employmentTypes.find((et) => et.id === id);
+                if (!employmentType) return null;
+                return (
+                  <Chip
+                    key={`employmentType-${id}`}
+                    label={`Employment Type: ${toSentenceCase(employmentType.name)}`}
+                    variant="outlined"
+                    onDelete={() => {
+                      const next = (filterPayload.filters.employmentTypeIds ?? []).filter(
+                        (x) => x !== id,
+                      );
+                      updateSearchPayload({
+                        filters: { employmentTypeIds: next.length ? next : undefined },
+                      });
+                    }}
+                    sx={multiFilterChipSx}
+                  />
+                );
+              })}
+              {(filterPayload.filters.employeeStatuses ?? []).map((status) => (
+                <Chip
+                  key={`employeeStatus-${status}`}
+                  label={`Status: ${toSentenceCase(status)}`}
+                  variant="outlined"
+                  onDelete={() => {
+                    const next = (filterPayload.filters.employeeStatuses ?? []).filter(
+                      (s) => s !== status,
+                    );
+                    updateSearchPayload({
+                      filters: { employeeStatuses: next.length ? next : undefined },
+                    });
+                  }}
+                  sx={multiFilterChipSx}
+                />
+              ))}
               {hasActiveFilters && (
                 <Button
                   variant="text"
@@ -888,6 +900,8 @@ export function SearchForm() {
         managerEmails={managerEmails}
         companies={companies}
         offices={offices}
+        multiSelectEmploymentType
+        multiSelectStatus
       />
     </Box>
   );

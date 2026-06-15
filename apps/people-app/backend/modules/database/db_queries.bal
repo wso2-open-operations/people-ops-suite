@@ -117,6 +117,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
                 THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END
         ) AS designation,
         e.designation_id AS designationId,
+        d.job_band AS jobBand,
         e.secondary_job_title AS secondaryJobTitle,
         e.job_role AS jobRole,
         o.name AS office,
@@ -310,8 +311,14 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     appendStringFilter(filters, payload.filters.residentNumber, `pi.resident_number = ${payload.filters.residentNumber}`);
     appendStringFilter(filters, payload.filters.city, `LOWER(pi.city) = LOWER(${payload.filters.city})`);
     appendStringFilter(filters, payload.filters.country, `LOWER(pi.country) = LOWER(${payload.filters.country})`);
+    string[]? statusList = payload.filters.employeeStatuses;
     string? statusFilter = payload.filters.employeeStatus;
-    if statusFilter is string {
+    if statusList is string[] && statusList.length() > 0 {
+        // Multi-select status takes precedence over the single status + includeMarkedLeavers flag.
+        string[] loweredStatuses = from string status in statusList
+            select status.toLowerAscii();
+        filters.push(sql:queryConcat(`LOWER(e.employee_status) IN (`, buildInClause(loweredStatuses), `)`));
+    } else if statusFilter is string {
         if payload.filters.includeMarkedLeavers == true {
             filters.push(`(LOWER(e.employee_status) = LOWER(${statusFilter}) OR e.employee_status = 'Marked leaver')`);
         } else {
@@ -335,7 +342,13 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     appendIntFilter(filters, payload.filters.teamId, `e.team_id = ${payload.filters.teamId}`);
     appendIntFilter(filters, payload.filters.subTeamId, `e.sub_team_id = ${payload.filters.subTeamId}`);
     appendIntFilter(filters, payload.filters.unitId, `e.unit_id = ${payload.filters.unitId}`);
-    appendIntFilter(filters, payload.filters.employmentTypeId, `e.employment_type_id = ${payload.filters.employmentTypeId}`);
+    int[]? employmentTypeList = payload.filters.employmentTypeIds;
+    if employmentTypeList is int[] && employmentTypeList.length() > 0 {
+        // Multi-select employment type takes precedence over the single employmentTypeId.
+        filters.push(sql:queryConcat(`e.employment_type_id IN (`, buildIntInClause(employmentTypeList), `)`));
+    } else {
+        appendIntFilter(filters, payload.filters.employmentTypeId, `e.employment_type_id = ${payload.filters.employmentTypeId}`);
+    }
 
     if payload.filters.excludeFutureStartDate == true {
         filters.push(`e.start_date <= CURDATE()`);
@@ -660,6 +673,20 @@ isolated function getExistingEpfsQuery(string[] epfs) returns sql:ParameterizedQ
 # + values - List of string values to include in the IN clause
 # + return - Parameterized query representing the IN clause
 isolated function buildInClause(string[] values) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery clause = ``;
+    foreach int i in 0 ..< values.length() {
+        clause = i == 0
+            ? sql:queryConcat(clause, `${values[i]}`)
+            : sql:queryConcat(clause, `, `, `${values[i]}`);
+    }
+    return clause;
+}
+
+# Build an SQL IN clause for a list of integer values.
+#
+# + values - List of integer values to include in the IN clause
+# + return - Parameterized query representing the IN clause
+isolated function buildIntInClause(int[] values) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery clause = ``;
     foreach int i in 0 ..< values.length() {
         clause = i == 0

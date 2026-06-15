@@ -148,9 +148,11 @@ export type Filters = {
   companyId?: number;
   officeId?: number;
   employmentTypeId?: number;
+  employmentTypeIds?: number[];
   managerEmail?: string;
   gender?: string;
   employeeStatus?: EmployeeStatus;
+  employeeStatuses?: EmployeeStatus[];
   directReports?: boolean;
   excludeFutureStartDate?: boolean;
   includeMarkedLeavers?: boolean;
@@ -283,7 +285,7 @@ const initialState: EmployeesState = {
   managersState: State.idle,
   employeeFilter: {
     filters: {
-      employeeStatus: EmployeeStatus.Active,
+      employeeStatuses: [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver],
       excludeFutureStartDate: true,
     },
     pagination: {
@@ -736,13 +738,18 @@ const EmployeeSlice = createSlice({
         state.stateMessage = "Filtered employees fetched successfully";
         state.errorMessage = null;
         const { searchString, filters } = action.meta.arg;
-        const isTotalActiveQuery =
+        // Capture the baseline count on the default query (Active + Marked leaver, no other filters).
+        const statuses = filters.employeeStatuses ?? [];
+        const isBaselineQuery =
           !searchString &&
-          filters.employeeStatus === EmployeeStatus.Active &&
+          filters.excludeFutureStartDate === true &&
+          statuses.length === 2 &&
+          statuses.includes(EmployeeStatus.Active) &&
+          statuses.includes(EmployeeStatus.MarkedLeaver) &&
           Object.entries(filters).every(([key, value]) => {
-            return key === "employeeStatus" || key === "excludeFutureStartDate" || value === undefined;
+            return key === "employeeStatuses" || key === "excludeFutureStartDate" || value === undefined;
           });
-        if (isTotalActiveQuery) {
+        if (isBaselineQuery) {
           state.totalActiveEmployeeCount = action.payload.totalCount;
         }
       })

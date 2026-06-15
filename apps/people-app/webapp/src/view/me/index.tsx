@@ -614,6 +614,7 @@ export default function Me({
               <>
                 <Avatar
                   src={employee?.employeeThumbnail ?? undefined}
+                  imgProps={{ referrerPolicy: "no-referrer" }}
                   sx={(theme) => avatarSx(theme)}
                 >
                   {employee?.firstName?.[0]?.toUpperCase() ?? ""}
@@ -787,6 +788,14 @@ export default function Me({
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
                     {designationText}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Job Band
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {employee.jobBand ?? "-"}
                   </Typography>
                 </Grid>
               </Grid>

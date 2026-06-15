@@ -48,6 +48,7 @@ import {
   type ContinuousServiceRecordInfo,
 } from "@slices/employeeSlice/employee";
 import { EmployeeStatus } from "@/types/types";
+import { sortAndFormatOptions } from "@utils/utils";
 import {
   fetchBusinessUnits,
   fetchTeams,
@@ -459,7 +460,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   );
 
   const managerEmailOptions = useMemo(() => {
-    const list = employeesBasicInfo.map((e) => e.workEmail).filter(Boolean);
+    const list = sortAndFormatOptions(
+      employeesBasicInfo.map((e) => e.workEmail).filter(Boolean),
+      (email) => email,
+    );
     if (values.managerEmail && !list.includes(values.managerEmail)) {
       return [values.managerEmail, ...list];
     }
@@ -467,7 +471,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   }, [employeesBasicInfo, values.managerEmail]);
 
   const additionalManagerOptions = useMemo(() => {
-    const list = employeesBasicInfo.map((e) => e.workEmail).filter(Boolean);
+    const list = sortAndFormatOptions(
+      employeesBasicInfo.map((e) => e.workEmail).filter(Boolean),
+      (email) => email,
+    );
     const selected = values.additionalManagerEmail ?? [];
     const missing = selected.filter((email) => email && !list.includes(email));
     return [...missing, ...list];
@@ -1034,7 +1041,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               sx={textFieldSx}
             >
               {businessUnits.length ? (
-                businessUnits.map((b) => (
+                sortAndFormatOptions(businessUnits, (b) => b.name).map((b) => (
                   <MenuItem key={b.id} value={b.id}>
                     {b.name}
                   </MenuItem>
@@ -1067,7 +1074,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               }}
             >
               {teams.length ? (
-                teams.map((t) => (
+                sortAndFormatOptions(teams, (t) => t.name).map((t) => (
                   <MenuItem key={t.id} value={t.id}>
                     {t.name}
                   </MenuItem>
@@ -1102,7 +1109,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 <em>None</em>
               </MenuItem>
               {subTeams.length ? (
-                subTeams.map((st) => (
+                sortAndFormatOptions(subTeams, (st) => st.name).map((st) => (
                   <MenuItem key={st.id} value={st.id}>
                     {st.name}
                   </MenuItem>
@@ -1137,7 +1144,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 <em>None</em>
               </MenuItem>
               {units.length ? (
-                units.map((u) => (
+                sortAndFormatOptions(units, (u) => u.name).map((u) => (
                   <MenuItem key={u.id} value={u.id}>
                     {u.name}
                   </MenuItem>
@@ -1170,7 +1177,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               sx={textFieldSx}
             >
               {careerFunctions.length ? (
-                careerFunctions.map((cf) => (
+                sortAndFormatOptions(careerFunctions, (cf) => cf.careerFunction).map((cf) => (
                   <MenuItem key={cf.id} value={cf.id}>
                     {cf.careerFunction}
                   </MenuItem>
@@ -1207,7 +1214,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               }}
             >
               {designations.length ? (
-                designations.map((d) => (
+                sortAndFormatOptions(designations, (d) => d.designation).map((d) => (
                   <MenuItem key={d.id} value={d.id}>
                     {d.designation}
                   </MenuItem>
@@ -1277,7 +1284,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               sx={textFieldSx}
             >
               {companies.length ? (
-                companies.map((company) => (
+                sortAndFormatOptions(companies, (company) => company.name).map((company) => (
                   <MenuItem key={company.id} value={company.id}>
                     {company.name}
                   </MenuItem>
@@ -1308,7 +1315,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 <em>None</em>
               </MenuItem>
               {offices.length ? (
-                offices.map((office) => (
+                sortAndFormatOptions(offices, (office) => office.name).map((office) => (
                   <MenuItem key={office.id} value={office.id}>
                     {office.name}
                   </MenuItem>
@@ -1343,7 +1350,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                       ?.allowedLocations ?? [];
 
                   return allowedLocations.length ? (
-                    allowedLocations.map((locationItem) => (
+                    sortAndFormatOptions(
+                      allowedLocations,
+                      (locationItem) => locationItem.location,
+                    ).map((locationItem) => (
                       <MenuItem
                         key={locationItem.location}
                         value={locationItem.location}
@@ -1397,7 +1407,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               sx={textFieldSx}
             >
               {selectableEmploymentTypes.length > 0 ? (
-                selectableEmploymentTypes.map((type) => (
+                sortAndFormatOptions(selectableEmploymentTypes, (type) => type.name).map((type) => (
                   <MenuItem key={type.id} value={type.id}>
                     {type.name}
                   </MenuItem>
@@ -1727,7 +1737,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               sx={textFieldSx}
             >
               {houses.length ? (
-                houses.map((h) => (
+                sortAndFormatOptions(houses, (h) => h.name).map((h) => (
                   <MenuItem key={h.id} value={h.id}>
                     {h.name}
                   </MenuItem>

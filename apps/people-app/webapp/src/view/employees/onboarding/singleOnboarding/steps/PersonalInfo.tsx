@@ -49,6 +49,7 @@ import {
   EmployeeGenders,
 } from "@root/src/config/constant";
 import { CreateEmployeeFormValues } from "@root/src/types/types";
+import { sortAndFormatOptions } from "@utils/utils";
 import dayjs from "dayjs";
 
 const PERSONAL_INFO_ICONS = {
@@ -555,7 +556,7 @@ export default function PersonalInfoStep() {
               }
               sx={textFieldSx}
             >
-              {Countries.map((c) => (
+              {sortAndFormatOptions(Countries, (c) => c).map((c) => (
                 <MenuItem key={c} value={c}>
                   {c}
                 </MenuItem>

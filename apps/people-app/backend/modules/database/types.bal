@@ -252,8 +252,12 @@ public type EmployeeFilters record {|
     int? designationId = ();
     # Employment type ID
     int? employmentTypeId = ();
+    # Employment type IDs (multi-select). When non-empty, takes precedence over employmentTypeId.
+    int[]? employmentTypeIds = ();
     # Employee Status
     string? employeeStatus = ();
+    # Employee Statuses (multi-select). When non-empty, takes precedence over employeeStatus/includeMarkedLeavers.
+    string[]? employeeStatuses = ();
     # Direct reports only (true = direct only, false = all subordinates recursively)
     boolean? directReports = ();
     # When true, excludes employees whose start date is in the future
