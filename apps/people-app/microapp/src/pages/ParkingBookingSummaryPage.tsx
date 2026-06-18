@@ -39,6 +39,7 @@ import { formatCoins } from "@/utils/helpers/coins";
 import {
   getParkingPaymentContextState,
   setParkingPaymentContextState,
+  clearParkingPaymentContextState,
 } from "@/utils/parkingStorage";
 import {
   PARKING_WALLET_PAYMENT_ERROR_KEY,
@@ -475,6 +476,9 @@ function ParkingBookingSummaryPage() {
                   onClick={() => {
                     setShowPaymentFailureModal(false);
                     setError(undefined);
+                    clearParkingPaymentContextState();
+                    Logger.info("ParkingBookingSummaryPage: payment context cleared on user dismiss");
+                    navigate("/services/parking");
                   }}
                 >
                   Close
