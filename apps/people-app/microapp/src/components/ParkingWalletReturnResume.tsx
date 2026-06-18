@@ -25,6 +25,7 @@ import {
   PARKING_WALLET_PAYMENT_STATUS_KEY,
   PARKING_WALLET_PAYMENT_TX_HASH_KEY,
   PARKING_WALLET_PAYMENT_ERROR_KEY,
+  clearWalletParkingPaymentBridgeKeys,
   confirmParkingReservation,
   fetchParkingReservationById,
   finalizeParkingConfirmationAfterSuccess,
@@ -88,6 +89,12 @@ export function ParkingWalletReturnResume({
 
           if (status === "FAILED") {
             const error = await getLocalDataAsync(PARKING_WALLET_PAYMENT_ERROR_KEY);
+            try {
+              await clearWalletParkingPaymentBridgeKeys();
+              Logger.info("ParkingWalletReturnResume: bridge keys cleared after FAILED", { reservationId });
+            } catch (clearErr) {
+              Logger.error("ParkingWalletReturnResume: bridge key cleanup failed after FAILED", clearErr);
+            }
             if (!cancelled) {
               navigate("/services/parking/summary", {
                 replace: true,
@@ -185,6 +192,12 @@ export function ParkingWalletReturnResume({
           }
         } else {
           Logger.error("ParkingWalletReturnResume", e);
+          try {
+            await clearWalletParkingPaymentBridgeKeys();
+            Logger.info("ParkingWalletReturnResume: bridge keys cleared after server error", { reservationId });
+          } catch (clearErr) {
+            Logger.error("ParkingWalletReturnResume: bridge key cleanup failed after server error", clearErr);
+          }
           if (!cancelled) {
             navigate("/services/parking/summary", {
               replace: true,
