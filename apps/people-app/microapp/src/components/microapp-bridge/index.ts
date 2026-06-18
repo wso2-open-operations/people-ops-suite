@@ -39,6 +39,7 @@ declare global {
       // Cross-microapp bridge API (provided by SuperApp).
       requestOpenMicroApp: (targetAppId: string, launchData?: unknown) => void;
       resolveDeviceSafeAreaInsets?: (data: { insets: EdgeInsets }) => void;
+      resolveMicroAppVersion?: (version: string) => void;
     };
     ReactNativeWebView?: {
       postMessage: (message: string) => void;
@@ -235,6 +236,22 @@ export const getLocalDataAsync = async <T = unknown>(key: string) => {
       key: normalizedKey,
     });
   });
+};
+
+export const requestMicroAppVersion = (
+  callback: Callback<string>,
+): void => {
+  if (window.nativebridge) {
+    triggerSuperAppAction(TOPIC.MICRO_APP_VERSION);
+    window.nativebridge.resolveMicroAppVersion = (version) => {
+      callback(version);
+    };
+  } else {
+    Logger.error(
+      ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE + " to fetch micro app version",
+    );
+    callback();
+  }
 };
 
 /**

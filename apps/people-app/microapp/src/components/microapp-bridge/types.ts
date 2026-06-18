@@ -25,6 +25,7 @@ export const TOPIC = {
   NATIVE_LOG: "native_log",
   NAVIGATE_TO_MY_APPS: "close_webview",
   DEVICE_SAFE_AREA_INSETS: "device_safe_area_insets",
+  MICRO_APP_VERSION: "micro_app_version",
 };
 
 export type TopicType = (typeof TOPIC)[keyof typeof TOPIC];

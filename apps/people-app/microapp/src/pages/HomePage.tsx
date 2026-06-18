@@ -19,17 +19,35 @@ import { services } from "@/constants";
 import { Header } from "@/components/core";
 import { PageTransitionWrapper } from "@/components/shared";
 import { ServiceTile } from "@/components/features/services";
+import { requestMicroAppVersion } from "@/components/microapp-bridge";
+import { useEffect, useState } from "react";
 
 function HomePage({ user: _user }: PageProps) {
+  const [appVersion, setAppVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    requestMicroAppVersion((version) => {
+      if (version) setAppVersion(version);
+    });
+  }, []);
+
   return (
     <PageTransitionWrapper type="main">
-      <div className="min-h-screen bg-[#F2F2EF]">
+      <div className="min-h-screen bg-[#F2F2EF] flex flex-col">
         <Header />
-        <main className="px-4 pt-3 flex flex-col gap-4">
+        <main className="px-4 pt-3 pb-4 flex flex-col gap-4 flex-1">
           {services.map((service, index) => (
             <ServiceTile key={index} {...service} />
           ))}
         </main>
+        {appVersion && (
+          <p
+            className="text-center text-xs text-[#9AA0A6]"
+            style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 12px)" }}
+          >
+            v{appVersion}
+          </p>
+        )}
       </div>
     </PageTransitionWrapper>
   );
