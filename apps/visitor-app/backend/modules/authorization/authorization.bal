@@ -59,7 +59,7 @@ public isolated service class JwtInterceptor {
             };
         }
 
-        CustomJwtPayload|ClientCredentialJwtPayload|error userInfo = result[1].cloneWithType();
+        CustomJwtPayload|error userInfo = result[1].cloneWithType();
         if userInfo is error {
             string errorMsg = "Malformed Invoker info object!";
             log:printError(errorMsg, userInfo);
@@ -68,6 +68,13 @@ public isolated service class JwtInterceptor {
                     message: errorMsg
                 }
             };
+        }
+
+        foreach anydata role in [...authorizedRoles.EMPLOYEE_ROLE, authorizedRoles.ADMIN_ROLE] {
+            if userInfo.groups.some(r => r === role) {
+                ctx.set(HEADER_USER_INFO, userInfo);
+                return ctx.next();
+            }
         }
 
         // If the token belongs to a client credential flow, we skip group checks as there won't be any groups in the token. We can add more checks here in the future if needed, such as checking the client_id against a list of allowed client IDs.

@@ -6,7 +6,8 @@ AUTHORIZED_CLIENT_ID = ""
 
 [visitor.authorization.authorizedRoles]
 ADMIN_ROLE = ""
-EMPLOYEE_ROLE = ""
+EMPLOYEE_ROLE = ["", ""]
+
 
 [visitor.database]
 encryptionKey = ""
