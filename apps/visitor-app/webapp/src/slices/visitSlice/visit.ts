@@ -84,9 +84,9 @@ export interface FetchVisitsResponse {
 }
 
 export interface UpdateVisitPayload {
-  rejectionReason: string | null | undefined;
-  passNumber?: string | null;
-  accessibleLocations?: FloorRoom[] | null;
+  rejectionReason?: string;
+  passNumber?: string;
+  accessibleLocations?: FloorRoom[];
   visitId: number;
   status: string;
 }
@@ -105,7 +105,7 @@ const initialState: VisitState = {
 
 export const addVisit = createAsyncThunk(
   "visit/addVisit",
-  async (payload: AddVisitPayload, { dispatch }) => {
+  (payload: AddVisitPayload, { dispatch }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     if (payload.passNumber === "") delete payload.passNumber;
@@ -145,7 +145,7 @@ export const addVisit = createAsyncThunk(
 
 export const fetchVisits = createAsyncThunk(
   "visit/fetchVisits",
-  async (
+  (
     {
       limit,
       offset,
@@ -228,7 +228,7 @@ export const fetchSingleVisit = createAsyncThunk(
 
 export const visitStatusUpdate = createAsyncThunk(
   "visit/visitStatusUpdate",
-  async (payload: UpdateVisitPayload, { dispatch, rejectWithValue }) => {
+  (payload: UpdateVisitPayload, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
 

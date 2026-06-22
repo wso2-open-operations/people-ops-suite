@@ -22,6 +22,7 @@ import MaintenancePage from "@layout/pages/Maintenance";
 import { RootState, useAppSelector } from "@slices/store";
 import ErrorHandler from "@component/common/ErrorHandler";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import { State } from "@/types/types";
 
 const AppHandler = () => {
   const auth = useAppSelector((state: RootState) => state.auth);
@@ -36,16 +37,16 @@ const AppHandler = () => {
 
   return (
     <>
-      {auth.status === "loading" && (
+      {(auth.status === State.loading || auth.status === State.idle) && (
         <PreLoader isLoading={true} message={auth.statusMessage} />
       )}
-      {auth.status === "success" && auth.mode === "active" && (
+      {auth.status === State.success && auth.mode === "active" && (
         <RouterProvider router={router} />
       )}
-      {auth.status === "success" && auth.mode === "maintenance" && (
+      {auth.status === State.success && auth.mode === "maintenance" && (
         <MaintenancePage />
       )}
-      {auth.status === "failed" && (
+      {auth.status === State.failed && (
         <ErrorHandler message={auth.statusMessage} />
       )}
     </>

@@ -14,21 +14,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import React, { useContext, useEffect, useState } from "react";
+import { useIdleTimer } from "react-idle-timer";
+
+import { useAuthContext, SecureApp } from "@asgardeo/auth-react";
+
+import PreLoader from "@component/common/PreLoader";
+import StatusWithAction from "@component/ui/StatusWithAction";
+
 import { Button } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
-import { APIService } from "@utils/apiService";
-import { useIdleTimer } from "react-idle-timer";
-import DialogTitle from "@mui/material/DialogTitle";
-import PreLoader from "@component/common/PreLoader";
-import { getUserInfo } from "@slices/userSlice/user";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import StatusWithAction from "@component/ui/StatusWithAction";
-import React, { useContext, useEffect, useState } from "react";
 import DialogContentText from "@mui/material/DialogContentText";
-import { useAuthContext, SecureApp } from "@asgardeo/auth-react";
+import DialogTitle from "@mui/material/DialogTitle";
+
 import { loadPrivileges, setUserAuthData } from "@slices/authSlice/auth";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { getUserInfo } from "@slices/userSlice/user";
+
+import { APIService } from "@utils/apiService";
 
 type AuthContextType = {
   appSignIn: () => void;
@@ -41,7 +46,9 @@ const promptBeforeIdle = 4_000;
 
 const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const [open, setOpen] = useState<boolean>(false);
-  const [appState, setAppState] = useState<"logout" | "active" | "loading">("loading");
+  const [appState, setAppState] = useState<"logout" | "active" | "loading">(
+    "loading",
+  );
 
   const dispatch = useAppDispatch();
   const auth = useAppSelector((state: RootState) => state.auth);
@@ -75,12 +82,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   } = useAuthContext();
 
   useEffect(() => {
-    var appStatus = localStorage.getItem("meet-app-state");
-
-    if (!localStorage.getItem("meet-app-redirect-url")) {
-      localStorage.setItem("meet-app-redirect-url", window.location.href.replace(window.location.origin, ""));
-    }
-
+    var appStatus = localStorage.getItem("visitor-app-state");
     if (appStatus && appStatus === "logout") {
       setAppState("logout");
     } else {
@@ -91,18 +93,20 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   useEffect(() => {
     if (appState === "active") {
       if (state.isAuthenticated) {
-        Promise.all([getBasicUserInfo(), getIDToken(), getDecodedIDToken()]).then(
-          async ([userInfo, idToken, decodedIdToken]) => {
+        Promise.all([getBasicUserInfo(), getIDToken(), getDecodedIDToken()])
+          .then(([userInfo, idToken, decodedIdToken]) => {
             dispatch(
               setUserAuthData({
                 userInfo: userInfo,
                 idToken: idToken,
                 decodedIdToken: decodedIdToken,
-              })
+              }),
             );
             new APIService(idToken, refreshToken);
-          }
-        );
+          })
+          .catch(() => {
+            appSignOut();
+          });
       }
     }
   }, [appState, state.isAuthenticated]);
@@ -143,14 +147,14 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   const appSignOut = async () => {
     setAppState("loading");
-    localStorage.setItem("meet-app-state", "logout");
+    localStorage.setItem("visitor-app-state", "logout");
     await signOut();
     setAppState("logout");
   };
 
   const appSignIn = async () => {
     setAppState("active");
-    localStorage.setItem("meet-app-state", "active");
+    localStorage.setItem("visitor-app-state", "active");
   };
 
   const authContext: AuthContextType = {
@@ -170,10 +174,13 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
             aria-labelledby="alert-dialog-title"
             aria-describedby="alert-dialog-description"
           >
-            <DialogTitle id="alert-dialog-title">{"Are you still there?"}</DialogTitle>
+            <DialogTitle id="alert-dialog-title">
+              {"Are you still there?"}
+            </DialogTitle>
             <DialogContent>
               <DialogContentText id="alert-dialog-description">
-                It looks like you've been inactive for a while. Would you like to continue?
+                It looks like you've been inactive for a while. Would you like
+                to continue?
               </DialogContentText>
             </DialogContent>
             <DialogActions>

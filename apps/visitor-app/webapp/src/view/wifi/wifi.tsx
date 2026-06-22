@@ -15,29 +15,21 @@
 // under the License.
 
 import CommonPage from "@layout/pages/CommonPage";
-import ActiveVisits from "@view/admin/panel/activeVisits";
-import VisitHistory from "@view/admin/panel/visitHistory";
-import PendingActionsIcon from "@mui/icons-material/PendingActions";
-import HistoryIcon from "@mui/icons-material/History";
-import SupervisorAccountRoundedIcon from "@mui/icons-material/SupervisorAccountRounded";
+import WifiCard from "@view/wifi/panel/wificard";
+import WifiRoundedIcon from "@mui/icons-material/WifiRounded";
+import WifiTetheringRoundedIcon from "@mui/icons-material/WifiTetheringRounded";
 
-export default function Admin() {
+export default function Wifi() {
   return (
     <CommonPage
-      title="Admin Panel"
-      icon={<SupervisorAccountRoundedIcon />}
+      title="Wi-Fi"
+      icon={<WifiTetheringRoundedIcon />}
       commonPageTabs={[
         {
-          tabTitle: "Active Visits",
-          tabPath: "active-visits",
-          icon: <PendingActionsIcon />,
-          page: <ActiveVisits />,
-        },
-        {
-          tabTitle: "History",
-          tabPath: "history",
-          icon: <HistoryIcon />,
-          page: <VisitHistory />,
+          tabTitle: "Wi-Fi",
+          tabPath: "wi-fi",
+          icon: <WifiRoundedIcon />,
+          page: <WifiCard />,
         },
       ]}
     />

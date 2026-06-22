@@ -148,7 +148,6 @@ const ActiveVisits = () => {
       const payload: UpdateVisitPayload = {
         visitId: +visitId,
         status: VisitAction.approve,
-        rejectionReason: null,
       };
 
       if (accessibleLocations.length > 0)
@@ -183,8 +182,6 @@ const ActiveVisits = () => {
             visitId: +visitId,
             status: VisitAction.reject,
             rejectionReason: reason?.trim(),
-            passNumber: null,
-            accessibleLocations: null,
           };
 
           await dispatch(visitStatusUpdate(payload));
@@ -219,9 +216,6 @@ const ActiveVisits = () => {
         const payload = {
           visitId: +visitId,
           status: VisitAction.complete,
-          passNumber: null,
-          accessibleLocations: null,
-          rejectionReason: null,
         };
 
         await dispatch(visitStatusUpdate(payload));
@@ -279,13 +273,6 @@ const ActiveVisits = () => {
       headerName: "Visitor Email",
       minWidth: 200,
       flex: 1.5,
-      renderCell: (params) => params.value || "N/A",
-    },
-    {
-      field: "passNumber",
-      headerName: "Pass Number",
-      minWidth: 120,
-      flex: 1,
       renderCell: (params) => params.value || "N/A",
     },
     {
