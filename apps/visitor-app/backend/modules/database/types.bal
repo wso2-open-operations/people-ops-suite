@@ -103,7 +103,7 @@ public type AddVisitorPayload record {|
 
 # [Database] Floor record.
 public type Floor record {|
-    # Floor
+    # Floor number
     string floor;
     # Array of rooms
     string[] rooms;

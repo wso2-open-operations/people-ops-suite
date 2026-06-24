@@ -114,11 +114,15 @@ public type AddVisitPayload record {|
 # Payload for updating an existing visit.
 public type ActionPayload record {|
     # Reason for rejecting the visit
-    string? rejectionReason = ();
-    # Status of the visit
-    string? passNumber = ();
+    string rejectionReason?;
+    # Number in the tag given to visitor
+    string passNumber?;
     # The floors and rooms that the visitor can access
     database:Floor[]? accessibleLocations = ();
+    # Purpose of the visit
+    string purposeOfVisit?;
+    # The person the visitor is supposed to meet
+    string whomTheyMeet?;
 |};
 
 # Payload for adding a new visit invitation.

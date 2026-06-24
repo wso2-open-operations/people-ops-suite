@@ -18,6 +18,7 @@ import visitor.calendar;
 import visitor.database;
 import visitor.email;
 import visitor.people;
+import visitor.wifi;
 import visitor.sms;
 
 import ballerina/cache;
@@ -28,6 +29,7 @@ import ballerina/random;
 import ballerina/time;
 
 configurable string webAppUrl = ?;
+configurable string wifiSecretSeed = ?;
 
 final cache:Cache cache = new ({
     capacity: 2000,
@@ -1098,6 +1100,66 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+    }
+
+    # Create a WiFi account for the user.
+    #
+    # + username - Username for the new WiFi account
+    # + return - Successfully created or error
+    isolated resource function post wifi/accounts(http:RequestContext ctx, string username)
+    returns http:Created|http:Forbidden|http:InternalServerError|http:Conflict {
+
+        authorization:CustomJwtPayload|error userInfo =
+        ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            return <http:Forbidden>{
+                body: {message: "Unauthorized"}
+            };
+        }
+
+        // Check if user has permission to create WiFi accounts
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            string customError = "Insufficient permissions to create WiFi accounts";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Generate password
+        string|error generatedPassword = generateDailyPassword();
+        if generatedPassword is error {
+            log:printError("Failed to generate daily password", generatedPassword);
+            return <http:InternalServerError>{
+                body: {message: "Failed to generate WiFi password"}
+            };
+        }
+
+        wifi:CreateWifiAccountPayload wifiPayload = {
+            username,
+            password: generatedPassword,
+            email: userInfo.email
+        };
+
+        wifi:CreateWifiAccountResponse|error result = wifi:createWifiAccount(wifiPayload);
+        if result is error {
+            log:printError("WiFi account creation failed", result);
+            return <http:InternalServerError>{
+                body: {message: "Failed to create WiFi account"}
+            };
+        }
+
+        // If statusCode is not present or is OK, consider it a success
+        return <http:Created>{
+            body: {
+                message: "WiFi account created successfully",
+                username: result.guestAccount,
+                password: generatedPassword
+            }
+        };
     }
 
     # Fetch a visit by its UUID.

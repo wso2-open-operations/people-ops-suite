@@ -15,6 +15,8 @@
 // under the License. 
 import visitor.database;
 
+import ballerina/crypto;
+import ballerina/lang.array;
 import ballerina/lang.regexp;
 import ballerina/time;
 
@@ -100,4 +102,27 @@ public isolated function formatDate(string dateTimeStr, string timeZone, boolean
 # + return - Padded string representation of the number
 isolated function padZero(int num) returns string {
     return num < 10 ? string `0${num}` : num.toString();
+}
+
+public isolated function generateDailyPassword(int PasswordLength = 8)
+    returns string|error {
+
+    time:Civil today = time:utcToCivil(time:utcNow());
+    string dateStr = string `${today.year}-${today.month}-${today.day}`;
+
+    string raw = dateStr + ":" + wifiSecretSeed;
+
+    byte[] rawBytes = raw.toBytes();
+    byte[] hashBytes = crypto:hashSha256(rawBytes);
+
+    string hashHex = array:toBase16(hashBytes);
+
+    string base = hashHex.substring(0, PasswordLength - 2);
+    string upper = hashHex.substring(0, 1).toUpperAscii();
+    int digitVal = check int:fromHexString(hashHex.substring(1, 2));
+    string digit = digitVal.toString();
+
+    string password = base + upper + digit;
+
+    return password.substring(0, PasswordLength);
 }
