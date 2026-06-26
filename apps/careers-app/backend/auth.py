@@ -44,6 +44,8 @@ def _get_key_for_token(token: str, jwks: dict):
     """Select the JWK matching the token's kid header, or None if none match."""
     headers = jwt.get_unverified_header(token)
     kid = headers.get("kid")
+    if not kid:
+        return None
     for key in jwks.get("keys", []):
         if key.get("kid") == kid:
             return jwk.construct(key)
