@@ -30,9 +30,9 @@ security = HTTPBearer()
 _jwks_cache: dict | None = None
 
 
-async def _get_jwks(settings: Settings) -> dict:
+async def _get_jwks(settings: Settings, force_refresh: bool = False) -> dict:
     global _jwks_cache
-    if _jwks_cache is None:
+    if _jwks_cache is None or force_refresh:
         async with httpx.AsyncClient() as client:
             resp = await client.get(settings.asgardeo_jwks_url)
             resp.raise_for_status()
@@ -41,17 +41,15 @@ async def _get_jwks(settings: Settings) -> dict:
 
 
 def _get_key_for_token(token: str, jwks: dict):
-    """Select the JWK matching the token's kid header."""
+    """Select the JWK matching the token's kid header, or None if none match."""
     headers = jwt.get_unverified_header(token)
     kid = headers.get("kid")
+    if not kid:
+        return None
     for key in jwks.get("keys", []):
         if key.get("kid") == kid:
             return jwk.construct(key)
-    # Fallback: use the first key if kid not matched
-    keys = jwks.get("keys", [])
-    if keys:
-        return jwk.construct(keys[0])
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No matching key found")
+    return None
 
 
 async def get_current_user(
@@ -62,6 +60,13 @@ async def get_current_user(
     try:
         jwks = await _get_jwks(settings)
         key = _get_key_for_token(token, jwks)
+        if key is None:
+            # if kid is not found in the cached key set, the signing keys may have rotated.
+            # Refetch the JWKS once and retry.
+            jwks = await _get_jwks(settings, force_refresh=True)
+            key = _get_key_for_token(token, jwks)
+        if key is None:
+            raise JWTError("no matching JWK for token kid")
         payload = jwt.decode(
             token,
             key,
