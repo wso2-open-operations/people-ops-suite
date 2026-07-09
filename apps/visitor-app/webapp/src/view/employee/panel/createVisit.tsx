@@ -360,7 +360,7 @@ function CreateVisit() {
             timeOfEntry: timeOfEntryUTC,
             timeOfDeparture: timeOfDepartureUTC,
             visitorIdHash: hashedId,
-            whomTheyMeet: values.whoTheyMeet || undefined,
+            whomTheyMeet: values.whoTheyMeet,
             companyName: values.companyName || undefined,
             accessibleLocations: values.accessibleLocations?.length
               ? values.accessibleLocations
@@ -440,7 +440,7 @@ function CreateVisit() {
 
   const validationSchema = Yup.object().shape({
     companyName: Yup.string().nullable(),
-    whoTheyMeet: Yup.string().nullable(),
+    whoTheyMeet: Yup.string().required("Whom they meet is required"),
     whoTheyMeetName: Yup.string().nullable(),
     whoTheyMeetThumbnail: Yup.string().nullable(),
     purposeOfVisit: Yup.string().nullable(),
@@ -657,6 +657,7 @@ function CreateVisit() {
                     {...params}
                     label="Whom They Meet"
                     placeholder="Search by name or email..."
+                    required
                     disabled={locked}
                     InputProps={{
                       ...params.InputProps,

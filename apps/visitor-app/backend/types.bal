@@ -58,7 +58,7 @@ public type AddVisitPayload record {|
             message: "The who they meet should be a non-empty string with printable characters."
         }
     }
-    string whomTheyMeet?;
+    string whomTheyMeet;
     # Purpose of the visit
     @constraint:String {
         pattern: {
