@@ -217,7 +217,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visit details
     # + return - Successfully created or error
     resource function post visits(http:RequestContext ctx, AddVisitPayload payload)
-        returns http:Created|http:InternalServerError|http:BadRequest|http:Unauthorized {
+        returns http:Created|http:InternalServerError|http:BadRequest|http:Forbidden {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -234,7 +234,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // External users can only create visits where they themselves are the host being visited.
         if isExternalUser && payload.whomTheyMeet != invokerInfo.email {
-            return <http:Unauthorized>{
+            return <http:Forbidden>{
                 body: {
                     message: "External users can only create visits where they themselves are the host!"
                 }
