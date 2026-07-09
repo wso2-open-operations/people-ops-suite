@@ -242,6 +242,28 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Internal users can only create visits where the host is a verified employee, so that the
+        // host is never an arbitrary, unverified address used later as an email recipient.
+        if !isExternalUser {
+            people:Employee|error? hostEmployee = people:fetchEmployee(payload.whomTheyMeet);
+            if hostEmployee is error {
+                string customError = "An error occurred while verifying the host employee!";
+                log:printError(customError, hostEmployee);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+            if hostEmployee is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Whom they meet should be a valid employee!"
+                    }
+                };
+            }
+        }
+
         string? timeOfEntry = payload.timeOfEntry;
         string? timeOfDeparture = payload.timeOfDeparture;
 
