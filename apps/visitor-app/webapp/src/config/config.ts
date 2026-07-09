@@ -30,7 +30,7 @@ declare global {
 }
 
 export const AsgardeoConfig: BaseURLAuthClientConfig = {
-  scope: ["openid", "email", "groups"],
+  scope: ["openid", "email", "groups", "profile"],
   baseUrl: window.config?.ASGARDEO_BASE_URL ?? "",
   clientID: window.config?.ASGARDEO_CLIENT_ID ?? "",
   signInRedirectURL: window.config?.AUTH_SIGN_IN_REDIRECT_URL ?? "",

@@ -77,8 +77,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], userInfo.groups) {
             // TODO: Add Claims.
             user = {
-                firstName: "First Name",
-                lastName: "Last Name",
+                firstName: userInfo.firstName,
+                lastName: userInfo.lastName,
                 workEmail: userInfo.email,
                 jobRole: "External User",
                 employeeId: "N/A"
@@ -1206,8 +1206,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], invokerInfo.groups) {
             return [
                 {
-                    firstName: "First Name",
-                    lastName: "Last Name",
+                    firstName: invokerInfo.firstName,
+                    lastName: invokerInfo.lastName,
                     workEmail: invokerInfo.email
                 }
             ];
