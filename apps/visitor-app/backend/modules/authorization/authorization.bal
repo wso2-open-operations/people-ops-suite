@@ -70,9 +70,21 @@ public isolated service class JwtInterceptor {
             };
         }
 
+        // Flatten the authorized roles into a single array for easier comparison.
+        string[] allAuthorizedRoles = [];
+        foreach string|string[] role in authorizedRoles.toArray() {
+            if role is string[] {
+                foreach string r in role {
+                    allAuthorizedRoles.push(r);
+                }
+            } else {
+                allAuthorizedRoles.push(<string>role);
+            }
+        }
+
         // For regular user tokens, we check if they have the required roles to access the resource.
-        foreach anydata role in authorizedRoles.toArray() {
-            if userInfo.groups.some(r => r === role) {
+        foreach string userGroup in userInfo.groups {
+            if allAuthorizedRoles.indexOf(userGroup) !is () {
                 ctx.set(HEADER_USER_INFO, userInfo);
                 return ctx.next();
             }
