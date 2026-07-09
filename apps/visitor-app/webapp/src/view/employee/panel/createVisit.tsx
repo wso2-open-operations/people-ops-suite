@@ -382,14 +382,19 @@ function CreateVisit() {
   );
 
   const fetchVisitorByEmailOrContact = useCallback(
-    async (emailOrContact: string, index: number, formik: any) => {
+    async (
+      emailOrContact: string,
+      index: number,
+      formik: any,
+      source: "email" | "contact",
+    ) => {
       if (!emailOrContact?.trim()) return;
       const idHash = await hash(emailOrContact);
       const action = await dispatch(fetchVisitor(idHash));
       if (fetchVisitor.fulfilled.match(action)) {
         let countryCode = "+94";
         let nationalNumber = "";
-        const raw = action.payload.contactNumber || "";
+        const raw = source === "email" ? "" : action.payload.contactNumber || "";
         if (raw) {
           try {
             const parsed = phoneUtil.parseAndKeepRawInput(raw);
@@ -408,7 +413,7 @@ function CreateVisit() {
             ? `${countryCode}${nationalNumber}`
             : "",
           countryCode,
-          emailAddress: action.payload.email,
+          emailAddress: source === "contact" ? "" : action.payload.email,
           status: VisitorStatus.Draft,
         };
         formik.setFieldValue(`visitors.${index}`, fetched);
@@ -956,6 +961,7 @@ function CreateVisit() {
                               extractedEmail,
                               idx,
                               formik,
+                              "email",
                             );
                           }
                         }}
@@ -999,6 +1005,7 @@ function CreateVisit() {
                                   email,
                                   idx,
                                   formik,
+                                  "email",
                                 );
                               }
                               delete visitorEmailDebounceRefs.current[idx];
@@ -1006,7 +1013,10 @@ function CreateVisit() {
                             600,
                           );
                         }}
-                        disabled={visitor.status === VisitorStatus.Completed}
+                        disabled={
+                          visitor.status === VisitorStatus.Completed ||
+                          !!visitor.contactNumber?.trim()
+                        }
                         error={
                           (visitorTouched?.emailAddress &&
                             !!visitorErrors?.emailAddress) ||
@@ -1072,6 +1082,7 @@ function CreateVisit() {
                                   normalizeContact(newValue),
                                   idx,
                                   formik,
+                                  "contact",
                                 );
                               }
                               delete visitorEmailDebounceRefs.current[idx];
@@ -1081,7 +1092,10 @@ function CreateVisit() {
                         }}
                         defaultCountry="LK"
                         forceCallingCode
-                        disabled={visitor.status === VisitorStatus.Completed}
+                        disabled={
+                          visitor.status === VisitorStatus.Completed ||
+                          !!visitor.emailAddress?.trim()
+                        }
                         error={
                           visitorTouched?.contactNumber &&
                           !!visitorErrors?.contactNumber
