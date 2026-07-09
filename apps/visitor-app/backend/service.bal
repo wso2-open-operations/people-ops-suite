@@ -76,8 +76,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         // If the user has only the external user role, bypass fetching employee details and return with basic user info.
         if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], userInfo.groups) {
             user = {
-                firstName: userInfo.firstName,
-                lastName: userInfo.lastName,
+                firstName: userInfo.firstName ?: userInfo.email,
+                lastName: userInfo.lastName ?: "",
                 workEmail: userInfo.email,
                 jobRole: "External User",
                 employeeId: "N/A"
@@ -363,7 +363,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                 // External users are the host themselves, so their details are already known
                 // from the token and there is no HR record to look up.
                 if isExternalUser {
-                    whomTheyMeet = invokerInfo.firstName + " " + invokerInfo.lastName + " [" + invokerInfo.email + "]";
+                    string? invokerFirstName = invokerInfo.firstName;
+                    string invokerLastName = invokerInfo.lastName ?: "";
+                    whomTheyMeet = invokerFirstName is string ?
+                        invokerFirstName + (invokerLastName != "" ? " " + invokerLastName : "") +
+                            " [" + invokerInfo.email + "]" :
+                        invokerInfo.email;
                 } else {
                     people:Employee|error? hostEmployee = people:fetchEmployee(whomTheyMeet);
                     if hostEmployee is error {
@@ -1254,8 +1259,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], invokerInfo.groups) {
             return [
                 {
-                    firstName: invokerInfo.firstName,
-                    lastName: invokerInfo.lastName,
+                    firstName: invokerInfo.firstName ?: invokerInfo.email,
+                    lastName: invokerInfo.lastName ?: "",
                     workEmail: invokerInfo.email
                 }
             ];

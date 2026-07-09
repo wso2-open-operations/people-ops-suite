@@ -23,10 +23,10 @@ public type CustomJwtPayload record {
     string[] groups = []; // Default to an empty array if groups claim is not present in the token(External  user store users may not have groups claim in the token).
     # User given name
     @jsondata:Name {value: "given_name"}
-    string firstName;
+    string? firstName = (); // Given_name claim may not be present in the token (e.g. external user store users).
     # User family name
     @jsondata:Name {value: "family_name"}
-    string lastName;
+    string? lastName = (); // Family_name claim may not be present in the token (e.g. external user store users).
 };
 
 # Application specific role mapping.
