@@ -7,6 +7,7 @@ AUTHORIZED_CLIENT_ID = ""
 [visitor.authorization.authorizedRoles]
 ADMIN_ROLE = ""
 EMPLOYEE_ROLE = [""]
+EXTERNAL_USER_ROLE = ""
 
 [visitor.database]
 encryptionKey = ""
