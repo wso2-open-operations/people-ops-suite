@@ -332,7 +332,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Sent the QR only if the visitor email is available.
         if visitorEmail is string {
             string? lastName = existingVisitor.lastName;
-            string? purposeOfVisit = payload.purposeOfVisit;
+            string? purposeOfVisit = payload.purposeOfVisit is string ? escapeHtml(<string>payload.purposeOfVisit) : ();
             string? whomTheyMeet = payload.whomTheyMeet;
             database:Floor[]? accessibleLocations = payload.accessibleLocations;
             string? accessibleLocationString = accessibleLocations is database:Floor[] ?
@@ -357,6 +357,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                         whomTheyMeet = hostEmployee.firstName + " " + hostEmployee.lastName + " [" + hostEmployee.workEmail + "]";
                     }
                 }
+                whomTheyMeet = escapeHtml(<string>whomTheyMeet);
             }
             string|error content = email:bindKeyValues(
                     email:inviteTemplate,
@@ -641,11 +642,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            string? passNumber = payload.passNumber;
+            string? passNumber = payload.passNumber is string ? escapeHtml(<string>payload.passNumber) : ();
             database:Floor[]? accessibleLocations = payload.accessibleLocations ?: visit.accessibleLocations;
             string? accessibleLocationString = accessibleLocations is database:Floor[] ?
                 organizeLocations(accessibleLocations) : ();
-            string? purposeOfVisit = visit.purposeOfVisit;
+            string? purposeOfVisit = visit.purposeOfVisit is string ? escapeHtml(<string>visit.purposeOfVisit) : ();
             string|error checkInTime = formatDateTime(time:utcToString(time:utcNow()), "Asia/Colombo", false);
             if checkInTime is error {
                 string customError = "Error occurred while formatting the check-in time!";
@@ -804,7 +805,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             // Send notification to the host about visitor arrival. Falls back to the raw email
             // as the display name when the host has no HR record (e.g. an external user host).
-            string? hostName = hostEmployee is people:Employee ? hostEmployee.firstName : hostEmail;
+            string? hostName = hostEmployee is people:Employee ? hostEmployee.firstName : (hostEmail is string ? escapeHtml(hostEmail) : ());
             if hostName is string && hostEmail is string {
                 string|error content = email:bindKeyValues(email:employeeVisitorArrivalTemplate,
                         {
@@ -1026,7 +1027,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
                 }
 
-                string? passNumber = visit.passNumber;
+                string? passNumber = visit.passNumber is string ? escapeHtml(<string>visit.passNumber) : ();
                 string? accessibleLocationString = accessibleLocations is database:Floor[] ?
                     organizeLocations(accessibleLocations) : ();
 

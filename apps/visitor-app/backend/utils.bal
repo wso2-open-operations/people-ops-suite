@@ -25,8 +25,9 @@ import ballerina/time;
 public isolated function organizeLocations(database:Floor[] accessibleLocations) returns string {
     string formattedString = "";
     foreach var location in accessibleLocations {
-        string floor = location.floor.toJsonString();
-        string roomList = location.rooms.length() > 0 ? string:'join(" | ", ...location.rooms) : "";
+        string floor = escapeHtml(location.floor.toJsonString());
+        string roomList = location.rooms.length() > 0 ?
+            string:'join(" | ", ...location.rooms.map(escapeHtml)) : "";
         if (roomList != "") {
             formattedString += string `Floor ${floor}: ${roomList}<br>`;
         } else {
@@ -37,6 +38,19 @@ public isolated function organizeLocations(database:Floor[] accessibleLocations)
     return formattedString.trim();
     // This function is used to format the date-time string from the database to timezone of the WSO2 Building that the visitor is in.
     // Currently, it only supports the WSO2 Building in Sri Lanka (Asia/Colombo) which is UTC +5:30.
+}
+
+# Escapes HTML special characters so untrusted values cannot inject markup when interpolated into HTML email templates.
+#
+# + input - Raw string value
+# + return - HTML-escaped string
+public isolated function escapeHtml(string input) returns string {
+    string result = re `&`.replaceAll(input, "&amp;");
+    result = re `<`.replaceAll(result, "&lt;");
+    result = re `>`.replaceAll(result, "&gt;");
+    result = re `"`.replaceAll(result, "&quot;");
+    result = re `'`.replaceAll(result, "&#39;");
+    return result;
 }
 
 # Helper function to format date-time strings in Ballerina
