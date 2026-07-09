@@ -75,7 +75,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // If the user has only the external user role, bypass fetching employee details and return with basic user info.
         if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], userInfo.groups) {
-            // TODO: Add Claims.
             user = {
                 firstName: userInfo.firstName,
                 lastName: userInfo.lastName,
@@ -499,7 +498,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Send the SMS only if the contact number is available.
         if contactNumber is string {
-            // TODO SMS sending logic here
             boolean isUniqueCode = false;
             int maxRetries = 5;
             int retryCount = 0;
@@ -1253,7 +1251,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // External users will retrieve only own details from this endpoint.
-        //TODO: enable claims and fill 
         if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], invokerInfo.groups) {
             return [
                 {
