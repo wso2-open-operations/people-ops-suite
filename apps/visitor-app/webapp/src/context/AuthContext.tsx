@@ -23,7 +23,6 @@ import PreLoader from "@component/common/PreLoader";
 import { getUserInfo } from "@slices/userSlice/user";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import StatusWithAction from "@component/ui/StatusWithAction";
 import React, { useContext, useEffect, useState } from "react";
 import DialogContentText from "@mui/material/DialogContentText";
 import { useAuthContext, SecureApp } from "@asgardeo/auth-react";
@@ -87,6 +86,14 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       setAppState("active");
     }
   }, []);
+
+  useEffect(() => {
+    if (appState === "logout") {
+      // Skip the manual "sign in" prompt and go straight to the Asgardeo login page.
+      appSignIn();
+      signIn();
+    }
+  }, [appState]);
 
   useEffect(() => {
     if (appState === "active") {
@@ -186,7 +193,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
               <SecureApp>{props.children}</SecureApp>
             </AuthContext.Provider>
           ) : (
-            <StatusWithAction action={() => appSignIn()} />
+            <PreLoader isLoading={true} message="" />
           )}
         </>
       )}
