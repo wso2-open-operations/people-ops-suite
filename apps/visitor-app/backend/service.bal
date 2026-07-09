@@ -541,21 +541,23 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !authorization:checkPermissions(
-                [authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) &&
-                inviter is string && inviter != invokerInfo.email {
-
-            string customError = "Non-admin users cannot access visits of other employees!";
-            log:printError(customError);
-            return <http:Forbidden>{
-                body: {
-                    message: customError
-                }
-            };
-
+        string? filterInviter = inviter;
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
+            if inviter is string && inviter != invokerInfo.email {
+                string customError = "Non-admin users cannot access visits of other employees!";
+                log:printError(customError);
+                return <http:Forbidden>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+            // Non-admins can only ever see their own visits, whether or not inviter was provided.
+            filterInviter = invokerInfo.email;
         }
 
-        database:VisitsResponse|error visitsResponse = database:fetchVisits({inviter, statusArray, 'limit, offset});
+        database:VisitsResponse|error visitsResponse =
+            database:fetchVisits({inviter: filterInviter, statusArray, 'limit, offset});
 
         if visitsResponse is error {
             string customError = "Error occurred while fetching visits!";
