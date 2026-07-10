@@ -394,7 +394,8 @@ function CreateVisit() {
       if (fetchVisitor.fulfilled.match(action)) {
         let countryCode = "+94";
         let nationalNumber = "";
-        const raw = source === "email" ? "" : action.payload.contactNumber || "";
+        const raw =
+          source === "email" ? "" : action.payload.contactNumber || "";
         if (raw) {
           try {
             const parsed = phoneUtil.parseAndKeepRawInput(raw);
@@ -928,6 +929,15 @@ function CreateVisit() {
                       )}
                   </Box>
 
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mb: 1 }}
+                  >
+                    Only one is required — enter an email address or a contact
+                    number.
+                  </Typography>
+
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={6}>
                       <TextField
@@ -1013,10 +1023,7 @@ function CreateVisit() {
                             600,
                           );
                         }}
-                        disabled={
-                          visitor.status === VisitorStatus.Completed ||
-                          !!visitor.contactNumber?.trim()
-                        }
+                        disabled={visitor.status === VisitorStatus.Completed}
                         error={
                           (visitorTouched?.emailAddress &&
                             !!visitorErrors?.emailAddress) ||
@@ -1092,10 +1099,7 @@ function CreateVisit() {
                         }}
                         defaultCountry="LK"
                         forceCallingCode
-                        disabled={
-                          visitor.status === VisitorStatus.Completed ||
-                          !!visitor.emailAddress?.trim()
-                        }
+                        disabled={visitor.status === VisitorStatus.Completed}
                         error={
                           visitorTouched?.contactNumber &&
                           !!visitorErrors?.contactNumber
