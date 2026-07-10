@@ -956,6 +956,9 @@ function CreateVisit() {
                             extractedEmail,
                           );
 
+                          if (formik.values.visitors[idx].contactNumber)
+                            return;
+
                           if (
                             visitor.status === VisitorStatus.Draft &&
                             extractedEmail &&
@@ -988,6 +991,9 @@ function CreateVisit() {
                             `visitors.${idx}.emailAddress`,
                             email,
                           );
+
+                          if (formik.values.visitors[idx].contactNumber)
+                            return;
 
                           if (visitorEmailDebounceRefs.current[idx]) {
                             clearTimeout(
