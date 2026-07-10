@@ -173,6 +173,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             visitor.email = ();
         }
 
+        // Hide audit metadata from external users.
+        if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], invokerInfo.groups) {
+            visitor.createdBy = SANITIZED_VALUE;
+            visitor.createdOn = SANITIZED_VALUE;
+            visitor.updatedBy = SANITIZED_VALUE;
+            visitor.updatedOn = SANITIZED_VALUE;
+        }
+
         return visitor;
     }
 
