@@ -209,14 +209,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if payload.email is string && payload.contactNumber is string {
-            return <http:BadRequest>{
-                body: {
-                    message: "Only one of email or contact number should be provided!"
-                }
-            };
-        }
-
         error? visitorError = database:addVisitor(payload, invokerInfo.email);
         if visitorError is error {
             string customError = "Error occurred while adding visitor!";
