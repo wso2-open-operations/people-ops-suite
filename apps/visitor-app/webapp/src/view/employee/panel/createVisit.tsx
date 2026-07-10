@@ -535,6 +535,20 @@ function CreateVisit() {
             }
           })
           .test(
+            "unique-contact",
+            "Contact number must be unique",
+            function (value) {
+              const visitors = this.options.context?.visitors || [];
+              if (!value) return true;
+              const normalized = value.replace(/\D/g, "");
+              return (
+                visitors.filter(
+                  (v: any) => v.contactNumber?.replace(/\D/g, "") === normalized,
+                ).length === 1
+              );
+            },
+          )
+          .test(
             "contact-or-email-required",
             "Email address or contact number is required",
             function (value) {
@@ -956,6 +970,9 @@ function CreateVisit() {
                             extractedEmail,
                           );
 
+                          if (formik.values.visitors[idx].contactNumber)
+                            return;
+
                           if (
                             visitor.status === VisitorStatus.Draft &&
                             extractedEmail &&
@@ -988,6 +1005,9 @@ function CreateVisit() {
                             `visitors.${idx}.emailAddress`,
                             email,
                           );
+
+                          if (formik.values.visitors[idx].contactNumber)
+                            return;
 
                           if (visitorEmailDebounceRefs.current[idx]) {
                             clearTimeout(
