@@ -14,3 +14,4 @@
 // specific language governing permissions and limitations
 // under the License. 
 public const USER_INFO_HEADER_NOT_FOUND_ERROR = "User information header not found!";
+public const SANITIZED_VALUE = "SANITIZED";
