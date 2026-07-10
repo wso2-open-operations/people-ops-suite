@@ -44,7 +44,7 @@ export interface FloorRoom {
 export interface AddVisitPayload {
   companyName?: string;
   passNumber?: string;
-  whomTheyMeet?: string;
+  whomTheyMeet: string;
   purposeOfVisit?: string;
   accessibleLocations?: FloorRoom[] | null;
   timeOfEntry?: string;

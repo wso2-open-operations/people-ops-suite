@@ -20,8 +20,4 @@ public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
 # Privileges.
 public const SECURITY_ADMIN_PRIVILEGE = 789;
 public const EMPLOYEE_PRIVILEGE = 987;
-
-# Open endpoints
-public const AUTHORIZE = "authorize";
-public const FILL = "fill";
-public const INVITATIONS = "invitations";
+public const EXTERNAL_USER_PRIVILEGE = 654;

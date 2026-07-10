@@ -13,25 +13,29 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+import ballerina/data.jsondata;
 
 # User info custom type for Asgardeo token.
 public type CustomJwtPayload record {
     # User email 
     string email;
     # User groups
-    string[] groups;
-};
-
-# Client Credential JWT payload type.
-public type ClientCredentialJwtPayload record {
-    # Client ID
-    string client_id;
+    string[] groups = []; // Default to an empty array if groups claim is not present in the token(External  user store users may not have groups claim in the token).
+    # User given name
+    @jsondata:Name {value: "given_name"}
+    string? firstName = (); // Given_name claim may not be present in the token (e.g. external user store users).
+    # User family name
+    @jsondata:Name {value: "family_name"}
+    string? lastName = (); // Family_name claim may not be present in the token (e.g. external user store users).
 };
 
 # Application specific role mapping.
 public type AppRoles record {|
     # Role for the employee
-    string EMPLOYEE_ROLE;
+    string[] EMPLOYEE_ROLE;
     # Role for the admin
     string ADMIN_ROLE;
+    # Role for external users
+    string EXTERNAL_USER_ROLE;
 |};
+

@@ -71,33 +71,50 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        people:Employee|error? employee = people:fetchEmployee(userInfo.email);
-        if employee is error {
-            string customError = string `Error occurred while fetching user information: ${userInfo.email}`;
-            log:printError(customError, employee);
-            return <http:InternalServerError>{
-                body: customError
+        people:Employee user;
+
+        // If the user has only the external user role, bypass fetching employee details and return with basic user info.
+        if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], userInfo.groups) {
+            user = {
+                firstName: userInfo.firstName ?: userInfo.email,
+                lastName: userInfo.lastName ?: "",
+                workEmail: userInfo.email,
+                jobRole: "External User",
+                employeeId: "N/A"
             };
-        }
-        if employee is () {
-            log:printError(string `No employee information found for the user: ${userInfo.email}`);
-            return <http:InternalServerError>{
-                body: {
-                    message: "No information found for the user!"
-                }
-            };
+        } else { // For internal users, fetch employee details from the user store.
+            people:Employee|error? employee = people:fetchEmployee(userInfo.email);
+            if employee is error {
+                string customError = string `Error occurred while fetching user information: ${userInfo.email}`;
+                log:printError(customError, employee);
+                return <http:InternalServerError>{
+                    body: customError
+                };
+            }
+            if employee is () {
+                log:printError(string `No employee information found for the user: ${userInfo.email}`);
+                return <http:InternalServerError>{
+                    body: {
+                        message: "No information found for the user!"
+                    }
+                };
+            }
+            user = employee;
         }
 
         // Fetch the user's privileges based on the roles.
         int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_ROLE], userInfo.groups) {
+        if authorization:checkPermissions(authorization:authorizedRoles.EMPLOYEE_ROLE, userInfo.groups) {
             privileges.push(authorization:EMPLOYEE_PRIVILEGE);
         }
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             privileges.push(authorization:SECURITY_ADMIN_PRIVILEGE);
         }
+        if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], userInfo.groups) {
+            privileges.push(authorization:EXTERNAL_USER_PRIVILEGE);
+        }
 
-        UserInfo userInfoResponse = {...employee, privileges};
+        UserInfo userInfoResponse = {...user, privileges};
 
         error? cacheError = cache.put(userInfo.email, userInfoResponse);
         if cacheError is error {
@@ -170,6 +187,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        if payload.email is string && payload.contactNumber is string {
+            return <http:BadRequest>{
+                body: {
+                    message: "Only one of email or contact number should be provided!"
+                }
+            };
+        }
+
         error? visitorError = database:addVisitor(payload, invokerInfo.email);
         if visitorError is error {
             string customError = "Error occurred while adding visitor!";
@@ -192,7 +217,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visit details
     # + return - Successfully created or error
     resource function post visits(http:RequestContext ctx, AddVisitPayload payload)
-        returns http:Created|http:InternalServerError|http:BadRequest {
+        returns http:Created|http:InternalServerError|http:BadRequest|http:Forbidden {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -202,6 +227,40 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: USER_INFO_HEADER_NOT_FOUND_ERROR
                 }
             };
+        }
+
+        boolean isExternalUser = authorization:checkPermissions(
+                [authorization:authorizedRoles.EXTERNAL_USER_ROLE], invokerInfo.groups);
+
+        // External users can only create visits where they themselves are the host being visited.
+        if isExternalUser && payload.whomTheyMeet != invokerInfo.email {
+            return <http:Forbidden>{
+                body: {
+                    message: "External users can only create visits where they themselves are the host!"
+                }
+            };
+        }
+
+        // Internal users can only create visits where the host is a verified employee, so that the
+        // host is never an arbitrary, unverified address used later as an email recipient.
+        if !isExternalUser {
+            people:Employee|error? hostEmployee = people:fetchEmployee(payload.whomTheyMeet);
+            if hostEmployee is error {
+                string customError = "An error occurred while verifying the host employee!";
+                log:printError(customError, hostEmployee);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+            if hostEmployee is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Whom they meet should be a valid employee!"
+                    }
+                };
+            }
         }
 
         string? timeOfEntry = payload.timeOfEntry;
@@ -294,25 +353,37 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Sent the QR only if the visitor email is available.
         if visitorEmail is string {
             string? lastName = existingVisitor.lastName;
-            string? purposeOfVisit = payload.purposeOfVisit;
+            string? purposeOfVisit = payload.purposeOfVisit is string ? escapeHtml(<string>payload.purposeOfVisit) : ();
             string? whomTheyMeet = payload.whomTheyMeet;
             database:Floor[]? accessibleLocations = payload.accessibleLocations;
             string? accessibleLocationString = accessibleLocations is database:Floor[] ?
                 organizeLocations(accessibleLocations) : ();
 
             if whomTheyMeet is string {
-                people:Employee|error? hostEmployee = people:fetchEmployee(whomTheyMeet);
-                if hostEmployee is error {
-                    string customError = "An error occurred while fetching host employee details!";
-                    log:printError(customError, hostEmployee);
+                // External users are the host themselves, so their details are already known
+                // from the token and there is no HR record to look up.
+                if isExternalUser {
+                    string? invokerFirstName = invokerInfo.firstName;
+                    string invokerLastName = invokerInfo.lastName ?: "";
+                    whomTheyMeet = invokerFirstName is string ?
+                        invokerFirstName + (invokerLastName != "" ? " " + invokerLastName : "") +
+                            " [" + invokerInfo.email + "]" :
+                        invokerInfo.email;
+                } else {
+                    people:Employee|error? hostEmployee = people:fetchEmployee(whomTheyMeet);
+                    if hostEmployee is error {
+                        string customError = "An error occurred while fetching host employee details!";
+                        log:printError(customError, hostEmployee);
+                    }
+                    if hostEmployee is () {
+                        string customError = string `No employee information found for the host: ${whomTheyMeet}!`;
+                        log:printError(customError);
+                    }
+                    if hostEmployee is people:Employee {
+                        whomTheyMeet = hostEmployee.firstName + " " + hostEmployee.lastName + " [" + hostEmployee.workEmail + "]";
+                    }
                 }
-                if hostEmployee is () {
-                    string customError = string `No employee information found for the host: ${whomTheyMeet}!`;
-                    log:printError(customError);
-                }
-                if hostEmployee is people:Employee {
-                    whomTheyMeet = hostEmployee.firstName + " " + hostEmployee.lastName + " [" + hostEmployee.workEmail + "]";
-                }
+                whomTheyMeet = escapeHtml(<string>whomTheyMeet);
             }
             string|error content = email:bindKeyValues(
                     email:inviteTemplate,
@@ -432,7 +503,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Send the SMS only if the contact number is available.
         if contactNumber is string {
-            // TODO SMS sending logic here
             boolean isUniqueCode = false;
             int maxRetries = 5;
             int retryCount = 0;
@@ -505,21 +575,23 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if !authorization:checkPermissions(
-                [authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) &&
-                inviter is string && inviter != invokerInfo.email {
-
-            string customError = "Non-admin users cannot access visits of other employees!";
-            log:printError(customError);
-            return <http:Forbidden>{
-                body: {
-                    message: customError
-                }
-            };
-
+        string? filterInviter = inviter;
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
+            if inviter is string && inviter != invokerInfo.email {
+                string customError = "Non-admin users cannot access visits of other employees!";
+                log:printError(customError);
+                return <http:Forbidden>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+            // Non-admins can only ever see their own visits, whether or not inviter was provided.
+            filterInviter = invokerInfo.email;
         }
 
-        database:VisitsResponse|error visitsResponse = database:fetchVisits({inviter, statusArray, 'limit, offset});
+        database:VisitsResponse|error visitsResponse =
+            database:fetchVisits({inviter: filterInviter, statusArray, 'limit, offset});
 
         if visitsResponse is error {
             string customError = "Error occurred while fetching visits!";
@@ -595,11 +667,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            string? passNumber = payload.passNumber;
+            string? passNumber = payload.passNumber is string ? escapeHtml(<string>payload.passNumber) : ();
             database:Floor[]? accessibleLocations = payload.accessibleLocations ?: visit.accessibleLocations;
             string? accessibleLocationString = accessibleLocations is database:Floor[] ?
                 organizeLocations(accessibleLocations) : ();
-            string? purposeOfVisit = visit.purposeOfVisit;
+            string? purposeOfVisit = visit.purposeOfVisit is string ? escapeHtml(<string>visit.purposeOfVisit) : ();
             string|error checkInTime = formatDateTime(time:utcToString(time:utcNow()), "Asia/Colombo", false);
             if checkInTime is error {
                 string customError = "Error occurred while formatting the check-in time!";
@@ -623,15 +695,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             string? hostEmail = visit.whomTheyMeet;
             people:Employee|error? hostEmployee = ();
             if hostEmail is string {
+                // The host employee lookup is only used to personalize the arrival notification
+                // email below, so a failure here (e.g. the host is an external user, not present
+                // in HR) should not block the approval itself.
                 hostEmployee = people:fetchEmployee(hostEmail);
                 if hostEmployee is error {
                     string customError = "Error occurred while fetching host employee details!";
                     log:printError(customError, hostEmployee);
-                    return <http:InternalServerError>{
-                        body: {
-                            message: customError
-                        }
-                    };
                 }
             }
 
@@ -758,11 +828,13 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             }
 
-            // Send notification to the host about visitor arrival
-            if hostEmployee is people:Employee && hostEmail is string {
+            // Send notification to the host about visitor arrival. Falls back to the raw email
+            // as the display name when the host has no HR record (e.g. an external user host).
+            string? hostName = hostEmployee is people:Employee ? hostEmployee.firstName : (hostEmail is string ? escapeHtml(hostEmail) : ());
+            if hostName is string && hostEmail is string {
                 string|error content = email:bindKeyValues(email:employeeVisitorArrivalTemplate,
                         {
-                            HOST_NAME: hostEmployee.firstName,
+                            HOST_NAME: hostName,
                             VISITOR_NAME: visit.firstName + (visitorLastName is string ? string ` ${visitorLastName}` : ""),
                             CHECK_IN_TIME: checkInTime,
                             LOCATION: accessibleLocationString is string ? string `<li>
@@ -980,7 +1052,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
                 }
 
-                string? passNumber = visit.passNumber;
+                string? passNumber = visit.passNumber is string ? escapeHtml(<string>visit.passNumber) : ();
                 string? accessibleLocationString = accessibleLocations is database:Floor[] ?
                     organizeLocations(accessibleLocations) : ();
 
@@ -1181,6 +1253,17 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: USER_INFO_HEADER_NOT_FOUND_ERROR
                 }
             };
+        }
+
+        // External users will retrieve only own details from this endpoint.
+        if authorization:checkPermissions([authorization:authorizedRoles.EXTERNAL_USER_ROLE], invokerInfo.groups) {
+            return [
+                {
+                    firstName: invokerInfo.firstName ?: invokerInfo.email,
+                    lastName: invokerInfo.lastName ?: "",
+                    workEmail: invokerInfo.email
+                }
+            ];
         }
 
         people:EmployeeBasic[]|error allEmployees = people:fetchEmployees(search, 'limit, offset);
