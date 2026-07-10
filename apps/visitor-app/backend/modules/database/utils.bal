@@ -96,6 +96,14 @@ public isolated function toHexString(byte[] data) returns string {
     return result;
 }
 
+# Compute the SHA-256 id hash of an email or contact number, matching the webapp's hashing scheme
+# (trim + lowercase + SHA-256 hex) so a stored value can be checked against a caller-supplied idHash.
+#
+# + value - Email or contact number to hash
+# + return - Hex-encoded SHA-256 hash
+public isolated function computeIdHash(string value) returns string
+    => toHexString(crypto:hashSha256(value.trim().toLowerAscii().toBytes()));
+
 # Decrypt the input format using AES-256-CBC.
 #
 # + value - Input string in the format "ivHex:encryptedHex"

@@ -159,6 +159,20 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Only return the identifier that was actually searched for: hide the contact number
+        // when the caller searched by email, and hide the email when the caller searched by
+        // contact number, by re-deriving each hash from the stored value and comparing it to
+        // the requested idHash.
+        string? storedEmail = visitor.email;
+        string? storedContactNumber = visitor.contactNumber;
+
+        if storedEmail is string && database:computeIdHash(storedEmail) == idHash {
+            visitor.contactNumber = ();
+        }
+        if storedContactNumber is string && database:computeIdHash(storedContactNumber) == idHash {
+            visitor.email = ();
+        }
+
         return visitor;
     }
 
