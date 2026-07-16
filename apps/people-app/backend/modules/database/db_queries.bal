@@ -28,10 +28,10 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
         e.employee_thumbnail,
         CONCAT(
             d.designation,
-            CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
-                THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END,
             CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
-                THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END
+                THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END,
+            CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
+                THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END
         ) AS designation
     FROM employee e
         INNER JOIN designation d ON e.designation_id = d.id
@@ -111,10 +111,10 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         d.career_function_id AS careerFunctionId,
         CONCAT(
             d.designation,
-            CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
-                THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END,
             CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
-                THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END
+                THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END,
+            CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
+                THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END
         ) AS designation,
         e.designation_id AS designationId,
         d.job_band AS jobBand,
@@ -197,10 +197,10 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             d.career_function_id AS careerFunctionId,
             CONCAT(
                 d.designation,
-                CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
-                    THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END,
                 CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
-                    THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END
+                    THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END,
+                CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
+                    THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END
             ) AS designation,
             e.designation_id AS designationId,
             d.job_band AS jobBand,
@@ -442,10 +442,10 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
         CONCAT(
             d.designation,
-            CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
-                THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END,
             CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
-                THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END
+                THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END,
+            CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
+                THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END
         ) AS designation,
         e.secondary_job_title AS secondaryJobTitle,
         o.name AS office,
