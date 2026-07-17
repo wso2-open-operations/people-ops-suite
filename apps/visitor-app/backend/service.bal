@@ -82,6 +82,16 @@ service http:InterceptableService / on new http:Listener(9090) {
                 jobRole: "External User",
                 employeeId: "N/A"
             };
+        } else if authorization:receptionUserEmails.indexOf(userInfo.email) !is () {
+            // Shared reception accounts are authorized via roles but are not real employees,
+            // so bypass fetching employee details and return with basic user info.
+            user = {
+                firstName: "WSO2",
+                lastName: "Reception",
+                workEmail: userInfo.email,
+                jobRole: "Reception",
+                employeeId: "N/A"
+            };
         } else { // For internal users, fetch employee details from the user store.
             people:Employee|error? employee = people:fetchEmployee(userInfo.email);
             if employee is error {

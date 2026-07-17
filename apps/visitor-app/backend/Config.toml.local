@@ -2,7 +2,7 @@
 webAppUrl = ""
 
 [visitor.authorization]
-AUTHORIZED_CLIENT_ID = ""
+receptionUserEmails = [""]
 
 [visitor.authorization.authorizedRoles]
 ADMIN_ROLE = ""
