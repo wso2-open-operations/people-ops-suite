@@ -88,19 +88,10 @@ export const decodeTokenAndStoreUser = (): User | null => {
 
     const decoded = jwtDecode<TokenPayload>(token);
     bridgeLog(
-      `decodeTokenAndStoreUser: decoded claims ${JSON.stringify({
-        email: decoded.email,
-        name: decoded.name,
-        given_name: decoded.given_name,
-        family_name: decoded.family_name,
-        groups: decoded.groups,
-      })}`,
+      `decodeTokenAndStoreUser: decoded claims present (email=${!!decoded.email}, name=${!!decoded.name}, given_name=${!!decoded.given_name}, family_name=${!!decoded.family_name}, groups=${decoded.groups?.length ?? 0})`,
       "info",
     );
-    Logger.info("Token decoded successfully", {
-      email: decoded.email,
-      name: decoded.name,
-    });
+    Logger.info("Token decoded successfully");
 
     const nameFromParts =
       `${decoded.given_name || ""} ${decoded.family_name || ""}`.trim();
@@ -109,12 +100,12 @@ export const decodeTokenAndStoreUser = (): User | null => {
       name: decoded.name || nameFromParts,
     };
     bridgeLog(
-      `decodeTokenAndStoreUser: built user ${JSON.stringify(user)}`,
+      `decodeTokenAndStoreUser: built user (email=${!!user.email}, name=${!!user.name})`,
       "info",
     );
 
     useUserStore.getState().setUser(user);
-    Logger.info("User information stored in Zustand store", user);
+    Logger.info("User information stored in Zustand store");
     return user;
   } catch (error) {
     bridgeLog(

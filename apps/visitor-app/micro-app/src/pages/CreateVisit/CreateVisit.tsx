@@ -326,12 +326,12 @@ function CreateVisit() {
   useEffect(() => {
     if (user?.email && !whoTheyMeet) {
       bridgeLog(
-        `CreateVisit: prepopulating whoTheyMeet from user ${JSON.stringify(user)}`,
+        `CreateVisit: prepopulating whoTheyMeet (name=${!!user.name})`,
         "info",
       );
-      const nameParts = (user.name || "").trim().split(/\s+/);
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || "";
+      const nameParts = (user.name || "").trim().split(/\s+/).filter(Boolean);
+      const firstName = nameParts[0] || user.email;
+      const lastName = nameParts.slice(1).join(" ");
       const fullName = user.name?.trim() || user.email;
 
       setWhoTheyMeet(user.email);
@@ -361,19 +361,12 @@ function CreateVisit() {
           const res = await apiClient.get(
             `${endpoint.baseUrl}${endpoint.path}`,
           );
-          bridgeLog(
-            `CreateVisit: employee search response ${JSON.stringify(res.data)}`,
-            "info",
-          );
           const employees: Employee[] = res.data;
           const match = employees?.find(
             (emp) => emp.workEmail.toLowerCase() === user.email.toLowerCase(),
           );
           if (match) {
-            bridgeLog(
-              `CreateVisit: employee match found ${JSON.stringify(match)}`,
-              "info",
-            );
+            bridgeLog("CreateVisit: employee match found", "info");
             setSelectedEmployee(match);
             const empFullName =
               `${match.firstName || ""} ${match.lastName || ""}`.trim();
@@ -428,12 +421,12 @@ function CreateVisit() {
   const employees = useMemo(() => {
     const base = employeesData || [];
     if (inputValue.trim() || !selfEmployeeOption) return base;
-    const alreadyIncluded = base.some(
+    const filteredBase = base.filter(
       (emp) =>
-        emp.workEmail.toLowerCase() ===
+        emp.workEmail.toLowerCase() !==
         selfEmployeeOption.workEmail.toLowerCase(),
     );
-    return alreadyIncluded ? base : [selfEmployeeOption, ...base];
+    return [selfEmployeeOption, ...filteredBase];
   }, [employeesData, inputValue, selfEmployeeOption]);
 
   // Add visitor mutation
@@ -713,12 +706,12 @@ function CreateVisit() {
         // Pre-populate "Whom They Meet" with the logged-in user
         if (user?.email) {
           bridgeLog(
-            `CreateVisit.resetForm: prepopulating whoTheyMeet from user ${JSON.stringify(user)}`,
+            `CreateVisit.resetForm: prepopulating whoTheyMeet (name=${!!user.name})`,
             "info",
           );
-          const nameParts = (user.name || "").trim().split(/\s+/);
-          const firstName = nameParts[0] || "";
-          const lastName = nameParts.slice(1).join(" ") || "";
+          const nameParts = (user.name || "").trim().split(/\s+/).filter(Boolean);
+          const firstName = nameParts[0] || user.email;
+          const lastName = nameParts.slice(1).join(" ");
           const fullName = user.name?.trim() || user.email;
 
           setWhoTheyMeet(user.email);
@@ -747,20 +740,13 @@ function CreateVisit() {
               const res = await apiClient.get(
                 `${endpoint.baseUrl}${endpoint.path}`,
               );
-              bridgeLog(
-                `CreateVisit.resetForm: employee search response ${JSON.stringify(res.data)}`,
-                "info",
-              );
               const employees: Employee[] = res.data;
               const match = employees?.find(
                 (emp) =>
                   emp.workEmail.toLowerCase() === user.email.toLowerCase(),
               );
               if (match) {
-                bridgeLog(
-                  `CreateVisit.resetForm: employee match found ${JSON.stringify(match)}`,
-                  "info",
-                );
+                bridgeLog("CreateVisit.resetForm: employee match found", "info");
                 setSelectedEmployee(match);
                 const empFullName =
                   `${match.firstName || ""} ${match.lastName || ""}`.trim();
