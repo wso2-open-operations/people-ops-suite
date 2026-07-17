@@ -14,7 +14,7 @@
 // under the License.
 
 import { jwtDecode } from "jwt-decode";
-import { getToken } from "../microapp-bridge";
+import { bridgeLog, getToken } from "../microapp-bridge";
 import { User, useUserStore } from "../stores/user/user";
 import { LocalStorageKeys } from "../utils/constants";
 import { Logger } from "../utils/logger";
@@ -44,6 +44,10 @@ export const setIdToken = (token: string): void =>
 export const refreshToken = (): Promise<string> => {
   return new Promise((resolve, reject) => {
     getToken((newIdToken: string | undefined) => {
+      bridgeLog(
+        `refreshToken: getToken callback resolved (present=${!!newIdToken})`,
+        "info",
+      );
       if (newIdToken) {
         setIdToken(newIdToken);
         setAccessToken(newIdToken);
@@ -74,6 +78,7 @@ export const refreshToken = (): Promise<string> => {
 export const decodeTokenAndStoreUser = (): User | null => {
   try {
     const token = getIdToken();
+    bridgeLog(`decodeTokenAndStoreUser: idToken present=${!!token}`, "info");
 
     if (!token) {
       Logger.error("ID token not found for user decoding.");
@@ -82,20 +87,40 @@ export const decodeTokenAndStoreUser = (): User | null => {
     }
 
     const decoded = jwtDecode<TokenPayload>(token);
+    bridgeLog(
+      `decodeTokenAndStoreUser: decoded claims ${JSON.stringify({
+        email: decoded.email,
+        name: decoded.name,
+        given_name: decoded.given_name,
+        family_name: decoded.family_name,
+        groups: decoded.groups,
+      })}`,
+      "info",
+    );
     Logger.info("Token decoded successfully", {
       email: decoded.email,
       name: decoded.name,
     });
 
+    const nameFromParts =
+      `${decoded.given_name || ""} ${decoded.family_name || ""}`.trim();
     const user: User = {
       email: decoded.email || "",
-      name: `${decoded.given_name || ""} ${decoded.family_name || ""}`,
+      name: decoded.name || nameFromParts,
     };
+    bridgeLog(
+      `decodeTokenAndStoreUser: built user ${JSON.stringify(user)}`,
+      "info",
+    );
 
     useUserStore.getState().setUser(user);
     Logger.info("User information stored in Zustand store", user);
     return user;
   } catch (error) {
+    bridgeLog(
+      `decodeTokenAndStoreUser: failed - ${error}`,
+      "error",
+    );
     Logger.error("Failed to decode token and store user information", error);
     useUserStore.getState().clearUser();
     return null;
@@ -107,14 +132,17 @@ export const decodeTokenAndStoreUser = (): User | null => {
  * Should be called when the app starts.
  */
 export const initializeUserFromToken = (): void => {
+  bridgeLog("initializeUserFromToken: start", "info");
   useUserStore.getState().setLoading(true);
 
   try {
     decodeTokenAndStoreUser();
   } catch (error) {
+    bridgeLog(`initializeUserFromToken: failed - ${error}`, "error");
     Logger.error("Failed to initialize user from token", error);
     useUserStore.getState().clearUser();
   } finally {
     useUserStore.getState().setLoading(false);
+    bridgeLog("initializeUserFromToken: end", "info");
   }
 };
