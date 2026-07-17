@@ -37,10 +37,10 @@ export default function EmployeesTable() {
   const employeeState = useAppSelector((state) => state.employee);
   const navigate = useNavigate();
 
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>(() => ({
     page: 0,
     pageSize: getPersistedPageSize(),
-  });
+  }));
 
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
 

@@ -36,7 +36,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { useCallback, useMemo, useState } from "react";
-import { DEFAULT_LIMIT_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
+import { PAGE_SIZE_OPTIONS } from "@config/constant";
 import { getPersistedPageSize, persistPageSize } from "@utils/utils";
 import {
   CreateEntityPayload,
@@ -50,7 +50,7 @@ function SkeletonOverlay() {
   const theme = useTheme();
   return (
     <Box sx={{ width: "100%", pb: 1 }}>
-      {Array.from({ length: DEFAULT_LIMIT_VALUE }).map((_, i) => (
+      {Array.from({ length: getPersistedPageSize() }).map((_, i) => (
         <Box
           key={i}
           sx={{
@@ -319,7 +319,7 @@ export default function EntityTab({
               fontWeight: 700,
             },
             "& .MuiDataGrid-virtualScroller": {
-              ...(isLoading && { minHeight: `${DEFAULT_LIMIT_VALUE * 52}px !important` }),
+              ...(isLoading && { minHeight: `${getPersistedPageSize() * 52}px !important` }),
             },
             "& .MuiDataGrid-cell": {
               display: "flex",

@@ -90,6 +90,12 @@ type ChipConfig =
   | ChipMeta<"office", Office>
   | ChipMeta<"gender", string>;
 
+// Baseline (Active + Marked leaver) is the default status selection — not an active filter.
+const BASELINE_STATUSES = [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver];
+const isBaselineStatuses = (employeeStatuses?: EmployeeStatus[]): boolean =>
+  (employeeStatuses?.length ?? 0) === BASELINE_STATUSES.length &&
+  BASELINE_STATUSES.every((status) => employeeStatuses?.includes(status));
+
 export function SearchForm() {
   const dispatch = useAppDispatch();
   const theme = useTheme();
@@ -186,48 +192,6 @@ export function SearchForm() {
     );
   };
 
-  function hasAnyActiveFilters(
-    filters: EmployeeSearchPayload["filters"],
-  ): boolean {
-    const {
-      businessUnitId,
-      teamId,
-      subTeamId,
-      unitId,
-      careerFunctionId,
-      designationId,
-      gender,
-      employmentTypeIds,
-      managerEmail,
-      companyId,
-      officeId,
-      employeeStatuses,
-      excludeFutureStartDate,
-    } = filters;
-
-    // Baseline (Active + Marked leaver, exclude future joiners) is the default — not an active filter.
-    const baselineStatuses = [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver];
-    const isBaselineStatuses =
-      (employeeStatuses?.length ?? 0) === baselineStatuses.length &&
-      baselineStatuses.every((status) => employeeStatuses?.includes(status));
-
-    return Boolean(
-      businessUnitId ||
-      teamId ||
-      subTeamId ||
-      unitId ||
-      careerFunctionId ||
-      gender ||
-      designationId ||
-      employmentTypeIds?.length ||
-      managerEmail ||
-      companyId ||
-      officeId ||
-      (!isBaselineStatuses && employeeStatuses?.length) ||
-      excludeFutureStartDate === false,
-    );
-  }
-
   // Count how many filters are active
   const activeFilterCount = useMemo(() => {
     const {
@@ -245,12 +209,9 @@ export function SearchForm() {
       employeeStatuses,
       excludeFutureStartDate,
     } = filterPayload.filters;
-    // Baseline (Active + Marked leaver, exclude future joiners) is the default — don't count it.
-    const baselineStatuses = [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver];
-    const isBaselineStatuses =
-      (employeeStatuses?.length ?? 0) === baselineStatuses.length &&
-      baselineStatuses.every((status) => employeeStatuses?.includes(status));
-    const statusCount = isBaselineStatuses ? 0 : (employeeStatuses?.length ?? 0);
+    const statusCount = isBaselineStatuses(employeeStatuses)
+      ? 0
+      : (employeeStatuses?.length ?? 0);
     const includeFutureStartDateFilter = excludeFutureStartDate === false;
     return [
       businessUnitId,
@@ -441,13 +402,9 @@ export function SearchForm() {
     throw new Error("Unhandled chip kind");
   };
 
-  const hasActiveFilters = useMemo(() => {
-    return hasAnyActiveFilters(filterPayload.filters);
-  }, [filterPayload.filters]);
-
   const hasSearchString = !!employeeState.employeeFilter.searchString?.trim();
   const showFilteredCard =
-    (employeeState.filterAppliedOnce && hasActiveFilters) || hasSearchString;
+    (employeeState.filterAppliedOnce && active) || hasSearchString;
 
   const isLoading: boolean =
     employeeState.filteredEmployeesResponseState === State.loading;
@@ -852,7 +809,7 @@ export function SearchForm() {
                   }
                 />
               ))}
-              {hasActiveFilters && (
+              {active && (
                 <Button
                   variant="text"
                   onClick={clearAll}
