@@ -1220,8 +1220,7 @@ isolated function getOfficesQuery(int? companyId = ()) returns sql:Parameterized
         SELECT 
             id,
             name,
-            location,
-            working_locations
+            location
         FROM office`;
     if companyId is int {
         query = sql:queryConcat(query, ` WHERE company_id = ${companyId}`);
