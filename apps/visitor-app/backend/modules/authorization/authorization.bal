@@ -20,6 +20,11 @@ import ballerina/log;
 
 public configurable AppRoles authorizedRoles = ?;
 
+# Emails of shared/non-employee accounts (e.g. reception desks) that are authorized via
+# authorizedRoles but are not present in the employee management system, so employee lookups
+# for these emails should be bypassed.
+public configurable string[] receptionUserEmails = [];
+
 # To handle authorization for each resource function invocation.
 public isolated service class JwtInterceptor {
 
