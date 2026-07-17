@@ -44,17 +44,12 @@ export const setIdToken = (token: string): void =>
 export const refreshToken = (): Promise<string> => {
   return new Promise((resolve, reject) => {
     getToken((newIdToken: string | undefined) => {
-      bridgeLog(
-        `refreshToken: getToken callback resolved (present=${!!newIdToken})`,
-        "info",
-      );
       if (newIdToken) {
         setIdToken(newIdToken);
         setAccessToken(newIdToken);
 
         try {
           initializeUserFromToken();
-          Logger.info("User information updated after token refresh");
         } catch (error) {
           Logger.warn(
             "Failed to update user information after token refresh",
@@ -78,7 +73,6 @@ export const refreshToken = (): Promise<string> => {
 export const decodeTokenAndStoreUser = (): User | null => {
   try {
     const token = getIdToken();
-    bridgeLog(`decodeTokenAndStoreUser: idToken present=${!!token}`, "info");
 
     if (!token) {
       Logger.error("ID token not found for user decoding.");
@@ -87,11 +81,6 @@ export const decodeTokenAndStoreUser = (): User | null => {
     }
 
     const decoded = jwtDecode<TokenPayload>(token);
-    bridgeLog(
-      `decodeTokenAndStoreUser: decoded claims present (email=${!!decoded.email}, name=${!!decoded.name}, given_name=${!!decoded.given_name}, family_name=${!!decoded.family_name}, groups=${decoded.groups?.length ?? 0})`,
-      "info",
-    );
-    Logger.info("Token decoded successfully");
 
     const nameFromParts =
       `${decoded.given_name || ""} ${decoded.family_name || ""}`.trim();
@@ -99,13 +88,7 @@ export const decodeTokenAndStoreUser = (): User | null => {
       email: decoded.email || "",
       name: decoded.name || nameFromParts,
     };
-    bridgeLog(
-      `decodeTokenAndStoreUser: built user (email=${!!user.email}, name=${!!user.name})`,
-      "info",
-    );
-
     useUserStore.getState().setUser(user);
-    Logger.info("User information stored in Zustand store");
     return user;
   } catch (error) {
     bridgeLog(
@@ -123,7 +106,6 @@ export const decodeTokenAndStoreUser = (): User | null => {
  * Should be called when the app starts.
  */
 export const initializeUserFromToken = (): void => {
-  bridgeLog("initializeUserFromToken: start", "info");
   useUserStore.getState().setLoading(true);
 
   try {
@@ -134,6 +116,5 @@ export const initializeUserFromToken = (): void => {
     useUserStore.getState().clearUser();
   } finally {
     useUserStore.getState().setLoading(false);
-    bridgeLog("initializeUserFromToken: end", "info");
   }
 };

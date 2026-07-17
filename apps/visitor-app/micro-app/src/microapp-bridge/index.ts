@@ -36,13 +36,8 @@ type Callback<T> = (data?: T) => void;
 // Function to get token from React Native
 export const getToken = (callback: Callback<string>): void => {
   if (window.nativebridge) {
-    bridgeLog("getToken: requesting token from native bridge", "info");
     window.nativebridge.requestToken();
     window.nativebridge.resolveToken = (token: string) => {
-      bridgeLog(
-        `getToken: resolved token (present=${!!token}, length=${token?.length ?? 0})`,
-        "info",
-      );
       callback(token);
     };
   } else {

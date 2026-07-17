@@ -325,10 +325,6 @@ function CreateVisit() {
   // Pre-populate "Whom They Meet" with the logged-in user's details
   useEffect(() => {
     if (user?.email && !whoTheyMeet) {
-      bridgeLog(
-        `CreateVisit: prepopulating whoTheyMeet (name=${!!user.name})`,
-        "info",
-      );
       const nameParts = (user.name || "").trim().split(/\s+/).filter(Boolean);
       const firstName = nameParts[0] || user.email;
       const lastName = nameParts.slice(1).join(" ");
@@ -354,10 +350,6 @@ function CreateVisit() {
             offset: 0,
             limit: 1,
           });
-          bridgeLog(
-            `CreateVisit: fetching employee record for ${user.email}`,
-            "info",
-          );
           const res = await apiClient.get(
             `${endpoint.baseUrl}${endpoint.path}`,
           );
@@ -366,7 +358,6 @@ function CreateVisit() {
             (emp) => emp.workEmail.toLowerCase() === user.email.toLowerCase(),
           );
           if (match) {
-            bridgeLog("CreateVisit: employee match found", "info");
             setSelectedEmployee(match);
             const empFullName =
               `${match.firstName || ""} ${match.lastName || ""}`.trim();
@@ -705,10 +696,6 @@ function CreateVisit() {
 
         // Pre-populate "Whom They Meet" with the logged-in user
         if (user?.email) {
-          bridgeLog(
-            `CreateVisit.resetForm: prepopulating whoTheyMeet (name=${!!user.name})`,
-            "info",
-          );
           const nameParts = (user.name || "").trim().split(/\s+/).filter(Boolean);
           const firstName = nameParts[0] || user.email;
           const lastName = nameParts.slice(1).join(" ");
@@ -733,10 +720,6 @@ function CreateVisit() {
                 offset: 0,
                 limit: 1,
               });
-              bridgeLog(
-                `CreateVisit.resetForm: fetching employee record for ${user.email}`,
-                "info",
-              );
               const res = await apiClient.get(
                 `${endpoint.baseUrl}${endpoint.path}`,
               );
@@ -746,7 +729,6 @@ function CreateVisit() {
                   emp.workEmail.toLowerCase() === user.email.toLowerCase(),
               );
               if (match) {
-                bridgeLog("CreateVisit.resetForm: employee match found", "info");
                 setSelectedEmployee(match);
                 const empFullName =
                   `${match.firstName || ""} ${match.lastName || ""}`.trim();
