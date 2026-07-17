@@ -72,6 +72,7 @@ import { State } from "@src/types/types";
 import { toSentenceCase, sortAndFormatOptions } from "@utils/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FilterChipSelect, FilterChipSelectProps } from "./FilterChipSelect";
+import { RemovableFilterChip, dropFilterValue } from "./RemovableFilterChip";
 import { FilterDrawer } from "./FilterDrawer";
 
 type ChipMeta<K extends string, T> = { kind: K } & FilterChipSelectProps<T>;
@@ -204,6 +205,12 @@ export function SearchForm() {
       excludeFutureStartDate,
     } = filters;
 
+    // Baseline (Active + Marked leaver, exclude future joiners) is the default — not an active filter.
+    const baselineStatuses = [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver];
+    const isBaselineStatuses =
+      (employeeStatuses?.length ?? 0) === baselineStatuses.length &&
+      baselineStatuses.every((status) => employeeStatuses?.includes(status));
+
     return Boolean(
       businessUnitId ||
       teamId ||
@@ -216,8 +223,8 @@ export function SearchForm() {
       managerEmail ||
       companyId ||
       officeId ||
-      employeeStatuses?.length ||
-      excludeFutureStartDate,
+      (!isBaselineStatuses && employeeStatuses?.length) ||
+      excludeFutureStartDate === false,
     );
   }
 
@@ -238,6 +245,13 @@ export function SearchForm() {
       employeeStatuses,
       excludeFutureStartDate,
     } = filterPayload.filters;
+    // Baseline (Active + Marked leaver, exclude future joiners) is the default — don't count it.
+    const baselineStatuses = [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver];
+    const isBaselineStatuses =
+      (employeeStatuses?.length ?? 0) === baselineStatuses.length &&
+      baselineStatuses.every((status) => employeeStatuses?.includes(status));
+    const statusCount = isBaselineStatuses ? 0 : (employeeStatuses?.length ?? 0);
+    const includeFutureStartDateFilter = excludeFutureStartDate === false;
     return [
       businessUnitId,
       teamId,
@@ -250,29 +264,13 @@ export function SearchForm() {
       managerEmail,
       companyId,
       officeId,
-      employeeStatuses?.length,
-      excludeFutureStartDate,
+      statusCount || undefined,
+      includeFutureStartDateFilter || undefined,
     ].filter(Boolean).length;
   }, [filterPayload.filters]);
 
   // Check if any of the filters are active
   const active = activeFilterCount > 0;
-
-  // Shared style for the multi-select filter chips (Employment Type, Status).
-  const accentColor = theme.palette.secondary.contrastText;
-  const multiFilterChipSx = {
-    height: "32px",
-    borderRadius: "50px",
-    fontSize: "12px",
-    fontWeight: 600,
-    color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[800],
-    backgroundColor: alpha(accentColor, theme.palette.mode === "dark" ? 0.12 : 0.06),
-    border: `1.5px solid ${accentColor}`,
-    "& .MuiChip-deleteIcon": {
-      color: theme.palette.text.disabled,
-      "&:hover": { color: theme.palette.error.main },
-    },
-  };
 
   // Derive manager emails
   const managerEmails = useMemo(() => {
@@ -822,36 +820,36 @@ export function SearchForm() {
                 const employmentType = employmentTypes.find((et) => et.id === id);
                 if (!employmentType) return null;
                 return (
-                  <Chip
+                  <RemovableFilterChip
                     key={`employmentType-${id}`}
                     label={`Employment Type: ${toSentenceCase(employmentType.name)}`}
-                    variant="outlined"
-                    onDelete={() => {
-                      const next = (filterPayload.filters.employmentTypeIds ?? []).filter(
-                        (x) => x !== id,
-                      );
+                    onDelete={() =>
                       updateSearchPayload({
-                        filters: { employmentTypeIds: next.length ? next : undefined },
-                      });
-                    }}
-                    sx={multiFilterChipSx}
+                        filters: {
+                          employmentTypeIds: dropFilterValue(
+                            filterPayload.filters.employmentTypeIds ?? [],
+                            id,
+                          ),
+                        },
+                      })
+                    }
                   />
                 );
               })}
               {(filterPayload.filters.employeeStatuses ?? []).map((status) => (
-                <Chip
+                <RemovableFilterChip
                   key={`employeeStatus-${status}`}
                   label={`Status: ${toSentenceCase(status)}`}
-                  variant="outlined"
-                  onDelete={() => {
-                    const next = (filterPayload.filters.employeeStatuses ?? []).filter(
-                      (s) => s !== status,
-                    );
+                  onDelete={() =>
                     updateSearchPayload({
-                      filters: { employeeStatuses: next.length ? next : undefined },
-                    });
-                  }}
-                  sx={multiFilterChipSx}
+                      filters: {
+                        employeeStatuses: dropFilterValue(
+                          filterPayload.filters.employeeStatuses ?? [],
+                          status,
+                        ),
+                      },
+                    })
+                  }
                 />
               ))}
               {hasActiveFilters && (
