@@ -21,7 +21,7 @@ import { BrowserConfiguration, Topic } from "./types";
  * Internal log helper to avoid circular dependency with Logger.
  * Logger imports sendNativeLog from this module, so we cannot import Logger here.
  */
-const bridgeLog = (message: string, level: "info" | "error" | "warn" = "error") => {
+export const bridgeLog = (message: string, level: "info" | "error" | "warn" = "error") => {
   if (typeof window !== "undefined" && window.ReactNativeWebView) {
     window.ReactNativeWebView.postMessage(
       JSON.stringify({ topic: Topic.nativeLog, data: { message, level } })

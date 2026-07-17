@@ -28,6 +28,7 @@ import QRCode from "qrcode";
 import { PhoneNumberUtil } from "google-libphonenumber";
 import { MuiTelInput } from "mui-tel-input";
 import { hash } from "../../utils/utils";
+import { bridgeLog } from "../../microapp-bridge";
 import { useSnackbar } from "../../contexts/SnackbarContext";
 import { useDialog } from "../../contexts/DialogContext";
 import { useUserStore } from "../../stores/user/user";
@@ -324,10 +325,10 @@ function CreateVisit() {
   // Pre-populate "Whom They Meet" with the logged-in user's details
   useEffect(() => {
     if (user?.email && !whoTheyMeet) {
-      const nameParts = (user.name || "").trim().split(/\s+/);
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || "";
-      const fullName = user.name || user.email;
+      const nameParts = (user.name || "").trim().split(/\s+/).filter(Boolean);
+      const firstName = nameParts[0] || user.email;
+      const lastName = nameParts.slice(1).join(" ");
+      const fullName = user.name?.trim() || user.email;
 
       setWhoTheyMeet(user.email);
       setWhoTheyMeetName(fullName);
@@ -364,9 +365,15 @@ function CreateVisit() {
               setWhoTheyMeetName(empFullName);
               setInputValue(empFullName);
             }
+          } else {
+            bridgeLog(
+              `CreateVisit: no employee match found for ${user.email}`,
+              "warn",
+            );
           }
-        } catch {
+        } catch (err) {
           // Thumbnail fetch failed silently — fallback already set above
+          bridgeLog(`CreateVisit: employee lookup failed - ${err}`, "error");
         }
       })();
     }
@@ -390,7 +397,28 @@ function CreateVisit() {
     true,
   );
 
-  const employees = employeesData || [];
+  // Pin the logged-in user as the first option once the field is cleared
+  const selfEmployeeOption: Employee | null = useMemo(() => {
+    if (!user?.email) return null;
+    const nameParts = (user.name || "").trim().split(/\s+/).filter(Boolean);
+    return {
+      firstName: nameParts[0] || user.email,
+      lastName: nameParts.slice(1).join(" "),
+      workEmail: user.email,
+      employeeThumbnail: null,
+    };
+  }, [user]);
+
+  const employees = useMemo(() => {
+    const base = employeesData || [];
+    if (inputValue.trim() || !selfEmployeeOption) return base;
+    const filteredBase = base.filter(
+      (emp) =>
+        emp.workEmail.toLowerCase() !==
+        selfEmployeeOption.workEmail.toLowerCase(),
+    );
+    return [selfEmployeeOption, ...filteredBase];
+  }, [employeesData, inputValue, selfEmployeeOption]);
 
   // Add visitor mutation
   const addVisitorMutation = useAPI<any, AddVisitorPayload>(
@@ -668,10 +696,10 @@ function CreateVisit() {
 
         // Pre-populate "Whom They Meet" with the logged-in user
         if (user?.email) {
-          const nameParts = (user.name || "").trim().split(/\s+/);
-          const firstName = nameParts[0] || "";
-          const lastName = nameParts.slice(1).join(" ") || "";
-          const fullName = user.name || user.email;
+          const nameParts = (user.name || "").trim().split(/\s+/).filter(Boolean);
+          const firstName = nameParts[0] || user.email;
+          const lastName = nameParts.slice(1).join(" ");
+          const fullName = user.name?.trim() || user.email;
 
           setWhoTheyMeet(user.email);
           setWhoTheyMeetName(fullName);
@@ -708,9 +736,17 @@ function CreateVisit() {
                   setWhoTheyMeetName(empFullName);
                   setInputValue(empFullName);
                 }
+              } else {
+                bridgeLog(
+                  `CreateVisit.resetForm: no employee match found for ${user.email}`,
+                  "warn",
+                );
               }
-            } catch {
-              // Thumbnail fetch failed silently
+            } catch (err) {
+              bridgeLog(
+                `CreateVisit.resetForm: employee lookup failed - ${err}`,
+                "error",
+              );
             }
           })();
         } else {
