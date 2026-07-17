@@ -37,6 +37,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { useCallback, useMemo, useState } from "react";
 import { DEFAULT_LIMIT_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
+import { getPersistedPageSize, persistPageSize } from "@utils/utils";
 import {
   CreateEntityPayload,
   CompanyOrgChartEntity,
@@ -286,8 +287,9 @@ export default function EntityTab({
           loading={isLoading}
           localeText={{ noRowsLabel: `No ${entityLabel.toLowerCase()}s` }}
           initialState={{
-            pagination: { paginationModel: { pageSize: DEFAULT_LIMIT_VALUE } },
+            pagination: { paginationModel: { pageSize: getPersistedPageSize() } },
           }}
+          onPaginationModelChange={(model) => persistPageSize(model.pageSize)}
           pageSizeOptions={PAGE_SIZE_OPTIONS}
           slots={{ loadingOverlay: SkeletonOverlay }}
           disableRowSelectionOnClick

@@ -15,7 +15,12 @@
 // under the License.
 
 import { ServiceLength } from "@src/types/types";
-import { DATE_FMT } from "@config/constant";
+import {
+  DATE_FMT,
+  DEFAULT_LIMIT_VALUE,
+  PAGE_SIZE_OPTIONS,
+  ROWS_PER_PAGE_STORAGE_KEY,
+} from "@config/constant";
 import { differenceInMonths } from "date-fns/differenceInMonths";
 import { differenceInYears } from "date-fns/differenceInYears";
 import { isAfter } from "date-fns/isAfter";
@@ -232,3 +237,14 @@ export const countCsvDataRows = (rows: string[][]): number => {
 // Strips the Byte Order Mark (BOM) from the beginning of a string if it exists.
 export const stripBom = (text: string): string =>
   text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+
+// Returns the user's persisted rows-per-page selection, shared across all tables.
+export const getPersistedPageSize = (): number => {
+  const stored = Number(localStorage.getItem(ROWS_PER_PAGE_STORAGE_KEY));
+  return PAGE_SIZE_OPTIONS.includes(stored) ? stored : DEFAULT_LIMIT_VALUE;
+};
+
+// Persists the user's rows-per-page selection, shared across all tables.
+export const persistPageSize = (pageSize: number): void => {
+  localStorage.setItem(ROWS_PER_PAGE_STORAGE_KEY, String(pageSize));
+};

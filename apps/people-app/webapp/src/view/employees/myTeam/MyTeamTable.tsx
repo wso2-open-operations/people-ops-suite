@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { DEFAULT_LIMIT_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
+import { PAGE_SIZE_OPTIONS } from "@config/constant";
 import { alpha, Avatar, Box, Chip, Skeleton, Tooltip, useTheme } from "@mui/material";
 import {
   DataGrid,
@@ -35,7 +35,7 @@ import { State } from "@src/types/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MyTeamSearchForm } from "./MyTeamSearchForm";
-import { getEmployeeStatusColor } from "@utils/utils";
+import { getEmployeeStatusColor, getPersistedPageSize, persistPageSize } from "@utils/utils";
 
 export default function MyTeamTable() {
   const theme = useTheme();
@@ -45,7 +45,7 @@ export default function MyTeamTable() {
 
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
-    pageSize: DEFAULT_LIMIT_VALUE,
+    pageSize: getPersistedPageSize(),
   });
 
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
@@ -312,7 +312,10 @@ export default function MyTeamTable() {
           loading={isLoading}
           paginationModel={paginationModel}
           pageSizeOptions={PAGE_SIZE_OPTIONS}
-          onPaginationModelChange={(model) => setPaginationModel({ page: model.page, pageSize: model.pageSize })}
+          onPaginationModelChange={(model) => {
+            if (model.pageSize !== paginationModel.pageSize) persistPageSize(model.pageSize);
+            setPaginationModel({ page: model.page, pageSize: model.pageSize });
+          }}
           sortingMode="server"
           sortModel={sortModel}
           onSortModelChange={(model) => {

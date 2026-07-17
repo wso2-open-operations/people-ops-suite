@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { DEFAULT_LIMIT_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
+import { PAGE_SIZE_OPTIONS } from "@config/constant";
 import { alpha, Avatar, Box, Chip, Skeleton, Tooltip, useTheme } from "@mui/material";
 import { DataGrid, GridColDef, GridPaginationModel, GridRenderCellParams, GridSortItem, GridSortModel } from "@mui/x-data-grid";
 import {
@@ -29,7 +29,7 @@ import { State } from "@src/types/types";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SearchForm } from "../searchForm/SearchForm";
-import { formatDate, getEmployeeStatusColor } from "@utils/utils";
+import { formatDate, getEmployeeStatusColor, getPersistedPageSize, persistPageSize } from "@utils/utils";
 
 export default function EmployeesTable() {
   const theme = useTheme();
@@ -39,7 +39,7 @@ export default function EmployeesTable() {
 
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
-    pageSize: DEFAULT_LIMIT_VALUE,
+    pageSize: getPersistedPageSize(),
   });
 
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
@@ -366,6 +366,7 @@ export default function EmployeesTable() {
           paginationModel={paginationModel}
           pageSizeOptions={PAGE_SIZE_OPTIONS}
           onPaginationModelChange={(model) => {
+            if (model.pageSize !== paginationModel.pageSize) persistPageSize(model.pageSize);
             setPaginationModel({
               page: model.page,
               pageSize: model.pageSize,

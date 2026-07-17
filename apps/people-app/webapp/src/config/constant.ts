@@ -39,6 +39,7 @@ export const SERVICE_DESK_PRIVILEGE = 991;
 export const DEFAULT_LIMIT_VALUE = 10;
 export const DEFAULT_OFFSET_VALUE = 0;
 export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
+export const ROWS_PER_PAGE_STORAGE_KEY = "people-app-rows-per-page";
 
 export const SEARCH_REGEX = /^[\p{L}\p{M}0-9\s@._'+-]*$/u;
 export const SEARCH_MAX_LENGTH = 100;
