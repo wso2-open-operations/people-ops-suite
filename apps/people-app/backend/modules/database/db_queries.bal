@@ -1217,11 +1217,10 @@ isolated function getCompaniesQuery() returns sql:ParameterizedQuery =>
 # + return - Offices query
 isolated function getOfficesQuery(int? companyId = ()) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
-        SELECT 
+        SELECT
             id,
             name,
-            location,
-            working_locations
+            location
         FROM office`;
     if companyId is int {
         query = sql:queryConcat(query, ` WHERE company_id = ${companyId}`);

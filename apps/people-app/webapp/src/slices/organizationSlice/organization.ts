@@ -68,7 +68,6 @@ export interface Office {
   id: number;
   name: string;
   location: string;
-  workingLocations: string[];
 }
 
 export interface EmploymentType {
@@ -370,9 +369,6 @@ export const fetchOffices = createAsyncThunk(
         id: office.id,
         name: office.name,
         location: office.location,
-        workingLocations: Array.isArray(office.workingLocations)
-          ? office.workingLocations
-          : [],
       }));
       return offices;
     } catch (error: any) {

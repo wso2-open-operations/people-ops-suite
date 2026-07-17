@@ -608,9 +608,6 @@ public type Office record {|
     string name;
     # Office location
     string location;
-    # Working locations
-    @sql:Column {name: "working_locations"}
-    json workingLocations;
 |};
 
 # Employment type.
