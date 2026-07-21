@@ -262,37 +262,43 @@ function ParkingBookingSummaryPage() {
           reservationId,
         );
 
-        // Already confirmed (e.g. a prior attempt succeeded but surfaced a
-        // spurious error): finish without charging again.
         if (existing.status === "CONFIRMED") {
+          // A prior attempt succeeded but surfaced a spurious error: finish
+          // without charging again.
           await finalizeParkingConfirmationAfterSuccess(existing, navigate);
           return;
-        }
-
-        // A prior wallet payment succeeded but was never confirmed: confirm with
-        // that transaction hash instead of opening the wallet (and paying) again.
-        const priorStatus = await getLocalDataAsync(
-          PARKING_WALLET_PAYMENT_STATUS_KEY,
-        );
-        if (String(priorStatus) === "SUCCESS") {
-          const priorTxRaw = await getLocalDataAsync(
-            PARKING_WALLET_PAYMENT_TX_HASH_KEY,
+        } else if (existing.status === "PENDING") {
+          // A prior wallet payment succeeded but was never confirmed: confirm
+          // with that transaction hash instead of paying again.
+          const priorStatus = await getLocalDataAsync(
+            PARKING_WALLET_PAYMENT_STATUS_KEY,
           );
-          const priorTx = priorTxRaw ? String(priorTxRaw).trim() : "";
-          if (priorTx) {
-            const confirmed = await confirmParkingReservation(
-              handleRequest,
-              handleRequestWithNewToken,
-              reservationId,
-              priorTx,
+          if (String(priorStatus) === "SUCCESS") {
+            const priorTxRaw = await getLocalDataAsync(
+              PARKING_WALLET_PAYMENT_TX_HASH_KEY,
             );
-            await finalizeParkingConfirmationAfterSuccess(confirmed, navigate);
-            return;
+            const priorTx = priorTxRaw ? String(priorTxRaw).trim() : "";
+            if (priorTx) {
+              const confirmed = await confirmParkingReservation(
+                handleRequest,
+                handleRequestWithNewToken,
+                reservationId,
+                priorTx,
+              );
+              await finalizeParkingConfirmationAfterSuccess(confirmed, navigate);
+              return;
+            }
           }
+          coinsAmount = existing.coinsAmount;
+        } else {
+          // Stale reservation (e.g. EXPIRED after the pending window lapsed).
+          // Reusing it would charge the wallet again only for the confirm to be
+          // rejected server-side, so discard it and create a fresh one below.
+          reservationId = undefined;
         }
+      }
 
-        coinsAmount = existing.coinsAmount;
-      } else {
+      if (!reservationId) {
         // Stage 1: create a pending reservation in backend. The backend enforces
         // one active booking per employee/day and is idempotent for a same-slot
         // retry, so this cannot silently create a duplicate.
