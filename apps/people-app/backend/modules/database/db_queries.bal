@@ -2134,6 +2134,44 @@ isolated function expireStalePendingParkingReservationForSlotDateQuery(string sl
       AND status = ${PENDING}
       AND created_on < DATE_SUB(NOW(), INTERVAL ${expiryMinutes} MINUTE)`;
 
+# Get the caller's active reservation for a date (existence + reuse check).
+#
+# + employeeEmail - Employee email
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
+# + return - Query to get the employee's active reservation for the date
+isolated function getActiveParkingReservationForEmployeeDateQuery(string employeeEmail, string bookingDate,
+        int pendingExpiryMinutes) returns sql:ParameterizedQuery =>
+    `SELECT
+        id,
+        slot_id as 'slotId',
+        status,
+        coins_amount as 'coinsAmount'
+    FROM parking_reservation
+    WHERE employee_email = ${employeeEmail}
+      AND booking_date = ${bookingDate}
+      AND (
+        status = ${CONFIRMED}
+        OR (status = ${PENDING}
+            AND created_on >= DATE_SUB(NOW(), INTERVAL ${pendingExpiryMinutes} MINUTE))
+      )
+    LIMIT 1`;
+
+# Expire the caller's stale pending reservations (PENDING -> EXPIRED) for a date (any slot).
+#
+# + employeeEmail - Employee email
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + expiryMinutes - Expiry duration in minutes
+# + return - Query to mark the employee's stale pending reservations as EXPIRED
+isolated function expireStalePendingParkingReservationsForEmployeeDateQuery(string employeeEmail, string bookingDate,
+        int expiryMinutes) returns sql:ParameterizedQuery =>
+    `UPDATE parking_reservation
+    SET status = ${EXPIRED}
+    WHERE employee_email = ${employeeEmail}
+      AND booking_date = ${bookingDate}
+      AND status = ${PENDING}
+      AND created_on < DATE_SUB(NOW(), INTERVAL ${expiryMinutes} MINUTE)`;
+
 # Insert parking reservation (PENDING).
 #
 # + payload - Reservation payload

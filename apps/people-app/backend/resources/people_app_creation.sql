@@ -489,6 +489,14 @@ CREATE UNIQUE INDEX `uk_active_slot_booking_date` ON `parking_reservation` ((
   END
 ));
 
+-- Functional UNIQUE index: one active (PENDING/CONFIRMED) reservation per employee per date.
+CREATE UNIQUE INDEX `uk_active_employee_booking_date` ON `parking_reservation` ((
+  CASE
+    WHEN `status` IN ('PENDING', 'CONFIRMED') THEN CONCAT(`employee_email`, '|', `booking_date`)
+    ELSE NULL
+  END
+));
+
 -- Personal Info Audit table
 CREATE TABLE `personal_info_audit` (
   `id` bigint NOT NULL AUTO_INCREMENT,

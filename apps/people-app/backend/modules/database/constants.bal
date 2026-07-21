@@ -39,3 +39,6 @@ public const CONSULTANCY_ID_PREFIX = "CON";
 public const BULK_INSERT_SUCCESS = 1000;
 public const BULK_INSERT_DUPLICATE = 1001;
 public const BULK_INSERT_FAILED = 1002;
+
+# MySQL error code for a duplicate entry on a unique index/key.
+const MYSQL_DUPLICATE_ENTRY_ERROR_CODE = 1062;

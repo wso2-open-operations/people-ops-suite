@@ -1848,6 +1848,48 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Expire the caller's own stale pending reservations for the date (any slot), so an
+        // abandoned attempt does not block a fresh booking.
+        boolean|error clearedForEmployee = database:expireStalePendingParkingReservationsForEmployeeDate(
+            userInfo.email, body.bookingDate, wso2_coin:pendingReservationExpiryMinutes);
+        if clearedForEmployee is error {
+            log:printError("Error expiring stale pending reservations for employee", clearedForEmployee);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while validating booking eligibility."}
+            };
+        }
+
+        // Enforce one active (PENDING/CONFIRMED) reservation per employee per day.
+        database:ActiveParkingReservationRow|error? activeReservation =
+            database:getActiveParkingReservationForEmployeeDate(userInfo.email, body.bookingDate,
+                wso2_coin:pendingReservationExpiryMinutes);
+        if activeReservation is error {
+            log:printError("Error checking existing reservations for employee", activeReservation);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while validating booking eligibility."}
+            };
+        }
+        if activeReservation is database:ActiveParkingReservationRow {
+            // Same-slot PENDING: reuse it so a retry does not create (or pay for) a second booking.
+            if activeReservation.status == database:PENDING && activeReservation.slotId == body.slotId {
+                return {
+                    reservationId: activeReservation.id,
+                    coinsAmount: activeReservation.coinsAmount
+                };
+            }
+            log:printWarn("Employee already has an active parking reservation for the date",
+                    invokerEmail = userInfo.email, bookingDate = body.bookingDate,
+                    existingSlot = activeReservation.slotId);
+            string activeMsg = activeReservation.status == database:CONFIRMED
+                ? string `You already have a confirmed parking booking for ${body.bookingDate}`
+                    + string ` (slot ${activeReservation.slotId}).`
+                : string `You already have a pending parking booking for ${body.bookingDate}`
+                    + string ` (slot ${activeReservation.slotId}). Complete or cancel it before booking another.`;
+            return <http:BadRequest>{
+                body: {message: activeMsg}
+            };
+        }
+
         // Expire stale pending reservations so the slot/date becomes reusable.
         boolean|error cleared = database:expireStalePendingParkingReservationForSlotDate(body.slotId, body.bookingDate,
             wso2_coin:pendingReservationExpiryMinutes);
@@ -1884,6 +1926,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             coinsAmount: slot.coinsPerSlot,
             createdBy: userInfo.email
         });
+        if reservationId is database:DuplicateActiveReservationError {
+            log:printWarn("Duplicate active parking reservation blocked by unique index",
+                    invokerEmail = userInfo.email, bookingDate = body.bookingDate, slotId = body.slotId);
+            return <http:BadRequest>{
+                body: {
+                    message: "You already have an active booking for this date, or the slot was just taken. "
+                        + "Please refresh and try again."
+                }
+            };
+        }
         if reservationId is error {
             log:printError("Error creating parking reservation", reservationId);
             return <http:InternalServerError>{
