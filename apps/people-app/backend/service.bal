@@ -1872,6 +1872,17 @@ service http:InterceptableService / on new http:Listener(9090) {
         if activeReservation is database:ActiveParkingReservationRow {
             // Same-slot PENDING: reuse it so a retry does not create (or pay for) a second booking.
             if activeReservation.status == database:PENDING && activeReservation.slotId == body.slotId {
+                // Keep the reused reservation aligned with the vehicle chosen on this attempt.
+                if activeReservation.vehicleId != body.vehicleId {
+                    boolean|error vehicleUpdated = database:updateParkingReservationVehicle(
+                        activeReservation.id, body.vehicleId, userInfo.email);
+                    if vehicleUpdated is error {
+                        log:printError("Error updating vehicle on reused reservation", vehicleUpdated);
+                        return <http:InternalServerError>{
+                            body: {message: "Error occurred while updating reservation."}
+                        };
+                    }
+                }
                 return {
                     reservationId: activeReservation.id,
                     coinsAmount: activeReservation.coinsAmount

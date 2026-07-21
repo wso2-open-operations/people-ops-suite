@@ -984,6 +984,20 @@ public isolated function expireStalePendingParkingReservationsForEmployeeDate(st
     return result.affectedRowCount > 0;
 }
 
+# Update the vehicle on a parking reservation.
+#
+# + reservationId - Reservation id
+# + vehicleId - Registered vehicle id to set
+# + updatedBy - User performing the update
+# + return - True if updated, or error
+public isolated function updateParkingReservationVehicle(int reservationId, int vehicleId, string updatedBy)
+        returns boolean|error {
+
+    sql:ExecutionResult result = check databaseClient->execute(
+        updateParkingReservationVehicleQuery(reservationId, vehicleId, updatedBy));
+    return result.affectedRowCount > 0;
+}
+
 # Create parking reservation (PENDING).
 #
 # + payload - Reservation payload

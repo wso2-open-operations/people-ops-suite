@@ -2145,6 +2145,7 @@ isolated function getActiveParkingReservationForEmployeeDateQuery(string employe
     `SELECT
         id,
         slot_id as 'slotId',
+        vehicle_id as 'vehicleId',
         status,
         coins_amount as 'coinsAmount'
     FROM parking_reservation
@@ -2171,6 +2172,18 @@ isolated function expireStalePendingParkingReservationsForEmployeeDateQuery(stri
       AND booking_date = ${bookingDate}
       AND status = ${PENDING}
       AND created_on < DATE_SUB(NOW(), INTERVAL ${expiryMinutes} MINUTE)`;
+
+# Update the vehicle on a parking reservation.
+#
+# + reservationId - Reservation id
+# + vehicleId - Registered vehicle id to set
+# + updatedBy - User performing the update
+# + return - Query to update the reservation's vehicle
+isolated function updateParkingReservationVehicleQuery(int reservationId, int vehicleId, string updatedBy)
+        returns sql:ParameterizedQuery =>
+    `UPDATE parking_reservation
+    SET vehicle_id = ${vehicleId}, updated_by = ${updatedBy}
+    WHERE id = ${reservationId}`;
 
 # Insert parking reservation (PENDING).
 #

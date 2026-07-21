@@ -1222,6 +1222,8 @@ public type ActiveParkingReservationRow record {|
     int id;
     # Slot identifier
     string slotId;
+    # Registered vehicle ID on the reservation
+    int vehicleId;
     # Reservation status
     ParkingReservationStatus status;
     # Amount to be paid in coins
