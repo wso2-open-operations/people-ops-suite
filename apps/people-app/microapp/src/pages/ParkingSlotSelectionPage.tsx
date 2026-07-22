@@ -28,6 +28,7 @@ import { PageTransitionWrapper, BottomNav } from "@/components/shared";
 import type {
   CarParkConfigResponse,
   ParkingFloor,
+  ParkingReservationDetails,
   ParkingSlot,
   VehicleResponse,
 } from "@/types";
@@ -65,6 +66,12 @@ function ParkingSlotSelectionPage() {
   const [error, setError] = useState<string | undefined>(undefined);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [vehiclesSetupRequired, setVehiclesSetupRequired] = useState(false);
+
+  // Only one parking booking is allowed per employee per day. Holds the caller's
+  // existing active (PENDING/CONFIRMED) reservation for today, if any.
+  const [existingBooking, setExistingBooking] =
+    useState<ParkingReservationDetails | null>(null);
+  const [checkingExistingBooking, setCheckingExistingBooking] = useState(true);
 
   const [reservationWindowStartHour, setReservationWindowStartHour] =
     useState(5);
@@ -232,13 +239,49 @@ function ParkingSlotSelectionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFloorId]);
 
+  // Check upfront whether the caller already has a booking for today, so the
+  // Proceed to Payment button can be disabled instead of failing at payment.
+  useEffect(() => {
+    let cancelled = false;
+    setCheckingExistingBooking(true);
+    executeWithTokenHandling(
+      handleRequest,
+      handleRequestWithNewToken,
+      serviceUrls.fetchParkingReservations(todayBookingDate, todayBookingDate),
+      "GET",
+      null,
+      (data) => {
+        if (cancelled) return;
+        const list = (data as ParkingReservationDetails[]) ?? [];
+        const active = list.find(
+          (r) => r.status === "PENDING" || r.status === "CONFIRMED",
+        );
+        setExistingBooking(active ?? null);
+        setCheckingExistingBooking(false);
+      },
+      () => {
+        // On failure don't block booking; the backend still guards duplicates.
+        if (cancelled) return;
+        setExistingBooking(null);
+        setCheckingExistingBooking(false);
+      },
+      () => {},
+    );
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleProceedToPayment = () => {
     if (
       !isBookingWindowActive ||
       !selectedSlot ||
       busyPayment ||
       vehiclesLoading ||
-      vehiclesSetupRequired
+      vehiclesSetupRequired ||
+      checkingExistingBooking ||
+      existingBooking
     ) {
       if (!vehiclesLoading && vehiclesSetupRequired) {
         navigate("/services/vehicles");
@@ -477,19 +520,37 @@ function ParkingSlotSelectionPage() {
                     busyPayment ||
                     selectedSlot.isBooked ||
                     vehiclesLoading ||
-                    vehiclesSetupRequired
+                    vehiclesSetupRequired ||
+                    checkingExistingBooking ||
+                    Boolean(existingBooking)
                   }
                   onClick={handleProceedToPayment}
                 >
                   {busyPayment
                     ? "Redirecting..."
-                    : vehiclesLoading
-                      ? "Checking vehicles..."
-                      : vehiclesSetupRequired
-                        ? "Add a vehicle to continue"
-                        : "Proceed to Payment"}
+                    : vehiclesLoading || checkingExistingBooking
+                      ? "Checking..."
+                      : existingBooking
+                        ? "You already have a booking today"
+                        : vehiclesSetupRequired
+                          ? "Add a vehicle to continue"
+                          : "Proceed to Payment"}
                 </button>
-                {vehiclesSetupRequired && !vehiclesLoading && (
+                {existingBooking && (
+                  <>
+                    <div className="mt-2 text-[12.5px] text-center text-[#808080] font-medium">
+                      Only one parking booking is allowed per day.
+                    </div>
+                    <button
+                      type="button"
+                      className="mt-3 w-full p-[0.75rem] text-[14px] font-semibold rounded-[0.7rem] border border-[#E5E5E5] bg-white text-[#1F2A44]"
+                      onClick={() => navigate("/services/parking/bookings")}
+                    >
+                      View My Bookings
+                    </button>
+                  </>
+                )}
+                {vehiclesSetupRequired && !vehiclesLoading && !existingBooking && (
                   <button
                     type="button"
                     className="mt-3 w-full p-[0.75rem] text-[14px] font-semibold rounded-[0.7rem] border border-[#E5E5E5] bg-white text-[#1F2A44]"
