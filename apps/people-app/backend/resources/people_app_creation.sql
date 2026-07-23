@@ -315,7 +315,7 @@ CREATE TABLE `employee` (
   `job_role` VARCHAR(100) NULL,
   `manager_email` VARCHAR(254) NOT NULL,
   `employee_status` VARCHAR(50) NOT NULL,
-  `continuous_service_record` VARCHAR(99) NULL,
+  `continuous_service_record` INT NULL,
   `employee_thumbnail` VARCHAR(2048) NULL,
   `probation_end_date` DATE NULL,
   `last_promoted_date` DATE NULL,
@@ -355,7 +355,7 @@ CREATE TABLE `employee` (
   CONSTRAINT `fk_emp_house`
     FOREIGN KEY (`house_id`) REFERENCES `house` (`id`),
   CONSTRAINT `fk_emp_continuous_service_record`
-    FOREIGN KEY (`continuous_service_record`) REFERENCES `employee` (`employee_id`)
+    FOREIGN KEY (`continuous_service_record`) REFERENCES `employee` (`id`)
 );
 
 -- Resignation table

@@ -244,8 +244,11 @@ export default function Me({
   const [shouldRequireEmergencyContacts, setShouldRequireEmergencyContacts] =
     useState<boolean>(initialHasEmergencyContactsRef.current);
 
-  const serviceLength = employee?.startDate
-    ? calculateServiceLength(employee.startDate)
+  const serviceStartDate =
+    employee?.continuousServiceDate ?? employee?.startDate ?? null;
+
+  const serviceLength = serviceStartDate
+    ? calculateServiceLength(serviceStartDate)
     : null;
 
   const serviceText = formatServiceLength(serviceLength);
@@ -971,6 +974,16 @@ export default function Me({
                     {formatDate(employee.startDate, "-")}
                   </Typography>
                 </Grid>
+                {employee.continuousServiceDate && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Continuous Service Date
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {formatDate(employee.continuousServiceDate, "-")}
+                    </Typography>
+                  </Grid>
+                )}
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Length of Service
