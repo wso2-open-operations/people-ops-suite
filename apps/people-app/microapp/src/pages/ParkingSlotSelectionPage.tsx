@@ -68,7 +68,9 @@ function ParkingSlotSelectionPage() {
   const [vehiclesSetupRequired, setVehiclesSetupRequired] = useState(false);
 
   // Only one parking booking is allowed per employee per day. Holds the caller's
-  // existing active (PENDING/CONFIRMED) reservation for today, if any.
+  // existing CONFIRMED reservation for today, if any. A PENDING booking is left to
+  // the backend, which reuses a same-slot pending and expires stale ones, so a
+  // stale abandoned pending never blocks re-booking here.
   const [existingBooking, setExistingBooking] =
     useState<ParkingReservationDetails | null>(null);
   const [checkingExistingBooking, setCheckingExistingBooking] = useState(true);
@@ -253,9 +255,7 @@ function ParkingSlotSelectionPage() {
       (data) => {
         if (cancelled) return;
         const list = (data as ParkingReservationDetails[]) ?? [];
-        const active = list.find(
-          (r) => r.status === "PENDING" || r.status === "CONFIRMED",
-        );
+        const active = list.find((r) => r.status === "CONFIRMED");
         setExistingBooking(active ?? null);
         setCheckingExistingBooking(false);
       },
