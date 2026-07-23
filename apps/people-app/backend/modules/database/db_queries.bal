@@ -159,7 +159,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         LEFT JOIN unit u ON e.unit_id = u.id
         LEFT JOIN house h ON e.house_id = h.id
         LEFT JOIN personal_info pi ON pi.id = e.personal_info_id
-        LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
+        LEFT JOIN employee csr ON csr.id = e.continuous_service_record
         LEFT JOIN resignation r ON r.employee_id = e.id
     WHERE
         e.employee_id = ${employeeId};`;
@@ -267,7 +267,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
                 FROM employee
                 GROUP BY LOWER(work_email)
             ) mgr ON mgr.managerEmail = LOWER(e.manager_email)
-            LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
+            LEFT JOIN employee csr ON csr.id = e.continuous_service_record
             LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 

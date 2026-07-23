@@ -355,7 +355,7 @@ CREATE TABLE `employee` (
   CONSTRAINT `fk_emp_house`
     FOREIGN KEY (`house_id`) REFERENCES `house` (`id`),
   CONSTRAINT `fk_emp_continuous_service_record`
-    FOREIGN KEY (`continuous_service_record`) REFERENCES `employee` (`employee_id`)
+    FOREIGN KEY (`continuous_service_record`) REFERENCES `employee` (`id`)
 );
 
 -- Resignation table
