@@ -30,7 +30,10 @@ public enum VehicleStatus {
 public enum ParkingReservationStatus {
     PENDING,
     CONFIRMED,
-    EXPIRED
+    EXPIRED,
+    // Historical duplicate collapsed during the v1.0.21 migration so the
+    // per-employee/date unique index could be created; retained for audit.
+    DUPLICATE
 }
 
 # [Database] Enum for employee statuses.

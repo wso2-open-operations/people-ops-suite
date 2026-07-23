@@ -467,7 +467,7 @@ CREATE TABLE `parking_reservation` (
   `booking_date` date NOT NULL,
   `employee_email` varchar(100) NOT NULL,
   `vehicle_id` int NOT NULL,
-  `status` enum('PENDING','CONFIRMED','EXPIRED') NOT NULL DEFAULT 'PENDING',
+  `status` enum('PENDING','CONFIRMED','EXPIRED','DUPLICATE') NOT NULL DEFAULT 'PENDING',
   `transaction_hash` varchar(255) DEFAULT NULL,
   `coins_amount` decimal(10, 4) NOT NULL,
   `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),

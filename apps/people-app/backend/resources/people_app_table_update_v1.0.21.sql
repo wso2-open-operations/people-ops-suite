@@ -9,20 +9,27 @@
 -- paid reservation and charged the wallet twice.
 --
 -- This functional unique index mirrors uk_active_slot_booking_date but is keyed
--- on the employee instead of the slot. EXPIRED rows map to NULL so they are
--- ignored by the index, allowing a fresh booking once a prior attempt expires.
+-- on the employee instead of the slot. Non-active rows (EXPIRED, DUPLICATE) map
+-- to NULL so they are ignored by the index, allowing a fresh booking once a
+-- prior attempt is no longer active.
 --
 -- Pre-cleanup: because this bug allowed multiple active reservations per
 -- employee/date, production may already hold such duplicates (the reported
 -- incident is one). CREATE UNIQUE INDEX would fail (error 1062) on them, so
--- first expire all-but-one active row per (employee_email, booking_date),
--- keeping the CONFIRMED row when present, otherwise the most recent id. The
--- derived table is materialized, so updating parking_reservation while reading
--- it in the subquery does not hit MySQL error 1093.
+-- first collapse all-but-one active row per (employee_email, booking_date) to a
+-- new DUPLICATE status, keeping the CONFIRMED row when present, otherwise the
+-- most recent id. DUPLICATE (rather than EXPIRED) preserves the fact that these
+-- were genuine, often paid, bookings for audit/refund purposes. The derived
+-- table is materialized, so updating parking_reservation while reading it in the
+-- subquery does not hit MySQL error 1093.
 -- =====================================================================
 
+-- Add the DUPLICATE status before it is assigned below.
+ALTER TABLE `parking_reservation`
+    MODIFY COLUMN `status` ENUM ('PENDING', 'CONFIRMED', 'EXPIRED', 'DUPLICATE') NOT NULL DEFAULT 'PENDING';
+
 UPDATE `parking_reservation`
-SET `status` = 'EXPIRED'
+SET `status` = 'DUPLICATE'
 WHERE `status` IN ('PENDING', 'CONFIRMED')
   AND `id` NOT IN (
     SELECT `keep_id` FROM (
