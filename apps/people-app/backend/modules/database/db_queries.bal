@@ -386,10 +386,12 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
 # + return - Parameterized query for fetching distinct managers
 isolated function getManagersQuery() returns sql:ParameterizedQuery =>
     `SELECT
-        SUBSTRING_INDEX(GROUP_CONCAT(m.employee_id ORDER BY m.id DESC SEPARATOR '||'), '||', 1) AS employee_id,
+        SUBSTRING_INDEX(
+            GROUP_CONCAT(m.employee_id ORDER BY (m.employee_status = 'Active') DESC, m.id DESC SEPARATOR '||'), '||', 1
+        ) AS employee_id,
         m.work_email
     FROM employee e
-    JOIN employee m ON e.manager_email = m.work_email
+    JOIN employee m ON LOWER(e.manager_email) = LOWER(m.work_email)
     WHERE e.manager_email IS NOT NULL AND e.manager_email <> ''
     GROUP BY m.work_email;`;
 
