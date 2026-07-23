@@ -271,7 +271,7 @@ function ParkingSlotSelectionPage() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [todayBookingDate]);
 
   const handleProceedToPayment = () => {
     if (
@@ -457,7 +457,25 @@ function ParkingSlotSelectionPage() {
         </section>
 
         <div className="fixed left-4 right-4 bottom-[calc(84px+var(--safe-bottom))]">
-          {reservationConfigLoaded && !isBookingWindowActive && (
+          {existingBooking && (
+            <div className="bg-white rounded-[1rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-[#E5E5E5] p-4">
+              <div className="text-[15px] font-bold text-[#1F2A44]">
+                You already have a booking for today
+              </div>
+              <div className="mt-1 text-[13px] text-[#808080] font-medium leading-snug">
+                Only one parking booking is allowed per day.
+              </div>
+              <button
+                type="button"
+                className="mt-3 w-full p-[0.85rem] text-[15px] font-semibold rounded-[0.7rem] bg-primary text-white"
+                onClick={() => navigate("/services/parking/bookings")}
+              >
+                View My Bookings
+              </button>
+            </div>
+          )}
+
+          {!existingBooking && reservationConfigLoaded && !isBookingWindowActive && (
             <div className="bg-[#FFF7EB] rounded-[1rem] shadow-[0_8px_24px_rgba(0,0,0,0.08)] border border-[#FFB74D] px-4 py-3">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 shrink-0">
@@ -479,7 +497,7 @@ function ParkingSlotSelectionPage() {
             </div>
           )}
 
-          {isBookingWindowActive && selectedSlot && (
+          {!existingBooking && isBookingWindowActive && selectedSlot && (
             <div className="bg-white rounded-[1rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-[#E5E5E5] p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -521,8 +539,7 @@ function ParkingSlotSelectionPage() {
                     selectedSlot.isBooked ||
                     vehiclesLoading ||
                     vehiclesSetupRequired ||
-                    checkingExistingBooking ||
-                    Boolean(existingBooking)
+                    checkingExistingBooking
                   }
                   onClick={handleProceedToPayment}
                 >
@@ -530,27 +547,11 @@ function ParkingSlotSelectionPage() {
                     ? "Redirecting..."
                     : vehiclesLoading || checkingExistingBooking
                       ? "Checking..."
-                      : existingBooking
-                        ? "You already have a booking today"
-                        : vehiclesSetupRequired
-                          ? "Add a vehicle to continue"
-                          : "Proceed to Payment"}
+                      : vehiclesSetupRequired
+                        ? "Add a vehicle to continue"
+                        : "Proceed to Payment"}
                 </button>
-                {existingBooking && (
-                  <>
-                    <div className="mt-2 text-[12.5px] text-center text-[#808080] font-medium">
-                      Only one parking booking is allowed per day.
-                    </div>
-                    <button
-                      type="button"
-                      className="mt-3 w-full p-[0.75rem] text-[14px] font-semibold rounded-[0.7rem] border border-[#E5E5E5] bg-white text-[#1F2A44]"
-                      onClick={() => navigate("/services/parking/bookings")}
-                    >
-                      View My Bookings
-                    </button>
-                  </>
-                )}
-                {vehiclesSetupRequired && !vehiclesLoading && !existingBooking && (
+                {vehiclesSetupRequired && !vehiclesLoading && (
                   <button
                     type="button"
                     className="mt-3 w-full p-[0.75rem] text-[14px] font-semibold rounded-[0.7rem] border border-[#E5E5E5] bg-white text-[#1F2A44]"
