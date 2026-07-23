@@ -88,7 +88,13 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         e.work_location AS workLocation,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
-        COALESCE(CONCAT(mgr.first_name, ' ', mgr.last_name), '') AS managerName,
+        COALESCE((
+            SELECT CONCAT(m.first_name, ' ', m.last_name)
+            FROM employee m
+            WHERE LOWER(m.work_email) = LOWER(e.manager_email)
+            ORDER BY m.id DESC
+            LIMIT 1
+        ), '') AS managerName,
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
         pi.gender AS gender,
         (
@@ -153,7 +159,6 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         LEFT JOIN unit u ON e.unit_id = u.id
         LEFT JOIN house h ON e.house_id = h.id
         LEFT JOIN personal_info pi ON pi.id = e.personal_info_id
-        LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
         LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
         LEFT JOIN resignation r ON r.employee_id = e.id
     WHERE
@@ -180,7 +185,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.work_location AS workLocation,
             e.start_date AS startDate,
             e.manager_email AS managerEmail,
-            COALESCE(CONCAT(mgr.first_name, ' ', mgr.last_name), '') AS managerName,
+            COALESCE(mgr.managerName, '') AS managerName,
             COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
             COALESCE(sc.subordinateCount, 0) AS subordinateCount,
             e.employee_status AS employeeStatus,
@@ -253,7 +258,15 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             LEFT JOIN sub_team st ON st.id = e.sub_team_id
             LEFT JOIN unit u ON u.id = e.unit_id
             LEFT JOIN house h ON h.id = e.house_id
-            LEFT JOIN employee mgr ON LOWER(e.manager_email) = LOWER(mgr.work_email)
+            LEFT JOIN (
+                SELECT
+                    LOWER(work_email) AS managerEmail,
+                    SUBSTRING_INDEX(
+                        GROUP_CONCAT(CONCAT(first_name, ' ', last_name) ORDER BY id DESC SEPARATOR '||'), '||', 1
+                    ) AS managerName
+                FROM employee
+                GROUP BY LOWER(work_email)
+            ) mgr ON mgr.managerEmail = LOWER(e.manager_email)
             LEFT JOIN employee csr ON csr.employee_id = e.continuous_service_record
             LEFT JOIN resignation r ON r.employee_id = e.id
         `;
@@ -372,12 +385,17 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
 #
 # + return - Parameterized query for fetching distinct managers
 isolated function getManagersQuery() returns sql:ParameterizedQuery =>
-    `SELECT DISTINCT 
-        m.employee_id, 
-        m.work_email
+    `SELECT
+        SUBSTRING_INDEX(
+            GROUP_CONCAT(m.employee_id ORDER BY (m.employee_status = 'Active') DESC, m.id DESC SEPARATOR '||'), '||', 1
+        ) AS employee_id,
+        SUBSTRING_INDEX(
+            GROUP_CONCAT(m.work_email ORDER BY (m.employee_status = 'Active') DESC, m.id DESC SEPARATOR '||'), '||', 1
+        ) AS work_email
     FROM employee e
-    JOIN employee m ON e.manager_email = m.work_email
-    WHERE e.manager_email IS NOT NULL AND e.manager_email <> '';`;
+    JOIN employee m ON LOWER(e.manager_email) = LOWER(m.work_email)
+    WHERE e.manager_email IS NOT NULL AND e.manager_email <> ''
+    GROUP BY LOWER(m.work_email);`;
 
 # Check if a target employee is a direct or additional subordinate of a lead.
 #
