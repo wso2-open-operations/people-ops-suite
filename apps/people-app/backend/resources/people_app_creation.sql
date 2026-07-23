@@ -315,7 +315,7 @@ CREATE TABLE `employee` (
   `job_role` VARCHAR(100) NULL,
   `manager_email` VARCHAR(254) NOT NULL,
   `employee_status` VARCHAR(50) NOT NULL,
-  `continuous_service_record` VARCHAR(99) NULL,
+  `continuous_service_record` INT NULL,
   `employee_thumbnail` VARCHAR(2048) NULL,
   `probation_end_date` DATE NULL,
   `last_promoted_date` DATE NULL,
