@@ -389,11 +389,13 @@ isolated function getManagersQuery() returns sql:ParameterizedQuery =>
         SUBSTRING_INDEX(
             GROUP_CONCAT(m.employee_id ORDER BY (m.employee_status = 'Active') DESC, m.id DESC SEPARATOR '||'), '||', 1
         ) AS employee_id,
-        m.work_email
+        SUBSTRING_INDEX(
+            GROUP_CONCAT(m.work_email ORDER BY (m.employee_status = 'Active') DESC, m.id DESC SEPARATOR '||'), '||', 1
+        ) AS work_email
     FROM employee e
     JOIN employee m ON LOWER(e.manager_email) = LOWER(m.work_email)
     WHERE e.manager_email IS NOT NULL AND e.manager_email <> ''
-    GROUP BY m.work_email;`;
+    GROUP BY LOWER(m.work_email);`;
 
 # Check if a target employee is a direct or additional subordinate of a lead.
 #
