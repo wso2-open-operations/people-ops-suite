@@ -47,6 +47,7 @@ import {
   PARKING_WALLET_PAYMENT_TX_HASH_KEY,
   clearWalletParkingPaymentBridgeKeys,
   confirmParkingReservation,
+  fetchParkingReservationById,
   finalizeParkingConfirmationAfterSuccess,
 } from "@/utils/parkingConfirm";
 import { Logger } from "@/utils/logger";
@@ -228,7 +229,7 @@ function ParkingBookingSummaryPage() {
             error: error ? String(error) : undefined,
           };
         }
-      } catch (e) {
+      } catch {
         // Ignore polling errors; keep waiting.
       }
 
@@ -246,15 +247,71 @@ function ParkingBookingSummaryPage() {
     setError(undefined);
     setShowPaymentFailureModal(false);
 
-    try {
-      // Stage 1: create a pending reservation in backend.
-      const reservation = await createReservation();
+    let reservationId = paymentContext.reservationId;
+    let coinsAmount = paymentContext.coinsAmount;
 
-      setParkingPaymentContextState({
-        ...paymentContext,
-        reservationId: reservation.reservationId,
-        coinsAmount: reservation.coinsAmount,
-      });
+    try {
+      // Recovery path: if a reservation was already created on a previous attempt,
+      // never create a second one or open the wallet again — that would charge the
+      // user twice. Reuse it, and settle it without re-charging when it is already
+      // paid or confirmed.
+      if (reservationId) {
+        const existing = await fetchParkingReservationById(
+          handleRequest,
+          handleRequestWithNewToken,
+          reservationId,
+        );
+
+        if (existing.status === "CONFIRMED") {
+          // A prior attempt succeeded but surfaced a spurious error: finish
+          // without charging again.
+          await finalizeParkingConfirmationAfterSuccess(existing, navigate);
+          return;
+        } else if (existing.status === "PENDING") {
+          // A prior wallet payment succeeded but was never confirmed: confirm
+          // with that transaction hash instead of paying again.
+          const priorStatus = await getLocalDataAsync(
+            PARKING_WALLET_PAYMENT_STATUS_KEY,
+          );
+          if (String(priorStatus) === "SUCCESS") {
+            const priorTxRaw = await getLocalDataAsync(
+              PARKING_WALLET_PAYMENT_TX_HASH_KEY,
+            );
+            const priorTx = priorTxRaw ? String(priorTxRaw).trim() : "";
+            if (priorTx) {
+              const confirmed = await confirmParkingReservation(
+                handleRequest,
+                handleRequestWithNewToken,
+                reservationId,
+                priorTx,
+              );
+              await finalizeParkingConfirmationAfterSuccess(confirmed, navigate);
+              return;
+            }
+          }
+          coinsAmount = existing.coinsAmount;
+        } else {
+          // Stale reservation (e.g. EXPIRED after the pending window lapsed).
+          // Reusing it would charge the wallet again only for the confirm to be
+          // rejected server-side, so discard it and create a fresh one below.
+          reservationId = undefined;
+        }
+      }
+
+      if (!reservationId) {
+        // Stage 1: create a pending reservation in backend. The backend enforces
+        // one active booking per employee/day and is idempotent for a same-slot
+        // retry, so this cannot silently create a duplicate.
+        const reservation = await createReservation();
+        reservationId = reservation.reservationId;
+        coinsAmount = reservation.coinsAmount;
+
+        setParkingPaymentContextState({
+          ...paymentContext,
+          reservationId,
+          coinsAmount,
+        });
+      }
 
       // Stage 2: ask Wallet to transfer coins, then confirm reservation with txHash.
       const carParkConfig = await new Promise<CarParkConfigResponse>(
@@ -279,7 +336,7 @@ function ParkingBookingSummaryPage() {
       requestOpenMicroApp("com.wso2.superapp.microapp.wallet", {
         initialRoute: "/send",
         wallet_address: carParkConfig.publicWalletAddress,
-        coin_amount: reservation.coinsAmount,
+        coin_amount: coinsAmount,
         source_app_id: "com.wso2.superapp.microapp.people",
         return_app_id: "com.wso2.superapp.microapp.people",
         return_route: "/services/parking/summary",
@@ -297,12 +354,34 @@ function ParkingBookingSummaryPage() {
       const confirmed = await confirmParkingReservation(
         handleRequest,
         handleRequestWithNewToken,
-        reservation.reservationId,
+        reservationId,
         paymentResult.txHash,
       );
 
       await finalizeParkingConfirmationAfterSuccess(confirmed, navigate);
     } catch (e) {
+      // A concurrent confirmation (ParkingWalletReturnResume) may have already
+      // succeeded, or our confirm response was lost mid-flight. Verify server
+      // state before declaring failure so a booking that actually went through
+      // never shows a false "payment failed" error (which drove the duplicate
+      // re-submissions this flow was fixed for).
+      const rid = getParkingPaymentContextState()?.reservationId ?? reservationId;
+      if (rid) {
+        try {
+          const existing = await fetchParkingReservationById(
+            handleRequest,
+            handleRequestWithNewToken,
+            rid,
+          );
+          if (existing.status === "CONFIRMED") {
+            await finalizeParkingConfirmationAfterSuccess(existing, navigate);
+            return;
+          }
+        } catch (verifyErr) {
+          Logger.error("Parking confirm recovery check failed", verifyErr);
+        }
+      }
+
       const msg = String(e ?? "Payment failed");
       setError(msg);
       setShowPaymentFailureModal(true);

@@ -28,6 +28,7 @@ import { PageTransitionWrapper, BottomNav } from "@/components/shared";
 import type {
   CarParkConfigResponse,
   ParkingFloor,
+  ParkingReservationDetails,
   ParkingSlot,
   VehicleResponse,
 } from "@/types";
@@ -65,6 +66,14 @@ function ParkingSlotSelectionPage() {
   const [error, setError] = useState<string | undefined>(undefined);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [vehiclesSetupRequired, setVehiclesSetupRequired] = useState(false);
+
+  // Only one parking booking is allowed per employee per day. Holds the caller's
+  // existing CONFIRMED reservation for today, if any. A PENDING booking is left to
+  // the backend, which reuses a same-slot pending and expires stale ones, so a
+  // stale abandoned pending never blocks re-booking here.
+  const [existingBooking, setExistingBooking] =
+    useState<ParkingReservationDetails | null>(null);
+  const [checkingExistingBooking, setCheckingExistingBooking] = useState(true);
 
   const [reservationWindowStartHour, setReservationWindowStartHour] =
     useState(5);
@@ -232,13 +241,47 @@ function ParkingSlotSelectionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFloorId]);
 
+  // Check upfront whether the caller already has a booking for today, so the
+  // Proceed to Payment button can be disabled instead of failing at payment.
+  useEffect(() => {
+    let cancelled = false;
+    setCheckingExistingBooking(true);
+    executeWithTokenHandling(
+      handleRequest,
+      handleRequestWithNewToken,
+      serviceUrls.fetchParkingReservations(todayBookingDate, todayBookingDate),
+      "GET",
+      null,
+      (data) => {
+        if (cancelled) return;
+        const list = (data as ParkingReservationDetails[]) ?? [];
+        const active = list.find((r) => r.status === "CONFIRMED");
+        setExistingBooking(active ?? null);
+        setCheckingExistingBooking(false);
+      },
+      () => {
+        // On failure don't block booking; the backend still guards duplicates.
+        if (cancelled) return;
+        setExistingBooking(null);
+        setCheckingExistingBooking(false);
+      },
+      () => {},
+    );
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todayBookingDate]);
+
   const handleProceedToPayment = () => {
     if (
       !isBookingWindowActive ||
       !selectedSlot ||
       busyPayment ||
       vehiclesLoading ||
-      vehiclesSetupRequired
+      vehiclesSetupRequired ||
+      checkingExistingBooking ||
+      existingBooking
     ) {
       if (!vehiclesLoading && vehiclesSetupRequired) {
         navigate("/services/vehicles");
@@ -414,7 +457,25 @@ function ParkingSlotSelectionPage() {
         </section>
 
         <div className="fixed left-4 right-4 bottom-[calc(84px+var(--safe-bottom))]">
-          {reservationConfigLoaded && !isBookingWindowActive && (
+          {existingBooking && (
+            <div className="bg-white rounded-[1rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-[#E5E5E5] p-4">
+              <div className="text-[15px] font-bold text-[#1F2A44]">
+                You already have a booking for today
+              </div>
+              <div className="mt-1 text-[13px] text-[#808080] font-medium leading-snug">
+                Only one parking booking is allowed per day.
+              </div>
+              <button
+                type="button"
+                className="mt-3 w-full p-[0.85rem] text-[15px] font-semibold rounded-[0.7rem] bg-primary text-white"
+                onClick={() => navigate("/services/parking/bookings")}
+              >
+                View My Bookings
+              </button>
+            </div>
+          )}
+
+          {!existingBooking && reservationConfigLoaded && !isBookingWindowActive && (
             <div className="bg-[#FFF7EB] rounded-[1rem] shadow-[0_8px_24px_rgba(0,0,0,0.08)] border border-[#FFB74D] px-4 py-3">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 shrink-0">
@@ -436,7 +497,7 @@ function ParkingSlotSelectionPage() {
             </div>
           )}
 
-          {isBookingWindowActive && selectedSlot && (
+          {!existingBooking && isBookingWindowActive && selectedSlot && (
             <div className="bg-white rounded-[1rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-[#E5E5E5] p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -477,14 +538,15 @@ function ParkingSlotSelectionPage() {
                     busyPayment ||
                     selectedSlot.isBooked ||
                     vehiclesLoading ||
-                    vehiclesSetupRequired
+                    vehiclesSetupRequired ||
+                    checkingExistingBooking
                   }
                   onClick={handleProceedToPayment}
                 >
                   {busyPayment
                     ? "Redirecting..."
-                    : vehiclesLoading
-                      ? "Checking vehicles..."
+                    : vehiclesLoading || checkingExistingBooking
+                      ? "Checking..."
                       : vehiclesSetupRequired
                         ? "Add a vehicle to continue"
                         : "Proceed to Payment"}

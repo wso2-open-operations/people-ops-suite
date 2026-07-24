@@ -956,12 +956,62 @@ public isolated function expireStalePendingParkingReservationForSlotDate(string 
     return result.affectedRowCount > 0;
 }
 
+# Get the caller's active reservation (CONFIRMED, or PENDING within `pendingExpiryMinutes`) for a date.
+#
+# + employeeEmail - Employee email
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
+# + return - Active reservation summary, nil if none, or error
+public isolated function getActiveParkingReservationForEmployeeDate(string employeeEmail, string bookingDate,
+        int pendingExpiryMinutes) returns ActiveParkingReservationRow|error? {
+
+    ActiveParkingReservationRow|error row = databaseClient->queryRow(
+        getActiveParkingReservationForEmployeeDateQuery(employeeEmail, bookingDate, pendingExpiryMinutes));
+    return row is sql:NoRowsError ? () : row;
+}
+
+# Expire the caller's stale PENDING reservations (PENDING -> EXPIRED) for a date (any slot).
+#
+# + employeeEmail - Employee email
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + expiryMinutes - Expiry duration in minutes
+# + return - True if any rows updated, or error
+public isolated function expireStalePendingParkingReservationsForEmployeeDate(string employeeEmail,
+        string bookingDate, int expiryMinutes) returns boolean|error {
+
+    sql:ExecutionResult result = check databaseClient->execute(
+        expireStalePendingParkingReservationsForEmployeeDateQuery(employeeEmail, bookingDate, expiryMinutes));
+    return result.affectedRowCount > 0;
+}
+
+# Update the vehicle on a parking reservation.
+#
+# + reservationId - Reservation id
+# + vehicleId - Registered vehicle id to set
+# + updatedBy - User performing the update
+# + return - True if updated, or error
+public isolated function updateParkingReservationVehicle(int reservationId, int vehicleId, string updatedBy)
+        returns boolean|error {
+
+    sql:ExecutionResult result = check databaseClient->execute(
+        updateParkingReservationVehicleQuery(reservationId, vehicleId, updatedBy));
+    return result.affectedRowCount > 0;
+}
+
 # Create parking reservation (PENDING).
 #
 # + payload - Reservation payload
-# + return - New reservation id
+# + return - New reservation id, `DuplicateActiveReservationError` if an active reservation already
+#            exists for the slot/date or employee/date (unique index violation), or error
 public isolated function addParkingReservation(AddParkingReservationPayload payload) returns int|error {
-    sql:ExecutionResult result = check databaseClient->execute(addParkingReservationQuery(payload));
+    sql:ExecutionResult|error result = databaseClient->execute(addParkingReservationQuery(payload));
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateActiveReservationError(
+            "An active reservation already exists for this slot or employee on this date.");
+    }
+    if result is error {
+        return result;
+    }
     return result.lastInsertId.ensureType(int);
 }
 
