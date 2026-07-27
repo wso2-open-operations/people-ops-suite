@@ -891,10 +891,11 @@ DELIMITER ;
 
 -- Trigger: trg_employee_no_self_continuous_service_insert
 -- continuous_service_record cannot reference the row's own id (MySQL disallows a
--- CHECK constraint on this column since `id` is AUTO_INCREMENT).
+-- CHECK constraint on this column since `id` is AUTO_INCREMENT). Must run AFTER
+-- INSERT: NEW.id is 0 in a BEFORE INSERT trigger since the value isn't generated yet.
 DELIMITER //
 CREATE TRIGGER `trg_employee_no_self_continuous_service_insert`
-BEFORE INSERT ON `employee`
+AFTER INSERT ON `employee`
 FOR EACH ROW
 BEGIN
   IF NEW.continuous_service_record IS NOT NULL AND NEW.continuous_service_record = NEW.id THEN
