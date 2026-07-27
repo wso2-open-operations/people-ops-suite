@@ -105,5 +105,13 @@
   "devDependencies": {
     "@types/node": "^24.5.2",
     "react-app-rewired": "^2.2.1"
+  },
+  "overrides": {
+    "@mui/x-date-pickers": {
+      "date-fns": "$date-fns"
+    }
+  },
+  "resolutions": {
+    "@mui/x-date-pickers/date-fns": "^4.1.0"
   }
 }
