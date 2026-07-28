@@ -17,9 +17,9 @@
 import React, { useMemo } from "react";
 import { Box, Grid, Typography, useTheme, alpha } from "@mui/material";
 import { useFormikContext } from "formik";
-import dayjs from "dayjs";
 import { useAppSelector } from "@slices/store";
 import { CreateEmployeeFormValues } from "@root/src/types/types";
+import { formatDate } from "@utils/utils";
 import {
   PersonOutline,
   CakeOutlined,
@@ -265,7 +265,7 @@ export default function ReviewStep() {
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Date of Birth"
-              value={p.dob ? dayjs(p.dob).format("MMMM D, YYYY") : null}
+              value={formatDate(p.dob)}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
@@ -452,31 +452,19 @@ export default function ReviewStep() {
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Start Date"
-              value={
-                values.startDate
-                  ? dayjs(values.startDate).format("MMMM D, YYYY")
-                  : null
-              }
+              value={formatDate(values.startDate)}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Probation End Date"
-              value={
-                values.probationEndDate
-                  ? dayjs(values.probationEndDate).format("MMMM D, YYYY")
-                  : null
-              }
+              value={formatDate(values.probationEndDate)}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Agreement End Date"
-              value={
-                values.agreementEndDate
-                  ? dayjs(values.agreementEndDate).format("MMMM D, YYYY")
-                  : null
-              }
+              value={formatDate(values.agreementEndDate)}
             />
           </Grid>
         </Grid>

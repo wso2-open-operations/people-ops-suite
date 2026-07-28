@@ -889,6 +889,35 @@ BEGIN
 END//
 DELIMITER ;
 
+-- Trigger: trg_employee_no_self_continuous_service_insert
+-- continuous_service_record cannot reference the row's own id (MySQL disallows a
+-- CHECK constraint on this column since `id` is AUTO_INCREMENT). Must run AFTER
+-- INSERT: NEW.id is 0 in a BEFORE INSERT trigger since the value isn't generated yet.
+DELIMITER //
+CREATE TRIGGER `trg_employee_no_self_continuous_service_insert`
+AFTER INSERT ON `employee`
+FOR EACH ROW
+BEGIN
+  IF NEW.continuous_service_record IS NOT NULL AND NEW.continuous_service_record = NEW.id THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'continuous_service_record cannot reference its own employee id';
+  END IF;
+END//
+DELIMITER ;
+
+-- Trigger: trg_employee_no_self_continuous_service_update
+DELIMITER //
+CREATE TRIGGER `trg_employee_no_self_continuous_service_update`
+BEFORE UPDATE ON `employee`
+FOR EACH ROW
+BEGIN
+  IF NEW.continuous_service_record IS NOT NULL AND NEW.continuous_service_record = NEW.id THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'continuous_service_record cannot reference its own employee id';
+  END IF;
+END//
+DELIMITER ;
+
 -- Procedure: prc_employee_additional_managers_audit
 DELIMITER //
 CREATE PROCEDURE `prc_employee_additional_managers_audit`(

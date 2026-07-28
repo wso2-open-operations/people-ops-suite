@@ -118,7 +118,7 @@ export const formatDate = (
   if (!isoDate) return fallback ?? null;
   const parsedDate = parseStrictYyyyMmDd(isoDate);
   if (!parsedDate) return fallback ?? null;
-  return format(parsedDate, "dd/MM/yyyy");
+  return format(parsedDate, "d MMM yyyy");
 };
 
 export const isPresentOrFuture = (isoDate?: string | null): boolean => {
