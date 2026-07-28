@@ -35,7 +35,7 @@ import { State } from "@src/types/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MyTeamSearchForm } from "./MyTeamSearchForm";
-import { getEmployeeStatusColor } from "@utils/utils";
+import { formatDate, getEmployeeStatusColor } from "@utils/utils";
 
 export default function MyTeamTable() {
   const theme = useTheme();
@@ -211,6 +211,16 @@ export default function MyTeamTable() {
               {params.value || "N/A"}
             </Box>
           </Tooltip>
+        ),
+      },
+      {
+        field: "startDate",
+        headerName: "Start Date",
+        width: 120,
+        resizable: false,
+        valueGetter: (_value, row) => formatDate(row.startDate, "-"),
+        renderCell: (params: GridRenderCellParams<Employee>) => (
+          <Box sx={{ color: theme.palette.text.primary }}>{params.value}</Box>
         ),
       },
       {
