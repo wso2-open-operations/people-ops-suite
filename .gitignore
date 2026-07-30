@@ -32,3 +32,4 @@ Config.toml
 .devcontainer.json
 .env
 node_modules
+.superpowers
