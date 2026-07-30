@@ -104,74 +104,85 @@ Because this checks the merged state, the first request that sets status to
 changing manager) while status remains `Marked leaver` are not blocked, since
 the previously-stored values already satisfy the check.
 
-### 3. Scheduled job (new file, e.g. `backend/leaver_scheduler.bal`)
+### 3. Scheduled sweep — standalone component (`apps/people-app/leaver-sweep/`)
 
-Uses `ballerina/task`. A `task:Job` implementation runs on a configurable
-interval (default **24 hours**) and, on each run:
+**Amendment (2026-07-30):** the sweep is a separate, independently-deployable
+Ballerina package — not an in-process `ballerina/task` job inside the
+`backend` HTTP service. This follows the existing precedent set by
+`apps/visitor-app/active-visit-reminder/`: a small standalone package with a
+`public function main() returns error?` entry point, deployed as a WSO2
+Choreo **Scheduled Task** component. Choreo's own cron configuration controls
+execution frequency — nothing in this repo declares an interval. Unlike the
+`active-visit-reminder` precedent (which calls its backend's HTTP API rather
+than touching the database), this component connects to the people_ops_suite
+database **directly**, with its own `mysql:Client` and `dbConfig`
+configurable, and calls the email-alerting-service directly with its own
+`http:Client` — it shares no Ballerina module with `apps/people-app/backend`
+(a separate Ballerina package cannot import another package's internal
+modules without publishing them, and duplicating this small amount of logic
+is simpler than doing so).
 
-1. Calls a new database function, `transitionExpiredLeavers(string actor)`,
-   which in a single `transaction`:
-   - `SELECT`s employees where `employee_status = 'Marked leaver'` AND
-     `resignation.final_day_of_employment IS NOT NULL AND <= CURDATE()`
-     (joining `employee`/`resignation` on `employee.id = resignation.employee_id`,
-     following the existing join style used by `upsertResignationQuery`).
-   - `UPDATE`s those same rows' `employee.employee_status` to `Left` and
-     `updated_by` to the passed-in `actor` (fires the existing
-     `trg_employee_audit_update` trigger automatically, same as any other
-     status change).
-   - Returns the list of transitioned employees (id, name, work email, final
-     day of employment) as a new `LeaverTransition[]` record type — empty
-     array if none matched (not an error).
-2. If the returned list is non-empty, calls
-   `email:notifyLeaverAutoTransition(transitions)` (see below). Email failures
-   are logged (`log:printError`) and do not roll back or retry the
-   already-committed status transitions — no email is sent on a no-op run.
+Package layout:
+- `Ballerina.toml`, `Config.toml`/`Config.toml.local`, `.gitignore` (same
+  shape as `active-visit-reminder`'s).
+- `main.bal` — `public function main() returns error?`: calls the database
+  module's sweep function, and if it returns any transitions, calls the
+  email module's notify function. Logs start/completion. No retry loop, no
+  scheduling code — one run, then exit.
+- `modules/database/`: own `DatabaseConfig` configurable + `mysql:Client`
+  (same shape as `backend/modules/database/client.bal`'s), plus:
+  - a query that `SELECT`s employees where `employee_status = 'Marked leaver'`
+    AND `resignation.final_day_of_employment IS NOT NULL AND <= CURDATE()`
+    (joining `employee`/`resignation` on `employee.id = resignation.employee_id`),
+  - a query that `UPDATE`s those same rows' `employee.employee_status` to
+    `Left` and `updated_by` to the literal `"system-scheduler"` (fires the
+    existing `trg_employee_audit_update` trigger automatically, same as any
+    other status change),
+  - a function that runs the `SELECT`, and only runs the `UPDATE` (in a
+    `transaction`) when the `SELECT` found at least one row — returning the
+    list of transitioned employees (id, name, work email, final day of
+    employment) as a `LeaverTransition[]` record type, empty if none matched
+    (not an error).
+- `modules/email/`: own `EmailServiceConfig`/`appName`/
+  `leaverNotificationRecipients` configurables, own `http:Client` to the
+  email-alerting-service (OAuth2 client-credentials, matching
+  `backend/modules/email/client.bal`'s shape), the same
+  `leaverAutoTransitionSummaryTemplate` HTML template content designed
+  earlier in this doc, and a `notifyLeaverAutoTransition(LeaverTransition[])`
+  function that builds and sends the summary email. Failures are logged
+  (`log:printError`) and do not fail `main()`'s exit code for the DB-update
+  part already committed — no email is sent when zero employees transitioned.
 
-The job is started once from the existing `service.bal` `init()`
-(lines 57-59).
+This supersedes the earlier "in-process `ballerina/task`" design entirely;
+`backend/modules/database` and `backend/modules/email` are **not** modified
+by this feature at all — the backend's `email` module stays exactly as
+dormant as it is today (no reactivation risk).
 
-New configurable: `configurable decimal leaverSweepIntervalHours = 24;`
-(root-level, alongside other top-level configurables).
+### 4. Config (new `apps/people-app/leaver-sweep/Config.toml.local`)
 
-### 4. Email notification (`backend/modules/email/`)
-
-- New configurable, separate from the existing onboarding-alert recipient
-  list: `public configurable string[] leaverNotificationRecipients = ?;`
-  (`modules/email/client.bal`), configured under `[people.email]`.
-- New template `leaverAutoTransitionSummaryTemplate` in `templates.bal`,
-  matching the existing WSO2-branded HTML style, with placeholders
-  `APP_NAME`, `RUN_DATE`, `COUNT`, `EMPLOYEE_LIST` (HTML `<li>` list, one
-  escaped entry per transitioned employee: name, ID, work email, final day),
-  `YEAR`.
-- New function `notifyLeaverAutoTransition(database:LeaverTransition[] transitions) returns error?`
-  in `email.bal`, mirroring `notifyGroupAssignmentFailure`: builds the
-  placeholder map, calls `bindKeyValues`, then `sendEmail` with `to:
-  leaverNotificationRecipients`.
-
-### 5. Config additions
-
-`Config.toml.local` (blank placeholders):
 ```toml
-leaverSweepIntervalHours = 24
+[dbConfig]
+    host = ""
+    user = ""
+    password = ""
+    database = ""
+    port =
 
-[people.email]
+[emailServiceConfig]
     appName = ""
     leaverNotificationRecipients = [""]
-
-[people.email.emailServiceConfig]
     emailServiceEndpoint = ""
-    to = [""]
     from = ""
 
-[people.email.emailServiceConfig.oauthConfig]
+[emailServiceConfig.oauthConfig]
     tokenUrl = ""
     clientId = ""
     clientSecret = ""
 ```
 
-`Config.toml` (active local dev config): add `leaverSweepIntervalHours` at
-root level and `leaverNotificationRecipients` under the existing (currently
-commented) `[people.email]` block.
+(Exact table nesting to be finalized against the actual configurable record
+shapes written in the plan/implementation — see the implementation plan for
+the concrete Ballerina types.)
 
 ## Testing / verification plan
 
@@ -186,8 +197,8 @@ this feature does not introduce one, consistent with existing scope.
      allows this and requires all three resignation fields.
   2. Confirm `employee.employee_status` and the `resignation` row are
      populated correctly.
-  3. Trigger the sweep (temporarily lower `leaverSweepIntervalHours`, or run
-     locally) and confirm the employee flips to `Left`, with
+  3. Run `apps/people-app/leaver-sweep`'s `main()` locally (`bal run`) against
+     the same local DB, and confirm the employee flips to `Left`, with
      `updated_by = 'system-scheduler'` and an audit trigger entry.
   4. Confirm the summary email call is reached/logged.
   5. Negative: an employee with a future final day is not transitioned.
