@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`people-app` is an HR/People Operations application with three distinct sub-projects:
+`people-app` is an HR/People Operations application with four distinct sub-projects:
 
 - **`backend/`** — Ballerina HTTP service (port 9090) for employee data management
 - **`webapp/`** — Legacy React SPA (Create React App + react-app-rewired) — the primary admin UI
 - **`microapp/`** — Modern embeddable React widget (Vite + React 19) for employee self-service features
+- **`leaver-sweep/`** — Standalone Ballerina package deployed as a WSO2 Choreo Scheduled Task; queries the database directly for employees whose "Marked leaver" final day of employment has arrived, transitions them to "Left", and emails a summary. No HTTP listener, no in-repo scheduling — Choreo's cron config controls run frequency. Run locally with `cd leaver-sweep && bal build` / `bal run`.
 
 ---
 

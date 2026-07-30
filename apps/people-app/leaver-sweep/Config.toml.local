@@ -4,6 +4,14 @@
     password = ""
     database = ""
     port =
+    [leaver_sweep.database.dbConfig.connectionPool]
+    maxOpenConnections =
+    maxConnectionLifeTime =
+    minIdleConnections =
+    [leaver_sweep.database.dbConfig.options]
+    connectTimeout =
+    [leaver_sweep.database.dbConfig.options.ssl]
+    mode = "PREFERRED"
 
 [leaver_sweep.email]
     appName = ""
