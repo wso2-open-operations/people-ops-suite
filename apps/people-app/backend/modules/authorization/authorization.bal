@@ -52,11 +52,39 @@ public isolated service class JwtInterceptor {
             return <http:InternalServerError>{body: {message: errorMsg}};
         }
 
-        foreach anydata role in authorizedRoles.toArray() {
-            if userInfo.groups.some(r => r === role) {
+        // Internal roles are allowed on any resource (further scoped by per-resource checks in service.bal).
+        string[] internalRoles = [authorizedRoles.EMPLOYEE_ROLE, authorizedRoles.ADMIN_ROLE,
+            authorizedRoles.SERVICE_DESK_ROLE];
+        boolean hasInternalRole = false;
+        foreach string userGroup in userInfo.groups {
+            if internalRoles.indexOf(userGroup) !is () {
+                hasInternalRole = true;
+                break;
+            }
+        }
+        if hasInternalRole {
+            ctx.set(HEADER_USER_INFO, userInfo);
+            return ctx.next();
+        }
+
+        // External users are only allowed to access the vehicles resource of their own record.
+        boolean hasExternalRole = false;
+        foreach string userGroup in userInfo.groups {
+            if authorizedRoles.EXTERNAL_USER_ROLES.indexOf(userGroup) !is () {
+                hasExternalRole = true;
+                break;
+            }
+        }
+        if hasExternalRole {
+            if path.length() == 3 && path[0] == "employees" && path[2] == "vehicles"
+                    && (req.method == http:HTTP_GET || req.method == http:HTTP_POST) {
                 ctx.set(HEADER_USER_INFO, userInfo);
                 return ctx.next();
             }
+
+            log:printWarn(string `${userInfo.email} (external user) attempted to access a restricted resource: `
+                    + string `${req.method} ${path.toBalString()}`);
+            return <http:Forbidden>{body: {message: "Insufficient privileges!"}};
         }
 
         log:printError(
