@@ -96,7 +96,6 @@ const SECTION_HEADER_BOX_SX = {
 
 export const createJobInfoValidationSchema = (
   employmentTypes?: { id: number; name: string }[],
-  originalEmployeeStatus?: string,
 ) =>
   Yup.object().shape({
     workEmail: Yup.string()
@@ -156,8 +155,7 @@ export const createJobInfoValidationSchema = (
       .nullable()
       .when("employeeStatus", {
         is: (status: string) =>
-          (status === EmployeeStatus.MarkedLeaver || status === EmployeeStatus.Left) &&
-          status !== originalEmployeeStatus,
+          status === EmployeeStatus.MarkedLeaver || status === EmployeeStatus.Left,
         then: (schema) =>
           schema.required("Required when status is Marked leaver or Left"),
       }),
@@ -167,8 +165,7 @@ export const createJobInfoValidationSchema = (
       .nullable()
       .when("employeeStatus", {
         is: (status: string) =>
-          (status === EmployeeStatus.MarkedLeaver || status === EmployeeStatus.Left) &&
-          status !== originalEmployeeStatus,
+          status === EmployeeStatus.MarkedLeaver || status === EmployeeStatus.Left,
         then: (schema) =>
           schema.required("Required when status is Marked leaver or Left"),
       }),
@@ -178,8 +175,7 @@ export const createJobInfoValidationSchema = (
       .nullable()
       .when("employeeStatus", {
         is: (status: string) =>
-          (status === EmployeeStatus.MarkedLeaver || status === EmployeeStatus.Left) &&
-          status !== originalEmployeeStatus,
+          status === EmployeeStatus.MarkedLeaver || status === EmployeeStatus.Left,
         then: (schema) =>
           schema.required("Required when status is Marked leaver or Left"),
       }),

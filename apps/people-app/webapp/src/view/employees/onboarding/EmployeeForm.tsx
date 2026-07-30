@@ -670,10 +670,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
             activeStep === 0
               ? personalInfoValidationSchema
               : activeStep === 1
-                ? createJobInfoValidationSchema(
-                    employmentTypes,
-                    initialValues.employeeStatus ?? undefined,
-                  )
+                ? createJobInfoValidationSchema(employmentTypes)
                 : undefined
           }
           onSubmit={async (values, actions) => {

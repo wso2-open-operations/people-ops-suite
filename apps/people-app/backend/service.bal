@@ -1533,12 +1533,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        boolean enteringLeaverState = payload.employeeStatus is database:EmployeeStatus
-                && payload.employeeStatus != employeeInfo.employeeStatus
-                && (payload.employeeStatus == database:EMPLOYEE_MARKED_LEAVER
-                        || payload.employeeStatus == database:EMPLOYEE_LEFT);
-
-        if enteringLeaverState {
+        string resultingStatus = payload.employeeStatus ?: employeeInfo.employeeStatus;
+        if resultingStatus == database:EMPLOYEE_MARKED_LEAVER || resultingStatus == database:EMPLOYEE_LEFT {
             string? resultingFinalDayInOffice = payload.finalDayInOffice ?: employeeInfo.finalDayInOffice;
             string? resultingFinalDayOfEmployment = payload.finalDayOfEmployment ?: employeeInfo.finalDayOfEmployment;
             string? resultingResignationReason = payload.resignationReason ?: employeeInfo.resignationReason;
