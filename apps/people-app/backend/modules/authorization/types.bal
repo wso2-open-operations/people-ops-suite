@@ -31,5 +31,5 @@ public type AppRoles record {|
     # Role for the service desk
     string SERVICE_DESK_ROLE;
     # Roles for the external users(for vehicle saving purpose)
-    string[] EXTERNAL_USER_ROLES;
+    string[] EXTERNAL_USER_ROLES = [];
 |};
