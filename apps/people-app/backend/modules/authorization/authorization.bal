@@ -60,7 +60,7 @@ public isolated service class JwtInterceptor {
                     allAuthorizedRoles.push(r);
                 }
             } else {
-                allAuthorizedRoles.push(<string>role);
+                allAuthorizedRoles.push(role);
             }
         }
 
