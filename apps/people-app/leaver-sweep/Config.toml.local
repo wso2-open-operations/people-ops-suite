@@ -1,0 +1,19 @@
+[leaver_sweep.database.dbConfig]
+    host = ""
+    user = ""
+    password = ""
+    database = ""
+    port =
+
+[leaver_sweep.email]
+    appName = ""
+    leaverNotificationRecipients = [""]
+
+[leaver_sweep.email.emailServiceConfig]
+    emailServiceEndpoint = ""
+    from = ""
+
+[leaver_sweep.email.emailServiceConfig.oauthConfig]
+    tokenUrl = ""
+    clientId = ""
+    clientSecret = ""
