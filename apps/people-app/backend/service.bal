@@ -1533,15 +1533,21 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        if database:hasLeaverFields(payload) && payload.employeeStatus != database:EMPLOYEE_LEFT
-                && employeeInfo.employeeStatus != database:EMPLOYEE_LEFT {
-            log:printWarn("Attempt to set resignation fields on a non-Left employee",
-                    employeeId = employeeId);
-            return <http:BadRequest>{
-                body: {
-                    message: "Resignation details can only be set when employee status is 'Left'"
-                }
-            };
+        string resultingStatus = payload.employeeStatus ?: employeeInfo.employeeStatus;
+        if resultingStatus == database:EMPLOYEE_MARKED_LEAVER || resultingStatus == database:EMPLOYEE_LEFT {
+            string? resultingFinalDayInOffice = payload.finalDayInOffice ?: employeeInfo.finalDayInOffice;
+            string? resultingFinalDayOfEmployment = payload.finalDayOfEmployment ?: employeeInfo.finalDayOfEmployment;
+            string? resultingResignationReason = payload.resignationReason ?: employeeInfo.resignationReason;
+
+            if resultingFinalDayInOffice is () || resultingFinalDayOfEmployment is () || resultingResignationReason is () {
+                log:printWarn("Attempt to set status to Marked leaver/Left without all resignation details",
+                        employeeId = employeeId);
+                return <http:BadRequest>{
+                    body: {
+                        message: "Final day in office, final day of employment, and resignation reason are all required when status is 'Marked leaver' or 'Left'"
+                    }
+                };
+            }
         }
 
         error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);
