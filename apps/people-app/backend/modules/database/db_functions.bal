@@ -795,6 +795,28 @@ isolated function syncResignationRecord(string employeeId, UpdateEmployeeJobInfo
     }
 }
 
+# Auto-transition employees whose Marked-leaver final day of employment has arrived (today or earlier) to Left.
+#
+# + actor - System actor performing the update (e.g. the scheduled sweep job)
+# + return - The employees that were transitioned (empty if none were due), or an error
+public isolated function transitionExpiredLeavers(string actor) returns LeaverTransition[]|error {
+    stream<LeaverTransition, error?> expiredLeaversStream = databaseClient->query(getExpiredLeaversQuery());
+    LeaverTransition[] transitions = check from LeaverTransition transition in expiredLeaversStream
+        select transition;
+
+    if transitions.length() == 0 {
+        return transitions;
+    }
+
+    transaction {
+        sql:ExecutionResult executionResult = check databaseClient->execute(transitionExpiredLeaversQuery(actor));
+        check checkAffectedCount(executionResult.affectedRowCount);
+        check commit;
+    }
+
+    return transitions;
+}
+
 # Fetch vehicles.
 #
 # + owner - Filter : owner of the vehicles  
