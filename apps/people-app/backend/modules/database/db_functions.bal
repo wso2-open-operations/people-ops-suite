@@ -791,6 +791,8 @@ isolated function syncResignationRecord(string employeeId, UpdateEmployeeJobInfo
 
     if hasLeaverFields(payload) {
         _ = check databaseClient->execute(upsertResignationQuery(employeeId, payload, updatedBy));
+    }
+    if payload.employeeStatus == EMPLOYEE_LEFT {
         check inactivateEmployeeRelationshipsOnOffboarding(employeeId, updatedBy);
     }
 }

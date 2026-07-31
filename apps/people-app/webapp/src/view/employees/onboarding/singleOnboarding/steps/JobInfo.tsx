@@ -593,6 +593,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     );
   }, [internshipTypeId, values.employmentTypeId]);
 
+  const isLeaverStatus =
+    values.employeeStatus === EmployeeStatus.Left ||
+    values.employeeStatus === EmployeeStatus.MarkedLeaver;
+
   const isFixedTerm = useMemo(() => {
     const selectedType = employmentTypes.find(
       (et) => et.id === values.employmentTypeId,
@@ -1432,7 +1436,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 onChange={(e) => {
                   const newStatus = e.target.value;
                   setFieldValue("employeeStatus", newStatus);
-                  if (newStatus !== EmployeeStatus.Left) {
+                  if (
+                    newStatus !== EmployeeStatus.Left &&
+                    newStatus !== EmployeeStatus.MarkedLeaver
+                  ) {
                     setFieldValue("finalDayInOffice", null);
                     setFieldValue("finalDayOfEmployment", null);
                     setFieldValue("resignationReason", null);
@@ -1766,7 +1773,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             <Grid item xs={12} sm={6} md={4}>
               <DatePicker
                 label="Final Day in Office"
-                disabled={values.employeeStatus !== EmployeeStatus.Left}
+                disabled={!isLeaverStatus}
                 value={
                   values.finalDayInOffice
                     ? dayjs(values.finalDayInOffice)
@@ -1791,7 +1798,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             <Grid item xs={12} sm={6} md={4}>
               <DatePicker
                 label="Final Day of Employment"
-                disabled={values.employeeStatus !== EmployeeStatus.Left}
+                disabled={!isLeaverStatus}
                 value={
                   values.finalDayOfEmployment
                     ? dayjs(values.finalDayOfEmployment)
@@ -1818,7 +1825,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 fullWidth
                 label="Reason for Leaving"
                 name="resignationReason"
-                disabled={values.employeeStatus !== EmployeeStatus.Left}
+                disabled={!isLeaverStatus}
                 value={values.resignationReason ?? ""}
                 onChange={(e) =>
                   setFieldValue(
