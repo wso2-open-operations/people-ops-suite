@@ -738,7 +738,11 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
         sql:ExecutionResult executionResult =
             check databaseClient->execute(updateEmployeeJobInfoQuery(employeeId, payload, updatedBy));
 
-        check checkAffectedCount(executionResult.affectedRowCount);
+        // A resignation-only payload updates just `updated_by` on the employee row; the real change
+        // lands in the resignation table below, so a zero affected count is not an error for it.
+        if !hasLeaverFields(payload) {
+            check checkAffectedCount(executionResult.affectedRowCount);
+        }
 
         Email[]? additionalManagerEmails = payload.additionalManagerEmails;
         if additionalManagerEmails is Email[] {
