@@ -1533,13 +1533,17 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        if database:hasLeaverFields(payload) && payload.employeeStatus != database:EMPLOYEE_LEFT
-                && employeeInfo.employeeStatus != database:EMPLOYEE_LEFT {
-            log:printWarn("Attempt to set resignation fields on a non-Left employee",
+        boolean isLeaverStatus = payload.employeeStatus is ()
+            ? employeeInfo.employeeStatus == database:EMPLOYEE_LEFT
+                || employeeInfo.employeeStatus == database:EMPLOYEE_MARKED_LEAVER
+            : payload.employeeStatus == database:EMPLOYEE_LEFT
+                || payload.employeeStatus == database:EMPLOYEE_MARKED_LEAVER;
+        if database:hasLeaverFields(payload) && !isLeaverStatus {
+            log:printWarn("Attempt to set resignation fields on an employee who is not a leaver",
                     employeeId = employeeId);
             return <http:BadRequest>{
                 body: {
-                    message: "Resignation details can only be set when employee status is 'Left'"
+                    message: "Resignation details can only be set when employee status is 'Left' or 'Marked leaver'"
                 }
             };
         }
