@@ -115,19 +115,6 @@ public isolated function getContinuousServiceRecordsByEmail(string workEmail)
         select serviceRecord;
 }
 
-# Search employee personal information.
-#
-# + payload - Search employee personal information payload
-# + return - Employee personal information search results
-public isolated function searchEmployeePersonalInfo(SearchEmployeePersonalInfoPayload payload)
-    returns EmployeePersonalInfo[]|error {
-
-    stream<EmployeePersonalInfo, error?> employeePersonalInfoStream = databaseClient->query(
-            searchEmployeePersonalInfoQuery(payload));
-    return from EmployeePersonalInfo employeePersonalInfo in employeePersonalInfoStream
-        select employeePersonalInfo;
-}
-
 # Fetch employee personal information.
 #
 # + employeeId - Employee ID

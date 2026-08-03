@@ -522,40 +522,6 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         AND et.is_active = 1
         AND et.name IN ('Permanent');`;
 
-# Search employee personal information.
-#
-# + payload - Search employee personal information payload
-# + return - Query to search employee personal information
-isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayload payload)
-    returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery mainQuery = `
-        SELECT 
-            nic_or_passport,
-            p.first_name AS firstName,
-            p.last_name AS lastName,
-            full_name,
-            title,
-            dob,
-            gender,
-            personal_email,
-            personal_phone,
-            resident_number,
-            address_line_1,
-            address_line_2,
-            city,
-            state_or_province,
-            postal_code,
-            country,
-            nationality
-        FROM personal_info p`;
-
-    string? nicOrPassport = payload?.nicOrPassport;
-    if nicOrPassport is string {
-        mainQuery = sql:queryConcat(mainQuery, ` WHERE p.nic_or_passport = ${nicOrPassport}`);
-    }
-    return sql:queryConcat(mainQuery, `;`);
-}
-
 # Fetch employee personal information.
 #
 # + employeeId - Employee ID
