@@ -362,9 +362,11 @@ const InfoPopoverAdornment = React.memo(
 );
 
 export const AUTO_ID_EMPLOYMENT_TYPES =
-  /^(permanent|internship|consultancy|advisory consultancy|part time consultancy)$/i;
+  /^(permanent|internship|consultancy|advisory consultancy|part time consultancy|probation)$/i;
 
 export const FIXED_TERM_EMPLOYMENT_TYPE = /^fixed\s+term\s+contract$/i;
+
+export const PROBATION_EMPLOYMENT_TYPE = /^probation$/i;
 
 export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   const theme = useTheme();
@@ -605,6 +607,14 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     return FIXED_TERM_EMPLOYMENT_TYPE.test(selectedType.name.trim());
   }, [employmentTypes, values.employmentTypeId]);
 
+  const isProbationType = useMemo(() => {
+    const selectedType = employmentTypes.find(
+      (et) => et.id === values.employmentTypeId,
+    );
+    if (!selectedType) return false;
+    return PROBATION_EMPLOYMENT_TYPE.test(selectedType.name.trim());
+  }, [employmentTypes, values.employmentTypeId]);
+
   const showAgreementEndDate = useMemo(() => {
     const normalized = employmentTypes
       .find((e) => e.id === values.employmentTypeId)
@@ -642,7 +652,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   }, [values.companyId, values.workLocation, companies]);
 
   useEffect(() => {
-    if (!isPermanent) {
+    // Permanent and Probation both derive their probation end date from the
+    // work location's configured probation period.
+    if (!isPermanent && !isProbationType) {
       setFieldValue("probationEndDate", null);
       return;
     }
@@ -670,11 +682,15 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       .add(probationMonths, "month")
       .format("YYYY-MM-DD");
     setFieldValue("probationEndDate", computed);
+    // values.probationEndDate is read above (edit-mode guard) but deliberately
+    // excluded here — including it re-fires this effect on every manual edit
+    // (including from the picker below) and immediately overwrites it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isPermanent,
+    isProbationType,
     isEditMode,
     values.startDate,
-    values.probationEndDate,
     matchedProbationLocation,
     setFieldValue,
   ]);
@@ -1514,7 +1530,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               }}
             />
           </Grid>
-          {isPermanent ? (
+          {isPermanent || isProbationType ? (
             <Grid item xs={12} sm={6} md={3}>
               <DatePicker
                 label="Probation End Date"
