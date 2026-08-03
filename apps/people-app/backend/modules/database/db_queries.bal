@@ -1299,8 +1299,8 @@ isolated function getHousesWithActiveEmployeeCountsQuery() returns sql:Parameter
 
 # Add employee personal information query. Upserts on the nic_or_passport UNIQUE key so
 # rehiring someone (same NIC/Passport) refreshes their existing personal_info row instead of
-# failing — `id = LAST_INSERT_ID(id)` makes the update branch still hand back that row's own id,
-# so the caller's `result.lastInsertId` is the existing id, not 0.
+# failing — `id = LAST_INSERT_ID(id)` makes the update branch still resolve to that row's own
+# id when the caller queries `SELECT LAST_INSERT_ID()` afterward (see addPersonalInfo).
 #
 # + payload - Create personal info payload
 # + createdBy - Creator/updater of the personal info record

@@ -520,11 +520,16 @@ isolated function generateBulkEmployeeId(CreateEmployeePayload payload,
                 return error(string `Company (ID: ${payload.companyId}) has no employee ID prefix configured`);
             }
             // PERMANENT and PROBATION share one number line; INTERNSHIP runs a separate one.
-            // Scope both the MAX query and the in-batch cache key to the matching group.
+            // Scope both the MAX query and the in-batch cache key to the matching group — using
+            // employmentType.toString() directly here would give PERMANENT and PROBATION rows
+            // separate cache entries and let interleaved batch rows collide on the same ID.
             EmploymentTypeName[] sequenceTypes = context.employmentType == INTERNSHIP
                 ? [INTERNSHIP]
                 : [PERMANENT, PROBATION];
-            string seqKey = companyPrefix + ":" + context.employmentType.toString();
+            string sequenceGroup = context.employmentType == INTERNSHIP
+                ? INTERNSHIP.toString()
+                : "PERMANENT_PROBATION";
+            string seqKey = companyPrefix + ":" + sequenceGroup;
             if !sequenceCache.hasKey(seqKey) {
                 EmployeeIdSequence seq = check getLastEmployeeNumericSuffix(
                         companyPrefix, sequenceTypes);

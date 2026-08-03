@@ -41,8 +41,8 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
         };
     }
 
-    // Reject inactive employment types. The frontend already hides them, but a direct API call
-    // could still send one; without this it would fall through to the unsupported 500 path.
+    // Reject inactive employment types before ID generation. The frontend already hides them,
+    // but a direct API call could still submit an inactive (yet otherwise supported) type.
     if !ctx.isActive {
         string customErr = string `Employment type (ID: ${payload.employmentTypeId}) is inactive ` +
             "and cannot be used for onboarding.";
