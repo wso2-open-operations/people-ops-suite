@@ -43,6 +43,25 @@ public isolated function getEmployeeIdByEpf(string epf) returns string|error? {
     return result is sql:NoRowsError ? () : result;
 }
 
+# Get the personal_info ID for a given NIC/Passport.
+#
+# + nicOrPassport - National Identity Card number or Passport
+# + return - personal_info ID, nil if no matching record, or error
+public isolated function getPersonalInfoIdByNic(string nicOrPassport) returns int?|error {
+    int|error result = databaseClient->queryRow(getPersonalInfoIdByNicQuery(nicOrPassport));
+    return result is sql:NoRowsError ? () : result;
+}
+
+# Check whether a personal_info ID already has an employee record under the given work email.
+#
+# + personalInfoId - personal_info ID matched by NIC/Passport
+# + workEmail - Work email from the new onboarding submission
+# + return - true if a matching employee record exists, or error
+public isolated function hasEmployeeWithWorkEmail(int personalInfoId, string workEmail) returns boolean|error {
+    int count = check databaseClient->queryRow(countEmployeeByPersonalInfoIdAndWorkEmailQuery(personalInfoId, workEmail));
+    return count > 0;
+}
+
 # Fetch employee detailed information.
 #
 # + employeeId - Employee ID

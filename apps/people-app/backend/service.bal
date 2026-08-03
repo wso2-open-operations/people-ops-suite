@@ -1208,25 +1208,39 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:EmployeePersonalInfo[]|error employeePersonalInfoList = database:searchEmployeePersonalInfo(
-                {nicOrPassport: payload.personalInfo.nicOrPassport});
-        if employeePersonalInfoList is error {
+        int?|error existingPersonalInfoId = database:getPersonalInfoIdByNic(payload.personalInfo.nicOrPassport);
+        if existingPersonalInfoId is error {
             string customErr = "Error occurred while checking existing employee personal information";
-            log:printError(customErr, employeePersonalInfoList, nicOrPassport = payload.personalInfo.nicOrPassport);
+            log:printError(customErr, existingPersonalInfoId, nicOrPassport = payload.personalInfo.nicOrPassport);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_EMPLOYEE_CREATION_FAILED
                 }
             };
         }
-        if employeePersonalInfoList.length() > 0 {
-            string customErr = "Employee with the given NIC/Passport already exists";
-            log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
+        if existingPersonalInfoId is int {
+            boolean|error isSameEmployee = database:hasEmployeeWithWorkEmail(existingPersonalInfoId, payload.workEmail);
+            if isSameEmployee is error {
+                string customErr = "Error occurred while verifying rehire eligibility";
+                log:printError(customErr, isSameEmployee, nicOrPassport = payload.personalInfo.nicOrPassport);
+                return <http:InternalServerError>{
+                    body: {
+                        message: ERROR_EMPLOYEE_CREATION_FAILED
+                    }
+                };
+            }
+            if !isSameEmployee {
+                string customErr = "Employee with the given NIC/Passport already exists";
+                log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+            // NIC/Passport matches a prior employee record under the same work email — this is
+            // a rehire. Fall through and let addEmployee's upsert refresh their personal_info
+            // row and link the new employee record to that same personal_info ID.
         }
 
         string? epfOpt = payload.epf;
