@@ -674,12 +674,6 @@ public type EpfRow record {|
     string epf;
 |};
 
-# Search employee personal information payload.
-public type SearchEmployeePersonalInfoPayload record {|
-    # National Identity Card number or Passport
-    string nicOrPassport?;
-|};
-
 # Emergency contact information.
 public type EmergencyContact record {|
     # Name of the emergency contact

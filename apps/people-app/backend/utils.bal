@@ -41,9 +41,8 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
         };
     }
 
-    // Reject inactive employment types (e.g. PROBATION). The frontend already hides them, but a
-    // direct API call could still send one; without this it would fall through to the unsupported
-    // 500 path. PROBATION stays non-onboardable here yet is still counted in the PERMANENT line below.
+    // Reject inactive employment types before ID generation. The frontend already hides them,
+    // but a direct API call could still submit an inactive (yet otherwise supported) type.
     if !ctx.isActive {
         string customErr = string `Employment type (ID: ${payload.employmentTypeId}) is inactive ` +
             "and cannot be used for onboarding.";
@@ -60,7 +59,7 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
     string companyPrefix = ctx.companyPrefix.trim();
 
     match ctx.employmentType {
-        database:PERMANENT|database:INTERNSHIP => {
+        database:PERMANENT|database:INTERNSHIP|database:PROBATION => {
             if companyPrefix.length() == 0 {
                 string customErr = string `The selected company (ID: ${payload.companyId}) has no employee ` +
                     "ID prefix configured. Set the company prefix before onboarding.";
@@ -72,12 +71,10 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
                 };
             }
             // PERMANENT and PROBATION share one number line (an employee keeps the same ID across
-            // probation -> permanent); INTERNSHIP runs a separate line. PROBATION is intentionally
-            // counted here but not onboardable (rejected by the is_active check above) -- do not add
-            // a PROBATION match arm or re-key this ternary off it.
-            database:EmploymentTypeName[] sequenceTypes = ctx.employmentType == database:PERMANENT
-                ? [database:PERMANENT, database:PROBATION]
-                : [database:INTERNSHIP];
+            // probation -> permanent); INTERNSHIP runs a separate line.
+            database:EmploymentTypeName[] sequenceTypes = ctx.employmentType == database:INTERNSHIP
+                ? [database:INTERNSHIP]
+                : [database:PERMANENT, database:PROBATION];
             database:EmployeeIdSequence|error row = database:getLastEmployeeNumericSuffix(
                     companyPrefix, sequenceTypes
             );
@@ -238,7 +235,7 @@ isolated function loadBulkReferenceData() returns BulkRefData|error {
         designationIds: map from database:Designation d_row in designations
             select [normalizeKey(d_row.designation), d_row.id],
         // Only active types are valid for onboarding; mirrors the frontend filter so a CSV row
-        // naming an inactive type (e.g. PROBATION) is rejected during validation.
+        // naming an inactive employment type is rejected during validation.
         employmentTypeIds: map from database:EmploymentType et_row in employmentTypes
             where et_row.isActive
             select [normalizeKey(et_row.name), et_row.id],

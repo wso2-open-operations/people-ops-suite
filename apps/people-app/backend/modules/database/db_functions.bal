@@ -43,6 +43,34 @@ public isolated function getEmployeeIdByEpf(string epf) returns string|error? {
     return result is sql:NoRowsError ? () : result;
 }
 
+# Get the personal_info ID for a given NIC/Passport.
+#
+# + nicOrPassport - National Identity Card number or Passport
+# + return - personal_info ID, nil if no matching record, or error
+public isolated function getPersonalInfoIdByNic(string nicOrPassport) returns int?|error {
+    int|error result = databaseClient->queryRow(getPersonalInfoIdByNicQuery(nicOrPassport));
+    return result is sql:NoRowsError ? () : result;
+}
+
+# Check whether a personal_info ID already has an employee record under the given work email.
+#
+# + personalInfoId - personal_info ID matched by NIC/Passport
+# + workEmail - Work email from the new onboarding submission
+# + return - true if a matching employee record exists, or error
+public isolated function hasEmployeeWithWorkEmail(int personalInfoId, string workEmail) returns boolean|error {
+    int count = check databaseClient->queryRow(countEmployeeByPersonalInfoIdAndWorkEmailQuery(personalInfoId, workEmail));
+    return count > 0;
+}
+
+# Check whether a personal_info ID has any currently active employment.
+#
+# + personalInfoId - personal_info ID matched by NIC/Passport
+# + return - true if an active employee record references this personal_info ID, or error
+public isolated function hasActiveEmploymentByPersonalInfoId(int personalInfoId) returns boolean|error {
+    int count = check databaseClient->queryRow(countActiveEmployeeByPersonalInfoIdQuery(personalInfoId));
+    return count > 0;
+}
+
 # Fetch employee detailed information.
 #
 # + employeeId - Employee ID
@@ -85,19 +113,6 @@ public isolated function getContinuousServiceRecordsByEmail(string workEmail)
     );
     return from ContinuousServiceRecordInfo serviceRecord in recordStream
         select serviceRecord;
-}
-
-# Search employee personal information.
-#
-# + payload - Search employee personal information payload
-# + return - Employee personal information search results
-public isolated function searchEmployeePersonalInfo(SearchEmployeePersonalInfoPayload payload)
-    returns EmployeePersonalInfo[]|error {
-
-    stream<EmployeePersonalInfo, error?> employeePersonalInfoStream = databaseClient->query(
-            searchEmployeePersonalInfoQuery(payload));
-    return from EmployeePersonalInfo employeePersonalInfo in employeePersonalInfoStream
-        select employeePersonalInfo;
 }
 
 # Fetch employee personal information.
@@ -497,7 +512,7 @@ isolated function generateBulkEmployeeId(CreateEmployeePayload payload,
     }
 
     match context.employmentType {
-        PERMANENT|INTERNSHIP => {
+        PERMANENT|INTERNSHIP|PROBATION => {
             // Normalize the prefix once so a value like " SG " can't pass the guard, leak spaces
             // into the ID, or fork a separate sequence from "SG".
             string companyPrefix = context.companyPrefix.trim();
@@ -505,12 +520,16 @@ isolated function generateBulkEmployeeId(CreateEmployeePayload payload,
                 return error(string `Company (ID: ${payload.companyId}) has no employee ID prefix configured`);
             }
             // PERMANENT and PROBATION share one number line; INTERNSHIP runs a separate one.
-            // Scope both the MAX query and the in-batch cache key to the matching group. PROBATION
-            // never reaches this path (inactive types are rejected during bulk validation).
-            EmploymentTypeName[] sequenceTypes = context.employmentType == PERMANENT
-                ? [PERMANENT, PROBATION]
-                : [INTERNSHIP];
-            string seqKey = companyPrefix + ":" + context.employmentType.toString();
+            // Scope both the MAX query and the in-batch cache key to the matching group — using
+            // employmentType.toString() directly here would give PERMANENT and PROBATION rows
+            // separate cache entries and let interleaved batch rows collide on the same ID.
+            EmploymentTypeName[] sequenceTypes = context.employmentType == INTERNSHIP
+                ? [INTERNSHIP]
+                : [PERMANENT, PROBATION];
+            string sequenceGroup = context.employmentType == INTERNSHIP
+                ? INTERNSHIP.toString()
+                : "PERMANENT_PROBATION";
+            string seqKey = companyPrefix + ":" + sequenceGroup;
             if !sequenceCache.hasKey(seqKey) {
                 EmployeeIdSequence seq = check getLastEmployeeNumericSuffix(
                         companyPrefix, sequenceTypes);
@@ -566,8 +585,12 @@ public isolated function getLastEmployeeNumericSuffix(string prefix, EmploymentT
 # + createdBy - Creator of the personal info record
 # + return - Created personal info ID or error
 isolated function addPersonalInfo(CreatePersonalInfoPayload personalInfo, string createdBy) returns int|error {
-    sql:ExecutionResult result = check databaseClient->execute(addEmployeePersonalInfoQuery(personalInfo, createdBy));
-    return check result.lastInsertId.ensureType(int);
+    _ = check databaseClient->execute(addEmployeePersonalInfoQuery(personalInfo, createdBy));
+    // Not result.lastInsertId: the personal_info_audit AFTER trigger's own auto-increment
+    // insert makes the JDBC driver's generated-keys result unreliable (returns nil) once that
+    // trigger fires. LAST_INSERT_ID() queried explicitly on this connection is unaffected.
+    record {|int id;|} row = check databaseClient->queryRow(`SELECT LAST_INSERT_ID() AS id`);
+    return row.id;
 }
 
 # Add employee record.

@@ -64,6 +64,33 @@ isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
 isolated function getEmployeeIdByEpfQuery(string epf) returns sql:ParameterizedQuery =>
     `SELECT employee_id FROM employee WHERE epf = ${epf} LIMIT 1;`;
 
+# Fetch the personal_info ID for a given NIC/Passport.
+#
+# + nicOrPassport - National Identity Card number or Passport
+# + return - Query returning the personal_info ID
+isolated function getPersonalInfoIdByNicQuery(string nicOrPassport) returns sql:ParameterizedQuery =>
+    `SELECT id FROM personal_info WHERE nic_or_passport = ${nicOrPassport} LIMIT 1;`;
+
+# Check whether a personal_info ID already has an employee record under the given work email —
+# used to confirm a duplicate NIC/Passport belongs to the same person coming back (rehire).
+#
+# + personalInfoId - personal_info ID matched by NIC/Passport
+# + workEmail - Work email from the new onboarding submission
+# + return - Query returning the count of matching employee records
+isolated function countEmployeeByPersonalInfoIdAndWorkEmailQuery(int personalInfoId, string workEmail)
+    returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) FROM employee
+     WHERE personal_info_id = ${personalInfoId}
+       AND LOWER(work_email) = LOWER(${workEmail});`;
+
+# Count active employee records linked to a personal_info ID — used to block onboarding a
+# rehire for someone who is still currently employed.
+#
+# + personalInfoId - personal_info ID matched by NIC/Passport
+# + return - Query returning the count of active employee records
+isolated function countActiveEmployeeByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) FROM employee WHERE personal_info_id = ${personalInfoId} AND employee_status = ${EMPLOYEE_ACTIVE};`;
+
 # Fetch employee work email by employee ID.
 #
 # + employeeId - Employee ID
@@ -494,40 +521,6 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         e.work_email = ${workEmail}
         AND et.is_active = 1
         AND et.name IN ('Permanent');`;
-
-# Search employee personal information.
-#
-# + payload - Search employee personal information payload
-# + return - Query to search employee personal information
-isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayload payload)
-    returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery mainQuery = `
-        SELECT 
-            nic_or_passport,
-            p.first_name AS firstName,
-            p.last_name AS lastName,
-            full_name,
-            title,
-            dob,
-            gender,
-            personal_email,
-            personal_phone,
-            resident_number,
-            address_line_1,
-            address_line_2,
-            city,
-            state_or_province,
-            postal_code,
-            country,
-            nationality
-        FROM personal_info p`;
-
-    string? nicOrPassport = payload?.nicOrPassport;
-    if nicOrPassport is string {
-        mainQuery = sql:queryConcat(mainQuery, ` WHERE p.nic_or_passport = ${nicOrPassport}`);
-    }
-    return sql:queryConcat(mainQuery, `;`);
-}
 
 # Fetch employee personal information.
 #
@@ -1304,11 +1297,14 @@ isolated function getHousesWithActiveEmployeeCountsQuery() returns sql:Parameter
      GROUP BY h.id, h.name
      ORDER BY active_count ASC`;
 
-# Add employee personal information query.
+# Add employee personal information query. Upserts on the nic_or_passport UNIQUE key so
+# rehiring someone (same NIC/Passport) refreshes their existing personal_info row instead of
+# failing — `id = LAST_INSERT_ID(id)` makes the update branch still resolve to that row's own
+# id when the caller queries `SELECT LAST_INSERT_ID()` afterward (see addPersonalInfo).
 #
 # + payload - Create personal info payload
-# + createdBy - Creator of the personal info record
-# + return - Personal info insert query
+# + createdBy - Creator/updater of the personal info record
+# + return - Personal info upsert query
 isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload, string createdBy)
     returns sql:ParameterizedQuery =>
     `INSERT INTO personal_info
@@ -1354,7 +1350,26 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${payload.nationality},
             ${createdBy},
             ${createdBy}
-        );`;
+        )
+    ON DUPLICATE KEY UPDATE
+        id = LAST_INSERT_ID(id),
+        first_name = VALUES(first_name),
+        last_name = VALUES(last_name),
+        full_name = VALUES(full_name),
+        title = VALUES(title),
+        dob = VALUES(dob),
+        gender = VALUES(gender),
+        personal_email = VALUES(personal_email),
+        personal_phone = VALUES(personal_phone),
+        resident_number = VALUES(resident_number),
+        address_line_1 = VALUES(address_line_1),
+        address_line_2 = VALUES(address_line_2),
+        city = VALUES(city),
+        state_or_province = VALUES(state_or_province),
+        postal_code = VALUES(postal_code),
+        country = VALUES(country),
+        nationality = VALUES(nationality),
+        updated_by = ${createdBy};`;
 
 # Fetch company prefix and employment type required for generating the next employee ID.
 #
