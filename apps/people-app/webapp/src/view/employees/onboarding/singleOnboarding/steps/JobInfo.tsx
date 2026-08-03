@@ -1234,11 +1234,14 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               }}
             >
               {designations.length ? (
-                sortAndFormatOptions(designations, (d) => d.designation).map((d) => (
-                  <MenuItem key={d.id} value={d.id}>
-                    {d.designation}
-                  </MenuItem>
-                ))
+                [...designations]
+                  .sort((a, b) => (a.jobBand ?? Infinity) - (b.jobBand ?? Infinity))
+                  .map((d) => (
+                    <MenuItem key={d.id} value={d.id}>
+                      {d.designation}
+                      {d.jobBand ? ` (JB ${d.jobBand})` : ""}
+                    </MenuItem>
+                  ))
               ) : (
                 <MenuItem disabled>
                   {!values.careerFunctionId || values.careerFunctionId === 0
