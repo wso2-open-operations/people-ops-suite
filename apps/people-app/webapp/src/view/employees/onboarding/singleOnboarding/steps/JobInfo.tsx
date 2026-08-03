@@ -974,7 +974,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               ) : (
                 <TextField
                   fullWidth
-                  label="Continuous Service Record"
+                  label="Employee ID (Previous)"
                   value={errorMessage ? "Error" : "No Record"}
                   disabled
                   error={!!errorMessage}
