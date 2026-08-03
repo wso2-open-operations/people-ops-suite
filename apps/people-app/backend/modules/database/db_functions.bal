@@ -584,8 +584,12 @@ public isolated function getLastEmployeeNumericSuffix(string prefix, EmploymentT
 # + createdBy - Creator of the personal info record
 # + return - Created personal info ID or error
 isolated function addPersonalInfo(CreatePersonalInfoPayload personalInfo, string createdBy) returns int|error {
-    sql:ExecutionResult result = check databaseClient->execute(addEmployeePersonalInfoQuery(personalInfo, createdBy));
-    return check result.lastInsertId.ensureType(int);
+    _ = check databaseClient->execute(addEmployeePersonalInfoQuery(personalInfo, createdBy));
+    // Not result.lastInsertId: the personal_info_audit AFTER trigger's own auto-increment
+    // insert makes the JDBC driver's generated-keys result unreliable (returns nil) once that
+    // trigger fires. LAST_INSERT_ID() queried explicitly on this connection is unaffected.
+    record {|int id;|} row = check databaseClient->queryRow(`SELECT LAST_INSERT_ID() AS id`);
+    return row.id;
 }
 
 # Add employee record.
