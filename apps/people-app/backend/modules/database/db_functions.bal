@@ -62,6 +62,15 @@ public isolated function hasEmployeeWithWorkEmail(int personalInfoId, string wor
     return count > 0;
 }
 
+# Check whether a personal_info ID has any currently active employment.
+#
+# + personalInfoId - personal_info ID matched by NIC/Passport
+# + return - true if an active employee record references this personal_info ID, or error
+public isolated function hasActiveEmploymentByPersonalInfoId(int personalInfoId) returns boolean|error {
+    int count = check databaseClient->queryRow(countActiveEmployeeByPersonalInfoIdQuery(personalInfoId));
+    return count > 0;
+}
+
 # Fetch employee detailed information.
 #
 # + employeeId - Employee ID

@@ -1219,6 +1219,26 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if existingPersonalInfoId is int {
+            boolean|error hasActiveEmployment = database:hasActiveEmploymentByPersonalInfoId(existingPersonalInfoId);
+            if hasActiveEmployment is error {
+                string customErr = "Error occurred while checking existing employee status";
+                log:printError(customErr, hasActiveEmployment, nicOrPassport = payload.personalInfo.nicOrPassport);
+                return <http:InternalServerError>{
+                    body: {
+                        message: ERROR_EMPLOYEE_CREATION_FAILED
+                    }
+                };
+            }
+            if hasActiveEmployment {
+                string customErr = "Employee with the given NIC/Passport already exists";
+                log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+
             boolean|error isSameEmployee = database:hasEmployeeWithWorkEmail(existingPersonalInfoId, payload.workEmail);
             if isSameEmployee is error {
                 string customErr = "Error occurred while verifying rehire eligibility";
@@ -1238,9 +1258,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            // NIC/Passport matches a prior employee record under the same work email — this is
-            // a rehire. Fall through and let addEmployee's upsert refresh their personal_info
-            // row and link the new employee record to that same personal_info ID.
+            // NIC/Passport belongs to a former employee (no active employment) under the same
+            // work email — this is a rehire. Fall through and let addEmployee's upsert refresh
+            // their personal_info row and link the new employee record to that same personal_info ID.
         }
 
         string? epfOpt = payload.epf;

@@ -83,6 +83,14 @@ isolated function countEmployeeByPersonalInfoIdAndWorkEmailQuery(int personalInf
      WHERE personal_info_id = ${personalInfoId}
        AND LOWER(work_email) = LOWER(${workEmail});`;
 
+# Count active employee records linked to a personal_info ID — used to block onboarding a
+# rehire for someone who is still currently employed.
+#
+# + personalInfoId - personal_info ID matched by NIC/Passport
+# + return - Query returning the count of active employee records
+isolated function countActiveEmployeeByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) FROM employee WHERE personal_info_id = ${personalInfoId} AND employee_status = ${EMPLOYEE_ACTIVE};`;
+
 # Fetch employee work email by employee ID.
 #
 # + employeeId - Employee ID
