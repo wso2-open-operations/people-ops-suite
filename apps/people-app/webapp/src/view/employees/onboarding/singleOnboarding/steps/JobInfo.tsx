@@ -652,6 +652,11 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   }, [values.companyId, values.workLocation, companies]);
 
   useEffect(() => {
+    // Wait for employment types to load — isPermanent/isProbationType both read
+    // false on an empty list, which would otherwise clear an edit-mode value
+    // (loaded from the employee record) before the preservation guard below runs.
+    if (employmentTypes.length === 0) return;
+
     // Permanent and Probation both derive their probation end date from the
     // work location's configured probation period.
     if (!isPermanent && !isProbationType) {
@@ -687,6 +692,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     // (including from the picker below) and immediately overwrites it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    employmentTypes.length,
     isPermanent,
     isProbationType,
     isEditMode,
@@ -1235,11 +1241,16 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             >
               {designations.length ? (
                 [...designations]
-                  .sort((a, b) => (a.jobBand ?? Infinity) - (b.jobBand ?? Infinity))
+                  .sort((a, b) => {
+                    if (a.jobBand == null && b.jobBand == null) return 0;
+                    if (a.jobBand == null) return 1;
+                    if (b.jobBand == null) return -1;
+                    return a.jobBand - b.jobBand;
+                  })
                   .map((d) => (
                     <MenuItem key={d.id} value={d.id}>
                       {d.designation}
-                      {d.jobBand ? ` (JB ${d.jobBand})` : ""}
+                      {d.jobBand != null ? ` (JB ${d.jobBand})` : ""}
                     </MenuItem>
                   ))
               ) : (
