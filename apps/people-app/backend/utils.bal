@@ -70,43 +70,35 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
                     }
                 };
             }
-            // PERMANENT and PROBATION share one number line (an employee keeps the same ID across
-            // probation -> permanent); INTERNSHIP runs a separate line.
-            database:EmploymentTypeName[] sequenceTypes = ctx.employmentType == database:INTERNSHIP
-                ? [database:INTERNSHIP]
-                : [database:PERMANENT, database:PROBATION];
-            database:EmployeeIdSequence|error row = database:getLastEmployeeNumericSuffix(
-                    companyPrefix, sequenceTypes
-            );
-            if row is error {
-                string customErr = "Error occurred while fetching last employee numeric suffix";
-                log:printError(customErr, row, employmentType = ctx.employmentType, companyPrefix = companyPrefix);
+            // PERMANENT and PROBATION share the "1" digit family (an employee keeps the same ID
+            // across probation -> permanent); INTERNSHIP uses "5". Scoping by this digit directly
+            // on the ID string (not by employment_type) means an employee tagged with any other
+            // or legacy type can never be invisible to this count.
+            int digit = ctx.employmentType == database:INTERNSHIP ? 5 : 1;
+            string|error nextId = database:getNextIdInFamily(companyPrefix, digit);
+            if nextId is error {
+                string customErr = "Error occurred while generating the next employee ID";
+                log:printError(customErr, nextId, employmentType = ctx.employmentType, companyPrefix = companyPrefix);
                 return <http:InternalServerError>{
                     body: {
                         message: customErr
                     }
                 };
             }
-            return string `${companyPrefix}${<int>row.lastNumericId + 1}`;
+            return nextId;
         }
         database:CONSULTANCY|database:ADVISORY_CONSULTANCY|database:PART_TIME_CONSULTANCY => {
-            database:EmployeeIdSequence|error row = database:getLastEmployeeNumericSuffix(
-                    database:CONSULTANCY_ID_PREFIX, [
-                        database:CONSULTANCY,
-                        database:ADVISORY_CONSULTANCY,
-                        database:PART_TIME_CONSULTANCY
-                    ]
-            );
-            if row is error {
-                string customErr = "Error occurred while fetching last employee numeric suffix";
-                log:printError(customErr, row, employmentType = ctx.employmentType);
+            string|error nextId = database:getNextIdInFamily(database:CONSULTANCY_ID_PREFIX, 0, zeroPadded = true);
+            if nextId is error {
+                string customErr = "Error occurred while generating the next employee ID";
+                log:printError(customErr, nextId, employmentType = ctx.employmentType);
                 return <http:InternalServerError>{
                     body: {
                         message: customErr
                     }
                 };
             }
-            return string `${database:CONSULTANCY_ID_PREFIX}${<int>row.lastNumericId + 1}`;
+            return nextId;
         }
         database:FIXED_TERM => {
             string manualId = (payload.employeeId ?: "").trim();
