@@ -579,6 +579,102 @@ public isolated function getLastEmployeeNumericSuffix(string prefix, EmploymentT
     return databaseClient->queryRow(getAndLockLastEmployeeNumericSuffixQuery(prefix, employmentTypes));
 }
 
+# Fetch the current numeric maximum for a digit-family sequence.
+#
+# + prefix - The ID prefix (company prefix or CONSULTANCY_ID_PREFIX)
+# + digit - The required leading digit for this family (0, 1, or 5)
+# + return - EmployeeIdSequence (lastNumericId is 0 if the family has no members yet) or error
+isolated function getFamilyMax(string prefix, int digit) returns EmployeeIdSequence|error {
+    return databaseClient->queryRow(getNextIdInFamilyQuery(prefix, digit.toString()));
+}
+
+# Compute 10 raised to the given exponent, for small non-negative exponents (ID-width arithmetic
+# only — not a general-purpose power function).
+#
+# + exponent - Non-negative exponent
+# + return - 10^exponent
+isolated function pow10(int exponent) returns int {
+    int result = 1;
+    foreach int i in 0 ..< exponent {
+        result *= 10;
+    }
+    return result;
+}
+
+# Zero-pad `n` to exactly `width` characters. If `n` already has `width` or more digits, it is
+# returned unpadded (the caller is responsible for rejecting values that don't fit; see the
+# zero-padded capacity check in `getNextIdInFamily` and `generateBulkEmployeeId`).
+#
+# + n - The number to pad
+# + width - Target string width
+# + return - `n` as a string, left-padded with zeros to `width` characters
+isolated function padZero(int n, int width) returns string {
+    string s = n.toString();
+    int padCount = width - s.length();
+    if padCount <= 0 {
+        return s;
+    }
+    string zerosStr = "";
+    foreach int i in 0 ..< padCount {
+        zerosStr += "0";
+    }
+    return zerosStr + s;
+}
+
+# Pure computation: given the current max numeric value observed for a digit-family, compute the
+# next number in that family. This is a plain increment, unless incrementing would flip the
+# leading digit, in which case it rolls over to the next order of magnitude that still starts
+# with the required digit (e.g. maxNum=199999, digit=1 -> next=1000000, not 200000). This mirrors
+# a rollover that already happened once in this system's real data, rather than inventing new
+# behavior.
+#
+# + maxNum - Current max numeric value in the family (0 if none exist yet)
+# + digit - The required leading digit for this family (0, 1, or 5)
+# + minWidth - Minimum digit width for a cold-start value (e.g. 6 means the family starts at
+#   100000 for digit 1)
+# + return - The next numeric value in this family
+isolated function nextNumberInFamily(int maxNum, int digit, int minWidth) returns int {
+    if maxNum == 0 {
+        return digit * pow10(minWidth - 1);
+    }
+    int candidate = maxNum + 1;
+    int candidateWidth = candidate.toString().length();
+    int candidateLeadingDigit = candidate / pow10(candidateWidth - 1);
+    if candidateLeadingDigit == digit {
+        return candidate;
+    }
+    return digit * pow10(candidateWidth);
+}
+
+# Generate the next employee ID within a digit-family sequence (single-onboarding path).
+#
+# + prefix - The ID prefix (company prefix or CONSULTANCY_ID_PREFIX)
+# + digit - The required leading digit for this family (0, 1, or 5)
+# + minWidth - Minimum digit width (default 6)
+# + zeroPadded - True for the digit-0 (Consultancy) family, which must be zero-padded to
+#   `minWidth` since a plain integer can never have a leading zero. Once that padded space is
+#   exhausted there is no valid next value, so this returns an error rather than overflowing.
+# + return - The next employee ID string, or an error on DB failure or exhausted zero-padded capacity
+public isolated function getNextIdInFamily(string prefix, int digit, int minWidth = 6, boolean zeroPadded = false)
+        returns string|error {
+
+    EmployeeIdSequence row = check getFamilyMax(prefix, digit);
+    int maxNum = <int>row.lastNumericId;
+
+    if zeroPadded {
+        int candidate = maxNum + 1;
+        string candidateStr = candidate.toString();
+        if candidateStr.length() > minWidth {
+            return error(string `Zero-padded ID family (digit '${digit}', prefix '${prefix}') is exhausted ` +
+                string `at width ${minWidth}; cannot generate the next ID.`);
+        }
+        return prefix + padZero(candidate, minWidth);
+    }
+
+    int nextNum = nextNumberInFamily(maxNum, digit, minWidth);
+    return prefix + nextNum.toString();
+}
+
 # Add employee personal information.
 #
 # + personalInfo - Personal information of the employee

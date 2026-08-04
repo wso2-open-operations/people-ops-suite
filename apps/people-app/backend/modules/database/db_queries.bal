@@ -1423,6 +1423,28 @@ isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, Employ
     );
 }
 
+# Fetch and lock the current numeric maximum within a digit-family sequence, scoped purely by the
+# ID string pattern (prefix + leading digit) rather than by employment type. This means an
+# employee tagged with any type — including inactive/legacy ones the caller never listed — can
+# never be invisible to this count, which is what a type-filtered scan allowed to happen.
+#
+# + prefix - The ID prefix (company prefix or CONSULTANCY_ID_PREFIX)
+# + digit - The required leading digit for this family, as a single character ("0", "1", or "5")
+# + return - Query returning the current numeric maximum for this family (0 if none exist yet)
+isolated function getNextIdInFamilyQuery(string prefix, string digit) returns sql:ParameterizedQuery =>
+    `SELECT
+        COALESCE(
+            MAX(CAST(SUBSTRING(employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
+            0
+        ) AS lastNumericId
+    FROM employee
+    WHERE
+        employee_id LIKE ${prefix + digit + "%"}
+        AND employee_id NOT LIKE ${prefix + "_%-%"}
+    ORDER BY CAST(SUBSTRING(employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
+    LIMIT 1
+    FOR UPDATE`;
+
 # Add employee query.
 #
 # + payload - Add employee payload
