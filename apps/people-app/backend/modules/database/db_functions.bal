@@ -565,16 +565,6 @@ public isolated function getEmployeeIdContext(int companyId, int employmentTypeI
     return databaseClient->queryRow(getEmployeeIdContextQuery(companyId, employmentTypeId));
 }
 
-# Fetch and lock the last numeric suffix for the given prefix and employment types.
-#
-# + prefix - The ID prefix to lock on (company prefix or consultancy prefix)
-# + employmentTypes - Employment type names that share this sequence
-# + return - EmployeeIdSequence or error
-public isolated function getLastEmployeeNumericSuffix(string prefix, EmploymentTypeName[] employmentTypes)
-        returns EmployeeIdSequence|error {
-
-    return databaseClient->queryRow(getAndLockLastEmployeeNumericSuffixQuery(prefix, employmentTypes));
-}
 
 # Fetch the current numeric maximum for a digit-family sequence.
 #

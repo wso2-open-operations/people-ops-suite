@@ -1386,42 +1386,6 @@ isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
     JOIN company c ON c.id = ${companyId}
     WHERE et.id = ${employmentTypeId}`;
 
-# Lock the employee sequence for the provided prefix and return the last numeric ID.
-#
-# + prefix - The ID prefix to lock on (company prefix or consultancy prefix)
-# + employmentTypes - The employment type names that share this sequence
-# + return - Query to lock the sequence and return the last numeric ID
-isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, EmploymentTypeName[] employmentTypes)
-    returns sql:ParameterizedQuery {
-
-    sql:ParameterizedQuery inClause = ``;
-    foreach int i in 0 ..< employmentTypes.length() {
-        if i == 0 {
-            inClause = sql:queryConcat(inClause, `${employmentTypes[i]}`);
-        } else {
-            inClause = sql:queryConcat(inClause, `, `, `${employmentTypes[i]}`);
-        }
-    }
-
-    return sql:queryConcat(
-            `SELECT
-            COALESCE(
-                MAX(CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
-                0
-            ) AS lastNumericId
-        FROM employee e
-        JOIN employment_type et ON et.id = e.employment_type_id
-        WHERE
-            e.employee_id LIKE ${prefix + "%"}
-            AND e.employee_id NOT LIKE ${prefix + "_%-%"}
-            AND UPPER(et.name) IN (`,
-            inClause,
-            `)
-        ORDER BY CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
-        LIMIT 1
-        FOR UPDATE`
-    );
-}
 
 # Fetch and lock the current numeric maximum within a digit-family sequence, scoped purely by the
 # ID string pattern (prefix + leading digit) rather than by employment type. This means an
