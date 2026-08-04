@@ -1392,6 +1392,15 @@ isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
 # employee tagged with any type — including inactive/legacy ones the caller never listed — can
 # never be invisible to this count, which is what a type-filtered scan allowed to happen.
 #
+# Note on `FOR UPDATE`: this row lock only has effect when the query runs inside a database
+# transaction. The bulk-onboarding caller (`generateBulkEmployeeId`) does hold it inside a real
+# transaction, so it gets actual mutual exclusion. The single-onboarding caller
+# (`getNextIdInFamily` -> `getFamilyMax`, invoked from `generateEmployeeId` in utils.bal) does
+# NOT wrap this in a transaction, so on that path the lock is released as soon as the query
+# returns and provides no real protection against a concurrent check-then-act race. That race is
+# a known, already-accepted limitation and intentionally out of scope here — this note exists so
+# `FOR UPDATE` isn't mistaken for an effective lock on the single-onboarding path.
+#
 # + prefix - The ID prefix (company prefix or CONSULTANCY_ID_PREFIX)
 # + digit - The required leading digit for this family, as a single character ("0", "1", or "5")
 # + return - Query returning the current numeric maximum for this family (0 if none exist yet)
@@ -1407,7 +1416,7 @@ isolated function getNextIdInFamilyQuery(string prefix, string digit) returns sq
         AND employee_id NOT LIKE ${prefix + "_%-%"}
     ORDER BY CAST(SUBSTRING(employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
     LIMIT 1
-    FOR UPDATE`;
+    FOR UPDATE`; // Lock has no effect here on the single-onboarding path — see doc comment above.
 
 # Add employee query.
 #

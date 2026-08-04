@@ -541,7 +541,7 @@ isolated function generateBulkEmployeeId(CreateEmployeePayload payload,
             }
             int next = (sequenceCache[seqKey] ?: 0) + 1;
             string nextStr = next.toString();
-            if nextStr.length() > 6 {
+            if nextStr.length() >= 6 {
                 return error("Zero-padded ID family (digit '0', prefix '" + CONSULTANCY_ID_PREFIX +
                     "') is exhausted at width 6; cannot generate the next ID.");
             }
@@ -615,16 +615,25 @@ isolated function padZero(int n, int width) returns string {
 # a rollover that already happened once in this system's real data, rather than inventing new
 # behavior.
 #
+# `minWidth` is a true floor, not just a cold-start default: if `maxNum` is 0 (no rows yet) or a
+# stray short value already exists in the family (e.g. a legacy ID left the max at 1 or 19), the
+# result is always clamped up to at least `digit * 10^(minWidth-1)` (e.g. 100000 for digit 1,
+# width 6) so every generated ID honors the family's minimum width convention.
+#
 # + maxNum - Current max numeric value in the family (0 if none exist yet)
 # + digit - The required leading digit for this family (0, 1, or 5)
-# + minWidth - Minimum digit width for a cold-start value (e.g. 6 means the family starts at
-#   100000 for digit 1)
+# + minWidth - Minimum digit width for the family (e.g. 6 means the family starts at 100000 for
+#   digit 1, and no generated value is ever narrower than this)
 # + return - The next numeric value in this family
 isolated function nextNumberInFamily(int maxNum, int digit, int minWidth) returns int {
+    int floor = digit * pow10(minWidth - 1);
     if maxNum == 0 {
-        return digit * pow10(minWidth - 1);
+        return floor;
     }
     int candidate = maxNum + 1;
+    if candidate < floor {
+        return floor;
+    }
     int candidateWidth = candidate.toString().length();
     int candidateLeadingDigit = candidate / pow10(candidateWidth - 1);
     if candidateLeadingDigit == digit {
@@ -651,7 +660,7 @@ public isolated function getNextIdInFamily(string prefix, int digit, int minWidt
     if zeroPadded {
         int candidate = maxNum + 1;
         string candidateStr = candidate.toString();
-        if candidateStr.length() > minWidth {
+        if candidateStr.length() >= minWidth {
             return error(string `Zero-padded ID family (digit '${digit}', prefix '${prefix}') is exhausted ` +
                 string `at width ${minWidth}; cannot generate the next ID.`);
         }
