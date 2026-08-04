@@ -519,37 +519,34 @@ isolated function generateBulkEmployeeId(CreateEmployeePayload payload,
             if companyPrefix.length() == 0 {
                 return error(string `Company (ID: ${payload.companyId}) has no employee ID prefix configured`);
             }
-            // PERMANENT and PROBATION share one number line; INTERNSHIP runs a separate one.
-            // Scope both the MAX query and the in-batch cache key to the matching group — using
-            // employmentType.toString() directly here would give PERMANENT and PROBATION rows
-            // separate cache entries and let interleaved batch rows collide on the same ID.
-            EmploymentTypeName[] sequenceTypes = context.employmentType == INTERNSHIP
-                ? [INTERNSHIP]
-                : [PERMANENT, PROBATION];
-            string sequenceGroup = context.employmentType == INTERNSHIP
-                ? INTERNSHIP.toString()
-                : "PERMANENT_PROBATION";
-            string seqKey = companyPrefix + ":" + sequenceGroup;
+            // PERMANENT and PROBATION share the "1" digit family; INTERNSHIP uses "5". Scoping by
+            // this digit directly on the ID string (not by employment_type) means an employee
+            // tagged with any other or legacy type can never be invisible to this count, and the
+            // in-batch cache key stays shared for interleaved Permanent/Probation batch rows.
+            int digit = context.employmentType == INTERNSHIP ? 5 : 1;
+            string seqKey = companyPrefix + ":" + digit.toString();
             if !sequenceCache.hasKey(seqKey) {
-                EmployeeIdSequence seq = check getLastEmployeeNumericSuffix(
-                        companyPrefix, sequenceTypes);
+                EmployeeIdSequence seq = check getFamilyMax(companyPrefix, digit);
                 sequenceCache[seqKey] = <int>seq.lastNumericId;
             }
-            int next = (sequenceCache[seqKey] ?: 0) + 1;
+            int next = nextNumberInFamily(sequenceCache[seqKey] ?: 0, digit, 6);
             sequenceCache[seqKey] = next;
-            return string `${companyPrefix}${next}`;
+            return companyPrefix + next.toString();
         }
         CONSULTANCY|ADVISORY_CONSULTANCY|PART_TIME_CONSULTANCY => {
-            string seqKey = CONSULTANCY_ID_PREFIX;
+            string seqKey = CONSULTANCY_ID_PREFIX + ":0";
             if !sequenceCache.hasKey(seqKey) {
-                EmployeeIdSequence seq = check getLastEmployeeNumericSuffix(
-                        CONSULTANCY_ID_PREFIX,
-                        [CONSULTANCY, ADVISORY_CONSULTANCY, PART_TIME_CONSULTANCY]);
+                EmployeeIdSequence seq = check getFamilyMax(CONSULTANCY_ID_PREFIX, 0);
                 sequenceCache[seqKey] = <int>seq.lastNumericId;
             }
             int next = (sequenceCache[seqKey] ?: 0) + 1;
+            string nextStr = next.toString();
+            if nextStr.length() > 6 {
+                return error("Zero-padded ID family (digit '0', prefix '" + CONSULTANCY_ID_PREFIX +
+                    "') is exhausted at width 6; cannot generate the next ID.");
+            }
             sequenceCache[seqKey] = next;
-            return string `${CONSULTANCY_ID_PREFIX}${next}`;
+            return CONSULTANCY_ID_PREFIX + padZero(next, 6);
         }
         _ => {
             return error("Unsupported employment type: " + context.employmentType.toString());
