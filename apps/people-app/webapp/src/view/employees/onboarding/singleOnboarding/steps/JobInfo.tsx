@@ -368,7 +368,7 @@ export const FIXED_TERM_EMPLOYMENT_TYPE = /^fixed\s+term\s+contract$/i;
 
 export const PROBATION_EMPLOYMENT_TYPE = /^probation$/i;
 
-export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
+export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const {
@@ -398,11 +398,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     offices,
     employmentTypes,
     houses,
-    suggestedHouseId,
   } = useAppSelector((state) => state.organization);
-  const suggestedHouseName = suggestedHouseId
-    ? houses.find((h) => h.id === suggestedHouseId)?.name
-    : undefined;
 
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
     null,
@@ -1747,49 +1743,45 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
         </Grid>
       </Box>
 
-      <Box>
-        <SectionHeader
-          icon={SECTION_ICONS.other}
-          title="Other"
-          headerBoxSx={SECTION_HEADER_BOX_SX}
-          iconBoxSx={iconBoxSx}
-        />
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              select
-              fullWidth
-              label="House"
-              name="houseId"
-              value={values.houseId || 0}
-              onChange={(e) => setFieldValue("houseId", Number(e.target.value))}
-              onBlur={handleBlur}
-              helperText={
-                suggestedHouseName
-                  ? `Fewest active employees: ${suggestedHouseName}`
-                  : suggestedHouseId
-                  ? "Loading suggested house..."
-                  : "Assign the house for this employee"
-              }
-              sx={textFieldSx}
-            >
-              {houses.length ? (
-                sortAndFormatOptions(houses, (h) => h.name).map((h) => (
-                  <MenuItem key={h.id} value={h.id}>
-                    {h.name}
+      {isEditMode ? (
+        <Box>
+          <SectionHeader
+            icon={SECTION_ICONS.other}
+            title="Other"
+            headerBoxSx={SECTION_HEADER_BOX_SX}
+            iconBoxSx={iconBoxSx}
+          />
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                select
+                fullWidth
+                label="House"
+                name="houseId"
+                value={values.houseId || 0}
+                onChange={(e) => setFieldValue("houseId", Number(e.target.value))}
+                onBlur={handleBlur}
+                helperText="Assign the house for this employee"
+                sx={textFieldSx}
+              >
+                {houses.length ? (
+                  sortAndFormatOptions(houses, (h) => h.name).map((h) => (
+                    <MenuItem key={h.id} value={h.id}>
+                      {h.name}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled>
+                    {organizationState === "loading"
+                      ? "Loading houses..."
+                      : "No houses found"}
                   </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>
-                  {organizationState === "loading"
-                    ? "Loading houses..."
-                    : "No houses found"}
-                </MenuItem>
-              )}
-            </TextField>
+                )}
+              </TextField>
+            </Grid>
           </Grid>
-        </Grid>
-      </Box>
+        </Box>
+      ) : null}
 
       {isEditMode ? (
         <Box>

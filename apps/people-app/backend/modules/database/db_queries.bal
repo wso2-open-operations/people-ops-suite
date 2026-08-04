@@ -1274,29 +1274,6 @@ isolated function getAsgardeoGroupsForTeamQuery(int teamId, int employmentTypeId
 isolated function getHousesQuery() returns sql:ParameterizedQuery =>
     `SELECT id, name FROM house WHERE is_active = 1 ORDER BY name`;
 
-# Get the house with the fewest active employees query.
-#
-# + return - Query to get the house with the least active employees
-isolated function getHouseWithLeastActiveEmployeesQuery() returns sql:ParameterizedQuery =>
-    `SELECT h.id, h.name
-     FROM house h
-     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
-     WHERE h.is_active = 1
-     GROUP BY h.id, h.name
-     ORDER BY COUNT(e.id) ASC
-     LIMIT 1`;
-
-# Get all active houses with their active employee counts query.
-#
-# + return - Query to get all active houses ordered by active employee count ascending
-isolated function getHousesWithActiveEmployeeCountsQuery() returns sql:ParameterizedQuery =>
-    `SELECT h.id, h.name, COUNT(e.id) AS active_count
-     FROM house h
-     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
-     WHERE h.is_active = 1
-     GROUP BY h.id, h.name
-     ORDER BY active_count ASC`;
-
 # Add employee personal information query. Upserts on the nic_or_passport UNIQUE key so
 # rehiring someone (same NIC/Passport) refreshes their existing personal_info row instead of
 # failing — `id = LAST_INSERT_ID(id)` makes the update branch still resolve to that row's own
@@ -1386,42 +1363,37 @@ isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
     JOIN company c ON c.id = ${companyId}
     WHERE et.id = ${employmentTypeId}`;
 
-# Lock the employee sequence for the provided prefix and return the last numeric ID.
+
+# Fetch and lock the current numeric maximum within a digit-family sequence, scoped purely by the
+# ID string pattern (prefix + leading digit) rather than by employment type. This means an
+# employee tagged with any type — including inactive/legacy ones the caller never listed — can
+# never be invisible to this count, which is what a type-filtered scan allowed to happen.
 #
-# + prefix - The ID prefix to lock on (company prefix or consultancy prefix)
-# + employmentTypes - The employment type names that share this sequence
-# + return - Query to lock the sequence and return the last numeric ID
-isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, EmploymentTypeName[] employmentTypes)
-    returns sql:ParameterizedQuery {
-
-    sql:ParameterizedQuery inClause = ``;
-    foreach int i in 0 ..< employmentTypes.length() {
-        if i == 0 {
-            inClause = sql:queryConcat(inClause, `${employmentTypes[i]}`);
-        } else {
-            inClause = sql:queryConcat(inClause, `, `, `${employmentTypes[i]}`);
-        }
-    }
-
-    return sql:queryConcat(
-            `SELECT
-            COALESCE(
-                MAX(CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
-                0
-            ) AS lastNumericId
-        FROM employee e
-        JOIN employment_type et ON et.id = e.employment_type_id
-        WHERE
-            e.employee_id LIKE ${prefix + "%"}
-            AND e.employee_id NOT LIKE ${prefix + "_%-%"}
-            AND UPPER(et.name) IN (`,
-            inClause,
-            `)
-        ORDER BY CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
-        LIMIT 1
-        FOR UPDATE`
-    );
-}
+# Note on `FOR UPDATE`: this row lock only has effect when the query runs inside a database
+# transaction. The bulk-onboarding caller (`generateBulkEmployeeId`) does hold it inside a real
+# transaction, so it gets actual mutual exclusion. The single-onboarding caller
+# (`getNextIdInFamily` -> `getFamilyMax`, invoked from `generateEmployeeId` in utils.bal) does
+# NOT wrap this in a transaction, so on that path the lock is released as soon as the query
+# returns and provides no real protection against a concurrent check-then-act race. That race is
+# a known, already-accepted limitation and intentionally out of scope here — this note exists so
+# `FOR UPDATE` isn't mistaken for an effective lock on the single-onboarding path.
+#
+# + prefix - The ID prefix (company prefix or CONSULTANCY_ID_PREFIX)
+# + digit - The required leading digit for this family, as a single character ("0", "1", or "5")
+# + return - Query returning the current numeric maximum for this family (0 if none exist yet)
+isolated function getNextIdInFamilyQuery(string prefix, string digit) returns sql:ParameterizedQuery =>
+    `SELECT
+        COALESCE(
+            MAX(CAST(SUBSTRING(employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
+            0
+        ) AS lastNumericId
+    FROM employee
+    WHERE
+        employee_id LIKE ${prefix + digit + "%"}
+        AND employee_id NOT LIKE ${prefix + "_%-%"}
+    ORDER BY CAST(SUBSTRING(employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
+    LIMIT 1
+    FOR UPDATE`; // Lock has no effect here on the single-onboarding path — see doc comment above.
 
 # Add employee query.
 #
