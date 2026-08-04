@@ -563,7 +563,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
       case 1:
         return <JobInfoStep isEditMode={isEditMode} />;
       case 2:
-        return <ReviewStep />;
+        return <ReviewStep isEditMode={isEditMode} />;
       default:
         return <Typography>Unknown step</Typography>;
     }
