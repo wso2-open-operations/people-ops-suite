@@ -368,7 +368,7 @@ export const FIXED_TERM_EMPLOYMENT_TYPE = /^fixed\s+term\s+contract$/i;
 
 export const PROBATION_EMPLOYMENT_TYPE = /^probation$/i;
 
-export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
+export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const {
