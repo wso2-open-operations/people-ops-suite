@@ -70,7 +70,6 @@ import {
 } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 import { resetEmployee } from "@slices/employeeSlice/employee";
 import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
-import { fetchSuggestedHouse } from "@slices/organizationSlice/organization";
 
 const deriveFullName = (
   full: string | null | undefined,
@@ -509,12 +508,6 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
     dispatch(fetchEmployeePersonalInfo(employeeId));
   }, [dispatch, isEditMode, employeeId]);
 
-  useEffect(() => {
-    dispatch(fetchSuggestedHouse());
-  }, [dispatch]);
-
-  const { suggestedHouseId } = useAppSelector((s) => s.organization);
-
   const initialEditValues = useMemo(() => {
     if (!isEditMode || !employee || !personalInfo) return null;
     return toFormValues(employee, personalInfo);
@@ -522,10 +515,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
 
   const initialValues = useMemo(() => {
     if (initialEditValues) return initialEditValues;
-    return suggestedHouseId
-      ? { ...emptyCreateEmployeeValues, houseId: suggestedHouseId }
-      : emptyCreateEmployeeValues;
-  }, [initialEditValues, suggestedHouseId]);
+    return emptyCreateEmployeeValues;
+  }, [initialEditValues]);
 
   const isFailedEditData =
     isEditMode &&
@@ -710,7 +701,6 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 subTeamId: values.subTeamId > 0 ? values.subTeamId : undefined,
                 businessUnitId: values.businessUnitId,
                 unitId: values.unitId > 0 ? values.unitId : undefined,
-                houseId: values.houseId > 0 ? values.houseId : undefined,
                 employeeId: values.employeeId?.trim() || undefined,
                 ...(values.isRelocation && values.continuousServiceRecord
                   ? { continuousServiceRecord: values.continuousServiceRecord }

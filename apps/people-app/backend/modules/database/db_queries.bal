@@ -1274,29 +1274,6 @@ isolated function getAsgardeoGroupsForTeamQuery(int teamId, int employmentTypeId
 isolated function getHousesQuery() returns sql:ParameterizedQuery =>
     `SELECT id, name FROM house WHERE is_active = 1 ORDER BY name`;
 
-# Get the house with the fewest active employees query.
-#
-# + return - Query to get the house with the least active employees
-isolated function getHouseWithLeastActiveEmployeesQuery() returns sql:ParameterizedQuery =>
-    `SELECT h.id, h.name
-     FROM house h
-     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
-     WHERE h.is_active = 1
-     GROUP BY h.id, h.name
-     ORDER BY COUNT(e.id) ASC
-     LIMIT 1`;
-
-# Get all active houses with their active employee counts query.
-#
-# + return - Query to get all active houses ordered by active employee count ascending
-isolated function getHousesWithActiveEmployeeCountsQuery() returns sql:ParameterizedQuery =>
-    `SELECT h.id, h.name, COUNT(e.id) AS active_count
-     FROM house h
-     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
-     WHERE h.is_active = 1
-     GROUP BY h.id, h.name
-     ORDER BY active_count ASC`;
-
 # Add employee personal information query. Upserts on the nic_or_passport UNIQUE key so
 # rehiring someone (same NIC/Passport) refreshes their existing personal_info row instead of
 # failing — `id = LAST_INSERT_ID(id)` makes the update branch still resolve to that row's own

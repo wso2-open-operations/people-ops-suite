@@ -336,23 +336,6 @@ public isolated function getHouses() returns House[]|error {
         select house;
 }
 
-# Get the house with the fewest active employees.
-#
-# + return - House with the least active employees, nil if no active houses, or error
-public isolated function getHouseWithLeastActiveEmployees() returns House|error? {
-    House|error result = databaseClient->queryRow(getHouseWithLeastActiveEmployeesQuery());
-    return result is sql:NoRowsError ? () : result;
-}
-
-# Get all active houses with their active employee counts, ordered ascending.
-#
-# + return - Houses with active employee counts, or error
-public isolated function getHousesWithActiveEmployeeCounts() returns HouseWithCount[]|error {
-    stream<HouseWithCount, error?> resultStream = databaseClient->query(getHousesWithActiveEmployeeCountsQuery());
-    return from HouseWithCount house in resultStream
-        select house;
-}
-
 # Get managers.
 #
 # + return - Managers
@@ -455,6 +438,9 @@ public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, stri
         transaction {
             foreach CreateEmployeePayload payload in payloads {
                 string employeeId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
+                // House is assigned automatically from the employee ID's numeric part — not
+                // known until the ID above is resolved, so this can't happen in buildBulkPayloads.
+                payload.houseId = check houseIdForEmployeeId(employeeId);
                 int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
                 _ = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
                 check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
@@ -669,6 +655,47 @@ public isolated function getNextIdInFamily(string prefix, int digit, int minWidt
 
     int nextNum = nextNumberInFamily(maxNum, digit, minWidth);
     return prefix + nextNum.toString();
+}
+
+# Extract the leading run of digits from an employee ID string (e.g. "LK1014231" -> 1014231).
+# Works regardless of prefix content or length, including manually-entered FIXED_TERM IDs.
+#
+# + employeeId - The employee ID to extract the numeric part from
+# + return - The numeric part as an int, or an error if the ID has no digits
+isolated function extractNumericSuffix(string employeeId) returns int|error {
+    int i = 0;
+    while i < employeeId.length() {
+        if re `[0-9]`.isFullMatch(employeeId.substring(i, i + 1)) {
+            break;
+        }
+        i += 1;
+    }
+    if i >= employeeId.length() {
+        return error(string `Employee ID '${employeeId}' has no numeric part`);
+    }
+    return check int:fromString(employeeId.substring(i));
+}
+
+# Compute the automatically-assigned house for a newly created employee, deterministically
+# derived from their employee ID's numeric part: `numericPart % 4` selects the house by a fixed
+# mapping (0 -> CloudBots, 1 -> Titans, 2 -> Legions, 3 -> Wild Boars), matching this system's
+# house IDs 1-4 in that same order.
+#
+# + employeeId - The employee's assigned employee ID (e.g. "LK1014231")
+# + return - The house ID to assign, or an error if the employee ID has no numeric part
+public isolated function houseIdForEmployeeId(string employeeId) returns int|error {
+    int numericPart = check extractNumericSuffix(employeeId);
+    int remainder = numericPart % 4;
+    if remainder == 0 {
+        return 1; // CloudBots
+    }
+    if remainder == 1 {
+        return 2; // Titans
+    }
+    if remainder == 2 {
+        return 3; // Legions
+    }
+    return 4; // Wild Boars
 }
 
 # Add employee personal information.

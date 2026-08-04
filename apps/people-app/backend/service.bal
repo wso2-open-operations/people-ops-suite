@@ -946,30 +946,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         return houses;
     }
 
-    # Get the house with the fewest active employees.
-    #
-    # + ctx - Request context
-    # + return - The suggested house, 404 if none found, or 500 on error
-    resource function get houses/suggested(http:RequestContext ctx) returns database:House|http:Forbidden|http:NotFound|http:InternalServerError {
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
-        }
-        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
-            log:printWarn("User is not authorized to view suggested house", invokerEmail = userInfo.email);
-            return <http:Forbidden>{body: {message: "You are not authorized to view suggested house"}};
-        }
-        database:House|error? house = database:getHouseWithLeastActiveEmployees();
-        if house is error {
-            log:printError("Error while fetching suggested house", house);
-            return <http:InternalServerError>{body: {message: "Error while fetching suggested house"}};
-        }
-        if house is () {
-            return <http:NotFound>{body: {message: "No active houses found"}};
-        }
-        return house;
-    }
-
     # Bulk-creates employees from an uploaded CSV file.
     #
     # Processes the request in two passes:
@@ -1291,6 +1267,20 @@ service http:InterceptableService / on new http:Listener(9090) {
             return generatedEmployeeId;
         }
         string employeeId = generatedEmployeeId;
+
+        // House is assigned automatically from the employee ID's numeric part — not a
+        // user-editable choice, and not known until the ID above is resolved.
+        int|error autoHouseId = database:houseIdForEmployeeId(employeeId);
+        if autoHouseId is error {
+            log:printError("Error occurred while computing automatic house assignment",
+                    autoHouseId, employeeId = employeeId);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                }
+            };
+        }
+        payload.houseId = autoHouseId;
 
         int|error newEmployeeId = database:addEmployee(payload, userInfo.email, employeeId);
         if newEmployeeId is error {

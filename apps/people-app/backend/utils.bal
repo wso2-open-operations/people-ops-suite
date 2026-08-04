@@ -203,7 +203,6 @@ isolated function loadBulkReferenceData() returns BulkRefData|error {
     future<database:EmploymentType[]|error> et = start database:getEmploymentTypes();
     future<database:CompanyResponse[]|error> c = start database:getCompanies();
     future<database:Office[]|error> o = start database:getOffices();
-    future<database:HouseWithCount[]|error> h = start database:getHousesWithActiveEmployeeCounts();
 
     database:BusinessUnit[] businessUnits = check wait bu;
     database:Team[] teams = check wait t;
@@ -213,7 +212,6 @@ isolated function loadBulkReferenceData() returns BulkRefData|error {
     database:EmploymentType[] employmentTypes = check wait et;
     database:CompanyResponse[] companies = check wait c;
     database:Office[] offices = check wait o;
-    database:HouseWithCount[] houses = check wait h;
 
     return {
         businessUnitIds: map from database:BusinessUnit bu_row in businessUnits
@@ -234,10 +232,7 @@ isolated function loadBulkReferenceData() returns BulkRefData|error {
         companyIds: map from database:CompanyResponse c_row in companies
             select [normalizeKey(c_row.name), c_row.id],
         officeIds: map from database:Office o_row in offices
-            select [normalizeKey(o_row.name), o_row.id],
-        houseIds: map from database:HouseWithCount h_row in houses
-            select [normalizeKey(h_row.name), h_row.id],
-        houses: houses
+            select [normalizeKey(o_row.name), o_row.id]
     };
 }
 
@@ -407,9 +402,9 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
 #
 # + row - Typed CSV row to build the payload from
 # + refData - Pre-loaded reference data lookup maps
-# + suggestedHouseId - House ID to assign, resolved per-employee at call time
-# + return - Fully populated `CreateEmployeePayload` ready for DB insertion
-isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData refData, int? suggestedHouseId)
+# + return - Fully populated `CreateEmployeePayload` ready for DB insertion; houseId is left
+#   unset here — it's assigned automatically once the employee ID is resolved (see addEmployeesBulk)
+isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData refData)
     returns database:CreateEmployeePayload {
 
     string firstName = row.firstName.trim();
@@ -464,7 +459,7 @@ isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData r
         unitId,
         businessUnitId: refData.businessUnitIds[normalizeKey(row.businessUnit)] ?: 0,
         officeId,
-        houseId: suggestedHouseId,
+        houseId: (),
         additionalManagerEmails,
         probationEndDate: row.probationEndDate.trim().length() > 0 ? row.probationEndDate.trim() : (),
         agreementEndDate: row.agreementEndDate.trim().length() > 0 ? row.agreementEndDate.trim() : (),
@@ -724,27 +719,11 @@ isolated function buildBulkPayloads(CsvRowInfo[] rowInfos, BulkRefData refData)
         returns BulkPayloadResult {
     ResolvedEmployee[] employees = [];
 
-    map<int> houseCounts = map from database:HouseWithCount h in refData.houses
-        select [h.id.toString(), h.activeCount];
-
     foreach CsvRowInfo rowInfo in rowInfos {
-        int? suggestedHouseId = ();
-        if refData.houses.length() > 0 {
-            int minCount = int:MAX_VALUE;
-            int? minHouseId = ();
-            foreach database:HouseWithCount h in refData.houses {
-                int count = houseCounts[h.id.toString()] ?: 0;
-                if count < minCount {
-                    minCount = count;
-                    minHouseId = h.id;
-                }
-            }
-            if minHouseId is int {
-                suggestedHouseId = minHouseId;
-                houseCounts[minHouseId.toString()] = (houseCounts[minHouseId.toString()] ?: 0) + 1;
-            }
-        }
-        database:CreateEmployeePayload payload = buildBulkEmployeePayload(rowInfo.values, refData, suggestedHouseId);
+        // House is assigned automatically from the employee ID's numeric part once the ID is
+        // resolved in addEmployeesBulk — it doesn't exist yet at this point, so houseId is left
+        // unset here.
+        database:CreateEmployeePayload payload = buildBulkEmployeePayload(rowInfo.values, refData);
         employees.push({employeeId: "", payload, rowNumber: rowInfo.rowNumber});
     }
 
