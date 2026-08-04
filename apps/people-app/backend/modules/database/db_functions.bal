@@ -528,8 +528,8 @@ isolated function generateBulkEmployeeId(CreateEmployeePayload payload,
             int next = (sequenceCache[seqKey] ?: 0) + 1;
             string nextStr = next.toString();
             if nextStr.length() >= 6 {
-                return error("Zero-padded ID family (digit '0', prefix '" + CONSULTANCY_ID_PREFIX +
-                    "') is exhausted at width 6; cannot generate the next ID.");
+                return error(string `Zero-padded ID family (digit '0', prefix '${CONSULTANCY_ID_PREFIX}') ` +
+                    string `is exhausted at width 6; cannot generate the next ID.`);
             }
             sequenceCache[seqKey] = next;
             return CONSULTANCY_ID_PREFIX + padZero(next, 6);
