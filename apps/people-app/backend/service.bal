@@ -946,30 +946,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         return houses;
     }
 
-    # Get the house with the fewest active employees.
-    #
-    # + ctx - Request context
-    # + return - The suggested house, 404 if none found, or 500 on error
-    resource function get houses/suggested(http:RequestContext ctx) returns database:House|http:Forbidden|http:NotFound|http:InternalServerError {
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
-        }
-        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
-            log:printWarn("User is not authorized to view suggested house", invokerEmail = userInfo.email);
-            return <http:Forbidden>{body: {message: "You are not authorized to view suggested house"}};
-        }
-        database:House|error? house = database:getHouseWithLeastActiveEmployees();
-        if house is error {
-            log:printError("Error while fetching suggested house", house);
-            return <http:InternalServerError>{body: {message: "Error while fetching suggested house"}};
-        }
-        if house is () {
-            return <http:NotFound>{body: {message: "No active houses found"}};
-        }
-        return house;
-    }
-
     # Bulk-creates employees from an uploaded CSV file.
     #
     # Processes the request in two passes:
@@ -1208,25 +1184,59 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:EmployeePersonalInfo[]|error employeePersonalInfoList = database:searchEmployeePersonalInfo(
-                {nicOrPassport: payload.personalInfo.nicOrPassport});
-        if employeePersonalInfoList is error {
+        int?|error existingPersonalInfoId = database:getPersonalInfoIdByNic(payload.personalInfo.nicOrPassport);
+        if existingPersonalInfoId is error {
             string customErr = "Error occurred while checking existing employee personal information";
-            log:printError(customErr, employeePersonalInfoList, nicOrPassport = payload.personalInfo.nicOrPassport);
+            log:printError(customErr, existingPersonalInfoId, nicOrPassport = payload.personalInfo.nicOrPassport);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_EMPLOYEE_CREATION_FAILED
                 }
             };
         }
-        if employeePersonalInfoList.length() > 0 {
-            string customErr = "Employee with the given NIC/Passport already exists";
-            log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
+        if existingPersonalInfoId is int {
+            boolean|error hasActiveEmployment = database:hasActiveEmploymentByPersonalInfoId(existingPersonalInfoId);
+            if hasActiveEmployment is error {
+                string customErr = "Error occurred while checking existing employee status";
+                log:printError(customErr, hasActiveEmployment, nicOrPassport = payload.personalInfo.nicOrPassport);
+                return <http:InternalServerError>{
+                    body: {
+                        message: ERROR_EMPLOYEE_CREATION_FAILED
+                    }
+                };
+            }
+            if hasActiveEmployment {
+                string customErr = "Employee with the given NIC/Passport already exists";
+                log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+
+            boolean|error isSameEmployee = database:hasEmployeeWithWorkEmail(existingPersonalInfoId, payload.workEmail);
+            if isSameEmployee is error {
+                string customErr = "Error occurred while verifying rehire eligibility";
+                log:printError(customErr, isSameEmployee, nicOrPassport = payload.personalInfo.nicOrPassport);
+                return <http:InternalServerError>{
+                    body: {
+                        message: ERROR_EMPLOYEE_CREATION_FAILED
+                    }
+                };
+            }
+            if !isSameEmployee {
+                string customErr = "Employee with the given NIC/Passport already exists";
+                log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+            // NIC/Passport belongs to a former employee (no active employment) under the same
+            // work email — this is a rehire. Fall through and let addEmployee's upsert refresh
+            // their personal_info row and link the new employee record to that same personal_info ID.
         }
 
         string? epfOpt = payload.epf;
@@ -1257,6 +1267,20 @@ service http:InterceptableService / on new http:Listener(9090) {
             return generatedEmployeeId;
         }
         string employeeId = generatedEmployeeId;
+
+        // House is assigned automatically from the employee ID's numeric part — not a
+        // user-editable choice, and not known until the ID above is resolved.
+        int|error autoHouseId = database:houseIdForEmployeeId(employeeId);
+        if autoHouseId is error {
+            log:printError("Error occurred while computing automatic house assignment",
+                    autoHouseId, employeeId = employeeId);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                }
+            };
+        }
+        payload.houseId = autoHouseId;
 
         int|error newEmployeeId = database:addEmployee(payload, userInfo.email, employeeId);
         if newEmployeeId is error {
@@ -1533,8 +1557,22 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        string resultingStatus = payload.employeeStatus ?: employeeInfo.employeeStatus;
-        if resultingStatus == database:EMPLOYEE_MARKED_LEAVER || resultingStatus == database:EMPLOYEE_LEFT {
+        boolean isLeaverStatus = payload.employeeStatus is ()
+            ? employeeInfo.employeeStatus == database:EMPLOYEE_LEFT
+                || employeeInfo.employeeStatus == database:EMPLOYEE_MARKED_LEAVER
+            : payload.employeeStatus == database:EMPLOYEE_LEFT
+                || payload.employeeStatus == database:EMPLOYEE_MARKED_LEAVER;
+        if database:hasLeaverFields(payload) && !isLeaverStatus {
+            log:printWarn("Attempt to set resignation fields on an employee who is not a leaver",
+                    employeeId = employeeId);
+            return <http:BadRequest>{
+                body: {
+                    message: "Resignation details can only be set when employee status is 'Left' or 'Marked leaver'"
+                }
+            };
+        }
+
+        if isLeaverStatus {
             string? resultingFinalDayInOffice = payload.finalDayInOffice ?: employeeInfo.finalDayInOffice;
             string? resultingFinalDayOfEmployment = payload.finalDayOfEmployment ?: employeeInfo.finalDayOfEmployment;
             string? resultingResignationReason = payload.resignationReason ?: employeeInfo.resignationReason;
@@ -1854,6 +1892,59 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Expire the caller's own stale pending reservations for the date (any slot), so an
+        // abandoned attempt does not block a fresh booking.
+        boolean|error clearedForEmployee = database:expireStalePendingParkingReservationsForEmployeeDate(
+            userInfo.email, body.bookingDate, wso2_coin:pendingReservationExpiryMinutes);
+        if clearedForEmployee is error {
+            log:printError("Error expiring stale pending reservations for employee", clearedForEmployee);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while validating booking eligibility."}
+            };
+        }
+
+        // Enforce one active (PENDING/CONFIRMED) reservation per employee per day.
+        database:ActiveParkingReservationRow|error? activeReservation =
+            database:getActiveParkingReservationForEmployeeDate(userInfo.email, body.bookingDate,
+                wso2_coin:pendingReservationExpiryMinutes);
+        if activeReservation is error {
+            log:printError("Error checking existing reservations for employee", activeReservation);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while validating booking eligibility."}
+            };
+        }
+        if activeReservation is database:ActiveParkingReservationRow {
+            // Same-slot PENDING: reuse it so a retry does not create (or pay for) a second booking.
+            if activeReservation.status == database:PENDING && activeReservation.slotId == body.slotId {
+                // Keep the reused reservation aligned with the vehicle chosen on this attempt.
+                if activeReservation.vehicleId != body.vehicleId {
+                    boolean|error vehicleUpdated = database:updateParkingReservationVehicle(
+                        activeReservation.id, body.vehicleId, userInfo.email);
+                    if vehicleUpdated is error {
+                        log:printError("Error updating vehicle on reused reservation", vehicleUpdated);
+                        return <http:InternalServerError>{
+                            body: {message: "Error occurred while updating reservation."}
+                        };
+                    }
+                }
+                return {
+                    reservationId: activeReservation.id,
+                    coinsAmount: activeReservation.coinsAmount
+                };
+            }
+            log:printWarn("Employee already has an active parking reservation for the date",
+                    invokerEmail = userInfo.email, bookingDate = body.bookingDate,
+                    existingSlot = activeReservation.slotId);
+            string activeMsg = activeReservation.status == database:CONFIRMED
+                ? string `You already have a confirmed parking booking for ${body.bookingDate}`
+                    + string ` (slot ${activeReservation.slotId}).`
+                : string `You already have a pending parking booking for ${body.bookingDate}`
+                    + string ` (slot ${activeReservation.slotId}). Complete or cancel it before booking another.`;
+            return <http:BadRequest>{
+                body: {message: activeMsg}
+            };
+        }
+
         // Expire stale pending reservations so the slot/date becomes reusable.
         boolean|error cleared = database:expireStalePendingParkingReservationForSlotDate(body.slotId, body.bookingDate,
             wso2_coin:pendingReservationExpiryMinutes);
@@ -1890,6 +1981,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             coinsAmount: slot.coinsPerSlot,
             createdBy: userInfo.email
         });
+        if reservationId is database:DuplicateActiveReservationError {
+            log:printWarn("Duplicate active parking reservation blocked by unique index",
+                    invokerEmail = userInfo.email, bookingDate = body.bookingDate, slotId = body.slotId);
+            return <http:BadRequest>{
+                body: {
+                    message: "You already have an active booking for this date, or the slot was just taken. "
+                        + "Please refresh and try again."
+                }
+            };
+        }
         if reservationId is error {
             log:printError("Error creating parking reservation", reservationId);
             return <http:InternalServerError>{

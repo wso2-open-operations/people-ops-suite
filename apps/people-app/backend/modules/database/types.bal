@@ -41,6 +41,10 @@ public type EntityNotFoundError distinct error;
 # Distinct error returned when a PATCH payload carries no fields to update.
 public type NoFieldsToUpdateError distinct error;
 
+# Distinct error returned when a parking reservation insert violates an
+# active-reservation unique index (slot/date or employee/date already active).
+public type DuplicateActiveReservationError distinct error;
+
 # [Configurable] Database configs.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
@@ -629,16 +633,6 @@ public type House record {|
     string name;
 |};
 
-# House with active employee count.
-public type HouseWithCount record {|
-    # House ID
-    int id;
-    # House name
-    string name;
-    # Number of currently active employees assigned to this house
-    @sql:Column {name: "active_count"}
-    int activeCount;
-|};
 
 # Manager payload.
 public type Manager record {|
@@ -668,12 +662,6 @@ public type NicOrPassportRow record {|
 public type EpfRow record {|
     # EPF number
     string epf;
-|};
-
-# Search employee personal information payload.
-public type SearchEmployeePersonalInfoPayload record {|
-    # National Identity Card number or Passport
-    string nicOrPassport?;
 |};
 
 # Emergency contact information.
@@ -1210,6 +1198,20 @@ public type ParkingReservationDetails record {|
 public type ReservationIdRow record {|
     # Reservation identifier
     int id;
+|};
+
+# [Database] Active reservation summary for an employee/date lookup.
+public type ActiveParkingReservationRow record {|
+    # Reservation identifier
+    int id;
+    # Slot identifier
+    string slotId;
+    # Registered vehicle ID on the reservation
+    int vehicleId;
+    # Reservation status
+    ParkingReservationStatus status;
+    # Amount to be paid in coins
+    decimal coinsAmount;
 |};
 
 # Payload to create a company org chart entity (business unit, team, sub-team, or unit).

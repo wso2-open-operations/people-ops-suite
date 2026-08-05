@@ -151,7 +151,11 @@ const MainSectionTitle = React.memo(({ title }: { title: string }) => {
   );
 });
 
-export default function ReviewStep() {
+interface ReviewStepProps {
+  isEditMode: boolean;
+}
+
+export default function ReviewStep({ isEditMode }: ReviewStepProps) {
   const theme = useTheme();
   const { values } = useFormikContext<CreateEmployeeFormValues>();
 
@@ -495,14 +499,16 @@ export default function ReviewStep() {
       </Box>
 
       {/* House */}
-      <Box sx={sectionBoxSx}>
-        <SectionHeader icon={REVIEW_ICONS.other} title="Other" />
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="House" value={mappedNames.house} />
+      {isEditMode ? (
+        <Box sx={sectionBoxSx}>
+          <SectionHeader icon={REVIEW_ICONS.other} title="Other" />
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={4}>
+              <ReviewField label="House" value={mappedNames.house} />
+            </Grid>
           </Grid>
-        </Grid>
-      </Box>
+        </Box>
+      ) : null}
     </Box>
   );
 }

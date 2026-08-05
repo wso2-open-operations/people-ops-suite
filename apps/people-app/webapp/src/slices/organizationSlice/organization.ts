@@ -96,7 +96,6 @@ export interface OrganizationState {
   offices: Office[];
   employmentTypes: EmploymentType[];
   houses: House[];
-  suggestedHouseId: number | null;
 }
 
 const initialState: OrganizationState = {
@@ -113,7 +112,6 @@ const initialState: OrganizationState = {
   offices: [],
   employmentTypes: [],
   houses: [],
-  suggestedHouseId: null,
 };
 
 interface FetchParams {
@@ -458,22 +456,6 @@ export const fetchHouses = createAsyncThunk(
   },
 );
 
-// Fetch Suggested House (house with fewest active employees)
-export const fetchSuggestedHouse = createAsyncThunk(
-  "organization/fetchSuggestedHouse",
-  async (_, { rejectWithValue }) => {
-    try {
-      const resp = await APIService.getInstance().get(
-        `${AppConfig.serviceUrls.houses}/suggested`,
-      );
-      return (resp.data as House).id;
-    } catch (error: any) {
-      if (isCancel(error)) return rejectWithValue("cancelled");
-      return rejectWithValue("Failed to fetch suggested house");
-    }
-  },
-);
-
 export const organizationSlice = createSlice({
   name: "organization",
   initialState,
@@ -495,7 +477,6 @@ export const organizationSlice = createSlice({
       state.offices = [];
       state.employmentTypes = [];
       state.houses = [];
-      state.suggestedHouseId = null;
     },
   },
   extraReducers: (builder) => {
@@ -660,19 +641,6 @@ export const organizationSlice = createSlice({
         state.state = State.failed;
         state.errorMessage = action.payload as string;
         state.stateMessage = null;
-      })
-      .addCase(fetchSuggestedHouse.pending, (state) => {
-        state.state = State.loading;
-        state.errorMessage = null;
-      })
-      .addCase(fetchSuggestedHouse.fulfilled, (state, action) => {
-        state.suggestedHouseId = action.payload;
-        state.state = State.success;
-        state.errorMessage = null;
-      })
-      .addCase(fetchSuggestedHouse.rejected, (state) => {
-        state.suggestedHouseId = null;
-        state.state = State.failed;
       });
   },
 });

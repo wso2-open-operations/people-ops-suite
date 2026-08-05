@@ -467,7 +467,7 @@ CREATE TABLE `parking_reservation` (
   `booking_date` date NOT NULL,
   `employee_email` varchar(100) NOT NULL,
   `vehicle_id` int NOT NULL,
-  `status` enum('PENDING','CONFIRMED','EXPIRED') NOT NULL DEFAULT 'PENDING',
+  `status` enum('PENDING','CONFIRMED','EXPIRED','DUPLICATE') NOT NULL DEFAULT 'PENDING',
   `transaction_hash` varchar(255) DEFAULT NULL,
   `coins_amount` decimal(10, 4) NOT NULL,
   `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -485,6 +485,14 @@ CREATE TABLE `parking_reservation` (
 CREATE UNIQUE INDEX `uk_active_slot_booking_date` ON `parking_reservation` ((
   CASE
     WHEN `status` IN ('PENDING', 'CONFIRMED') THEN CONCAT(`slot_id`, '|', `booking_date`)
+    ELSE NULL
+  END
+));
+
+-- Functional UNIQUE index: one active (PENDING/CONFIRMED) reservation per employee per date.
+CREATE UNIQUE INDEX `uk_active_employee_booking_date` ON `parking_reservation` ((
+  CASE
+    WHEN `status` IN ('PENDING', 'CONFIRMED') THEN CONCAT(`employee_email`, '|', `booking_date`)
     ELSE NULL
   END
 ));

@@ -380,11 +380,13 @@ const InfoPopoverAdornment = React.memo(
 );
 
 export const AUTO_ID_EMPLOYMENT_TYPES =
-  /^(permanent|internship|consultancy|advisory consultancy|part time consultancy)$/i;
+  /^(permanent|internship|consultancy|advisory consultancy|part time consultancy|probation)$/i;
 
 export const FIXED_TERM_EMPLOYMENT_TYPE = /^fixed\s+term\s+contract$/i;
 
-export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
+export const PROBATION_EMPLOYMENT_TYPE = /^probation$/i;
+
+export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const {
@@ -415,11 +417,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     offices,
     employmentTypes,
     houses,
-    suggestedHouseId,
   } = useAppSelector((state) => state.organization);
-  const suggestedHouseName = suggestedHouseId
-    ? houses.find((h) => h.id === suggestedHouseId)?.name
-    : undefined;
 
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
     null,
@@ -612,12 +610,24 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     );
   }, [internshipTypeId, values.employmentTypeId]);
 
+  const isLeaverStatus =
+    values.employeeStatus === EmployeeStatus.Left ||
+    values.employeeStatus === EmployeeStatus.MarkedLeaver;
+
   const isFixedTerm = useMemo(() => {
     const selectedType = employmentTypes.find(
       (et) => et.id === values.employmentTypeId,
     );
     if (!selectedType) return false;
     return FIXED_TERM_EMPLOYMENT_TYPE.test(selectedType.name.trim());
+  }, [employmentTypes, values.employmentTypeId]);
+
+  const isProbationType = useMemo(() => {
+    const selectedType = employmentTypes.find(
+      (et) => et.id === values.employmentTypeId,
+    );
+    if (!selectedType) return false;
+    return PROBATION_EMPLOYMENT_TYPE.test(selectedType.name.trim());
   }, [employmentTypes, values.employmentTypeId]);
 
   const showAgreementEndDate = useMemo(() => {
@@ -657,7 +667,14 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   }, [values.companyId, values.workLocation, companies]);
 
   useEffect(() => {
-    if (!isPermanent) {
+    // Wait for employment types to load — isPermanent/isProbationType both read
+    // false on an empty list, which would otherwise clear an edit-mode value
+    // (loaded from the employee record) before the preservation guard below runs.
+    if (employmentTypes.length === 0) return;
+
+    // Permanent and Probation both derive their probation end date from the
+    // work location's configured probation period.
+    if (!isPermanent && !isProbationType) {
       setFieldValue("probationEndDate", null);
       return;
     }
@@ -685,11 +702,16 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       .add(probationMonths, "month")
       .format("YYYY-MM-DD");
     setFieldValue("probationEndDate", computed);
+    // values.probationEndDate is read above (edit-mode guard) but deliberately
+    // excluded here — including it re-fires this effect on every manual edit
+    // (including from the picker below) and immediately overwrites it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    employmentTypes.length,
     isPermanent,
+    isProbationType,
     isEditMode,
     values.startDate,
-    values.probationEndDate,
     matchedProbationLocation,
     setFieldValue,
   ]);
@@ -973,7 +995,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               ) : (
                 <TextField
                   fullWidth
-                  label="Continuous Service Record"
+                  label="Employee ID (Previous)"
                   value={errorMessage ? "Error" : "No Record"}
                   disabled
                   error={!!errorMessage}
@@ -1233,11 +1255,19 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               }}
             >
               {designations.length ? (
-                sortAndFormatOptions(designations, (d) => d.designation).map((d) => (
-                  <MenuItem key={d.id} value={d.id}>
-                    {d.designation}
-                  </MenuItem>
-                ))
+                [...designations]
+                  .sort((a, b) => {
+                    if (a.jobBand == null && b.jobBand == null) return 0;
+                    if (a.jobBand == null) return 1;
+                    if (b.jobBand == null) return -1;
+                    return a.jobBand - b.jobBand;
+                  })
+                  .map((d) => (
+                    <MenuItem key={d.id} value={d.id}>
+                      {d.designation}
+                      {d.jobBand != null ? ` (JB ${d.jobBand})` : ""}
+                    </MenuItem>
+                  ))
               ) : (
                 <MenuItem disabled>
                   {!values.careerFunctionId || values.careerFunctionId === 0
@@ -1451,7 +1481,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 onChange={(e) => {
                   const newStatus = e.target.value;
                   setFieldValue("employeeStatus", newStatus);
-                  if (newStatus === EmployeeStatus.Active) {
+                  if (
+                    newStatus !== EmployeeStatus.Left &&
+                    newStatus !== EmployeeStatus.MarkedLeaver
+                  ) {
                     setFieldValue("finalDayInOffice", null);
                     setFieldValue("finalDayOfEmployment", null);
                     setFieldValue("resignationReason", null);
@@ -1526,7 +1559,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               }}
             />
           </Grid>
-          {isPermanent ? (
+          {isPermanent || isProbationType ? (
             <Grid item xs={12} sm={6} md={3}>
               <DatePicker
                 label="Probation End Date"
@@ -1729,49 +1762,45 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
         </Grid>
       </Box>
 
-      <Box>
-        <SectionHeader
-          icon={SECTION_ICONS.other}
-          title="Other"
-          headerBoxSx={SECTION_HEADER_BOX_SX}
-          iconBoxSx={iconBoxSx}
-        />
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              select
-              fullWidth
-              label="House"
-              name="houseId"
-              value={values.houseId || 0}
-              onChange={(e) => setFieldValue("houseId", Number(e.target.value))}
-              onBlur={handleBlur}
-              helperText={
-                suggestedHouseName
-                  ? `Fewest active employees: ${suggestedHouseName}`
-                  : suggestedHouseId
-                  ? "Loading suggested house..."
-                  : "Assign the house for this employee"
-              }
-              sx={textFieldSx}
-            >
-              {houses.length ? (
-                sortAndFormatOptions(houses, (h) => h.name).map((h) => (
-                  <MenuItem key={h.id} value={h.id}>
-                    {h.name}
+      {isEditMode ? (
+        <Box>
+          <SectionHeader
+            icon={SECTION_ICONS.other}
+            title="Other"
+            headerBoxSx={SECTION_HEADER_BOX_SX}
+            iconBoxSx={iconBoxSx}
+          />
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                select
+                fullWidth
+                label="House"
+                name="houseId"
+                value={values.houseId || 0}
+                onChange={(e) => setFieldValue("houseId", Number(e.target.value))}
+                onBlur={handleBlur}
+                helperText="Assign the house for this employee"
+                sx={textFieldSx}
+              >
+                {houses.length ? (
+                  sortAndFormatOptions(houses, (h) => h.name).map((h) => (
+                    <MenuItem key={h.id} value={h.id}>
+                      {h.name}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled>
+                    {organizationState === "loading"
+                      ? "Loading houses..."
+                      : "No houses found"}
                   </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>
-                  {organizationState === "loading"
-                    ? "Loading houses..."
-                    : "No houses found"}
-                </MenuItem>
-              )}
-            </TextField>
+                )}
+              </TextField>
+            </Grid>
           </Grid>
-        </Grid>
-      </Box>
+        </Box>
+      ) : null}
 
       {isEditMode ? (
         <Box>
@@ -1785,10 +1814,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             <Grid item xs={12} sm={6} md={4}>
               <DatePicker
                 label="Final Day in Office"
-                disabled={
-                  values.employeeStatus !== EmployeeStatus.MarkedLeaver &&
-                  values.employeeStatus !== EmployeeStatus.Left
-                }
+                disabled={!isLeaverStatus}
                 value={
                   values.finalDayInOffice
                     ? dayjs(values.finalDayInOffice)
@@ -1818,10 +1844,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             <Grid item xs={12} sm={6} md={4}>
               <DatePicker
                 label="Final Day of Employment"
-                disabled={
-                  values.employeeStatus !== EmployeeStatus.MarkedLeaver &&
-                  values.employeeStatus !== EmployeeStatus.Left
-                }
+                disabled={!isLeaverStatus}
                 value={
                   values.finalDayOfEmployment
                     ? dayjs(values.finalDayOfEmployment)
@@ -1853,10 +1876,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 fullWidth
                 label="Reason for Leaving"
                 name="resignationReason"
-                disabled={
-                  values.employeeStatus !== EmployeeStatus.MarkedLeaver &&
-                  values.employeeStatus !== EmployeeStatus.Left
-                }
+                disabled={!isLeaverStatus}
                 value={values.resignationReason ?? ""}
                 onChange={(e) =>
                   setFieldValue(

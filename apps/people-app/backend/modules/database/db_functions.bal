@@ -43,6 +43,34 @@ public isolated function getEmployeeIdByEpf(string epf) returns string|error? {
     return result is sql:NoRowsError ? () : result;
 }
 
+# Get the personal_info ID for a given NIC/Passport.
+#
+# + nicOrPassport - National Identity Card number or Passport
+# + return - personal_info ID, nil if no matching record, or error
+public isolated function getPersonalInfoIdByNic(string nicOrPassport) returns int?|error {
+    int|error result = databaseClient->queryRow(getPersonalInfoIdByNicQuery(nicOrPassport));
+    return result is sql:NoRowsError ? () : result;
+}
+
+# Check whether a personal_info ID already has an employee record under the given work email.
+#
+# + personalInfoId - personal_info ID matched by NIC/Passport
+# + workEmail - Work email from the new onboarding submission
+# + return - true if a matching employee record exists, or error
+public isolated function hasEmployeeWithWorkEmail(int personalInfoId, string workEmail) returns boolean|error {
+    int count = check databaseClient->queryRow(countEmployeeByPersonalInfoIdAndWorkEmailQuery(personalInfoId, workEmail));
+    return count > 0;
+}
+
+# Check whether a personal_info ID has any currently active employment.
+#
+# + personalInfoId - personal_info ID matched by NIC/Passport
+# + return - true if an active employee record references this personal_info ID, or error
+public isolated function hasActiveEmploymentByPersonalInfoId(int personalInfoId) returns boolean|error {
+    int count = check databaseClient->queryRow(countActiveEmployeeByPersonalInfoIdQuery(personalInfoId));
+    return count > 0;
+}
+
 # Fetch employee detailed information.
 #
 # + employeeId - Employee ID
@@ -85,19 +113,6 @@ public isolated function getContinuousServiceRecordsByEmail(string workEmail)
     );
     return from ContinuousServiceRecordInfo serviceRecord in recordStream
         select serviceRecord;
-}
-
-# Search employee personal information.
-#
-# + payload - Search employee personal information payload
-# + return - Employee personal information search results
-public isolated function searchEmployeePersonalInfo(SearchEmployeePersonalInfoPayload payload)
-    returns EmployeePersonalInfo[]|error {
-
-    stream<EmployeePersonalInfo, error?> employeePersonalInfoStream = databaseClient->query(
-            searchEmployeePersonalInfoQuery(payload));
-    return from EmployeePersonalInfo employeePersonalInfo in employeePersonalInfoStream
-        select employeePersonalInfo;
 }
 
 # Fetch employee personal information.
@@ -321,23 +336,6 @@ public isolated function getHouses() returns House[]|error {
         select house;
 }
 
-# Get the house with the fewest active employees.
-#
-# + return - House with the least active employees, nil if no active houses, or error
-public isolated function getHouseWithLeastActiveEmployees() returns House|error? {
-    House|error result = databaseClient->queryRow(getHouseWithLeastActiveEmployeesQuery());
-    return result is sql:NoRowsError ? () : result;
-}
-
-# Get all active houses with their active employee counts, ordered ascending.
-#
-# + return - Houses with active employee counts, or error
-public isolated function getHousesWithActiveEmployeeCounts() returns HouseWithCount[]|error {
-    stream<HouseWithCount, error?> resultStream = databaseClient->query(getHousesWithActiveEmployeeCountsQuery());
-    return from HouseWithCount house in resultStream
-        select house;
-}
-
 # Get managers.
 #
 # + return - Managers
@@ -440,6 +438,9 @@ public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, stri
         transaction {
             foreach CreateEmployeePayload payload in payloads {
                 string employeeId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
+                // House is assigned automatically from the employee ID's numeric part — not
+                // known until the ID above is resolved, so this can't happen in buildBulkPayloads.
+                payload.houseId = check houseIdForEmployeeId(employeeId);
                 int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
                 _ = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
                 check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
@@ -497,40 +498,41 @@ isolated function generateBulkEmployeeId(CreateEmployeePayload payload,
     }
 
     match context.employmentType {
-        PERMANENT|INTERNSHIP => {
+        PERMANENT|INTERNSHIP|PROBATION => {
             // Normalize the prefix once so a value like " SG " can't pass the guard, leak spaces
             // into the ID, or fork a separate sequence from "SG".
             string companyPrefix = context.companyPrefix.trim();
             if companyPrefix.length() == 0 {
                 return error(string `Company (ID: ${payload.companyId}) has no employee ID prefix configured`);
             }
-            // PERMANENT and PROBATION share one number line; INTERNSHIP runs a separate one.
-            // Scope both the MAX query and the in-batch cache key to the matching group. PROBATION
-            // never reaches this path (inactive types are rejected during bulk validation).
-            EmploymentTypeName[] sequenceTypes = context.employmentType == PERMANENT
-                ? [PERMANENT, PROBATION]
-                : [INTERNSHIP];
-            string seqKey = companyPrefix + ":" + context.employmentType.toString();
+            // PERMANENT and PROBATION share the "1" digit family; INTERNSHIP uses "5". Scoping by
+            // this digit directly on the ID string (not by employment_type) means an employee
+            // tagged with any other or legacy type can never be invisible to this count, and the
+            // in-batch cache key stays shared for interleaved Permanent/Probation batch rows.
+            int digit = context.employmentType == INTERNSHIP ? 5 : 1;
+            string seqKey = companyPrefix + ":" + digit.toString();
             if !sequenceCache.hasKey(seqKey) {
-                EmployeeIdSequence seq = check getLastEmployeeNumericSuffix(
-                        companyPrefix, sequenceTypes);
+                EmployeeIdSequence seq = check getFamilyMax(companyPrefix, digit);
                 sequenceCache[seqKey] = <int>seq.lastNumericId;
             }
-            int next = (sequenceCache[seqKey] ?: 0) + 1;
+            int next = nextNumberInFamily(sequenceCache[seqKey] ?: 0, digit, 6);
             sequenceCache[seqKey] = next;
-            return string `${companyPrefix}${next}`;
+            return companyPrefix + next.toString();
         }
         CONSULTANCY|ADVISORY_CONSULTANCY|PART_TIME_CONSULTANCY => {
-            string seqKey = CONSULTANCY_ID_PREFIX;
+            string seqKey = CONSULTANCY_ID_PREFIX + ":0";
             if !sequenceCache.hasKey(seqKey) {
-                EmployeeIdSequence seq = check getLastEmployeeNumericSuffix(
-                        CONSULTANCY_ID_PREFIX,
-                        [CONSULTANCY, ADVISORY_CONSULTANCY, PART_TIME_CONSULTANCY]);
+                EmployeeIdSequence seq = check getFamilyMax(CONSULTANCY_ID_PREFIX, 0);
                 sequenceCache[seqKey] = <int>seq.lastNumericId;
             }
             int next = (sequenceCache[seqKey] ?: 0) + 1;
+            string nextStr = next.toString();
+            if nextStr.length() >= 6 {
+                return error(string `Zero-padded ID family (digit '0', prefix '${CONSULTANCY_ID_PREFIX}') ` +
+                    string `is exhausted at width 6; cannot generate the next ID.`);
+            }
             sequenceCache[seqKey] = next;
-            return string `${CONSULTANCY_ID_PREFIX}${next}`;
+            return CONSULTANCY_ID_PREFIX + padZero(next, 6);
         }
         _ => {
             return error("Unsupported employment type: " + context.employmentType.toString());
@@ -549,15 +551,151 @@ public isolated function getEmployeeIdContext(int companyId, int employmentTypeI
     return databaseClient->queryRow(getEmployeeIdContextQuery(companyId, employmentTypeId));
 }
 
-# Fetch and lock the last numeric suffix for the given prefix and employment types.
-#
-# + prefix - The ID prefix to lock on (company prefix or consultancy prefix)
-# + employmentTypes - Employment type names that share this sequence
-# + return - EmployeeIdSequence or error
-public isolated function getLastEmployeeNumericSuffix(string prefix, EmploymentTypeName[] employmentTypes)
-        returns EmployeeIdSequence|error {
 
-    return databaseClient->queryRow(getAndLockLastEmployeeNumericSuffixQuery(prefix, employmentTypes));
+# Fetch the current numeric maximum for a digit-family sequence.
+#
+# + prefix - The ID prefix (company prefix or CONSULTANCY_ID_PREFIX)
+# + digit - The required leading digit for this family (0, 1, or 5)
+# + return - EmployeeIdSequence (lastNumericId is 0 if the family has no members yet) or error
+isolated function getFamilyMax(string prefix, int digit) returns EmployeeIdSequence|error {
+    return databaseClient->queryRow(getNextIdInFamilyQuery(prefix, digit.toString()));
+}
+
+# Compute 10 raised to the given exponent, for small non-negative exponents (ID-width arithmetic
+# only — not a general-purpose power function).
+#
+# + exponent - Non-negative exponent
+# + return - 10^exponent
+isolated function pow10(int exponent) returns int {
+    int result = 1;
+    foreach int i in 0 ..< exponent {
+        result *= 10;
+    }
+    return result;
+}
+
+# Zero-pad `n` to exactly `width` characters. If `n` already has `width` or more digits, it is
+# returned unpadded (the caller is responsible for rejecting values that don't fit; see the
+# zero-padded capacity check in `getNextIdInFamily` and `generateBulkEmployeeId`).
+#
+# + n - The number to pad
+# + width - Target string width
+# + return - `n` as a string, left-padded with zeros to `width` characters
+isolated function padZero(int n, int width) returns string {
+    string s = n.toString();
+    int padCount = width - s.length();
+    if padCount <= 0 {
+        return s;
+    }
+    string zerosStr = "";
+    foreach int i in 0 ..< padCount {
+        zerosStr += "0";
+    }
+    return zerosStr + s;
+}
+
+# Pure computation: given the current max numeric value observed for a digit-family, compute the
+# next number in that family. This is a plain increment, unless incrementing would flip the
+# leading digit, in which case it rolls over to the next order of magnitude that still starts
+# with the required digit (e.g. maxNum=199999, digit=1 -> next=1000000, not 200000). This mirrors
+# a rollover that already happened once in this system's real data, rather than inventing new
+# behavior.
+#
+# `minWidth` is a true floor, not just a cold-start default: if `maxNum` is 0 (no rows yet) or a
+# stray short value already exists in the family (e.g. a legacy ID left the max at 1 or 19), the
+# result is always clamped up to at least `digit * 10^(minWidth-1)` (e.g. 100000 for digit 1,
+# width 6) so every generated ID honors the family's minimum width convention.
+#
+# + maxNum - Current max numeric value in the family (0 if none exist yet)
+# + digit - The required leading digit for this family (0, 1, or 5)
+# + minWidth - Minimum digit width for the family (e.g. 6 means the family starts at 100000 for
+#   digit 1, and no generated value is ever narrower than this)
+# + return - The next numeric value in this family
+isolated function nextNumberInFamily(int maxNum, int digit, int minWidth) returns int {
+    int floor = digit * pow10(minWidth - 1);
+    if maxNum == 0 {
+        return floor;
+    }
+    int candidate = maxNum + 1;
+    if candidate < floor {
+        return floor;
+    }
+    int candidateWidth = candidate.toString().length();
+    int candidateLeadingDigit = candidate / pow10(candidateWidth - 1);
+    if candidateLeadingDigit == digit {
+        return candidate;
+    }
+    return digit * pow10(candidateWidth);
+}
+
+# Generate the next employee ID within a digit-family sequence (single-onboarding path).
+#
+# + prefix - The ID prefix (company prefix or CONSULTANCY_ID_PREFIX)
+# + digit - The required leading digit for this family (0, 1, or 5)
+# + minWidth - Minimum digit width (default 6)
+# + zeroPadded - True for the digit-0 (Consultancy) family, which must be zero-padded to
+#   `minWidth` since a plain integer can never have a leading zero. Once that padded space is
+#   exhausted there is no valid next value, so this returns an error rather than overflowing.
+# + return - The next employee ID string, or an error on DB failure or exhausted zero-padded capacity
+public isolated function getNextIdInFamily(string prefix, int digit, int minWidth = 6, boolean zeroPadded = false)
+        returns string|error {
+
+    EmployeeIdSequence row = check getFamilyMax(prefix, digit);
+    int maxNum = <int>row.lastNumericId;
+
+    if zeroPadded {
+        int candidate = maxNum + 1;
+        string candidateStr = candidate.toString();
+        if candidateStr.length() >= minWidth {
+            return error(string `Zero-padded ID family (digit '${digit}', prefix '${prefix}') is exhausted ` +
+                string `at width ${minWidth}; cannot generate the next ID.`);
+        }
+        return prefix + padZero(candidate, minWidth);
+    }
+
+    int nextNum = nextNumberInFamily(maxNum, digit, minWidth);
+    return prefix + nextNum.toString();
+}
+
+# Extract the leading run of digits from an employee ID string (e.g. "LK1014231" -> 1014231).
+# Works regardless of prefix content or length, including manually-entered FIXED_TERM IDs.
+#
+# + employeeId - The employee ID to extract the numeric part from
+# + return - The numeric part as an int, or an error if the ID has no digits
+isolated function extractNumericSuffix(string employeeId) returns int|error {
+    int i = 0;
+    while i < employeeId.length() {
+        if re `[0-9]`.isFullMatch(employeeId.substring(i, i + 1)) {
+            break;
+        }
+        i += 1;
+    }
+    if i >= employeeId.length() {
+        return error(string `Employee ID '${employeeId}' has no numeric part`);
+    }
+    return check int:fromString(employeeId.substring(i));
+}
+
+# Compute the automatically-assigned house for a newly created employee, deterministically
+# derived from their employee ID's numeric part: `numericPart % 4` selects the house by a fixed
+# mapping (0 -> CloudBots, 1 -> Titans, 2 -> Legions, 3 -> Wild Boars), matching this system's
+# house IDs 1-4 in that same order.
+#
+# + employeeId - The employee's assigned employee ID (e.g. "LK1014231")
+# + return - The house ID to assign, or an error if the employee ID has no numeric part
+public isolated function houseIdForEmployeeId(string employeeId) returns int|error {
+    int numericPart = check extractNumericSuffix(employeeId);
+    int remainder = numericPart % 4;
+    if remainder == 0 {
+        return 1; // CloudBots
+    }
+    if remainder == 1 {
+        return 2; // Titans
+    }
+    if remainder == 2 {
+        return 3; // Legions
+    }
+    return 4; // Wild Boars
 }
 
 # Add employee personal information.
@@ -566,8 +704,12 @@ public isolated function getLastEmployeeNumericSuffix(string prefix, EmploymentT
 # + createdBy - Creator of the personal info record
 # + return - Created personal info ID or error
 isolated function addPersonalInfo(CreatePersonalInfoPayload personalInfo, string createdBy) returns int|error {
-    sql:ExecutionResult result = check databaseClient->execute(addEmployeePersonalInfoQuery(personalInfo, createdBy));
-    return check result.lastInsertId.ensureType(int);
+    _ = check databaseClient->execute(addEmployeePersonalInfoQuery(personalInfo, createdBy));
+    // Not result.lastInsertId: the personal_info_audit AFTER trigger's own auto-increment
+    // insert makes the JDBC driver's generated-keys result unreliable (returns nil) once that
+    // trigger fires. LAST_INSERT_ID() queried explicitly on this connection is unaffected.
+    record {|int id;|} row = check databaseClient->queryRow(`SELECT LAST_INSERT_ID() AS id`);
+    return row.id;
 }
 
 # Add employee record.
@@ -738,7 +880,11 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
         sql:ExecutionResult executionResult =
             check databaseClient->execute(updateEmployeeJobInfoQuery(employeeId, payload, updatedBy));
 
-        check checkAffectedCount(executionResult.affectedRowCount);
+        // A resignation-only payload updates just `updated_by` on the employee row; the real change
+        // lands in the resignation table below, so a zero affected count is not an error for it.
+        if !hasLeaverFields(payload) {
+            check checkAffectedCount(executionResult.affectedRowCount);
+        }
 
         Email[]? additionalManagerEmails = payload.additionalManagerEmails;
         if additionalManagerEmails is Email[] {
@@ -791,6 +937,8 @@ isolated function syncResignationRecord(string employeeId, UpdateEmployeeJobInfo
 
     if hasLeaverFields(payload) {
         _ = check databaseClient->execute(upsertResignationQuery(employeeId, payload, updatedBy));
+    }
+    if payload.employeeStatus == EMPLOYEE_LEFT {
         check inactivateEmployeeRelationshipsOnOffboarding(employeeId, updatedBy);
     }
 }
@@ -956,12 +1104,62 @@ public isolated function expireStalePendingParkingReservationForSlotDate(string 
     return result.affectedRowCount > 0;
 }
 
+# Get the caller's active reservation (CONFIRMED, or PENDING within `pendingExpiryMinutes`) for a date.
+#
+# + employeeEmail - Employee email
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
+# + return - Active reservation summary, nil if none, or error
+public isolated function getActiveParkingReservationForEmployeeDate(string employeeEmail, string bookingDate,
+        int pendingExpiryMinutes) returns ActiveParkingReservationRow|error? {
+
+    ActiveParkingReservationRow|error row = databaseClient->queryRow(
+        getActiveParkingReservationForEmployeeDateQuery(employeeEmail, bookingDate, pendingExpiryMinutes));
+    return row is sql:NoRowsError ? () : row;
+}
+
+# Expire the caller's stale PENDING reservations (PENDING -> EXPIRED) for a date (any slot).
+#
+# + employeeEmail - Employee email
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + expiryMinutes - Expiry duration in minutes
+# + return - True if any rows updated, or error
+public isolated function expireStalePendingParkingReservationsForEmployeeDate(string employeeEmail,
+        string bookingDate, int expiryMinutes) returns boolean|error {
+
+    sql:ExecutionResult result = check databaseClient->execute(
+        expireStalePendingParkingReservationsForEmployeeDateQuery(employeeEmail, bookingDate, expiryMinutes));
+    return result.affectedRowCount > 0;
+}
+
+# Update the vehicle on a parking reservation.
+#
+# + reservationId - Reservation id
+# + vehicleId - Registered vehicle id to set
+# + updatedBy - User performing the update
+# + return - True if updated, or error
+public isolated function updateParkingReservationVehicle(int reservationId, int vehicleId, string updatedBy)
+        returns boolean|error {
+
+    sql:ExecutionResult result = check databaseClient->execute(
+        updateParkingReservationVehicleQuery(reservationId, vehicleId, updatedBy));
+    return result.affectedRowCount > 0;
+}
+
 # Create parking reservation (PENDING).
 #
 # + payload - Reservation payload
-# + return - New reservation id
+# + return - New reservation id, `DuplicateActiveReservationError` if an active reservation already
+#            exists for the slot/date or employee/date (unique index violation), or error
 public isolated function addParkingReservation(AddParkingReservationPayload payload) returns int|error {
-    sql:ExecutionResult result = check databaseClient->execute(addParkingReservationQuery(payload));
+    sql:ExecutionResult|error result = databaseClient->execute(addParkingReservationQuery(payload));
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateActiveReservationError(
+            "An active reservation already exists for this slot or employee on this date.");
+    }
+    if result is error {
+        return result;
+    }
     return result.lastInsertId.ensureType(int);
 }
 

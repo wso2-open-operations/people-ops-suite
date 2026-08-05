@@ -64,6 +64,33 @@ isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
 isolated function getEmployeeIdByEpfQuery(string epf) returns sql:ParameterizedQuery =>
     `SELECT employee_id FROM employee WHERE epf = ${epf} LIMIT 1;`;
 
+# Fetch the personal_info ID for a given NIC/Passport.
+#
+# + nicOrPassport - National Identity Card number or Passport
+# + return - Query returning the personal_info ID
+isolated function getPersonalInfoIdByNicQuery(string nicOrPassport) returns sql:ParameterizedQuery =>
+    `SELECT id FROM personal_info WHERE nic_or_passport = ${nicOrPassport} LIMIT 1;`;
+
+# Check whether a personal_info ID already has an employee record under the given work email —
+# used to confirm a duplicate NIC/Passport belongs to the same person coming back (rehire).
+#
+# + personalInfoId - personal_info ID matched by NIC/Passport
+# + workEmail - Work email from the new onboarding submission
+# + return - Query returning the count of matching employee records
+isolated function countEmployeeByPersonalInfoIdAndWorkEmailQuery(int personalInfoId, string workEmail)
+    returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) FROM employee
+     WHERE personal_info_id = ${personalInfoId}
+       AND LOWER(work_email) = LOWER(${workEmail});`;
+
+# Count active employee records linked to a personal_info ID — used to block onboarding a
+# rehire for someone who is still currently employed.
+#
+# + personalInfoId - personal_info ID matched by NIC/Passport
+# + return - Query returning the count of active employee records
+isolated function countActiveEmployeeByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) FROM employee WHERE personal_info_id = ${personalInfoId} AND employee_status = ${EMPLOYEE_ACTIVE};`;
+
 # Fetch employee work email by employee ID.
 #
 # + employeeId - Employee ID
@@ -494,40 +521,6 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         e.work_email = ${workEmail}
         AND et.is_active = 1
         AND et.name IN ('Permanent');`;
-
-# Search employee personal information.
-#
-# + payload - Search employee personal information payload
-# + return - Query to search employee personal information
-isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayload payload)
-    returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery mainQuery = `
-        SELECT 
-            nic_or_passport,
-            p.first_name AS firstName,
-            p.last_name AS lastName,
-            full_name,
-            title,
-            dob,
-            gender,
-            personal_email,
-            personal_phone,
-            resident_number,
-            address_line_1,
-            address_line_2,
-            city,
-            state_or_province,
-            postal_code,
-            country,
-            nationality
-        FROM personal_info p`;
-
-    string? nicOrPassport = payload?.nicOrPassport;
-    if nicOrPassport is string {
-        mainQuery = sql:queryConcat(mainQuery, ` WHERE p.nic_or_passport = ${nicOrPassport}`);
-    }
-    return sql:queryConcat(mainQuery, `;`);
-}
 
 # Fetch employee personal information.
 #
@@ -1281,34 +1274,14 @@ isolated function getAsgardeoGroupsForTeamQuery(int teamId, int employmentTypeId
 isolated function getHousesQuery() returns sql:ParameterizedQuery =>
     `SELECT id, name FROM house WHERE is_active = 1 ORDER BY name`;
 
-# Get the house with the fewest active employees query.
-#
-# + return - Query to get the house with the least active employees
-isolated function getHouseWithLeastActiveEmployeesQuery() returns sql:ParameterizedQuery =>
-    `SELECT h.id, h.name
-     FROM house h
-     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
-     WHERE h.is_active = 1
-     GROUP BY h.id, h.name
-     ORDER BY COUNT(e.id) ASC
-     LIMIT 1`;
-
-# Get all active houses with their active employee counts query.
-#
-# + return - Query to get all active houses ordered by active employee count ascending
-isolated function getHousesWithActiveEmployeeCountsQuery() returns sql:ParameterizedQuery =>
-    `SELECT h.id, h.name, COUNT(e.id) AS active_count
-     FROM house h
-     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
-     WHERE h.is_active = 1
-     GROUP BY h.id, h.name
-     ORDER BY active_count ASC`;
-
-# Add employee personal information query.
+# Add employee personal information query. Upserts on the nic_or_passport UNIQUE key so
+# rehiring someone (same NIC/Passport) refreshes their existing personal_info row instead of
+# failing — `id = LAST_INSERT_ID(id)` makes the update branch still resolve to that row's own
+# id when the caller queries `SELECT LAST_INSERT_ID()` afterward (see addPersonalInfo).
 #
 # + payload - Create personal info payload
-# + createdBy - Creator of the personal info record
-# + return - Personal info insert query
+# + createdBy - Creator/updater of the personal info record
+# + return - Personal info upsert query
 isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload, string createdBy)
     returns sql:ParameterizedQuery =>
     `INSERT INTO personal_info
@@ -1354,7 +1327,26 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${payload.nationality},
             ${createdBy},
             ${createdBy}
-        );`;
+        )
+    ON DUPLICATE KEY UPDATE
+        id = LAST_INSERT_ID(id),
+        first_name = VALUES(first_name),
+        last_name = VALUES(last_name),
+        full_name = VALUES(full_name),
+        title = VALUES(title),
+        dob = VALUES(dob),
+        gender = VALUES(gender),
+        personal_email = VALUES(personal_email),
+        personal_phone = VALUES(personal_phone),
+        resident_number = VALUES(resident_number),
+        address_line_1 = VALUES(address_line_1),
+        address_line_2 = VALUES(address_line_2),
+        city = VALUES(city),
+        state_or_province = VALUES(state_or_province),
+        postal_code = VALUES(postal_code),
+        country = VALUES(country),
+        nationality = VALUES(nationality),
+        updated_by = ${createdBy};`;
 
 # Fetch company prefix and employment type required for generating the next employee ID.
 #
@@ -1371,42 +1363,37 @@ isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
     JOIN company c ON c.id = ${companyId}
     WHERE et.id = ${employmentTypeId}`;
 
-# Lock the employee sequence for the provided prefix and return the last numeric ID.
+
+# Fetch and lock the current numeric maximum within a digit-family sequence, scoped purely by the
+# ID string pattern (prefix + leading digit) rather than by employment type. This means an
+# employee tagged with any type — including inactive/legacy ones the caller never listed — can
+# never be invisible to this count, which is what a type-filtered scan allowed to happen.
 #
-# + prefix - The ID prefix to lock on (company prefix or consultancy prefix)
-# + employmentTypes - The employment type names that share this sequence
-# + return - Query to lock the sequence and return the last numeric ID
-isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, EmploymentTypeName[] employmentTypes)
-    returns sql:ParameterizedQuery {
-
-    sql:ParameterizedQuery inClause = ``;
-    foreach int i in 0 ..< employmentTypes.length() {
-        if i == 0 {
-            inClause = sql:queryConcat(inClause, `${employmentTypes[i]}`);
-        } else {
-            inClause = sql:queryConcat(inClause, `, `, `${employmentTypes[i]}`);
-        }
-    }
-
-    return sql:queryConcat(
-            `SELECT
-            COALESCE(
-                MAX(CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
-                0
-            ) AS lastNumericId
-        FROM employee e
-        JOIN employment_type et ON et.id = e.employment_type_id
-        WHERE
-            e.employee_id LIKE ${prefix + "%"}
-            AND e.employee_id NOT LIKE ${prefix + "_%-%"}
-            AND UPPER(et.name) IN (`,
-            inClause,
-            `)
-        ORDER BY CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
-        LIMIT 1
-        FOR UPDATE`
-    );
-}
+# Note on `FOR UPDATE`: this row lock only has effect when the query runs inside a database
+# transaction. The bulk-onboarding caller (`generateBulkEmployeeId`) does hold it inside a real
+# transaction, so it gets actual mutual exclusion. The single-onboarding caller
+# (`getNextIdInFamily` -> `getFamilyMax`, invoked from `generateEmployeeId` in utils.bal) does
+# NOT wrap this in a transaction, so on that path the lock is released as soon as the query
+# returns and provides no real protection against a concurrent check-then-act race. That race is
+# a known, already-accepted limitation and intentionally out of scope here — this note exists so
+# `FOR UPDATE` isn't mistaken for an effective lock on the single-onboarding path.
+#
+# + prefix - The ID prefix (company prefix or CONSULTANCY_ID_PREFIX)
+# + digit - The required leading digit for this family, as a single character ("0", "1", or "5")
+# + return - Query returning the current numeric maximum for this family (0 if none exist yet)
+isolated function getNextIdInFamilyQuery(string prefix, string digit) returns sql:ParameterizedQuery =>
+    `SELECT
+        COALESCE(
+            MAX(CAST(SUBSTRING(employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
+            0
+        ) AS lastNumericId
+    FROM employee
+    WHERE
+        employee_id LIKE ${prefix + digit + "%"}
+        AND employee_id NOT LIKE ${prefix + "_%-%"}
+    ORDER BY CAST(SUBSTRING(employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
+    LIMIT 1
+    FOR UPDATE`; // Lock has no effect here on the single-onboarding path — see doc comment above.
 
 # Add employee query.
 #
@@ -2151,6 +2138,57 @@ isolated function expireStalePendingParkingReservationForSlotDateQuery(string sl
       AND booking_date = ${bookingDate}
       AND status = ${PENDING}
       AND created_on < DATE_SUB(NOW(), INTERVAL ${expiryMinutes} MINUTE)`;
+
+# Get the caller's active reservation for a date (existence + reuse check).
+#
+# + employeeEmail - Employee email
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + pendingExpiryMinutes - Pending expiry duration in minutes
+# + return - Query to get the employee's active reservation for the date
+isolated function getActiveParkingReservationForEmployeeDateQuery(string employeeEmail, string bookingDate,
+        int pendingExpiryMinutes) returns sql:ParameterizedQuery =>
+    `SELECT
+        id,
+        slot_id as 'slotId',
+        vehicle_id as 'vehicleId',
+        status,
+        coins_amount as 'coinsAmount'
+    FROM parking_reservation
+    WHERE employee_email = ${employeeEmail}
+      AND booking_date = ${bookingDate}
+      AND (
+        status = ${CONFIRMED}
+        OR (status = ${PENDING}
+            AND created_on >= DATE_SUB(NOW(), INTERVAL ${pendingExpiryMinutes} MINUTE))
+      )
+    LIMIT 1`;
+
+# Expire the caller's stale pending reservations (PENDING -> EXPIRED) for a date (any slot).
+#
+# + employeeEmail - Employee email
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + expiryMinutes - Expiry duration in minutes
+# + return - Query to mark the employee's stale pending reservations as EXPIRED
+isolated function expireStalePendingParkingReservationsForEmployeeDateQuery(string employeeEmail, string bookingDate,
+        int expiryMinutes) returns sql:ParameterizedQuery =>
+    `UPDATE parking_reservation
+    SET status = ${EXPIRED}
+    WHERE employee_email = ${employeeEmail}
+      AND booking_date = ${bookingDate}
+      AND status = ${PENDING}
+      AND created_on < DATE_SUB(NOW(), INTERVAL ${expiryMinutes} MINUTE)`;
+
+# Update the vehicle on a parking reservation.
+#
+# + reservationId - Reservation id
+# + vehicleId - Registered vehicle id to set
+# + updatedBy - User performing the update
+# + return - Query to update the reservation's vehicle
+isolated function updateParkingReservationVehicleQuery(int reservationId, int vehicleId, string updatedBy)
+        returns sql:ParameterizedQuery =>
+    `UPDATE parking_reservation
+    SET vehicle_id = ${vehicleId}, updated_by = ${updatedBy}
+    WHERE id = ${reservationId}`;
 
 # Insert parking reservation (PENDING).
 #

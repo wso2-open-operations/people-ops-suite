@@ -41,9 +41,8 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
         };
     }
 
-    // Reject inactive employment types (e.g. PROBATION). The frontend already hides them, but a
-    // direct API call could still send one; without this it would fall through to the unsupported
-    // 500 path. PROBATION stays non-onboardable here yet is still counted in the PERMANENT line below.
+    // Reject inactive employment types before ID generation. The frontend already hides them,
+    // but a direct API call could still submit an inactive (yet otherwise supported) type.
     if !ctx.isActive {
         string customErr = string `Employment type (ID: ${payload.employmentTypeId}) is inactive ` +
             "and cannot be used for onboarding.";
@@ -60,7 +59,7 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
     string companyPrefix = ctx.companyPrefix.trim();
 
     match ctx.employmentType {
-        database:PERMANENT|database:INTERNSHIP => {
+        database:PERMANENT|database:INTERNSHIP|database:PROBATION => {
             if companyPrefix.length() == 0 {
                 string customErr = string `The selected company (ID: ${payload.companyId}) has no employee ` +
                     "ID prefix configured. Set the company prefix before onboarding.";
@@ -71,45 +70,35 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
                     }
                 };
             }
-            // PERMANENT and PROBATION share one number line (an employee keeps the same ID across
-            // probation -> permanent); INTERNSHIP runs a separate line. PROBATION is intentionally
-            // counted here but not onboardable (rejected by the is_active check above) -- do not add
-            // a PROBATION match arm or re-key this ternary off it.
-            database:EmploymentTypeName[] sequenceTypes = ctx.employmentType == database:PERMANENT
-                ? [database:PERMANENT, database:PROBATION]
-                : [database:INTERNSHIP];
-            database:EmployeeIdSequence|error row = database:getLastEmployeeNumericSuffix(
-                    companyPrefix, sequenceTypes
-            );
-            if row is error {
-                string customErr = "Error occurred while fetching last employee numeric suffix";
-                log:printError(customErr, row, employmentType = ctx.employmentType, companyPrefix = companyPrefix);
+            // PERMANENT and PROBATION share the "1" digit family (an employee keeps the same ID
+            // across probation -> permanent); INTERNSHIP uses "5". Scoping by this digit directly
+            // on the ID string (not by employment_type) means an employee tagged with any other
+            // or legacy type can never be invisible to this count.
+            int digit = ctx.employmentType == database:INTERNSHIP ? 5 : 1;
+            string|error nextId = database:getNextIdInFamily(companyPrefix, digit);
+            if nextId is error {
+                string customErr = "Error occurred while generating the next employee ID";
+                log:printError(customErr, nextId, employmentType = ctx.employmentType, companyPrefix = companyPrefix);
                 return <http:InternalServerError>{
                     body: {
                         message: customErr
                     }
                 };
             }
-            return string `${companyPrefix}${<int>row.lastNumericId + 1}`;
+            return nextId;
         }
         database:CONSULTANCY|database:ADVISORY_CONSULTANCY|database:PART_TIME_CONSULTANCY => {
-            database:EmployeeIdSequence|error row = database:getLastEmployeeNumericSuffix(
-                    database:CONSULTANCY_ID_PREFIX, [
-                        database:CONSULTANCY,
-                        database:ADVISORY_CONSULTANCY,
-                        database:PART_TIME_CONSULTANCY
-                    ]
-            );
-            if row is error {
-                string customErr = "Error occurred while fetching last employee numeric suffix";
-                log:printError(customErr, row, employmentType = ctx.employmentType);
+            string|error nextId = database:getNextIdInFamily(database:CONSULTANCY_ID_PREFIX, 0, zeroPadded = true);
+            if nextId is error {
+                string customErr = "Error occurred while generating the next employee ID";
+                log:printError(customErr, nextId, employmentType = ctx.employmentType);
                 return <http:InternalServerError>{
                     body: {
                         message: customErr
                     }
                 };
             }
-            return string `${database:CONSULTANCY_ID_PREFIX}${<int>row.lastNumericId + 1}`;
+            return nextId;
         }
         database:FIXED_TERM => {
             string manualId = (payload.employeeId ?: "").trim();
@@ -214,7 +203,6 @@ isolated function loadBulkReferenceData() returns BulkRefData|error {
     future<database:EmploymentType[]|error> et = start database:getEmploymentTypes();
     future<database:CompanyResponse[]|error> c = start database:getCompanies();
     future<database:Office[]|error> o = start database:getOffices();
-    future<database:HouseWithCount[]|error> h = start database:getHousesWithActiveEmployeeCounts();
 
     database:BusinessUnit[] businessUnits = check wait bu;
     database:Team[] teams = check wait t;
@@ -224,7 +212,6 @@ isolated function loadBulkReferenceData() returns BulkRefData|error {
     database:EmploymentType[] employmentTypes = check wait et;
     database:CompanyResponse[] companies = check wait c;
     database:Office[] offices = check wait o;
-    database:HouseWithCount[] houses = check wait h;
 
     return {
         businessUnitIds: map from database:BusinessUnit bu_row in businessUnits
@@ -238,17 +225,14 @@ isolated function loadBulkReferenceData() returns BulkRefData|error {
         designationIds: map from database:Designation d_row in designations
             select [normalizeKey(d_row.designation), d_row.id],
         // Only active types are valid for onboarding; mirrors the frontend filter so a CSV row
-        // naming an inactive type (e.g. PROBATION) is rejected during validation.
+        // naming an inactive employment type is rejected during validation.
         employmentTypeIds: map from database:EmploymentType et_row in employmentTypes
             where et_row.isActive
             select [normalizeKey(et_row.name), et_row.id],
         companyIds: map from database:CompanyResponse c_row in companies
             select [normalizeKey(c_row.name), c_row.id],
         officeIds: map from database:Office o_row in offices
-            select [normalizeKey(o_row.name), o_row.id],
-        houseIds: map from database:HouseWithCount h_row in houses
-            select [normalizeKey(h_row.name), h_row.id],
-        houses: houses
+            select [normalizeKey(o_row.name), o_row.id]
     };
 }
 
@@ -418,9 +402,9 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
 #
 # + row - Typed CSV row to build the payload from
 # + refData - Pre-loaded reference data lookup maps
-# + suggestedHouseId - House ID to assign, resolved per-employee at call time
-# + return - Fully populated `CreateEmployeePayload` ready for DB insertion
-isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData refData, int? suggestedHouseId)
+# + return - Fully populated `CreateEmployeePayload` ready for DB insertion; houseId is left
+#   unset here — it's assigned automatically once the employee ID is resolved (see addEmployeesBulk)
+isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData refData)
     returns database:CreateEmployeePayload {
 
     string firstName = row.firstName.trim();
@@ -475,7 +459,7 @@ isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData r
         unitId,
         businessUnitId: refData.businessUnitIds[normalizeKey(row.businessUnit)] ?: 0,
         officeId,
-        houseId: suggestedHouseId,
+        houseId: (),
         additionalManagerEmails,
         probationEndDate: row.probationEndDate.trim().length() > 0 ? row.probationEndDate.trim() : (),
         agreementEndDate: row.agreementEndDate.trim().length() > 0 ? row.agreementEndDate.trim() : (),
@@ -735,27 +719,11 @@ isolated function buildBulkPayloads(CsvRowInfo[] rowInfos, BulkRefData refData)
         returns BulkPayloadResult {
     ResolvedEmployee[] employees = [];
 
-    map<int> houseCounts = map from database:HouseWithCount h in refData.houses
-        select [h.id.toString(), h.activeCount];
-
     foreach CsvRowInfo rowInfo in rowInfos {
-        int? suggestedHouseId = ();
-        if refData.houses.length() > 0 {
-            int minCount = int:MAX_VALUE;
-            int? minHouseId = ();
-            foreach database:HouseWithCount h in refData.houses {
-                int count = houseCounts[h.id.toString()] ?: 0;
-                if count < minCount {
-                    minCount = count;
-                    minHouseId = h.id;
-                }
-            }
-            if minHouseId is int {
-                suggestedHouseId = minHouseId;
-                houseCounts[minHouseId.toString()] = (houseCounts[minHouseId.toString()] ?: 0) + 1;
-            }
-        }
-        database:CreateEmployeePayload payload = buildBulkEmployeePayload(rowInfo.values, refData, suggestedHouseId);
+        // House is assigned automatically from the employee ID's numeric part once the ID is
+        // resolved in addEmployeesBulk — it doesn't exist yet at this point, so houseId is left
+        // unset here.
+        database:CreateEmployeePayload payload = buildBulkEmployeePayload(rowInfo.values, refData);
         employees.push({employeeId: "", payload, rowNumber: rowInfo.rowNumber});
     }
 
