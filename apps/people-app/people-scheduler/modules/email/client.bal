@@ -16,13 +16,15 @@
 
 import ballerina/http;
 
-public configurable EmailServiceConfig emailServiceConfig = ?;
+public configurable string emailServiceEndpoint = ?;
+public configurable ClientAuthConfig clientAuthConfig = ?;
 public configurable string appName = ?;
-public configurable string[] leaverNotificationRecipients = ?;
+public configurable string fromEmailAddress = ?;
 
-final http:Client emailClient = check new (emailServiceConfig.emailServiceEndpoint, {
+# Email HTTP client, shared across all scheduled jobs.
+public final http:Client emailClient = check new (emailServiceEndpoint, {
     auth: {
-        ...emailServiceConfig.oauthConfig
+        ...clientAuthConfig
     },
     timeout: 15.0,
     httpVersion: http:HTTP_1_1,

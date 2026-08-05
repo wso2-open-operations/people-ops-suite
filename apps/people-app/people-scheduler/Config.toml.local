@@ -1,0 +1,25 @@
+[people_scheduler.database.dbConfig]
+    host = ""
+    user = ""
+    password = ""
+    database = ""
+    port =
+    [people_scheduler.database.dbConfig.connectionPool]
+    maxOpenConnections =
+    maxConnectionLifeTime =
+    minIdleConnections =
+    [people_scheduler.database.dbConfig.options]
+    connectTimeout =
+    [people_scheduler.database.dbConfig.options.ssl]
+    mode = "PREFERRED"
+
+[people_scheduler.email]
+    emailServiceEndpoint = ""
+    appName = ""
+    fromEmailAddress = ""
+    leaverNotificationRecipients = [""]
+
+[people_scheduler.email.clientAuthConfig]
+    tokenUrl = ""
+    clientId = ""
+    clientSecret = ""

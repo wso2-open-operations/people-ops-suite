@@ -38,7 +38,7 @@ public type DatabaseConfig record {|
 
 configurable DatabaseConfig dbConfig = ?;
 
-function initLeaverSweepDbClient() returns mysql:Client|error => new (...dbConfig);
+function initSchedulerDbClient() returns mysql:Client|error => new (...dbConfig);
 
-# Database Client.
-final mysql:Client databaseClient = check initLeaverSweepDbClient();
+# Database Client, shared across all scheduled jobs.
+public final mysql:Client databaseClient = check initSchedulerDbClient();

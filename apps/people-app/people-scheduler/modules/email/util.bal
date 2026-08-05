@@ -22,7 +22,7 @@ import ballerina/mime;
 #
 # + str - String to escape
 # + return - HTML-escaped string
-isolated function htmlEscape(string str) returns string {
+public isolated function htmlEscape(string str) returns string {
     string escaped = str;
     escaped = re `&`.replaceAll(escaped, "&amp;");
     escaped = re `<`.replaceAll(escaped, "&lt;");
@@ -37,7 +37,7 @@ isolated function htmlEscape(string str) returns string {
 # + content - Email content
 # + keyValPairs - Key value pairs
 # + return - Email content
-isolated function bindKeyValues(string content, map<string> keyValPairs) returns string|error {
+public isolated function bindKeyValues(string content, map<string> keyValPairs) returns string|error {
     string bindContent = keyValPairs.entries().reduce(
         isolated function(string accumulation, [string, string] keyVal) returns string {
         regexp:RegExp r = re `<!-- \[${keyVal[0].toUpperAscii()}\] -->`;

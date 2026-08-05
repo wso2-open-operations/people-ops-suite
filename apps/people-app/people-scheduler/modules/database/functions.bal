@@ -43,7 +43,8 @@ public isolated function transitionExpiredLeavers(string actor) returns LeaverTr
     string[] employeeIds = from LeaverTransition t in transitions select t.employeeId;
 
     transaction {
-        sql:ExecutionResult executionResult = check databaseClient->execute(transitionExpiredLeaversQuery(actor, employeeIds));
+        sql:ExecutionResult executionResult =
+            check databaseClient->execute(transitionExpiredLeaversQuery(actor, employeeIds));
         check checkAffectedCount(executionResult.affectedRowCount);
         check commit;
     }

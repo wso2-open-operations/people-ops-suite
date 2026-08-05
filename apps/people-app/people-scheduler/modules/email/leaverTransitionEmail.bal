@@ -14,11 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import leaver_sweep.database;
+import people_scheduler.database;
 
 import ballerina/http;
 import ballerina/log;
 import ballerina/time;
+
+configurable string[] leaverNotificationRecipients = ?;
 
 # Send a summary email listing employees auto-transitioned from Marked leaver to Left.
 #
@@ -30,9 +32,11 @@ public isolated function notifyLeaverAutoTransition(database:LeaverTransition[] 
        select string `<li>${htmlEscape(t.firstName)} ${htmlEscape(t.lastName)} (${htmlEscape(t.employeeId)})
             &mdash; ${htmlEscape(t.workEmail)} &mdash; final day: ${htmlEscape(t.finalDayOfEmployment)}</li>`);
 
+    string runDate = time:utcToString(time:utcNow()).substring(0, 10);
+
     map<string> keyValues = {
         APP_NAME: appName,
-        RUN_DATE: time:utcToString(time:utcNow()).substring(0, 10),
+        RUN_DATE: runDate,
         COUNT: transitions.length().toString(),
         EMPLOYEE_LIST: employeeListHtml,
         YEAR: time:utcToCivil(time:utcNow()).year.toString()
@@ -47,8 +51,8 @@ public isolated function notifyLeaverAutoTransition(database:LeaverTransition[] 
 
     EmailPayload emailPayload = {
         to: leaverNotificationRecipients,
-        'from: emailServiceConfig.'from,
-        subject: string `Employee Offboarding Alert: ${transitions.length()} employee(s) transitioned to Left`,
+        'from: fromEmailAddress,
+        subject: string `Employee Offboarding Alert (${runDate}): ${transitions.length()} employee(s) transitioned to Left`,
         template: boundTemplate
     };
 
@@ -60,7 +64,8 @@ public isolated function notifyLeaverAutoTransition(database:LeaverTransition[] 
     }
     if response.statusCode != http:STATUS_OK {
         string customError = string `Error occurred while sending the leaver auto-transition summary email! - HTTP ${response.statusCode}`;
-        log:printError(customError);
+        json|error responseBody = response.getJsonPayload();
+        log:printError(customError, responseBody = responseBody is json ? responseBody.toJsonString() : responseBody.message());
         return error(customError);
     }
     log:printInfo(string `Leaver auto-transition summary email sent successfully to ${emailPayload.to.toString()}`);

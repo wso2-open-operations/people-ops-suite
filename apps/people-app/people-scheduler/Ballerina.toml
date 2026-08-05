@@ -1,6 +1,6 @@
 [package]
 org = "wso2_open_operations"
-name = "leaver_sweep"
+name = "people_scheduler"
 version = "1.0.0"
 distribution = "2201.12.7"
 

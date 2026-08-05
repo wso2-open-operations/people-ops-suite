@@ -14,26 +14,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# OAuth2 application configuration.
-public type Oauth2Config record {|
-    # The URL of the token endpoint
+# Auth2 client auth configurations.
+public type ClientAuthConfig record {|
+    # Token URL
     string tokenUrl;
-    # The client ID of the application
+    # Client ID
     string clientId;
-    # The client secret of the application
+    # Client Secret
     string clientSecret;
-    # OAuth2 scopes
-    string[] scopes = [];
 |};
 
-# Email Service Configuration.
-public type EmailServiceConfig record {|
-    # Email Service Endpoint
-    string emailServiceEndpoint;
-    # Auth Configurations
-    Oauth2Config oauthConfig;
-    # Sender email
-    string 'from;
+# Document attachment record.
+public type Document record {|
+    # Name of the document
+    string contentName;
+    # Document type
+    string contentType;
+    # Document content byte array
+    byte[] attachment;
+    # Content ID for referencing the attachment in email templates
+    string contentId?;
 |};
 
 # Payload of the email alerting service.
@@ -46,4 +46,10 @@ public type EmailPayload record {|
     string subject;
     # Email template
     string template;
+    # Attachments
+    Document[] attachments = [];
+    # CC'ed recipient email(s) as string array
+    string[] cc?;
+    # BCC'd recipient email(s)
+    string[] bcc?;
 |};

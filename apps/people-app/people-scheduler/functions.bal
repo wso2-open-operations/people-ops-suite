@@ -14,17 +14,21 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import leaver_sweep.database;
-import leaver_sweep.email;
+import people_scheduler.database;
+import people_scheduler.email;
 
 import ballerina/log;
 
-const string LEAVER_SWEEP_ACTOR = "system-scheduler";
+const string SCHEDULER_ACTOR = "system-scheduler";
 
-public function main() returns error? {
+# Run the leaver auto-transition job: find employees whose Marked-leaver final day of employment
+# has arrived, transition them to Left, and email a summary.
+#
+# + return - Error if the transition step itself fails
+isolated function runLeaverTransition() returns error? {
     log:printInfo("Leaver auto-transition sweep started");
 
-    database:LeaverTransition[] transitions = check database:transitionExpiredLeavers(LEAVER_SWEEP_ACTOR);
+    database:LeaverTransition[] transitions = check database:transitionExpiredLeavers(SCHEDULER_ACTOR);
 
     if transitions.length() == 0 {
         log:printInfo("Leaver auto-transition sweep completed — no employees due for transition");
