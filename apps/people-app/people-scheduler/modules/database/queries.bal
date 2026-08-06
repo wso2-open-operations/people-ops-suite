@@ -30,7 +30,7 @@ isolated function getExpiredLeaversQuery() returns sql:ParameterizedQuery =>
     JOIN resignation r ON r.employee_id = e.id
     WHERE e.employee_status = 'Marked leaver'
         AND r.final_day_of_employment IS NOT NULL
-        AND r.final_day_of_employment <= CURDATE();`;
+        AND r.final_day_of_employment <= UTC_DATE();`;
 
 # Build an SQL IN clause for a list of string values.
 #
@@ -59,7 +59,7 @@ isolated function transitionExpiredLeaversQuery(string actor, string[] employeeI
         SET e.employee_status = 'Left', e.updated_by = ${actor}
         WHERE e.employee_status = 'Marked leaver'
             AND r.final_day_of_employment IS NOT NULL
-            AND r.final_day_of_employment <= CURDATE()
+            AND r.final_day_of_employment <= UTC_DATE()
             AND e.employee_id IN (`,
         inClause,
         `);`

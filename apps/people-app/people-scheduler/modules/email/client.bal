@@ -32,9 +32,12 @@ public final http:Client emailClient = check new (emailServiceEndpoint, {
         keepAlive: http:KEEPALIVE_NEVER
     },
     retryConfig: {
-        count: 3,
+        count: 5,
         interval: 3.0,
+        backOffFactor: 2.0,
+        maxWaitInterval: 30.0,
         statusCodes: [
+            http:STATUS_INTERNAL_SERVER_ERROR,
             http:STATUS_BAD_GATEWAY,
             http:STATUS_SERVICE_UNAVAILABLE,
             http:STATUS_GATEWAY_TIMEOUT

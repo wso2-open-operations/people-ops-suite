@@ -1577,7 +1577,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             string? resultingFinalDayOfEmployment = payload.finalDayOfEmployment ?: employeeInfo.finalDayOfEmployment;
             string? resultingResignationReason = payload.resignationReason ?: employeeInfo.resignationReason;
 
-            if resultingFinalDayInOffice is () || resultingFinalDayOfEmployment is () || resultingResignationReason is () {
+            if resultingFinalDayInOffice is () || resultingFinalDayOfEmployment is ()
+                || resultingResignationReason is () || resultingResignationReason.trim().length() == 0 {
                 log:printWarn("Attempt to set status to Marked leaver/Left without all resignation details",
                         employeeId = employeeId);
                 return <http:BadRequest>{

@@ -171,7 +171,9 @@ export const createJobInfoValidationSchema = (
       }),
     resignationReason: Yup.string()
       .max(300, "Resignation reason must be at most 300 characters")
-      .transform((value) => (value === "" ? null : value))
+      .transform((value) =>
+        typeof value === "string" && value.trim() === "" ? null : value,
+      )
       .nullable()
       .when("employeeStatus", {
         is: (status: string) =>

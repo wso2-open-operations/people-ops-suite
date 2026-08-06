@@ -24,7 +24,10 @@ const string SCHEDULER_ACTOR = "system-scheduler";
 # Run the leaver auto-transition job: find employees whose Marked-leaver final day of employment
 # has arrived, transition them to Left, and email a summary.
 #
-# + return - Error if the transition step itself fails
+# + return - Error if the transition step itself fails, or if the summary email could not be sent
+# after retries — the transition itself has already committed either way; this only reports
+# whether the notification step succeeded, so the scheduled run surfaces as failed and can be
+# noticed and manually checked.
 isolated function runLeaverTransition() returns error? {
     log:printInfo("Leaver auto-transition sweep started");
 
@@ -40,6 +43,8 @@ isolated function runLeaverTransition() returns error? {
     error? notifyResult = email:notifyLeaverAutoTransition(transitions);
     if notifyResult is error {
         log:printError("Failed to send leaver auto-transition summary email", notifyResult);
+        log:printInfo("Leaver auto-transition sweep completed");
+        return notifyResult;
     }
 
     log:printInfo("Leaver auto-transition sweep completed");

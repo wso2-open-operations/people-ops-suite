@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`backend/`** — Ballerina HTTP service (port 9090) for employee data management
 - **`webapp/`** — Legacy React SPA (Create React App + react-app-rewired) — the primary admin UI
 - **`microapp/`** — Modern embeddable React widget (Vite + React 19) for employee self-service features
-- **`leaver-sweep/`** — Standalone Ballerina package deployed as a WSO2 Choreo Scheduled Task; queries the database directly for employees whose "Marked leaver" final day of employment has arrived, transitions them to "Left", and emails a summary. No HTTP listener, no in-repo scheduling — Choreo's cron config controls run frequency. Run locally with `cd leaver-sweep && bal build` / `bal run`.
+- **`people-scheduler/`** — Standalone Ballerina package deployed as a WSO2 Choreo Scheduled Task; runs all scheduled People App background jobs from one `main()` entry point. Job orchestration logic (e.g. `runLeaverTransition()`) lives in root-level files like `functions.bal`, invoked from `main.bal`. All database access (queries, types, functions) lives in `modules/database/`; all email concerns (client, templates, notification-sending) live in `modules/email/` — these are the only two modules, shared across every job rather than split per job. Currently runs the leaver auto-transition job: finds employees whose "Marked leaver" final day of employment has arrived, transitions them to "Left", and emails a summary. No HTTP listener, no in-repo scheduling — Choreo's cron config controls run frequency. Run locally with `cd people-scheduler && bal build` / `bal run`.
 
 ---
 

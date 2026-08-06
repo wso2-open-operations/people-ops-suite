@@ -17,14 +17,21 @@
 import ballerina/log;
 
 # Entry point for the scheduled People App job runner (deployed as a WSO2 Choreo Scheduled Task).
-# Runs each registered job in turn; a failure in one job is logged but does not prevent the others
-# from running.
-public function main() {
+# Runs every registered job in turn regardless of whether an earlier one failed, then reports an
+# error if any job failed — so the Choreo run visibly shows as failed and can be noticed, without
+# one job's failure preventing the others from running.
+#
+# + return - Error if any job reported a failure
+public function main() returns error? {
     error? leaverResult = runLeaverTransition();
     if leaverResult is error {
         log:printError("Leaver auto-transition sweep failed", leaverResult);
     }
     // Future jobs (e.g. probation-to-permanent conversion) are added here the same way: call the
-    // job's `run<JobName>()` function (defined in functions.bal) and log (don't propagate) any
-    // error, so one job's failure can't stop the others from running.
+    // job's `run<JobName>()` function (defined in functions.bal), log its error if any, and track
+    // it below — every job still runs even if an earlier one failed.
+
+    if leaverResult is error {
+        return error("One or more scheduled jobs failed — see logs for details");
+    }
 }

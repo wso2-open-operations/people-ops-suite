@@ -118,7 +118,7 @@ public final string leaverAutoTransitionSummaryTemplate = string `
                               "
                             >
                               <strong>Automated Offboarding Update</strong> &mdash;
-                              <!-- [COUNT] --> employee(s) reached their final day of employment on
+                              <!-- [COUNT] --> employee(s) had reached their final day of employment by
                               <!-- [RUN_DATE] --> and were automatically transitioned from
                               <em>Marked leaver</em> to <em>Left</em>.
                             </p>

@@ -68,5 +68,5 @@ public isolated function notifyLeaverAutoTransition(database:LeaverTransition[] 
         log:printError(customError, responseBody = responseBody is json ? responseBody.toJsonString() : responseBody.message());
         return error(customError);
     }
-    log:printInfo(string `Leaver auto-transition summary email sent successfully to ${emailPayload.to.toString()}`);
+    log:printInfo(string `Leaver auto-transition summary email sent on ${runDate} for ${transitions.length()} leaver(s)`);
 }
