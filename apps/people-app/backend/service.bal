@@ -1573,17 +1573,17 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if isLeaverStatus {
-            string? resultingFinalDayInOffice = payload.finalDayInOffice ?: employeeInfo.finalDayInOffice;
-            string? resultingFinalDayOfEmployment = payload.finalDayOfEmployment ?: employeeInfo.finalDayOfEmployment;
-            string? resultingResignationReason = payload.resignationReason ?: employeeInfo.resignationReason;
+            string? payloadFinalDayInOffice = payload.finalDayInOffice;
+            string? payloadFinalDayOfEmployment = payload.finalDayOfEmployment;
+            string? payloadResignationReason = payload.resignationReason;
 
-            if resultingFinalDayInOffice is () || resultingFinalDayOfEmployment is ()
-                || resultingResignationReason is () || resultingResignationReason.trim().length() == 0 {
-                log:printWarn("Attempt to set status to Marked leaver/Left without all resignation details",
+            if payloadFinalDayInOffice is () || payloadFinalDayOfEmployment is ()
+                || payloadResignationReason is () || payloadResignationReason.trim().length() == 0 {
+                log:printWarn("Attempt to set status to Marked leaver/Left without all resignation details in the request",
                         employeeId = employeeId);
                 return <http:BadRequest>{
                     body: {
-                        message: "Final day in office, final day of employment, and resignation reason are all required when status is 'Marked leaver' or 'Left'"
+                        message: "Final day in office, final day of employment, and resignation reason must all be provided in the request when status is 'Marked leaver' or 'Left'"
                     }
                 };
             }

@@ -1483,10 +1483,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                 onChange={(e) => {
                   const newStatus = e.target.value;
                   setFieldValue("employeeStatus", newStatus);
-                  if (
-                    newStatus !== EmployeeStatus.Left &&
-                    newStatus !== EmployeeStatus.MarkedLeaver
-                  ) {
+                  // Clear resignation details whenever the status isn't Left, and also when
+                  // entering Marked leaver — even switching directly from Left starts a fresh
+                  // leave event, so a prior event's details should never carry over.
+                  if (newStatus !== EmployeeStatus.Left) {
                     setFieldValue("finalDayInOffice", null);
                     setFieldValue("finalDayOfEmployment", null);
                     setFieldValue("resignationReason", null);
