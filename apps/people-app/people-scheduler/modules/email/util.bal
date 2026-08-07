@@ -32,6 +32,41 @@ public isolated function htmlEscape(string str) returns string {
     return escaped;
 }
 
+# Month names indexed by month number (1-12).
+final readonly & string[] MONTH_NAMES = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+];
+
+# Format an ISO `yyyy-MM-dd` date as `MMMM dd, yyyy` (e.g. "2026-08-07" -> "August 07, 2026")
+# for display in emails. Returns the input unchanged if it is not in the expected form, so a
+# malformed value degrades to the raw date rather than failing the notification.
+#
+# + isoDate - Date string in `yyyy-MM-dd` form
+# + return - Human-readable date, or the input unchanged if it cannot be parsed
+public isolated function formatDisplayDate(string isoDate) returns string {
+    string[] parts = re `-`.split(isoDate);
+    if parts.length() != 3 {
+        return isoDate;
+    }
+    int|error year = int:fromString(parts[0]);
+    int|error month = int:fromString(parts[1]);
+    if year is error || month is error || month < 1 || month > 12 {
+        return isoDate;
+    }
+    return string `${MONTH_NAMES[month - 1]} ${parts[2]}, ${year}`;
+}
+
 # Bind values to the email template and encode.
 #
 # + content - Email content
