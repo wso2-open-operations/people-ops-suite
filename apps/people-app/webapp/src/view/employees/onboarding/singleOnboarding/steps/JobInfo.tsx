@@ -152,15 +152,35 @@ export const createJobInfoValidationSchema = (
     finalDayInOffice: Yup.string()
       .matches(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format")
       .transform((value) => (value === "" ? null : value))
-      .nullable(),
+      .nullable()
+      .when("employeeStatus", {
+        is: (status: string) =>
+          status === EmployeeStatus.MarkedLeaver || status === EmployeeStatus.Left,
+        then: (schema) =>
+          schema.required("Required when status is Marked leaver or Left"),
+      }),
     finalDayOfEmployment: Yup.string()
       .matches(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format")
       .transform((value) => (value === "" ? null : value))
-      .nullable(),
+      .nullable()
+      .when("employeeStatus", {
+        is: (status: string) =>
+          status === EmployeeStatus.MarkedLeaver || status === EmployeeStatus.Left,
+        then: (schema) =>
+          schema.required("Required when status is Marked leaver or Left"),
+      }),
     resignationReason: Yup.string()
       .max(300, "Resignation reason must be at most 300 characters")
-      .transform((value) => (value === "" ? null : value))
-      .nullable(),
+      .transform((value) =>
+        typeof value === "string" && value.trim() === "" ? null : value,
+      )
+      .nullable()
+      .when("employeeStatus", {
+        is: (status: string) =>
+          status === EmployeeStatus.MarkedLeaver || status === EmployeeStatus.Left,
+        then: (schema) =>
+          schema.required("Required when status is Marked leaver or Left"),
+      }),
     employeeId: Yup.string()
       .trim()
       .transform((value) => (value === "" ? null : value))
@@ -379,6 +399,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
     errors,
     setFieldValue,
     setFieldError,
+    setFieldTouched,
   } = useFormikContext<CreateEmployeeFormValues>();
   const {
     employeesBasicInfo,
@@ -1462,10 +1483,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                 onChange={(e) => {
                   const newStatus = e.target.value;
                   setFieldValue("employeeStatus", newStatus);
-                  if (
-                    newStatus !== EmployeeStatus.Left &&
-                    newStatus !== EmployeeStatus.MarkedLeaver
-                  ) {
+                  // Clear resignation details whenever the status isn't Left, and also when
+                  // entering Marked leaver — even switching directly from Left starts a fresh
+                  // leave event, so a prior event's details should never carry over.
+                  if (newStatus !== EmployeeStatus.Left) {
                     setFieldValue("finalDayInOffice", null);
                     setFieldValue("finalDayOfEmployment", null);
                     setFieldValue("resignationReason", null);
@@ -1801,17 +1822,22 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                     ? dayjs(values.finalDayInOffice)
                     : null
                 }
-                onChange={(val) =>
+                onChange={(val) => {
+                  setFieldTouched("finalDayInOffice", true);
                   setFieldValue(
                     "finalDayInOffice",
                     val ? val.format("YYYY-MM-DD") : null,
-                  )
-                }
+                  );
+                }}
                 slotProps={{
                   field: { clearable: true },
                   textField: {
                     fullWidth: true,
-                    helperText: "Last day the employee was in office",
+                    error: Boolean(touched.finalDayInOffice && errors.finalDayInOffice),
+                    helperText:
+                      touched.finalDayInOffice && errors.finalDayInOffice
+                        ? errors.finalDayInOffice
+                        : "Last day the employee was in office",
                     sx: textFieldSx,
                   },
                 }}
@@ -1826,17 +1852,22 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                     ? dayjs(values.finalDayOfEmployment)
                     : null
                 }
-                onChange={(val) =>
+                onChange={(val) => {
+                  setFieldTouched("finalDayOfEmployment", true);
                   setFieldValue(
                     "finalDayOfEmployment",
                     val ? val.format("YYYY-MM-DD") : null,
-                  )
-                }
+                  );
+                }}
                 slotProps={{
                   field: { clearable: true },
                   textField: {
                     fullWidth: true,
-                    helperText: "Official last day of employment",
+                    error: Boolean(touched.finalDayOfEmployment && errors.finalDayOfEmployment),
+                    helperText:
+                      touched.finalDayOfEmployment && errors.finalDayOfEmployment
+                        ? errors.finalDayOfEmployment
+                        : "Official last day of employment",
                     sx: textFieldSx,
                   },
                 }}
@@ -1856,6 +1887,8 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                   )
                 }
                 onBlur={handleBlur}
+                error={Boolean(touched.resignationReason && errors.resignationReason)}
+                helperText={touched.resignationReason && errors.resignationReason ? errors.resignationReason : undefined}
                 inputProps={{ maxLength: 300 }}
                 sx={textFieldSx}
               />

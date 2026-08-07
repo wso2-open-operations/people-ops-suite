@@ -1,0 +1,17 @@
+[people_scheduler.database.dbConfig]
+host = ""
+user = ""
+password = ""
+database = ""
+port = 0
+
+[people_scheduler.email]
+emailServiceEndpoint = ""
+appName = ""
+fromEmailAddress = ""
+leaverNotificationRecipients = [""]
+
+[people_scheduler.email.clientAuthConfig]
+tokenUrl = ""
+clientId = ""
+clientSecret = ""

@@ -22,7 +22,7 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useConfirmationModalContext } from "@context/DialogContext";
-import { ConfirmationType, State } from "@/types/types";
+import { ConfirmationType, EmployeeStatus, State } from "@/types/types";
 import {
   Box,
   Stepper,
@@ -660,9 +660,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
           validationSchema={
             activeStep === 0
               ? personalInfoValidationSchema
-              : activeStep === 1
-                ? createJobInfoValidationSchema(employmentTypes)
-                : undefined
+              : createJobInfoValidationSchema(employmentTypes)
           }
           onSubmit={async (values, actions) => {
             if (activeStep !== EmployeeFormSteps.length - 1) {
@@ -754,6 +752,18 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
 
               const jobPatch: Partial<UpdateEmployeeJobInfoPayload> =
                 diffObject(initialJob, currentJob);
+
+              // Always send resignation details when the resulting status is a leaver status,
+              // regardless of whether they differ from the pre-edit values — the diff alone
+              // isn't reliable here since these fields are reset to null on entering the status.
+              if (
+                currentJob.employeeStatus === EmployeeStatus.MarkedLeaver ||
+                currentJob.employeeStatus === EmployeeStatus.Left
+              ) {
+                jobPatch.finalDayInOffice = currentJob.finalDayInOffice;
+                jobPatch.finalDayOfEmployment = currentJob.finalDayOfEmployment;
+                jobPatch.resignationReason = currentJob.resignationReason;
+              }
               const personalPatch = diffObject(
                 initialPersonal,
                 currentPersonal,

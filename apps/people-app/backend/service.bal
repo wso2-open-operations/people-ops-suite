@@ -1572,6 +1572,23 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        if isLeaverStatus {
+            string? payloadFinalDayInOffice = payload.finalDayInOffice;
+            string? payloadFinalDayOfEmployment = payload.finalDayOfEmployment;
+            string? payloadResignationReason = payload.resignationReason;
+
+            if payloadFinalDayInOffice is () || payloadFinalDayOfEmployment is ()
+                || payloadResignationReason is () || payloadResignationReason.trim().length() == 0 {
+                log:printWarn("Attempt to set status to Marked leaver/Left without all resignation details in the request",
+                        employeeId = employeeId);
+                return <http:BadRequest>{
+                    body: {
+                        message: "Final day in office, final day of employment, and resignation reason must all be provided in the request when status is 'Marked leaver' or 'Left'"
+                    }
+                };
+            }
+        }
+
         error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);
         if updateResult is error {
             string customErr = string `Error occurred while updating employee job information for ID: ${employeeId}`;
