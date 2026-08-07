@@ -161,23 +161,79 @@ public final string leaverAutoTransitionSummaryTemplate = string `
                         border:1px solid #e0e0e0;
                         border-radius:4px;
                         margin-top:8px;
+                        font-family:'Roboto', Helvetica, sans-serif;
+                        font-size:13px;
+                        color:#465868;
                       "
                     >
-                      <tbody>
+                      <thead>
                         <tr>
-                          <td
+                          <th
+                            align="left"
                             style="
-                              padding:12px 16px;
-                              font-family:'Roboto', Helvetica, sans-serif;
-                              font-size:14px;
-                              color:#465868;
+                              padding:10px 16px;
+                              background-color:#f7f9fb;
+                              border-bottom:1px solid #e0e0e0;
+                              font-size:11px;
+                              font-weight:bold;
+                              letter-spacing:0.6px;
+                              text-transform:uppercase;
+                              color:#7a8899;
+                              white-space:nowrap;
                             "
                           >
-                            <ul style="margin:0; padding-left:20px;">
-                              <!-- [EMPLOYEE_LIST] -->
-                            </ul>
-                          </td>
+                            ID
+                          </th>
+                          <th
+                            align="left"
+                            style="
+                              padding:10px 12px;
+                              background-color:#f7f9fb;
+                              border-bottom:1px solid #e0e0e0;
+                              font-size:11px;
+                              font-weight:bold;
+                              letter-spacing:0.6px;
+                              text-transform:uppercase;
+                              color:#7a8899;
+                            "
+                          >
+                            Employee
+                          </th>
+                          <th
+                            align="left"
+                            style="
+                              padding:10px 12px;
+                              background-color:#f7f9fb;
+                              border-bottom:1px solid #e0e0e0;
+                              font-size:11px;
+                              font-weight:bold;
+                              letter-spacing:0.6px;
+                              text-transform:uppercase;
+                              color:#7a8899;
+                            "
+                          >
+                            Work email
+                          </th>
+                          <th
+                            align="right"
+                            style="
+                              padding:10px 16px;
+                              background-color:#f7f9fb;
+                              border-bottom:1px solid #e0e0e0;
+                              font-size:11px;
+                              font-weight:bold;
+                              letter-spacing:0.6px;
+                              text-transform:uppercase;
+                              color:#7a8899;
+                              white-space:nowrap;
+                            "
+                          >
+                            Final day
+                          </th>
                         </tr>
+                      </thead>
+                      <tbody>
+                        <!-- [EMPLOYEE_LIST] -->
                       </tbody>
                     </table>
 

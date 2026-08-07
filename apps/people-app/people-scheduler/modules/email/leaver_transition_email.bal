@@ -25,10 +25,7 @@ import ballerina/time;
 # + transitions - Employees that were transitioned during this sweep (must be non-empty)
 # + return - Error if the email notification fails to send
 public isolated function notifyLeaverAutoTransition(database:LeaverTransition[] transitions) returns error? {
-    string employeeListHtml = string:'join("",
-    ...from database:LeaverTransition t in transitions
-       select string `<li>${htmlEscape(t.firstName)} ${htmlEscape(t.lastName)} (${htmlEscape(t.employeeId)})
-            &mdash; ${htmlEscape(t.workEmail)} &mdash; final day: ${htmlEscape(t.finalDayOfEmployment)}</li>`);
+    string employeeListHtml = buildTransitionRows(transitions);
 
     string runDate = time:utcToString(time:utcNow()).substring(0, 10);
 
@@ -70,4 +67,46 @@ public isolated function notifyLeaverAutoTransition(database:LeaverTransition[] 
         return error(customError);
     }
     log:printInfo(string `Leaver auto-transition summary email sent on ${runDate} for ${transitions.length()} leaver(s)`);
+}
+
+# Build the `<tbody>` rows for the transitioned-employees table, latest final day of employment
+# first and tie-broken by employee ID so the listing is stable across runs (the underlying query
+# applies no ordering of its own). Same-date employees are grouped under a date band.
+#
+# + transitions - Employees that were transitioned during this sweep
+# + return - HTML table rows, safe to inject into the template
+isolated function buildTransitionRows(database:LeaverTransition[] transitions) returns string {
+    database:LeaverTransition[] sorted = from database:LeaverTransition t in transitions
+        order by t.finalDayOfEmployment descending, t.employeeId ascending
+        select t;
+
+    // Count per final day up front so each date band can state its own total.
+    map<int> countsByDate = {};
+    foreach database:LeaverTransition t in sorted {
+        countsByDate[t.finalDayOfEmployment] = (countsByDate[t.finalDayOfEmployment] ?: 0) + 1;
+    }
+
+    string cellBase = "padding:10px 12px; border-bottom:1px solid #eef1f4; vertical-align:top;";
+    string rows = "";
+    string currentDate = "";
+
+    foreach database:LeaverTransition t in sorted {
+        if t.finalDayOfEmployment != currentDate {
+            currentDate = t.finalDayOfEmployment;
+            int dateCount = countsByDate[currentDate] ?: 0;
+            rows += string `<tr><td colspan="4" style="padding:9px 16px; background-color:#eef2f6;` +
+                string ` border-top:1px solid #d8dfe6; border-bottom:1px solid #d8dfe6; font-size:13px;` +
+                string ` font-weight:bold; color:#33455c;">` +
+                string `${htmlEscape(currentDate)} <span style="font-weight:normal; color:#6b7a8c;">` +
+                string `(${dateCount})</span></td></tr>`;
+        }
+        rows += string `<tr>` +
+            string `<td style="${cellBase} padding-left:16px; white-space:nowrap;">${htmlEscape(t.employeeId)}</td>` +
+            string `<td style="${cellBase}">${htmlEscape(t.firstName)} ${htmlEscape(t.lastName)}</td>` +
+            string `<td style="${cellBase}">${htmlEscape(t.workEmail)}</td>` +
+            string `<td align="right" style="${cellBase} padding-right:16px; white-space:nowrap;` +
+            string ` color:#7a8899;">${htmlEscape(t.finalDayOfEmployment)}</td>` +
+            string `</tr>`;
+    }
+    return rows;
 }
