@@ -15,13 +15,25 @@
 // under the License.
 
 # OAuth2 client auth configurations.
-public type ClientAuthConfig record {|
+type Oauth2Config record {|
     # Token URL
     string tokenUrl;
     # Client ID
     string clientId;
     # Client Secret
     string clientSecret;
+|};
+
+# [Configurable] Email notification service configs.
+type EmailServiceConfig record {|
+    # Email Service Endpoint
+    string emailServiceEndpoint;
+    # Auth Configurations
+    Oauth2Config oauthConfig;
+    # Recipient email(s) as string array
+    string[] to;
+    # Sender email
+    string 'from;
 |};
 
 # Payload of the email alerting service.
