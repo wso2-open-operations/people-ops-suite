@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import ballerina/log;
 import ballerina/sql;
 
 # Check the affected row count after an update operation.
@@ -32,9 +33,13 @@ isolated function checkAffectedCount(int? affectedRowCount) returns error? {
 # + actor - System actor performing the update (e.g. "system-scheduler")
 # + return - The employees that were transitioned (empty if none were due), or an error
 public isolated function transitionExpiredLeavers(string actor) returns LeaverTransition[]|error {
+    log:printInfo("Loading employees due for leaver transition");
+
     stream<LeaverTransition, error?> expiredLeaversStream = databaseClient->query(getExpiredLeaversQuery());
     LeaverTransition[] transitions = check from LeaverTransition transition in expiredLeaversStream
         select transition;
+
+    log:printInfo("Loaded employees due for leaver transition", count = transitions.length());
 
     if transitions.length() == 0 {
         return transitions;
@@ -48,6 +53,8 @@ public isolated function transitionExpiredLeavers(string actor) returns LeaverTr
         check checkAffectedCount(executionResult.affectedRowCount);
         check commit;
     }
+
+    log:printInfo("Marked employees as Left", count = transitions.length());
 
     return transitions;
 }

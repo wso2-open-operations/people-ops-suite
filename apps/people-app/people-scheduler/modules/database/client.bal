@@ -14,31 +14,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ballerina/sql;
 import ballerinax/mysql;
 import ballerinax/mysql.driver as _;
 
-# Database Client Configuration.
-public type DatabaseConfig record {|
-    # If the MySQL server is secured, the username
-    string user;
-    # The password of the MySQL server for the provided username
-    string password;
-    # The name of the database
-    string database;
-    # Hostname of the MySQL server
-    string host;
-    # Port number of the MySQL server
-    int port;
-    # The `mysql:Options` configurations
-    mysql:Options options?;
-    # The `sql:ConnectionPool` configurations
-    sql:ConnectionPool connectionPool?;
-|};
-
+# People Ops Database Client Configuration.
 configurable DatabaseConfig dbConfig = ?;
 
-function initSchedulerDbClient() returns mysql:Client|error => new (...dbConfig);
-
 # Database Client, shared across all scheduled jobs.
-public final mysql:Client databaseClient = check initSchedulerDbClient();
+public final mysql:Client databaseClient = check new (
+    user = dbConfig.user,
+    password = dbConfig.password,
+    database = dbConfig.database,
+    host = dbConfig.host,
+    port = dbConfig.port,
+    options = {
+        ssl: {
+            mode: mysql:SSL_PREFERRED
+        },
+        connectTimeout: 10
+    },
+    connectionPool = {
+        maxOpenConnections: dbConfig.maxOpenConnections,
+        maxConnectionLifeTime: dbConfig.maxConnectionLifeTime,
+        minIdleConnections: dbConfig.minIdleConnections
+    }
+);

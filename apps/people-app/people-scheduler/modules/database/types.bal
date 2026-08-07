@@ -16,6 +16,26 @@
 
 import ballerina/sql;
 
+# [Configurable] People Ops database configs.
+type DatabaseConfig record {|
+    # User of the database
+    string user;
+    # Password of the database
+    string password;
+    # Name of the database
+    string database;
+    # Host of the database
+    string host;
+    # Port of the database
+    int port;
+    # Maximum number of open connections
+    int maxOpenConnections;
+    # Maximum lifetime of a connection
+    decimal maxConnectionLifeTime;
+    # Minimum number of open connections
+    int minIdleConnections;
+|};
+
 # Row mapping for an employee whose Marked-leaver period has ended and who should transition to Left.
 public type LeaverTransition record {|
     # External employee ID

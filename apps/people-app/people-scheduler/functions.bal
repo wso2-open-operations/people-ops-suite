@@ -38,7 +38,7 @@ isolated function runLeaverTransition() returns error? {
         return;
     }
 
-    log:printInfo("Auto-transitioned leavers to Left", count = transitions.length());
+    log:printInfo("Leaver transition step completed", count = transitions.length());
 
     error? notifyResult = email:notifyLeaverAutoTransition(transitions);
     if notifyResult is error {

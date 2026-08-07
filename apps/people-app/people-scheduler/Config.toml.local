@@ -4,14 +4,19 @@ user = ""
 password = ""
 database = ""
 port = 0
+maxOpenConnections = 10
+maxConnectionLifeTime = 180.0
+minIdleConnections = 5
 
 [people_scheduler.email]
-emailServiceEndpoint = ""
 appName = ""
-fromEmailAddress = ""
-leaverNotificationRecipients = [""]
 
-[people_scheduler.email.clientAuthConfig]
+[people_scheduler.email.emailServiceConfig]
+emailServiceEndpoint = ""
+to = [""]
+from = ""
+
+[people_scheduler.email.emailServiceConfig.oauthConfig]
 tokenUrl = ""
 clientId = ""
 clientSecret = ""

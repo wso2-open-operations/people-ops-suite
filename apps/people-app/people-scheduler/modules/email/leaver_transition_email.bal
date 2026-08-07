@@ -20,8 +20,6 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/time;
 
-configurable string[] leaverNotificationRecipients = ?;
-
 # Send a summary email listing employees auto-transitioned from Marked leaver to Left.
 #
 # + transitions - Employees that were transitioned during this sweep (must be non-empty)
@@ -50,11 +48,14 @@ public isolated function notifyLeaverAutoTransition(database:LeaverTransition[] 
     }
 
     EmailPayload emailPayload = {
-        to: leaverNotificationRecipients,
-        'from: fromEmailAddress,
+        to: emailServiceConfig.to,
+        'from: emailServiceConfig.'from,
         subject: string `Employee Offboarding Alert (${runDate}): ${transitions.length()} employee(s) transitioned to Left`,
         template: boundTemplate
     };
+
+    log:printInfo("Sending leaver auto-transition summary email", count = transitions.length(),
+            recipientCount = emailServiceConfig.to.length());
 
     http:Response|http:ClientError response = emailClient->/send\-email.post(emailPayload);
     if response is http:ClientError {
