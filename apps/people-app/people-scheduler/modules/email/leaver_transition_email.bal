@@ -97,7 +97,7 @@ isolated function buildTransitionRows(database:LeaverTransition[] transitions) r
             rows += string `<tr><td colspan="4" style="padding:9px 16px; background-color:#eef2f6;` +
                 string ` border-top:1px solid #d8dfe6; border-bottom:1px solid #d8dfe6; font-size:13px;` +
                 string ` font-weight:bold; color:#33455c;">` +
-                string `${htmlEscape(currentDate)} <span style="font-weight:normal; color:#6b7a8c;">` +
+                string `${htmlEscape(formatDisplayDate(currentDate))} <span style="font-weight:normal; color:#6b7a8c;">` +
                 string `(${dateCount})</span></td></tr>`;
         }
         rows += string `<tr>` +
@@ -105,7 +105,7 @@ isolated function buildTransitionRows(database:LeaverTransition[] transitions) r
             string `<td style="${cellBase}">${htmlEscape(t.firstName)} ${htmlEscape(t.lastName)}</td>` +
             string `<td style="${cellBase}">${htmlEscape(t.workEmail)}</td>` +
             string `<td align="right" style="${cellBase} padding-right:16px; white-space:nowrap;` +
-            string ` color:#7a8899;">${htmlEscape(t.finalDayOfEmployment)}</td>` +
+            string ` color:#7a8899;">${htmlEscape(formatDisplayDate(t.finalDayOfEmployment))}</td>` +
             string `</tr>`;
     }
     return rows;
