@@ -252,19 +252,19 @@ isolated function resolveAdditionalManagerNames(string? emails, map<string> name
     return string:'join(", ", ...names);
 }
 
-# Ordered canonical column keys for the active-employee CSV (26 columns).
+# Ordered canonical column keys for the active-employee CSV (27 columns).
 final string[] & readonly EMPLOYEE_CSV_COLUMNS = [
     "employeeId", "firstName", "lastName", "gender", "workEmail", "company",
-    "location", "employmentType", "jobRole", "jobBand", "startDate",
+    "location", "employmentType", "jobRole", "externalDesignation", "jobBand", "startDate",
     "continuousServiceDate", "lengthOfService", "reportsTo", "additionalManager",
     "employeeStatus", "team", "subTeam", "epfNumber", "leadEmail", "businessUnit",
     "house", "unit", "office", "probationEndDate", "agreementEndDate"
 ];
 
-# Ordered canonical column keys for the resignation CSV (26 shared + 4 resignation-specific).
+# Ordered canonical column keys for the resignation CSV (27 shared + 4 resignation-specific).
 final string[] & readonly RESIGNATION_CSV_COLUMNS = [
     "employeeId", "firstName", "lastName", "gender", "workEmail", "company",
-    "location", "employmentType", "jobRole", "jobBand", "startDate",
+    "location", "employmentType", "jobRole", "externalDesignation", "jobBand", "startDate",
     "continuousServiceDate", "lengthOfService", "reportsTo", "additionalManager",
     "employeeStatus", "team", "subTeam", "epfNumber", "leadEmail", "businessUnit",
     "house", "unit", "office", "probationEndDate", "agreementEndDate",
@@ -282,6 +282,7 @@ final map<string> & readonly COLUMN_HEADER_MAP = {
     "location":              "Location",
     "employmentType":        "Employment Type",
     "jobRole":               "Job Role",
+    "externalDesignation":   "External Designation",
     "jobBand":               "Job Band",
     "startDate":             "Start Date",
     "continuousServiceDate": "Continuous Service Date",
@@ -322,6 +323,7 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
         "location"              => { return csvEscape(e.workLocation); }
         "employmentType"        => { return csvEscape(e.employmentType); }
         "jobRole"               => { return csvEscape(e.designation); }
+        "externalDesignation"   => { return csvEscape(e.externalDesignation); }
         "jobBand"               => { return csvEscape(e.jobBand != () ? e.jobBand.toString() : ()); }
         "startDate"             => { return csvEscape(e.startDate); }
         "continuousServiceDate" => { return csvEscape(e.continuousServiceDate); }
