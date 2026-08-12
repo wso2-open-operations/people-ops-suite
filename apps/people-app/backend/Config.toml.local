@@ -22,6 +22,10 @@ EXTERNAL_USER_ROLES = [];
     password = ""
     database = ""
     port =
+    # Keep maxConnectionLifeTime below the HRIS server's wait_timeout (300s at the
+    # time of writing) and minIdleConnections at 0. The pool must retire a
+    # connection before the server closes it, or a query after an idle period
+    # fails with "No operations allowed after connection closed" (SQL state 08003).
     [people.promotion.promotionDbConfig.connectionPool]
     maxOpenConnections =
     maxConnectionLifeTime =

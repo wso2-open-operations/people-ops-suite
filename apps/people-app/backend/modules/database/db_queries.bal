@@ -134,7 +134,19 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         ) AS subordinateCount,
         e.employee_status AS employeeStatus,
         e.continuous_service_record AS continuousServiceRecord,
-        csr.start_date AS continuousServiceDate,
+        -- Walks the whole continuous-service chain, not one hop. An employee with three
+        -- linked employments (A -> B -> C) would otherwise report B's start date and
+        -- understate their service.
+        (
+            WITH RECURSIVE chain AS (
+                SELECT csr0.id, csr0.continuous_service_record, csr0.start_date
+                FROM employee csr0 WHERE csr0.id = e.continuous_service_record
+                UNION
+                SELECT csr1.id, csr1.continuous_service_record, csr1.start_date
+                FROM employee csr1 JOIN chain ON csr1.id = chain.continuous_service_record
+            )
+            SELECT MIN(chain.start_date) FROM chain
+        ) AS continuousServiceDate,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
         r.date AS resignationDate,
@@ -189,7 +201,6 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         LEFT JOIN unit u ON e.unit_id = u.id
         LEFT JOIN house h ON e.house_id = h.id
         LEFT JOIN personal_info pi ON pi.id = e.personal_info_id
-        LEFT JOIN employee csr ON csr.id = e.continuous_service_record
         LEFT JOIN resignation r ON r.employee_id = e.id
     WHERE
         e.employee_id = ${employeeId};`;
@@ -220,7 +231,18 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             COALESCE(sc.subordinateCount, 0) AS subordinateCount,
             e.employee_status AS employeeStatus,
             e.continuous_service_record AS continuousServiceRecord,
-            csr.start_date AS continuousServiceDate,
+            -- See the note on the single-employee query: this walks the whole chain
+            -- rather than one hop.
+            (
+                WITH RECURSIVE chain AS (
+                    SELECT csr0.id, csr0.continuous_service_record, csr0.start_date
+                    FROM employee csr0 WHERE csr0.id = e.continuous_service_record
+                    UNION
+                    SELECT csr1.id, csr1.continuous_service_record, csr1.start_date
+                    FROM employee csr1 JOIN chain ON csr1.id = chain.continuous_service_record
+                )
+                SELECT MIN(chain.start_date) FROM chain
+            ) AS continuousServiceDate,
             e.probation_end_date AS probationEndDate,
             e.agreement_end_date AS agreementEndDate,
             r.date AS resignationDate,
@@ -298,7 +320,6 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
                 FROM employee
                 GROUP BY LOWER(work_email)
             ) mgr ON mgr.managerEmail = LOWER(e.manager_email)
-            LEFT JOIN employee csr ON csr.id = e.continuous_service_record
             LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 
