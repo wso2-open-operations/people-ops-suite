@@ -1387,3 +1387,21 @@ public type AuditSnapshot record {|
     # The full row snapshot as JSON
     json data;
 |};
+
+# One field-level change derived from consecutive audit snapshots.
+public type HistoryEvent record {|
+    # Employee table primary key this event belongs to
+    int employeePkId;
+    # Canonical field key (e.g. "team_id")
+    string 'field;
+    # Value before the change, if any
+    string? previousValue;
+    # Value after the change
+    string? currentValue;
+    # When the change occurred
+    string occurredOn;
+    # Who made the change
+    string actionBy;
+    # True when actionBy is a system actor rather than a person
+    boolean isSystem;
+|};
