@@ -816,47 +816,31 @@ public isolated function assignPromotionsToPeriods(database:EmploymentPeriod[] p
 
     foreach promotion:PromotionRecord promotionRecord in promotions {
         int? targetIndex = ();
-        string? promotedDate = promotionRecord.promotedDate;
+        string createdOn = promotionRecord.createdOn;
 
-        // A promotion with no recorded date cannot be placed by range. It is still a real
-        // promotion, so it attaches to the current (newest) period rather than being dropped —
-        // HRIS contains APPROVED promotions in ended cycles whose date was never populated.
-        if promotedDate is () {
-            if periods.length() > 0 {
-                bucketed[0].push(promotionRecord);
-            }
-            continue;
-        }
-
-        // Exact containment first.
+        // A promotion request is raised while the employee is employed, so its created date
+        // always falls inside exactly one employment period. That containment is what
+        // attributes the promotion to the right employment — the promoted date is not used
+        // here, since HRIS frequently leaves it unpopulated.
         foreach int index in 0 ..< periods.length() {
             database:EmploymentPeriod period = periods[index];
             string? endDate = period.endDate;
-            boolean startedBy = promotedDate >= period.startDate;
-            boolean endedAfter = endDate is () || promotedDate <= endDate;
+            boolean startedBy = createdOn >= period.startDate;
+            boolean endedAfter = endDate is () || createdOn <= endDate;
             if startedBy && endedAfter {
                 targetIndex = index;
                 break;
             }
         }
 
-        // No range contains it: fall back to the nearest period that began before it. Periods
-        // arrive newest first, so the first period starting on or before the promoted date is
-        // the nearest earlier one.
-        if targetIndex is () {
-            foreach int index in 0 ..< periods.length() {
-                if periods[index].startDate <= promotedDate {
-                    targetIndex = index;
-                    break;
-                }
-            }
-        }
-
         if targetIndex is int {
             bucketed[targetIndex].push(promotionRecord);
         } else {
-            log:printWarn("Promotion predates every employment period; omitted from the timeline",
-                    promotedDate = promotionRecord.promotedDate, cycleName = promotionRecord.cycleName);
+            // No period contains it. This should not happen for well-formed data; it means the
+            // promotion's created date falls outside every employment period, which points at
+            // bad data rather than a timeline that needs a fallback.
+            log:printWarn("Promotion created date falls outside every employment period; omitted",
+                    createdOn = createdOn, cycleName = promotionRecord.cycleName);
         }
     }
 

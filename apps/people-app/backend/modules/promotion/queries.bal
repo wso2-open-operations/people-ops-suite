@@ -22,6 +22,7 @@ import ballerina/sql;
 isolated function getApprovedPromotionsQuery(string workEmail) returns sql:ParameterizedQuery =>
     `SELECT
         pr.promotion_request_promoted_date AS promotedDate,
+        DATE(pr.promotion_request_created_on) AS createdOn,
         pr.promotion_request_current_job_band AS currentJobBand,
         pr.promotion_request_requested_job_band AS nextJobBand,
         pr.promotion_request_current_job_role AS jobRole,
@@ -36,4 +37,4 @@ isolated function getApprovedPromotionsQuery(string workEmail) returns sql:Param
     WHERE pr.promotion_request_employee_email = ${workEmail}
         AND pr.promotion_request_status = 'APPROVED'
         AND pc.promotion_cycle_status = 'END'
-    ORDER BY pr.promotion_request_promoted_date DESC`;
+    ORDER BY pr.promotion_request_created_on DESC`;

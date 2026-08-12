@@ -38,6 +38,9 @@ public isolated function getApprovedPromotions(string workEmail) returns Promoti
             department: promotion.department,
             team: promotion.team,
             subTeam: promotion.subTeam,
+            // createdOn comes from a TIMESTAMP column via DATE(), so it is always
+            // YYYY-MM-DD and needs no normalisation.
+            createdOn: promotion.createdOn,
             promotedDate: promotion.promotedDate is string
                 ? re `/`.replaceAll(<string>promotion.promotedDate, "-")
                 : ()

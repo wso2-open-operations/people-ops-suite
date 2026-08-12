@@ -90,8 +90,13 @@ const statusChipColors = (theme: Theme, status: string) => {
 // promotion.
 interface TimelineRow {
   key: string;
-  // Nullable for promotions whose promoted date was never recorded in HRIS.
+  // What the date column displays. Nullable for promotions whose promoted date
+  // was never recorded in HRIS — those show their cycle name instead.
   date: string | null;
+  // What the row is ordered by, kept separate from what it displays. For a
+  // promotion this is its created date, which is always present even when the
+  // promoted date is not.
+  sortKey: string;
   isPromo: boolean;
   isJoin: boolean;
   isSystem: boolean;
@@ -111,6 +116,7 @@ const buildRows = (period: EmploymentPeriod, events: HistoryEvent[]): TimelineRo
       rows.push({
         key: `event-${period.id}-${index}`,
         date: event.occurredOn,
+        sortKey: event.occurredOn,
         isPromo: false,
         isJoin: false,
         isSystem: event.isSystem,
@@ -125,6 +131,9 @@ const buildRows = (period: EmploymentPeriod, events: HistoryEvent[]): TimelineRo
     rows.push({
       key: `promo-${period.id}-${index}`,
       date: promotion.promotedDate,
+      // Ordered by when the request was raised, not by the promoted date —
+      // the latter is frequently null in HRIS.
+      sortKey: promotion.createdOn,
       isPromo: true,
       isJoin: false,
       isSystem: false,
@@ -135,15 +144,12 @@ const buildRows = (period: EmploymentPeriod, events: HistoryEvent[]): TimelineRo
     });
   });
 
-  // Newest first. A row with no recorded date (a promotion whose promoted date
-  // was never populated in HRIS) sorts to the top rather than being compared
-  // against a string, since it cannot be placed chronologically.
-  rows.sort((a, b) => {
-    if (a.date === b.date) return 0;
-    if (!a.date) return -1;
-    if (!b.date) return 1;
-    return a.date < b.date ? 1 : -1;
-  });
+  // Newest first, ordered by sortKey rather than the displayed date so a
+  // promotion sits at the point its request was raised even when it displays
+  // a cycle name instead of a date.
+  rows.sort((a, b) =>
+    a.sortKey < b.sortKey ? 1 : a.sortKey > b.sortKey ? -1 : 0,
+  );
 
   // The diff engine never emits a change event for the record that created
   // the employment row (an INSERT is a baseline, not a change), so "Joined"
@@ -151,6 +157,7 @@ const buildRows = (period: EmploymentPeriod, events: HistoryEvent[]): TimelineRo
   rows.push({
     key: `join-${period.id}`,
     date: period.startDate,
+    sortKey: period.startDate,
     isPromo: false,
     isJoin: true,
     isSystem: false,

@@ -34,9 +34,13 @@ public type PromotionDatabaseConfig record {|
 
 # Approved promotion record for an employee.
 public type PromotionRecord record {|
-    # Date the promotion took effect. Nullable: real data contains APPROVED
+    # Date the promotion took effect. Nullable: HRIS contains APPROVED
     # promotions in ended cycles whose promoted date was never populated.
     string? promotedDate;
+    # Date the promotion request was raised. This is what places a promotion on
+    # the timeline: it always falls inside exactly one employment period, which
+    # is how a promotion is attributed to the employment it belongs to.
+    string createdOn;
     # Job band held before the promotion
     string currentJobBand;
     # Job band granted by the promotion
