@@ -350,11 +350,15 @@ const PeriodSection = ({
   const visibleRows = rows.filter((row) => !row.isSystem);
   const systemCount = rows.length - visibleRows.length;
 
+  // continuousServiceRecord holds the linked period's employee_id string
+  // (see getEmploymentPeriodsQuery: `csr.employee_id AS continuousServiceRecord`),
+  // not the linked period's numeric `id` — a period without an employeeId can
+  // never be a link target.
   const linkedPeriod = period.continuousServiceRecord
-    ? periods.find((p) => String(p.id) === period.continuousServiceRecord)
+    ? periods.find((p) => p.employeeId === period.continuousServiceRecord)
     : undefined;
   const linkedLabel = linkedPeriod
-    ? `${linkedPeriod.employmentType} · ${linkedPeriod.employeeId ?? linkedPeriod.id}`
+    ? `${linkedPeriod.employmentType} · ${linkedPeriod.employeeId}`
     : period.continuousServiceRecord;
 
   return (
