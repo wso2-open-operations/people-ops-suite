@@ -1514,6 +1514,28 @@ public isolated function hasActiveEmployeesInBUTeamSubTeamUnitMapping(int id) re
     return result.count > 0;
 }
 
+# Resolve the person behind a work email to their personal_info ID.
+#
+# Callers authorizing "may this user see this record" must compare people, not employee IDs. A
+# rehired person holds several employee IDs against one personal_info row, so comparing employee
+# IDs would deny them access to their own earlier employment.
+#
+# + workEmail - Work email of the person
+# + return - personal_info ID, nil if no matching employee record, or error
+public isolated function getPersonalInfoIdByWorkEmail(string workEmail) returns int?|error {
+    int|error result = databaseClient->queryRow(getPersonalInfoIdByWorkEmailQuery(workEmail));
+    return result is sql:NoRowsError ? () : result;
+}
+
+# Resolve the person behind an employee ID to their personal_info ID.
+#
+# + employeeId - Employee ID of any one of the person's employment records
+# + return - personal_info ID, nil if no matching employee record, or error
+public isolated function getPersonalInfoIdByEmployeeId(string employeeId) returns int?|error {
+    int|error result = databaseClient->queryRow(getPersonalInfoIdByEmployeeIdQuery(employeeId));
+    return result is sql:NoRowsError ? () : result;
+}
+
 # Fetch every employment period for the person behind an employee ID.
 #
 # + employeeId - Employee ID of any one of the person's employment records

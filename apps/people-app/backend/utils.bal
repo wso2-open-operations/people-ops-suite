@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 import people.database;
+import people.promotion;
 
 import ballerina/data.csv;
 import ballerina/http;
@@ -741,4 +742,119 @@ public isolated function parseCsvBytes(byte[] fileBytes) returns BulkEmployeeCsv
         return error("CSV must contain a header row and at least one data row");
     }
     return rows;
+}
+
+# Reduce history events to what the calling privilege level is permitted to receive.
+#
+# The filtering happens here, on the server, and never on the client. An event the caller may
+# not see is absent from the payload rather than flagged for the client to hide, so the data
+# is not merely unrendered but never transmitted.
+#
+# For a non-ADMIN caller:
+# - `actionBy` is omitted from every event: an employee sees *that* their team changed, not
+#   which HR administrator changed it.
+# - Events made by system actors are dropped: migrations and scheduled jobs are operational
+#   noise that would read as unexplained changes to their own record.
+#
+# Leaver events (employee_status transitions and resignation reason) are returned in BOTH
+# projections. This is deliberate: the employee already knows they are leaving, and hiding the
+# transition would leave an unexplained gap at the end of their own timeline.
+#
+# + events - Derived history events, newest first
+# + hasAdminAccess - True when the caller holds the ADMIN role
+# + return - Events the caller is permitted to receive, newest first
+public isolated function projectHistoryEvents(database:HistoryEvent[] events, boolean hasAdminAccess)
+        returns HistoryEventResponse[] {
+
+    if hasAdminAccess {
+        return from database:HistoryEvent event in events
+            select {
+                employeePkId: event.employeePkId,
+                'field: event.'field,
+                previousValue: event.previousValue,
+                currentValue: event.currentValue,
+                occurredOn: event.occurredOn,
+                actionBy: event.actionBy,
+                isSystem: event.isSystem
+            };
+    }
+
+    return from database:HistoryEvent event in events
+        where !event.isSystem
+        select {
+            employeePkId: event.employeePkId,
+            'field: event.'field,
+            previousValue: event.previousValue,
+            currentValue: event.currentValue,
+            occurredOn: event.occurredOn,
+            isSystem: false
+        };
+}
+
+# Attach each promotion to the employment period it took effect during.
+#
+# A promotion belongs to the period whose startDate..endDate range contains its promotedDate.
+# An open period (no endDate) extends to the present.
+#
+# A promotion that falls in no range is attached to the nearest *earlier* period rather than
+# dropped, because the HRIS promoted date and the employment start date are maintained in two
+# different systems and disagree at the edges. Losing a real promotion is worse than showing it
+# one period early. A promotion earlier than every period has no earlier period to fall back on
+# and is left unattached.
+#
+# + periods - Employment periods for the person, newest first
+# + promotions - Approved promotions for the person
+# + return - Periods in their original order, each carrying its promotions
+public isolated function assignPromotionsToPeriods(database:EmploymentPeriod[] periods,
+        promotion:PromotionRecord[] promotions) returns EmploymentPeriodResponse[] {
+
+    promotion:PromotionRecord[][] bucketed = from database:EmploymentPeriod _ in periods
+        select [];
+
+    foreach promotion:PromotionRecord promotionRecord in promotions {
+        int? targetIndex = ();
+
+        // Exact containment first.
+        foreach int index in 0 ..< periods.length() {
+            database:EmploymentPeriod period = periods[index];
+            string? endDate = period.endDate;
+            boolean startedBy = promotionRecord.promotedDate >= period.startDate;
+            boolean endedAfter = endDate is () || promotionRecord.promotedDate <= endDate;
+            if startedBy && endedAfter {
+                targetIndex = index;
+                break;
+            }
+        }
+
+        // No range contains it: fall back to the nearest period that began before it. Periods
+        // arrive newest first, so the first period starting on or before the promoted date is
+        // the nearest earlier one.
+        if targetIndex is () {
+            foreach int index in 0 ..< periods.length() {
+                if periods[index].startDate <= promotionRecord.promotedDate {
+                    targetIndex = index;
+                    break;
+                }
+            }
+        }
+
+        if targetIndex is int {
+            bucketed[targetIndex].push(promotionRecord);
+        } else {
+            log:printWarn("Promotion predates every employment period; omitted from the timeline",
+                    promotedDate = promotionRecord.promotedDate, cycleName = promotionRecord.cycleName);
+        }
+    }
+
+    return from int index in 0 ..< periods.length()
+        select {
+            id: periods[index].id,
+            employeeId: periods[index].employeeId,
+            employmentType: periods[index].employmentType,
+            startDate: periods[index].startDate,
+            endDate: periods[index].endDate,
+            workEmail: periods[index].workEmail,
+            continuousServiceRecord: periods[index].continuousServiceRecord,
+            promotions: bucketed[index]
+        };
 }

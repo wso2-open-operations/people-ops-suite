@@ -16,6 +16,7 @@
 
 import people.authorization;
 import people.database;
+import people.promotion;
 import people.qr;
 import people.wso2_coin;
 // Temporarily disabled together with the Asgardeo/SCIM provisioning blocks in the onboarding
@@ -2874,5 +2875,111 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{body: {message: customErr}};
         }
         return orgStructure;
+    }
+
+    # Fetch the employment history timeline for an employee.
+    #
+    # Returns every employment period held by the *person* behind the given employee ID
+    # (a rehire has more than one), the field-level changes derived from the audit trail,
+    # and the approved promotions from HRIS attached to the period they fall in.
+    #
+    # + employeeId - Employee ID
+    # + return - History timeline, or an error response
+    resource function get employees/[string employeeId]/history(http:RequestContext ctx)
+        returns EmployeeHistoryResponse|http:InternalServerError|http:NotFound|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions(
+                [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        // Authorization compares *people*, not employee IDs. A rehired person holds several
+        // employee IDs against one personal_info row (e.g. intern "IN 0456" then permanent
+        // "EP 10006"), so comparing the caller's employee ID against the requested one would
+        // deny them their own earlier employment. Admins bypass the check entirely.
+        if !hasAdminAccess {
+            int?|error callerPersonalInfoId = database:getPersonalInfoIdByWorkEmail(userInfo.email);
+            if callerPersonalInfoId is error {
+                string customErr = "Error occurred while resolving the invoker's employee record";
+                log:printError(customErr, callerPersonalInfoId, invokerEmail = userInfo.email);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+
+            int?|error requestedPersonalInfoId = database:getPersonalInfoIdByEmployeeId(employeeId);
+            if requestedPersonalInfoId is error {
+                string customErr = string `Error occurred while resolving employee record for ID: ${employeeId}`;
+                log:printError(customErr, requestedPersonalInfoId, employeeId = employeeId);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+
+            if requestedPersonalInfoId is () {
+                string customErr = "Employee information not found";
+                log:printWarn(customErr, employeeId = employeeId);
+                return <http:NotFound>{body: {message: customErr}};
+            }
+
+            if callerPersonalInfoId is () || callerPersonalInfoId != requestedPersonalInfoId {
+                log:printWarn("User is not authorized to view this employee's history",
+                        invokerEmail = userInfo.email, employeeId = employeeId);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view this employee's history"}
+                };
+            }
+        }
+
+        database:EmploymentPeriod[]|error periods = database:getEmploymentPeriods(employeeId);
+        if periods is error {
+            string customErr = string `Error occurred while fetching employment periods for ID: ${employeeId}`;
+            log:printError(customErr, periods, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        if periods.length() == 0 {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
+        }
+
+        int[] employeePkIds = from database:EmploymentPeriod period in periods
+            select period.id;
+
+        database:AuditSnapshot[]|error snapshots = database:getAuditSnapshots(employeePkIds);
+        if snapshots is error {
+            string customErr = string `Error occurred while fetching audit history for ID: ${employeeId}`;
+            log:printError(customErr, snapshots, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        database:HistoryEvent[] events = database:buildHistoryEvents(snapshots);
+
+        // The HRIS promotion database is a second database. An outage there must degrade the
+        // timeline rather than break the employee's own profile page, so the failure is
+        // reported as a flag alongside an otherwise complete response.
+        boolean promotionsUnavailable = false;
+        promotion:PromotionRecord[] promotions = [];
+        string workEmail = periods[0].workEmail;
+        promotion:PromotionRecord[]|error fetchedPromotions = promotion:getApprovedPromotions(workEmail);
+        if fetchedPromotions is error {
+            promotionsUnavailable = true;
+            log:printError("Error occurred while fetching promotions from HRIS; returning history without them",
+                    fetchedPromotions, employeeId = employeeId);
+        } else {
+            promotions = fetchedPromotions;
+        }
+
+        EmploymentPeriodResponse[] periodResponses = assignPromotionsToPeriods(periods, promotions);
+
+        return {
+            periods: periodResponses,
+            events: projectHistoryEvents(events, hasAdminAccess),
+            promotionsUnavailable: promotionsUnavailable
+        };
     }
 }

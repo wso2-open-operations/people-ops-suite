@@ -2446,6 +2446,25 @@ isolated function deleteEmployeeEmergencyContactsAuditQuery(int personalInfoId) 
 isolated function deletePersonalInfoAuditQuery(int personalInfoId) returns sql:ParameterizedQuery =>
     `DELETE FROM personal_info_audit WHERE personal_info_pk_id = ${personalInfoId};`;
 
+# Resolve the person behind a work email.
+#
+# A person may hold several employee rows over time (a rehire issues a new employee ID while
+# reusing the same personal_info row), so this deliberately returns the personal_info_id rather
+# than an employee ID. LIMIT 1 is safe because every employee row for one person points at the
+# same personal_info_id, and a work email belongs to exactly one employee row.
+#
+# + workEmail - Work email of the person
+# + return - Parameterized query returning the person's personal_info_id
+isolated function getPersonalInfoIdByWorkEmailQuery(string workEmail) returns sql:ParameterizedQuery =>
+    `SELECT personal_info_id FROM employee WHERE work_email = ${workEmail} LIMIT 1;`;
+
+# Resolve the person behind an employee ID.
+#
+# + employeeId - Employee ID of any one of the person's employment records
+# + return - Parameterized query returning the person's personal_info_id
+isolated function getPersonalInfoIdByEmployeeIdQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId} LIMIT 1;`;
+
 # All employment periods for the person behind an employee ID.
 #
 # + employeeId - Employee ID of any one of the person's employment records
