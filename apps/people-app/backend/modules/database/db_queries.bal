@@ -2564,14 +2564,28 @@ isolated function getPersonalInfoAuditSnapshotsQuery(int[] employeePkIds) return
 # query per lookup table. `designation` names its column `designation`; every other
 # lookup table uses `name`.
 #
+# Every string is given an explicit COLLATE. The lookup tables do not agree among
+# themselves — `house.name` is utf8mb4_unicode_ci while the rest are utf8mb4_0900_ai_ci —
+# and the literals would otherwise take the connection default, so a bare UNION fails with
+# "Illegal mix of collations" (MySQL 1271).
+#
 # + return - Parameterized query returning (field, id, name) rows
 isolated function getHistoryLookupNamesQuery() returns sql:ParameterizedQuery =>
-    `SELECT 'business_unit_id' AS field, id, name FROM business_unit
-     UNION ALL SELECT 'team_id', id, name FROM team
-     UNION ALL SELECT 'sub_team_id', id, name FROM sub_team
-     UNION ALL SELECT 'unit_id', id, name FROM unit
-     UNION ALL SELECT 'designation_id', id, designation FROM designation
-     UNION ALL SELECT 'employment_type_id', id, name FROM employment_type
-     UNION ALL SELECT 'company_id', id, name FROM company
-     UNION ALL SELECT 'office_id', id, name FROM office
-     UNION ALL SELECT 'house_id', id, name FROM house`;
+    `SELECT 'business_unit_id' COLLATE utf8mb4_general_ci AS field,
+            id, name COLLATE utf8mb4_general_ci AS name FROM business_unit
+     UNION ALL SELECT 'team_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM team
+     UNION ALL SELECT 'sub_team_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM sub_team
+     UNION ALL SELECT 'unit_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM unit
+     UNION ALL SELECT 'designation_id' COLLATE utf8mb4_general_ci,
+            id, designation COLLATE utf8mb4_general_ci FROM designation
+     UNION ALL SELECT 'employment_type_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM employment_type
+     UNION ALL SELECT 'company_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM company
+     UNION ALL SELECT 'office_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM office
+     UNION ALL SELECT 'house_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM house`;
