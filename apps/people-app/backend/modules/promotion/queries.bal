@@ -36,5 +36,4 @@ isolated function getApprovedPromotionsQuery(string workEmail) returns sql:Param
     WHERE pr.promotion_request_employee_email = ${workEmail}
         AND pr.promotion_request_status = 'APPROVED'
         AND pc.promotion_cycle_status = 'END'
-        AND pr.promotion_request_promoted_date IS NOT NULL
     ORDER BY pr.promotion_request_promoted_date DESC`;

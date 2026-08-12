@@ -37,7 +37,9 @@ export interface HistoryEvent {
 }
 
 export interface PromotionRecord {
-  promotedDate: string;
+  // Nullable: HRIS holds APPROVED promotions in ended cycles whose promoted
+  // date was never populated. The timeline renders these with a "-" date.
+  promotedDate: string | null;
   currentJobBand: string;
   nextJobBand: string;
   jobRole: string;

@@ -816,13 +816,24 @@ public isolated function assignPromotionsToPeriods(database:EmploymentPeriod[] p
 
     foreach promotion:PromotionRecord promotionRecord in promotions {
         int? targetIndex = ();
+        string? promotedDate = promotionRecord.promotedDate;
+
+        // A promotion with no recorded date cannot be placed by range. It is still a real
+        // promotion, so it attaches to the current (newest) period rather than being dropped —
+        // HRIS contains APPROVED promotions in ended cycles whose date was never populated.
+        if promotedDate is () {
+            if periods.length() > 0 {
+                bucketed[0].push(promotionRecord);
+            }
+            continue;
+        }
 
         // Exact containment first.
         foreach int index in 0 ..< periods.length() {
             database:EmploymentPeriod period = periods[index];
             string? endDate = period.endDate;
-            boolean startedBy = promotionRecord.promotedDate >= period.startDate;
-            boolean endedAfter = endDate is () || promotionRecord.promotedDate <= endDate;
+            boolean startedBy = promotedDate >= period.startDate;
+            boolean endedAfter = endDate is () || promotedDate <= endDate;
             if startedBy && endedAfter {
                 targetIndex = index;
                 break;
@@ -834,7 +845,7 @@ public isolated function assignPromotionsToPeriods(database:EmploymentPeriod[] p
         // the nearest earlier one.
         if targetIndex is () {
             foreach int index in 0 ..< periods.length() {
-                if periods[index].startDate <= promotionRecord.promotedDate {
+                if periods[index].startDate <= promotedDate {
                     targetIndex = index;
                     break;
                 }

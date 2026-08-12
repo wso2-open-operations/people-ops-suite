@@ -34,8 +34,9 @@ public type PromotionDatabaseConfig record {|
 
 # Approved promotion record for an employee.
 public type PromotionRecord record {|
-    # Date the promotion took effect
-    string promotedDate;
+    # Date the promotion took effect. Nullable: real data contains APPROVED
+    # promotions in ended cycles whose promoted date was never populated.
+    string? promotedDate;
     # Job band held before the promotion
     string currentJobBand;
     # Job band granted by the promotion

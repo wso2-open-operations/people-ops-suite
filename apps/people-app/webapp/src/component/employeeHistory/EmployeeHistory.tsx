@@ -90,7 +90,8 @@ const statusChipColors = (theme: Theme, status: string) => {
 // promotion.
 interface TimelineRow {
   key: string;
-  date: string;
+  // Nullable for promotions whose promoted date was never recorded in HRIS.
+  date: string | null;
   isPromo: boolean;
   isJoin: boolean;
   isSystem: boolean;
@@ -134,7 +135,15 @@ const buildRows = (period: EmploymentPeriod, events: HistoryEvent[]): TimelineRo
     });
   });
 
-  rows.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  // Newest first. A row with no recorded date (a promotion whose promoted date
+  // was never populated in HRIS) sorts to the top rather than being compared
+  // against a string, since it cannot be placed chronologically.
+  rows.sort((a, b) => {
+    if (a.date === b.date) return 0;
+    if (!a.date) return -1;
+    if (!b.date) return 1;
+    return a.date < b.date ? 1 : -1;
+  });
 
   // The diff engine never emits a change event for the record that created
   // the employment row (an INSERT is a baseline, not a change), so "Joined"

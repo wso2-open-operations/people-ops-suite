@@ -38,6 +38,8 @@ public isolated function getApprovedPromotions(string workEmail) returns Promoti
             department: promotion.department,
             team: promotion.team,
             subTeam: promotion.subTeam,
-            promotedDate: re `/`.replaceAll(promotion.promotedDate, "-")
+            promotedDate: promotion.promotedDate is string
+                ? re `/`.replaceAll(<string>promotion.promotedDate, "-")
+                : ()
         };
 }
