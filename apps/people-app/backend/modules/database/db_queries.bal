@@ -2445,3 +2445,95 @@ isolated function deleteEmployeeEmergencyContactsAuditQuery(int personalInfoId) 
 # + return - Parameterized query to delete personal info audit rows
 isolated function deletePersonalInfoAuditQuery(int personalInfoId) returns sql:ParameterizedQuery =>
     `DELETE FROM personal_info_audit WHERE personal_info_pk_id = ${personalInfoId};`;
+
+# All employment periods for the person behind an employee ID.
+#
+# + employeeId - Employee ID of any one of the person's employment records
+# + return - Parameterized query returning every employment period, newest first
+isolated function getEmploymentPeriodsQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT
+        e.id AS id,
+        e.employee_id AS employeeId,
+        et.name AS employmentType,
+        e.start_date AS startDate,
+        r.final_day_of_employment AS endDate,
+        e.work_email AS workEmail,
+        csr.employee_id AS continuousServiceRecord
+    FROM employee e
+        JOIN employment_type et ON et.id = e.employment_type_id
+        LEFT JOIN resignation r ON r.employee_id = e.id
+        LEFT JOIN employee csr ON csr.id = e.continuous_service_record
+    WHERE e.personal_info_id = (
+        SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}
+    )
+    ORDER BY e.start_date DESC`;
+
+# Fetch audit snapshots from the employee_audit table for a set of employee rows.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning employee_audit rows tagged with their source table
+isolated function getEmployeeAuditSnapshotsQuery(int[] employeePkIds) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildIntInClause(employeePkIds);
+    return sql:queryConcat(
+            `SELECT
+                employee_pk_id AS employeePkId,
+                'employee_audit' AS sourceTable,
+                action_type AS actionType,
+                action_by AS actionBy,
+                action_on AS actionOn,
+                data AS data
+            FROM employee_audit
+            WHERE employee_pk_id IN (`,
+            inClause,
+            `)
+            ORDER BY action_on ASC`
+    );
+}
+
+# Fetch audit snapshots from the employee_additional_managers_audit table for a set of employee rows.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning employee_additional_managers_audit rows tagged with their source table
+isolated function getEmployeeAdditionalManagersAuditSnapshotsQuery(int[] employeePkIds)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildIntInClause(employeePkIds);
+    return sql:queryConcat(
+            `SELECT
+                employee_pk_id AS employeePkId,
+                'employee_additional_managers_audit' AS sourceTable,
+                action_type AS actionType,
+                action_by AS actionBy,
+                action_on AS actionOn,
+                data AS data
+            FROM employee_additional_managers_audit
+            WHERE employee_pk_id IN (`,
+            inClause,
+            `)
+            ORDER BY action_on ASC`
+    );
+}
+
+# Fetch audit snapshots from the personal_info_audit table for the person behind a set of employee rows.
+#
+# personal_info_audit keys on personal_info_pk_id, not employee_pk_id. All employee rows belonging to one
+# person share the same personal_info_id, so it is resolved once from any single employee primary key in
+# the set (the first one) rather than joined against the whole set, which would otherwise multiply rows.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning personal_info_audit rows tagged with their source table; each
+# row's employeePkId is the resolving employee primary key, not necessarily the one active at that time
+isolated function getPersonalInfoAuditSnapshotsQuery(int[] employeePkIds) returns sql:ParameterizedQuery {
+    int anchorEmployeePkId = employeePkIds[0];
+    return `SELECT
+                ${anchorEmployeePkId} AS employeePkId,
+                'personal_info_audit' AS sourceTable,
+                pia.action_type AS actionType,
+                pia.action_by AS actionBy,
+                pia.action_on AS actionOn,
+                pia.data AS data
+            FROM personal_info_audit pia
+            WHERE pia.personal_info_pk_id = (
+                SELECT personal_info_id FROM employee WHERE id = ${anchorEmployeePkId}
+            )
+            ORDER BY pia.action_on ASC`;
+}

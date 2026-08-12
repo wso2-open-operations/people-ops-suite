@@ -1513,3 +1513,46 @@ public isolated function hasActiveEmployeesInBUTeamSubTeamUnitMapping(int id) re
             countActiveEmployeesInBUTeamSubTeamUnitMappingQuery(id));
     return result.count > 0;
 }
+
+# Fetch every employment period for the person behind an employee ID.
+#
+# + employeeId - Employee ID of any one of the person's employment records
+# + return - Employment periods for the person, newest first
+public isolated function getEmploymentPeriods(string employeeId) returns EmploymentPeriod[]|error {
+    stream<EmploymentPeriod, error?> periodStream = databaseClient->query(getEmploymentPeriodsQuery(employeeId));
+    return from EmploymentPeriod period in periodStream
+        select period;
+}
+
+# Fetch raw audit snapshots across all audit tables for a person's employee rows.
+#
+# Each source table is queried and ordered independently, then merged and re-sorted by action_on
+# ascending across the combined set, since Task 3 diffs consecutive rows and depends on one
+# globally-ordered timeline rather than three independently-ordered ones.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Audit snapshots from employee_audit, personal_info_audit, and
+# employee_additional_managers_audit, ordered by action_on ascending across all three
+public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSnapshot[]|error {
+    stream<AuditSnapshot, error?> employeeAuditStream =
+        databaseClient->query(getEmployeeAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] employeeAuditSnapshots = check from AuditSnapshot snapshot in employeeAuditStream
+        select snapshot;
+
+    stream<AuditSnapshot, error?> personalInfoAuditStream =
+        databaseClient->query(getPersonalInfoAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] personalInfoAuditSnapshots = check from AuditSnapshot snapshot in personalInfoAuditStream
+        select snapshot;
+
+    stream<AuditSnapshot, error?> additionalManagersAuditStream =
+        databaseClient->query(getEmployeeAdditionalManagersAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] additionalManagersAuditSnapshots =
+        check from AuditSnapshot snapshot in additionalManagersAuditStream
+        select snapshot;
+
+    AuditSnapshot[] allSnapshots =
+        [...employeeAuditSnapshots, ...personalInfoAuditSnapshots, ...additionalManagersAuditSnapshots];
+    return from AuditSnapshot snapshot in allSnapshots
+        order by snapshot.actionOn ascending
+        select snapshot;
+}

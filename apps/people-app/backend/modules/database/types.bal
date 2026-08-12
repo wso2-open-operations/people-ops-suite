@@ -1353,3 +1353,37 @@ type CompanyOrgChartBusinessUnitRow record {|
     # Teams with nested sub-teams and units as raw JSON.
     json teams;
 |};
+
+# One employment period for a person.
+public type EmploymentPeriod record {|
+    # Employee table primary key
+    int id;
+    # Employee ID (e.g. "EP 10006")
+    string? employeeId;
+    # Employment type name
+    string employmentType;
+    # Start date
+    string startDate;
+    # Final day of employment, if the period has ended
+    string? endDate;
+    # Work email
+    string workEmail;
+    # Employee ID of the prior linked employment, if any
+    string? continuousServiceRecord;
+|};
+
+# A raw audit row awaiting diffing.
+public type AuditSnapshot record {|
+    # Employee table primary key this snapshot belongs to
+    int employeePkId;
+    # Source table this snapshot came from
+    string sourceTable;
+    # INSERT or UPDATE
+    string actionType;
+    # Who performed the action
+    string actionBy;
+    # When the action occurred
+    string actionOn;
+    # The full row snapshot as JSON
+    json data;
+|};
