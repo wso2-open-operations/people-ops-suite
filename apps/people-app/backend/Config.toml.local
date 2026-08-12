@@ -19,6 +19,16 @@ EXTERNAL_USER_ROLES = [];
     [people.database.dbConfig.options.ssl]
     mode = "PREFERRED"
 
+[people.promotion.promotionDbConfig]
+    host = ""
+    user = ""
+    password = ""
+    database = ""
+    [people.promotion.promotionDbConfig.connectionPool]
+    maxOpenConnections =
+    maxConnectionLifeTime =
+    minIdleConnections =
+
 [people.wso2_coin]
     masterWalletAddress = ""
     reservationWindowStartHour = 
