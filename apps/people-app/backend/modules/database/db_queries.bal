@@ -2482,8 +2482,30 @@ isolated function getEmploymentPeriodsQuery(string employeeId) returns sql:Param
         JOIN employment_type et ON et.id = e.employment_type_id
         LEFT JOIN resignation r ON r.employee_id = e.id
         LEFT JOIN employee csr ON csr.id = e.continuous_service_record
-    WHERE e.personal_info_id = (
-        SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}
+    WHERE e.id IN (
+        WITH RECURSIVE anchor AS (
+            SELECT id, personal_info_id, continuous_service_record
+            FROM employee WHERE employee_id = ${employeeId}
+        ),
+        -- Walk backwards: each row points at the employment that preceded it.
+        earlier AS (
+            SELECT id, continuous_service_record FROM anchor
+            UNION
+            SELECT e2.id, e2.continuous_service_record
+            FROM employee e2 JOIN earlier ON e2.id = earlier.continuous_service_record
+        ),
+        -- Walk forwards: find rows pointing back at anything already collected.
+        later AS (
+            SELECT id FROM anchor
+            UNION
+            SELECT e3.id
+            FROM employee e3 JOIN later ON e3.continuous_service_record = later.id
+        )
+        SELECT id FROM earlier
+        UNION SELECT id FROM later
+        -- Rehires where the identity record does match are still picked up here.
+        UNION SELECT e4.id FROM employee e4
+            JOIN anchor ON e4.personal_info_id = anchor.personal_info_id
     )
     ORDER BY e.start_date DESC`;
 
