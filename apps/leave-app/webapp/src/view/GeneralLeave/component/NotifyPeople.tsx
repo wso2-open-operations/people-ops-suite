@@ -20,6 +20,7 @@ import {
   Box,
   Chip,
   CircularProgress,
+  createFilterOptions,
   InputAdornment,
   Stack,
   TextField,
@@ -32,15 +33,23 @@ import { useEffect, useState } from "react";
 import { selectAppConfig } from "@root/src/slices/configSlice/config";
 import { selectEmployeeState, selectEmployees } from "@root/src/slices/employeeSlice/employee";
 import { useAppSelector } from "@root/src/slices/store";
-import { CachedMail, State } from "@root/src/types/types";
+import { CachedMail, EmployeeStatus, State } from "@root/src/types/types";
 
 interface EmployeeOption {
-  label: string;
   displayName: string;
   email: string;
   thumbnail: string | null;
   isFixed?: boolean;
 }
+
+const getOptionLabel = (option: EmployeeOption) =>
+  option.displayName ? `${option.displayName} (${option.email})` : option.email;
+
+// Cap rendered matches so typing doesn't mount hundreds of Autocomplete list items at once.
+const filterOptions = createFilterOptions<EmployeeOption>({
+  stringify: getOptionLabel,
+  limit: 50,
+});
 
 interface NotifyPeopleProps {
   selectedEmails: string[];
@@ -68,7 +77,6 @@ export default function NotifyPeople({
     const defaultMails: CachedMail = appConfig.cachedEmails;
 
     const mandatoryOptions = defaultMails.mandatoryMails.map((mail) => ({
-      label: mail.email,
       displayName: mail.email,
       email: mail.email,
       thumbnail: mail.thumbnail || null,
@@ -78,7 +86,6 @@ export default function NotifyPeople({
     const optionalOptions = defaultMails.optionalMails
       .filter((mail) => !defaultMails.mandatoryMails.find((m) => m.email === mail.email))
       .map((mail) => ({
-        label: mail.email,
         displayName: mail.email,
         email: mail.email,
         thumbnail: mail.thumbnail || null,
@@ -96,13 +103,14 @@ export default function NotifyPeople({
 
   useEffect(() => {
     if (employees.length > 0) {
-      const employeeOptionsFromApi = employees.map((employee) => ({
-        label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
-        displayName: `${employee.firstName} ${employee.lastName}`.trim(),
-        email: employee.workEmail,
-        thumbnail: employee.employeeThumbnail,
-        isFixed: fixedEmails.includes(employee.workEmail),
-      }));
+      const employeeOptionsFromApi = employees
+        .filter((employee) => employee.employeeStatus !== EmployeeStatus.LEFT)
+        .map((employee) => ({
+          displayName: `${employee.firstName} ${employee.lastName}`.trim(),
+          email: employee.workEmail,
+          thumbnail: employee.employeeThumbnail,
+          isFixed: fixedEmails.includes(employee.workEmail),
+        }));
 
       setEmployeeOptions((prev) => {
         const apiByEmail = new Map(employeeOptionsFromApi.map((o) => [o.email, o]));
@@ -154,7 +162,8 @@ export default function NotifyPeople({
           ];
           onEmailsChange(newEmails);
         }}
-        getOptionLabel={(option) => option.label}
+        getOptionLabel={getOptionLabel}
+        filterOptions={filterOptions}
         isOptionEqualToValue={(option, value) => option.email === value.email}
         renderOption={(props, option) => (
           <li
