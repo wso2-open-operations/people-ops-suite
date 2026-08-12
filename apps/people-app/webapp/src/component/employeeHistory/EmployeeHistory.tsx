@@ -213,7 +213,9 @@ const EventRow = ({ row }: { row: TimelineRow }) => {
           whiteSpace: "nowrap",
         }}
       >
-        {formatEventDate(row.date)}
+        {row.date
+          ? formatEventDate(row.date)
+          : (row.promotion?.cycleName ?? "-")}
       </Typography>
       <Box sx={{ minWidth: 0 }}>
         <Typography
@@ -275,11 +277,18 @@ const EventRow = ({ row }: { row: TimelineRow }) => {
                   rowGap: 0.5,
                 }}
               >
-                {[
-                  ["Cycle", row.promotion.cycleName],
-                  ["Type", row.promotion.promotionType],
-                  ["Role", row.promotion.jobRole],
-                ].map(([dt, dd]) => (
+                {(
+                  [
+                    // The cycle name stands in for the date when HRIS has no
+                    // promoted date, so it is only repeated here when a real
+                    // date occupies the date column.
+                    ...(row.date
+                      ? [["Cycle", row.promotion.cycleName]]
+                      : []),
+                    ["Type", row.promotion.promotionType],
+                    ["Role", row.promotion.jobRole],
+                  ] as [string, string][]
+                ).map(([dt, dd]) => (
                   <Box key={dt} sx={{ display: "flex", gap: 0.75 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>
                       {dt}
