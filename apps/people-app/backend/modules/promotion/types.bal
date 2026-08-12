@@ -26,6 +26,8 @@ public type PromotionDatabaseConfig record {|
     string database;
     # Database host
     string host;
+    # Port number of the MySQL server
+    int port;
     # Connection pool configuration
     sql:ConnectionPool connectionPool?;
 |};

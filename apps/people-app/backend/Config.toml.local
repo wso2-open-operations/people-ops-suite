@@ -14,16 +14,14 @@ EXTERNAL_USER_ROLES = [];
     maxOpenConnections = 
     maxConnectionLifeTime = 
     minIdleConnections= 
-    [people.database.dbConfig.options]
-    connectTimeout = 
-    [people.database.dbConfig.options.ssl]
-    mode = "PREFERRED"
+
 
 [people.promotion.promotionDbConfig]
     host = ""
     user = ""
     password = ""
     database = ""
+    port =
     [people.promotion.promotionDbConfig.connectionPool]
     maxOpenConnections =
     maxConnectionLifeTime =
