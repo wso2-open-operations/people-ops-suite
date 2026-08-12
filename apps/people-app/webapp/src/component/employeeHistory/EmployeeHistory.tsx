@@ -316,6 +316,10 @@ const EventRow = ({ row }: { row: TimelineRow }) => {
             )}
           </>
         ) : (
+          /* Three distinct shapes, not one: a value set for the first time, a
+             value changed, and a value removed. Rendering a removal as
+             "87 →" with nothing after the arrow reads as a bug rather than
+             as a deliberate clearing. */
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
             {row.previousValue !== null && (
               <>
@@ -328,10 +332,24 @@ const EventRow = ({ row }: { row: TimelineRow }) => {
                 >
                   {row.previousValue}
                 </Typography>
-                <Typography sx={{ color: "text.disabled" }}>{"→"}</Typography>
+                {row.currentValue !== null && (
+                  <Typography sx={{ color: "text.disabled" }}>{"→"}</Typography>
+                )}
               </>
             )}
-            {showStatusChip ? (
+            {row.currentValue === null ? (
+              <Chip
+                size="small"
+                label="Removed"
+                sx={{
+                  height: 20,
+                  fontWeight: 600,
+                  fontSize: 11,
+                  color: theme.palette.text.secondary,
+                  backgroundColor: theme.palette.action.hover,
+                }}
+              />
+            ) : showStatusChip ? (
               <Chip
                 size="small"
                 label={row.currentValue}
@@ -339,7 +357,7 @@ const EventRow = ({ row }: { row: TimelineRow }) => {
                   height: 20,
                   fontWeight: 600,
                   fontSize: 11,
-                  ...statusChipColors(theme, row.currentValue ?? ""),
+                  ...statusChipColors(theme, row.currentValue),
                 }}
               />
             ) : (
