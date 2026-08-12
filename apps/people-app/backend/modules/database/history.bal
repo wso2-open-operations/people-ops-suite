@@ -142,3 +142,44 @@ isolated function toDisplayValue(json value) returns string? {
 isolated function isSystemActor(string actionBy) returns boolean {
     return SYSTEM_ACTORS.indexOf(actionBy) !is ();
 }
+
+# Resolve raw foreign-key values on history events to human-readable names.
+#
+# Events arrive carrying ids from the audit snapshots ("87"). Anything that has a mapping
+# is replaced with its name; values with no mapping (a deleted lookup row, or a field that
+# was never an id) are left exactly as they are rather than blanked, so nothing disappears
+# from the timeline.
+#
+# + events - History events carrying raw values
+# + lookup - Field -> id -> name mapping
+# + return - Events with id values replaced by names where a mapping exists
+public isolated function resolveHistoryEventNames(HistoryEvent[] events, map<map<string>> lookup)
+        returns HistoryEvent[] =>
+    from HistoryEvent event in events
+    select {
+        employeePkId: event.employeePkId,
+        'field: event.'field,
+        previousValue: resolveLookupValue(event.'field, event.previousValue, lookup),
+        currentValue: resolveLookupValue(event.'field, event.currentValue, lookup),
+        occurredOn: event.occurredOn,
+        actionBy: event.actionBy,
+        isSystem: event.isSystem
+    };
+
+# Replace a single id with its name when a mapping exists.
+#
+# + field - The audit field the value belongs to
+# + value - The raw value, possibly an id
+# + lookup - Field -> id -> name mapping
+# + return - The resolved name, or the original value when there is no mapping
+isolated function resolveLookupValue(string 'field, string? value, map<map<string>> lookup)
+        returns string? {
+    if value is () {
+        return ();
+    }
+    if !lookup.hasKey('field) {
+        return value;
+    }
+    map<string> byId = lookup.get('field);
+    return byId.hasKey(value) ? byId.get(value) : value;
+}

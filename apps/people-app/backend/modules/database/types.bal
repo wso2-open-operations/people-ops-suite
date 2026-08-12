@@ -1405,3 +1405,13 @@ public type HistoryEvent record {|
     # True when actionBy is a system actor rather than a person
     boolean isSystem;
 |};
+
+# One id-to-name mapping row used to resolve history event values.
+public type HistoryLookupName record {|
+    # The audit field this mapping applies to, e.g. "unit_id"
+    string 'field;
+    # The lookup row's primary key
+    int id;
+    # The human-readable name
+    string name;
+|};

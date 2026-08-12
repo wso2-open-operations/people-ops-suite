@@ -1578,3 +1578,24 @@ public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSna
         order by snapshot.actionOn ascending
         select snapshot;
 }
+
+# Build a lookup of audit field -> id -> human-readable name.
+#
+# History events carry raw foreign keys from the audit snapshots. Rendering "87" tells a
+# reader nothing, so ids are resolved to names before the response is built.
+#
+# + return - Nested map keyed by field then by id, or an error
+public isolated function getHistoryLookupNames() returns map<map<string>>|error {
+    stream<HistoryLookupName, error?> resultStream =
+        databaseClient->query(getHistoryLookupNamesQuery());
+
+    map<map<string>> lookup = {};
+    check from HistoryLookupName row in resultStream
+        do {
+            map<string> byId = lookup.hasKey(row.'field) ? lookup.get(row.'field) : {};
+            byId[row.id.toString()] = row.name;
+            lookup[row.'field] = byId;
+        };
+
+    return lookup;
+}

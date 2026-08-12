@@ -2981,6 +2981,17 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         database:HistoryEvent[] events = database:buildHistoryEvents(snapshots);
 
+        // Audit snapshots store foreign keys, so an event reads "87" until its id is
+        // resolved. A lookup failure degrades to raw ids rather than failing the request —
+        // an unhelpful timeline is better than none.
+        map<map<string>>|error lookupNames = database:getHistoryLookupNames();
+        if lookupNames is map<map<string>> {
+            events = database:resolveHistoryEventNames(events, lookupNames);
+        } else {
+            log:printError("Error resolving history lookup names; returning raw ids",
+                    lookupNames, employeeId = employeeId);
+        }
+
         // The HRIS promotion database is a second database. An outage there must degrade the
         // timeline rather than break the employee's own profile page, so the failure is
         // reported as a flag alongside an otherwise complete response.

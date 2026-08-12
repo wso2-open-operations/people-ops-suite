@@ -2556,3 +2556,22 @@ isolated function getPersonalInfoAuditSnapshotsQuery(int[] employeePkIds) return
             )
             ORDER BY pia.action_on ASC`;
 }
+
+# Every id-to-name mapping needed to render history events, in one query.
+#
+# Audit snapshots store foreign keys (`unit_id`, `designation_id`, ...), which are
+# meaningless to a reader. This resolves them in a single round trip rather than one
+# query per lookup table. `designation` names its column `designation`; every other
+# lookup table uses `name`.
+#
+# + return - Parameterized query returning (field, id, name) rows
+isolated function getHistoryLookupNamesQuery() returns sql:ParameterizedQuery =>
+    `SELECT 'business_unit_id' AS field, id, name FROM business_unit
+     UNION ALL SELECT 'team_id', id, name FROM team
+     UNION ALL SELECT 'sub_team_id', id, name FROM sub_team
+     UNION ALL SELECT 'unit_id', id, name FROM unit
+     UNION ALL SELECT 'designation_id', id, designation FROM designation
+     UNION ALL SELECT 'employment_type_id', id, name FROM employment_type
+     UNION ALL SELECT 'company_id', id, name FROM company
+     UNION ALL SELECT 'office_id', id, name FROM office
+     UNION ALL SELECT 'house_id', id, name FROM house`;
