@@ -233,6 +233,10 @@ export default function Me({
     (state) => state.employeePersonalInfo,
   );
   const [isSavingChanges, setSavingChanges] = useState(false);
+  // Two pieces of state, deliberately: `historyExpanded` toggles with the
+  // accordion, while `hasExpandedHistory` latches on first open so the
+  // timeline stays mounted (and is not re-fetched) across collapse/expand.
+  const [historyExpanded, setHistoryExpanded] = useState(false);
   const [hasExpandedHistory, setHasExpandedHistory] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [qrImageNaturalSize, setQrImageNaturalSize] = useState<number | null>(
@@ -1640,8 +1644,9 @@ export default function Me({
       </Accordion>
 
       <Accordion
-        expanded={hasExpandedHistory}
+        expanded={historyExpanded}
         onChange={(_, expanded) => {
+          setHistoryExpanded(expanded);
           if (expanded) setHasExpandedHistory(true);
         }}
         sx={{
