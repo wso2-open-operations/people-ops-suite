@@ -21,7 +21,7 @@ import ballerina/constraint;
 
 # One field-level change as returned to the client.
 #
-# `actionBy` is optional rather than required because the non-ADMIN projection strips it
+# `actionBy` is optional rather than required because the reduced projection strips it
 # server-side. The field is absent from the payload entirely for those callers rather than
 # blanked, so the client is never handed an actor it is not permitted to display.
 public type HistoryEventResponse record {|
@@ -35,10 +35,10 @@ public type HistoryEventResponse record {|
     string? currentValue;
     # When the change occurred
     string occurredOn;
-    # Who made the change. Omitted entirely for non-ADMIN callers.
+    # Who made the change. Omitted entirely under the reduced projection.
     string actionBy?;
     # True when the change was made by an automated process rather than a person.
-    # Always false for non-ADMIN callers, whose system events are dropped outright.
+    # Always false under the reduced projection, whose system events are dropped outright.
     boolean isSystem;
 |};
 

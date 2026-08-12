@@ -750,7 +750,10 @@ public isolated function parseCsvBytes(byte[] fileBytes) returns BulkEmployeeCsv
 # not see is absent from the payload rather than flagged for the client to hide, so the data
 # is not merely unrendered but never transmitted.
 #
-# For a non-ADMIN caller:
+# The full projection is granted to ADMINs and to a lead viewing their own subordinate; the
+# reduced projection applies to someone viewing their own record.
+#
+# Under the reduced projection:
 # - `actionBy` is omitted from every event: an employee sees *that* their team changed, not
 #   which HR administrator changed it.
 # - Events made by system actors are dropped: migrations and scheduled jobs are operational
@@ -761,12 +764,12 @@ public isolated function parseCsvBytes(byte[] fileBytes) returns BulkEmployeeCsv
 # transition would leave an unexplained gap at the end of their own timeline.
 #
 # + events - Derived history events, newest first
-# + hasAdminAccess - True when the caller holds the ADMIN role
+# + hasFullProjection - True when the caller may see attribution and system rows
 # + return - Events the caller is permitted to receive, newest first
-public isolated function projectHistoryEvents(database:HistoryEvent[] events, boolean hasAdminAccess)
+public isolated function projectHistoryEvents(database:HistoryEvent[] events, boolean hasFullProjection)
         returns HistoryEventResponse[] {
 
-    if hasAdminAccess {
+    if hasFullProjection {
         return from database:HistoryEvent event in events
             select {
                 employeePkId: event.employeePkId,

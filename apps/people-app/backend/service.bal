@@ -2897,14 +2897,36 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions(
+        // Access and projection are one decision, carried by one variable, so a caller can never
+        // be granted access under one tier and then filtered under another.
+        //
+        // - ADMIN, and a LEAD viewing their own subordinate, get the full projection:
+        //   attribution and system rows included. A lead can already see a subordinate's
+        //   designation, manager, status and dates through the sibling employee endpoint;
+        //   history adds only *when* those changed, so withholding it would be inconsistent.
+        // - Self gets the employee projection: no actionBy, no system rows.
+        boolean hasFullProjection = authorization:checkPermissions(
                 [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        if !hasFullProjection {
+            // Deliberately checked against the requested employeeId itself, never resolved
+            // through personal_info_id first. The lead relationship is carried by manager_email
+            // on an individual employment row, so resolving to the person would let a lead reach
+            // a former employment period of someone who is no longer their report.
+            boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
+            if isSubordinate is error {
+                string customErr = string `Error occurred while checking lead authorization for ID: ${employeeId}`;
+                log:printError(customErr, isSubordinate, employeeId = employeeId);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+            hasFullProjection = isSubordinate;
+        }
 
         // Authorization compares *people*, not employee IDs. A rehired person holds several
         // employee IDs against one personal_info row (e.g. intern "IN 0456" then permanent
         // "EP 10006"), so comparing the caller's employee ID against the requested one would
-        // deny them their own earlier employment. Admins bypass the check entirely.
-        if !hasAdminAccess {
+        // deny them their own earlier employment. Admins and leads-of-this-report skip this.
+        if !hasFullProjection {
             int?|error callerPersonalInfoId = database:getPersonalInfoIdByWorkEmail(userInfo.email);
             if callerPersonalInfoId is error {
                 string customErr = "Error occurred while resolving the invoker's employee record";
@@ -2978,7 +3000,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return {
             periods: periodResponses,
-            events: projectHistoryEvents(events, hasAdminAccess),
+            events: projectHistoryEvents(events, hasFullProjection),
             promotionsUnavailable: promotionsUnavailable
         };
     }
