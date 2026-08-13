@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useEffect, useMemo } from "react";
+import { Fragment, useEffect, useMemo } from "react";
 import { format } from "date-fns/format";
 import { isValid } from "date-fns/isValid";
 import { parseISO } from "date-fns/parseISO";
@@ -379,30 +379,65 @@ const EventRow = ({ row }: { row: TimelineRow }) => {
   );
 };
 
+// Bridges the gap between two employment periods joined by a relocation, so the
+// link is drawn rather than described. Rendered above the period that carries the
+// continuousServiceRecord, spanning down from the one before it.
+const RelocationConnector = ({ label }: { label: string }) => {
+  const theme = useTheme();
+  return (
+    <Box
+      sx={{
+        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        py: 1.25,
+        pl: 1.5,
+        // The dashed rule sits on the same x as the event spine, so the eye
+        // follows one continuous vertical through the join.
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          left: 15,
+          top: 0,
+          bottom: 0,
+          width: "1px",
+          backgroundImage: `repeating-linear-gradient(to bottom, ${theme.palette.text.disabled} 0 3px, transparent 3px 7px)`,
+        },
+      }}
+    >
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.75}
+        sx={{
+          ml: 2.75,
+          px: 1.125,
+          py: 0.375,
+          borderRadius: 5,
+          backgroundColor: theme.palette.action.hover,
+          color: "text.secondary",
+        }}
+      >
+        <LinkOutlinedIcon sx={{ fontSize: 13 }} />
+        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+          {label}
+        </Typography>
+      </Stack>
+    </Box>
+  );
+};
+
 const PeriodSection = ({
   period,
   events,
-  periods,
 }: {
   period: EmploymentPeriod;
   events: HistoryEvent[];
-  periods: EmploymentPeriod[];
 }) => {
   const theme = useTheme();
   const rows = useMemo(() => buildRows(period, events), [period, events]);
   const visibleRows = rows.filter((row) => !row.isSystem);
   const systemCount = rows.length - visibleRows.length;
-
-  // continuousServiceRecord holds the linked period's employee_id string
-  // (see getEmploymentPeriodsQuery: `csr.employee_id AS continuousServiceRecord`),
-  // not the linked period's numeric `id` — a period without an employeeId can
-  // never be a link target.
-  const linkedPeriod = period.continuousServiceRecord
-    ? periods.find((p) => p.employeeId === period.continuousServiceRecord)
-    : undefined;
-  const linkedLabel = linkedPeriod
-    ? `${linkedPeriod.employmentType} · ${linkedPeriod.employeeId}`
-    : period.continuousServiceRecord;
 
   return (
     <Box sx={{ mb: 3.75 }}>
@@ -444,19 +479,6 @@ const PeriodSection = ({
         </Typography>
       </Stack>
 
-      {period.continuousServiceRecord && (
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={0.75}
-          sx={{ color: "text.secondary", fontSize: 12, pt: 0.875, pb: 0.375, pl: 1.875 }}
-        >
-          <LinkOutlinedIcon sx={{ fontSize: 14 }} />
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            Relocation — linked to {linkedLabel}
-          </Typography>
-        </Stack>
-      )}
 
       <Box sx={{ position: "relative" }}>
         {visibleRows.map((row) => (
@@ -546,14 +568,23 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
         </Box>
       )}
 
-      {sortedPeriods.map((period) => (
-        <PeriodSection
-          key={period.id}
-          period={period}
-          events={events}
-          periods={periods}
-        />
-      ))}
+      {sortedPeriods.map((period, index) => {
+        // A period links backwards to the one it relocated from. Draw the
+        // connector only when that target is the period directly below it, so
+        // the line always spans a real adjacency rather than jumping a gap.
+        const previous = sortedPeriods[index + 1];
+        const linksToPrevious =
+          period.continuousServiceRecord !== null &&
+          previous !== undefined &&
+          previous.employeeId === period.continuousServiceRecord;
+
+        return (
+          <Fragment key={period.id}>
+            <PeriodSection period={period} events={events} />
+            {linksToPrevious && <RelocationConnector label="Relocation" />}
+          </Fragment>
+        );
+      })}
     </Box>
   );
 }
