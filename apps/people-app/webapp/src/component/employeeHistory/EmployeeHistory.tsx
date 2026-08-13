@@ -453,7 +453,7 @@ const PeriodSection = ({
         >
           <LinkOutlinedIcon sx={{ fontSize: 14 }} />
           <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            Continuous service — linked to {linkedLabel}
+            Relocation — linked to {linkedLabel}
           </Typography>
         </Stack>
       )}
