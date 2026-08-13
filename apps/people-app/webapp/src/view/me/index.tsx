@@ -1092,7 +1092,6 @@ export default function Me({
         </AccordionDetails>
       </Accordion>
       <Accordion
-        defaultExpanded
         sx={{
           borderRadius: 2,
           boxShadow: 0,
