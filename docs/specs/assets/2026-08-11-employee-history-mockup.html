@@ -1,0 +1,417 @@
+<title>Employee History — People App</title>
+
+<style>
+  :root {
+    --ink:        #2f3438;
+    --ink-2:      #5a5d61;
+    --muted:      #82868a;
+    --faint:      #a8abad;
+    --rule:       #dfe1e3;
+    --rule-soft:  #ecedee;
+    --ground:     #f7f8f8;
+    --surface:    #ffffff;
+    --spine:      #d6d8da;
+    --accent:     #f14e23;
+    --accent-dim: #fbe4dc;
+    --ok:         #388e3c;
+    --warn:       #b08d3c;
+    --stop:       #d93a2b;
+    --ok-bg:      #e8f2e9;
+    --warn-bg:    #f6efdc;
+    --stop-bg:    #fbe6e4;
+    --shadow:     0 1px 2px rgba(20,24,28,.05), 0 1px 8px rgba(20,24,28,.04);
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink:        #e8eaeb;
+      --ink-2:      #b9bcbe;
+      --muted:      #8d9195;
+      --faint:      #6b6f73;
+      --rule:       #3a3f43;
+      --rule-soft:  #2f3438;
+      --ground:     #212528;
+      --surface:    #292d31;
+      --spine:      #3f4448;
+      --accent:     #ff7350;
+      --accent-dim: #4a2419;
+      --ok:         #6cc070;
+      --warn:       #d0ae5e;
+      --stop:       #ff6a5c;
+      --ok-bg:      #23372a;
+      --warn-bg:    #3a3423;
+      --stop-bg:    #3d2523;
+      --shadow:     0 1px 2px rgba(0,0,0,.3), 0 1px 8px rgba(0,0,0,.2);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink:        #e8eaeb;
+    --ink-2:      #b9bcbe;
+    --muted:      #8d9195;
+    --faint:      #6b6f73;
+    --rule:       #3a3f43;
+    --rule-soft:  #2f3438;
+    --ground:     #212528;
+    --surface:    #292d31;
+    --spine:      #3f4448;
+    --accent:     #ff7350;
+    --accent-dim: #4a2419;
+    --ok:         #6cc070;
+    --warn:       #d0ae5e;
+    --stop:       #ff6a5c;
+    --ok-bg:      #23372a;
+    --warn-bg:    #3a3423;
+    --stop-bg:    #3d2523;
+    --shadow:     0 1px 2px rgba(0,0,0,.3), 0 1px 8px rgba(0,0,0,.2);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 940px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  /* ---------- page head ---------- */
+  .pagehead { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; justify-content: space-between; margin-bottom: 8px; }
+  h1 { font-size: 21px; font-weight: 650; margin: 0; letter-spacing: -.01em; }
+  .who { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-top: 3px; }
+  .who .name { font-size: 14px; color: var(--ink-2); }
+  .who .sep { color: var(--faint); }
+  .who .eid { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+
+  /* ---------- view switch (demo affordance) ---------- */
+  .switch { display: inline-flex; background: var(--surface); border: 1px solid var(--rule); border-radius: 7px; padding: 2px; box-shadow: var(--shadow); }
+  .switch button {
+    font: inherit; font-size: 12.5px; font-weight: 550;
+    padding: 5px 12px; border: 0; border-radius: 5px;
+    background: transparent; color: var(--muted); cursor: pointer;
+    transition: background .12s, color .12s;
+  }
+  .switch button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+  .switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .note {
+    margin: 18px 0 26px; padding: 9px 13px;
+    border-left: 2px solid var(--accent);
+    background: var(--surface);
+    border-radius: 0 5px 5px 0;
+    font-size: 12.5px; color: var(--ink-2);
+    box-shadow: var(--shadow);
+  }
+  .note b { font-weight: 600; color: var(--ink); }
+
+  /* ---------- period ---------- */
+  .period { margin-bottom: 30px; }
+  .period-head {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding-bottom: 9px; border-bottom: 1px solid var(--rule);
+    margin-bottom: 4px;
+  }
+  .period-type { font-size: 14.5px; font-weight: 640; letter-spacing: -.005em; }
+  .period-id { font-family: var(--mono); font-size: 12px; color: var(--muted); background: var(--rule-soft); padding: 1.5px 6px; border-radius: 4px; }
+  .period-span { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: auto; }
+
+  .csr {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 12px; color: var(--muted);
+    padding: 7px 0 3px 15px; margin-top: -2px;
+  }
+  .csr svg { flex: none; }
+
+  /* ---------- events ---------- */
+  .events { list-style: none; margin: 0; padding: 0; position: relative; }
+  .events::before {
+    content: ""; position: absolute; left: 15px; top: 12px; bottom: 12px;
+    width: 1px; background: var(--spine);
+  }
+
+  .ev { position: relative; display: grid; grid-template-columns: 32px 96px 1fr; align-items: baseline; gap: 0 14px; padding: 9px 0; }
+  .ev + .ev { border-top: 1px solid var(--rule-soft); }
+
+  .dot { position: relative; width: 32px; height: 15px; }
+  .dot::after {
+    content: ""; position: absolute; left: 11px; top: 5px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--spine); box-shadow: 0 0 0 3px var(--ground);
+  }
+  .ev.is-promo .dot::after { background: var(--accent); width: 9px; height: 9px; left: 10px; top: 4px; }
+  .ev.is-join  .dot::after,
+  .ev.is-exit  .dot::after { background: var(--ink-2); }
+
+  .when { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .what { min-width: 0; }
+  .field { font-size: 12px; color: var(--muted); letter-spacing: .03em; text-transform: uppercase; margin-bottom: 2px; }
+  .change { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; }
+  .from { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); text-decoration-thickness: 1px; }
+  .arrow { color: var(--faint); flex: none; }
+  .to { font-weight: 550; }
+  .single { font-size: 14px; font-weight: 550; }
+  .by { font-size: 12px; color: var(--faint); margin-top: 3px; }
+  .by .sysbadge {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em;
+    background: var(--rule-soft); color: var(--muted);
+    padding: 1px 5px; border-radius: 3px; margin-right: 5px;
+  }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; font-weight: 600; letter-spacing: .02em;
+    padding: 2px 8px; border-radius: 20px; white-space: nowrap;
+  }
+  .chip.ok   { background: var(--ok-bg);   color: var(--ok); }
+  .chip.warn { background: var(--warn-bg); color: var(--warn); }
+  .chip.stop { background: var(--stop-bg); color: var(--stop); }
+  .chip.promo{ background: var(--accent-dim); color: var(--accent); }
+
+  .promo-detail {
+    margin-top: 7px; padding: 9px 12px;
+    background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 6px; font-size: 12.5px; color: var(--ink-2);
+    display: flex; flex-wrap: wrap; gap: 4px 18px;
+  }
+  .promo-detail div { display: flex; gap: 6px; }
+  .promo-detail dt { color: var(--muted); margin: 0; }
+  .promo-detail dd { margin: 0; font-weight: 550; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .leaver-detail { margin-top: 6px; font-size: 13px; color: var(--ink-2); }
+  .leaver-detail span { color: var(--muted); }
+
+  /* ---------- HR-only affordances ---------- */
+  .hr-only { display: none; }
+  body.is-hr .hr-only { display: revert; }
+  body.is-hr .by { display: block; }
+  body:not(.is-hr) .by { display: none; }
+
+  .sysrow { display: none; }
+  body.is-hr .sysrow { display: grid; }
+  body.is-hr .sysrow .what { opacity: .62; }
+
+  .foot { margin-top: 34px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--muted); }
+  .foot code { font-family: var(--mono); font-size: 11.5px; background: var(--rule-soft); padding: 1px 5px; border-radius: 3px; }
+
+  @media (max-width: 620px) {
+    .ev { grid-template-columns: 26px 1fr; }
+    .when { grid-column: 2; margin-bottom: 3px; }
+    .what { grid-column: 2; }
+    .events::before { left: 12px; }
+    .dot { width: 26px; }
+    .dot::after { left: 8px; }
+    .period-span { margin-left: 0; width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <div class="pagehead">
+    <div>
+      <h1>History</h1>
+      <div class="who">
+        <span class="name">Samina Iqbal</span>
+        <span class="sep">·</span>
+        <span class="eid">AE 10006</span>
+      </div>
+    </div>
+    <div class="switch" role="group" aria-label="Preview projection">
+      <button id="btn-emp" aria-pressed="true">Employee view</button>
+      <button id="btn-hr"  aria-pressed="false">HR view</button>
+    </div>
+  </div>
+
+  <p class="note" id="note"></p>
+
+  <!-- ============ PERIOD 1 ============ -->
+  <section class="period">
+    <div class="period-head">
+      <span class="period-type">Permanent</span>
+      <span class="period-id">EP 10006</span>
+      <span class="period-span">1 Jan 2024 — present</span>
+    </div>
+
+    <ul class="events">
+
+      <li class="ev is-exit">
+        <div class="dot"></div>
+        <div class="when">1 Aug 2026</div>
+        <div class="what">
+          <div class="field">Employee status</div>
+          <div class="change">
+            <span class="from">Active</span>
+            <span class="arrow" aria-hidden="true">→</span>
+            <span class="chip warn">Marked leaver</span>
+          </div>
+          <div class="leaver-detail">
+            <span>Reason</span> Migration &nbsp;·&nbsp; <span>Final day</span> 31 Aug 2026
+          </div>
+          <div class="by">by amangi@wso2.com</div>
+        </div>
+      </li>
+
+      <li class="ev is-promo">
+        <div class="dot"></div>
+        <div class="when">3 Mar 2026</div>
+        <div class="what">
+          <div class="field">Promotion</div>
+          <div class="change">
+            <span class="from">Job Band 7</span>
+            <span class="arrow" aria-hidden="true">→</span>
+            <span class="to">Job Band 8</span>
+            <span class="chip promo">Approved</span>
+          </div>
+          <dl class="promo-detail">
+            <div><dt>Cycle</dt><dd>2026 H1</dd></div>
+            <div><dt>Type</dt><dd>Normal</dd></div>
+            <div><dt>Role</dt><dd>Senior Software Engineer</dd></div>
+          </dl>
+        </div>
+      </li>
+
+      <li class="ev">
+        <div class="dot"></div>
+        <div class="when">12 Jun 2025</div>
+        <div class="what">
+          <div class="field">Team</div>
+          <div class="change">
+            <span class="from">Platform</span>
+            <span class="arrow" aria-hidden="true">→</span>
+            <span class="to">Digital</span>
+          </div>
+          <div class="by">by amangi@wso2.com</div>
+        </div>
+      </li>
+
+      <li class="ev">
+        <div class="dot"></div>
+        <div class="when">12 Jun 2025</div>
+        <div class="what">
+          <div class="field">Sub-team</div>
+          <div class="change">
+            <span class="from">Integration</span>
+            <span class="arrow" aria-hidden="true">→</span>
+            <span class="to">Internal Apps</span>
+          </div>
+          <div class="by">by amangi@wso2.com</div>
+        </div>
+      </li>
+
+      <li class="ev">
+        <div class="dot"></div>
+        <div class="when">4 Feb 2025</div>
+        <div class="what">
+          <div class="field">Reporting to</div>
+          <div class="change">
+            <span class="from">uday@wso2.com</span>
+            <span class="arrow" aria-hidden="true">→</span>
+            <span class="to">chanuka@wso2.com</span>
+          </div>
+          <div class="by">by inthira@wso2.com</div>
+        </div>
+      </li>
+
+      <li class="ev sysrow">
+        <div class="dot"></div>
+        <div class="when">10 Jun 2024</div>
+        <div class="what">
+          <div class="field">Record migrated</div>
+          <div class="change"><span class="single">No field changes</span></div>
+          <div class="by"><span class="sysbadge">SYSTEM</span>MIGRATION · 5 runs collapsed</div>
+        </div>
+      </li>
+
+      <li class="ev is-join">
+        <div class="dot"></div>
+        <div class="when">1 Jan 2024</div>
+        <div class="what">
+          <div class="field">Joined</div>
+          <div class="change">
+            <span class="single">Software Engineer II</span>
+            <span class="chip ok">Permanent</span>
+          </div>
+          <div class="by">by MIGRATION</div>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <!-- ============ PERIOD 2 ============ -->
+  <section class="period">
+    <div class="period-head">
+      <span class="period-type">Internship</span>
+      <span class="period-id">IN 0456</span>
+      <span class="period-span">3 Jun 2023 — 1 Dec 2023</span>
+    </div>
+
+    <div class="csr">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+      Continuous service — linked to Permanent · EP 10006
+    </div>
+
+    <ul class="events">
+      <li class="ev is-exit">
+        <div class="dot"></div>
+        <div class="when">1 Dec 2023</div>
+        <div class="what">
+          <div class="field">Employee status</div>
+          <div class="change">
+            <span class="from">Active</span>
+            <span class="arrow" aria-hidden="true">→</span>
+            <span class="chip stop">Left</span>
+          </div>
+          <div class="by">by inthira@wso2.com</div>
+        </div>
+      </li>
+
+      <li class="ev is-join">
+        <div class="dot"></div>
+        <div class="when">3 Jun 2023</div>
+        <div class="what">
+          <div class="field">Joined</div>
+          <div class="change">
+            <span class="single">Software Engineer Intern</span>
+            <span class="chip ok">Internship</span>
+          </div>
+          <div class="by">by inthira@wso2.com</div>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <p class="foot">
+    Mock data. Promotions are read from the HRIS database where
+    <code>status = APPROVED</code> and <code>cycle = END</code>.
+  </p>
+
+</div>
+
+<script>
+  const body  = document.body;
+  const bEmp  = document.getElementById("btn-emp");
+  const bHr   = document.getElementById("btn-hr");
+  const note  = document.getElementById("note");
+
+  const COPY = {
+    emp: "<b>Employee view</b> — what a person sees on their own profile. No editor attribution, and system/migration rows are filtered out.",
+    hr:  "<b>HR view</b> — adds <b>who</b> made each change, and surfaces collapsed system rows so the record is complete."
+  };
+
+  function set(isHr) {
+    body.classList.toggle("is-hr", isHr);
+    bHr.setAttribute("aria-pressed", String(isHr));
+    bEmp.setAttribute("aria-pressed", String(!isHr));
+    note.innerHTML = isHr ? COPY.hr : COPY.emp;
+  }
+  bEmp.addEventListener("click", () => set(false));
+  bHr.addEventListener("click",  () => set(true));
+  set(false);
+</script>
