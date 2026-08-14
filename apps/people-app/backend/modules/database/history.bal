@@ -17,6 +17,9 @@
 # Source table name for employee_audit snapshots.
 const SOURCE_TABLE_EMPLOYEE_AUDIT = "employee_audit";
 
+# Source table name for personal_info_audit snapshots.
+const SOURCE_TABLE_PERSONAL_INFO_AUDIT = "personal_info_audit";
+
 # Action type recorded for a row insert.
 const ACTION_TYPE_INSERT = "INSERT";
 
@@ -36,6 +39,32 @@ final readonly & string[] TRACKED_EMPLOYEE_FIELDS = [
     "job_role", "secondary_job_title", "external_designation",
     "house_id", "epf", "probation_end_date", "agreement_end_date", "start_date"
 ];
+
+# Personal information fields surfaced in the history.
+#
+# `full_name` is deliberately excluded: it is generated from first_name and last_name, so
+# tracking it would emit a second event for every name change. The audit columns
+# (created_*, updated_*, id) are excluded for the same reason as on the employee table.
+final readonly & string[] TRACKED_PERSONAL_INFO_FIELDS = [
+    "nic_or_passport", "first_name", "last_name", "title", "dob", "gender",
+    "personal_email", "personal_phone", "resident_number",
+    "address_line_1", "address_line_2", "city", "state_or_province",
+    "postal_code", "country", "nationality"
+];
+
+# The tracked field list for a given audit source.
+#
+# + sourceTable - Audit table the snapshot came from
+# + return - Fields to diff for that source; empty when the source is not tracked
+isolated function trackedFieldsFor(string sourceTable) returns string[] {
+    if sourceTable == SOURCE_TABLE_EMPLOYEE_AUDIT {
+        return TRACKED_EMPLOYEE_FIELDS;
+    }
+    if sourceTable == SOURCE_TABLE_PERSONAL_INFO_AUDIT {
+        return TRACKED_PERSONAL_INFO_FIELDS;
+    }
+    return [];
+}
 
 # Derive field-level change events by comparing consecutive audit snapshots.
 #
@@ -57,8 +86,9 @@ final readonly & string[] TRACKED_EMPLOYEE_FIELDS = [
 # different columns under partly overlapping names, so a cross-table comparison would
 # report tracked fields flipping to null purely because the other table lacks them.
 #
-# Only TRACKED_EMPLOYEE_FIELDS produce events; all of them live in employee_audit, so
-# snapshots from the other audit tables establish baselines but currently emit nothing.
+# Each source table has its own tracked field list. employee_audit and personal_info_audit
+# both produce events; employee_additional_managers_audit is fetched for completeness but
+# has no tracked fields, so it establishes baselines and emits nothing.
 #
 # + snapshots - Audit snapshots ordered oldest first
 # + return - One event per changed tracked field, newest first
@@ -81,8 +111,10 @@ public isolated function buildHistoryEvents(AuditSnapshot[] snapshots) returns H
         // against whatever preceded it.
         boolean isBaseline = snapshot.actionType == ACTION_TYPE_INSERT;
 
-        if hasBaseline && !isBaseline && snapshot.sourceTable == SOURCE_TABLE_EMPLOYEE_AUDIT {
-            foreach string 'field in TRACKED_EMPLOYEE_FIELDS {
+        string[] trackedFields = trackedFieldsFor(snapshot.sourceTable);
+
+        if hasBaseline && !isBaseline && trackedFields.length() > 0 {
+            foreach string 'field in trackedFields {
                 json previousValue = getField(previous, 'field);
                 json currentValue = getField(snapshot.data, 'field);
 
@@ -90,6 +122,7 @@ public isolated function buildHistoryEvents(AuditSnapshot[] snapshots) returns H
                     events.push({
                         employeePkId: snapshot.employeePkId,
                         'field: 'field,
+                        sourceTable: snapshot.sourceTable,
                         previousValue: toDisplayValue(previousValue),
                         currentValue: toDisplayValue(currentValue),
                         occurredOn: snapshot.actionOn,
@@ -159,6 +192,7 @@ public isolated function resolveHistoryEventNames(HistoryEvent[] events, map<map
     select {
         employeePkId: event.employeePkId,
         'field: event.'field,
+        sourceTable: event.sourceTable,
         previousValue: resolveLookupValue(event.'field, event.previousValue, lookup),
         currentValue: resolveLookupValue(event.'field, event.currentValue, lookup),
         occurredOn: event.occurredOn,

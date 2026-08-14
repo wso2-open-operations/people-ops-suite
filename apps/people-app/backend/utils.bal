@@ -774,6 +774,7 @@ public isolated function projectHistoryEvents(database:HistoryEvent[] events, bo
             select {
                 employeePkId: event.employeePkId,
                 'field: event.'field,
+                sourceTable: event.sourceTable,
                 previousValue: event.previousValue,
                 currentValue: event.currentValue,
                 occurredOn: event.occurredOn,
@@ -787,6 +788,7 @@ public isolated function projectHistoryEvents(database:HistoryEvent[] events, bo
         select {
             employeePkId: event.employeePkId,
             'field: event.'field,
+            sourceTable: event.sourceTable,
             previousValue: event.previousValue,
             currentValue: event.currentValue,
             occurredOn: event.occurredOn,

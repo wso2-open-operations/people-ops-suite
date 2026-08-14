@@ -29,6 +29,8 @@ public type HistoryEventResponse record {|
     int employeePkId;
     # Canonical field key (e.g. "team_id")
     string 'field;
+    # Audit table the change came from, so the client can group events by kind
+    string sourceTable;
     # Value before the change, if any
     string? previousValue;
     # Value after the change
