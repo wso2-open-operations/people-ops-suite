@@ -29,6 +29,9 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 export interface HistoryEvent {
   employeePkId: number;
   field: string;
+  // Which audit table the change came from, used to group events into filter
+  // categories without inferring the category from the field name.
+  sourceTable: string;
   previousValue: string | null;
   currentValue: string | null;
   occurredOn: string;

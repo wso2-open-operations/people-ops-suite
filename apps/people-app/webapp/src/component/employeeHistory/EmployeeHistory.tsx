@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Fragment, useEffect, useMemo } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns/format";
 import { isValid } from "date-fns/isValid";
 import { parseISO } from "date-fns/parseISO";
@@ -54,7 +54,41 @@ const FIELD_LABELS: Record<string, string> = {
   probation_end_date: "Probation End Date",
   agreement_end_date: "Agreement End Date",
   start_date: "Start Date",
+  // personal_info fields
+  nic_or_passport: "NIC / Passport",
+  first_name: "First Name",
+  last_name: "Last Name",
+  title: "Title",
+  dob: "Date of Birth",
+  gender: "Gender",
+  personal_email: "Personal Email",
+  personal_phone: "Personal Phone",
+  resident_number: "Resident Number",
+  address_line_1: "Address Line 1",
+  address_line_2: "Address Line 2",
+  city: "City",
+  state_or_province: "State / Province",
+  postal_code: "Postal Code",
+  country: "Country",
+  nationality: "Nationality",
 };
+
+// Timeline filter categories. Relocations are deliberately absent: they are links
+// between employment periods rather than events, so filtering to them alone would
+// leave connectors with nothing between them.
+type HistoryCategory = "employment" | "personal" | "promotion";
+
+const CATEGORY_LABELS: Record<HistoryCategory, string> = {
+  employment: "Employment",
+  personal: "Personal Info",
+  promotion: "Promotions",
+};
+
+const CATEGORY_ORDER: HistoryCategory[] = [
+  "employment",
+  "personal",
+  "promotion",
+];
 
 const fieldLabel = (field: string): string =>
   FIELD_LABELS[field] ??
@@ -100,6 +134,10 @@ interface TimelineRow {
   isPromo: boolean;
   isJoin: boolean;
   isSystem: boolean;
+  // Which filter category this row belongs to. A "Joined" row has none: it is
+  // structural, so it stays visible whatever filter is applied — otherwise a
+  // filtered period would lose the row that anchors it.
+  category: HistoryCategory | null;
   field: string;
   previousValue: string | null;
   currentValue: string | null;
@@ -120,6 +158,10 @@ const buildRows = (period: EmploymentPeriod, events: HistoryEvent[]): TimelineRo
         isPromo: false,
         isJoin: false,
         isSystem: event.isSystem,
+        category:
+          event.sourceTable === "personal_info_audit"
+            ? "personal"
+            : "employment",
         field: event.field,
         previousValue: event.previousValue,
         currentValue: event.currentValue,
@@ -137,6 +179,7 @@ const buildRows = (period: EmploymentPeriod, events: HistoryEvent[]): TimelineRo
       isPromo: true,
       isJoin: false,
       isSystem: false,
+      category: "promotion",
       field: "Promotion",
       previousValue: promotion.currentJobBand,
       currentValue: promotion.nextJobBand,
@@ -161,6 +204,7 @@ const buildRows = (period: EmploymentPeriod, events: HistoryEvent[]): TimelineRo
     isPromo: false,
     isJoin: true,
     isSystem: false,
+    category: null,
     field: "Joined",
     previousValue: null,
     currentValue: period.employmentType,
@@ -430,14 +474,22 @@ const RelocationConnector = ({ label }: { label: string }) => {
 const PeriodSection = ({
   period,
   events,
+  selected,
 }: {
   period: EmploymentPeriod;
   events: HistoryEvent[];
+  selected: Set<HistoryCategory>;
 }) => {
   const theme = useTheme();
   const rows = useMemo(() => buildRows(period, events), [period, events]);
-  const visibleRows = rows.filter((row) => !row.isSystem);
-  const systemCount = rows.length - visibleRows.length;
+  // A row with no category is structural ("Joined") and survives every filter,
+  // so a filtered period keeps the row that anchors it rather than collapsing
+  // to an empty block.
+  const visibleRows = rows.filter(
+    (row) =>
+      !row.isSystem && (row.category === null || selected.has(row.category)),
+  );
+  const systemCount = rows.filter((row) => row.isSystem).length;
 
   return (
     <Box sx={{ mb: 3.75 }}>
@@ -499,6 +551,23 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
   const dispatch = useAppDispatch();
   const { state, history, errorMessage } = useAppSelector((s) => s.employeeHistory);
 
+  // Deliberately not persisted: a filter set days ago and forgotten is how a
+  // reader concludes data is missing. Every open starts showing everything.
+  const [selected, setSelected] = useState<Set<HistoryCategory>>(
+    () => new Set(CATEGORY_ORDER),
+  );
+
+  const toggle = (category: HistoryCategory) =>
+    setSelected((current) => {
+      const next = new Set(current);
+      // Never allow an empty selection — deselecting the last active category
+      // would show a timeline of nothing, which reads as broken rather than
+      // filtered.
+      if (next.has(category) && next.size > 1) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+
   useEffect(() => {
     if (employeeId) dispatch(fetchEmployeeHistory(employeeId));
     // Fetch once when this component mounts (i.e. on first expand by the parent);
@@ -529,6 +598,27 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
 
   const periods = history?.periods ?? [];
   const events = history?.events ?? [];
+
+  // How many rows each category would contribute, so a category with nothing in
+  // it can be hidden rather than offered as an empty filter.
+  const counts = useMemo(() => {
+    const tally: Record<HistoryCategory, number> = {
+      employment: 0,
+      personal: 0,
+      promotion: 0,
+    };
+    events.forEach((event) => {
+      if (event.isSystem) return;
+      if (event.sourceTable === "personal_info_audit") tally.personal += 1;
+      else tally.employment += 1;
+    });
+    periods.forEach((period) => {
+      tally.promotion += period.promotions.length;
+    });
+    return tally;
+  }, [events, periods]);
+
+  const available = CATEGORY_ORDER.filter((category) => counts[category] > 0);
 
   if (periods.length === 0 && events.length === 0) {
     return (
@@ -568,6 +658,38 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
         </Box>
       )}
 
+      {available.length > 1 && (
+        <Stack
+          direction="row"
+          spacing={1}
+          flexWrap="wrap"
+          useFlexGap
+          sx={{ mb: 2.5 }}
+        >
+          {available.map((category) => {
+            const isOn = selected.has(category);
+            return (
+              <Chip
+                key={category}
+                size="small"
+                clickable
+                onClick={() => toggle(category)}
+                label={`${CATEGORY_LABELS[category]} ${counts[category]}`}
+                variant={isOn ? "filled" : "outlined"}
+                sx={{
+                  height: 26,
+                  fontWeight: 600,
+                  fontSize: 12,
+                  ...(isOn
+                    ? {}
+                    : { color: "text.secondary", borderColor: "divider" }),
+                }}
+              />
+            );
+          })}
+        </Stack>
+      )}
+
       {sortedPeriods.map((period, index) => {
         // A period links backwards to the one it relocated from. Draw the
         // connector only when that target is the period directly below it, so
@@ -580,7 +702,11 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
 
         return (
           <Fragment key={period.id}>
-            <PeriodSection period={period} events={events} />
+            <PeriodSection
+              period={period}
+              events={events}
+              selected={selected}
+            />
             {linksToPrevious && <RelocationConnector label="Relocation" />}
           </Fragment>
         );
