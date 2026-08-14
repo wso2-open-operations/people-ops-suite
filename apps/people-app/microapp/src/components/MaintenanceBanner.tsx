@@ -32,7 +32,7 @@ export const MaintenanceBanner = () => {
           Under Maintenance
         </h2>
         <p className="text-[#808080] dark:text-gray-300">
-          The app is currently undergoing scheduled maintenance and is temporarily unavailable. Please check back later.
+          The app is currently undergoing maintenance and is temporarily unavailable. Please check back later.
         </p>
       </div>
     </div>
