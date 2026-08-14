@@ -1,21 +1,48 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import { useEffect, useState } from "react";
 import { serviceUrls } from "@/config/config";
 import { Warning } from "@mui/icons-material";
+import useHttp from "@/utils/http";
 
 export const MaintenanceBanner = () => {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const { handleRequest } = useHttp();
 
   useEffect(() => {
-    fetch(serviceUrls.fetchAppConfigs())
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.isMaintenanceMode) {
-          setIsMaintenanceMode(true);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to fetch app configs:", err);
+    const fetchConfigs = () => {
+      handleRequest({
+        url: serviceUrls.fetchAppConfigs(),
+        method: "GET",
+        successFn: (data: any) => {
+          if (data) {
+            setIsMaintenanceMode(!!data.isMaintenanceMode);
+          }
+        },
+        failFn: (err) => {
+          console.error("Failed to fetch app configs:", err);
+        },
       });
+    };
+
+    fetchConfigs();
+    const interval = setInterval(fetchConfigs, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   if (!isMaintenanceMode) {

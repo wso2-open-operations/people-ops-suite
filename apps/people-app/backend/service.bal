@@ -70,6 +70,13 @@ service http:InterceptableService / on new http:Listener(9090) {
     public function createInterceptors() returns http:Interceptor[] =>
         [new authorization:JwtInterceptor(), new ErrorInterceptor()];
 
+    # Get global app config.
+    #
+    # + return - App config
+    resource function get configs() returns AppConfig {
+        return app;
+    }
+
     # Get user information.
     #
     # + return - User information or http errors
