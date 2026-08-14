@@ -81,6 +81,8 @@ const FIELD_LABELS: Record<string, string> = {
   postal_code: "Postal Code",
   country: "Country",
   nationality: "Nationality",
+  // employee_additional_managers_audit
+  additional_manager: "Additional Manager",
 };
 
 // Timeline filter categories. Relocations are deliberately absent: they are links
@@ -198,6 +200,9 @@ const buildRows = (
         isPromo: false,
         isJoin: false,
         isSystem: event.isSystem,
+        // Additional-manager rows come from their own audit table but read as an
+        // employment change, so they sit under Employment rather than earning a
+        // category with a single field in it.
         category:
           event.sourceTable === "personal_info_audit"
             ? "personal"

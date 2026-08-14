@@ -20,6 +20,16 @@ const SOURCE_TABLE_EMPLOYEE_AUDIT = "employee_audit";
 # Source table name for personal_info_audit snapshots.
 const SOURCE_TABLE_PERSONAL_INFO_AUDIT = "personal_info_audit";
 
+# Source table name for employee_additional_managers_audit snapshots.
+const SOURCE_TABLE_ADDITIONAL_MANAGERS_AUDIT = "employee_additional_managers_audit";
+
+# Synthetic field name for additional-manager events, which describe a relationship
+# rather than a column on the employee row.
+const FIELD_ADDITIONAL_MANAGER = "additional_manager";
+
+# Action type recorded when a row is soft-deleted (is_active flipped to 0).
+const ACTION_TYPE_DELETE = "DELETE";
+
 # Action type recorded for a row insert.
 const ACTION_TYPE_INSERT = "INSERT";
 
@@ -86,9 +96,9 @@ isolated function trackedFieldsFor(string sourceTable) returns string[] {
 # different columns under partly overlapping names, so a cross-table comparison would
 # report tracked fields flipping to null purely because the other table lacks them.
 #
-# Each source table has its own tracked field list. employee_audit and personal_info_audit
-# both produce events; employee_additional_managers_audit is fetched for completeness but
-# has no tracked fields, so it establishes baselines and emits nothing.
+# employee_audit and personal_info_audit are diffed field by field.
+# employee_additional_managers_audit is not: each of its rows is one manager
+# relationship, so the row being added or removed is itself the event.
 #
 # + snapshots - Audit snapshots ordered oldest first
 # + return - One event per changed tracked field, newest first
@@ -100,6 +110,17 @@ public isolated function buildHistoryEvents(AuditSnapshot[] snapshots) returns H
     map<json> previousByRecord = {};
 
     foreach AuditSnapshot snapshot in snapshots {
+        // An additional-manager row describes a relationship, not a column on the
+        // employee: its existence is the event. Handled before the field diff, which
+        // has nothing to compare for it.
+        if snapshot.sourceTable == SOURCE_TABLE_ADDITIONAL_MANAGERS_AUDIT {
+            HistoryEvent? managerEvent = buildAdditionalManagerEvent(snapshot);
+            if managerEvent is HistoryEvent {
+                events.push(managerEvent);
+            }
+            continue;
+        }
+
         string recordKey = string `${snapshot.employeePkId}|${snapshot.sourceTable}`;
 
         // hasKey, not `previous is json`: a JSON null is itself a valid json value, so an
@@ -137,6 +158,44 @@ public isolated function buildHistoryEvents(AuditSnapshot[] snapshots) returns H
     }
 
     return events.reverse();
+}
+
+# Build an event for an additional-manager row.
+#
+# Unlike the employee and personal-info tables, there is nothing to diff here: one row is
+# one manager relationship, so an INSERT is an addition and the trigger records a DELETE
+# when is_active flips to 0. An UPDATE that leaves the row active is a no-op re-save and
+# yields nothing, so a bulk re-write cannot fill the timeline with noise.
+#
+# + snapshot - Audit snapshot from employee_additional_managers_audit
+# + return - The event, or () when the snapshot records no meaningful change
+isolated function buildAdditionalManagerEvent(AuditSnapshot snapshot) returns HistoryEvent? {
+    string? managerEmail = toDisplayValue(getField(snapshot.data, "additional_manager_email"));
+    if managerEmail is () {
+        return ();
+    }
+
+    boolean isRemoval = snapshot.actionType == ACTION_TYPE_DELETE
+        || toDisplayValue(getField(snapshot.data, "is_active")) == "0";
+    boolean isAddition = snapshot.actionType == ACTION_TYPE_INSERT;
+
+    if !isRemoval && !isAddition {
+        return ();
+    }
+
+    return {
+        employeePkId: snapshot.employeePkId,
+        'field: FIELD_ADDITIONAL_MANAGER,
+        sourceTable: snapshot.sourceTable,
+        // Rendered by the existing old -> new treatment: an addition has no previous
+        // value, and a removal has no current one, which the timeline already draws as
+        // "added" and "Removed" respectively.
+        previousValue: isRemoval ? managerEmail : (),
+        currentValue: isRemoval ? () : managerEmail,
+        occurredOn: snapshot.actionOn,
+        actionBy: snapshot.actionBy,
+        isSystem: isSystemActor(snapshot.actionBy)
+    };
 }
 
 # Read a member from a JSON snapshot without failing when it is absent.
