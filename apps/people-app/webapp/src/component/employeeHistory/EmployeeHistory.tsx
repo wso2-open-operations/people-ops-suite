@@ -145,11 +145,38 @@ interface TimelineRow {
   promotion?: PromotionRecord;
 }
 
-const buildRows = (period: EmploymentPeriod, events: HistoryEvent[]): TimelineRow[] => {
+// Personal information belongs to the person, not to one employment: the backend
+// stamps those rows with an anchor employment id, which is arbitrary. Attach them
+// to the period whose date range contains them instead — the same rule promotions
+// already follow — so they appear against the employment they happened during.
+const ownsPersonalEvent = (
+  period: EmploymentPeriod,
+  periods: EmploymentPeriod[],
+  occurredOn: string,
+): boolean => {
+  const containing = periods.find((candidate) => {
+    const startedBy = occurredOn >= candidate.startDate;
+    const endedAfter = candidate.endDate === null || occurredOn <= candidate.endDate;
+    return startedBy && endedAfter;
+  });
+  // Outside every range (a change made after the last employment ended, say):
+  // fall back to the most recent period so the event is never silently dropped.
+  return containing ? containing.id === period.id : periods[0]?.id === period.id;
+};
+
+const buildRows = (
+  period: EmploymentPeriod,
+  events: HistoryEvent[],
+  periods: EmploymentPeriod[],
+): TimelineRow[] => {
   const rows: TimelineRow[] = [];
 
   events
-    .filter((event) => event.employeePkId === period.id)
+    .filter((event) =>
+      event.sourceTable === "personal_info_audit"
+        ? ownsPersonalEvent(period, periods, event.occurredOn)
+        : event.employeePkId === period.id,
+    )
     .forEach((event, index) => {
       rows.push({
         key: `event-${period.id}-${index}`,
@@ -474,14 +501,19 @@ const RelocationConnector = ({ label }: { label: string }) => {
 const PeriodSection = ({
   period,
   events,
+  periods,
   selected,
 }: {
   period: EmploymentPeriod;
   events: HistoryEvent[];
+  periods: EmploymentPeriod[];
   selected: Set<HistoryCategory>;
 }) => {
   const theme = useTheme();
-  const rows = useMemo(() => buildRows(period, events), [period, events]);
+  const rows = useMemo(
+    () => buildRows(period, events, periods),
+    [period, events, periods],
+  );
   // A row with no category is structural ("Joined") and survives every filter,
   // so a filtered period keeps the row that anchors it rather than collapsing
   // to an empty block.
@@ -707,6 +739,7 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
             <PeriodSection
               period={period}
               events={events}
+              periods={sortedPeriods}
               selected={selected}
             />
             {linksToPrevious && <RelocationConnector label="Relocation" />}
