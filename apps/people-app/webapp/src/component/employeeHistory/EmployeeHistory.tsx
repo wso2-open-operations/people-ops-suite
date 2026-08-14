@@ -662,6 +662,10 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
 
   // How many rows each category would contribute, so a category with nothing in
   // it can be hidden rather than offered as an empty filter.
+  // Categories with nothing in them are left out, but the row itself is shown
+  // whenever any history exists — including when that leaves a single category.
+  // Hiding it below two made the control appear and disappear between employees,
+  // which reads as a bug rather than as an absence of anything to filter.
   const available = CATEGORY_ORDER.filter((category) => counts[category] > 0);
   const totalCount = CATEGORY_ORDER.reduce((sum, c) => sum + counts[c], 0);
 
@@ -703,7 +707,7 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
         </Box>
       )}
 
-      {available.length > 1 && (
+      {available.length > 0 && (
         <Tabs
           value={view}
           onChange={(_, next: HistoryView) => setView(next)}
