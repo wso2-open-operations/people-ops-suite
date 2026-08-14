@@ -31,12 +31,7 @@ import ballerina/time;
     label: "People Service",
     id: "people-ops-suite/people-service"
 }
-
-public type AppConfig record {|
-    boolean isMaintenanceMode = false;
-|};
-
-configurable AppConfig app = ?;
+configurable boolean isMaintenanceMode = false;
 
 service class ErrorInterceptor {
     *http:ResponseErrorInterceptor;

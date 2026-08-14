@@ -227,3 +227,9 @@ type BulkEmployeeCsvRow record {|
     # Emergency contact telephone (optional)
     string emergencyContactTelephone = "";
 |};
+
+# App configuration parameters.
+public type AppConfig record {|
+    # Whether maintenance mode is enabled
+    boolean isMaintenanceMode = false;
+|};

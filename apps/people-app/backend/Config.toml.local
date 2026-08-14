@@ -68,6 +68,5 @@ EXTERNAL_USER_ROLES = [];
     clientId = ""
     clientSecret = ""
 
-[people.app]
-    # isMaintenanceMode = false
+isMaintenanceMode = false
 
