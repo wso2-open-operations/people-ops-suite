@@ -794,16 +794,16 @@ public isolated function projectHistoryEvents(database:HistoryEvent[] events, bo
         };
 }
 
-# Attach each promotion to the employment period it took effect during.
+# Attach each promotion to the employment period it was raised during.
 #
-# A promotion belongs to the period whose startDate..endDate range contains its promotedDate.
-# An open period (no endDate) extends to the present.
+# A promotion belongs to the period whose startDate..endDate range contains its `createdOn`.
+# An open period (no endDate) extends to the present. The promoted date is deliberately not
+# used: HRIS frequently leaves it null, whereas a request is always raised while the employee
+# is employed, so its created date falls inside exactly one period.
 #
-# A promotion that falls in no range is attached to the nearest *earlier* period rather than
-# dropped, because the HRIS promoted date and the employment start date are maintained in two
-# different systems and disagree at the edges. Losing a real promotion is worse than showing it
-# one period early. A promotion earlier than every period has no earlier period to fall back on
-# and is left unattached.
+# A promotion matching no period is logged and omitted rather than reassigned. That should not
+# happen for well-formed data — it means the created date falls outside every employment
+# period, which points at bad data rather than a case needing a fallback.
 #
 # + periods - Employment periods for the person, newest first
 # + promotions - Approved promotions for the person
