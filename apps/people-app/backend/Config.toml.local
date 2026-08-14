@@ -67,3 +67,7 @@ EXTERNAL_USER_ROLES = [];
     tokenUrl = ""
     clientId = ""
     clientSecret = ""
+
+[people.app]
+    # isMaintenanceMode = false
+
