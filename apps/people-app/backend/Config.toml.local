@@ -1,3 +1,5 @@
+isMaintenanceMode = true
+
 [people.authorization.authorizedRoles]
 EMPLOYEE_ROLE = ""
 ADMIN_ROLE = ""
