@@ -2632,3 +2632,47 @@ isolated function getHistoryLookupNamesQuery() returns sql:ParameterizedQuery =>
             id, name COLLATE utf8mb4_general_ci FROM office
      UNION ALL SELECT 'house_id' COLLATE utf8mb4_general_ci,
             id, name COLLATE utf8mb4_general_ci FROM house`;
+
+# Whether an employee ID names the person's current (most recent) employment.
+#
+# `manager_email` is never cleared when an employment ends, so an old row keeps naming a
+# former manager forever. Any check built on that column therefore has to be paired with a
+# currency test, or a former lead retains access to a person they no longer manage.
+#
+# + employeeId - Employee ID to test
+# + return - Parameterized query returning 1 when this is the person's latest employment
+isolated function isCurrentEmploymentQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT 1 FROM employee target
+     WHERE target.employee_id = ${employeeId}
+        AND target.id = (
+            -- Resolved through the same chain the history itself walks, not through
+            -- personal_info_id. A person's employments can hold different personal_info rows
+            -- (one NIC recorded several ways), in which case every row would look "latest"
+            -- within its own group of one and the check would pass for all of them.
+            WITH RECURSIVE anchor AS (
+                SELECT id, personal_info_id, continuous_service_record
+                FROM employee WHERE employee_id = ${employeeId}
+            ),
+            earlier AS (
+                SELECT id, continuous_service_record FROM anchor
+                UNION
+                SELECT e2.id, e2.continuous_service_record
+                FROM employee e2 JOIN earlier ON e2.id = earlier.continuous_service_record
+            ),
+            later AS (
+                SELECT id FROM anchor
+                UNION
+                SELECT e3.id FROM employee e3 JOIN later ON e3.continuous_service_record = later.id
+            ),
+            whole_person AS (
+                SELECT id FROM earlier
+                UNION SELECT id FROM later
+                UNION SELECT e4.id FROM employee e4
+                    JOIN anchor ON e4.personal_info_id = anchor.personal_info_id
+            )
+            SELECT latest.id FROM employee latest
+            JOIN whole_person ON whole_person.id = latest.id
+            ORDER BY latest.start_date DESC, latest.id DESC
+            LIMIT 1
+        )
+     LIMIT 1;`;

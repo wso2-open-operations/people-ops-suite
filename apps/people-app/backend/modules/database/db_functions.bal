@@ -1599,3 +1599,18 @@ public isolated function getHistoryLookupNames() returns map<map<string>>|error 
 
     return lookup;
 }
+
+# Whether an employee ID names the person's current (most recent) employment.
+#
+# + employeeId - Employee ID to test
+# + return - True when this is the person's latest employment row, or an error
+public isolated function isCurrentEmployment(string employeeId) returns boolean|error {
+    int|error result = databaseClient->queryRow(isCurrentEmploymentQuery(employeeId));
+    if result is sql:NoRowsError {
+        return false;
+    }
+    if result is error {
+        return result;
+    }
+    return true;
+}

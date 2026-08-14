@@ -2909,17 +2909,34 @@ service http:InterceptableService / on new http:Listener(9090) {
                 [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
 
         if !hasFullProjection {
-            // Deliberately checked against the requested employeeId itself, never resolved
-            // through personal_info_id first. The lead relationship is carried by manager_email
-            // on an individual employment row, so resolving to the person would let a lead reach
-            // a former employment period of someone who is no longer their report.
+            // Two conditions, and both are required.
+            //
+            // `manager_email` is never cleared when an employment ends, so an old row names its
+            // former manager forever. The subordinate check alone would therefore let a former
+            // lead pass by quoting a stale employee ID — and because the response fans out to
+            // every period for that person, they would receive the current employment too.
+            // Requiring the requested row to be the person's current employment closes that:
+            // the lead projection is granted only for someone they still manage today.
             boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
             if isSubordinate is error {
                 string customErr = string `Error occurred while checking lead authorization for ID: ${employeeId}`;
                 log:printError(customErr, isSubordinate, employeeId = employeeId);
                 return <http:InternalServerError>{body: {message: customErr}};
             }
-            hasFullProjection = isSubordinate;
+
+            if isSubordinate {
+                boolean|error isCurrent = database:isCurrentEmployment(employeeId);
+                if isCurrent is error {
+                    string customErr = string `Error occurred while checking employment currency for ID: ${employeeId}`;
+                    log:printError(customErr, isCurrent, employeeId = employeeId);
+                    return <http:InternalServerError>{body: {message: customErr}};
+                }
+                if !isCurrent {
+                    log:printWarn("Lead access denied: requested employment is not the person's current one",
+                            invokerEmail = userInfo.email, employeeId = employeeId);
+                }
+                hasFullProjection = isCurrent;
+            }
         }
 
         // Authorization compares *people*, not employee IDs. A rehired person holds several
@@ -2997,14 +3014,27 @@ service http:InterceptableService / on new http:Listener(9090) {
         // reported as a flag alongside an otherwise complete response.
         boolean promotionsUnavailable = false;
         promotion:PromotionRecord[] promotions = [];
-        string workEmail = periods[0].workEmail;
-        promotion:PromotionRecord[]|error fetchedPromotions = promotion:getApprovedPromotions(workEmail);
-        if fetchedPromotions is error {
-            promotionsUnavailable = true;
-            log:printError("Error occurred while fetching promotions from HRIS; returning history without them",
-                    fetchedPromotions, employeeId = employeeId);
-        } else {
-            promotions = fetchedPromotions;
+
+        // work_email lives on the employment row, and a chain is walked by
+        // continuous_service_record rather than by email, so periods can legitimately carry
+        // different emails. Querying only the newest one would silently omit promotions
+        // raised under a former address.
+        string[] workEmails = [];
+        foreach database:EmploymentPeriod period in periods {
+            if period.workEmail.trim() != "" && workEmails.indexOf(period.workEmail) is () {
+                workEmails.push(period.workEmail);
+            }
+        }
+
+        foreach string workEmail in workEmails {
+            promotion:PromotionRecord[]|error fetched = promotion:getApprovedPromotions(workEmail);
+            if fetched is error {
+                promotionsUnavailable = true;
+                log:printError("Error occurred while fetching promotions from HRIS; returning history without them",
+                        fetched, employeeId = employeeId, workEmail = workEmail);
+            } else {
+                promotions.push(...fetched);
+            }
         }
 
         EmploymentPeriodResponse[] periodResponses = assignPromotionsToPeriods(periods, promotions);
