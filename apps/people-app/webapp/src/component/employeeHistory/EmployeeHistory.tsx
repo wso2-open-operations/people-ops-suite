@@ -18,7 +18,16 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns/format";
 import { isValid } from "date-fns/isValid";
 import { parseISO } from "date-fns/parseISO";
-import { alpha, Box, Chip, Stack, Typography, useTheme } from "@mui/material";
+import {
+  alpha,
+  Box,
+  Chip,
+  Stack,
+  Tab,
+  Tabs,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import type { Theme } from "@mui/material/styles";
 import CircularProgress from "@mui/material/CircularProgress";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
@@ -89,6 +98,9 @@ const CATEGORY_ORDER: HistoryCategory[] = [
   "personal",
   "promotion",
 ];
+
+// "all" is a view but not a category: it matches every row rather than tagging one.
+type HistoryView = HistoryCategory | "all";
 
 const fieldLabel = (field: string): string =>
   FIELD_LABELS[field] ??
@@ -502,12 +514,12 @@ const PeriodSection = ({
   period,
   events,
   periods,
-  selected,
+  view,
 }: {
   period: EmploymentPeriod;
   events: HistoryEvent[];
   periods: EmploymentPeriod[];
-  selected: Set<HistoryCategory>;
+  view: HistoryView;
 }) => {
   const theme = useTheme();
   const rows = useMemo(
@@ -519,7 +531,8 @@ const PeriodSection = ({
   // to an empty block.
   const visibleRows = rows.filter(
     (row) =>
-      !row.isSystem && (row.category === null || selected.has(row.category)),
+      !row.isSystem &&
+      (view === "all" || row.category === null || row.category === view),
   );
   const systemCount = rows.filter((row) => row.isSystem).length;
 
@@ -585,20 +598,11 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
 
   // Deliberately not persisted: a filter set days ago and forgotten is how a
   // reader concludes data is missing. Every open starts showing everything.
-  const [selected, setSelected] = useState<Set<HistoryCategory>>(
-    () => new Set(CATEGORY_ORDER),
-  );
-
-  const toggle = (category: HistoryCategory) =>
-    setSelected((current) => {
-      const next = new Set(current);
-      // Never allow an empty selection — deselecting the last active category
-      // would show a timeline of nothing, which reads as broken rather than
-      // filtered.
-      if (next.has(category) && next.size > 1) next.delete(category);
-      else next.add(category);
-      return next;
-    });
+  // One active view rather than a set of toggles: "which view of this timeline"
+  // is the question being answered, and it removes the awkward rule that the
+  // last active category cannot be deselected. Not persisted — a filter set days
+  // ago and forgotten is how a reader concludes data is missing.
+  const [view, setView] = useState<HistoryView>("all");
 
   useEffect(() => {
     if (employeeId) dispatch(fetchEmployeeHistory(employeeId));
@@ -653,6 +657,7 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
   // How many rows each category would contribute, so a category with nothing in
   // it can be hidden rather than offered as an empty filter.
   const available = CATEGORY_ORDER.filter((category) => counts[category] > 0);
+  const totalCount = CATEGORY_ORDER.reduce((sum, c) => sum + counts[c], 0);
 
   if (periods.length === 0 && events.length === 0) {
     return (
@@ -693,35 +698,58 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
       )}
 
       {available.length > 1 && (
-        <Stack
-          direction="row"
-          spacing={1}
-          flexWrap="wrap"
-          useFlexGap
-          sx={{ mb: 2.5 }}
+        <Tabs
+          value={view}
+          onChange={(_, next: HistoryView) => setView(next)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            minHeight: 0,
+            mb: 2.5,
+            borderBottom: 1,
+            borderColor: "divider",
+            "& .MuiTab-root": {
+              minHeight: 0,
+              minWidth: 0,
+              px: 0,
+              mr: 2.75,
+              py: 1,
+              fontSize: 13,
+              fontWeight: 600,
+              textTransform: "none",
+              color: "text.secondary",
+            },
+            "& .Mui-selected": { color: "text.primary" },
+          }}
         >
-          {available.map((category) => {
-            const isOn = selected.has(category);
-            return (
-              <Chip
-                key={category}
-                size="small"
-                clickable
-                onClick={() => toggle(category)}
-                label={`${CATEGORY_LABELS[category]} ${counts[category]}`}
-                variant={isOn ? "filled" : "outlined"}
-                sx={{
-                  height: 26,
-                  fontWeight: 600,
-                  fontSize: 12,
-                  ...(isOn
-                    ? {}
-                    : { color: "text.secondary", borderColor: "divider" }),
-                }}
-              />
-            );
-          })}
-        </Stack>
+          {(["all", ...available] as HistoryView[]).map((option) => (
+            <Tab
+              key={option}
+              value={option}
+              label={
+                <Stack direction="row" spacing={0.75} alignItems="center">
+                  <span>
+                    {option === "all" ? "All" : CATEGORY_LABELS[option]}
+                  </span>
+                  <Box
+                    component="span"
+                    sx={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "text.disabled",
+                      backgroundColor: "action.hover",
+                      borderRadius: 4,
+                      px: 0.625,
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {option === "all" ? totalCount : counts[option]}
+                  </Box>
+                </Stack>
+              }
+            />
+          ))}
+        </Tabs>
       )}
 
       {sortedPeriods.map((period, index) => {
@@ -740,7 +768,7 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
               period={period}
               events={events}
               periods={sortedPeriods}
-              selected={selected}
+              view={view}
             />
             {linksToPrevious && <RelocationConnector label="Relocation" />}
           </Fragment>
