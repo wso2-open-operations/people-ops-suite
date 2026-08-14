@@ -11,10 +11,13 @@ EXTERNAL_USER_ROLES = [];
     database = ""
     port = 
     [people.database.dbConfig.connectionPool]
-    maxOpenConnections = 
-    maxConnectionLifeTime = 
-    minIdleConnections= 
-
+    maxOpenConnections =
+    maxConnectionLifeTime =
+    minIdleConnections=
+    [people.database.dbConfig.options]
+    connectTimeout =
+    [people.database.dbConfig.options.ssl]
+    mode = "PREFERRED"
 
 [people.promotion.promotionDbConfig]
     host = ""
@@ -30,6 +33,10 @@ EXTERNAL_USER_ROLES = [];
     maxOpenConnections =
     maxConnectionLifeTime =
     minIdleConnections =
+    [people.promotion.promotionDbConfig.options]
+    connectTimeout =
+    [people.promotion.promotionDbConfig.options.ssl]
+    mode = "PREFERRED"
 
 [people.wso2_coin]
     masterWalletAddress = ""

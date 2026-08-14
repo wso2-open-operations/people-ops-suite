@@ -133,6 +133,12 @@ const EmployeeHistorySlice = createSlice({
       .addCase(fetchEmployeeHistory.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Fetching employee history...";
+        // Cleared here rather than on unmount: the slice is global, so without
+        // this a fetch for a second employee renders the first one's timeline
+        // until it resolves — stale data presented as current. Clearing in
+        // `pending` covers every entry point, not just the component's cleanup.
+        state.history = null;
+        state.errorMessage = null;
       })
       .addCase(fetchEmployeeHistory.fulfilled, (state, action) => {
         state.state = State.success;

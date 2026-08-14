@@ -60,12 +60,13 @@ Runtime config injected via `window.config`. Required keys: `CLIENT_ID`, `SIGN_I
 ### Backend
 
 - Ballerina 2201.12.7, organized as package `wso2_open_operations/people`
-- Six modules:
+- Seven modules:
   - **`authorization`** — `JwtInterceptor` reads the `x-jwt-assertion` header, decodes the JWT, validates group membership, and stores `CustomJwtPayload` in the request context. Roles configured via `Config.toml`: `EMPLOYEE_ROLE`, `ADMIN_ROLE`, and `SERVICE_DESK_ROLE`.
   - **`database`** — MySQL client, all DB queries (`db_queries.bal`), DB functions (`db_functions.bal`), types, enums, and utils.
   - **`email`** — Email notification client; sends alerts via an external email service for onboarding events (e.g., failed Asgardeo group assignments).
   - **`qr`** — QR code generation for employees (`qr.bal`, `clients.bal`, `types.bal`).
   - **`scim`** — Asgardeo SCIM client for user and group management in the internal org; used during employee onboarding and bulk provisioning.
+  - **`promotion`** — Read-only client for the separate HRIS database (`promotionDbConfig`), supplying approved promotion history to the employee history timeline. Kept apart from `database` because it is a second datasource: its own client, config and types, so the dependency can be replaced or removed without touching the primary database module.
   - **`wso2_coin`** — Car park reservation + O2C payment integration. Bundles the blockchain transaction client (`transaction.bal`, `clients.bal`), Google Sheets parking-record sync (`parkingSheet.bal`), shared types/constants, and admin scripts. Exposes config values like `masterWalletAddress`, `reservationWindowStartHour/EndHour`, and `pendingReservationExpiryMinutes` consumed directly from `service.bal`. The microapp's parking booking flow (`/services/parking/*`) is the frontend surface for this module.
 - Every resource function in `service.bal` extracts `userInfo` from `ctx` and checks role permissions before executing business logic.
 - Four privilege levels — `EMPLOYEE_PRIVILEGE`, `LEAD_PRIVILEGE`, `SERVICE_DESK_PRIVILEGE`, and `ADMIN_PRIVILEGE` — are returned to the frontend in `/user-info`.

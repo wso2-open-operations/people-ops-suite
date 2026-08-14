@@ -38,6 +38,7 @@ import {
   EmploymentPeriod,
   fetchEmployeeHistory,
   HistoryEvent,
+  resetEmployeeHistory,
   PromotionRecord,
 } from "@slices/employeeSlice/employeeHistory";
 
@@ -606,6 +607,11 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
 
   useEffect(() => {
     if (employeeId) dispatch(fetchEmployeeHistory(employeeId));
+    // Cleared on unmount so the global slice does not hand the next employee's
+    // section a previous timeline before its own fetch resolves.
+    return () => {
+      dispatch(resetEmployeeHistory());
+    };
     // Fetch once when this component mounts (i.e. on first expand by the parent);
     // do not add `state` here or every expand/collapse would re-trigger it.
     // eslint-disable-next-line react-hooks/exhaustive-deps

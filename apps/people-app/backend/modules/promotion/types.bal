@@ -15,6 +15,7 @@
 // under the License.
 
 import ballerina/sql;
+import ballerinax/mysql;
 
 # HRIS promotion database configuration.
 public type PromotionDatabaseConfig record {|
@@ -28,6 +29,10 @@ public type PromotionDatabaseConfig record {|
     string host;
     # Port number of the MySQL server
     int port;
+    # The `mysql:Options` configurations. Present so a cross-machine connection to the
+    # HRIS host can be given a TLS mode and a connect timeout, as the primary database
+    # config already can.
+    mysql:Options options?;
     # Connection pool configuration
     sql:ConnectionPool connectionPool?;
 |};

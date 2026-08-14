@@ -28,6 +28,7 @@ public isolated function getApprovedPromotions(string workEmail) returns Promoti
     // Promoted dates are inconsistently stored; some use slashes. The promotion app
     // normalises the same way (promotion-app functions.bal:132).
     return from PromotionRecord promotion in promotions
+        let string? promotedDate = promotion.promotedDate
         select {
             currentJobBand: promotion.currentJobBand,
             nextJobBand: promotion.nextJobBand,
@@ -41,8 +42,10 @@ public isolated function getApprovedPromotions(string workEmail) returns Promoti
             // createdOn comes from a TIMESTAMP column via DATE(), so it is always
             // YYYY-MM-DD and needs no normalisation.
             createdOn: promotion.createdOn,
-            promotedDate: promotion.promotedDate is string
-                ? re `/`.replaceAll(<string>promotion.promotedDate, "-")
+            // Bound to a local above: narrowing does not apply to record field
+            // access, so reading the field directly would still need a cast here.
+            promotedDate: promotedDate is string
+                ? re `/`.replaceAll(promotedDate, "-")
                 : ()
         };
 }
