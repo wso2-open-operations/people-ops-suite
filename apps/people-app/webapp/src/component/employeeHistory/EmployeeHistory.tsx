@@ -575,6 +575,25 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employeeId, dispatch]);
 
+  // Declared above the early returns: hooks must run in the same order on every
+  // render, and the loading/failed branches below return before this point.
+  const counts = useMemo(() => {
+    const tally: Record<HistoryCategory, number> = {
+      employment: 0,
+      personal: 0,
+      promotion: 0,
+    };
+    (history?.events ?? []).forEach((event) => {
+      if (event.isSystem) return;
+      if (event.sourceTable === "personal_info_audit") tally.personal += 1;
+      else tally.employment += 1;
+    });
+    (history?.periods ?? []).forEach((period) => {
+      tally.promotion += period.promotions.length;
+    });
+    return tally;
+  }, [history]);
+
   if (state === State.loading || state === State.idle) {
     return (
       <Stack alignItems="center" justifyContent="center" spacing={1.5} sx={{ py: 5 }}>
@@ -601,23 +620,6 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
 
   // How many rows each category would contribute, so a category with nothing in
   // it can be hidden rather than offered as an empty filter.
-  const counts = useMemo(() => {
-    const tally: Record<HistoryCategory, number> = {
-      employment: 0,
-      personal: 0,
-      promotion: 0,
-    };
-    events.forEach((event) => {
-      if (event.isSystem) return;
-      if (event.sourceTable === "personal_info_audit") tally.personal += 1;
-      else tally.employment += 1;
-    });
-    periods.forEach((period) => {
-      tally.promotion += period.promotions.length;
-    });
-    return tally;
-  }, [events, periods]);
-
   const available = CATEGORY_ORDER.filter((category) => counts[category] > 0);
 
   if (periods.length === 0 && events.length === 0) {
