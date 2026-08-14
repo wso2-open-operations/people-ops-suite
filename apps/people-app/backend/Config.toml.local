@@ -1,4 +1,4 @@
-isMaintenanceMode = true
+isMaintenanceMode = false
 
 [people.authorization.authorizedRoles]
 EMPLOYEE_ROLE = ""
@@ -69,6 +69,3 @@ EXTERNAL_USER_ROLES = [];
     tokenUrl = ""
     clientId = ""
     clientSecret = ""
-
-isMaintenanceMode = false
-
