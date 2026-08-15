@@ -31,6 +31,7 @@ import ballerina/time;
     label: "People Service",
     id: "people-ops-suite/people-service"
 }
+configurable boolean isMaintenanceMode = false;
 
 service class ErrorInterceptor {
     *http:ResponseErrorInterceptor;
@@ -63,6 +64,13 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - authorization:JwtInterceptor, ErrorInterceptor
     public function createInterceptors() returns http:Interceptor[] =>
         [new authorization:JwtInterceptor(), new ErrorInterceptor()];
+
+    # Get global app config.
+    #
+    # + return - App config
+    resource function get configs() returns AppConfig {
+        return app;
+    }
 
     # Get user information.
     #
