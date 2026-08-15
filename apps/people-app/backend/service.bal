@@ -69,7 +69,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - App config
     resource function get configs() returns AppConfig {
-        return app;
+        return { isMaintenanceMode };
     }
 
     # Get user information.
