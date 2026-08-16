@@ -17,9 +17,9 @@
 import { useEffect, useState } from "react";
 import { serviceUrls } from "@/config/config";
 import { AppsSharp, Warning } from "@mui/icons-material";
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack } from "@mui/material";
+import { IconButton } from "@mui/material";
 import useHttp, { executeWithTokenHandling } from "@/utils/http";
-import { goToMyAppsScreen } from "@/components/microapp-bridge";
+import { ExitToAppsDialog } from "@/components/shared";
 
 export const MaintenanceBanner = () => {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
@@ -64,7 +64,6 @@ export const MaintenanceBanner = () => {
           onClick={() => setIsExitDialogOpen(true)}
           aria-label="Back to Super App"
           size="large"
-          className="bg-white/10 hover:bg-white/20"
         >
           <AppsSharp className="text-white" />
         </IconButton>
@@ -83,87 +82,10 @@ export const MaintenanceBanner = () => {
       </div>
 
       {/* Exit Dialog */}
-      <Dialog
+      <ExitToAppsDialog
         open={isExitDialogOpen}
         onClose={() => setIsExitDialogOpen(false)}
-        fullWidth
-        maxWidth="xs"
-        sx={{ zIndex: 10000 }}
-        PaperProps={{
-          sx: {
-            borderRadius: "16px",
-            p: 1.75,
-            m: 2,
-          },
-        }}
-      >
-        <Stack spacing={2.5}>
-          <Box>
-            <DialogTitle sx={{ p: 0, fontSize: "1rem", fontWeight: 700, lineHeight: 1.5, color: "#1F2A44" }}>
-              Return to Apps
-            </DialogTitle>
-            <DialogContent
-              sx={{
-                p: 0,
-                pt: 1,
-                fontSize: "0.875rem",
-                lineHeight: 1.2,
-                color: "#5F6368",
-                whiteSpace: "normal",
-              }}
-            >
-              Are you sure you want to leave this application?
-            </DialogContent>
-          </Box>
-
-          <DialogActions sx={{ p: 0, justifyContent: "flex-end", gap: 1.25 }}>
-            <Button
-              variant="outlined"
-              onClick={() => setIsExitDialogOpen(false)}
-              sx={{
-                minWidth: 98,
-                borderRadius: 999,
-                px: 2.25,
-                py: 0.75,
-                borderColor: "#ff7300",
-                color: "#ff7300",
-                fontWeight: 600,
-                textTransform: "none",
-                "&:hover": {
-                  borderColor: "#e86800",
-                  backgroundColor: "rgba(255, 115, 0, 0.06)",
-                },
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="contained"
-              onClick={() => {
-                setIsExitDialogOpen(false);
-                goToMyAppsScreen();
-              }}
-              sx={{
-                minWidth: 98,
-                borderRadius: 999,
-                px: 2.25,
-                py: 0.75,
-                backgroundColor: "#ff7300",
-                color: "#fff",
-                fontWeight: 600,
-                textTransform: "none",
-                boxShadow: "none",
-                "&:hover": {
-                  backgroundColor: "#e86800",
-                  boxShadow: "none",
-                },
-              }}
-            >
-              Leave
-            </Button>
-          </DialogActions>
-        </Stack>
-      </Dialog>
+      />
     </div>
   );
 };
