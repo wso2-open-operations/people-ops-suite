@@ -17,26 +17,30 @@
 import { useEffect, useState } from "react";
 import { serviceUrls } from "@/config/config";
 import { Warning } from "@mui/icons-material";
-import useHttp from "@/utils/http";
+import useHttp, { executeWithTokenHandling } from "@/utils/http";
 
 export const MaintenanceBanner = () => {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
-  const { handleRequest } = useHttp();
+  const { handleRequest, handleRequestWithNewToken } = useHttp();
 
   useEffect(() => {
     const fetchConfigs = () => {
-      handleRequest({
-        url: serviceUrls.fetchAppConfigs(),
-        method: "GET",
-        successFn: (data: any) => {
+      executeWithTokenHandling(
+        handleRequest,
+        handleRequestWithNewToken,
+        serviceUrls.fetchAppConfigs(),
+        "GET",
+        null,
+        (data: any) => {
           if (data) {
             setIsMaintenanceMode(!!data.isMaintenanceMode);
           }
         },
-        failFn: (err) => {
+        (err) => {
           console.error("Failed to fetch app configs:", err);
         },
-      });
+        () => {} // Optional loading function
+      );
     };
 
     fetchConfigs();
