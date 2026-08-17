@@ -67,8 +67,6 @@ function AnimatedRoutes({ user }: PageProps) {
   );
 }
 
-import { MaintenanceBanner } from "@/components/MaintenanceBanner";
-
 function App() {
   const [user, setUser] = useState<User | undefined>(undefined);
   const [resumeReady, setResumeReady] = useState(false);
@@ -108,7 +106,6 @@ function App() {
 
   return (
     <HashRouter>
-      <MaintenanceBanner />
       <ParkingWalletReturnResume
         onInitialResumeComplete={handleInitialResumeComplete}
         onParkingResumeGateActive={setParkingResumeGateActive}

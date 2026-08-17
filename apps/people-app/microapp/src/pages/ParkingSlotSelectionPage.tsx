@@ -39,6 +39,7 @@ import {
   getTodayBookingDate,
   isWithinParkingReservationWindow,
 } from "@/utils/helpers/date";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { formatCoins } from "@/utils/helpers/coins";
 import {
   clearParkingPaymentContextState,
@@ -321,6 +322,8 @@ function ParkingSlotSelectionPage() {
             <div className="w-[40px]" />
           </div>
         </header>
+
+        <MaintenanceBanner />
 
         <section className="px-4">
           {isBookingWindowActive && (
