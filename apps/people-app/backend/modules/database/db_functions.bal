@@ -1513,3 +1513,104 @@ public isolated function hasActiveEmployeesInBUTeamSubTeamUnitMapping(int id) re
             countActiveEmployeesInBUTeamSubTeamUnitMappingQuery(id));
     return result.count > 0;
 }
+
+# Resolve the person behind a work email to their personal_info ID.
+#
+# Callers authorizing "may this user see this record" must compare people, not employee IDs. A
+# rehired person holds several employee IDs against one personal_info row, so comparing employee
+# IDs would deny them access to their own earlier employment.
+#
+# + workEmail - Work email of the person
+# + return - personal_info ID, nil if no matching employee record, or error
+public isolated function getPersonalInfoIdByWorkEmail(string workEmail) returns int?|error {
+    int|error result = databaseClient->queryRow(getPersonalInfoIdByWorkEmailQuery(workEmail));
+    return result is sql:NoRowsError ? () : result;
+}
+
+# Resolve the person behind an employee ID to their personal_info ID.
+#
+# + employeeId - Employee ID of any one of the person's employment records
+# + return - personal_info ID, nil if no matching employee record, or error
+public isolated function getPersonalInfoIdByEmployeeId(string employeeId) returns int?|error {
+    int|error result = databaseClient->queryRow(getPersonalInfoIdByEmployeeIdQuery(employeeId));
+    return result is sql:NoRowsError ? () : result;
+}
+
+# Fetch every employment period for the person behind an employee ID.
+#
+# + employeeId - Employee ID of any one of the person's employment records
+# + return - Employment periods for the person, newest first
+public isolated function getEmploymentPeriods(string employeeId) returns EmploymentPeriod[]|error {
+    stream<EmploymentPeriod, error?> periodStream = databaseClient->query(getEmploymentPeriodsQuery(employeeId));
+    return from EmploymentPeriod period in periodStream
+        select period;
+}
+
+# Fetch raw audit snapshots across all audit tables for a person's employee rows.
+#
+# Each source table is queried and ordered independently, then merged and re-sorted by action_on
+# ascending across the combined set, since Task 3 diffs consecutive rows and depends on one
+# globally-ordered timeline rather than three independently-ordered ones.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Audit snapshots from employee_audit, personal_info_audit, and
+# employee_additional_managers_audit, ordered by action_on ascending across all three
+public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSnapshot[]|error {
+    stream<AuditSnapshot, error?> employeeAuditStream =
+        databaseClient->query(getEmployeeAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] employeeAuditSnapshots = check from AuditSnapshot snapshot in employeeAuditStream
+        select snapshot;
+
+    stream<AuditSnapshot, error?> personalInfoAuditStream =
+        databaseClient->query(getPersonalInfoAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] personalInfoAuditSnapshots = check from AuditSnapshot snapshot in personalInfoAuditStream
+        select snapshot;
+
+    stream<AuditSnapshot, error?> additionalManagersAuditStream =
+        databaseClient->query(getEmployeeAdditionalManagersAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] additionalManagersAuditSnapshots =
+        check from AuditSnapshot snapshot in additionalManagersAuditStream
+        select snapshot;
+
+    AuditSnapshot[] allSnapshots =
+        [...employeeAuditSnapshots, ...personalInfoAuditSnapshots, ...additionalManagersAuditSnapshots];
+    return from AuditSnapshot snapshot in allSnapshots
+        order by snapshot.actionOn ascending
+        select snapshot;
+}
+
+# Build a lookup of audit field -> id -> human-readable name.
+#
+# History events carry raw foreign keys from the audit snapshots. Rendering "87" tells a
+# reader nothing, so ids are resolved to names before the response is built.
+#
+# + return - Nested map keyed by field then by id, or an error
+public isolated function getHistoryLookupNames() returns map<map<string>>|error {
+    stream<HistoryLookupName, error?> resultStream =
+        databaseClient->query(getHistoryLookupNamesQuery());
+
+    map<map<string>> lookup = {};
+    check from HistoryLookupName row in resultStream
+        do {
+            map<string> byId = lookup.hasKey(row.'field) ? lookup.get(row.'field) : {};
+            byId[row.id.toString()] = row.name;
+            lookup[row.'field] = byId;
+        };
+
+    return lookup;
+}
+
+# Whether an employee ID names the person's current (most recent) employment.
+#
+# + employeeId - Employee ID to test
+# + return - True when this is the person's latest employment row, or an error
+public isolated function isCurrentEmployment(string employeeId) returns boolean|error {
+    int|error result = databaseClient->queryRow(isCurrentEmploymentQuery(employeeId));
+    if result is sql:NoRowsError {
+        return false;
+    }
+    if result is error {
+        return result;
+    }
+    return true;
+}

@@ -134,7 +134,19 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         ) AS subordinateCount,
         e.employee_status AS employeeStatus,
         e.continuous_service_record AS continuousServiceRecord,
-        csr.start_date AS continuousServiceDate,
+        -- Walks the whole continuous-service chain, not one hop. An employee with three
+        -- linked employments (A -> B -> C) would otherwise report B's start date and
+        -- understate their service.
+        (
+            WITH RECURSIVE chain AS (
+                SELECT csr0.id, csr0.continuous_service_record, csr0.start_date
+                FROM employee csr0 WHERE csr0.id = e.continuous_service_record
+                UNION
+                SELECT csr1.id, csr1.continuous_service_record, csr1.start_date
+                FROM employee csr1 JOIN chain ON csr1.id = chain.continuous_service_record
+            )
+            SELECT MIN(chain.start_date) FROM chain
+        ) AS continuousServiceDate,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
         r.date AS resignationDate,
@@ -189,7 +201,6 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         LEFT JOIN unit u ON e.unit_id = u.id
         LEFT JOIN house h ON e.house_id = h.id
         LEFT JOIN personal_info pi ON pi.id = e.personal_info_id
-        LEFT JOIN employee csr ON csr.id = e.continuous_service_record
         LEFT JOIN resignation r ON r.employee_id = e.id
     WHERE
         e.employee_id = ${employeeId};`;
@@ -220,7 +231,18 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             COALESCE(sc.subordinateCount, 0) AS subordinateCount,
             e.employee_status AS employeeStatus,
             e.continuous_service_record AS continuousServiceRecord,
-            csr.start_date AS continuousServiceDate,
+            -- See the note on the single-employee query: this walks the whole chain
+            -- rather than one hop.
+            (
+                WITH RECURSIVE chain AS (
+                    SELECT csr0.id, csr0.continuous_service_record, csr0.start_date
+                    FROM employee csr0 WHERE csr0.id = e.continuous_service_record
+                    UNION
+                    SELECT csr1.id, csr1.continuous_service_record, csr1.start_date
+                    FROM employee csr1 JOIN chain ON csr1.id = chain.continuous_service_record
+                )
+                SELECT MIN(chain.start_date) FROM chain
+            ) AS continuousServiceDate,
             e.probation_end_date AS probationEndDate,
             e.agreement_end_date AS agreementEndDate,
             r.date AS resignationDate,
@@ -298,7 +320,6 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
                 FROM employee
                 GROUP BY LOWER(work_email)
             ) mgr ON mgr.managerEmail = LOWER(e.manager_email)
-            LEFT JOIN employee csr ON csr.id = e.continuous_service_record
             LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 
@@ -2445,3 +2466,213 @@ isolated function deleteEmployeeEmergencyContactsAuditQuery(int personalInfoId) 
 # + return - Parameterized query to delete personal info audit rows
 isolated function deletePersonalInfoAuditQuery(int personalInfoId) returns sql:ParameterizedQuery =>
     `DELETE FROM personal_info_audit WHERE personal_info_pk_id = ${personalInfoId};`;
+
+# Resolve the person behind a work email.
+#
+# A person may hold several employee rows over time (a rehire issues a new employee ID while
+# reusing the same personal_info row), so this deliberately returns the personal_info_id rather
+# than an employee ID. LIMIT 1 is safe because every employee row for one person points at the
+# same personal_info_id, and a work email belongs to exactly one employee row.
+#
+# + workEmail - Work email of the person
+# + return - Parameterized query returning the person's personal_info_id
+isolated function getPersonalInfoIdByWorkEmailQuery(string workEmail) returns sql:ParameterizedQuery =>
+    `SELECT personal_info_id FROM employee WHERE work_email = ${workEmail} LIMIT 1;`;
+
+# Resolve the person behind an employee ID.
+#
+# + employeeId - Employee ID of any one of the person's employment records
+# + return - Parameterized query returning the person's personal_info_id
+isolated function getPersonalInfoIdByEmployeeIdQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId} LIMIT 1;`;
+
+# All employment periods for the person behind an employee ID.
+#
+# + employeeId - Employee ID of any one of the person's employment records
+# + return - Parameterized query returning every employment period, newest first
+isolated function getEmploymentPeriodsQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT
+        e.id AS id,
+        e.employee_id AS employeeId,
+        et.name AS employmentType,
+        e.start_date AS startDate,
+        r.final_day_of_employment AS endDate,
+        e.work_email AS workEmail,
+        csr.employee_id AS continuousServiceRecord
+    FROM employee e
+        JOIN employment_type et ON et.id = e.employment_type_id
+        LEFT JOIN resignation r ON r.employee_id = e.id
+        LEFT JOIN employee csr ON csr.id = e.continuous_service_record
+    WHERE e.id IN (
+        WITH RECURSIVE anchor AS (
+            SELECT id, personal_info_id, continuous_service_record
+            FROM employee WHERE employee_id = ${employeeId}
+        ),
+        -- Walk backwards: each row points at the employment that preceded it.
+        earlier AS (
+            SELECT id, continuous_service_record FROM anchor
+            UNION
+            SELECT e2.id, e2.continuous_service_record
+            FROM employee e2 JOIN earlier ON e2.id = earlier.continuous_service_record
+        ),
+        -- Walk forwards: find rows pointing back at anything already collected.
+        later AS (
+            SELECT id FROM anchor
+            UNION
+            SELECT e3.id
+            FROM employee e3 JOIN later ON e3.continuous_service_record = later.id
+        )
+        SELECT id FROM earlier
+        UNION SELECT id FROM later
+        -- Rehires where the identity record does match are still picked up here.
+        UNION SELECT e4.id FROM employee e4
+            JOIN anchor ON e4.personal_info_id = anchor.personal_info_id
+    )
+    ORDER BY e.start_date DESC`;
+
+# Fetch audit snapshots from the employee_audit table for a set of employee rows.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning employee_audit rows tagged with their source table
+isolated function getEmployeeAuditSnapshotsQuery(int[] employeePkIds) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildIntInClause(employeePkIds);
+    return sql:queryConcat(
+            `SELECT
+                employee_pk_id AS employeePkId,
+                'employee_audit' AS sourceTable,
+                action_type AS actionType,
+                action_by AS actionBy,
+                action_on AS actionOn,
+                data AS data
+            FROM employee_audit
+            WHERE employee_pk_id IN (`,
+            inClause,
+            `)
+            ORDER BY action_on ASC`
+    );
+}
+
+# Fetch audit snapshots from the employee_additional_managers_audit table for a set of employee rows.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning employee_additional_managers_audit rows tagged with their source table
+isolated function getEmployeeAdditionalManagersAuditSnapshotsQuery(int[] employeePkIds)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildIntInClause(employeePkIds);
+    return sql:queryConcat(
+            `SELECT
+                employee_pk_id AS employeePkId,
+                'employee_additional_managers_audit' AS sourceTable,
+                action_type AS actionType,
+                action_by AS actionBy,
+                action_on AS actionOn,
+                data AS data
+            FROM employee_additional_managers_audit
+            WHERE employee_pk_id IN (`,
+            inClause,
+            `)
+            ORDER BY action_on ASC`
+    );
+}
+
+# Fetch audit snapshots from the personal_info_audit table for the person behind a set of employee rows.
+#
+# personal_info_audit keys on personal_info_pk_id, not employee_pk_id. All employee rows belonging to one
+# person share the same personal_info_id, so it is resolved once from any single employee primary key in
+# the set (the first one) rather than joined against the whole set, which would otherwise multiply rows.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning personal_info_audit rows tagged with their source table; each
+# row's employeePkId is the resolving employee primary key, not necessarily the one active at that time
+isolated function getPersonalInfoAuditSnapshotsQuery(int[] employeePkIds) returns sql:ParameterizedQuery {
+    int anchorEmployeePkId = employeePkIds[0];
+    return `SELECT
+                ${anchorEmployeePkId} AS employeePkId,
+                'personal_info_audit' AS sourceTable,
+                pia.action_type AS actionType,
+                pia.action_by AS actionBy,
+                pia.action_on AS actionOn,
+                pia.data AS data
+            FROM personal_info_audit pia
+            WHERE pia.personal_info_pk_id = (
+                SELECT personal_info_id FROM employee WHERE id = ${anchorEmployeePkId}
+            )
+            ORDER BY pia.action_on ASC`;
+}
+
+# Every id-to-name mapping needed to render history events, in one query.
+#
+# Audit snapshots store foreign keys (`unit_id`, `designation_id`, ...), which are
+# meaningless to a reader. This resolves them in a single round trip rather than one
+# query per lookup table. `designation` names its column `designation`; every other
+# lookup table uses `name`.
+#
+# Every string is given an explicit COLLATE. The lookup tables do not agree among
+# themselves — `house.name` is utf8mb4_unicode_ci while the rest are utf8mb4_0900_ai_ci —
+# and the literals would otherwise take the connection default, so a bare UNION fails with
+# "Illegal mix of collations" (MySQL 1271).
+#
+# + return - Parameterized query returning (field, id, name) rows
+isolated function getHistoryLookupNamesQuery() returns sql:ParameterizedQuery =>
+    `SELECT 'business_unit_id' COLLATE utf8mb4_general_ci AS field,
+            id, name COLLATE utf8mb4_general_ci AS name FROM business_unit
+     UNION ALL SELECT 'team_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM team
+     UNION ALL SELECT 'sub_team_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM sub_team
+     UNION ALL SELECT 'unit_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM unit
+     UNION ALL SELECT 'designation_id' COLLATE utf8mb4_general_ci,
+            id, designation COLLATE utf8mb4_general_ci FROM designation
+     UNION ALL SELECT 'employment_type_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM employment_type
+     UNION ALL SELECT 'company_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM company
+     UNION ALL SELECT 'office_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM office
+     UNION ALL SELECT 'house_id' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM house`;
+
+# Whether an employee ID names the person's current (most recent) employment.
+#
+# `manager_email` is never cleared when an employment ends, so an old row keeps naming a
+# former manager forever. Any check built on that column therefore has to be paired with a
+# currency test, or a former lead retains access to a person they no longer manage.
+#
+# + employeeId - Employee ID to test
+# + return - Parameterized query returning 1 when this is the person's latest employment
+isolated function isCurrentEmploymentQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT 1 FROM employee target
+     WHERE target.employee_id = ${employeeId}
+        AND target.id = (
+            -- Resolved through the same chain the history itself walks, not through
+            -- personal_info_id. A person's employments can hold different personal_info rows
+            -- (one NIC recorded several ways), in which case every row would look "latest"
+            -- within its own group of one and the check would pass for all of them.
+            WITH RECURSIVE anchor AS (
+                SELECT id, personal_info_id, continuous_service_record
+                FROM employee WHERE employee_id = ${employeeId}
+            ),
+            earlier AS (
+                SELECT id, continuous_service_record FROM anchor
+                UNION
+                SELECT e2.id, e2.continuous_service_record
+                FROM employee e2 JOIN earlier ON e2.id = earlier.continuous_service_record
+            ),
+            later AS (
+                SELECT id FROM anchor
+                UNION
+                SELECT e3.id FROM employee e3 JOIN later ON e3.continuous_service_record = later.id
+            ),
+            whole_person AS (
+                SELECT id FROM earlier
+                UNION SELECT id FROM later
+                UNION SELECT e4.id FROM employee e4
+                    JOIN anchor ON e4.personal_info_id = anchor.personal_info_id
+            )
+            SELECT latest.id FROM employee latest
+            JOIN whole_person ON whole_person.id = latest.id
+            ORDER BY latest.start_date DESC, latest.id DESC
+            LIMIT 1
+        )
+     LIMIT 1;`;

@@ -1353,3 +1353,68 @@ type CompanyOrgChartBusinessUnitRow record {|
     # Teams with nested sub-teams and units as raw JSON.
     json teams;
 |};
+
+# One employment period for a person.
+public type EmploymentPeriod record {|
+    # Employee table primary key
+    int id;
+    # Employee ID (e.g. "EP 10006")
+    string? employeeId;
+    # Employment type name
+    string employmentType;
+    # Start date
+    string startDate;
+    # Final day of employment, if the period has ended
+    string? endDate;
+    # Work email
+    string workEmail;
+    # Employee ID of the prior linked employment, if any
+    string? continuousServiceRecord;
+|};
+
+# A raw audit row awaiting diffing.
+public type AuditSnapshot record {|
+    # Employee table primary key this snapshot belongs to
+    int employeePkId;
+    # Source table this snapshot came from
+    string sourceTable;
+    # INSERT or UPDATE
+    string actionType;
+    # Who performed the action
+    string actionBy;
+    # When the action occurred
+    string actionOn;
+    # The full row snapshot as JSON
+    json data;
+|};
+
+# One field-level change derived from consecutive audit snapshots.
+public type HistoryEvent record {|
+    # Employee table primary key this event belongs to
+    int employeePkId;
+    # Canonical field key (e.g. "team_id")
+    string 'field;
+    # Audit table the change came from, so the client can group events by kind
+    # (employment vs personal information) without inferring it from the field name
+    string sourceTable;
+    # Value before the change, if any
+    string? previousValue;
+    # Value after the change
+    string? currentValue;
+    # When the change occurred
+    string occurredOn;
+    # Who made the change
+    string actionBy;
+    # True when actionBy is a system actor rather than a person
+    boolean isSystem;
+|};
+
+# One id-to-name mapping row used to resolve history event values.
+public type HistoryLookupName record {|
+    # The audit field this mapping applies to, e.g. "unit_id"
+    string 'field;
+    # The lookup row's primary key
+    int id;
+    # The human-readable name
+    string name;
+|};

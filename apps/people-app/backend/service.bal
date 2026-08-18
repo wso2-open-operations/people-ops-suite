@@ -16,6 +16,7 @@
 
 import people.authorization;
 import people.database;
+import people.promotion;
 import people.qr;
 import people.wso2_coin;
 // Temporarily disabled together with the Asgardeo/SCIM provisioning blocks in the onboarding
@@ -2882,5 +2883,174 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{body: {message: customErr}};
         }
         return orgStructure;
+    }
+
+    # Fetch the employment history timeline for an employee.
+    #
+    # Returns every employment period held by the *person* behind the given employee ID
+    # (a rehire has more than one), the field-level changes derived from the audit trail,
+    # and the approved promotions from HRIS attached to the period they fall in.
+    #
+    # + employeeId - Employee ID
+    # + return - History timeline, or an error response
+    resource function get employees/[string employeeId]/history(http:RequestContext ctx)
+        returns EmployeeHistoryResponse|http:InternalServerError|http:NotFound|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        // Access and projection are one decision, carried by one variable, so a caller can never
+        // be granted access under one tier and then filtered under another.
+        //
+        // - ADMIN, and a LEAD viewing their own subordinate, get the full projection:
+        //   attribution and system rows included. A lead can already see a subordinate's
+        //   designation, manager, status and dates through the sibling employee endpoint;
+        //   history adds only *when* those changed, so withholding it would be inconsistent.
+        // - Self gets the employee projection: no actionBy, no system rows.
+        boolean hasFullProjection = authorization:checkPermissions(
+                [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        if !hasFullProjection {
+            // Two conditions, and both are required.
+            //
+            // `manager_email` is never cleared when an employment ends, so an old row names its
+            // former manager forever. The subordinate check alone would therefore let a former
+            // lead pass by quoting a stale employee ID — and because the response fans out to
+            // every period for that person, they would receive the current employment too.
+            // Requiring the requested row to be the person's current employment closes that:
+            // the lead projection is granted only for someone they still manage today.
+            boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
+            if isSubordinate is error {
+                string customErr = string `Error occurred while checking lead authorization for ID: ${employeeId}`;
+                log:printError(customErr, isSubordinate, employeeId = employeeId);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+
+            if isSubordinate {
+                boolean|error isCurrent = database:isCurrentEmployment(employeeId);
+                if isCurrent is error {
+                    string customErr = string `Error occurred while checking employment currency for ID: ${employeeId}`;
+                    log:printError(customErr, isCurrent, employeeId = employeeId);
+                    return <http:InternalServerError>{body: {message: customErr}};
+                }
+                if !isCurrent {
+                    log:printWarn("Lead access denied: requested employment is not the person's current one",
+                            invokerEmail = userInfo.email, employeeId = employeeId);
+                }
+                hasFullProjection = isCurrent;
+            }
+        }
+
+        // Authorization compares *people*, not employee IDs. A rehired person holds several
+        // employee IDs against one personal_info row (e.g. intern "IN 0456" then permanent
+        // "EP 10006"), so comparing the caller's employee ID against the requested one would
+        // deny them their own earlier employment. Admins and leads-of-this-report skip this.
+        if !hasFullProjection {
+            int?|error callerPersonalInfoId = database:getPersonalInfoIdByWorkEmail(userInfo.email);
+            if callerPersonalInfoId is error {
+                string customErr = "Error occurred while resolving the invoker's employee record";
+                log:printError(customErr, callerPersonalInfoId, invokerEmail = userInfo.email);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+
+            int?|error requestedPersonalInfoId = database:getPersonalInfoIdByEmployeeId(employeeId);
+            if requestedPersonalInfoId is error {
+                string customErr = string `Error occurred while resolving employee record for ID: ${employeeId}`;
+                log:printError(customErr, requestedPersonalInfoId, employeeId = employeeId);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+
+            if requestedPersonalInfoId is () {
+                string customErr = "Employee information not found";
+                log:printWarn(customErr, employeeId = employeeId);
+                return <http:NotFound>{body: {message: customErr}};
+            }
+
+            if callerPersonalInfoId is () || callerPersonalInfoId != requestedPersonalInfoId {
+                log:printWarn("User is not authorized to view this employee's history",
+                        invokerEmail = userInfo.email, employeeId = employeeId);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view this employee's history"}
+                };
+            }
+        }
+
+        database:EmploymentPeriod[]|error periods = database:getEmploymentPeriods(employeeId);
+        if periods is error {
+            string customErr = string `Error occurred while fetching employment periods for ID: ${employeeId}`;
+            log:printError(customErr, periods, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        if periods.length() == 0 {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
+        }
+
+        int[] employeePkIds = from database:EmploymentPeriod period in periods
+            select period.id;
+
+        database:AuditSnapshot[]|error snapshots = database:getAuditSnapshots(employeePkIds);
+        if snapshots is error {
+            string customErr = string `Error occurred while fetching audit history for ID: ${employeeId}`;
+            log:printError(customErr, snapshots, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        database:HistoryEvent[] events = database:buildHistoryEvents(snapshots);
+
+        // Audit snapshots store foreign keys, so an event reads "87" until its id is
+        // resolved. A lookup failure degrades to raw ids rather than failing the request —
+        // an unhelpful timeline is better than none.
+        map<map<string>>|error lookupNames = database:getHistoryLookupNames();
+        if lookupNames is map<map<string>> {
+            events = database:resolveHistoryEventNames(events, lookupNames);
+        } else {
+            log:printError("Error resolving history lookup names; returning raw ids",
+                    lookupNames, employeeId = employeeId);
+        }
+
+        // The HRIS promotion database is a second database. An outage there must degrade the
+        // timeline rather than break the employee's own profile page, so the failure is
+        // reported as a flag alongside an otherwise complete response.
+        boolean promotionsUnavailable = false;
+        promotion:PromotionRecord[] promotions = [];
+
+        // work_email lives on the employment row, and a chain is walked by
+        // continuous_service_record rather than by email, so periods can legitimately carry
+        // different emails. Querying only the newest one would silently omit promotions
+        // raised under a former address.
+        string[] workEmails = [];
+        foreach database:EmploymentPeriod period in periods {
+            if period.workEmail.trim() != "" && workEmails.indexOf(period.workEmail) is () {
+                workEmails.push(period.workEmail);
+            }
+        }
+
+        foreach string workEmail in workEmails {
+            promotion:PromotionRecord[]|error fetched = promotion:getApprovedPromotions(workEmail);
+            if fetched is error {
+                promotionsUnavailable = true;
+                log:printError("Error occurred while fetching promotions from HRIS; returning history without them",
+                        fetched, employeeId = employeeId, workEmail = workEmail);
+            } else {
+                promotions.push(...fetched);
+            }
+        }
+
+        EmploymentPeriodResponse[] periodResponses = assignPromotionsToPeriods(periods, promotions);
+
+        return {
+            periods: periodResponses,
+            events: projectHistoryEvents(events, hasFullProjection),
+            promotionsUnavailable: promotionsUnavailable
+        };
     }
 }
