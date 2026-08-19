@@ -168,7 +168,7 @@ export default function MasterDataView() {
           ),
         },
         {
-          tabTitle: "Org Structure",
+          tabTitle: "Hierarchy",
           tabPath: "org-structure",
           icon: <AccountTreeIcon />,
           page: <HierarchyView />,
