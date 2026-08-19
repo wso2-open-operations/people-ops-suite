@@ -45,6 +45,9 @@ public type NoFieldsToUpdateError distinct error;
 # active-reservation unique index (slot/date or employee/date already active).
 public type DuplicateActiveReservationError distinct error;
 
+# Raised when an active designation with the same name already exists in the career function.
+public type DuplicateDesignationError distinct error;
+
 # [Configurable] Database configs.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
@@ -559,6 +562,12 @@ public type CareerFunction record {|
     # Career function name
     @sql:Column {name: "career_function"}
     string careerFunction;
+    # Whether the career function is active
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # Number of active employees across this career function's designations
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
 |};
 
 # Designation.
@@ -570,6 +579,55 @@ public type Designation record {|
     # Job band
     @sql:Column {name: "job_band"}
     int? jobBand;
+    # Parent career function ID, nil when unassigned
+    @sql:Column {name: "career_function_id"}
+    int? careerFunctionId;
+    # Whether the designation is active
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # Number of active employees holding this designation
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
+|};
+
+# Payload to create a career function.
+public type CreateCareerFunctionPayload record {|
+    # Career function name
+    @constraint:String {maxLength: 150, minLength: 1}
+    string careerFunction;
+|};
+
+# Payload to update a career function (all fields optional for PATCH).
+public type UpdateCareerFunctionPayload record {|
+    # Career function name
+    @constraint:String {maxLength: 150, minLength: 1}
+    string? careerFunction = ();
+    # Whether the career function is active
+    boolean? isActive = ();
+|};
+
+# Payload to create a designation.
+public type CreateDesignationPayload record {|
+    # Designation name
+    @constraint:String {maxLength: 150, minLength: 1}
+    string designation;
+    # Job band (optional)
+    int? jobBand = ();
+    # Parent career function ID (optional; nil means unassigned)
+    int? careerFunctionId = ();
+|};
+
+# Payload to update a designation (all fields optional for PATCH).
+public type UpdateDesignationPayload record {|
+    # Designation name
+    @constraint:String {maxLength: 150, minLength: 1}
+    string? designation = ();
+    # Job band
+    int? jobBand = ();
+    # Parent career function ID
+    int? careerFunctionId = ();
+    # Whether the designation is active
+    boolean? isActive = ();
 |};
 
 # [Database] Company record with allowed locations as a JSON string.
