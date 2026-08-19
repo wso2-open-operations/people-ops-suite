@@ -102,11 +102,18 @@ export default function DesignationGrid({
         if (!q) return true;
         return d.designation.toLowerCase().includes(q);
       })
-      // Active designations first, then inactive ones, each group sorted by name.
+      // Active designations first, then inactive ones. Within each group, order by job
+      // band ascending so the career ladder reads bottom-up, with band-less designations
+      // last (a null band is "unset", not band zero) and name as the tiebreaker.
       // Sorting only reorders rows, so the summary stats derived from this list are
       // unaffected. The user can still re-sort any column via the DataGrid header.
       .sort((a, b) => {
         if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+        if (a.jobBand !== b.jobBand) {
+          if (a.jobBand === null) return 1;
+          if (b.jobBand === null) return -1;
+          return a.jobBand - b.jobBand;
+        }
         return a.designation.localeCompare(b.designation);
       });
   }, [designations, searchText, statusFilter]);
