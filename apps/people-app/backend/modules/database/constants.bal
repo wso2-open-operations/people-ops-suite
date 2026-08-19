@@ -42,3 +42,9 @@ public const BULK_INSERT_FAILED = 1002;
 
 # MySQL error code for a duplicate entry on a unique index/key.
 const MYSQL_DUPLICATE_ENTRY_ERROR_CODE = 1062;
+
+# Sentinel value for updateDesignationQuery's jobBand parameter that clears job_band to NULL.
+public const JOB_BAND_CLEAR_SENTINEL = -1;
+
+# Sentinel value for updateDesignationQuery's careerFunctionId parameter that clears career_function_id to NULL.
+public const CAREER_FUNCTION_CLEAR_SENTINEL = -1;

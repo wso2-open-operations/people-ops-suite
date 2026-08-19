@@ -1302,8 +1302,8 @@ isolated function createDesignationQuery(string designation, int? jobBand, int? 
 #
 # + id - Designation ID
 # + designation - New name, or nil to leave unchanged
-# + jobBand - New job band, or nil to leave unchanged
-# + careerFunctionId - New parent career function ID, or nil to leave unchanged
+# + jobBand - New job band; -1 (JOB_BAND_CLEAR_SENTINEL) clears it to NULL; nil leaves it unchanged
+# + careerFunctionId - New parent career function ID; -1 (CAREER_FUNCTION_CLEAR_SENTINEL) clears it to NULL; nil leaves it unchanged
 # + isActive - New active flag, or nil to leave unchanged
 # + updatedBy - Email of the admin performing the action
 # + return - Update query, or NoFieldsToUpdateError when nothing was supplied
@@ -1315,10 +1315,18 @@ isolated function updateDesignationQuery(int id, string? designation, int? jobBa
         updates.push(`designation = ${designation}`);
     }
     if jobBand is int {
-        updates.push(`job_band = ${jobBand}`);
+        if jobBand == JOB_BAND_CLEAR_SENTINEL {
+            updates.push(`job_band = NULL`);
+        } else {
+            updates.push(`job_band = ${jobBand}`);
+        }
     }
     if careerFunctionId is int {
-        updates.push(`career_function_id = ${careerFunctionId}`);
+        if careerFunctionId == CAREER_FUNCTION_CLEAR_SENTINEL {
+            updates.push(`career_function_id = NULL`);
+        } else {
+            updates.push(`career_function_id = ${careerFunctionId}`);
+        }
     }
     if isActive is boolean {
         updates.push(`is_active = ${isActive}`);
