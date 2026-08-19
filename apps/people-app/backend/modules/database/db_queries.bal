@@ -1195,29 +1195,169 @@ isolated function getFullOrganizationStructureQuery() returns sql:ParameterizedQ
 
 # Get career functions query.
 #
+# + includeInactive - If true, return all rows including inactive; otherwise active-only
 # + return - Career functions query
-isolated function getCareerFunctionsQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
-        id,
-        career_function
-    FROM career_function;`;
+isolated function getCareerFunctionsQuery(boolean includeInactive = false) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `SELECT
+            cf.id,
+            cf.career_function,
+            cf.is_active,
+            (SELECT COUNT(*)
+                FROM employee e
+                JOIN designation d ON d.id = e.designation_id
+                WHERE d.career_function_id = cf.id AND e.employee_status = 'Active'
+            ) AS active_employee_count
+        FROM career_function cf`;
+    if !includeInactive {
+        query = sql:queryConcat(query, ` WHERE cf.is_active = 1`);
+    }
+    return sql:queryConcat(query, ` ORDER BY cf.career_function;`);
+}
 
 # Get designations query.
 #
 # + careerFunctionId - Career function ID (optional)
+# + includeInactive - If true, return all rows including inactive; otherwise active-only
 # + return - Designations query
-isolated function getDesignationsQuery(int? careerFunctionId = ()) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-        SELECT 
-            id,
-            designation,
-            job_band
-        FROM designation`;
+isolated function getDesignationsQuery(int? careerFunctionId = (), boolean includeInactive = false)
+        returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery query = `SELECT
+            d.id,
+            d.designation,
+            d.job_band,
+            d.career_function_id,
+            d.is_active,
+            (SELECT COUNT(*)
+                FROM employee e
+                WHERE e.designation_id = d.id AND e.employee_status = 'Active'
+            ) AS active_employee_count
+        FROM designation d`;
+
+    sql:ParameterizedQuery[] filters = [];
     if careerFunctionId is int {
-        query = sql:queryConcat(query, ` WHERE career_function_id = ${careerFunctionId}`);
+        filters.push(`d.career_function_id = ${careerFunctionId}`);
     }
-    return sql:queryConcat(query, `;`);
+    if !includeInactive {
+        filters.push(`d.is_active = 1`);
+    }
+    foreach int i in 0 ..< filters.length() {
+        query = sql:queryConcat(query, i == 0 ? ` WHERE ` : ` AND `, filters[i]);
+    }
+    return sql:queryConcat(query, ` ORDER BY d.designation;`);
 }
+
+# Create a career function.
+#
+# + careerFunction - Career function name
+# + createdBy - Email of the admin performing the action
+# + return - Insert query
+isolated function createCareerFunctionQuery(string careerFunction, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO career_function (career_function, created_by, updated_by)
+     VALUES (${careerFunction}, ${createdBy}, ${createdBy});`;
+
+# Update a career function.
+#
+# + id - Career function ID
+# + careerFunction - New name, or nil to leave unchanged
+# + isActive - New active flag, or nil to leave unchanged
+# + updatedBy - Email of the admin performing the action
+# + return - Update query, or NoFieldsToUpdateError when nothing was supplied
+isolated function updateCareerFunctionQuery(int id, string? careerFunction, boolean? isActive, string updatedBy)
+        returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if careerFunction is string {
+        updates.push(`career_function = ${careerFunction}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError("No fields to update");
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = `UPDATE career_function SET `;
+    foreach int i in 0 ..< updates.length() {
+        query = sql:queryConcat(query, i == 0 ? `` : `, `, updates[i]);
+    }
+    return sql:queryConcat(query, ` WHERE id = ${id};`);
+}
+
+# Create a designation.
+#
+# + designation - Designation name
+# + jobBand - Job band, or nil
+# + careerFunctionId - Parent career function ID, or nil for unassigned
+# + createdBy - Email of the admin performing the action
+# + return - Insert query
+isolated function createDesignationQuery(string designation, int? jobBand, int? careerFunctionId, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO designation (designation, job_band, career_function_id, created_by, updated_by)
+     VALUES (${designation}, ${jobBand}, ${careerFunctionId}, ${createdBy}, ${createdBy});`;
+
+# Update a designation.
+#
+# + id - Designation ID
+# + designation - New name, or nil to leave unchanged
+# + jobBand - New job band, or nil to leave unchanged
+# + careerFunctionId - New parent career function ID, or nil to leave unchanged
+# + isActive - New active flag, or nil to leave unchanged
+# + updatedBy - Email of the admin performing the action
+# + return - Update query, or NoFieldsToUpdateError when nothing was supplied
+isolated function updateDesignationQuery(int id, string? designation, int? jobBand, int? careerFunctionId,
+        boolean? isActive, string updatedBy) returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if designation is string {
+        updates.push(`designation = ${designation}`);
+    }
+    if jobBand is int {
+        updates.push(`job_band = ${jobBand}`);
+    }
+    if careerFunctionId is int {
+        updates.push(`career_function_id = ${careerFunctionId}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError("No fields to update");
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = `UPDATE designation SET `;
+    foreach int i in 0 ..< updates.length() {
+        query = sql:queryConcat(query, i == 0 ? `` : `, `, updates[i]);
+    }
+    return sql:queryConcat(query, ` WHERE id = ${id};`);
+}
+
+# Count active employees holding a designation.
+#
+# + id - Designation ID
+# + return - Query counting active employees
+isolated function countActiveEmployeesInDesignationQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee WHERE designation_id = ${id} AND employee_status = 'Active';`;
+
+# Count active employees across a career function's designations.
+#
+# + id - Career function ID
+# + return - Query counting active employees
+isolated function countActiveEmployeesInCareerFunctionQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count
+     FROM employee e
+     JOIN designation d ON d.id = e.designation_id
+     WHERE d.career_function_id = ${id} AND e.employee_status = 'Active';`;
+
+# Count active designations in a career function.
+#
+# + id - Career function ID
+# + return - Query counting active designations
+isolated function countActiveDesignationsInCareerFunctionQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM designation WHERE career_function_id = ${id} AND is_active = 1;`;
 
 # Get companies query.
 #
