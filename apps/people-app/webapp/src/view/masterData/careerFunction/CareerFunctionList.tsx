@@ -14,10 +14,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { alpha, Box, IconButton, Skeleton, Tooltip, Typography, useTheme } from "@mui/material";
+import {
+  alpha,
+  Box,
+  FormControl,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Select,
+  Skeleton,
+  Tooltip,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import ClearIcon from "@mui/icons-material/Clear";
 import EditIcon from "@mui/icons-material/Edit";
-import { useMemo } from "react";
+import SearchIcon from "@mui/icons-material/Search";
+import { useMemo, useState } from "react";
+import { BaseTextField } from "@component/common/FieldInput/BasicFieldInput/BaseTextField";
 import { CareerFunction, Designation } from "@slices/careerFunctionSlice/careerFunction";
 
 const SKELETON_ROW_COUNT = 5;
@@ -43,23 +59,39 @@ export default function CareerFunctionList({
 }: CareerFunctionListProps) {
   const theme = useTheme();
 
-  // Active career functions first, then inactive ones, each group sorted by name.
-  // Mirrors how HierarchyView orders its org-chart columns.
-  const sortedCareerFunctions = useMemo(
-    () =>
-      [...careerFunctions].sort((a, b) => {
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("active");
+
+  // Filter by status and name, then order active career functions first, with each
+  // group sorted by name. Mirrors how HierarchyView orders its org-chart columns.
+  const sortedCareerFunctions = useMemo(() => {
+    const q = searchText.trim().toLowerCase();
+    return careerFunctions
+      .filter((cf) => {
+        if (statusFilter === "active" && !cf.isActive) return false;
+        if (statusFilter === "inactive" && cf.isActive) return false;
+        if (!q) return true;
+        return cf.careerFunction.toLowerCase().includes(q);
+      })
+      .sort((a, b) => {
         if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
         return a.careerFunction.localeCompare(b.careerFunction);
-      }),
-    [careerFunctions],
-  );
+      });
+  }, [careerFunctions, searchText, statusFilter]);
 
   const unassignedCount = useMemo(
     () => designations.filter((d) => d.careerFunctionId === null).length,
     [designations],
   );
 
-  const showUnassigned = designations.some((d) => d.careerFunctionId === null);
+  // The Unassigned pseudo-entry ignores the status filter — orphan designations have no
+  // active/inactive state of their own — but it still respects the search box, so typing
+  // a real career function's name does not leave it dangling at the bottom.
+  const showUnassigned = useMemo(() => {
+    if (!designations.some((d) => d.careerFunctionId === null)) return false;
+    const q = searchText.trim().toLowerCase();
+    return !q || "unassigned".includes(q);
+  }, [designations, searchText]);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
@@ -94,6 +126,59 @@ export default function CareerFunctionList({
         </Tooltip>
       </Box>
 
+      {/* Toolbar */}
+      <Box
+        sx={{
+          px: 1.5,
+          py: 1.25,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          flexShrink: 0,
+        }}
+      >
+        <BaseTextField
+          label="Search"
+          size="small"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          sx={{ width: "100%" }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
+              </InputAdornment>
+            ),
+            endAdornment: searchText ? (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={() => setSearchText("")}
+                  edge="end"
+                  aria-label="Clear search"
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : null,
+          }}
+        />
+        <FormControl size="small" fullWidth>
+          <InputLabel sx={{ fontSize: 15 }}>Status</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Status"
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            sx={{ fontSize: 15 }}
+          >
+            <MenuItem value="all" sx={{ fontSize: 15 }}>All</MenuItem>
+            <MenuItem value="active" sx={{ fontSize: 15 }}>Active</MenuItem>
+            <MenuItem value="inactive" sx={{ fontSize: 15 }}>Inactive</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+
       {/* Body */}
       <Box sx={{ flex: 1, overflowY: "auto" }}>
         {isLoading ? (
@@ -115,7 +200,11 @@ export default function CareerFunctionList({
           ))
         ) : sortedCareerFunctions.length === 0 && !showUnassigned ? (
           <Box sx={{ px: 2, py: 4, textAlign: "center" }}>
-            <Typography sx={{ fontSize: 14, color: "text.disabled" }}>No career functions yet.</Typography>
+            <Typography sx={{ fontSize: 14, color: "text.disabled" }}>
+              {careerFunctions.length === 0
+                ? "No career functions yet."
+                : "No career functions match."}
+            </Typography>
           </Box>
         ) : (
           <>
