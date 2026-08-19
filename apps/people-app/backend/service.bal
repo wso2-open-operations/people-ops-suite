@@ -844,9 +844,12 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get career functions.
     #
-    # + return - Career functions
-    resource function get career\-functions() returns database:CareerFunction[]|http:InternalServerError {
-        database:CareerFunction[]|error careerFunctions = database:getCareerFunctions();
+    # + includeInactive - If true, include inactive career functions
+    # + return - Career functions or HTTP errors
+    resource function get career\-functions(boolean includeInactive = false)
+            returns database:CareerFunction[]|http:InternalServerError {
+
+        database:CareerFunction[]|error careerFunctions = database:getCareerFunctions(includeInactive);
         if careerFunctions is error {
             string customErr = "Error while fetching Career Functions";
             log:printError(customErr, careerFunctions);
@@ -862,11 +865,12 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get designations.
     #
     # + careerFunctionId - Career function ID (optional)
-    # + return - Designations
-    resource function get designations(int? careerFunctionId = ())
-        returns database:Designation[]|http:InternalServerError {
+    # + includeInactive - If true, include inactive designations
+    # + return - Designations or HTTP errors
+    resource function get designations(int? careerFunctionId = (), boolean includeInactive = false)
+            returns database:Designation[]|http:InternalServerError {
 
-        database:Designation[]|error designations = database:getDesignations(careerFunctionId);
+        database:Designation[]|error designations = database:getDesignations(careerFunctionId, includeInactive);
         if designations is error {
             string customErr = "Error while fetching Designations";
             log:printError(customErr, designations);
@@ -2570,6 +2574,179 @@ service http:InterceptableService / on new http:Listener(9090) {
         if updateResult is error {
             log:printError("Error occurred while updating unit", updateResult, id = id);
             return <http:InternalServerError>{body: {message: "Error occurred while updating unit"}};
+        }
+        return http:OK;
+    }
+
+    # Create a career function.
+    #
+    # + ctx - Request context
+    # + payload - Career function creation payload
+    # + return - ID of the new career function, or HTTP errors
+    resource function post career\-functions(http:RequestContext ctx,
+            database:CreateCareerFunctionPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create career function", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage career functions"}};
+        }
+
+        int|error newId = database:createCareerFunction(payload, userInfo.email);
+        if newId is error {
+            string customErr = "Error occurred while creating career function";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a career function.
+    #
+    # + ctx - Request context
+    # + id - Career function ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch career\-functions/[int id](http:RequestContext ctx,
+            database:UpdateCareerFunctionPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update career function", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage career functions"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasDesignations = database:hasActiveDesignationsInCareerFunction(id);
+            if hasDesignations is error {
+                log:printError("Error checking active designations in career function", hasDesignations, id = id);
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while updating career function"}
+                };
+            }
+            if hasDesignations {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Cannot deactivate: this career function still has active designations. " +
+                            "Deactivate them first."
+                    }
+                };
+            }
+
+            boolean|error hasEmployees = database:hasActiveEmployeesInCareerFunction(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in career function", hasEmployees, id = id);
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while updating career function"}
+                };
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees in this career function"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateCareerFunction(id, payload, userInfo.email);
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating career function", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating career function"}};
+        }
+        return http:OK;
+    }
+
+    # Create a designation.
+    #
+    # + ctx - Request context
+    # + payload - Designation creation payload
+    # + return - ID of the new designation, or HTTP errors
+    resource function post designations(http:RequestContext ctx, database:CreateDesignationPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create designation", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage designations"}};
+        }
+
+        int|error newId = database:createDesignation(payload, userInfo.email);
+        if newId is database:DuplicateDesignationError {
+            return <http:BadRequest>{body: {message: newId.message()}};
+        }
+        if newId is error {
+            string customErr = "Error occurred while creating designation";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a designation.
+    #
+    # + ctx - Request context
+    # + id - Designation ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch designations/[int id](http:RequestContext ctx,
+            database:UpdateDesignationPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update designation", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage designations"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInDesignation(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in designation", hasEmployees, id = id);
+                return <http:InternalServerError>{body: {message: "Error occurred while updating designation"}};
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees with this designation"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateDesignation(id, payload, userInfo.email);
+        if updateResult is database:DuplicateDesignationError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating designation", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating designation"}};
         }
         return http:OK;
     }
