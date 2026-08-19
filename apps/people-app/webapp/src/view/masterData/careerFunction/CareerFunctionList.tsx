@@ -43,8 +43,14 @@ export default function CareerFunctionList({
 }: CareerFunctionListProps) {
   const theme = useTheme();
 
+  // Active career functions first, then inactive ones, each group sorted by name.
+  // Mirrors how HierarchyView orders its org-chart columns.
   const sortedCareerFunctions = useMemo(
-    () => [...careerFunctions].sort((a, b) => a.careerFunction.localeCompare(b.careerFunction)),
+    () =>
+      [...careerFunctions].sort((a, b) => {
+        if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+        return a.careerFunction.localeCompare(b.careerFunction);
+      }),
     [careerFunctions],
   );
 

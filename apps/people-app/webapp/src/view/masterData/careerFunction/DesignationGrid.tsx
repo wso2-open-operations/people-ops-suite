@@ -95,12 +95,20 @@ export default function DesignationGrid({
 
   const filteredDesignations = useMemo(() => {
     const q = searchText.trim().toLowerCase();
-    return designations.filter((d) => {
-      if (statusFilter === "active" && !d.isActive) return false;
-      if (statusFilter === "inactive" && d.isActive) return false;
-      if (!q) return true;
-      return d.designation.toLowerCase().includes(q);
-    });
+    return designations
+      .filter((d) => {
+        if (statusFilter === "active" && !d.isActive) return false;
+        if (statusFilter === "inactive" && d.isActive) return false;
+        if (!q) return true;
+        return d.designation.toLowerCase().includes(q);
+      })
+      // Active designations first, then inactive ones, each group sorted by name.
+      // Sorting only reorders rows, so the summary stats derived from this list are
+      // unaffected. The user can still re-sort any column via the DataGrid header.
+      .sort((a, b) => {
+        if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+        return a.designation.localeCompare(b.designation);
+      });
   }, [designations, searchText, statusFilter]);
 
   const totalActiveEmployees = useMemo(
