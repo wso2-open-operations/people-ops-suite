@@ -108,6 +108,12 @@ export default function MasterDataView() {
       icon={<HubIcon />}
       commonPageTabs={[
         {
+          tabTitle: "Hierarchy",
+          tabPath: "org-structure",
+          icon: <AccountTreeIcon />,
+          page: <HierarchyView />,
+        },
+        {
           tabTitle: "Business Units",
           tabPath: "business-units",
           icon: <BusinessIcon />,
@@ -166,12 +172,6 @@ export default function MasterDataView() {
               onUpdate={handleUpdateUnit}
             />
           ),
-        },
-        {
-          tabTitle: "Hierarchy",
-          tabPath: "org-structure",
-          icon: <AccountTreeIcon />,
-          page: <HierarchyView />,
         },
       ]}
     />
