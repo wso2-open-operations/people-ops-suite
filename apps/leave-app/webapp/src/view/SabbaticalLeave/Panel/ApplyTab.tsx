@@ -111,6 +111,7 @@ export default function ApplyTab({
   const [managerApprovalError, setManagerApprovalError] = useState(false);
   const [policyReadError, setPolicyReadError] = useState(false);
   const [resignationAcknowledgeError, setResignationAcknowledgeError] = useState(false);
+  const [sabbaticalEligibilityWarning, setSabbaticalEligibilityWarning] = useState<string>("");
   const [hasFetched, setHasFetched] = useState(false);
   const [sabbaticalEligibilityDurationInYears] = useState(sabbaticalLeaveEligibilityDuration / 365);
   const [sabbaticalMaxApplicationDurationInWeeks] = useState(
@@ -125,9 +126,6 @@ export default function ApplyTab({
   // Check eligibility conditions
   const employmentStartDateDiff =
     todayUtc.diff(dayjs(userInfo?.employmentStartDate).startOf("day"), "day") - 1;
-  const lastSabbaticalLeaveDiff = lastLeaveEndDate
-    ? todayUtc.diff(dayjs(lastLeaveEndDate).startOf("day"), "day") - 1
-    : null;
   const isEmploymentEligible = employmentStartDateDiff >= sabbaticalLeaveEligibilityDuration;
 
   useEffect(() => {
@@ -176,10 +174,6 @@ export default function ApplyTab({
       return;
     }
 
-    const isSabbaticalLeaveEligible =
-      lastSabbaticalLeaveDiff === null ||
-      lastSabbaticalLeaveDiff >= sabbaticalLeaveEligibilityDuration;
-
     let eligible = true;
     let errorMsg;
 
@@ -193,14 +187,6 @@ export default function ApplyTab({
       );
 
       setCanRenderSabbaticalFormField(false);
-    } else if (!isSabbaticalLeaveEligible) {
-      eligible = false;
-      errorMsg = (
-        <>
-          Your last sabbatical leave was taken within the past{" "}
-          {sabbaticalEligibilityDurationInYears} years, making you ineligible. {policyMessage}
-        </>
-      );
     }
 
     if (!eligible) {
@@ -228,32 +214,29 @@ export default function ApplyTab({
     sabbaticalLeaveEligibilityDuration,
   ]);
 
-  // Validate last sabbatical leave end date whenever it changes
+  // Dynamically validate eligibility gap between last sabbatical end date and leave start date
   useEffect(() => {
     if (!sabbaticalEndDateFieldEditable || !lastSabbaticalLeaveEndDate) {
+      setSabbaticalEligibilityWarning("");
+      return;
+    }
+    // If no leave start date yet, clear warning and wait
+    if (!leaveStartDate) {
+      setSabbaticalEligibilityWarning("");
       return;
     }
 
-    const todayUtc = dayjs.utc().startOf("day");
-    const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
-
+    const diffDays = leaveStartDate.startOf("day").diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
     if (diffDays < sabbaticalLeaveEligibilityDuration) {
-      setErrorMessage(
-        `Your last sabbatical leave was taken within the past ${sabbaticalEligibilityDurationInYears} years, making you ineligible.`,
+      setSabbaticalEligibilityWarning(
+        `The leave start date must be at least ${sabbaticalEligibilityDurationInYears} years after the last sabbatical leave end date.`,
       );
-      setEligibilityPayload((prev) => ({
-        ...prev,
-        isEligible: false,
-      }));
     } else {
-      setErrorMessage("");
-      setEligibilityPayload((prev) => ({
-        ...prev,
-        isEligible: true,
-      }));
+      setSabbaticalEligibilityWarning("");
     }
   }, [
     lastSabbaticalLeaveEndDate,
+    leaveStartDate,
     sabbaticalEndDateFieldEditable,
     sabbaticalLeaveEligibilityDuration,
   ]);
@@ -313,13 +296,24 @@ export default function ApplyTab({
       return;
     }
 
-    // Validate last sabbatical leave end date
+    // Validate eligibility duration against the leave request start date
     if (lastSabbaticalLeaveEndDate) {
-      const todayUtc = dayjs.utc().startOf("day");
-      const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
+      const diffDays = leaveStartDate!.startOf("day").diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
       if (diffDays < sabbaticalLeaveEligibilityDuration) {
         enqueueSnackbar(
-          `The last sabbatical leave end date should be at least ${sabbaticalEligibilityDurationInYears} years before today.`,
+          `The last sabbatical leave end date must be at least ${sabbaticalEligibilityDurationInYears} years before the leave start date.`,
+          { variant: "error" },
+        );
+        return;
+      }
+    } else if (userInfo?.employmentStartDate) {
+      // No prior sabbatical — check employment start date against leave start date
+      const diffDays = leaveStartDate!.startOf("day").diff(
+        dayjs(userInfo.employmentStartDate).startOf("day"), "day"
+      ) - 1;
+      if (diffDays < sabbaticalLeaveEligibilityDuration) {
+        enqueueSnackbar(
+          `You must be employed for at least ${sabbaticalEligibilityDurationInYears} years before the leave start date.`,
           { variant: "error" },
         );
         return;
@@ -440,6 +434,11 @@ export default function ApplyTab({
                 />
               )}
             </Stack>
+            {sabbaticalEligibilityWarning && (
+              <Alert variant="outlined" severity="warning">
+                {sabbaticalEligibilityWarning}
+              </Alert>
+            )}
             {!eligibilityPayload?.isEligible && (
               <Alert variant="outlined" severity="warning">
                 {errorMessage}
