@@ -50,18 +50,19 @@ public type PromotionRecord record {|
     string currentJobBand;
     # Job band granted by the promotion
     string nextJobBand;
-    # Job role at the time of promotion
-    string jobRole;
+    # Job role at the time of promotion. Nullable in HRIS.
+    string? jobRole;
     # Type of promotion
     string promotionType;
     # Name of the promotion cycle
     string cycleName;
     # Business unit at the time of promotion
     string businessUnit;
-    # Department at the time of promotion
-    string department;
-    # Team at the time of promotion
-    string team;
-    # Sub-team at the time of promotion
-    string subTeam;
+    # Department at the time of promotion. Nullable in HRIS.
+    string? department;
+    # Team at the time of promotion. Nullable in HRIS.
+    string? team;
+    # Sub-team at the time of promotion. Nullable in HRIS: this is the field a
+    # production row first tripped over, aborting the whole result stream.
+    string? subTeam;
 |};

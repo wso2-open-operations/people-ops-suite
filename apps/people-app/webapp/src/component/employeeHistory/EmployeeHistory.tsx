@@ -383,7 +383,9 @@ const EventRow = ({ row }: { row: TimelineRow }) => {
                       : []),
                     ["Type", row.promotion.promotionType],
                     ["Role", row.promotion.jobRole],
-                  ] as [string, string][]
+                    // jobRole is nullable in HRIS; the `dd || "-"` fallback
+                    // below is what renders a missing one.
+                  ] as [string, string | null][]
                 ).map(([dt, dd]) => (
                   <Box key={dt} sx={{ display: "flex", gap: 0.75 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>

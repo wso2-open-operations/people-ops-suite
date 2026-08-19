@@ -49,13 +49,15 @@ export interface PromotionRecord {
   createdOn: string;
   currentJobBand: string;
   nextJobBand: string;
-  jobRole: string;
+  // Nullable in HRIS, so nullable here: only businessUnit, the job bands, the
+  // promotion type and the cycle name are guaranteed by that schema.
+  jobRole: string | null;
   promotionType: string;
   cycleName: string;
   businessUnit: string;
-  department: string;
-  team: string;
-  subTeam: string;
+  department: string | null;
+  team: string | null;
+  subTeam: string | null;
 }
 
 export interface EmploymentPeriod {
