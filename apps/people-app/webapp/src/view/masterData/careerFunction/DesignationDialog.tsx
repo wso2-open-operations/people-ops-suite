@@ -129,12 +129,20 @@ export default function DesignationDialog({
   const resolvedCareerFunctionIdForCheck =
     formik.values.careerFunctionId === UNASSIGNED_VALUE ? null : Number(formik.values.careerFunctionId);
 
-  const duplicate = isDuplicateDesignationName(
-    formik.values.designation,
-    resolvedCareerFunctionIdForCheck,
-    allDesignations,
-    designation?.id,
-  );
+  // The DB unique index (`uk_active_designation_per_career_function`) only covers
+  // ACTIVE rows, so a name collision cannot occur when this row is being deactivated.
+  // Blocking submission here would also make pre-existing duplicate active rows
+  // (which the index migration may have found in production data) unfixable through
+  // the UI, since deactivating one of them is the normal way to resolve the conflict.
+  const willBeActive = !isEdit || formik.values.isActive;
+  const duplicate =
+    willBeActive &&
+    isDuplicateDesignationName(
+      formik.values.designation,
+      resolvedCareerFunctionIdForCheck,
+      allDesignations,
+      designation?.id,
+    );
 
   const nameError = duplicate
     ? "An active designation with this name already exists in this career function."

@@ -57,4 +57,8 @@ describe("isDuplicateDesignationName", () => {
   it("returns false for an empty name", () => {
     expect(isDuplicateDesignationName("   ", 10, rows)).toBe(false);
   });
+
+  it("still reports a duplicate when the colliding row is active, regardless of the candidate's own state", () => {
+    expect(isDuplicateDesignationName("Software Engineer", 10, rows)).toBe(true);
+  });
 });
