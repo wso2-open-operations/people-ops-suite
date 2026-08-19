@@ -237,9 +237,11 @@ public isolated function getFullOrganizationStructure() returns OrgStructureBusi
 
 # Get career functions.
 #
+# + includeInactive - If true, return all rows including inactive; otherwise active-only
 # + return - Career functions
-public isolated function getCareerFunctions() returns CareerFunction[]|error {
-    stream<CareerFunction, error?> careerFunctionStream = databaseClient->query(getCareerFunctionsQuery());
+public isolated function getCareerFunctions(boolean includeInactive = false) returns CareerFunction[]|error {
+    stream<CareerFunction, error?> careerFunctionStream =
+        databaseClient->query(getCareerFunctionsQuery(includeInactive));
     return from CareerFunction careerFunction in careerFunctionStream
         select careerFunction;
 }
@@ -247,11 +249,119 @@ public isolated function getCareerFunctions() returns CareerFunction[]|error {
 # Get designations.
 #
 # + careerFunctionId - Career function ID (optional)
+# + includeInactive - If true, return all rows including inactive; otherwise active-only
 # + return - Designations
-public isolated function getDesignations(int? careerFunctionId = ()) returns Designation[]|error {
-    stream<Designation, error?> designationStream = databaseClient->query(getDesignationsQuery(careerFunctionId));
+public isolated function getDesignations(int? careerFunctionId = (), boolean includeInactive = false)
+        returns Designation[]|error {
+
+    stream<Designation, error?> designationStream =
+        databaseClient->query(getDesignationsQuery(careerFunctionId, includeInactive));
     return from Designation designation in designationStream
         select designation;
+}
+
+# Create a career function.
+#
+# + payload - Career function creation payload
+# + createdBy - Email of the admin performing the action
+# + return - ID of the newly created career function, or error
+public isolated function createCareerFunction(CreateCareerFunctionPayload payload, string createdBy)
+        returns int|error {
+
+    sql:ExecutionResult result = check databaseClient->execute(
+        createCareerFunctionQuery(payload.careerFunction, createdBy));
+    return check result.lastInsertId.ensureType(int);
+}
+
+# Update a career function.
+#
+# + id - Career function ID
+# + payload - Update payload (all fields optional)
+# + updatedBy - Email of the admin performing the action
+# + return - Nil, EntityNotFoundError, NoFieldsToUpdateError, or error
+public isolated function updateCareerFunction(int id, UpdateCareerFunctionPayload payload, string updatedBy)
+        returns error? {
+
+    sql:ParameterizedQuery query =
+        check updateCareerFunctionQuery(id, payload.careerFunction, payload.isActive, updatedBy);
+
+    sql:ExecutionResult result = check databaseClient->execute(query);
+    if result.affectedRowCount == 0 {
+        return error EntityNotFoundError(string `Career function with ID ${id} not found`);
+    }
+}
+
+# Create a designation.
+#
+# + payload - Designation creation payload
+# + createdBy - Email of the admin performing the action
+# + return - ID of the new designation, DuplicateDesignationError on a unique-index
+#            violation, or error
+public isolated function createDesignation(CreateDesignationPayload payload, string createdBy) returns int|error {
+    sql:ExecutionResult|error result = databaseClient->execute(
+        createDesignationQuery(payload.designation, payload.jobBand, payload.careerFunctionId, createdBy));
+
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateDesignationError(
+            "An active designation with this name already exists in this career function.");
+    }
+    if result is error {
+        return result;
+    }
+    return check result.lastInsertId.ensureType(int);
+}
+
+# Update a designation.
+#
+# + id - Designation ID
+# + payload - Update payload (all fields optional)
+# + updatedBy - Email of the admin performing the action
+# + return - Nil, EntityNotFoundError, NoFieldsToUpdateError, DuplicateDesignationError,
+#            or error
+public isolated function updateDesignation(int id, UpdateDesignationPayload payload, string updatedBy)
+        returns error? {
+
+    sql:ParameterizedQuery query = check updateDesignationQuery(id, payload.designation, payload.jobBand,
+            payload.careerFunctionId, payload.isActive, updatedBy);
+
+    sql:ExecutionResult|error result = databaseClient->execute(query);
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateDesignationError(
+            "An active designation with this name already exists in this career function.");
+    }
+    if result is error {
+        return result;
+    }
+    if result.affectedRowCount == 0 {
+        return error EntityNotFoundError(string `Designation with ID ${id} not found`);
+    }
+}
+
+# Check whether any active employees hold a designation.
+#
+# + id - Designation ID
+# + return - True if active employees exist, false otherwise, or error
+public isolated function hasActiveEmployeesInDesignation(int id) returns boolean|error {
+    record {int count;} result = check databaseClient->queryRow(countActiveEmployeesInDesignationQuery(id));
+    return result.count > 0;
+}
+
+# Check whether any active employees sit in a career function's designations.
+#
+# + id - Career function ID
+# + return - True if active employees exist, false otherwise, or error
+public isolated function hasActiveEmployeesInCareerFunction(int id) returns boolean|error {
+    record {int count;} result = check databaseClient->queryRow(countActiveEmployeesInCareerFunctionQuery(id));
+    return result.count > 0;
+}
+
+# Check whether a career function still has active designations.
+#
+# + id - Career function ID
+# + return - True if active designations exist, false otherwise, or error
+public isolated function hasActiveDesignationsInCareerFunction(int id) returns boolean|error {
+    record {int count;} result = check databaseClient->queryRow(countActiveDesignationsInCareerFunctionQuery(id));
+    return result.count > 0;
 }
 
 # Get companies.
