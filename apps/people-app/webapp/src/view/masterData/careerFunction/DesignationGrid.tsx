@@ -93,23 +93,6 @@ export default function DesignationGrid({
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("active");
 
-  const totalActiveEmployees = useMemo(
-    () => designations.reduce((sum, d) => sum + d.activeEmployeeCount, 0),
-    [designations],
-  );
-
-  const jobBandRange = useMemo(() => {
-    const bands = designations
-      .map((d) => d.jobBand)
-      .filter((band): band is number => band !== null);
-    if (bands.length === 0) return "—";
-    const distinctBands = Array.from(new Set(bands));
-    if (distinctBands.length === 1) return `${distinctBands[0]}`;
-    const min = Math.min(...bands);
-    const max = Math.max(...bands);
-    return `${min}–${max}`;
-  }, [designations]);
-
   const filteredDesignations = useMemo(() => {
     const q = searchText.trim().toLowerCase();
     return designations.filter((d) => {
@@ -119,6 +102,23 @@ export default function DesignationGrid({
       return d.designation.toLowerCase().includes(q);
     });
   }, [designations, searchText, statusFilter]);
+
+  const totalActiveEmployees = useMemo(
+    () => filteredDesignations.reduce((sum, d) => sum + d.activeEmployeeCount, 0),
+    [filteredDesignations],
+  );
+
+  const jobBandRange = useMemo(() => {
+    const bands = filteredDesignations
+      .map((d) => d.jobBand)
+      .filter((band): band is number => band !== null);
+    if (bands.length === 0) return "—";
+    const distinctBands = Array.from(new Set(bands));
+    if (distinctBands.length === 1) return `${distinctBands[0]}`;
+    const min = Math.min(...bands);
+    const max = Math.max(...bands);
+    return `${min}–${max}`;
+  }, [filteredDesignations]);
 
   const columns: GridColDef<Designation>[] = useMemo(
     () => [
@@ -208,7 +208,7 @@ export default function DesignationGrid({
           {careerFunctionName}
         </Typography>
         <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-          {designations.length} designations · {totalActiveEmployees} active employees
+          {filteredDesignations.length} designations · {totalActiveEmployees} active employees
         </Typography>
       </Box>
 
@@ -219,7 +219,7 @@ export default function DesignationGrid({
             Designations
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            {designations.length}
+            {filteredDesignations.length}
           </Typography>
         </Box>
         <Box>
