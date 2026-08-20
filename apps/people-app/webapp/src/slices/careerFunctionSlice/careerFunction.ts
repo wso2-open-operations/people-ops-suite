@@ -81,14 +81,20 @@ export interface UpdateDesignationPayload {
 interface CareerFunctionState {
   careerFunctions: CareerFunction[];
   designations: Designation[];
-  state: State;
+  // Tracked separately: the page fetches both lists concurrently, and a single shared
+  // field would flip to `success` as soon as the faster one resolved — letting consumers
+  // render against a list that is still in flight. Mirrors masterDataSlice, which splits
+  // entitiesState and orgStructureState for the same reason.
+  careerFunctionsState: State;
+  designationsState: State;
   stateMessage: string | null;
 }
 
 const initialState: CareerFunctionState = {
   careerFunctions: [],
   designations: [],
-  state: State.idle,
+  careerFunctionsState: State.idle,
+  designationsState: State.idle,
   stateMessage: null,
 };
 
@@ -233,29 +239,29 @@ const careerFunctionSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchCareerFunctions.pending, (state) => {
-        state.state = State.loading;
+        state.careerFunctionsState = State.loading;
         state.stateMessage = "Fetching career functions...";
       })
       .addCase(fetchCareerFunctions.fulfilled, (state, action) => {
-        state.state = State.success;
+        state.careerFunctionsState = State.success;
         state.stateMessage = null;
         state.careerFunctions = action.payload;
       })
       .addCase(fetchCareerFunctions.rejected, (state) => {
-        state.state = State.failed;
+        state.careerFunctionsState = State.failed;
         state.stateMessage = "Failed to fetch career functions";
       })
       .addCase(fetchDesignations.pending, (state) => {
-        state.state = State.loading;
+        state.designationsState = State.loading;
         state.stateMessage = "Fetching designations...";
       })
       .addCase(fetchDesignations.fulfilled, (state, action) => {
-        state.state = State.success;
+        state.designationsState = State.success;
         state.stateMessage = null;
         state.designations = action.payload;
       })
       .addCase(fetchDesignations.rejected, (state) => {
-        state.state = State.failed;
+        state.designationsState = State.failed;
         state.stateMessage = "Failed to fetch designations";
       });
   },
@@ -263,6 +269,9 @@ const careerFunctionSlice = createSlice({
 
 export const selectCareerFunctions = (state: RootState) => state.careerFunction.careerFunctions;
 export const selectDesignations = (state: RootState) => state.careerFunction.designations;
-export const selectCareerFunctionState = (state: RootState) => state.careerFunction.state;
+export const selectCareerFunctionsState = (state: RootState) =>
+  state.careerFunction.careerFunctionsState;
+export const selectDesignationsState = (state: RootState) =>
+  state.careerFunction.designationsState;
 
 export default careerFunctionSlice.reducer;

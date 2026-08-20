@@ -31,7 +31,8 @@ import {
   createDesignation,
   fetchCareerFunctions,
   fetchDesignations,
-  selectCareerFunctionState,
+  selectCareerFunctionsState,
+  selectDesignationsState,
   selectCareerFunctions,
   selectDesignations,
   updateCareerFunction,
@@ -45,11 +46,14 @@ import DesignationDialog from "./DesignationDialog";
 export default function CareerFunctionView() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const loadingState = useAppSelector(selectCareerFunctionState);
+  const careerFunctionsState = useAppSelector(selectCareerFunctionsState);
+  const designationsState = useAppSelector(selectDesignationsState);
   const careerFunctions = useAppSelector(selectCareerFunctions);
   const designations = useAppSelector(selectDesignations);
 
-  const isLoading = loadingState === State.loading;
+  // Either list still in flight counts as loading — the screen needs both.
+  const isLoading =
+    careerFunctionsState === State.loading || designationsState === State.loading;
 
   // undefined = nothing chosen yet (initial, before data loads)
   // null      = the "Unassigned" pseudo-entry is selected
@@ -73,7 +77,7 @@ export default function CareerFunctionView() {
 
   useEffect(() => {
     if (selectedId !== undefined) return;
-    if (loadingState !== State.success) return;
+    if (careerFunctionsState !== State.success || designationsState !== State.success) return;
 
     // Prefer the first active career function; fall back to the Unassigned group, then to
     // any inactive career function. The last case matters now that the status filter
@@ -95,7 +99,7 @@ export default function CareerFunctionView() {
     if (inactive.length > 0) {
       setSelectedId(inactive[0].id);
     }
-  }, [selectedId, loadingState, careerFunctions, designations]);
+  }, [selectedId, careerFunctionsState, designationsState, careerFunctions, designations]);
 
   const visibleDesignations = useMemo(
     // `undefined` means no selection has been resolved yet. Guard it explicitly: without
