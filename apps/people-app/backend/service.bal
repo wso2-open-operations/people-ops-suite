@@ -19,10 +19,10 @@ import people.database;
 import people.promotion;
 import people.qr;
 import people.wso2_coin;
-// Temporarily disabled together with the Asgardeo/SCIM provisioning blocks in the onboarding
-// handlers below (see the NOTE there). Re-enable these imports when provisioning is restored.
+import people.scim;
+// `email` stays disabled together with the Asgardeo/SCIM employment-type/team provisioning
+// blocks in the onboarding handlers below (see the NOTE there). Re-enable when that's restored.
 // import people.email;
-// import people.scim;
 
 import ballerina/http;
 import ballerina/log;
@@ -1157,6 +1157,42 @@ service http:InterceptableService / on new http:Listener(9090) {
         //     created += 1;
         // }
 
+        // Org-hierarchy IDP group assignment (Unit -> Sub-Team -> Team -> Business Unit fallback),
+        // independent of the disabled employment-type/team SCIM block above.
+        foreach ResolvedEmployee emp in payloadResult.employees {
+            string[]|error hierarchyGroupNames = database:getAsgardeoGroupsByHierarchy(
+                    emp.payload.businessUnitId, emp.payload.teamId, emp.payload.subTeamId, emp.payload.unitId);
+            if hierarchyGroupNames is error {
+                log:printError("Failed to fetch Asgardeo groups for org hierarchy during bulk onboarding; " +
+                        "skipping hierarchy group assignment",
+                        hierarchyGroupNames, workEmail = emp.payload.workEmail, employeeId = emp.employeeId,
+                        businessUnitId = emp.payload.businessUnitId, teamId = emp.payload.teamId,
+                        subTeamId = emp.payload.subTeamId, unitId = emp.payload.unitId);
+                continue;
+            }
+
+            string[] failedHierarchyGroups = [];
+            foreach string groupName in hierarchyGroupNames {
+                scim:AddUsersToGroupResponse|error addResult =
+                        scim:addUserToGroup(groupName, emp.payload.workEmail);
+                if addResult is error || addResult.failedUsers.length() > 0 {
+                    log:printError("Failed to add user to Asgardeo group via org-hierarchy assignment " +
+                            "during bulk onboarding",
+                                addResult is error ? addResult : (),
+                            workEmail = emp.payload.workEmail, group = groupName, employeeId = emp.employeeId,
+                            failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
+                    failedHierarchyGroups.push(groupName);
+                }
+            }
+            if failedHierarchyGroups.length() > 0 {
+                groupAssignmentWarnings.push({
+                    employeeId: emp.employeeId,
+                    workEmail: emp.payload.workEmail,
+                    failedGroups: failedHierarchyGroups
+                });
+            }
+        }
+
         return {
             created,
             skipped: firstPass.skipped,
@@ -1383,10 +1419,41 @@ service http:InterceptableService / on new http:Listener(9090) {
         //         hasGroupAssignmentWarning: true
         //     };
         // }
+
+        // Org-hierarchy IDP group assignment (Unit -> Sub-Team -> Team -> Business Unit fallback).
+        // Resolves whichever of the 4 hierarchy levels has idp_groups configured for this employee's
+        // placement (most specific level wins) and assigns the user to those Asgardeo groups.
+        boolean hierarchyGroupAssignmentWarning = false;
+        string[]|error hierarchyGroupNames = database:getAsgardeoGroupsByHierarchy(
+                payload.businessUnitId, payload.teamId, payload.subTeamId, payload.unitId);
+        if hierarchyGroupNames is error {
+            log:printError("Failed to fetch Asgardeo groups for org hierarchy; skipping hierarchy group assignment",
+                    hierarchyGroupNames, workEmail = payload.workEmail, employeeId = employeeId,
+                    businessUnitId = payload.businessUnitId, teamId = payload.teamId,
+                    subTeamId = payload.subTeamId, unitId = payload.unitId);
+            hierarchyGroupAssignmentWarning = true;
+        } else {
+            string[] failedHierarchyGroups = [];
+            foreach string groupName in hierarchyGroupNames {
+                scim:AddUsersToGroupResponse|error addResult =
+                        scim:addUserToGroup(groupName, payload.workEmail);
+                if addResult is error || addResult.failedUsers.length() > 0 {
+                    log:printError("Failed to add user to Asgardeo group via org-hierarchy assignment",
+                                addResult is error ? addResult : (),
+                            workEmail = payload.workEmail, group = groupName, employeeId = employeeId,
+                            failedUsers = addResult is scim:AddUsersToGroupResponse ? addResult.failedUsers : ());
+                    failedHierarchyGroups.push(groupName);
+                }
+            }
+            if failedHierarchyGroups.length() > 0 {
+                hierarchyGroupAssignmentWarning = true;
+            }
+        }
+
         return {
             employeeId: newEmployeeId,
-            message: "Employee created successfully!",
-            hasGroupAssignmentWarning: false
+            message: hierarchyGroupAssignmentWarning ? WARNING_GROUP_ASSIGNMENT_FAILED : "Employee created successfully!",
+            hasGroupAssignmentWarning: hierarchyGroupAssignmentWarning
         };
     }
 
@@ -2843,9 +2910,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if updateResult is database:EntityNotFoundError {
             return <http:NotFound>{body: {message: updateResult.message()}};
         }
-        if updateResult is database:NoFieldsToUpdateError {
-            return <http:BadRequest>{body: {message: updateResult.message()}};
-        }
+        if updateResult is database:NoFieldsToUpdateError { return <http:BadRequest>{body: {message: updateResult.message()}}; }
         if updateResult is error {
             log:printError("Error occurred while updating business unit team sub-team unit mapping",
                 updateResult, id = id);
