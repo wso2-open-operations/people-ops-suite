@@ -60,7 +60,9 @@ export default function CareerFunctionList({
   const theme = useTheme();
 
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("active");
+  // Default to "all" so inactive entries are visible without changing the filter; they
+  // sort below the active ones rather than being hidden.
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   // Filter by status and name, then order active career functions first, with each
   // group sorted by name. Mirrors how HierarchyView orders its org-chart columns.

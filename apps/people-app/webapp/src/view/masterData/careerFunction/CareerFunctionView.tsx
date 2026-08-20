@@ -75,14 +75,25 @@ export default function CareerFunctionView() {
     if (selectedId !== undefined) return;
     if (loadingState !== State.success) return;
 
-    const activeCareerFunctions = [...careerFunctions]
-      .filter((cf) => cf.isActive)
-      .sort((a, b) => a.careerFunction.localeCompare(b.careerFunction));
+    // Prefer the first active career function; fall back to the Unassigned group, then to
+    // any inactive career function. The last case matters now that the status filter
+    // defaults to "all": without it nothing would be selected in an all-inactive org, and
+    // `selectedId ?? null` would then list the orphans under an empty header.
+    const byName = (a: CareerFunction, b: CareerFunction) =>
+      a.careerFunction.localeCompare(b.careerFunction);
+    const active = careerFunctions.filter((cf) => cf.isActive).sort(byName);
 
-    if (activeCareerFunctions.length > 0) {
-      setSelectedId(activeCareerFunctions[0].id);
-    } else if (designations.some((d) => d.careerFunctionId === null)) {
+    if (active.length > 0) {
+      setSelectedId(active[0].id);
+      return;
+    }
+    if (designations.some((d) => d.careerFunctionId === null)) {
       setSelectedId(null);
+      return;
+    }
+    const inactive = [...careerFunctions].sort(byName);
+    if (inactive.length > 0) {
+      setSelectedId(inactive[0].id);
     }
   }, [selectedId, loadingState, careerFunctions, designations]);
 
