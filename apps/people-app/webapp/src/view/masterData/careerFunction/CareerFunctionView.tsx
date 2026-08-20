@@ -98,7 +98,13 @@ export default function CareerFunctionView() {
   }, [selectedId, loadingState, careerFunctions, designations]);
 
   const visibleDesignations = useMemo(
-    () => designations.filter((d) => d.careerFunctionId === (selectedId ?? null)),
+    // `undefined` means no selection has been resolved yet. Guard it explicitly: without
+    // this, `selectedId ?? null` would collapse to null on the first render and briefly
+    // list the Unassigned designations under an empty header.
+    () =>
+      selectedId === undefined
+        ? []
+        : designations.filter((d) => d.careerFunctionId === selectedId),
     [designations, selectedId],
   );
 

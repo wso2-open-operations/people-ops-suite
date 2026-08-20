@@ -37,14 +37,18 @@ import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { useMemo, useState } from "react";
-import { DEFAULT_LIMIT_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
+import { PAGE_SIZE_OPTIONS } from "@config/constant";
 import { Designation } from "@slices/careerFunctionSlice/careerFunction";
+
+// Enough placeholder rows to fill a typical viewport while loading. Deliberately not
+// tied to the page size (25) — that many skeleton rows would overflow the screen.
+const SKELETON_ROW_COUNT = 10;
 
 function SkeletonOverlay() {
   const theme = useTheme();
   return (
     <Box sx={{ width: "100%", pb: 1 }}>
-      {Array.from({ length: DEFAULT_LIMIT_VALUE }).map((_, i) => (
+      {Array.from({ length: SKELETON_ROW_COUNT }).map((_, i) => (
         <Box
           key={i}
           sx={{
@@ -242,7 +246,11 @@ export default function DesignationGrid({
           {careerFunctionName}
         </Typography>
         <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-          {filteredDesignations.length} designations · {totalActiveEmployees} active employees
+          {/* Held back while loading: the slice keeps the previous rows during a
+              refresh, so these would show stale counts above a skeleton table. */}
+          {isLoading
+            ? "—"
+            : `${filteredDesignations.length} designations · ${totalActiveEmployees} active employees`}
         </Typography>
       </Box>
 
@@ -253,7 +261,7 @@ export default function DesignationGrid({
             Designations
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            {filteredDesignations.length}
+            {isLoading ? "—" : filteredDesignations.length}
           </Typography>
         </Box>
         <Box>
@@ -261,7 +269,7 @@ export default function DesignationGrid({
             Active Employees
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            {totalActiveEmployees}
+            {isLoading ? "—" : totalActiveEmployees}
           </Typography>
         </Box>
         <Box>
@@ -269,7 +277,7 @@ export default function DesignationGrid({
             Job Bands
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-            {jobBandRange}
+            {isLoading ? "—" : jobBandRange}
           </Typography>
         </Box>
       </Box>
@@ -378,7 +386,11 @@ export default function DesignationGrid({
               fontWeight: 700,
             },
             "& .MuiDataGrid-virtualScroller": {
-              ...(isLoading && { minHeight: `${DEFAULT_LIMIT_VALUE * 52}px !important` }),
+              // No fixed reserve while loading: the grid already fills a height:100%
+              // flex container, and a row-count-derived min-height would either
+              // under-reserve (page size is 25, not DEFAULT_LIMIT_VALUE) or overflow
+              // the viewport. Letting it fill avoids a jump when rows arrive.
+              ...(isLoading && { minHeight: "100% !important" }),
             },
             "& .MuiDataGrid-cell": {
               display: "flex",

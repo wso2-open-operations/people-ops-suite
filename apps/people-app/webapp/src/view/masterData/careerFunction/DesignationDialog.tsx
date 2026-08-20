@@ -60,10 +60,13 @@ const validationSchema = Yup.object({
     .trim()
     .required("Name is required")
     .max(150, "Name must be at most 150 characters"),
+  // Job band is optional: null (blank) or any non-negative integer, 0 included.
+  // Negatives are rejected because JOB_BAND_CLEAR_SENTINEL is -1 — accepting it as a
+  // real band would clear the column instead of setting it.
   jobBand: Yup.number()
     .nullable()
     .integer("Job band must be a whole number")
-    .min(1, "Job band must be at least 1"),
+    .min(0, "Job band cannot be negative"),
   careerFunctionId: Yup.string(),
 });
 
