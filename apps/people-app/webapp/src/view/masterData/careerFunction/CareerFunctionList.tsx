@@ -266,22 +266,16 @@ export default function CareerFunctionList({
             {sortedCareerFunctions.map((cf) => {
               const selected = selectedId === cf.id;
               return (
+                // The row is a plain container. The selectable area and the edit control
+                // are SIBLING buttons inside it — nesting a button in a button is invalid
+                // HTML and makes click/keyboard delegation browser-dependent.
                 <Box
                   key={cf.id}
-                  component="button"
-                  type="button"
-                  onClick={() => onSelect(cf.id)}
                   sx={{
-                    all: "unset",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
-                    width: "100%",
-                    boxSizing: "border-box",
                     minHeight: 52,
-                    pl: 2,
                     pr: 0.5,
-                    cursor: "pointer",
                     borderBottom: `1px solid ${theme.palette.divider}`,
                     borderLeft: selected
                       ? `3px solid ${theme.palette.primary.main}`
@@ -291,7 +285,9 @@ export default function CareerFunctionList({
                       : alpha(theme.palette.background.paper, 0.5),
                     transition: "background-color 0.2s ease",
                     "&:hover": {
-                      backgroundColor: selected ? theme.palette.action.focus : theme.palette.action.hover,
+                      backgroundColor: selected
+                        ? theme.palette.action.focus
+                        : theme.palette.action.hover,
                       "& .career-function-actions": { opacity: 1 },
                     },
                     // Keyboard users tabbing to the edit button would otherwise land on an
@@ -299,53 +295,73 @@ export default function CareerFunctionList({
                     "&:focus-within .career-function-actions": { opacity: 1 },
                   }}
                 >
-                  <Typography
-                    title={cf.careerFunction}
+                  <Box
+                    component="button"
+                    type="button"
+                    onClick={() => onSelect(cf.id)}
+                    aria-pressed={selected}
                     sx={{
+                      all: "unset",
+                      display: "flex",
+                      alignItems: "center",
                       flex: 1,
                       minWidth: 0,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      fontSize: 14,
-                      fontWeight: selected ? 600 : 400,
-                      color: cf.isActive ? theme.palette.text.primary : theme.palette.text.disabled,
-                      textDecoration: cf.isActive ? "none" : "line-through",
+                      alignSelf: "stretch",
+                      pl: 2,
+                      cursor: "pointer",
+                      boxSizing: "border-box",
                     }}
                   >
-                    {cf.careerFunction}
-                  </Typography>
-                  <Typography
-                    title={`${cf.activeEmployeeCount} active employee${
-                      cf.activeEmployeeCount === 1 ? "" : "s"
-                    }`}
+                    <Typography
+                      title={cf.careerFunction}
+                      sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        textAlign: "left",
+                        fontSize: 14,
+                        fontWeight: selected ? 600 : 400,
+                        color: cf.isActive ? theme.palette.text.primary : theme.palette.text.disabled,
+                        textDecoration: cf.isActive ? "none" : "line-through",
+                      }}
+                    >
+                      {cf.careerFunction}
+                    </Typography>
+                    <Typography
+                      title={`${cf.activeEmployeeCount} active employee${
+                        cf.activeEmployeeCount === 1 ? "" : "s"
+                      }`}
+                      sx={{
+                        flexShrink: 0,
+                        ml: 1,
+                        minWidth: 28,
+                        textAlign: "right",
+                        fontVariantNumeric: "tabular-nums",
+                        fontSize: 13,
+                        color: cf.activeEmployeeCount
+                          ? theme.palette.text.secondary
+                          : theme.palette.text.disabled,
+                      }}
+                    >
+                      {cf.activeEmployeeCount}
+                    </Typography>
+                  </Box>
+                  <Box
+                    className="career-function-actions"
                     sx={{
                       flexShrink: 0,
                       ml: 1,
-                      minWidth: 28,
-                      textAlign: "right",
-                      fontVariantNumeric: "tabular-nums",
-                      fontSize: 13,
-                      color: cf.activeEmployeeCount
-                        ? theme.palette.text.secondary
-                        : theme.palette.text.disabled,
+                      opacity: selected ? 1 : 0,
+                      transition: "opacity 0.15s",
                     }}
-                  >
-                    {cf.activeEmployeeCount}
-                  </Typography>
-                  <Box
-                    className="career-function-actions"
-                    sx={{ opacity: selected ? 1 : 0, transition: "opacity 0.15s" }}
-                    onClick={(e) => e.stopPropagation()}
                   >
                     <Tooltip title="Edit" arrow>
                       <IconButton
                         size="small"
                         aria-label={`Edit ${cf.careerFunction}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(cf);
-                        }}
+                        onClick={() => onEdit(cf)}
                       >
                         <EditIcon sx={{ fontSize: 15 }} />
                       </IconButton>

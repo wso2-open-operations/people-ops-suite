@@ -322,7 +322,12 @@ export default function DesignationGrid({
               ),
               endAdornment: searchText ? (
                 <InputAdornment position="end">
-                  <IconButton size="small" onClick={() => setSearchText("")} edge="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => setSearchText("")}
+                    edge="end"
+                    aria-label="Clear search"
+                  >
                     <ClearIcon fontSize="small" />
                   </IconButton>
                 </InputAdornment>

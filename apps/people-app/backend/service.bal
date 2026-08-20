@@ -844,10 +844,26 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get career functions.
     #
-    # + includeInactive - If true, include inactive career functions
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
+    # + includeInactive - If true return all including inactive (ADMIN-only)
     # + return - Career functions or HTTP errors
-    resource function get career\-functions(boolean includeInactive = false)
-            returns database:CareerFunction[]|http:InternalServerError {
+    resource function get career\-functions(http:RequestContext ctx, boolean includeInactive = false)
+            returns database:CareerFunction[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive career functions",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive career functions"}
+                };
+            }
+        }
 
         database:CareerFunction[]|error careerFunctions = database:getCareerFunctions(includeInactive);
         if careerFunctions is error {
@@ -864,11 +880,28 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get designations.
     #
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
     # + careerFunctionId - Career function ID (optional)
-    # + includeInactive - If true, include inactive designations
+    # + includeInactive - If true return all including inactive (ADMIN-only)
     # + return - Designations or HTTP errors
-    resource function get designations(int? careerFunctionId = (), boolean includeInactive = false)
-            returns database:Designation[]|http:InternalServerError {
+    resource function get designations(http:RequestContext ctx, int? careerFunctionId = (),
+            boolean includeInactive = false)
+            returns database:Designation[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive designations",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive designations"}
+                };
+            }
+        }
 
         database:Designation[]|error designations = database:getDesignations(careerFunctionId, includeInactive);
         if designations is error {
@@ -2686,7 +2719,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error newId = database:createDesignation(payload, userInfo.email);
-        if newId is database:DuplicateDesignationError {
+        if newId is database:DuplicateDesignationError || newId is database:UnknownCareerFunctionError {
             return <http:BadRequest>{body: {message: newId.message()}};
         }
         if newId is error {
@@ -2731,7 +2764,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? updateResult = database:updateDesignation(id, payload, userInfo.email);
-        if updateResult is database:DuplicateDesignationError {
+        if updateResult is database:DuplicateDesignationError
+                || updateResult is database:UnknownCareerFunctionError {
             return <http:BadRequest>{body: {message: updateResult.message()}};
         }
         if updateResult is database:EntityNotFoundError {

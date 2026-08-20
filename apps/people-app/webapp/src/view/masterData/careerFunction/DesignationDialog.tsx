@@ -28,6 +28,7 @@ import {
   Tooltip,
   useTheme,
 } from "@mui/material";
+import { useMemo } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { BaseTextField } from "@component/common/FieldInput/BasicFieldInput/BaseTextField";
@@ -151,14 +152,30 @@ export default function DesignationDialog({
     ? "An active designation with this name already exists in this career function."
     : formik.touched.designation && formik.errors.designation;
 
-  const cannotDeactivate = isEdit && Boolean(designation?.activeEmployeeCount);
+  // Same reasoning as CareerFunctionDialog: gate on the current switch value so an
+  // already-inactive designation that still holds active employees can be reactivated.
+  const cannotDeactivate =
+    isEdit && Boolean(designation?.activeEmployeeCount) && formik.values.isActive;
   const activeCount = designation?.activeEmployeeCount ?? 0;
   const employeeWord = `employee${activeCount === 1 ? "" : "s"}`;
   const deactivateTooltip = cannotDeactivate
     ? `This designation has ${activeCount} active ${employeeWord} and cannot be deactivated.`
     : "";
 
-  const activeCareerFunctions = careerFunctions.filter((cf) => cf.isActive);
+  // Active career functions, plus this designation's OWN career function even when it is
+  // inactive. Without that exception, editing a designation whose parent has been retired
+  // would drop the current value from the Select and silently unassign it on save. Other
+  // inactive career functions stay out, so a designation still cannot be moved INTO a
+  // retired one — you can keep where you are, but not move somewhere retired.
+  const selectableCareerFunctions = useMemo(() => {
+    const options = careerFunctions.filter((cf) => cf.isActive);
+    const currentId = designation?.careerFunctionId;
+    if (currentId != null && !options.some((cf) => cf.id === currentId)) {
+      const current = careerFunctions.find((cf) => cf.id === currentId);
+      if (current) options.push(current);
+    }
+    return options.sort((a, b) => a.careerFunction.localeCompare(b.careerFunction));
+  }, [careerFunctions, designation]);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -202,7 +219,7 @@ export default function DesignationDialog({
               helperText={formik.touched.careerFunctionId && formik.errors.careerFunctionId}
             >
               <MenuItem value={UNASSIGNED_VALUE}>Unassigned</MenuItem>
-              {activeCareerFunctions.map((cf) => (
+              {selectableCareerFunctions.map((cf) => (
                 <MenuItem key={cf.id} value={String(cf.id)}>
                   {cf.careerFunction}
                 </MenuItem>

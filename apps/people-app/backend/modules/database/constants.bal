@@ -43,6 +43,9 @@ public const BULK_INSERT_FAILED = 1002;
 # MySQL error code for a duplicate entry on a unique index/key.
 const MYSQL_DUPLICATE_ENTRY_ERROR_CODE = 1062;
 
+# MySQL error code for a failed foreign key constraint on insert/update.
+const MYSQL_FK_CONSTRAINT_ERROR_CODE = 1452;
+
 # Sentinel value for updateDesignationQuery's jobBand parameter that clears job_band to NULL.
 public const JOB_BAND_CLEAR_SENTINEL = -1;
 

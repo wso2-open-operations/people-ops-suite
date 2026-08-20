@@ -107,7 +107,11 @@ export default function CareerFunctionDialog({
   // Deactivation is gated on active employees only. Active-but-unstaffed designations do
   // not block it — see the matching comment on PATCH /career-functions in service.bal.
   const activeCount = careerFunction?.activeEmployeeCount ?? 0;
-  const cannotDeactivate = isEdit && activeCount > 0;
+  // Gate on the CURRENT switch value so this blocks only the active -> inactive
+  // transition. activeEmployeeCount is independent of isActive, so without the last
+  // clause an already-inactive career function holding active employees would have a
+  // permanently disabled switch and could never be reactivated here.
+  const cannotDeactivate = isEdit && activeCount > 0 && formik.values.isActive;
   const employeeWord = `employee${activeCount === 1 ? "" : "s"}`;
   const deactivateTooltip = cannotDeactivate
     ? `This career function has ${activeCount} active ${employeeWord} and cannot be deactivated.`

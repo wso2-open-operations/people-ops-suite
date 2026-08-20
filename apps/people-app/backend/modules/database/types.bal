@@ -52,6 +52,10 @@ public type DuplicateDesignationError distinct error;
 # applies to every row regardless of `is_active` — a career function name is never reusable.
 public type DuplicateCareerFunctionError distinct error;
 
+# Raised when a designation references a career function that does not exist (foreign key
+# violation), so the caller gets a 400 rather than an opaque 500.
+public type UnknownCareerFunctionError distinct error;
+
 # [Configurable] Database configs.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
@@ -596,15 +600,16 @@ public type Designation record {|
 
 # Payload to create a career function.
 public type CreateCareerFunctionPayload record {|
-    # Career function name
-    @constraint:String {maxLength: 150, minLength: 1}
+    # Career function name. The pattern rejects whitespace-only input: minLength alone
+    # sees the raw value, and the name is trimmed only after validation passes.
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
     string careerFunction;
 |};
 
 # Payload to update a career function (all fields optional for PATCH).
 public type UpdateCareerFunctionPayload record {|
-    # Career function name
-    @constraint:String {maxLength: 150, minLength: 1}
+    # Career function name; whitespace-only is rejected (see CreateCareerFunctionPayload)
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
     string? careerFunction = ();
     # Whether the career function is active
     boolean? isActive = ();
@@ -613,22 +618,33 @@ public type UpdateCareerFunctionPayload record {|
 # Payload to create a designation.
 public type CreateDesignationPayload record {|
     # Designation name
-    @constraint:String {maxLength: 150, minLength: 1}
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
     string designation;
-    # Job band (optional)
+    # Job band (optional): nil, 0, or any positive integer. Negatives are rejected so a
+    # real band can never collide with JOB_BAND_CLEAR_SENTINEL (-1), which means
+    # "clear to NULL" on the update path only.
+    @constraint:Int {minValue: 0}
     int? jobBand = ();
-    # Parent career function ID (optional; nil means unassigned)
+    # Parent career function ID (optional; nil means unassigned). Must be a real id —
+    # a bad value would otherwise violate the foreign key and surface as a 500.
+    @constraint:Int {minValue: 1}
     int? careerFunctionId = ();
 |};
 
 # Payload to update a designation (all fields optional for PATCH).
+# NOTE: jobBand and careerFunctionId are deliberately NOT constrained here, unlike on
+# `CreateDesignationPayload`. On the update path -1 is meaningful: it is
+# JOB_BAND_CLEAR_SENTINEL / CAREER_FUNCTION_CLEAR_SENTINEL, meaning "clear this column to
+# NULL". Adding a minValue constraint here would silently break unassigning a designation
+# and clearing its job band.
 public type UpdateDesignationPayload record {|
     # Designation name
-    @constraint:String {maxLength: 150, minLength: 1}
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
     string? designation = ();
-    # Job band
+    # Job band; -1 (JOB_BAND_CLEAR_SENTINEL) clears it, nil leaves it unchanged
     int? jobBand = ();
-    # Parent career function ID
+    # Parent career function ID; -1 (CAREER_FUNCTION_CLEAR_SENTINEL) clears it, nil
+    # leaves it unchanged
     int? careerFunctionId = ();
     # Whether the designation is active
     boolean? isActive = ();

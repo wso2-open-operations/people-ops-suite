@@ -268,8 +268,10 @@ public isolated function getDesignations(int? careerFunctionId = (), boolean inc
 public isolated function createCareerFunction(CreateCareerFunctionPayload payload, string createdBy)
         returns int|error {
 
+    // Trim before storing: both unique indexes compare LOWER(TRIM(...)), so an untrimmed
+    // value would occupy the slot for its trimmed form and render padded in every list.
     sql:ExecutionResult|error result = databaseClient->execute(
-        createCareerFunctionQuery(payload.careerFunction, createdBy));
+        createCareerFunctionQuery(payload.careerFunction.trim(), createdBy));
 
     if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
         return error DuplicateCareerFunctionError("A career function with this name already exists.");
@@ -289,8 +291,9 @@ public isolated function createCareerFunction(CreateCareerFunctionPayload payloa
 public isolated function updateCareerFunction(int id, UpdateCareerFunctionPayload payload, string updatedBy)
         returns error? {
 
+    string? trimmedName = payload.careerFunction is string ? (<string>payload.careerFunction).trim() : ();
     sql:ParameterizedQuery query =
-        check updateCareerFunctionQuery(id, payload.careerFunction, payload.isActive, updatedBy);
+        check updateCareerFunctionQuery(id, trimmedName, payload.isActive, updatedBy);
 
     sql:ExecutionResult|error result = databaseClient->execute(query);
     if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
@@ -311,12 +314,20 @@ public isolated function updateCareerFunction(int id, UpdateCareerFunctionPayloa
 # + return - ID of the new designation, DuplicateDesignationError on a unique-index
 #            violation, or error
 public isolated function createDesignation(CreateDesignationPayload payload, string createdBy) returns int|error {
+    // Trim before storing — see the note in createCareerFunction.
     sql:ExecutionResult|error result = databaseClient->execute(
-        createDesignationQuery(payload.designation, payload.jobBand, payload.careerFunctionId, createdBy));
+        createDesignationQuery(payload.designation.trim(), payload.jobBand, payload.careerFunctionId,
+            createdBy));
 
     if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
         return error DuplicateDesignationError(
             "An active designation with this name already exists in this career function.");
+    }
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_FK_CONSTRAINT_ERROR_CODE {
+        return error UnknownCareerFunctionError("The specified career function does not exist.");
+    }
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_FK_CONSTRAINT_ERROR_CODE {
+        return error UnknownCareerFunctionError("The specified career function does not exist.");
     }
     if result is error {
         return result;
@@ -334,7 +345,8 @@ public isolated function createDesignation(CreateDesignationPayload payload, str
 public isolated function updateDesignation(int id, UpdateDesignationPayload payload, string updatedBy)
         returns error? {
 
-    sql:ParameterizedQuery query = check updateDesignationQuery(id, payload.designation, payload.jobBand,
+    string? trimmedName = payload.designation is string ? (<string>payload.designation).trim() : ();
+    sql:ParameterizedQuery query = check updateDesignationQuery(id, trimmedName, payload.jobBand,
             payload.careerFunctionId, payload.isActive, updatedBy);
 
     sql:ExecutionResult|error result = databaseClient->execute(query);
