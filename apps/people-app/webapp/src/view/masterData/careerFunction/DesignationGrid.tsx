@@ -58,8 +58,14 @@ function SkeletonOverlay() {
           }}
         >
           <Skeleton variant="rectangular" height={20} width="65%" sx={{ borderRadius: 1 }} />
-          <Skeleton variant="rectangular" height={20} width="50%" sx={{ borderRadius: 1 }} />
-          <Skeleton variant="rectangular" height={20} width="40%" sx={{ borderRadius: 1 }} />
+          {/* Job Band and Active Employees are right-aligned columns, so their
+              placeholders sit right too — otherwise the rows visibly shift on load. */}
+          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Skeleton variant="rectangular" height={20} width="50%" sx={{ borderRadius: 1 }} />
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Skeleton variant="rectangular" height={20} width="40%" sx={{ borderRadius: 1 }} />
+          </Box>
           <Box sx={{ display: "flex", justifyContent: "center" }}>
             <Skeleton variant="rounded" height={24} width={72} sx={{ borderRadius: 2 }} />
           </Box>
@@ -161,9 +167,18 @@ export default function DesignationGrid({
         field: "activeEmployeeCount",
         headerName: "Active Employees",
         width: 150,
+        align: "right",
+        headerAlign: "right",
         resizable: false,
         renderCell: (params: GridRenderCellParams<Designation>) => (
-          <Box sx={{ color: params.value > 0 ? theme.palette.text.primary : theme.palette.text.disabled }}>
+          <Box
+            sx={{
+              width: "100%",
+              textAlign: "right",
+              fontVariantNumeric: "tabular-nums",
+              color: params.value > 0 ? theme.palette.text.primary : theme.palette.text.disabled,
+            }}
+          >
             {params.value}
           </Box>
         ),
