@@ -14,8 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { isDuplicateDesignationName } from "./duplicateDesignation.utils";
-import { Designation } from "@slices/careerFunctionSlice/careerFunction";
+import {
+  isDuplicateCareerFunctionName,
+  isDuplicateDesignationName,
+} from "./duplicateDesignation.utils";
+import { CareerFunction, Designation } from "@slices/careerFunctionSlice/careerFunction";
 
 const rows: Designation[] = [
   { id: 1, designation: "Software Engineer", jobBand: 4, careerFunctionId: 10, isActive: true, activeEmployeeCount: 5 },
@@ -60,5 +63,47 @@ describe("isDuplicateDesignationName", () => {
 
   it("still reports a duplicate when the colliding row is active, regardless of the candidate's own state", () => {
     expect(isDuplicateDesignationName("Software Engineer", 10, rows)).toBe(true);
+  });
+});
+
+const careerFunctions: CareerFunction[] = [
+  { id: 10, careerFunction: "Engineering", isActive: true, activeEmployeeCount: 128 },
+  { id: 20, careerFunction: "Finance", isActive: true, activeEmployeeCount: 19 },
+  { id: 30, careerFunction: "Old Sales Function", isActive: false, activeEmployeeCount: 0 },
+];
+
+describe("isDuplicateCareerFunctionName", () => {
+  it("flags an exact duplicate", () => {
+    expect(isDuplicateCareerFunctionName("Engineering", careerFunctions)).toBe(true);
+  });
+
+  it("ignores case", () => {
+    expect(isDuplicateCareerFunctionName("engineering", careerFunctions)).toBe(true);
+  });
+
+  it("ignores surrounding whitespace", () => {
+    expect(isDuplicateCareerFunctionName("  Engineering  ", careerFunctions)).toBe(true);
+  });
+
+  it("allows a name no career function is using", () => {
+    expect(isDuplicateCareerFunctionName("Legal", careerFunctions)).toBe(false);
+  });
+
+  it("still flags a name held by an INACTIVE career function", () => {
+    // Stricter than the designation rule on purpose: a career function name is never
+    // reusable, so a retired one keeps holding its name.
+    expect(isDuplicateCareerFunctionName("Old Sales Function", careerFunctions)).toBe(true);
+  });
+
+  it("does not flag the row being edited against itself", () => {
+    expect(isDuplicateCareerFunctionName("Engineering", careerFunctions, 10)).toBe(false);
+  });
+
+  it("still flags a collision with a different row while editing", () => {
+    expect(isDuplicateCareerFunctionName("Finance", careerFunctions, 10)).toBe(true);
+  });
+
+  it("returns false for an empty name", () => {
+    expect(isDuplicateCareerFunctionName("   ", careerFunctions)).toBe(false);
   });
 });

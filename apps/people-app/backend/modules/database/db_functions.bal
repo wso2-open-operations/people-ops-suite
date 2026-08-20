@@ -268,8 +268,15 @@ public isolated function getDesignations(int? careerFunctionId = (), boolean inc
 public isolated function createCareerFunction(CreateCareerFunctionPayload payload, string createdBy)
         returns int|error {
 
-    sql:ExecutionResult result = check databaseClient->execute(
+    sql:ExecutionResult|error result = databaseClient->execute(
         createCareerFunctionQuery(payload.careerFunction, createdBy));
+
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateCareerFunctionError("A career function with this name already exists.");
+    }
+    if result is error {
+        return result;
+    }
     return check result.lastInsertId.ensureType(int);
 }
 
@@ -285,7 +292,13 @@ public isolated function updateCareerFunction(int id, UpdateCareerFunctionPayloa
     sql:ParameterizedQuery query =
         check updateCareerFunctionQuery(id, payload.careerFunction, payload.isActive, updatedBy);
 
-    sql:ExecutionResult result = check databaseClient->execute(query);
+    sql:ExecutionResult|error result = databaseClient->execute(query);
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateCareerFunctionError("A career function with this name already exists.");
+    }
+    if result is error {
+        return result;
+    }
     if result.affectedRowCount == 0 {
         return error EntityNotFoundError(string `Career function with ID ${id} not found`);
     }

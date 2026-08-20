@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Designation } from "@slices/careerFunctionSlice/careerFunction";
+import { CareerFunction, Designation } from "@slices/careerFunctionSlice/careerFunction";
 
 /**
  * Mirrors the `uk_active_designation_per_career_function` database index:
@@ -40,5 +40,29 @@ export function isDuplicateDesignationName(
       d.id !== excludeId &&
       d.careerFunctionId === careerFunctionId &&
       d.designation.trim().toLowerCase() === candidate,
+  );
+}
+
+/**
+ * Mirrors the `uk_career_function_name` database index: a career function name is
+ * unique across the WHOLE table, compared case-insensitively and whitespace-trimmed.
+ *
+ * Note this is deliberately stricter than the designation rule above, which only
+ * covers active rows. Here inactive career functions still hold their name — a
+ * retired career function is reactivated rather than recreated.
+ *
+ * This is a convenience check so the dialog can show an inline error; the database
+ * index remains the real guard against races.
+ */
+export function isDuplicateCareerFunctionName(
+  name: string,
+  careerFunctions: CareerFunction[],
+  excludeId?: number,
+): boolean {
+  const candidate = name.trim().toLowerCase();
+  if (!candidate) return false;
+
+  return careerFunctions.some(
+    (cf) => cf.id !== excludeId && cf.careerFunction.trim().toLowerCase() === candidate,
   );
 }

@@ -202,6 +202,7 @@ export default function CareerFunctionView() {
             onClose={handleCareerFunctionDialogClose}
             onSubmit={handleCareerFunctionSubmit}
             careerFunction={editingCareerFunction}
+            allCareerFunctions={careerFunctions}
           />
           <DesignationDialog
             open={designationDialogOpen}

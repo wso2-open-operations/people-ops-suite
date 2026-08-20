@@ -35,12 +35,14 @@ import {
   CreateCareerFunctionPayload,
   UpdateCareerFunctionPayload,
 } from "@slices/careerFunctionSlice/careerFunction";
+import { isDuplicateCareerFunctionName } from "./duplicateDesignation.utils";
 
 interface CareerFunctionDialogProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (payload: CreateCareerFunctionPayload | UpdateCareerFunctionPayload) => Promise<void>;
   careerFunction?: CareerFunction | null;
+  allCareerFunctions: CareerFunction[];
 }
 
 const validationSchema = Yup.object({
@@ -55,6 +57,7 @@ export default function CareerFunctionDialog({
   onClose,
   onSubmit,
   careerFunction,
+  allCareerFunctions,
 }: CareerFunctionDialogProps) {
   const theme = useTheme();
   const isEdit = careerFunction != null;
@@ -89,6 +92,18 @@ export default function CareerFunctionDialog({
     onClose();
   };
 
+  // A career function name is unique across the whole table, active or not, matching the
+  // uk_career_function_name index. The backend still returns 400 for the same condition;
+  // this check just avoids a round-trip for the common case.
+  const duplicate = isDuplicateCareerFunctionName(
+    formik.values.careerFunction,
+    allCareerFunctions,
+    careerFunction?.id,
+  );
+  const nameError = duplicate
+    ? "A career function with this name already exists."
+    : formik.touched.careerFunction && formik.errors.careerFunction;
+
   // Deactivation is gated on active employees only. Active-but-unstaffed designations do
   // not block it — see the matching comment on PATCH /career-functions in service.bal.
   const activeCount = careerFunction?.activeEmployeeCount ?? 0;
@@ -114,8 +129,8 @@ export default function CareerFunctionDialog({
               value={formik.values.careerFunction}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              error={formik.touched.careerFunction && Boolean(formik.errors.careerFunction)}
-              helperText={formik.touched.careerFunction && formik.errors.careerFunction}
+              error={Boolean(nameError)}
+              helperText={nameError}
             />
             {isEdit && (
               <FormControlLabel
@@ -155,7 +170,7 @@ export default function CareerFunctionDialog({
             type="submit"
             variant="contained"
             color="secondary"
-            disabled={formik.isSubmitting || !formik.dirty}
+            disabled={formik.isSubmitting || !formik.dirty || duplicate}
             startIcon={formik.isSubmitting ? <CircularProgress size={16} /> : null}
             sx={{ textTransform: "none" }}
           >

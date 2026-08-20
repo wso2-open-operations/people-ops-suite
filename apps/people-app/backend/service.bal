@@ -2598,6 +2598,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error newId = database:createCareerFunction(payload, userInfo.email);
+        if newId is database:DuplicateCareerFunctionError {
+            return <http:BadRequest>{body: {message: newId.message()}};
+        }
         if newId is error {
             string customErr = "Error occurred while creating career function";
             log:printError(customErr, newId);
@@ -2648,6 +2651,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? updateResult = database:updateCareerFunction(id, payload, userInfo.email);
+        if updateResult is database:DuplicateCareerFunctionError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
         if updateResult is database:EntityNotFoundError {
             return <http:NotFound>{body: {message: updateResult.message()}};
         }

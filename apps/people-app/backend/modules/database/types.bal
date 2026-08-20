@@ -48,6 +48,10 @@ public type DuplicateActiveReservationError distinct error;
 # Raised when an active designation with the same name already exists in the career function.
 public type DuplicateDesignationError distinct error;
 
+# Raised when a career function with the same name already exists. Unlike designations, this
+# applies to every row regardless of `is_active` — a career function name is never reusable.
+public type DuplicateCareerFunctionError distinct error;
+
 # [Configurable] Database configs.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
