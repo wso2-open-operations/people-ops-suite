@@ -87,6 +87,8 @@ interface DesignationGridProps {
   onEdit: (d: Designation) => void;
 }
 
+const DESIGNATION_PAGE_SIZE = 25;
+
 export default function DesignationGrid({
   designations,
   careerFunctionName,
@@ -342,7 +344,10 @@ export default function DesignationGrid({
           loading={isLoading}
           localeText={{ noRowsLabel: "No designations found." }}
           initialState={{
-            pagination: { paginationModel: { pageSize: DEFAULT_LIMIT_VALUE } },
+            // A career function's designation list is short (a couple of dozen at most),
+            // so page at 25 rather than the app-wide default of 10 — otherwise inactive
+            // designations, which sort last, fall onto page 2 and look missing.
+            pagination: { paginationModel: { pageSize: DESIGNATION_PAGE_SIZE } },
           }}
           pageSizeOptions={PAGE_SIZE_OPTIONS}
           slots={{ loadingOverlay: SkeletonOverlay }}
