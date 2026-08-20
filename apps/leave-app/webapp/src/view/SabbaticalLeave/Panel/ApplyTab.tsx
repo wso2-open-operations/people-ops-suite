@@ -406,6 +406,9 @@ export default function ApplyTab({
                       setLeaveStartDate(newValue);
                       setStartDateError(false);
                       setDurationExceedError(false);
+                      if (newValue && leaveEndDate && newValue.isAfter(leaveEndDate)) {
+                        setLeaveEndDate(null);
+                      }
                     }}
                     format="YYYY-MM-DD"
                     disablePast
