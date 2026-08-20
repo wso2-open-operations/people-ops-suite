@@ -429,7 +429,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
                 // User can apply only if he is within the eligibility period
                 boolean|error isEligible = checkEligibilityForSabbaticalApplication(employmentStartDate,
-                        lastSabbaticalLeaveEndDate);
+                        lastSabbaticalLeaveEndDate, payload.startDate);
                 if isEligible is error {
                     string errMsg = "Error occurred while checking eligibility for sabbatical leave application";
                     log:printError(errMsg, isEligible);
