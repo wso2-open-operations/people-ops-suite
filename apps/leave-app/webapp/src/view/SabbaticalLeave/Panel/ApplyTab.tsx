@@ -31,7 +31,7 @@ import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useSnackbar } from "notistack";
 
-import { ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import CustomButton from "@root/src/component/common/CustomButton";
 import { FormContainer } from "@root/src/component/common/FormContainer";
@@ -80,22 +80,11 @@ export default function ApplyTab({
   const leaveState = useAppSelector(selectLeaveState);
   const leaves = useAppSelector(selectLeaves);
   const submitState = useAppSelector(selectSubmitState);
-  const policyMessage: ReactNode = (
-    <>
-      Refer to the{" "}
-      <Link href={sabbaticalPolicyUrl} target="_blank" rel="noopener" underline="hover">
-        Sabbatical Leave Policy
-      </Link>{" "}
-      for more information.
-    </>
-  );
-
   const [eligibilityPayload, setEligibilityPayload] = useState<EligibilityResponse>({
     employmentStartDate: "",
     lastSabbaticalLeaveEndDate: dayjs().toISOString(),
   });
   const [sabbaticalEndDateFieldEditable, setSabbaticalEndDateFieldEditable] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<ReactNode>("");
   const [lastSabbaticalLeaveEndDate, setLastSabbaticalLeaveEndDate] = useState<Dayjs | null>(null);
   const [leaveStartDate, setLeaveStartDate] = useState<Dayjs | null>(null);
   const [leaveEndDate, setLeaveEndDate] = useState<Dayjs | null>(null);
@@ -103,7 +92,6 @@ export default function ApplyTab({
   const [managerApprovalChecked, setManagerApprovalChecked] = useState(false);
   const [policyReadChecked, setPolicyReadChecked] = useState(false);
   const [resignationAcknowledgeChecked, setResignationAcknowledgeChecked] = useState(false);
-  const [canRenderSabbaticalFormField, setCanRenderSabbaticalFormField] = useState(true);
   const [startDateError, setStartDateError] = useState(false);
   const [endDateError, setEndDateError] = useState(false);
   const [durationExceedError, setDurationExceedError] = useState(false);
@@ -163,6 +151,7 @@ export default function ApplyTab({
     leaves,
     hasFetched,
     userInfo?.employmentStartDate,
+    lastLeaveEndDate,
   ]);
 
   // Dynamically validate eligibility gap between anchor date and leave start date
@@ -251,27 +240,9 @@ export default function ApplyTab({
     }
 
     // Validate eligibility duration against the leave request start date
-    if (lastSabbaticalLeaveEndDate) {
-      const diffDays = leaveStartDate!.startOf("day").diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
-      if (diffDays < sabbaticalLeaveEligibilityDuration) {
-        enqueueSnackbar(
-          `The last sabbatical leave end date must be at least ${sabbaticalEligibilityDurationInYears} years before the leave start date.`,
-          { variant: "error" },
-        );
-        return;
-      }
-    } else if (userInfo?.employmentStartDate) {
-      // No prior sabbatical — check employment start date against leave start date
-      const diffDays = leaveStartDate!.startOf("day").diff(
-        dayjs(userInfo.employmentStartDate).startOf("day"), "day"
-      ) - 1;
-      if (diffDays < sabbaticalLeaveEligibilityDuration) {
-        enqueueSnackbar(
-          `You must be employed for at least ${sabbaticalEligibilityDurationInYears} years before the leave start date.`,
-          { variant: "error" },
-        );
-        return;
-      }
+    if (sabbaticalEligibilityWarning) {
+      enqueueSnackbar(sabbaticalEligibilityWarning, { variant: "error" });
+      return;
     }
 
     if (!managerApprovalChecked) {
