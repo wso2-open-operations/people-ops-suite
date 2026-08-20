@@ -380,12 +380,11 @@ export default function ApplyTab({
               <DatePicker
                 label="Last sabbatical leave end date"
                 sx={{ flex: 1 }}
-                maxDate={dayjs()}
                 value={lastSabbaticalLeaveEndDate ? dayjs(lastSabbaticalLeaveEndDate) : null}
                 onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
                 disabled={!sabbaticalEndDateFieldEditable}
                 format="YYYY-MM-DD"
-                disableFuture
+                {...(sabbaticalEndDateFieldEditable && { disableFuture: true })}
               />
             </Stack>
             {sabbaticalEligibilityWarning && (
