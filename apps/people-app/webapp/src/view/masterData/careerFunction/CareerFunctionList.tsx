@@ -185,6 +185,53 @@ export default function CareerFunctionList({
         </FormControl>
       </Box>
 
+      {/* Column headers — widths mirror the row layout below (flexible name, 28px
+          right-aligned count, 30px action spacer) so the columns line up. */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          pl: 2,
+          pr: 0.5,
+          py: 0.75,
+          borderLeft: "3px solid transparent",
+          backgroundColor:
+            theme.palette.mode === "dark" ? theme.palette.grey[800] : theme.palette.grey[100],
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          flexShrink: 0,
+        }}
+      >
+        <Typography
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            fontSize: "0.75rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            color: theme.palette.text.secondary,
+          }}
+        >
+          Name
+        </Typography>
+        <Typography
+          sx={{
+            flexShrink: 0,
+            ml: 1,
+            minWidth: 28,
+            textAlign: "right",
+            fontSize: "0.75rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            color: theme.palette.text.secondary,
+          }}
+        >
+          Emp.
+        </Typography>
+        <Box sx={{ flexShrink: 0, width: 30 }} aria-hidden="true" />
+      </Box>
+
       {/* Body */}
       <Box sx={{ flex: 1, overflowY: "auto" }}>
         {isLoading ? (
