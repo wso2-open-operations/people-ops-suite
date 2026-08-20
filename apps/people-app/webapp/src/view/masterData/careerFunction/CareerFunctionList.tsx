@@ -79,8 +79,14 @@ export default function CareerFunctionList({
       });
   }, [careerFunctions, searchText, statusFilter]);
 
-  const unassignedCount = useMemo(
-    () => designations.filter((d) => d.careerFunctionId === null).length,
+  // Active employees across the orphan designations. The Unassigned row has no
+  // activeEmployeeCount of its own, so it is summed from its designations here — the same
+  // way the backend derives the figure for a real career function.
+  const unassignedEmployeeCount = useMemo(
+    () =>
+      designations
+        .filter((d) => d.careerFunctionId === null)
+        .reduce((sum, d) => sum + d.activeEmployeeCount, 0),
     [designations],
   );
 
@@ -209,7 +215,6 @@ export default function CareerFunctionList({
         ) : (
           <>
             {sortedCareerFunctions.map((cf) => {
-              const designationCount = designations.filter((d) => d.careerFunctionId === cf.id).length;
               const selected = selectedId === cf.id;
               return (
                 <Box
@@ -262,6 +267,9 @@ export default function CareerFunctionList({
                     {cf.careerFunction}
                   </Typography>
                   <Typography
+                    title={`${cf.activeEmployeeCount} active employee${
+                      cf.activeEmployeeCount === 1 ? "" : "s"
+                    }`}
                     sx={{
                       flexShrink: 0,
                       ml: 1,
@@ -269,12 +277,12 @@ export default function CareerFunctionList({
                       textAlign: "right",
                       fontVariantNumeric: "tabular-nums",
                       fontSize: 13,
-                      color: designationCount
+                      color: cf.activeEmployeeCount
                         ? theme.palette.text.secondary
                         : theme.palette.text.disabled,
                     }}
                   >
-                    {designationCount}
+                    {cf.activeEmployeeCount}
                   </Typography>
                   <Box
                     className="career-function-actions"
@@ -345,6 +353,9 @@ export default function CareerFunctionList({
                   Unassigned
                 </Typography>
                 <Typography
+                  title={`${unassignedEmployeeCount} active employee${
+                    unassignedEmployeeCount === 1 ? "" : "s"
+                  }`}
                   sx={{
                     flexShrink: 0,
                     ml: 1,
@@ -352,10 +363,12 @@ export default function CareerFunctionList({
                     textAlign: "right",
                     fontVariantNumeric: "tabular-nums",
                     fontSize: 13,
-                    color: theme.palette.text.secondary,
+                    color: unassignedEmployeeCount
+                      ? theme.palette.text.secondary
+                      : theme.palette.text.disabled,
                   }}
                 >
-                  {unassignedCount}
+                  {unassignedEmployeeCount}
                 </Typography>
                 {/* Spacer matching the edit IconButton on real rows, so the count in this
                     row lines up with the counts above it. */}
