@@ -113,7 +113,7 @@ export default function ApplyTab({
   const [resignationAcknowledgeError, setResignationAcknowledgeError] = useState(false);
   const [sabbaticalEligibilityWarning, setSabbaticalEligibilityWarning] = useState<string>("");
   const [hasFetched, setHasFetched] = useState(false);
-  const [sabbaticalEligibilityDurationInYears] = useState(sabbaticalLeaveEligibilityDuration / 365);
+  const [sabbaticalEligibilityDurationInYears] = useState(parseFloat((sabbaticalLeaveEligibilityDuration / 365).toFixed(1)));
   const [sabbaticalMaxApplicationDurationInWeeks] = useState(
     sabbaticalLeaveMaxApplicationDuration / 7,
   );
