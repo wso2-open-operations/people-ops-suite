@@ -91,7 +91,6 @@ export default function ApplyTab({
   );
 
   const [eligibilityPayload, setEligibilityPayload] = useState<EligibilityResponse>({
-    isEligible: false,
     employmentStartDate: "",
     lastSabbaticalLeaveEndDate: dayjs().toISOString(),
   });
@@ -152,7 +151,6 @@ export default function ApplyTab({
     const eligibilityResponse: EligibilityResponse = {
       employmentStartDate: userInfo?.employmentStartDate || "",
       lastSabbaticalLeaveEndDate: lastLeaveEndDate || "",
-      isEligible: true,
     };
 
     setEligibilityPayload(eligibilityResponse);
@@ -384,6 +382,7 @@ export default function ApplyTab({
                 onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
                 disabled={!sabbaticalEndDateFieldEditable}
                 format="YYYY-MM-DD"
+                minDate={userInfo?.employmentStartDate ? dayjs(userInfo.employmentStartDate) : undefined}
                 {...(sabbaticalEndDateFieldEditable && { disableFuture: true })}
               />
             </Stack>
