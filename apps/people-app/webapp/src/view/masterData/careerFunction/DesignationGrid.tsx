@@ -286,7 +286,7 @@ export default function DesignationGrid({
             size="small"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            sx={{ width: 320 }}
+            sx={{ width: { xs: "100%", md: 240 } }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

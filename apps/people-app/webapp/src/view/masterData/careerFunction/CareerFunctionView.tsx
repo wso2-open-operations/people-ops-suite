@@ -171,7 +171,7 @@ export default function CareerFunctionView() {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "270px 1fr" },
+              gridTemplateColumns: { xs: "1fr", md: "360px 1fr" },
               height: "100%",
             }}
           >
