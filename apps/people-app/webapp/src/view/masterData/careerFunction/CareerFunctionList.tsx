@@ -240,17 +240,41 @@ export default function CareerFunctionList({
                       backgroundColor: selected ? theme.palette.action.focus : theme.palette.action.hover,
                       "& .career-function-actions": { opacity: 1 },
                     },
+                    // Keyboard users tabbing to the edit button would otherwise land on an
+                    // invisible control, since it is hidden until hover or selection.
+                    "&:focus-within .career-function-actions": { opacity: 1 },
                   }}
                 >
                   <Typography
+                    title={cf.careerFunction}
                     sx={{
+                      flex: 1,
+                      minWidth: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                       fontSize: 14,
                       fontWeight: selected ? 600 : 400,
                       color: cf.isActive ? theme.palette.text.primary : theme.palette.text.disabled,
                       textDecoration: cf.isActive ? "none" : "line-through",
                     }}
                   >
-                    {cf.careerFunction} ({designationCount})
+                    {cf.careerFunction}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      flexShrink: 0,
+                      ml: 1,
+                      minWidth: 28,
+                      textAlign: "right",
+                      fontVariantNumeric: "tabular-nums",
+                      fontSize: 13,
+                      color: designationCount
+                        ? theme.palette.text.secondary
+                        : theme.palette.text.disabled,
+                    }}
+                  >
+                    {designationCount}
                   </Typography>
                   <Box
                     className="career-function-actions"
@@ -307,13 +331,35 @@ export default function CareerFunctionList({
               >
                 <Typography
                   sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                     fontSize: 14,
+                    fontStyle: "italic",
                     fontWeight: selectedId === null ? 600 : 400,
                     color: theme.palette.text.primary,
                   }}
                 >
-                  Unassigned ({unassignedCount})
+                  Unassigned
                 </Typography>
+                <Typography
+                  sx={{
+                    flexShrink: 0,
+                    ml: 1,
+                    minWidth: 28,
+                    textAlign: "right",
+                    fontVariantNumeric: "tabular-nums",
+                    fontSize: 13,
+                    color: theme.palette.text.secondary,
+                  }}
+                >
+                  {unassignedCount}
+                </Typography>
+                {/* Spacer matching the edit IconButton on real rows, so the count in this
+                    row lines up with the counts above it. */}
+                <Box sx={{ flexShrink: 0, width: 30 }} aria-hidden="true" />
               </Box>
             )}
           </>
