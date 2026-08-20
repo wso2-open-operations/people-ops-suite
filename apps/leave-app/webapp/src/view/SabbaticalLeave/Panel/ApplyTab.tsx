@@ -121,52 +121,27 @@ export default function ApplyTab({
   const isLoading = leaveState === State.loading || !hasFetched;
   const isSubmitting = submitState === State.loading;
   const lastLeaveEndDate = leaves[0]?.endDate;
-  const todayUtc = dayjs.utc().startOf("day");
 
-  // Check eligibility conditions
-  const employmentStartDateDiff =
-    todayUtc.diff(dayjs(userInfo?.employmentStartDate).startOf("day"), "day") - 1;
-  const isEmploymentEligible = employmentStartDateDiff >= sabbaticalLeaveEligibilityDuration;
-
+  // Always fetch leave history — eligibility is validated against leaveStartDate, not today
   useEffect(() => {
     if (userInfo?.workEmail) {
-      if (isEmploymentEligible) {
-        setHasFetched(false);
-        dispatch(resetLeaveState());
-        dispatch(
-          fetchLeaveHistory({
-            email: userInfo.workEmail,
-            leaveCategory: [LeaveType.SABBATICAL],
-            statuses: [Status.APPROVED],
-            orderBy: OrderBy.DESC,
-            limit: 1,
-          }),
-        ).then(() => {
-          setHasFetched(true);
-        });
-      } else {
+      setHasFetched(false);
+      dispatch(resetLeaveState());
+      dispatch(
+        fetchLeaveHistory({
+          email: userInfo.workEmail,
+          leaveCategory: [LeaveType.SABBATICAL],
+          statuses: [Status.APPROVED],
+          orderBy: OrderBy.DESC,
+          limit: 1,
+        }),
+      ).then(() => {
         setHasFetched(true);
-        setCanRenderSabbaticalFormField(false);
-        let errorMsg = (
-          <>
-            You must be employed for at least {sabbaticalEligibilityDurationInYears} years to be
-            eligible for sabbatical leave. {policyMessage}
-          </>
-        );
-        setErrorMessage(errorMsg);
-        setEligibilityPayload({
-          employmentStartDate: userInfo?.employmentStartDate || "",
-          lastSabbaticalLeaveEndDate: "",
-          isEligible: false,
-        });
-      }
+      });
     }
   }, [
     dispatch,
     userInfo?.workEmail,
-    isEmploymentEligible,
-    userInfo?.employmentStartDate,
-    sabbaticalEligibilityDurationInYears,
   ]);
 
   useEffect(() => {
@@ -174,36 +149,15 @@ export default function ApplyTab({
       return;
     }
 
-    let eligible = true;
-    let errorMsg;
-
-    if (!isEmploymentEligible) {
-      eligible = false;
-      errorMsg = (
-        <>
-          You must be employed for at least {sabbaticalEligibilityDurationInYears} years to be
-          eligible for sabbatical leave. {policyMessage}
-        </>
-      );
-
-      setCanRenderSabbaticalFormField(false);
-    }
-
-    if (!eligible) {
-      setErrorMessage(errorMsg);
-    } else {
-      setErrorMessage("");
-    }
-
     const eligibilityResponse: EligibilityResponse = {
       employmentStartDate: userInfo?.employmentStartDate || "",
       lastSabbaticalLeaveEndDate: lastLeaveEndDate || "",
-      isEligible: eligible,
+      isEligible: true,
     };
 
     setEligibilityPayload(eligibilityResponse);
     setLastSabbaticalLeaveEndDate(lastLeaveEndDate ? dayjs(lastLeaveEndDate) : null);
-    if (!lastLeaveEndDate && eligible) {
+    if (!lastLeaveEndDate) {
       setSabbaticalEndDateFieldEditable(true);
     }
   }, [
@@ -211,25 +165,26 @@ export default function ApplyTab({
     leaves,
     hasFetched,
     userInfo?.employmentStartDate,
-    sabbaticalLeaveEligibilityDuration,
   ]);
 
-  // Dynamically validate eligibility gap between last sabbatical end date and leave start date
+  // Dynamically validate eligibility gap between anchor date and leave start date
   useEffect(() => {
-    if (!sabbaticalEndDateFieldEditable || !lastSabbaticalLeaveEndDate) {
-      setSabbaticalEligibilityWarning("");
-      return;
-    }
-    // If no leave start date yet, clear warning and wait
-    if (!leaveStartDate) {
+    // Use last sabbatical end date if available, otherwise fall back to employment start date
+    const validationAnchor = lastSabbaticalLeaveEndDate
+      ?? (userInfo?.employmentStartDate ? dayjs(userInfo.employmentStartDate) : null);
+
+    if (!validationAnchor || !leaveStartDate) {
       setSabbaticalEligibilityWarning("");
       return;
     }
 
-    const diffDays = leaveStartDate.startOf("day").diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
+    const diffDays = leaveStartDate.startOf("day").diff(validationAnchor.startOf("day"), "day") - 1;
     if (diffDays < sabbaticalLeaveEligibilityDuration) {
+      const anchorLabel = lastSabbaticalLeaveEndDate
+        ? "last sabbatical leave end date"
+        : "employment start date";
       setSabbaticalEligibilityWarning(
-        `The leave start date must be at least ${sabbaticalEligibilityDurationInYears} years after the last sabbatical leave end date.`,
+        `The leave start date must be at least ${sabbaticalEligibilityDurationInYears} years after the ${anchorLabel}.`,
       );
     } else {
       setSabbaticalEligibilityWarning("");
@@ -237,9 +192,10 @@ export default function ApplyTab({
   }, [
     lastSabbaticalLeaveEndDate,
     leaveStartDate,
-    sabbaticalEndDateFieldEditable,
+    userInfo?.employmentStartDate,
     sabbaticalLeaveEligibilityDuration,
   ]);
+
   // Validate leave dates to be stay within eligibility duration
   useEffect(() => {
     if (!leaveStartDate || !leaveEndDate) {
@@ -439,13 +395,7 @@ export default function ApplyTab({
                 {sabbaticalEligibilityWarning}
               </Alert>
             )}
-            {!eligibilityPayload?.isEligible && (
-              <Alert variant="outlined" severity="warning">
-                {errorMessage}
-              </Alert>
-            )}
-            {eligibilityPayload?.isEligible && (
-              <>
+            <>
                 <Stack
                   direction={{ xs: "column", md: "row" }}
                   gap="2rem"
@@ -598,8 +548,6 @@ export default function ApplyTab({
                 <Box mx={{ xs: "auto", md: "0" }} ml={{ md: "auto" }}>
                   <CustomButton label="Apply" onClick={handleOpenDialog} disabled={isSubmitting} />
                 </Box>
-              </>
-            )}
             </>
             )}
           </FormContainer>
