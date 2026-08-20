@@ -355,15 +355,6 @@ public isolated function hasActiveEmployeesInCareerFunction(int id) returns bool
     return result.count > 0;
 }
 
-# Check whether a career function still has active designations.
-#
-# + id - Career function ID
-# + return - True if active designations exist, false otherwise, or error
-public isolated function hasActiveDesignationsInCareerFunction(int id) returns boolean|error {
-    record {int count;} result = check databaseClient->queryRow(countActiveDesignationsInCareerFunctionQuery(id));
-    return result.count > 0;
-}
-
 # Get companies.
 #
 # + return - Companies with allowed locations and probation periods

@@ -1360,13 +1360,6 @@ isolated function countActiveEmployeesInCareerFunctionQuery(int id) returns sql:
      JOIN designation d ON d.id = e.designation_id
      WHERE d.career_function_id = ${id} AND e.employee_status = 'Active';`;
 
-# Count active designations in a career function.
-#
-# + id - Career function ID
-# + return - Query counting active designations
-isolated function countActiveDesignationsInCareerFunctionQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM designation WHERE career_function_id = ${id} AND is_active = 1;`;
-
 # Get companies query.
 #
 # + return - Companies query

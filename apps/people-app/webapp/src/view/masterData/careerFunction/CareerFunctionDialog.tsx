@@ -41,7 +41,6 @@ interface CareerFunctionDialogProps {
   onClose: () => void;
   onSubmit: (payload: CreateCareerFunctionPayload | UpdateCareerFunctionPayload) => Promise<void>;
   careerFunction?: CareerFunction | null;
-  hasActiveDesignations: boolean;
 }
 
 const validationSchema = Yup.object({
@@ -56,7 +55,6 @@ export default function CareerFunctionDialog({
   onClose,
   onSubmit,
   careerFunction,
-  hasActiveDesignations,
 }: CareerFunctionDialogProps) {
   const theme = useTheme();
   const isEdit = careerFunction != null;
@@ -91,15 +89,14 @@ export default function CareerFunctionDialog({
     onClose();
   };
 
+  // Deactivation is gated on active employees only. Active-but-unstaffed designations do
+  // not block it — see the matching comment on PATCH /career-functions in service.bal.
   const activeCount = careerFunction?.activeEmployeeCount ?? 0;
-  const hasActiveEmployees = activeCount > 0;
-  const cannotDeactivate = isEdit && (hasActiveDesignations || hasActiveEmployees);
+  const cannotDeactivate = isEdit && activeCount > 0;
   const employeeWord = `employee${activeCount === 1 ? "" : "s"}`;
-  const deactivateTooltip = hasActiveDesignations
-    ? "This career function still has active designations and cannot be deactivated."
-    : hasActiveEmployees
-      ? `This career function has ${activeCount} active ${employeeWord} and cannot be deactivated.`
-      : "";
+  const deactivateTooltip = cannotDeactivate
+    ? `This career function has ${activeCount} active ${employeeWord} and cannot be deactivated.`
+    : "";
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>

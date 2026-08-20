@@ -99,9 +99,6 @@ export default function CareerFunctionView() {
   const isUnassigned = selectedId === null;
   const careerFunctionName = isUnassigned ? "Unassigned" : (selectedCareerFunction?.careerFunction ?? "");
 
-  const hasActiveDesignations = designations.some(
-    (d) => d.careerFunctionId === editingCareerFunction?.id && d.isActive,
-  );
 
   const handleSelect = (id: number | null) => {
     setSelectedId(id);
@@ -205,7 +202,6 @@ export default function CareerFunctionView() {
             onClose={handleCareerFunctionDialogClose}
             onSubmit={handleCareerFunctionSubmit}
             careerFunction={editingCareerFunction}
-            hasActiveDesignations={hasActiveDesignations}
           />
           <DesignationDialog
             open={designationDialogOpen}

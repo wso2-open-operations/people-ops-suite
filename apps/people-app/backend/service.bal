@@ -2627,22 +2627,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if payload.isActive == false {
-            boolean|error hasDesignations = database:hasActiveDesignationsInCareerFunction(id);
-            if hasDesignations is error {
-                log:printError("Error checking active designations in career function", hasDesignations, id = id);
-                return <http:InternalServerError>{
-                    body: {message: "Error occurred while updating career function"}
-                };
-            }
-            if hasDesignations {
-                return <http:BadRequest>{
-                    body: {
-                        message: "Cannot deactivate: this career function still has active designations. " +
-                            "Deactivate them first."
-                    }
-                };
-            }
-
+            // Only the active-employee check gates deactivation. A career function with
+            // active-but-unstaffed designations may be deactivated: the onboarding form
+            // fetches designations scoped to a chosen career function
+            // (fetchDesignations({ careerFunctionId })) and the career function dropdown
+            // comes from GET /career-functions, which is active-only by default — so a
+            // deactivated function's designations are already unreachable for new hires.
             boolean|error hasEmployees = database:hasActiveEmployeesInCareerFunction(id);
             if hasEmployees is error {
                 log:printError("Error checking active employees in career function", hasEmployees, id = id);
