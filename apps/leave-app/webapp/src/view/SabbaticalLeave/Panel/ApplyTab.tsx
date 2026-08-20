@@ -377,25 +377,22 @@ export default function ApplyTab({
                 format="YYYY-MM-DD"
                 disabled
               />
-              {canRenderSabbaticalFormField && (
-                <DatePicker
-                  label="Last sabbatical leave end date"
-                  sx={{ flex: 1 }}
-                  maxDate={dayjs()}
-                  value={lastSabbaticalLeaveEndDate ? dayjs(lastSabbaticalLeaveEndDate) : null}
-                  onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
-                  disabled={!sabbaticalEndDateFieldEditable}
-                  format="YYYY-MM-DD"
-                  disableFuture
-                />
-              )}
+              <DatePicker
+                label="Last sabbatical leave end date"
+                sx={{ flex: 1 }}
+                maxDate={dayjs()}
+                value={lastSabbaticalLeaveEndDate ? dayjs(lastSabbaticalLeaveEndDate) : null}
+                onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
+                disabled={!sabbaticalEndDateFieldEditable}
+                format="YYYY-MM-DD"
+                disableFuture
+              />
             </Stack>
             {sabbaticalEligibilityWarning && (
               <Alert variant="outlined" severity="warning">
                 {sabbaticalEligibilityWarning}
               </Alert>
             )}
-            <>
                 <Stack
                   direction={{ xs: "column", md: "row" }}
                   gap="2rem"
@@ -550,6 +547,7 @@ export default function ApplyTab({
                 </Box>
             </>
             )}
+
           </FormContainer>
         </Stack>
       )}
