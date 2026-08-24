@@ -61,6 +61,8 @@ export const AppConfig = {
       SERVICE_BASE_URL + `/employees/${employeeId}/personal-info`,
     jobInfo: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/job-info`,
+    employeeHistory: (employeeId: string) =>
+      SERVICE_BASE_URL + `/employees/${employeeId}/history`,
     employeeQrCode: (employeeId: string) => `${SERVICE_BASE_URL}/employees/${employeeId}/qr-code`,
     qrCodesSearch: SERVICE_BASE_URL + "/reports/qr-codes/search",
 
@@ -69,7 +71,9 @@ export const AppConfig = {
     businessUnits: SERVICE_BASE_URL + "/business-units",
     businessUnit: (id: number) => SERVICE_BASE_URL + `/business-units/${id}`,
     careerFunctions: SERVICE_BASE_URL + "/career-functions",
+    careerFunction: (id: number) => SERVICE_BASE_URL + `/career-functions/${id}`,
     designations: SERVICE_BASE_URL + "/designations",
+    designation: (id: number) => SERVICE_BASE_URL + `/designations/${id}`,
     companies: SERVICE_BASE_URL + "/companies",
     employmentTypes: SERVICE_BASE_URL + "/employment-types",
     teams: SERVICE_BASE_URL + "/teams",

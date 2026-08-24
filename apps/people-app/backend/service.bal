@@ -16,6 +16,7 @@
 
 import people.authorization;
 import people.database;
+import people.promotion;
 import people.qr;
 import people.wso2_coin;
 import people.scim;
@@ -843,9 +844,28 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get career functions.
     #
-    # + return - Career functions
-    resource function get career\-functions() returns database:CareerFunction[]|http:InternalServerError {
-        database:CareerFunction[]|error careerFunctions = database:getCareerFunctions();
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
+    # + includeInactive - If true return all including inactive (ADMIN-only)
+    # + return - Career functions or HTTP errors
+    resource function get career\-functions(http:RequestContext ctx, boolean includeInactive = false)
+            returns database:CareerFunction[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive career functions",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive career functions"}
+                };
+            }
+        }
+
+        database:CareerFunction[]|error careerFunctions = database:getCareerFunctions(includeInactive);
         if careerFunctions is error {
             string customErr = "Error while fetching Career Functions";
             log:printError(customErr, careerFunctions);
@@ -860,12 +880,30 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get designations.
     #
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
     # + careerFunctionId - Career function ID (optional)
-    # + return - Designations
-    resource function get designations(int? careerFunctionId = ())
-        returns database:Designation[]|http:InternalServerError {
+    # + includeInactive - If true return all including inactive (ADMIN-only)
+    # + return - Designations or HTTP errors
+    resource function get designations(http:RequestContext ctx, int? careerFunctionId = (),
+            boolean includeInactive = false)
+            returns database:Designation[]|http:Forbidden|http:InternalServerError {
 
-        database:Designation[]|error designations = database:getDesignations(careerFunctionId);
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive designations",
+                    invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive designations"}
+                };
+            }
+        }
+
+        database:Designation[]|error designations = database:getDesignations(careerFunctionId, includeInactive);
         if designations is error {
             string customErr = "Error while fetching Designations";
             log:printError(customErr, designations);
@@ -2640,6 +2678,176 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
+    # Create a career function.
+    #
+    # + ctx - Request context
+    # + payload - Career function creation payload
+    # + return - ID of the new career function, or HTTP errors
+    resource function post career\-functions(http:RequestContext ctx,
+            database:CreateCareerFunctionPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create career function", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage career functions"}};
+        }
+
+        int|error newId = database:createCareerFunction(payload, userInfo.email);
+        if newId is database:DuplicateCareerFunctionError {
+            return <http:BadRequest>{body: {message: newId.message()}};
+        }
+        if newId is error {
+            string customErr = "Error occurred while creating career function";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a career function.
+    #
+    # + ctx - Request context
+    # + id - Career function ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch career\-functions/[int id](http:RequestContext ctx,
+            database:UpdateCareerFunctionPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update career function", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage career functions"}};
+        }
+
+        if payload.isActive == false {
+            // Only the active-employee check gates deactivation. A career function with
+            // active-but-unstaffed designations may be deactivated: the onboarding form
+            // fetches designations scoped to a chosen career function
+            // (fetchDesignations({ careerFunctionId })) and the career function dropdown
+            // comes from GET /career-functions, which is active-only by default — so a
+            // deactivated function's designations are already unreachable for new hires.
+            boolean|error hasEmployees = database:hasActiveEmployeesInCareerFunction(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in career function", hasEmployees, id = id);
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while updating career function"}
+                };
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees in this career function"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateCareerFunction(id, payload, userInfo.email);
+        if updateResult is database:DuplicateCareerFunctionError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating career function", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating career function"}};
+        }
+        return http:OK;
+    }
+
+    # Create a designation.
+    #
+    # + ctx - Request context
+    # + payload - Designation creation payload
+    # + return - ID of the new designation, or HTTP errors
+    resource function post designations(http:RequestContext ctx, database:CreateDesignationPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create designation", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage designations"}};
+        }
+
+        int|error newId = database:createDesignation(payload, userInfo.email);
+        if newId is database:DuplicateDesignationError || newId is database:UnknownCareerFunctionError {
+            return <http:BadRequest>{body: {message: newId.message()}};
+        }
+        if newId is error {
+            string customErr = "Error occurred while creating designation";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a designation.
+    #
+    # + ctx - Request context
+    # + id - Designation ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch designations/[int id](http:RequestContext ctx,
+            database:UpdateDesignationPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update designation", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage designations"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInDesignation(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in designation", hasEmployees, id = id);
+                return <http:InternalServerError>{body: {message: "Error occurred while updating designation"}};
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees with this designation"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateDesignation(id, payload, userInfo.email);
+        if updateResult is database:DuplicateDesignationError
+                || updateResult is database:UnknownCareerFunctionError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating designation", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating designation"}};
+        }
+        return http:OK;
+    }
+
     # Create a business-unit → team mapping.
     #
     # + ctx - Request context
@@ -2947,5 +3155,174 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{body: {message: customErr}};
         }
         return orgStructure;
+    }
+
+    # Fetch the employment history timeline for an employee.
+    #
+    # Returns every employment period held by the *person* behind the given employee ID
+    # (a rehire has more than one), the field-level changes derived from the audit trail,
+    # and the approved promotions from HRIS attached to the period they fall in.
+    #
+    # + employeeId - Employee ID
+    # + return - History timeline, or an error response
+    resource function get employees/[string employeeId]/history(http:RequestContext ctx)
+        returns EmployeeHistoryResponse|http:InternalServerError|http:NotFound|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        // Access and projection are one decision, carried by one variable, so a caller can never
+        // be granted access under one tier and then filtered under another.
+        //
+        // - ADMIN, and a LEAD viewing their own subordinate, get the full projection:
+        //   attribution and system rows included. A lead can already see a subordinate's
+        //   designation, manager, status and dates through the sibling employee endpoint;
+        //   history adds only *when* those changed, so withholding it would be inconsistent.
+        // - Self gets the employee projection: no actionBy, no system rows.
+        boolean hasFullProjection = authorization:checkPermissions(
+                [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        if !hasFullProjection {
+            // Two conditions, and both are required.
+            //
+            // `manager_email` is never cleared when an employment ends, so an old row names its
+            // former manager forever. The subordinate check alone would therefore let a former
+            // lead pass by quoting a stale employee ID — and because the response fans out to
+            // every period for that person, they would receive the current employment too.
+            // Requiring the requested row to be the person's current employment closes that:
+            // the lead projection is granted only for someone they still manage today.
+            boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
+            if isSubordinate is error {
+                string customErr = string `Error occurred while checking lead authorization for ID: ${employeeId}`;
+                log:printError(customErr, isSubordinate, employeeId = employeeId);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+
+            if isSubordinate {
+                boolean|error isCurrent = database:isCurrentEmployment(employeeId);
+                if isCurrent is error {
+                    string customErr = string `Error occurred while checking employment currency for ID: ${employeeId}`;
+                    log:printError(customErr, isCurrent, employeeId = employeeId);
+                    return <http:InternalServerError>{body: {message: customErr}};
+                }
+                if !isCurrent {
+                    log:printWarn("Lead access denied: requested employment is not the person's current one",
+                            invokerEmail = userInfo.email, employeeId = employeeId);
+                }
+                hasFullProjection = isCurrent;
+            }
+        }
+
+        // Authorization compares *people*, not employee IDs. A rehired person holds several
+        // employee IDs against one personal_info row (e.g. intern "IN 0456" then permanent
+        // "EP 10006"), so comparing the caller's employee ID against the requested one would
+        // deny them their own earlier employment. Admins and leads-of-this-report skip this.
+        if !hasFullProjection {
+            int?|error callerPersonalInfoId = database:getPersonalInfoIdByWorkEmail(userInfo.email);
+            if callerPersonalInfoId is error {
+                string customErr = "Error occurred while resolving the invoker's employee record";
+                log:printError(customErr, callerPersonalInfoId, invokerEmail = userInfo.email);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+
+            int?|error requestedPersonalInfoId = database:getPersonalInfoIdByEmployeeId(employeeId);
+            if requestedPersonalInfoId is error {
+                string customErr = string `Error occurred while resolving employee record for ID: ${employeeId}`;
+                log:printError(customErr, requestedPersonalInfoId, employeeId = employeeId);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+
+            if requestedPersonalInfoId is () {
+                string customErr = "Employee information not found";
+                log:printWarn(customErr, employeeId = employeeId);
+                return <http:NotFound>{body: {message: customErr}};
+            }
+
+            if callerPersonalInfoId is () || callerPersonalInfoId != requestedPersonalInfoId {
+                log:printWarn("User is not authorized to view this employee's history",
+                        invokerEmail = userInfo.email, employeeId = employeeId);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view this employee's history"}
+                };
+            }
+        }
+
+        database:EmploymentPeriod[]|error periods = database:getEmploymentPeriods(employeeId);
+        if periods is error {
+            string customErr = string `Error occurred while fetching employment periods for ID: ${employeeId}`;
+            log:printError(customErr, periods, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        if periods.length() == 0 {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
+        }
+
+        int[] employeePkIds = from database:EmploymentPeriod period in periods
+            select period.id;
+
+        database:AuditSnapshot[]|error snapshots = database:getAuditSnapshots(employeePkIds);
+        if snapshots is error {
+            string customErr = string `Error occurred while fetching audit history for ID: ${employeeId}`;
+            log:printError(customErr, snapshots, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        database:HistoryEvent[] events = database:buildHistoryEvents(snapshots);
+
+        // Audit snapshots store foreign keys, so an event reads "87" until its id is
+        // resolved. A lookup failure degrades to raw ids rather than failing the request —
+        // an unhelpful timeline is better than none.
+        map<map<string>>|error lookupNames = database:getHistoryLookupNames();
+        if lookupNames is map<map<string>> {
+            events = database:resolveHistoryEventNames(events, lookupNames);
+        } else {
+            log:printError("Error resolving history lookup names; returning raw ids",
+                    lookupNames, employeeId = employeeId);
+        }
+
+        // The HRIS promotion database is a second database. An outage there must degrade the
+        // timeline rather than break the employee's own profile page, so the failure is
+        // reported as a flag alongside an otherwise complete response.
+        boolean promotionsUnavailable = false;
+        promotion:PromotionRecord[] promotions = [];
+
+        // work_email lives on the employment row, and a chain is walked by
+        // continuous_service_record rather than by email, so periods can legitimately carry
+        // different emails. Querying only the newest one would silently omit promotions
+        // raised under a former address.
+        string[] workEmails = [];
+        foreach database:EmploymentPeriod period in periods {
+            if period.workEmail.trim() != "" && workEmails.indexOf(period.workEmail) is () {
+                workEmails.push(period.workEmail);
+            }
+        }
+
+        foreach string workEmail in workEmails {
+            promotion:PromotionRecord[]|error fetched = promotion:getApprovedPromotions(workEmail);
+            if fetched is error {
+                promotionsUnavailable = true;
+                log:printError("Error occurred while fetching promotions from HRIS; returning history without them",
+                        fetched, employeeId = employeeId, workEmail = workEmail);
+            } else {
+                promotions.push(...fetched);
+            }
+        }
+
+        EmploymentPeriodResponse[] periodResponses = assignPromotionsToPeriods(periods, promotions);
+
+        return {
+            periods: periodResponses,
+            events: projectHistoryEvents(events, hasFullProjection),
+            promotionsUnavailable: promotionsUnavailable
+        };
     }
 }

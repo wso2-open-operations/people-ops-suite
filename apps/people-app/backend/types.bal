@@ -15,8 +15,66 @@
 // under the License.
 
 import people.database;
+import people.promotion;
 
 import ballerina/constraint;
+
+# One field-level change as returned to the client.
+#
+# `actionBy` is optional rather than required because the reduced projection strips it
+# server-side. The field is absent from the payload entirely for those callers rather than
+# blanked, so the client is never handed an actor it is not permitted to display.
+public type HistoryEventResponse record {|
+    # Employee table primary key this event belongs to
+    int employeePkId;
+    # Canonical field key (e.g. "team_id")
+    string 'field;
+    # Audit table the change came from, so the client can group events by kind
+    string sourceTable;
+    # Value before the change, if any
+    string? previousValue;
+    # Value after the change
+    string? currentValue;
+    # When the change occurred
+    string occurredOn;
+    # Who made the change. Omitted entirely under the reduced projection.
+    string actionBy?;
+    # True when the change was made by an automated process rather than a person.
+    # Always false under the reduced projection, whose system events are dropped outright.
+    boolean isSystem;
+|};
+
+# One employment period with the promotions that fall inside it.
+public type EmploymentPeriodResponse record {|
+    # Employee table primary key
+    int id;
+    # Employee ID (e.g. "EP 10006")
+    string? employeeId;
+    # Employment type name
+    string employmentType;
+    # Start date
+    string startDate;
+    # Final day of employment, if the period has ended
+    string? endDate;
+    # Work email
+    string workEmail;
+    # Employee ID of the prior linked employment, if any
+    string? continuousServiceRecord;
+    # Approved promotions that took effect during this period
+    promotion:PromotionRecord[] promotions;
+|};
+
+# Employee history timeline: employment periods, field-level changes, and promotions.
+public type EmployeeHistoryResponse record {|
+    # Employment periods for the person, newest first, each carrying its promotions
+    EmploymentPeriodResponse[] periods;
+    # Field-level change events, newest first, already filtered for the caller's privilege
+    HistoryEventResponse[] events;
+    # True when the HRIS promotion lookup failed. The rest of the response is still valid;
+    # the client should indicate that promotions could not be loaded rather than that there
+    # were none.
+    boolean promotionsUnavailable;
+|};
 
 // # Payload for adding a vehicle.
 type NewVehicle record {|

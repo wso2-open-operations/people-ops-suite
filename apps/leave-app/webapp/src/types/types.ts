@@ -269,7 +269,6 @@ export interface ApprovalResponse {
 export interface EligibilityResponse {
   employmentStartDate: string;
   lastSabbaticalLeaveEndDate: string;
-  isEligible: boolean;
 }
 
 // Sabbatical application request type.

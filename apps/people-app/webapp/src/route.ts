@@ -26,6 +26,8 @@ import { useSelector } from "react-redux";
 import { selectRoles } from "@slices/authSlice/auth";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import HubIcon from "@mui/icons-material/Hub";
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import WorkspacesIcon from "@mui/icons-material/Workspaces";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PersonOffIcon from "@mui/icons-material/PersonOff";
@@ -89,6 +91,18 @@ const OnboardingRoot = () => {
   const { pathname } = useLocation();
   if (pathname === "/onboarding") {
     return React.createElement(Navigate, { to: "/onboarding/single", replace: true });
+  }
+  return React.createElement(Outlet);
+};
+
+const MasterDataRoot = () => {
+  const { pathname, search } = useLocation();
+  if (pathname === "/master-data") {
+    // Forward the query string so links such as /master-data?tab=teams keep their tab.
+    return React.createElement(Navigate, {
+      to: `/master-data/org-structure${search}`,
+      replace: true,
+    });
   }
   return React.createElement(Outlet);
 };
@@ -192,8 +206,24 @@ export const routes: RouteObjectWithRole[] = [
     path: "/master-data",
     text: "Master Data",
     icon: React.createElement(HubIcon),
-    element: React.createElement(View.masterDataView),
+    element: React.createElement(MasterDataRoot),
     allowRoles: [Role.ADMIN],
+    children: [
+      {
+        path: "/master-data/org-structure",
+        text: "Org Structure",
+        icon: React.createElement(AccountTreeIcon),
+        element: React.createElement(View.masterDataView),
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/master-data/career-functions",
+        text: "Career Functions",
+        icon: React.createElement(WorkspacesIcon),
+        element: React.createElement(View.careerFunctionView),
+        allowRoles: [Role.ADMIN],
+      },
+    ],
   },
   // Todo: Uncomment when help view is ready
   // {

@@ -15,12 +15,14 @@
 // under the License.
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { serviceUrls } from "@/config/config";
 import { Warning } from "@mui/icons-material";
 import useHttp, { executeWithTokenHandling } from "@/utils/http";
 
 export const MaintenanceBanner = () => {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const navigate = useNavigate();
   const { handleRequest, handleRequestWithNewToken } = useHttp();
 
   useEffect(() => {
@@ -62,9 +64,15 @@ export const MaintenanceBanner = () => {
         <h2 className="text-2xl font-bold text-[#1F2A44] dark:text-white">
           Under Maintenance
         </h2>
-        <p className="text-[#808080] dark:text-gray-300">
+        <p className="text-[#808080] dark:text-gray-300 mb-2">
           The app is currently undergoing maintenance and is temporarily unavailable. Please check back later.
         </p>
+        <button
+          onClick={() => navigate("/")}
+          className="w-full mt-2 py-3 px-4 bg-primary text-white font-semibold rounded-xl"
+        >
+          Go Back
+        </button>
       </div>
     </div>
   );

@@ -45,6 +45,17 @@ public type NoFieldsToUpdateError distinct error;
 # active-reservation unique index (slot/date or employee/date already active).
 public type DuplicateActiveReservationError distinct error;
 
+# Raised when an active designation with the same name already exists in the career function.
+public type DuplicateDesignationError distinct error;
+
+# Raised when a career function with the same name already exists. Unlike designations, this
+# applies to every row regardless of `is_active` — a career function name is never reusable.
+public type DuplicateCareerFunctionError distinct error;
+
+# Raised when a designation references a career function that does not exist (foreign key
+# violation), so the caller gets a 400 rather than an opaque 500.
+public type UnknownCareerFunctionError distinct error;
+
 # [Configurable] Database configs.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
@@ -559,6 +570,12 @@ public type CareerFunction record {|
     # Career function name
     @sql:Column {name: "career_function"}
     string careerFunction;
+    # Whether the career function is active
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # Number of active employees across this career function's designations
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
 |};
 
 # Designation.
@@ -570,6 +587,67 @@ public type Designation record {|
     # Job band
     @sql:Column {name: "job_band"}
     int? jobBand;
+    # Parent career function ID, nil when unassigned
+    @sql:Column {name: "career_function_id"}
+    int? careerFunctionId;
+    # Whether the designation is active
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # Number of active employees holding this designation
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
+|};
+
+# Payload to create a career function.
+public type CreateCareerFunctionPayload record {|
+    # Career function name. The pattern rejects whitespace-only input: minLength alone
+    # sees the raw value, and the name is trimmed only after validation passes.
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
+    string careerFunction;
+|};
+
+# Payload to update a career function (all fields optional for PATCH).
+public type UpdateCareerFunctionPayload record {|
+    # Career function name; whitespace-only is rejected (see CreateCareerFunctionPayload)
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
+    string? careerFunction = ();
+    # Whether the career function is active
+    boolean? isActive = ();
+|};
+
+# Payload to create a designation.
+public type CreateDesignationPayload record {|
+    # Designation name
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
+    string designation;
+    # Job band (optional): nil, 0, or any positive integer. Negatives are rejected so a
+    # real band can never collide with JOB_BAND_CLEAR_SENTINEL (-1), which means
+    # "clear to NULL" on the update path only.
+    @constraint:Int {minValue: 0}
+    int? jobBand = ();
+    # Parent career function ID (optional; nil means unassigned). Must be a real id —
+    # a bad value would otherwise violate the foreign key and surface as a 500.
+    @constraint:Int {minValue: 1}
+    int? careerFunctionId = ();
+|};
+
+# Payload to update a designation (all fields optional for PATCH).
+# NOTE: jobBand and careerFunctionId are deliberately NOT constrained here, unlike on
+# `CreateDesignationPayload`. On the update path -1 is meaningful: it is
+# JOB_BAND_CLEAR_SENTINEL / CAREER_FUNCTION_CLEAR_SENTINEL, meaning "clear this column to
+# NULL". Adding a minValue constraint here would silently break unassigning a designation
+# and clearing its job band.
+public type UpdateDesignationPayload record {|
+    # Designation name
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
+    string? designation = ();
+    # Job band; -1 (JOB_BAND_CLEAR_SENTINEL) clears it, nil leaves it unchanged
+    int? jobBand = ();
+    # Parent career function ID; -1 (CAREER_FUNCTION_CLEAR_SENTINEL) clears it, nil
+    # leaves it unchanged
+    int? careerFunctionId = ();
+    # Whether the designation is active
+    boolean? isActive = ();
 |};
 
 # [Database] Company record with allowed locations as a JSON string.
@@ -1352,4 +1430,69 @@ type CompanyOrgChartBusinessUnitRow record {|
     int activeEmployeeCount;
     # Teams with nested sub-teams and units as raw JSON.
     json teams;
+|};
+
+# One employment period for a person.
+public type EmploymentPeriod record {|
+    # Employee table primary key
+    int id;
+    # Employee ID (e.g. "EP 10006")
+    string? employeeId;
+    # Employment type name
+    string employmentType;
+    # Start date
+    string startDate;
+    # Final day of employment, if the period has ended
+    string? endDate;
+    # Work email
+    string workEmail;
+    # Employee ID of the prior linked employment, if any
+    string? continuousServiceRecord;
+|};
+
+# A raw audit row awaiting diffing.
+public type AuditSnapshot record {|
+    # Employee table primary key this snapshot belongs to
+    int employeePkId;
+    # Source table this snapshot came from
+    string sourceTable;
+    # INSERT or UPDATE
+    string actionType;
+    # Who performed the action
+    string actionBy;
+    # When the action occurred
+    string actionOn;
+    # The full row snapshot as JSON
+    json data;
+|};
+
+# One field-level change derived from consecutive audit snapshots.
+public type HistoryEvent record {|
+    # Employee table primary key this event belongs to
+    int employeePkId;
+    # Canonical field key (e.g. "team_id")
+    string 'field;
+    # Audit table the change came from, so the client can group events by kind
+    # (employment vs personal information) without inferring it from the field name
+    string sourceTable;
+    # Value before the change, if any
+    string? previousValue;
+    # Value after the change
+    string? currentValue;
+    # When the change occurred
+    string occurredOn;
+    # Who made the change
+    string actionBy;
+    # True when actionBy is a system actor rather than a person
+    boolean isSystem;
+|};
+
+# One id-to-name mapping row used to resolve history event values.
+public type HistoryLookupName record {|
+    # The audit field this mapping applies to, e.g. "unit_id"
+    string 'field;
+    # The lookup row's primary key
+    int id;
+    # The human-readable name
+    string name;
 |};

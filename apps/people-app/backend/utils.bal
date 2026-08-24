@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 import people.database;
+import people.promotion;
 
 import ballerina/data.csv;
 import ballerina/http;
@@ -741,4 +742,119 @@ public isolated function parseCsvBytes(byte[] fileBytes) returns BulkEmployeeCsv
         return error("CSV must contain a header row and at least one data row");
     }
     return rows;
+}
+
+# Reduce history events to what the calling privilege level is permitted to receive.
+#
+# The filtering happens here, on the server, and never on the client. An event the caller may
+# not see is absent from the payload rather than flagged for the client to hide, so the data
+# is not merely unrendered but never transmitted.
+#
+# The full projection is granted to ADMINs and to a lead viewing their own subordinate; the
+# reduced projection applies to someone viewing their own record.
+#
+# Under the reduced projection:
+# - `actionBy` is omitted from every event: an employee sees *that* their team changed, not
+#   which HR administrator changed it.
+# - Events made by system actors are dropped: migrations and scheduled jobs are operational
+#   noise that would read as unexplained changes to their own record.
+#
+# Leaver events (employee_status transitions and resignation reason) are returned in BOTH
+# projections. This is deliberate: the employee already knows they are leaving, and hiding the
+# transition would leave an unexplained gap at the end of their own timeline.
+#
+# + events - Derived history events, newest first
+# + hasFullProjection - True when the caller may see attribution and system rows
+# + return - Events the caller is permitted to receive, newest first
+public isolated function projectHistoryEvents(database:HistoryEvent[] events, boolean hasFullProjection)
+        returns HistoryEventResponse[] {
+
+    if hasFullProjection {
+        return from database:HistoryEvent event in events
+            select {
+                employeePkId: event.employeePkId,
+                'field: event.'field,
+                sourceTable: event.sourceTable,
+                previousValue: event.previousValue,
+                currentValue: event.currentValue,
+                occurredOn: event.occurredOn,
+                actionBy: event.actionBy,
+                isSystem: event.isSystem
+            };
+    }
+
+    return from database:HistoryEvent event in events
+        where !event.isSystem
+        select {
+            employeePkId: event.employeePkId,
+            'field: event.'field,
+            sourceTable: event.sourceTable,
+            previousValue: event.previousValue,
+            currentValue: event.currentValue,
+            occurredOn: event.occurredOn,
+            isSystem: false
+        };
+}
+
+# Attach each promotion to the employment period it was raised during.
+#
+# A promotion belongs to the period whose startDate..endDate range contains its `createdOn`.
+# An open period (no endDate) extends to the present. The promoted date is deliberately not
+# used: HRIS frequently leaves it null, whereas a request is always raised while the employee
+# is employed, so its created date falls inside exactly one period.
+#
+# A promotion matching no period is logged and omitted rather than reassigned. That should not
+# happen for well-formed data — it means the created date falls outside every employment
+# period, which points at bad data rather than a case needing a fallback.
+#
+# + periods - Employment periods for the person, newest first
+# + promotions - Approved promotions for the person
+# + return - Periods in their original order, each carrying its promotions
+public isolated function assignPromotionsToPeriods(database:EmploymentPeriod[] periods,
+        promotion:PromotionRecord[] promotions) returns EmploymentPeriodResponse[] {
+
+    promotion:PromotionRecord[][] bucketed = from database:EmploymentPeriod _ in periods
+        select [];
+
+    foreach promotion:PromotionRecord promotionRecord in promotions {
+        int? targetIndex = ();
+        string createdOn = promotionRecord.createdOn;
+
+        // A promotion request is raised while the employee is employed, so its created date
+        // always falls inside exactly one employment period. That containment is what
+        // attributes the promotion to the right employment — the promoted date is not used
+        // here, since HRIS frequently leaves it unpopulated.
+        foreach int index in 0 ..< periods.length() {
+            database:EmploymentPeriod period = periods[index];
+            string? endDate = period.endDate;
+            boolean startedBy = createdOn >= period.startDate;
+            boolean endedAfter = endDate is () || createdOn <= endDate;
+            if startedBy && endedAfter {
+                targetIndex = index;
+                break;
+            }
+        }
+
+        if targetIndex is int {
+            bucketed[targetIndex].push(promotionRecord);
+        } else {
+            // No period contains it. This should not happen for well-formed data; it means the
+            // promotion's created date falls outside every employment period, which points at
+            // bad data rather than a timeline that needs a fallback.
+            log:printWarn("Promotion created date falls outside every employment period; omitted",
+                    createdOn = createdOn, cycleName = promotionRecord.cycleName);
+        }
+    }
+
+    return from int index in 0 ..< periods.length()
+        select {
+            id: periods[index].id,
+            employeeId: periods[index].employeeId,
+            employmentType: periods[index].employmentType,
+            startDate: periods[index].startDate,
+            endDate: periods[index].endDate,
+            workEmail: periods[index].workEmail,
+            continuousServiceRecord: periods[index].continuousServiceRecord,
+            promotions: bucketed[index]
+        };
 }

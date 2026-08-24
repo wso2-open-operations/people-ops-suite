@@ -22,11 +22,13 @@ import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import employeeReducer from "@slices/employeeSlice/employee";
+import employeeHistoryReducer from "@slices/employeeSlice/employeeHistory";
 import employeePersonalInfoReducer from "@slices/employeeSlice/employeePersonalInfo";
 import userReducer from "@slices/userSlice/user";
 import organizationReducer from "@slices/organizationSlice/organization";
 import masterDataReducer from "@slices/masterDataSlice/masterData";
 import bulkOnboardingReducer from "@slices/bulkOnboardingSlice/bulkOnboarding";
+import careerFunctionReducer from "@slices/careerFunctionSlice/careerFunction";
 
 enableMapSet();
 
@@ -36,11 +38,13 @@ export const store = configureStore({
     user: userReducer,
     common: commonReducer,
     employee: employeeReducer,
+    employeeHistory: employeeHistoryReducer,
     employeePersonalInfo: employeePersonalInfoReducer,
     appConfig: appConfigReducer,
     organization: organizationReducer,
     masterData: masterDataReducer,
     bulkOnboarding: bulkOnboardingReducer,
+    careerFunction: careerFunctionReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware(),

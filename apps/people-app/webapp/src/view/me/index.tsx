@@ -87,6 +87,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { array, object, string } from "yup";
 import { Role, selectRoles } from "@slices/authSlice/auth";
 import { useAppDispatch, useAppSelector } from "@slices/store";
+import EmployeeHistory from "@component/employeeHistory/EmployeeHistory";
 
 const ReadOnly = ({
   label,
@@ -232,6 +233,11 @@ export default function Me({
     (state) => state.employeePersonalInfo,
   );
   const [isSavingChanges, setSavingChanges] = useState(false);
+  // Two pieces of state, deliberately: `historyExpanded` toggles with the
+  // accordion, while `hasExpandedHistory` latches on first open so the
+  // timeline stays mounted (and is not re-fetched) across collapse/expand.
+  const [historyExpanded, setHistoryExpanded] = useState(false);
+  const [hasExpandedHistory, setHasExpandedHistory] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [qrImageNaturalSize, setQrImageNaturalSize] = useState<number | null>(
     null,
@@ -1086,7 +1092,6 @@ export default function Me({
         </AccordionDetails>
       </Accordion>
       <Accordion
-        defaultExpanded
         sx={{
           borderRadius: 2,
           boxShadow: 0,
@@ -1633,6 +1638,35 @@ export default function Me({
             <Typography color="text.secondary">
               Personal Information not found.
             </Typography>
+          )}
+        </AccordionDetails>
+      </Accordion>
+
+      <Accordion
+        expanded={historyExpanded}
+        onChange={(_, expanded) => {
+          setHistoryExpanded(expanded);
+          if (expanded) setHasExpandedHistory(true);
+        }}
+        sx={{
+          borderRadius: 2,
+          mt: 2,
+          boxShadow: 0,
+          border: 1,
+          borderColor: "divider",
+        }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          sx={{ borderRadius: 2, backgroundColor: "background.paper" }}
+        >
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            History
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          {hasExpandedHistory && targetEmployeeId && (
+            <EmployeeHistory employeeId={targetEmployeeId} />
           )}
         </AccordionDetails>
       </Accordion>

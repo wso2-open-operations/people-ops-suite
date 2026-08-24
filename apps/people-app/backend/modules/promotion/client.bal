@@ -13,9 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import ballerinax/mysql;
+import ballerinax/mysql.driver as _;
 
-export { default as PageTransitionWrapper } from "@/components/shared/PageTransitionWrapper";
-export { default as BottomSheet } from "@/components/shared/BottomSheet";
-export { default as RequireUserInit } from "@/components/shared/RequireUserInit";
-export { default as BottomNav } from "@/components/shared/BottomNav";
-export { default as ExitToAppsDialog } from "@/components/shared/ExitToAppsDialog";
+# HRIS promotion database client configuration.
+configurable PromotionDatabaseConfig promotionDbConfig = ?;
+
+function initPromotionDbClient() returns mysql:Client|error => new (...promotionDbConfig);
+
+# HRIS promotion database client.
+final mysql:Client promotionDbClient = check initPromotionDbClient();
