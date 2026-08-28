@@ -13,13 +13,39 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import ballerina/sql;
 import ballerinax/mysql;
 import ballerinax/mysql.driver as _;
 
 # HRIS promotion database client configuration.
 configurable PromotionDatabaseConfig promotionDbConfig = ?;
 
-function initPromotionDbClient() returns mysql:Client|error => new (...promotionDbConfig);
+# Initialize the HRIS promotion database client.
+#
+# See the note on `PromotionDatabaseConfig` in types.bal for why mysql:Options/
+# sql:ConnectionPool are built here rather than being configurable fields themselves.
+#
+# + return - Database client, or error
+function initPromotionDbClient() returns mysql:Client|sql:Error {
+    final sql:ConnectionPool connPool = {
+        maxOpenConnections: promotionDbConfig.maxOpenConnections,
+        maxConnectionLifeTime: promotionDbConfig.maxConnectionLifeTime,
+        minIdleConnections: promotionDbConfig.minIdleConnections
+    };
+    final mysql:Options mysqlOptions = {
+        ssl: {mode: mysql:SSL_PREFERRED},
+        connectTimeout: promotionDbConfig.connectTimeout
+    };
+    return new (
+        user = promotionDbConfig.user,
+        password = promotionDbConfig.password,
+        database = promotionDbConfig.database,
+        host = promotionDbConfig.host,
+        port = promotionDbConfig.port,
+        options = mysqlOptions,
+        connectionPool = connPool
+    );
+}
 
 # HRIS promotion database client.
 final mysql:Client promotionDbClient = check initPromotionDbClient();

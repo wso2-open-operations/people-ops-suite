@@ -17,7 +17,6 @@
 import ballerina/constraint;
 import ballerina/lang.regexp;
 import ballerina/sql;
-import ballerinax/mysql;
 
 # Email validation pattern.
 public final regexp:RegExp EMAIL_PATTERN = re `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`;
@@ -57,6 +56,12 @@ public type DuplicateCareerFunctionError distinct error;
 public type UnknownCareerFunctionError distinct error;
 
 # [Configurable] Database configs.
+# Deliberately flat (primitive fields only) rather than embedding mysql:Options/
+# sql:ConnectionPool directly: Choreo's config UI introspects configurable variable
+# types, so nesting the actual library types here would expose their entire field
+# surface (many more knobs than we use) as configurable entries. initPeopleOpsDbClient()
+# in client.bal builds the real mysql:Options/sql:ConnectionPool values internally
+# from these primitives, which stays invisible to that introspection.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
     string user;
@@ -68,10 +73,14 @@ type DatabaseConfig record {|
     string host;
     # Port number of the MySQL server
     int port;
-    # The `mysql:Options` configurations
-    mysql:Options options?;
-    # The `sql:ConnectionPool` configurations
-    sql:ConnectionPool connectionPool?;
+    # Max open connections in the pool
+    int maxOpenConnections;
+    # Max connection lifetime (seconds)
+    decimal maxConnectionLifeTime;
+    # Min idle connections in the pool
+    int minIdleConnections;
+    # Connection timeout (seconds)
+    decimal connectTimeout;
 |};
 
 # Employee basic information.
@@ -714,7 +723,6 @@ public type House record {|
     # House name
     string name;
 |};
-
 
 # Manager payload.
 public type Manager record {|

@@ -14,10 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ballerina/sql;
-import ballerinax/mysql;
-
 # HRIS promotion database configuration.
+# Deliberately flat — see the note on `DatabaseConfig` in the database module's
+# types.bal for why (keeps mysql:Options/sql:ConnectionPool's full field surface out
+# of Choreo's auto-generated config UI).
 public type PromotionDatabaseConfig record {|
     # Database user
     string user;
@@ -29,12 +29,14 @@ public type PromotionDatabaseConfig record {|
     string host;
     # Port number of the MySQL server
     int port;
-    # The `mysql:Options` configurations. Present so a cross-machine connection to the
-    # HRIS host can be given a TLS mode and a connect timeout, as the primary database
-    # config already can.
-    mysql:Options options?;
-    # Connection pool configuration
-    sql:ConnectionPool connectionPool?;
+    # Max open connections in the pool
+    int maxOpenConnections;
+    # Max connection lifetime (seconds)
+    decimal maxConnectionLifeTime;
+    # Min idle connections in the pool
+    int minIdleConnections;
+    # Connection timeout (seconds)
+    decimal connectTimeout;
 |};
 
 # Approved promotion record for an employee.
