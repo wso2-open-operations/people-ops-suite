@@ -453,6 +453,59 @@ public isolated function getAsgardeoGroupsByTeam(int teamId, int employmentTypeI
         select groupRow.groupName;
 }
 
+# Resolve Asgardeo group names for an employee's org-hierarchy placement using the
+# Unit -> Sub-Team -> Team -> Business Unit fallback (most specific non-null idp_groups wins).
+#
+# + businessUnitId - Business unit ID
+# + teamId - Team ID
+# + subTeamId - Sub-team ID, or () if the employee has no sub-team
+# + unitId - Unit ID, or () if the employee has no unit
+# + return - Group names from the most specific configured hierarchy level, an empty
+# array if no level in the chain has idp_groups configured, or an error
+public isolated function getAsgardeoGroupsByHierarchy(int businessUnitId, int teamId, int? subTeamId, int? unitId)
+        returns string[]|error {
+    // Defensive check: a unit is only ever reached via a sub-team in this hierarchy
+    // (business_unit_team_sub_team_unit.business_unit_team_sub_team_id), so a request
+    // with unitId set but subTeamId unset is malformed input, not a valid "no sub-team"
+    // case. Without this check, the SQL join would silently fail to match the unit
+    // level and fall back to Team/Business-Unit level without any indication anything
+    // was wrong. Fail loudly instead.
+    if unitId is int && subTeamId is () {
+        return error("unitId provided without subTeamId: a unit cannot be resolved without its parent sub-team",
+                businessUnitId = businessUnitId, teamId = teamId, unitId = unitId);
+    }
+
+    stream<record {|json? idpGroups;|}, error?> rows =
+        databaseClient->query(getIdpGroupsForHierarchyQuery(businessUnitId, teamId, subTeamId, unitId));
+    record {|record {|json? idpGroups;|} value;|}|error? firstRow = rows.next();
+    error? closeErr = rows.close();
+
+    if firstRow is error {
+        return firstRow;
+    }
+    if closeErr is error {
+        return closeErr;
+    }
+    if firstRow is () {
+        // No matching business_unit row at all (shouldn't happen for a valid businessUnitId).
+        return [];
+    }
+
+    json? idpGroups = firstRow.value.idpGroups;
+    if idpGroups is () {
+        // No level in the chain (unit/sub-team/team/business-unit) has idp_groups set.
+        return [];
+    }
+
+    string[]|error groupNames = idpGroups.cloneWithType();
+    if groupNames is error {
+        return error("Failed to parse idp_groups JSON for hierarchy",
+                groupNames, businessUnitId = businessUnitId, teamId = teamId,
+                subTeamId = subTeamId, unitId = unitId);
+    }
+    return groupNames;
+}
+
 # Get houses.
 #
 # + return - Houses

@@ -1434,6 +1434,33 @@ isolated function getAsgardeoGroupsForTeamQuery(int teamId, int employmentTypeId
      FROM team_asgardeo_groups
      WHERE team_id = ${teamId} AND employment_type_id = ${employmentTypeId};`;
 
+# Resolve the IDP group array for an employee's org-hierarchy placement, applying a
+# 4-level fallback: Unit -> Sub-Team -> Team -> Business Unit. The most specific level
+# whose `idp_groups` value is non-null wins; levels with a null `idp_groups` (or that
+# aren't reached because the employee has no sub-team/unit) are skipped upward.
+#
+# + businessUnitId - Business unit ID (employee.business_unit_id)
+# + teamId - Team ID (employee.team_id)
+# + subTeamId - Sub-team ID (employee.sub_team_id), or () if not set
+# + unitId - Unit ID (employee.unit_id), or () if not set
+# + return - Parameterized query returning a single resolved idpGroups JSON column
+isolated function getIdpGroupsForHierarchyQuery(int businessUnitId, int teamId, int? subTeamId, int? unitId)
+        returns sql:ParameterizedQuery =>
+    `SELECT COALESCE(
+         butstu.idp_groups,
+         butst.idp_groups,
+         but.idp_groups,
+         bu.idp_groups
+     ) AS idpGroups
+     FROM business_unit bu
+     LEFT JOIN business_unit_team but
+         ON but.business_unit_id = bu.id AND but.team_id = ${teamId} AND but.is_active = 1
+     LEFT JOIN business_unit_team_sub_team butst
+         ON butst.business_unit_team_id = but.id AND butst.sub_team_id = ${subTeamId} AND butst.is_active = 1
+     LEFT JOIN business_unit_team_sub_team_unit butstu
+         ON butstu.business_unit_team_sub_team_id = butst.id AND butstu.unit_id = ${unitId} AND butstu.is_active = 1
+     WHERE bu.id = ${businessUnitId};`;
+
 # Get houses query.
 #
 # + return - Houses query

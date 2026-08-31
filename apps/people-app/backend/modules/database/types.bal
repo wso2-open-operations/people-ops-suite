@@ -823,8 +823,13 @@ public type BulkGroupAssignmentWarning record {|
     string employeeId;
     # Work email of the affected employee
     string workEmail;
-    # Groups that could not be assigned
+    # Groups that could not be assigned. Empty when the failure happened before
+    # group names could even be resolved (see `reason` in that case).
     string[] failedGroups;
+    # Set when the warning is due to a failure resolving which groups to assign
+    # (e.g. the hierarchy lookup itself errored), rather than a per-group SCIM
+    # assignment failure. () for the normal per-group-failure case.
+    string? reason = ();
 |};
 
 public type OrphanedScimUser record {|
