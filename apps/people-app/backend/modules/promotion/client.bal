@@ -26,14 +26,24 @@ configurable PromotionDatabaseConfig promotionDbConfig = ?;
 # sql:ConnectionPool are built here rather than being configurable fields themselves.
 #
 # + return - Database client, or error
-function initPromotionDbClient() returns mysql:Client|sql:Error {
+function initPromotionDbClient() returns mysql:Client|error {
     final sql:ConnectionPool connPool = {
         maxOpenConnections: promotionDbConfig.maxOpenConnections,
         maxConnectionLifeTime: promotionDbConfig.maxConnectionLifeTime,
         minIdleConnections: promotionDbConfig.minIdleConnections
     };
+    
+    mysql:SSLMode sslMode = mysql:SSL_PREFERRED;
+    match promotionDbConfig.sslMode {
+        "DISABLED" => { sslMode = mysql:SSL_DISABLED; }
+        "REQUIRED" => { sslMode = mysql:SSL_REQUIRED; }
+        "VERIFY_CA" => { sslMode = mysql:SSL_VERIFY_CA; }
+        "VERIFY_IDENTITY" => { sslMode = mysql:SSL_VERIFY_IDENTITY; }
+        _ => { sslMode = mysql:SSL_PREFERRED; }
+    }
+
     final mysql:Options mysqlOptions = {
-        ssl: {mode: mysql:SSL_PREFERRED},
+        ssl: {mode: sslMode},
         connectTimeout: promotionDbConfig.connectTimeout
     };
     return new (

@@ -33,8 +33,18 @@ function initPeopleOpsDbClient() returns mysql:Client|error {
         maxConnectionLifeTime: dbConfig.maxConnectionLifeTime,
         minIdleConnections: dbConfig.minIdleConnections
     };
+
+    mysql:SSLMode sslMode = mysql:SSL_PREFERRED;
+    match dbConfig.sslMode {
+        "DISABLED" => { sslMode = mysql:SSL_DISABLED; }
+        "REQUIRED" => { sslMode = mysql:SSL_REQUIRED; }
+        "VERIFY_CA" => { sslMode = mysql:SSL_VERIFY_CA; }
+        "VERIFY_IDENTITY" => { sslMode = mysql:SSL_VERIFY_IDENTITY; }
+        _ => { sslMode = mysql:SSL_PREFERRED; }
+    }
+
     final mysql:Options mysqlOptions = {
-        ssl: {mode: mysql:SSL_PREFERRED},
+        ssl: {mode: sslMode},
         connectTimeout: dbConfig.connectTimeout
     };
     return new (

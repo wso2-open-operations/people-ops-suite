@@ -30,13 +30,15 @@ public type PromotionDatabaseConfig record {|
     # Port number of the MySQL server
     int port;
     # Max open connections in the pool
-    int maxOpenConnections;
+    int maxOpenConnections = 10;
     # Max connection lifetime (seconds)
-    decimal maxConnectionLifeTime;
+    decimal maxConnectionLifeTime = 240;
     # Min idle connections in the pool
-    int minIdleConnections;
+    int minIdleConnections = 0;
     # Connection timeout (seconds)
-    decimal connectTimeout;
+    decimal connectTimeout = 30;
+    # SSL mode for DB connection ("DISABLED", "PREFERRED", "REQUIRED", "VERIFY_CA", "VERIFY_IDENTITY")
+    string sslMode = "PREFERRED";
 |};
 
 # Approved promotion record for an employee.

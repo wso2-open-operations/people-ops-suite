@@ -14,11 +14,9 @@ database = ""
 port = 
 maxOpenConnections = 
 maxConnectionLifeTime = 
-minIdleConnections=
-[people.database.dbConfig.options]
+minIdleConnections = 
 connectTimeout = 
-[people.database.dbConfig.options.ssl]
-mode = "PREFERRED"
+sslMode = "PREFERRED"
 
 [people.promotion.promotionDbConfig]
 host = ""
@@ -26,14 +24,15 @@ user = ""
 password = ""
 database = ""
 port = 
+maxOpenConnections = 
 # Keep maxConnectionLifeTime below the HRIS server's wait_timeout (300s at the
 # time of writing) and minIdleConnections at 0. The pool must retire a
 # connection before the server closes it, or a query after an idle period
 # fails with "No operations allowed after connection closed" (SQL state 08003).
-maxOpenConnections = 
 maxConnectionLifeTime = 
 minIdleConnections = 
 connectTimeout = 
+sslMode = "PREFERRED"
 
 [people.wso2_coin]
 masterWalletAddress = ""
