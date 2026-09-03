@@ -1760,6 +1760,41 @@ isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmplo
     return finalQuery;
 }
 
+# Update the denormalized first/last name copies held on the employee row itself.
+#
+# `employee.first_name`/`employee.last_name` are separate columns from
+# `personal_info.first_name`/`personal_info.last_name` (both are populated at creation time
+# from the two halves of CreateEmployeePayload) and are what the employee directory, search,
+# and detail views actually read. They must be kept in sync whenever a personal-info edit
+# changes the name, or those views silently keep showing the old name.
+#
+# + employeeId - Employee ID
+# + payload - Personal info update payload
+# + updatedBy - Updater of the employee record
+# + return - sql:ParameterizedQuery - Update query for the employee row's name columns
+isolated function updateEmployeeNameQuery(string employeeId, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `UPDATE employee SET `;
+    sql:ParameterizedQuery[] updates = [];
+
+    if payload.firstName != () {
+        updates.push(`first_name = ${payload.firstName}`);
+    }
+
+    if payload.lastName != () {
+        updates.push(`last_name = ${payload.lastName}`);
+    }
+
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
+
+    return sql:queryConcat(query, `
+        WHERE employee_id = ${employeeId}
+    `);
+}
+
 # Add emergency contact query.
 #
 # + employeeId - Employee ID
