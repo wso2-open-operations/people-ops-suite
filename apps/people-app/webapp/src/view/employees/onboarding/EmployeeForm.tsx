@@ -180,11 +180,11 @@ const toJobUpdatePayload = (
   // (see diffObject below), so a plain `null` here would be indistinguishable from "this
   // field wasn't touched" once diffed and would be silently dropped instead of clearing
   // the value. -1 forces a real, always-diffable change when the user picks "None."
-  officeId: values.officeId > 0 ? values.officeId : -1,
+  officeId: values.officeId,
   teamId: values.teamId > 0 ? values.teamId : null,
   subTeamId: values.subTeamId > 0 ? values.subTeamId : null,
   businessUnitId: values.businessUnitId > 0 ? values.businessUnitId : null,
-  unitId: values.unitId > 0 ? values.unitId : -1,
+  unitId: values.unitId,
   houseId: values.houseId > 0 ? values.houseId : null,
   continuousServiceRecord: values.isRelocation
     ? (values.continuousServiceRecord ?? null)
@@ -248,15 +248,13 @@ const OrangeConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.alternativeLabel}`]: { top: 18 },
   [`&.${stepConnectorClasses.active}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: `linear-gradient(90deg, ${
-        theme.palette.secondary.contrastText
+      backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText
         }, ${alpha(theme.palette.secondary.contrastText, 0.5)})`,
     },
   },
   [`&.${stepConnectorClasses.completed}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText}, ${
-        theme.palette.secondary.contrastText
+      backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText}, ${theme.palette.secondary.contrastText
         })`,
     },
   },
@@ -286,8 +284,7 @@ const StepIconRoot = styled("div")<{
   fontWeight: 600,
 
   ...(ownerState.active && {
-    backgroundImage: `linear-gradient(135deg, ${
-      theme.palette.secondary.contrastText
+    backgroundImage: `linear-gradient(135deg, ${theme.palette.secondary.contrastText
       }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
     boxShadow: `0 4px 10px 0 ${alpha(
       theme.palette.secondary.contrastText,
@@ -296,8 +293,7 @@ const StepIconRoot = styled("div")<{
   }),
 
   ...(ownerState.completed && {
-    backgroundImage: `linear-gradient(135deg, ${
-      theme.palette.secondary.contrastText
+    backgroundImage: `linear-gradient(135deg, ${theme.palette.secondary.contrastText
       }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
   }),
 }));
@@ -839,7 +835,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                         "Update Failed",
                         <Typography variant="body1">{errorMessage}</Typography>,
                         ConfirmationType.accept,
-                        () => {},
+                        () => { },
                         "OK",
                       );
                     } else {
@@ -853,7 +849,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                         An unexpected error occurred during the update.
                       </Typography>,
                       ConfirmationType.accept,
-                      () => {},
+                      () => { },
                       "OK",
                     );
                   } finally {

@@ -312,7 +312,7 @@ public isolated function updateCareerFunction(int id, UpdateCareerFunctionPayloa
 # + payload - Designation creation payload
 # + createdBy - Email of the admin performing the action
 # + return - ID of the new designation, DuplicateDesignationError on a unique-index
-#            violation, or error
+# violation, or error
 public isolated function createDesignation(CreateDesignationPayload payload, string createdBy) returns int|error {
     // Trim before storing — see the note in createCareerFunction.
     sql:ExecutionResult|error result = databaseClient->execute(
@@ -341,7 +341,7 @@ public isolated function createDesignation(CreateDesignationPayload payload, str
 # + payload - Update payload (all fields optional)
 # + updatedBy - Email of the admin performing the action
 # + return - Nil, EntityNotFoundError, NoFieldsToUpdateError, DuplicateDesignationError,
-#            or error
+# or error
 public isolated function updateDesignation(int id, UpdateDesignationPayload payload, string updatedBy)
         returns error? {
 
@@ -677,7 +677,6 @@ public isolated function getEmployeeIdContext(int companyId, int employmentTypeI
     return databaseClient->queryRow(getEmployeeIdContextQuery(companyId, employmentTypeId));
 }
 
-
 # Fetch the current numeric maximum for a digit-family sequence.
 #
 # + prefix - The ID prefix (company prefix or CONSULTANCY_ID_PREFIX)
@@ -735,7 +734,7 @@ isolated function padZero(int n, int width) returns string {
 # + maxNum - Current max numeric value in the family (0 if none exist yet)
 # + digit - The required leading digit for this family (0, 1, or 5)
 # + minWidth - Minimum digit width for the family (e.g. 6 means the family starts at 100000 for
-#   digit 1, and no generated value is ever narrower than this)
+# digit 1, and no generated value is ever narrower than this)
 # + return - The next numeric value in this family
 isolated function nextNumberInFamily(int maxNum, int digit, int minWidth) returns int {
     int floor = digit * pow10(minWidth - 1);
@@ -760,8 +759,8 @@ isolated function nextNumberInFamily(int maxNum, int digit, int minWidth) return
 # + digit - The required leading digit for this family (0, 1, or 5)
 # + minWidth - Minimum digit width (default 6)
 # + zeroPadded - True for the digit-0 (Consultancy) family, which must be zero-padded to
-#   `minWidth` since a plain integer can never have a leading zero. Once that padded space is
-#   exhausted there is no valid next value, so this returns an error rather than overflowing.
+# `minWidth` since a plain integer can never have a leading zero. Once that padded space is
+# exhausted there is no valid next value, so this returns an error rather than overflowing.
 # + return - The next employee ID string, or an error on DB failure or exhausted zero-padded capacity
 public isolated function getNextIdInFamily(string prefix, int digit, int minWidth = 6, boolean zeroPadded = false)
         returns string|error {
@@ -944,9 +943,8 @@ public isolated function updateEmployeePersonalInfo(string employeeId, UpdateEmp
         // the directory, search, and employee-detail views. Keep them in sync whenever a name
         // field is part of this edit, or those views keep showing the pre-edit name.
         if payload.firstName != () || payload.lastName != () {
-            sql:ExecutionResult nameResult = check databaseClient->execute(
-                updateEmployeeNameQuery(employeeId, payload, updatedBy));
-            check checkAffectedCount(nameResult.affectedRowCount);
+            _ = check databaseClient->execute(
+            updateEmployeeNameQuery(employeeId, payload, updatedBy));
         }
 
         check commit;
@@ -1285,7 +1283,7 @@ public isolated function updateParkingReservationVehicle(int reservationId, int 
 #
 # + payload - Reservation payload
 # + return - New reservation id, `DuplicateActiveReservationError` if an active reservation already
-#            exists for the slot/date or employee/date (unique index violation), or error
+# exists for the slot/date or employee/date (unique index violation), or error
 public isolated function addParkingReservation(AddParkingReservationPayload payload) returns int|error {
     sql:ExecutionResult|error result = databaseClient->execute(addParkingReservationQuery(payload));
     if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {

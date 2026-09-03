@@ -1099,9 +1099,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Unit ID; -1 (UNIT_CLEAR_SENTINEL) clears it to NULL, nil leaves it unchanged.
     # NOTE: same caveat as officeId above — absence must never be treated as "clear."
     int? unitId = ();
-    # House ID. System-computed at employee creation and never user-editable via this
-    # endpoint, so unlike officeId/unitId there is no clear sentinel: nil always means
-    # "leave unchanged," and there is no way to null it out through this payload.
+    # House ID. The House selection does not provide a "None" option,
+    # so there is no way to clear houseId through this payload and no clear
+    # sentinel is required.
     int? houseId = ();
     # Continuous service record
     @constraint:String {maxLength: 99}

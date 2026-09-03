@@ -82,6 +82,11 @@ import {
 } from "@mui/icons-material";
 import dayjs from "dayjs";
 
+import {
+  OFFICE_CLEAR_SENTINEL,
+  UNIT_CLEAR_SENTINEL,
+} from "@slices/careerFunctionSlice/careerFunction";
+
 // Sentinel for the synthetic "Add "<text>"" row offered by the resignation-reason
 // Autocomplete's filterOptions. It is a distinct OBJECT type (not a string) so it
 // can never collide with real user-typed text, unlike a string-based marker such
@@ -219,8 +224,8 @@ export const createJobInfoValidationSchema = (
             : false;
           return isFixed
             ? schema.required(
-                "Employee ID is required for fixed-term employment",
-              )
+              "Employee ID is required for fixed-term employment",
+            )
             : schema;
         },
       ),
@@ -829,7 +834,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         initialLoadRef.current.offices = true;
 
         if (!currentCompanyId || currentCompanyId !== newCompanyId) {
-          setFieldValue("officeId", 0);
+          setFieldValue("officeId", OFFICE_CLEAR_SENTINEL);
           setFieldValue("workLocation", "");
         }
       }
@@ -849,14 +854,14 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         if (prevBusinessUnitId !== newBusinessUnitId) {
           setFieldValue("teamId", 0);
           setFieldValue("subTeamId", 0);
-          setFieldValue("unitId", 0);
+          setFieldValue("unitId", undefined);
           initialLoadRef.current.subTeams = false;
           initialLoadRef.current.units = false;
         }
       } else {
         setFieldValue("teamId", 0);
         setFieldValue("subTeamId", 0);
-        setFieldValue("unitId", 0);
+        setFieldValue("unitId", undefined);
       }
     },
     [dispatch, setFieldValue, values.businessUnitId],
@@ -873,12 +878,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
 
         if (prevTeamId !== newTeamId) {
           setFieldValue("subTeamId", 0);
-          setFieldValue("unitId", 0);
+          setFieldValue("unitId", undefined);
           initialLoadRef.current.units = false;
         }
       } else {
         setFieldValue("subTeamId", 0);
-        setFieldValue("unitId", 0);
+        setFieldValue("unitId", undefined);
       }
     },
     [dispatch, setFieldValue, values.teamId],
@@ -894,10 +899,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         initialLoadRef.current.units = true;
 
         if (prevSubTeamId !== newSubTeamId) {
-          setFieldValue("unitId", 0);
+          setFieldValue("unitId", undefined);
         }
       } else {
-        setFieldValue("unitId", 0);
+        setFieldValue("unitId", undefined);
       }
     },
     [dispatch, setFieldValue, values.subTeamId],
@@ -1204,7 +1209,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                 ...disabledSx,
               }}
             >
-              <MenuItem value={0}>
+              <MenuItem value={UNIT_CLEAR_SENTINEL}>
                 <em>None</em>
               </MenuItem>
               {units.length ? (
@@ -1401,7 +1406,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
               helperText={touched.officeId && errors.officeId}
               sx={textFieldSx}
             >
-              <MenuItem value={0}>
+              <MenuItem value={OFFICE_CLEAR_SENTINEL}>
                 <em>None</em>
               </MenuItem>
               {offices.length ? (
