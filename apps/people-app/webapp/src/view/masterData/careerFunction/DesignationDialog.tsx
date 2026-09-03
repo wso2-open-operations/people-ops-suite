@@ -38,7 +38,6 @@ import {
   CreateDesignationPayload,
   UpdateDesignationPayload,
   JOB_BAND_CLEAR_SENTINEL,
-  CAREER_FUNCTION_CLEAR_SENTINEL,
 } from "@slices/careerFunctionSlice/careerFunction";
 import { isDuplicateDesignationName } from "./duplicateDesignation.utils";
 
@@ -52,8 +51,10 @@ interface DesignationDialogProps {
   allDesignations: Designation[];
 }
 
-// The Career Function Select uses "" to represent the explicit "Unassigned" option,
-// since MUI Select cannot use `null` as an item value.
+// "" is the Select's empty state — nothing chosen. There is no longer an "Unassigned"
+// option: every designation must belong to a career function. Existing rows created
+// before that rule can still be unassigned, and they open with the Select blank until
+// a career function is picked.
 const UNASSIGNED_VALUE = "";
 
 const validationSchema = Yup.object({
@@ -68,7 +69,9 @@ const validationSchema = Yup.object({
     .nullable()
     .integer("Job band must be a whole number")
     .min(0, "Job band cannot be negative"),
-  careerFunctionId: Yup.string(),
+  // Required: a designation must belong to a career function. The Select carries string
+  // values, so "" (nothing chosen) is the failing case.
+  careerFunctionId: Yup.string().required("Career function is required"),
 });
 
 export default function DesignationDialog({
@@ -97,16 +100,20 @@ export default function DesignationDialog({
     validationSchema,
     onSubmit: async (values, { setSubmitting }) => {
       const trimmedName = values.designation.trim();
-      const resolvedCareerFunctionId =
-        values.careerFunctionId === UNASSIGNED_VALUE ? null : Number(values.careerFunctionId);
+      // A career function is mandatory, and the Select no longer offers a way to clear
+      // it. Validation already rejects "", so this is only a type-level narrowing.
+      if (values.careerFunctionId === UNASSIGNED_VALUE) {
+        setSubmitting(false);
+        return;
+      }
+      const resolvedCareerFunctionId = Number(values.careerFunctionId);
       const resolvedJobBand = values.jobBand === "" ? null : Number(values.jobBand);
 
       const payload = isEdit
         ? ({
             designation: trimmedName,
             jobBand: resolvedJobBand === null ? JOB_BAND_CLEAR_SENTINEL : resolvedJobBand,
-            careerFunctionId:
-              resolvedCareerFunctionId === null ? CAREER_FUNCTION_CLEAR_SENTINEL : resolvedCareerFunctionId,
+            careerFunctionId: resolvedCareerFunctionId,
             isActive: values.isActive,
           } satisfies UpdateDesignationPayload)
         : ({
@@ -128,8 +135,11 @@ export default function DesignationDialog({
     onClose();
   };
 
-  // Resolved number|null career function id, used for the duplicate check — NOT the
-  // sentinel and NOT the "" select value the utility would never match against.
+  // Resolved number|null career function id for the duplicate check — not the "" select
+  // value, which the utility would never match against. "" still resolves to null: an
+  // existing unassigned designation opens with a blank Select, and until a career
+  // function is picked the check must compare it against the unassigned group it
+  // actually still belongs to.
   const resolvedCareerFunctionIdForCheck =
     formik.values.careerFunctionId === UNASSIGNED_VALUE ? null : Number(formik.values.careerFunctionId);
 
@@ -209,6 +219,7 @@ export default function DesignationDialog({
             />
             <BaseTextField
               select
+              isRequired
               label="Career Function"
               id="careerFunctionId"
               name="careerFunctionId"
@@ -218,7 +229,6 @@ export default function DesignationDialog({
               error={formik.touched.careerFunctionId && Boolean(formik.errors.careerFunctionId)}
               helperText={formik.touched.careerFunctionId && formik.errors.careerFunctionId}
             >
-              <MenuItem value={UNASSIGNED_VALUE}>Unassigned</MenuItem>
               {selectableCareerFunctions.map((cf) => (
                 <MenuItem key={cf.id} value={String(cf.id)}>
                   {cf.careerFunction}
@@ -263,7 +273,12 @@ export default function DesignationDialog({
             type="submit"
             variant="contained"
             color="secondary"
-            disabled={formik.isSubmitting || !formik.dirty || duplicate}
+            disabled={
+              formik.isSubmitting ||
+              !formik.dirty ||
+              duplicate ||
+              formik.values.careerFunctionId === UNASSIGNED_VALUE
+            }
             startIcon={formik.isSubmitting ? <CircularProgress size={16} /> : null}
             sx={{ textTransform: "none" }}
           >
