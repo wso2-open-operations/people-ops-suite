@@ -50,7 +50,10 @@ export interface UpdateCareerFunctionPayload {
 export interface CreateDesignationPayload {
   designation: string;
   jobBand: number | null;
-  careerFunctionId: number | null;
+  // Required: every new designation must belong to a career function. Existing rows may
+  // still have a null career function (see the "Unassigned" group in the career function
+  // view), but new ones can no longer be created that way.
+  careerFunctionId: number;
 }
 
 // Sentinel used for `jobBand`, since the backend distinguishes three states for this field:

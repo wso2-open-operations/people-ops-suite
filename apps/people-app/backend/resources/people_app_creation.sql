@@ -18,6 +18,8 @@ DROP TABLE IF EXISTS business_unit;
 DROP TABLE IF EXISTS office;
 DROP TABLE IF EXISTS companies_allowed_locations;
 DROP TABLE IF EXISTS company;
+DROP TABLE IF EXISTS designation_audit;
+DROP TABLE IF EXISTS career_function_audit;
 DROP TABLE IF EXISTS designation;
 DROP TABLE IF EXISTS career_function;
 DROP TABLE IF EXISTS employment_type_idp_group;
@@ -1023,3 +1025,171 @@ CREATE TABLE `team_asgardeo_groups` (
     FOREIGN KEY (`employment_type_id`) REFERENCES `employment_type` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Career Function Audit table
+CREATE TABLE `career_function_audit` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `career_function_pk_id` int DEFAULT NULL,
+  `action_type` enum('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+  `action_by` varchar(254) NOT NULL,
+  `db_user` varchar(254) NULL,
+  `action_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `data` json NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_cf_audit_career_function_pk` (`career_function_pk_id`),
+  KEY `idx_cf_audit_action_on` (`action_on`),
+  CONSTRAINT `fk_cf_audit_career_function` FOREIGN KEY (`career_function_pk_id`) REFERENCES `career_function` (`id`) ON DELETE
+  SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+-- Designation Audit table
+CREATE TABLE `designation_audit` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `designation_pk_id` int DEFAULT NULL,
+  `action_type` enum('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+  `action_by` varchar(254) NOT NULL,
+  `db_user` varchar(254) NULL,
+  `action_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `data` json NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_desig_audit_designation_pk` (`designation_pk_id`),
+  KEY `idx_desig_audit_action_on` (`action_on`),
+  CONSTRAINT `fk_desig_audit_designation` FOREIGN KEY (`designation_pk_id`) REFERENCES `designation` (`id`) ON DELETE
+  SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+-- Procedure: prc_career_function_audit
+DELIMITER //
+CREATE PROCEDURE `prc_career_function_audit`(
+  IN p_id              INT,
+  IN p_action_type     VARCHAR(10),
+  IN p_action_by       VARCHAR(254),
+  IN p_career_function VARCHAR(150),
+  IN p_is_active       TINYINT(1),
+  IN p_created_by      VARCHAR(254),
+  IN p_created_on      DATETIME(6),
+  IN p_updated_by      VARCHAR(254),
+  IN p_updated_on      DATETIME(6)
+)
+BEGIN
+  INSERT INTO career_function_audit (career_function_pk_id, action_type, action_by, db_user, action_on, data)
+  VALUES (
+    p_id,
+    p_action_type,
+    p_action_by,
+    USER(),
+    CURRENT_TIMESTAMP(6),
+    JSON_OBJECT(
+      'id',              p_id,
+      'career_function', p_career_function,
+      'is_active',       p_is_active,
+      'created_by',      p_created_by,
+      'created_on',      p_created_on,
+      'updated_by',      p_updated_by,
+      'updated_on',      p_updated_on
+    )
+  );
+END//
+DELIMITER ;
+
+-- Trigger: trg_career_function_audit_insert
+DELIMITER //
+CREATE TRIGGER `trg_career_function_audit_insert`
+AFTER INSERT ON `career_function`
+FOR EACH ROW
+BEGIN
+  CALL prc_career_function_audit(
+    NEW.id, 'INSERT', COALESCE(NULLIF(TRIM(NEW.created_by), ''), 'SYSTEM'),
+    NEW.career_function, NEW.is_active,
+    NEW.created_by,      NEW.created_on,
+    NEW.updated_by,      NEW.updated_on
+  );
+END//
+DELIMITER ;
+
+-- Trigger: trg_career_function_audit_update
+DELIMITER //
+CREATE TRIGGER `trg_career_function_audit_update`
+AFTER UPDATE ON `career_function`
+FOR EACH ROW
+BEGIN
+  CALL prc_career_function_audit(
+    NEW.id,
+    CASE WHEN OLD.is_active = 1 AND NEW.is_active = 0 THEN 'DELETE' ELSE 'UPDATE' END,
+    COALESCE(NULLIF(TRIM(NEW.updated_by), ''), 'SYSTEM'),
+    NEW.career_function, NEW.is_active,
+    NEW.created_by,      NEW.created_on,
+    NEW.updated_by,      NEW.updated_on
+  );
+END//
+DELIMITER ;
+
+-- Procedure: prc_designation_audit
+DELIMITER //
+CREATE PROCEDURE `prc_designation_audit`(
+  IN p_id                 INT,
+  IN p_action_type        VARCHAR(10),
+  IN p_action_by          VARCHAR(254),
+  IN p_designation        VARCHAR(150),
+  IN p_job_band           INT,
+  IN p_career_function_id INT,
+  IN p_is_active          TINYINT(1),
+  IN p_created_by         VARCHAR(254),
+  IN p_created_on         DATETIME(6),
+  IN p_updated_by         VARCHAR(254),
+  IN p_updated_on         DATETIME(6)
+)
+BEGIN
+  INSERT INTO designation_audit (designation_pk_id, action_type, action_by, db_user, action_on, data)
+  VALUES (
+    p_id,
+    p_action_type,
+    p_action_by,
+    USER(),
+    CURRENT_TIMESTAMP(6),
+    JSON_OBJECT(
+      'id',                 p_id,
+      'designation',        p_designation,
+      'job_band',           p_job_band,
+      'career_function_id', p_career_function_id,
+      'is_active',          p_is_active,
+      'created_by',         p_created_by,
+      'created_on',         p_created_on,
+      'updated_by',         p_updated_by,
+      'updated_on',         p_updated_on
+    )
+  );
+END//
+DELIMITER ;
+
+-- Trigger: trg_designation_audit_insert
+DELIMITER //
+CREATE TRIGGER `trg_designation_audit_insert`
+AFTER INSERT ON `designation`
+FOR EACH ROW
+BEGIN
+  CALL prc_designation_audit(
+    NEW.id, 'INSERT', COALESCE(NULLIF(TRIM(NEW.created_by), ''), 'SYSTEM'),
+    NEW.designation,  NEW.job_band, NEW.career_function_id, NEW.is_active,
+    NEW.created_by,   NEW.created_on,
+    NEW.updated_by,   NEW.updated_on
+  );
+END//
+DELIMITER ;
+
+-- Trigger: trg_designation_audit_update
+DELIMITER //
+CREATE TRIGGER `trg_designation_audit_update`
+AFTER UPDATE ON `designation`
+FOR EACH ROW
+BEGIN
+  CALL prc_designation_audit(
+    NEW.id,
+    CASE WHEN OLD.is_active = 1 AND NEW.is_active = 0 THEN 'DELETE' ELSE 'UPDATE' END,
+    COALESCE(NULLIF(TRIM(NEW.updated_by), ''), 'SYSTEM'),
+    NEW.designation,  NEW.job_band, NEW.career_function_id, NEW.is_active,
+    NEW.created_by,   NEW.created_on,
+    NEW.updated_by,   NEW.updated_on
+  );
+END//
+DELIMITER ;

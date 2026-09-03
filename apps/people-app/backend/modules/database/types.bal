@@ -636,10 +636,13 @@ public type CreateDesignationPayload record {|
     # "clear to NULL" on the update path only.
     @constraint:Int {minValue: 0}
     int? jobBand = ();
-    # Parent career function ID (optional; nil means unassigned). Must be a real id —
-    # a bad value would otherwise violate the foreign key and surface as a 500.
+    # Parent career function ID. Required: every designation must belong to a career
+    # function. Must be a real id — a bad value would otherwise violate the foreign key
+    # and surface as a 500. Rows predating this rule may still hold NULL in the column
+    # (the column stays nullable so they remain readable and reassignable), but no new
+    # designation can be created without a career function.
     @constraint:Int {minValue: 1}
-    int? careerFunctionId = ();
+    int careerFunctionId;
 |};
 
 # Payload to update a designation (all fields optional for PATCH).
