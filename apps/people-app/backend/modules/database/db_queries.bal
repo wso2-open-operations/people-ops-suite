@@ -656,7 +656,7 @@ isolated function getSubTeamsQuery(int? teamId = (), boolean includeInactive = f
                 but.team_id = ${teamId}`);
         if !includeInactive {
             query = sql:queryConcat(query,
-                ` AND st.is_active = 1 AND butst.is_active = 1 AND but.is_active = 1`);
+                    ` AND st.is_active = 1 AND butst.is_active = 1 AND but.is_active = 1`);
         }
     } else if !includeInactive {
         query = sql:queryConcat(query, ` WHERE st.is_active = 1`);
@@ -705,7 +705,7 @@ isolated function getExistingEpfsQuery(string[] epfs) returns sql:ParameterizedQ
 }
 
 # Build an SQL IN clause for a list of string values.
-# 
+#
 # + values - List of string values to include in the IN clause
 # + return - Parameterized query representing the IN clause
 isolated function buildInClause(string[] values) returns sql:ParameterizedQuery {
@@ -755,7 +755,7 @@ isolated function getUnitsQuery(int? subTeamId = (), boolean includeInactive = f
                 butst.sub_team_id = ${subTeamId}`);
         if !includeInactive {
             query = sql:queryConcat(query,
-                ` AND u.is_active = 1 AND butstu.is_active = 1 AND butst.is_active = 1`);
+                    ` AND u.is_active = 1 AND butstu.is_active = 1 AND butst.is_active = 1`);
         }
     } else if !includeInactive {
         query = sql:queryConcat(query, ` WHERE u.is_active = 1`);
@@ -1002,7 +1002,7 @@ isolated function updateBusinessUnitTeamSubTeamQuery(int id, string? headEmail, 
     }
     updates.push(`updated_by = ${updatedBy}`);
     return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team_sub_team SET `, updates),
-        ` WHERE id = ${id};`);
+            ` WHERE id = ${id};`);
 }
 
 # Create business-unit-team-sub-team → unit mapping query.
@@ -1046,7 +1046,7 @@ isolated function updateBusinessUnitTeamSubTeamUnitQuery(int id, string? headEma
     }
     updates.push(`updated_by = ${updatedBy}`);
     return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team_sub_team_unit SET `, updates),
-        ` WHERE id = ${id};`);
+            ` WHERE id = ${id};`);
 }
 
 # Get the company org chart structure query (includes all mapping metadata).
@@ -1927,10 +1927,20 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         updates.push(`designation_id = ${payload.designationId}`);
     }
 
+    // The frontend only ever includes officeId/unitId/houseId in the PATCH body when their
+    // value actually changed (it diffs against the pre-edit form state and omits unchanged
+    // keys) — so `payload.X is ()` means "this field wasn't part of this edit," NOT "clear
+    // it." officeId/unitId ARE legitimately user-clearable (the edit form has a "None"
+    // option), so an explicit clear is sent as the OFFICE_CLEAR_SENTINEL / UNIT_CLEAR_SENTINEL
+    // value (-1), matching the same pattern already used for jobBand/careerFunctionId in
+    // updateDesignationQuery. Absence (`is ()`) is intentionally not handled here — the column
+    // is simply left untouched.
     if payload.officeId is int {
-        updates.push(`office_id = ${payload.officeId}`);
-    } else if payload.officeId is () {
-        updates.push(`office_id = NULL`);
+        if payload.officeId == OFFICE_CLEAR_SENTINEL {
+            updates.push(`office_id = NULL`);
+        } else {
+            updates.push(`office_id = ${payload.officeId}`);
+        }
     }
 
     if payload.teamId != () {
@@ -1946,15 +1956,19 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
     }
 
     if payload.unitId is int {
-        updates.push(`unit_id = ${payload.unitId}`);
-    } else if payload.unitId is () {
-        updates.push(`unit_id = NULL`);
+        if payload.unitId == UNIT_CLEAR_SENTINEL {
+            updates.push(`unit_id = NULL`);
+        } else {
+            updates.push(`unit_id = ${payload.unitId}`);
+        }
     }
 
+    // houseId is system-computed at employee creation (from the numeric part of the employee
+    // ID) and is never included by the job-info edit form's diff — unlike officeId/unitId,
+    // there is no "clear the house" user action, so absence here always means "not part of
+    // this edit." Set only when explicitly provided; never null it on omission.
     if payload.houseId is int {
         updates.push(`house_id = ${payload.houseId}`);
-    } else if payload.houseId is () {
-        updates.push(`house_id = NULL`);
     }
 
     if payload.continuousServiceRecord is string {

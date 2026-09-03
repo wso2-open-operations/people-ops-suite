@@ -102,9 +102,9 @@ const toFormValues = (
     base.managerEmail = employee.managerEmail ?? "";
     base.additionalManagerEmail = employee.additionalManagerEmails
       ? employee.additionalManagerEmails
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
       : [];
     base.careerFunctionId = employee.careerFunctionId ?? 0;
     base.designationId = employee.designationId ?? 0;
@@ -175,11 +175,16 @@ const toJobUpdatePayload = (
     values.employmentTypeId > 0 ? values.employmentTypeId : null,
   designationId: values.designationId > 0 ? values.designationId : null,
   companyId: values.companyId > 0 ? values.companyId : null,
-  officeId: values.officeId > 0 ? values.officeId : null,
+  // -1 is OFFICE_CLEAR_SENTINEL / UNIT_CLEAR_SENTINEL on the backend (see
+  // updateEmployeeJobInfoQuery): the edit submit path only sends fields that changed
+  // (see diffObject below), so a plain `null` here would be indistinguishable from "this
+  // field wasn't touched" once diffed and would be silently dropped instead of clearing
+  // the value. -1 forces a real, always-diffable change when the user picks "None."
+  officeId: values.officeId > 0 ? values.officeId : -1,
   teamId: values.teamId > 0 ? values.teamId : null,
   subTeamId: values.subTeamId > 0 ? values.subTeamId : null,
   businessUnitId: values.businessUnitId > 0 ? values.businessUnitId : null,
-  unitId: values.unitId > 0 ? values.unitId : null,
+  unitId: values.unitId > 0 ? values.unitId : -1,
   houseId: values.houseId > 0 ? values.houseId : null,
   continuousServiceRecord: values.isRelocation
     ? (values.continuousServiceRecord ?? null)
@@ -234,7 +239,7 @@ const toPersonalUpdatePayload = (
   nationality: values.personalInfo.nationality ?? null,
   emergencyContacts:
     values.personalInfo.emergencyContacts &&
-    values.personalInfo.emergencyContacts.length > 0
+      values.personalInfo.emergencyContacts.length > 0
       ? values.personalInfo.emergencyContacts
       : null,
 });
@@ -245,14 +250,14 @@ const OrangeConnector = styled(StepConnector)(({ theme }) => ({
     [`& .${stepConnectorClasses.line}`]: {
       backgroundImage: `linear-gradient(90deg, ${
         theme.palette.secondary.contrastText
-      }, ${alpha(theme.palette.secondary.contrastText, 0.5)})`,
+        }, ${alpha(theme.palette.secondary.contrastText, 0.5)})`,
     },
   },
   [`&.${stepConnectorClasses.completed}`]: {
     [`& .${stepConnectorClasses.line}`]: {
       backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText}, ${
         theme.palette.secondary.contrastText
-      })`,
+        })`,
     },
   },
   [`& .${stepConnectorClasses.line}`]: {
@@ -283,7 +288,7 @@ const StepIconRoot = styled("div")<{
   ...(ownerState.active && {
     backgroundImage: `linear-gradient(135deg, ${
       theme.palette.secondary.contrastText
-    }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
+      }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
     boxShadow: `0 4px 10px 0 ${alpha(
       theme.palette.secondary.contrastText,
       0.3,
@@ -293,7 +298,7 @@ const StepIconRoot = styled("div")<{
   ...(ownerState.completed && {
     backgroundImage: `linear-gradient(135deg, ${
       theme.palette.secondary.contrastText
-    }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
+      }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
   }),
 }));
 
@@ -455,7 +460,7 @@ function FormActionsBar({
         }}
       >
         {employeeSlice.state === State.loading ||
-        employeeSlice.updateJobInfoState === State.loading
+          employeeSlice.updateJobInfoState === State.loading
           ? "Saving..."
           : activeStep === EmployeeFormSteps.length - 1
             ? isEditMode
