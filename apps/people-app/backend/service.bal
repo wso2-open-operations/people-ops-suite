@@ -262,19 +262,17 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Personal information is admin-or-self only. A lead legitimately sees a subordinate's
+        // work details through the sibling employee endpoint, but personal_info carries
+        // NIC/passport, date of birth, gender, home address, personal contact details and
+        // emergency contacts — none of which a lead needs in order to manage someone. Unlike the
+        // history endpoint there is no lead projection here: the whole record is withheld.
         boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
         boolean isSelf = employeeInfo != () && employeeInfo.workEmail == userInfo.email;
         if !hasAdminAccess && !isSelf {
-            boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
-            if isSubordinate is error {
-                string customErr = string `Error occurred while checking lead authorization for ID: ${employeeId}`;
-                log:printError(customErr, isSubordinate, employeeId = employeeId);
-                return <http:InternalServerError>{body: {message: customErr}};
-            }
-            if !isSubordinate {
-                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
-                return <http:Forbidden>{body: {message: "You are not authorized to view this employee's information"}};
-            }
+            log:printWarn("User is not authorized to view this employee's personal information",
+                    invokerEmail = userInfo.email, employeeId = employeeId);
+            return <http:Forbidden>{body: {message: "You are not authorized to view this employee's information"}};
         }
 
         if employeeInfo is () {

@@ -17,6 +17,11 @@ import ballerina/sql;
 
 # Fetch employee basic information.
 #
+# A person may hold several employee rows under one work email (a rehire issues a new employee
+# ID while reusing the same work email), so this orders by start date to return their latest
+# employment rather than an arbitrary row. `id` is only a deterministic tiebreaker: it does not
+# track chronology, because historical stints were migrated in after the current records.
+#
 # + email - Employee's work email address
 # + return - Query to get employee basic information
 isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
@@ -36,7 +41,9 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
         e.external_designation AS externalDesignation
     FROM employee e
         INNER JOIN designation d ON e.designation_id = d.id
-    WHERE e.work_email = ${email};`;
+    WHERE e.work_email = ${email}
+    ORDER BY e.start_date DESC, e.id DESC
+    LIMIT 1;`;
 
 # Fetch all employees' basic information.
 #
@@ -499,6 +506,11 @@ isolated function isLeadQuery(string leadEmail) returns sql:ParameterizedQuery =
 
 # Fetch continuous service record by work email.
 #
+# A person may hold several employee rows under one work email (a rehire issues a new employee
+# ID while reusing the same work email), and every stint is returned here by design. Ordering is
+# newest-first by start date so the caller gets a stable, chronological service history; `id` is
+# only a tiebreaker, as it does not track chronology.
+#
 # + workEmail - Work email of the employee
 # + return - Parameterized query for continuous service record
 isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:ParameterizedQuery =>
@@ -545,7 +557,8 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
     WHERE
         e.work_email = ${workEmail}
         AND et.is_active = 1
-        AND et.name IN ('Permanent');`;
+        AND et.name IN ('Permanent')
+    ORDER BY e.start_date DESC, e.id DESC;`;
 
 # Fetch employee personal information.
 #
@@ -2611,14 +2624,19 @@ isolated function deletePersonalInfoAuditQuery(int personalInfoId) returns sql:P
 # Resolve the person behind a work email.
 #
 # A person may hold several employee rows over time (a rehire issues a new employee ID while
-# reusing the same personal_info row), so this deliberately returns the personal_info_id rather
-# than an employee ID. LIMIT 1 is safe because every employee row for one person points at the
-# same personal_info_id, and a work email belongs to exactly one employee row.
+# reusing the same work email), so this deliberately returns the personal_info_id rather than an
+# employee ID.
+#
+# Those rows do NOT always share one personal_info_id — historical stints were migrated in with
+# their own personal_info rows — so LIMIT 1 must pick deliberately rather than arbitrarily. It
+# resolves to the latest employment (newest start date), matching the record the caller is
+# identified by elsewhere; `id` is only a tiebreaker, as it does not track chronology.
 #
 # + workEmail - Work email of the person
 # + return - Parameterized query returning the person's personal_info_id
 isolated function getPersonalInfoIdByWorkEmailQuery(string workEmail) returns sql:ParameterizedQuery =>
-    `SELECT personal_info_id FROM employee WHERE work_email = ${workEmail} LIMIT 1;`;
+    `SELECT personal_info_id FROM employee WHERE work_email = ${workEmail}
+     ORDER BY start_date DESC, id DESC LIMIT 1;`;
 
 # Resolve the person behind an employee ID.
 #
