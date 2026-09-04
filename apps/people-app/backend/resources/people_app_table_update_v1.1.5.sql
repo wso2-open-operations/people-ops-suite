@@ -17,6 +17,10 @@
 -- Data-repair script (NOT a schema migration) for employees with an
 -- unassigned house_id.
 --
+-- IMPORTANT:
+-- Run this script only after the backend fix that prevents house_id
+-- from being cleared during employee updates has been deployed.
+--
 -- The house_id is recomputed using the same deterministic formula used
 -- by houseIdForEmployeeId for employee IDs with a valid numeric suffix.
 --
@@ -27,7 +31,8 @@ UPDATE employee
 SET
     house_id = (
         CAST(REGEXP_REPLACE(employee_id, '^[^0-9]*', '') AS UNSIGNED) % 4
-    ) + 1
+    ) + 1,
+    updated_by = 'system-data-repair'
 WHERE house_id IS NULL
   AND employee_id REGEXP '^[^0-9]*[0-9]+$';
 

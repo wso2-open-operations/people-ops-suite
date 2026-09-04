@@ -71,6 +71,11 @@ import {
 import { resetEmployee } from "@slices/employeeSlice/employee";
 import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 
+import {
+  OFFICE_CLEAR_SENTINEL,
+  UNIT_CLEAR_SENTINEL,
+} from "@slices/careerFunctionSlice/careerFunction";
+
 const deriveFullName = (
   full: string | null | undefined,
   first?: string,
@@ -91,9 +96,9 @@ const toFormValues = (
     base.businessUnitId = employee.businessUnitId ?? 0;
     base.teamId = employee.teamId ?? 0;
     base.subTeamId = employee.subTeamId ?? 0;
-    base.unitId = employee.unitId ?? 0;
+    base.unitId = employee.unitId ?? UNIT_CLEAR_SENTINEL;
     base.companyId = employee.companyId ?? 0;
-    base.officeId = employee.officeId ?? 0;
+    base.officeId = employee.officeId ?? OFFICE_CLEAR_SENTINEL;
     base.workLocation = employee.workLocation ?? "";
     base.employmentTypeId = employee.employmentTypeId ?? 0;
     base.startDate = employee.startDate ?? "";
@@ -175,16 +180,16 @@ const toJobUpdatePayload = (
     values.employmentTypeId > 0 ? values.employmentTypeId : null,
   designationId: values.designationId > 0 ? values.designationId : null,
   companyId: values.companyId > 0 ? values.companyId : null,
-  // -1 is OFFICE_CLEAR_SENTINEL / UNIT_CLEAR_SENTINEL on the backend (see
-  // updateEmployeeJobInfoQuery): the edit submit path only sends fields that changed
-  // (see diffObject below), so a plain `null` here would be indistinguishable from "this
-  // field wasn't touched" once diffed and would be silently dropped instead of clearing
-  // the value. -1 forces a real, always-diffable change when the user picks "None."
-  officeId: values.officeId,
+  // Belt-and-suspenders: by submit time officeId/unitId should never legitimately be a
+  // non-positive value other than the sentinel (0 is blocked by Yup's notOneOf([0]) on
+  // officeId, and cascade resets always write the sentinel directly for unitId — see
+  // handleBusinessUnitChange/handleTeamChange/handleSubTeamChange). This guard just makes
+  // sure nothing malformed reaches the wire regardless.
+  officeId: values.officeId > 0 ? values.officeId : OFFICE_CLEAR_SENTINEL,
   teamId: values.teamId > 0 ? values.teamId : null,
   subTeamId: values.subTeamId > 0 ? values.subTeamId : null,
   businessUnitId: values.businessUnitId > 0 ? values.businessUnitId : null,
-  unitId: values.unitId,
+  unitId: values.unitId > 0 ? values.unitId : UNIT_CLEAR_SENTINEL,
   houseId: values.houseId > 0 ? values.houseId : null,
   continuousServiceRecord: values.isRelocation
     ? (values.continuousServiceRecord ?? null)
@@ -201,7 +206,8 @@ const toPersonalUpdatePayload = (
   nicOrPassport: values.personalInfo.nicOrPassport ?? null,
   firstName: values.personalInfo.firstName ?? null,
   lastName: values.personalInfo.lastName ?? null,
-  fullName: values.personalInfo.fullName?.trim() || null,
+  fullName:
+    `${values.personalInfo.firstName ?? ""} ${values.personalInfo.lastName ?? ""}`.trim() || null,
   title: values.personalInfo.title ?? null,
   dob: values.personalInfo.dob ?? null,
   gender: values.personalInfo.gender ?? null,
@@ -695,6 +701,9 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                     : undefined,
                 designationId: values.designationId,
                 companyId: values.companyId,
+                // Create is a single POST, not a PATCH diff — there's no "leave unchanged"
+                // concept here, so no sentinel is needed; -1 (if it ever appeared) would
+                // still correctly fall through to undefined via the >0 check.
                 officeId:
                   values.officeId && values.officeId > 0
                     ? values.officeId

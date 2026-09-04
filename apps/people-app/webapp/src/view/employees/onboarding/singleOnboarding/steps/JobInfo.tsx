@@ -157,7 +157,9 @@ export const createJobInfoValidationSchema = (
     companyId: Yup.number()
       .required("Company is required")
       .min(1, "Select a valid company"),
-    officeId: Yup.number().optional(),
+    officeId: Yup.number()
+      .optional()
+      .notOneOf([0], 'Select an office or explicitly choose "None"'),
     workLocation: Yup.string()
       .required("Work location is required")
       .min(1, "Select a valid work location"),
@@ -834,7 +836,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         initialLoadRef.current.offices = true;
 
         if (!currentCompanyId || currentCompanyId !== newCompanyId) {
-          setFieldValue("officeId", OFFICE_CLEAR_SENTINEL);
+          // Reset to an unresolved state when the company changes.
+          // The user must select an office or explicitly choose "None".
+          setFieldValue("officeId", 0);
           setFieldValue("workLocation", "");
         }
       }
@@ -854,14 +858,14 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         if (prevBusinessUnitId !== newBusinessUnitId) {
           setFieldValue("teamId", 0);
           setFieldValue("subTeamId", 0);
-          setFieldValue("unitId", undefined);
+          setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
           initialLoadRef.current.subTeams = false;
           initialLoadRef.current.units = false;
         }
       } else {
         setFieldValue("teamId", 0);
         setFieldValue("subTeamId", 0);
-        setFieldValue("unitId", undefined);
+        setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
       }
     },
     [dispatch, setFieldValue, values.businessUnitId],
@@ -878,12 +882,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
 
         if (prevTeamId !== newTeamId) {
           setFieldValue("subTeamId", 0);
-          setFieldValue("unitId", undefined);
+          setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
           initialLoadRef.current.units = false;
         }
       } else {
         setFieldValue("subTeamId", 0);
-        setFieldValue("unitId", undefined);
+        setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
       }
     },
     [dispatch, setFieldValue, values.teamId],
@@ -899,10 +903,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         initialLoadRef.current.units = true;
 
         if (prevSubTeamId !== newSubTeamId) {
-          setFieldValue("unitId", undefined);
+          setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
         }
       } else {
-        setFieldValue("unitId", undefined);
+        setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
       }
     },
     [dispatch, setFieldValue, values.subTeamId],

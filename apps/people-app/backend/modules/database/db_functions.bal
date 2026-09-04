@@ -326,9 +326,6 @@ public isolated function createDesignation(CreateDesignationPayload payload, str
     if result is sql:DatabaseError && result.detail().errorCode == MYSQL_FK_CONSTRAINT_ERROR_CODE {
         return error UnknownCareerFunctionError("The specified career function does not exist.");
     }
-    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_FK_CONSTRAINT_ERROR_CODE {
-        return error UnknownCareerFunctionError("The specified career function does not exist.");
-    }
     if result is error {
         return result;
     }
