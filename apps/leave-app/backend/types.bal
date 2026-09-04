@@ -150,6 +150,19 @@ public type LeavePayload record {|
     *database:LeavePayload;
 |};
 
+# Payload for recording leave on behalf of another employee.
+#
+# Carries the same fields as a self-service leave so the notification, calendar
+# and day-calculation paths stay identical; the only addition is the employee
+# the leave belongs to. `leaveType` is deliberately the full enum - which types
+# People Ops may actually record is gated at runtime by
+# `onBehalfAllowedLeaveTypes`.
+public type OnBehalfLeavePayload record {|
+    *database:LeavePayload;
+    # Email of the employee the leave is recorded for
+    string employeeEmail;
+|};
+
 # Leave entity.
 public type LeaveResponse record {|
     *database:LeaveResponse;
@@ -274,6 +287,10 @@ public type AppConfig record {|
     int sabbaticalLeaveMaxApplicationDuration;
     # Cached email notifications list
     employee:DefaultMailResponse cachedEmails;
+    # Leave types People Ops may record on behalf of an employee. Drives the
+    # leave-type options on the admin recording screen, so widening the
+    # configuration needs no UI change.
+    database:LeaveType[] onBehalfAllowedLeaveTypes;
 |};
 
 # Sabbatical Leave Response.

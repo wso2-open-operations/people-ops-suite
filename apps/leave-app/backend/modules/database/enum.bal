@@ -31,7 +31,9 @@ public enum LeaveType {
     PATERNITY_LEAVE = "paternity",
     SABBATICAL_LEAVE = "sabbatical",
     CONGES_PAYES_LEAVE = "conges_payes",
-    RTT_LEAVE = "rtt"
+    RTT_LEAVE = "rtt",
+    MEDICAL_LEAVE = "medical",
+    NO_PAY_LEAVE = "no-pay"
 }
 
 # Order by.
