@@ -71,6 +71,11 @@ import {
 import { resetEmployee } from "@slices/employeeSlice/employee";
 import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 
+import {
+  OFFICE_CLEAR_SENTINEL,
+  UNIT_CLEAR_SENTINEL,
+} from "@slices/careerFunctionSlice/careerFunction";
+
 const deriveFullName = (
   full: string | null | undefined,
   first?: string,
@@ -91,9 +96,9 @@ const toFormValues = (
     base.businessUnitId = employee.businessUnitId ?? 0;
     base.teamId = employee.teamId ?? 0;
     base.subTeamId = employee.subTeamId ?? 0;
-    base.unitId = employee.unitId ?? 0;
+    base.unitId = employee.unitId ?? UNIT_CLEAR_SENTINEL;
     base.companyId = employee.companyId ?? 0;
-    base.officeId = employee.officeId ?? 0;
+    base.officeId = employee.officeId ?? OFFICE_CLEAR_SENTINEL;
     base.workLocation = employee.workLocation ?? "";
     base.employmentTypeId = employee.employmentTypeId ?? 0;
     base.startDate = employee.startDate ?? "";
@@ -102,9 +107,9 @@ const toFormValues = (
     base.managerEmail = employee.managerEmail ?? "";
     base.additionalManagerEmail = employee.additionalManagerEmails
       ? employee.additionalManagerEmails
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
       : [];
     base.careerFunctionId = employee.careerFunctionId ?? 0;
     base.designationId = employee.designationId ?? 0;
@@ -175,11 +180,16 @@ const toJobUpdatePayload = (
     values.employmentTypeId > 0 ? values.employmentTypeId : null,
   designationId: values.designationId > 0 ? values.designationId : null,
   companyId: values.companyId > 0 ? values.companyId : null,
-  officeId: values.officeId > 0 ? values.officeId : null,
+  // Belt-and-suspenders: by submit time officeId/unitId should never legitimately be a
+  // non-positive value other than the sentinel (0 is blocked by Yup's notOneOf([0]) on
+  // officeId, and cascade resets always write the sentinel directly for unitId — see
+  // handleBusinessUnitChange/handleTeamChange/handleSubTeamChange). This guard just makes
+  // sure nothing malformed reaches the wire regardless.
+  officeId: values.officeId > 0 ? values.officeId : OFFICE_CLEAR_SENTINEL,
   teamId: values.teamId > 0 ? values.teamId : null,
   subTeamId: values.subTeamId > 0 ? values.subTeamId : null,
   businessUnitId: values.businessUnitId > 0 ? values.businessUnitId : null,
-  unitId: values.unitId > 0 ? values.unitId : null,
+  unitId: values.unitId > 0 ? values.unitId : UNIT_CLEAR_SENTINEL,
   houseId: values.houseId > 0 ? values.houseId : null,
   continuousServiceRecord: values.isRelocation
     ? (values.continuousServiceRecord ?? null)
@@ -196,7 +206,8 @@ const toPersonalUpdatePayload = (
   nicOrPassport: values.personalInfo.nicOrPassport ?? null,
   firstName: values.personalInfo.firstName ?? null,
   lastName: values.personalInfo.lastName ?? null,
-  fullName: values.personalInfo.fullName?.trim() || null,
+  fullName:
+    `${values.personalInfo.firstName ?? ""} ${values.personalInfo.lastName ?? ""}`.trim() || null,
   title: values.personalInfo.title ?? null,
   dob: values.personalInfo.dob ?? null,
   gender: values.personalInfo.gender ?? null,
@@ -234,7 +245,7 @@ const toPersonalUpdatePayload = (
   nationality: values.personalInfo.nationality ?? null,
   emergencyContacts:
     values.personalInfo.emergencyContacts &&
-    values.personalInfo.emergencyContacts.length > 0
+      values.personalInfo.emergencyContacts.length > 0
       ? values.personalInfo.emergencyContacts
       : null,
 });
@@ -243,16 +254,14 @@ const OrangeConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.alternativeLabel}`]: { top: 18 },
   [`&.${stepConnectorClasses.active}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: `linear-gradient(90deg, ${
-        theme.palette.secondary.contrastText
-      }, ${alpha(theme.palette.secondary.contrastText, 0.5)})`,
+      backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText
+        }, ${alpha(theme.palette.secondary.contrastText, 0.5)})`,
     },
   },
   [`&.${stepConnectorClasses.completed}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText}, ${
-        theme.palette.secondary.contrastText
-      })`,
+      backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText}, ${theme.palette.secondary.contrastText
+        })`,
     },
   },
   [`& .${stepConnectorClasses.line}`]: {
@@ -281,9 +290,8 @@ const StepIconRoot = styled("div")<{
   fontWeight: 600,
 
   ...(ownerState.active && {
-    backgroundImage: `linear-gradient(135deg, ${
-      theme.palette.secondary.contrastText
-    }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
+    backgroundImage: `linear-gradient(135deg, ${theme.palette.secondary.contrastText
+      }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
     boxShadow: `0 4px 10px 0 ${alpha(
       theme.palette.secondary.contrastText,
       0.3,
@@ -291,9 +299,8 @@ const StepIconRoot = styled("div")<{
   }),
 
   ...(ownerState.completed && {
-    backgroundImage: `linear-gradient(135deg, ${
-      theme.palette.secondary.contrastText
-    }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
+    backgroundImage: `linear-gradient(135deg, ${theme.palette.secondary.contrastText
+      }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
   }),
 }));
 
@@ -455,7 +462,7 @@ function FormActionsBar({
         }}
       >
         {employeeSlice.state === State.loading ||
-        employeeSlice.updateJobInfoState === State.loading
+          employeeSlice.updateJobInfoState === State.loading
           ? "Saving..."
           : activeStep === EmployeeFormSteps.length - 1
             ? isEditMode
@@ -694,6 +701,9 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                     : undefined,
                 designationId: values.designationId,
                 companyId: values.companyId,
+                // Create is a single POST, not a PATCH diff — there's no "leave unchanged"
+                // concept here, so no sentinel is needed; -1 (if it ever appeared) would
+                // still correctly fall through to undefined via the >0 check.
                 officeId:
                   values.officeId && values.officeId > 0
                     ? values.officeId
@@ -834,7 +844,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                         "Update Failed",
                         <Typography variant="body1">{errorMessage}</Typography>,
                         ConfirmationType.accept,
-                        () => {},
+                        () => { },
                         "OK",
                       );
                     } else {
@@ -848,7 +858,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                         An unexpected error occurred during the update.
                       </Typography>,
                       ConfirmationType.accept,
-                      () => {},
+                      () => { },
                       "OK",
                     );
                   } finally {

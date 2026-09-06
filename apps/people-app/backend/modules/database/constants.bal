@@ -51,3 +51,9 @@ public const JOB_BAND_CLEAR_SENTINEL = -1;
 
 # Sentinel value for updateDesignationQuery's careerFunctionId parameter that clears career_function_id to NULL.
 public const CAREER_FUNCTION_CLEAR_SENTINEL = -1;
+
+# Sentinel value for updateEmployeeJobInfoQuery's officeId parameter that clears office_id to NULL.
+public const OFFICE_CLEAR_SENTINEL = -1;
+
+# Sentinel value for updateEmployeeJobInfoQuery's unitId parameter that clears unit_id to NULL.
+public const UNIT_CLEAR_SENTINEL = -1;
