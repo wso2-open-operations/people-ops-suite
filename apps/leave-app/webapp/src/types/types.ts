@@ -88,6 +88,8 @@ export enum LeaveType {
   SICK = "sick",
   CONGES_PAYES = "conges_payes",
   RTT = "rtt",
+  MEDICAL = "medical",
+  NO_PAY = "no-pay",
 }
 
 export enum LeaveLabel {
@@ -99,6 +101,8 @@ export enum LeaveLabel {
   SICK = "Sick Leave",
   CONGES_PAYES = "Congés Payés",
   RTT = "RTT",
+  MEDICAL = "Medical",
+  NO_PAY = "No-Pay",
   SPAIN_ANNUAL = "Annual Leave",
   SPAIN_CASUAL = "Casual Leave",
   INDIA_ANNUAL = "Annual / Earned",
@@ -177,6 +181,25 @@ export interface LeaveSubmissionResponse {
   success: boolean;
   message?: string;
   leaveId?: string;
+}
+
+// Payload for recording leave on behalf of an employee (People Ops only).
+export interface OnBehalfLeaveRequest {
+  employeeEmail: string;
+  leaveType: LeaveType;
+  startDate: string;
+  endDate: string;
+  periodType?: PeriodType;
+  comment?: string;
+  emailRecipients?: string[];
+  isPublicComment?: boolean;
+}
+
+// Result of a validation-only on-behalf request, used for the live preview.
+export interface OnBehalfLeavePreview {
+  workingDays: number;
+  hasOverlap: boolean;
+  message?: string;
 }
 
 // Leave history response for a single leave.
@@ -292,6 +315,9 @@ export interface AppConfigResponse {
   sabbaticalLeaveEligibilityDuration: number;
   sabbaticalLeaveMaxApplicationDuration: number;
   cachedEmails: CachedMail;
+  // Leave types People Ops may record on behalf of an employee. Server-driven,
+  // so enabling another type needs no frontend change.
+  onBehalfAllowedLeaveTypes?: LeaveType[];
 }
 
 // Leave policy entitlement/consumed counts.

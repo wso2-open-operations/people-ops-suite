@@ -28,6 +28,8 @@ import {
   LeaveSubmissionResponse,
   LeaveValidationRequest,
   LeaveValidationResponse,
+  OnBehalfLeavePreview,
+  OnBehalfLeaveRequest,
   PeriodType,
 } from "@root/src/types/types";
 import { APIService } from "@root/src/utils/apiService";
@@ -77,6 +79,46 @@ export const submitLeaveRequest = async (
 
   const response = await apiInstance.post<LeaveSubmissionResponse>(
     `${AppConfig.serviceUrls.leaves}?isValidationOnlyMode=${false}`,
+    request,
+  );
+
+  return response.data;
+};
+
+/**
+ * Preview an on-behalf leave without recording it.
+ *
+ * Returns the working-day count the leave would carry and whether it overlaps
+ * leave the employee already has, so the form can show both before submitting.
+ */
+export const previewLeaveOnBehalf = async (
+  request: OnBehalfLeaveRequest,
+  signal?: AbortSignal,
+): Promise<OnBehalfLeavePreview> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.post<OnBehalfLeavePreview>(
+    `${AppConfig.serviceUrls.leavesOnBehalf}?isValidationOnlyMode=${true}`,
+    request,
+    { signal },
+  );
+
+  return response.data;
+};
+
+/**
+ * Record leave on behalf of an employee (People Ops only).
+ *
+ * Notifications and the calendar event follow the same path as a self-submitted
+ * leave, so the employee and the leave group are notified identically.
+ */
+export const recordLeaveOnBehalf = async (
+  request: OnBehalfLeaveRequest,
+): Promise<LeaveSubmissionResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.post<LeaveSubmissionResponse>(
+    `${AppConfig.serviceUrls.leavesOnBehalf}?isValidationOnlyMode=${false}`,
     request,
   );
 
