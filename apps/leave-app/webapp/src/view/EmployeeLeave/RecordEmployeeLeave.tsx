@@ -176,6 +176,11 @@ export default function RecordEmployeeLeave() {
     previewAbort.current?.abort();
     setPreviewError(null);
 
+    // The abort above skips the `finally` that would clear this, so an in-flight
+    // preview would otherwise leave the spinner up - and the spinner hides the
+    // validation error below it.
+    setPreviewLoading(false);
+
     if (!selectedEmployee || !startDate || !endDate) {
       setPreview(null);
       return;

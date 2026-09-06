@@ -681,6 +681,19 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
+            // Half days are not recordable on this path. getEffectiveLeaveDaysFromLeave
+            // stamps the period type onto EVERY working day in the range
+            // (utils.bal:207-215), so a half day spanning more than one date would
+            // store 0.5 against each of them. None of the allowed leave types is
+            // taken as a half day, so this is rejected rather than guarded.
+            if payload.periodType is database:HALF_DAY_LEAVE {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Half day leave cannot be recorded on behalf of an employee."
+                    }
+                };
+            }
+
             [time:Utc, time:Utc]|error validatedDateRange = validateDateRange(payload.startDate, payload.endDate);
             if validatedDateRange is error {
                 log:printError(ERR_MSG_INVALID_DATE_FORMAT, validatedDateRange);
@@ -694,13 +707,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             // The app derives period type from the INCLUSIVE CALENDAR SPAN, not
             // the working-day count (GeneralLeave.tsx:196 via
             // LeaveDateSelection.tsx:62). Derived here so any client gets it
-            // right; an explicit half-day is honoured for future use, though
-            // nothing on this path sets one today.
-            database:LeavePeriodType derivedPeriodType = payload.periodType is database:HALF_DAY_LEAVE
-                ? database:HALF_DAY_LEAVE
-                : (payload.startDate == payload.endDate
-                    ? database:ONE_DAY_LEAVE
-                    : database:MULTIPLE_DAYS_LEAVE);
+            // right. Compared on the NORMALISED dates: validateDateRange accepts
+            // both `2026-01-05` and `2026-01-05T00:00:00Z`, so the same day sent
+            // in two accepted formats is not equal as raw strings.
+            database:LeavePeriodType derivedPeriodType = validatedDateRange[0] == validatedDateRange[1]
+                ? database:ONE_DAY_LEAVE
+                : database:MULTIPLE_DAYS_LEAVE;
 
             // Backdating is expected: this records leave that has already been taken.
             database:LeaveInput input = {
@@ -709,7 +721,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 endDate: payload.endDate,
                 leaveType: payload.leaveType,
                 periodType: derivedPeriodType,
-                isMorningLeave: payload.isMorningLeave,
+                // Only meaningful for a half day, which is rejected above.
+                isMorningLeave: (),
                 emailRecipients: payload.emailRecipients,
                 calendarEventId: payload.calendarEventId,
                 comment: payload.comment,
@@ -782,7 +795,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             LeavePayload leavePayload = {
                 startDate: payload.startDate,
                 endDate: payload.endDate,
-                isMorningLeave: payload.isMorningLeave,
+                isMorningLeave: (),
                 periodType: derivedPeriodType,
                 leaveType: payload.leaveType,
                 emailRecipients: payload.emailRecipients,
