@@ -32,12 +32,6 @@ declare global {
       resolveQR: (qrString: string) => void;
       resolveQRCode: (qrData: string) => void;
       rejectQRCode: (error: string) => void;
-      resolveSaveLocalData: () => void;
-      rejectSaveLocalData: (error: string) => void;
-      resolveGetLocalData: (data: { value: string | null }) => void;
-      rejectGetLocalData: (error: string) => void;
-      // Cross-microapp bridge API (provided by SuperApp).
-      requestOpenMicroApp: (targetAppId: string, launchData?: unknown) => void;
       resolveDeviceSafeAreaInsets?: (data: { insets: EdgeInsets }) => void;
       resolveMicroAppVersion?: (version: string) => void;
     };
@@ -175,69 +169,6 @@ export const scanQRCode = (
   }
 };
 
-function normalizeKey(key: string): string {
-  // Keep the same normalization logic as the wallet microapp bridge.
-  return key.toString().replace(" ", "-").toLowerCase();
-}
-
-function encodeValue(value: unknown): string {
-  return btoa(JSON.stringify(value));
-}
-
-function decodeValue<T>(value: string): T {
-  return JSON.parse(atob(value)) as T;
-}
-
-export const saveLocalDataAsync = async (key: string, value: unknown) => {
-  const normalizedKey = normalizeKey(key);
-  const encodedValue = encodeValue(value);
-
-  return new Promise<void>((resolve, reject) => {
-    if (!window.nativebridge || !window.ReactNativeWebView) {
-      Logger.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
-      reject(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
-      return;
-    }
-
-    window.nativebridge.resolveSaveLocalData = () => resolve();
-    window.nativebridge.rejectSaveLocalData = (error: string) => reject(error);
-
-    triggerSuperAppAction(TOPIC.SAVE_LOCAL_DATA, {
-      key: normalizedKey,
-      value: encodedValue,
-    });
-  });
-};
-
-export const getLocalDataAsync = async <T = unknown>(key: string) => {
-  const normalizedKey = normalizeKey(key);
-
-  return new Promise<T | null>((resolve, reject) => {
-    if (!window.nativebridge || !window.ReactNativeWebView) {
-      Logger.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
-      reject(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
-      return;
-    }
-
-    window.nativebridge.resolveGetLocalData = ({ value }) => {
-      if (!value) {
-        resolve(null);
-        return;
-      }
-      try {
-        resolve(decodeValue<T>(value));
-      } catch {
-        resolve(null);
-      }
-    };
-    window.nativebridge.rejectGetLocalData = (error: string) => reject(error);
-
-    triggerSuperAppAction(TOPIC.GET_LOCAL_DATA, {
-      key: normalizedKey,
-    });
-  });
-};
-
 export const requestMicroAppVersion = (
   callback: Callback<string>,
 ): void => {
@@ -252,31 +183,4 @@ export const requestMicroAppVersion = (
     );
     callback();
   }
-};
-
-/**
- * Request the super app to open another micro app.
- * Used for switching to the Wallet microapp for payment.
- */
-export const requestOpenMicroApp = (
-  targetAppId: string,
-  launchData?: unknown,
-): void => {
-  if (window.nativebridge?.requestOpenMicroApp) {
-    window.nativebridge.requestOpenMicroApp(targetAppId, launchData);
-    return;
-  }
-
-  // Fallback: direct postMessage in case the injected bridge method isn't typed.
-  if (window.ReactNativeWebView) {
-    window.ReactNativeWebView.postMessage(
-      JSON.stringify({
-        topic: "open_micro_app",
-        data: { targetAppId, launchData },
-      }),
-    );
-    return;
-  }
-
-  Logger.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
 };

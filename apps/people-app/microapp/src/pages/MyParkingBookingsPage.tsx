@@ -278,9 +278,9 @@ function MyParkingBookingsPage() {
 
                   <div className="mt-3">
                     <InfoBox
-                      label="Transaction Hash"
-                      value={getTransactionHashDisplay(details.transactionHash)}
-                      icon={<span className="text-[#808080] font-bold">Tx</span>}
+                      label="Payment Reference"
+                      value={getPaymentReferenceDisplay(details.paymentReference)}
+                      icon={<span className="text-[#808080] font-bold">Ref</span>}
                     />
                   </div>
                 </div>
@@ -309,18 +309,10 @@ function ReservationStatusBadge({ status }: { status: ParkingReservationStatus |
   );
 }
 
-function getTransactionHashDisplay(hash: string | null): string {
-  if (!hash) return "Not available for this reservation.";
-
-  const normalized = hash.trim();
+function getPaymentReferenceDisplay(reference: string | null): string {
+  const normalized = (reference ?? "").trim();
   if (!normalized) return "Not available for this reservation.";
-
-  const hasPrefix = normalized.startsWith("0x");
-  const prefix = hasPrefix ? "0x" : "";
-  const body = hasPrefix ? normalized.slice(2) : normalized;
-
-  if (body.length <= 12) return `${prefix}${body}`;
-  return `${prefix}${body.slice(0, 6)}...${body.slice(-6)}`;
+  return normalized;
 }
 
 function ActiveBookingCard({
