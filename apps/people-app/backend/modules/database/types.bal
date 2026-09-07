@@ -17,7 +17,6 @@
 import ballerina/constraint;
 import ballerina/lang.regexp;
 import ballerina/sql;
-import ballerinax/mysql;
 
 # Email validation pattern.
 public final regexp:RegExp EMAIL_PATTERN = re `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`;
@@ -57,6 +56,12 @@ public type DuplicateCareerFunctionError distinct error;
 public type UnknownCareerFunctionError distinct error;
 
 # [Configurable] Database configs.
+# Deliberately flat (primitive fields only) rather than embedding mysql:Options/
+# sql:ConnectionPool directly: Choreo's config UI introspects configurable variable
+# types, so nesting the actual library types here would expose their entire field
+# surface (many more knobs than we use) as configurable entries. initPeopleOpsDbClient()
+# in client.bal builds the real mysql:Options/sql:ConnectionPool values internally
+# from these primitives, which stays invisible to that introspection.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
     string user;
@@ -68,10 +73,16 @@ type DatabaseConfig record {|
     string host;
     # Port number of the MySQL server
     int port;
-    # The `mysql:Options` configurations
-    mysql:Options options?;
-    # The `sql:ConnectionPool` configurations
-    sql:ConnectionPool connectionPool?;
+    # Max open connections in the pool
+    int maxOpenConnections = 10;
+    # Max connection lifetime (seconds)
+    decimal maxConnectionLifeTime = 1800;
+    # Min idle connections in the pool
+    int minIdleConnections = 0;
+    # Connection timeout (seconds)
+    decimal connectTimeout = 30;
+    # SSL mode for DB connection 
+    string sslMode = "PREFERRED";
 |};
 
 # Employee basic information.
@@ -718,7 +729,6 @@ public type House record {|
     string name;
 |};
 
-
 # Manager payload.
 public type Manager record {|
     # Employee ID of the manager
@@ -981,11 +991,13 @@ public type UpdateEmployeePersonalInfoPayload record {|
     # National Identity Card number or Passport
     @constraint:String {maxLength: 100}
     string? nicOrPassport = ();
-    # First name
-    @constraint:String {maxLength: 100}
+    # First name. minLength guards against a blank string being accepted as "set the name to
+    # empty" — see updateEmployeeNameQuery, which forwards this value into employee.first_name
+    # whenever it is non-nil, with no separate blank check of its own.
+    @constraint:String {minLength: 1, maxLength: 100}
     string? firstName = ();
-    # Last name
-    @constraint:String {maxLength: 100}
+    # Last name. Same minLength rationale as firstName above.
+    @constraint:String {minLength: 1, maxLength: 100}
     string? lastName = ();
     # Full name
     @constraint:String {maxLength: 255}
@@ -1076,7 +1088,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     int? employmentTypeId = ();
     # Designation ID
     int? designationId = ();
-    # Office ID
+    # Office ID; -1 (OFFICE_CLEAR_SENTINEL) clears it to NULL, nil leaves it unchanged.
+    # NOTE: the edit form only sends this field when it actually changed, so nil (absent from
+    # the request) must NEVER be treated as "clear" here — see updateEmployeeJobInfoQuery.
     int? officeId = ();
     # Team ID
     int? teamId = ();
@@ -1084,9 +1098,12 @@ public type UpdateEmployeeJobInfoPayload record {|
     int? subTeamId = ();
     # Business unit ID
     int? businessUnitId = ();
-    # Unit ID
+    # Unit ID; -1 (UNIT_CLEAR_SENTINEL) clears it to NULL, nil leaves it unchanged.
+    # NOTE: same caveat as officeId above — absence must never be treated as "clear."
     int? unitId = ();
-    # House ID
+    # House ID. The House selection does not provide a "None" option,
+    # so there is no way to clear houseId through this payload and no clear
+    # sentinel is required.
     int? houseId = ();
     # Continuous service record
     @constraint:String {maxLength: 99}

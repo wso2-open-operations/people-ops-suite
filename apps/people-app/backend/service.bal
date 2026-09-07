@@ -19,6 +19,7 @@ import people.database;
 import people.promotion;
 import people.qr;
 import people.wso2_coin;
+
 // Temporarily disabled together with the Asgardeo/SCIM provisioning blocks in the onboarding
 // handlers below (see the NOTE there). Re-enable these imports when provisioning is restored.
 // import people.email;
@@ -70,7 +71,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - App config
     resource function get configs() returns AppConfig {
-        return { isMaintenanceMode };
+        return {isMaintenanceMode};
     }
 
     # Get user information.
@@ -359,11 +360,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         byte[]|error imageBytes = qr:generateEmployeeQrCode({
-            employeeNumber: employee.employeeId,
-            firstName: employee.firstName,
-            lastName: employee.lastName,
-            house
-        });
+                                                                employeeNumber: employee.employeeId,
+                                                                firstName: employee.firstName,
+                                                                lastName: employee.lastName,
+                                                                house
+                                                            });
         if imageBytes is error {
             string customErr = "Error occurred while generating QR code";
             log:printError(customErr, imageBytes);
@@ -548,11 +549,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         database:EmployeesResponse|error result = database:getEmployees({
-            searchString: payload.searchString,
-            filters: {employeeStatus: payload.filters.employeeStatus},
-            pagination: payload.pagination,
-            sort: payload.sort
-        });
+                                                                            searchString: payload.searchString,
+                                                                            filters: {employeeStatus: payload.filters.employeeStatus},
+                                                                            pagination: payload.pagination,
+                                                                            sort: payload.sort
+                                                                        });
         if result is error {
             string customErr = "Error occurred while fetching employees for QR export";
             log:printError(customErr, result);
@@ -692,7 +693,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
                 log:printWarn("Unauthorized attempt to fetch inactive business units",
-                    invokerEmail = userInfo.email);
+                        invokerEmail = userInfo.email);
                 return <http:Forbidden>{
                     body: {message: "You are not authorized to view inactive business units"}
                 };
@@ -729,7 +730,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
                 log:printWarn("Unauthorized attempt to fetch inactive teams",
-                    invokerEmail = userInfo.email);
+                        invokerEmail = userInfo.email);
                 return <http:Forbidden>{
                     body: {message: "You are not authorized to view inactive teams"}
                 };
@@ -766,7 +767,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
                 log:printWarn("Unauthorized attempt to fetch inactive sub-teams",
-                    invokerEmail = userInfo.email);
+                        invokerEmail = userInfo.email);
                 return <http:Forbidden>{
                     body: {message: "You are not authorized to view inactive sub-teams"}
                 };
@@ -803,7 +804,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
                 log:printWarn("Unauthorized attempt to fetch inactive units",
-                    invokerEmail = userInfo.email);
+                        invokerEmail = userInfo.email);
                 return <http:Forbidden>{
                     body: {message: "You are not authorized to view inactive units"}
                 };
@@ -856,7 +857,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
                 log:printWarn("Unauthorized attempt to fetch inactive career functions",
-                    invokerEmail = userInfo.email);
+                        invokerEmail = userInfo.email);
                 return <http:Forbidden>{
                     body: {message: "You are not authorized to view inactive career functions"}
                 };
@@ -894,7 +895,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
                 log:printWarn("Unauthorized attempt to fetch inactive designations",
-                    invokerEmail = userInfo.email);
+                        invokerEmail = userInfo.email);
                 return <http:Forbidden>{
                     body: {message: "You are not authorized to view inactive designations"}
                 };
@@ -1432,7 +1433,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - HTTP OK or HTTP errors
     resource function patch employees/[string employeeId]/personal\-info(http:RequestContext ctx,
             database:UpdateEmployeePersonalInfoPayload payload)
-        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+        returns http:Ok|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1444,6 +1445,27 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        string? firstName = payload.firstName;
+        string? lastName = payload.lastName;
+        if firstName is string {
+            if firstName.trim().length() == 0 {
+                return <http:BadRequest>{
+                    body: {
+                        message: "First name and last name must not be blank"
+                    }
+                };
+            }
+        }
+        if lastName is string {
+            if lastName.trim().length() == 0 {
+                return <http:BadRequest>{
+                    body: {
+                        message: "First name and last name must not be blank"
+                    }
+                };
+            }
+        }
 
         database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
         if employeeInfo is error {
@@ -1574,6 +1596,17 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:NotFound>{
                 body: {
                     message: "Employee information not found"
+                }
+            };
+        }
+
+        if (payload.officeId is int && payload.officeId <= 0
+                && payload.officeId != database:OFFICE_CLEAR_SENTINEL)
+                || (payload.unitId is int && payload.unitId <= 0
+                && payload.unitId != database:UNIT_CLEAR_SENTINEL) {
+            return <http:BadRequest>{
+                body: {
+                    message: "Office and unit IDs must be positive IDs or the clear sentinel"
                 }
             };
         }
@@ -1724,12 +1757,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error vehicleResult = database:addVehicle({
-            owner: userInfo.email,
-            vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
-            vehicleType: vehicle.vehicleType,
-            vehicleStatus: database:ACTIVE,
-            createdBy: userInfo.email
-        });
+                                                          owner: userInfo.email,
+                                                          vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
+                                                          vehicleType: vehicle.vehicleType,
+                                                          vehicleStatus: database:ACTIVE,
+                                                          createdBy: userInfo.email
+                                                      });
         if vehicleResult is error {
             string customError = string `Error occurred while adding vehicle!`;
             log:printError(customError, vehicleResult);
@@ -1766,10 +1799,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updateResult = database:updateVehicle({
-            vehicleId,
-            vehicleStatus: database:INACTIVE,
-            updatedBy: userInfo.email
-        });
+                                                                vehicleId,
+                                                                vehicleStatus: database:INACTIVE,
+                                                                updatedBy: userInfo.email
+                                                            });
 
         if updateResult is error {
             string customError = string `Error occurred while updating vehicle!`;
@@ -1858,7 +1891,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date,
-            wso2_coin:pendingReservationExpiryMinutes);
+                wso2_coin:pendingReservationExpiryMinutes);
         if slots is error {
             log:printError("Error fetching parking slots", slots);
             return <http:InternalServerError>{
@@ -1940,7 +1973,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Expire the caller's own stale pending reservations for the date (any slot), so an
         // abandoned attempt does not block a fresh booking.
         boolean|error clearedForEmployee = database:expireStalePendingParkingReservationsForEmployeeDate(
-            userInfo.email, body.bookingDate, wso2_coin:pendingReservationExpiryMinutes);
+                userInfo.email, body.bookingDate, wso2_coin:pendingReservationExpiryMinutes);
         if clearedForEmployee is error {
             log:printError("Error expiring stale pending reservations for employee", clearedForEmployee);
             return <http:InternalServerError>{
@@ -1964,7 +1997,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 // Keep the reused reservation aligned with the vehicle chosen on this attempt.
                 if activeReservation.vehicleId != body.vehicleId {
                     boolean|error vehicleUpdated = database:updateParkingReservationVehicle(
-                        activeReservation.id, body.vehicleId, userInfo.email);
+                            activeReservation.id, body.vehicleId, userInfo.email);
                     if vehicleUpdated is error {
                         log:printError("Error updating vehicle on reused reservation", vehicleUpdated);
                         return <http:InternalServerError>{
@@ -1992,7 +2025,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Expire stale pending reservations so the slot/date becomes reusable.
         boolean|error cleared = database:expireStalePendingParkingReservationForSlotDate(body.slotId, body.bookingDate,
-            wso2_coin:pendingReservationExpiryMinutes);
+                wso2_coin:pendingReservationExpiryMinutes);
         if cleared is error {
             log:printError("Error expiring stale pending reservations", cleared);
             return <http:InternalServerError>{
@@ -2001,7 +2034,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate,
-            wso2_coin:pendingReservationExpiryMinutes);
+                wso2_coin:pendingReservationExpiryMinutes);
         if booked is error {
             log:printError("Error checking slot availability", booked);
             return <http:InternalServerError>{
@@ -2019,13 +2052,13 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Insert a new PENDING row
         int|error reservationId = database:addParkingReservation({
-            slotId: body.slotId,
-            bookingDate: body.bookingDate,
-            employeeEmail: userInfo.email,
-            vehicleId: body.vehicleId,
-            coinsAmount: slot.coinsPerSlot,
-            createdBy: userInfo.email
-        });
+                                                                     slotId: body.slotId,
+                                                                     bookingDate: body.bookingDate,
+                                                                     employeeEmail: userInfo.email,
+                                                                     vehicleId: body.vehicleId,
+                                                                     coinsAmount: slot.coinsPerSlot,
+                                                                     createdBy: userInfo.email
+                                                                 });
         if reservationId is database:DuplicateActiveReservationError {
             log:printWarn("Duplicate active parking reservation blocked by unique index",
                     invokerEmail = userInfo.email, bookingDate = body.bookingDate, slotId = body.slotId);
@@ -2109,7 +2142,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Report generation options (status filter, future-joiner exclusion, marked-leaver inclusion)
     # + return - CSV file response or HTTP errors
     resource function post reports/employees/generate(http:RequestContext ctx,
-        @http:Payload database:EmployeeReportPayload payload)
+            @http:Payload database:EmployeeReportPayload payload)
         returns http:Response|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -2131,11 +2164,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
-                searchString: (),
-                filters: payload.filters,
-                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                sort: {sortField: "employeeId", sortOrder: "ASC"}
-            });
+                                                                                    searchString: (),
+                                                                                    filters: payload.filters,
+                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
+                                                                                });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
@@ -2230,11 +2263,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updated = database:updateParkingReservationStatus({
-            reservationId: reservation.id,
-            status: database:CONFIRMED,
-            transactionHash: body.transactionHash,
-            updatedBy: userInfo.email
-        });
+                                                                            reservationId: reservation.id,
+                                                                            status: database:CONFIRMED,
+                                                                            transactionHash: body.transactionHash,
+                                                                            updatedBy: userInfo.email
+                                                                        });
         if updated is error {
             log:printError("Error confirming reservation", updated);
             return <http:InternalServerError>{
@@ -2837,7 +2870,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamMapping(id);
             if hasEmployees is error {
                 log:printError("Error checking active employees in business unit team mapping",
-                    hasEmployees, id = id);
+                        hasEmployees, id = id);
                 return <http:InternalServerError>{
                     body: {message: "Error occurred while updating business unit team mapping"}
                 };
@@ -2887,7 +2920,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to create business unit team sub-team mapping",
-                invokerEmail = userInfo.email);
+                    invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
@@ -2923,7 +2956,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to update business unit team sub-team mapping",
-                invokerEmail = userInfo.email);
+                    invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
@@ -2931,7 +2964,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamSubTeamMapping(id);
             if hasEmployees is error {
                 log:printError("Error checking active employees in business unit team sub-team mapping",
-                    hasEmployees, id = id);
+                        hasEmployees, id = id);
                 return <http:InternalServerError>{
                     body: {message: "Error occurred while updating business unit team sub-team mapping"}
                 };
@@ -2958,7 +2991,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if updateResult is error {
             log:printError("Error occurred while updating business unit team sub-team mapping",
-                updateResult, id = id);
+                    updateResult, id = id);
             return <http:InternalServerError>{
                 body: {message: "Error occurred while updating business unit team sub-team mapping"}
             };
@@ -2982,7 +3015,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to create business unit team sub-team unit mapping",
-                invokerEmail = userInfo.email);
+                    invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
@@ -3018,7 +3051,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to update business unit team sub-team unit mapping",
-                invokerEmail = userInfo.email);
+                    invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
@@ -3026,7 +3059,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamSubTeamUnitMapping(id);
             if hasEmployees is error {
                 log:printError("Error checking active employees in business unit team sub-team unit mapping",
-                    hasEmployees, id = id);
+                        hasEmployees, id = id);
                 return <http:InternalServerError>{
                     body: {message: "Error occurred while updating business unit team sub-team unit mapping"}
                 };
@@ -3053,7 +3086,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if updateResult is error {
             log:printError("Error occurred while updating business unit team sub-team unit mapping",
-                updateResult, id = id);
+                    updateResult, id = id);
             return <http:InternalServerError>{
                 body: {message: "Error occurred while updating business unit team sub-team unit mapping"}
             };
@@ -3075,7 +3108,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to access company org chart structure",
-                invokerEmail = userInfo.email);
+                    invokerEmail = userInfo.email);
             return <http:Forbidden>{
                 body: {message: "You are not authorized to access the company org chart structure"}
             };

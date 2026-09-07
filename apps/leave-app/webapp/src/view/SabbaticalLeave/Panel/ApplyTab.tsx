@@ -31,7 +31,7 @@ import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useSnackbar } from "notistack";
 
-import { ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import CustomButton from "@root/src/component/common/CustomButton";
 import { FormContainer } from "@root/src/component/common/FormContainer";
@@ -80,23 +80,11 @@ export default function ApplyTab({
   const leaveState = useAppSelector(selectLeaveState);
   const leaves = useAppSelector(selectLeaves);
   const submitState = useAppSelector(selectSubmitState);
-  const policyMessage: ReactNode = (
-    <>
-      Refer to the{" "}
-      <Link href={sabbaticalPolicyUrl} target="_blank" rel="noopener" underline="hover">
-        Sabbatical Leave Policy
-      </Link>{" "}
-      for more information.
-    </>
-  );
-
   const [eligibilityPayload, setEligibilityPayload] = useState<EligibilityResponse>({
-    isEligible: false,
     employmentStartDate: "",
     lastSabbaticalLeaveEndDate: dayjs().toISOString(),
   });
   const [sabbaticalEndDateFieldEditable, setSabbaticalEndDateFieldEditable] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<ReactNode>("");
   const [lastSabbaticalLeaveEndDate, setLastSabbaticalLeaveEndDate] = useState<Dayjs | null>(null);
   const [leaveStartDate, setLeaveStartDate] = useState<Dayjs | null>(null);
   const [leaveEndDate, setLeaveEndDate] = useState<Dayjs | null>(null);
@@ -104,15 +92,15 @@ export default function ApplyTab({
   const [managerApprovalChecked, setManagerApprovalChecked] = useState(false);
   const [policyReadChecked, setPolicyReadChecked] = useState(false);
   const [resignationAcknowledgeChecked, setResignationAcknowledgeChecked] = useState(false);
-  const [canRenderSabbaticalFormField, setCanRenderSabbaticalFormField] = useState(true);
   const [startDateError, setStartDateError] = useState(false);
   const [endDateError, setEndDateError] = useState(false);
   const [durationExceedError, setDurationExceedError] = useState(false);
   const [managerApprovalError, setManagerApprovalError] = useState(false);
   const [policyReadError, setPolicyReadError] = useState(false);
   const [resignationAcknowledgeError, setResignationAcknowledgeError] = useState(false);
+  const [sabbaticalEligibilityWarning, setSabbaticalEligibilityWarning] = useState<string>("");
   const [hasFetched, setHasFetched] = useState(false);
-  const [sabbaticalEligibilityDurationInYears] = useState(sabbaticalLeaveEligibilityDuration / 365);
+  const [sabbaticalEligibilityDurationInYears] = useState(parseFloat((sabbaticalLeaveEligibilityDuration / 365).toFixed(1)));
   const [sabbaticalMaxApplicationDurationInWeeks] = useState(
     sabbaticalLeaveMaxApplicationDuration / 7,
   );
@@ -120,55 +108,27 @@ export default function ApplyTab({
   const isLoading = leaveState === State.loading || !hasFetched;
   const isSubmitting = submitState === State.loading;
   const lastLeaveEndDate = leaves[0]?.endDate;
-  const todayUtc = dayjs.utc().startOf("day");
 
-  // Check eligibility conditions
-  const employmentStartDateDiff =
-    todayUtc.diff(dayjs(userInfo?.employmentStartDate).startOf("day"), "day") - 1;
-  const lastSabbaticalLeaveDiff = lastLeaveEndDate
-    ? todayUtc.diff(dayjs(lastLeaveEndDate).startOf("day"), "day") - 1
-    : null;
-  const isEmploymentEligible = employmentStartDateDiff >= sabbaticalLeaveEligibilityDuration;
-
+  // Always fetch leave history — eligibility is validated against leaveStartDate, not today
   useEffect(() => {
     if (userInfo?.workEmail) {
-      if (isEmploymentEligible) {
-        setHasFetched(false);
-        dispatch(resetLeaveState());
-        dispatch(
-          fetchLeaveHistory({
-            email: userInfo.workEmail,
-            leaveCategory: [LeaveType.SABBATICAL],
-            statuses: [Status.APPROVED],
-            orderBy: OrderBy.DESC,
-            limit: 1,
-          }),
-        ).then(() => {
-          setHasFetched(true);
-        });
-      } else {
+      setHasFetched(false);
+      dispatch(resetLeaveState());
+      dispatch(
+        fetchLeaveHistory({
+          email: userInfo.workEmail,
+          leaveCategory: [LeaveType.SABBATICAL],
+          statuses: [Status.APPROVED],
+          orderBy: OrderBy.DESC,
+          limit: 1,
+        }),
+      ).then(() => {
         setHasFetched(true);
-        setCanRenderSabbaticalFormField(false);
-        let errorMsg = (
-          <>
-            You must be employed for at least {sabbaticalEligibilityDurationInYears} years to be
-            eligible for sabbatical leave. {policyMessage}
-          </>
-        );
-        setErrorMessage(errorMsg);
-        setEligibilityPayload({
-          employmentStartDate: userInfo?.employmentStartDate || "",
-          lastSabbaticalLeaveEndDate: "",
-          isEligible: false,
-        });
-      }
+      });
     }
   }, [
     dispatch,
     userInfo?.workEmail,
-    isEmploymentEligible,
-    userInfo?.employmentStartDate,
-    sabbaticalEligibilityDurationInYears,
   ]);
 
   useEffect(() => {
@@ -176,48 +136,14 @@ export default function ApplyTab({
       return;
     }
 
-    const isSabbaticalLeaveEligible =
-      lastSabbaticalLeaveDiff === null ||
-      lastSabbaticalLeaveDiff >= sabbaticalLeaveEligibilityDuration;
-
-    let eligible = true;
-    let errorMsg;
-
-    if (!isEmploymentEligible) {
-      eligible = false;
-      errorMsg = (
-        <>
-          You must be employed for at least {sabbaticalEligibilityDurationInYears} years to be
-          eligible for sabbatical leave. {policyMessage}
-        </>
-      );
-
-      setCanRenderSabbaticalFormField(false);
-    } else if (!isSabbaticalLeaveEligible) {
-      eligible = false;
-      errorMsg = (
-        <>
-          Your last sabbatical leave was taken within the past{" "}
-          {sabbaticalEligibilityDurationInYears} years, making you ineligible. {policyMessage}
-        </>
-      );
-    }
-
-    if (!eligible) {
-      setErrorMessage(errorMsg);
-    } else {
-      setErrorMessage("");
-    }
-
     const eligibilityResponse: EligibilityResponse = {
       employmentStartDate: userInfo?.employmentStartDate || "",
       lastSabbaticalLeaveEndDate: lastLeaveEndDate || "",
-      isEligible: eligible,
     };
 
     setEligibilityPayload(eligibilityResponse);
     setLastSabbaticalLeaveEndDate(lastLeaveEndDate ? dayjs(lastLeaveEndDate) : null);
-    if (!lastLeaveEndDate && eligible) {
+    if (!lastLeaveEndDate) {
       setSabbaticalEndDateFieldEditable(true);
     }
   }, [
@@ -225,38 +151,38 @@ export default function ApplyTab({
     leaves,
     hasFetched,
     userInfo?.employmentStartDate,
-    sabbaticalLeaveEligibilityDuration,
+    lastLeaveEndDate,
   ]);
 
-  // Validate last sabbatical leave end date whenever it changes
+  // Dynamically validate eligibility gap between anchor date and leave start date
   useEffect(() => {
-    if (!sabbaticalEndDateFieldEditable || !lastSabbaticalLeaveEndDate) {
+    // Use last sabbatical end date if available, otherwise fall back to employment start date
+    const validationAnchor = lastSabbaticalLeaveEndDate
+      ?? (userInfo?.employmentStartDate ? dayjs(userInfo.employmentStartDate) : null);
+
+    if (!validationAnchor || !leaveStartDate) {
+      setSabbaticalEligibilityWarning("");
       return;
     }
 
-    const todayUtc = dayjs.utc().startOf("day");
-    const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
-
+    const diffDays = leaveStartDate.startOf("day").diff(validationAnchor.startOf("day"), "day") - 1;
     if (diffDays < sabbaticalLeaveEligibilityDuration) {
-      setErrorMessage(
-        `Your last sabbatical leave was taken within the past ${sabbaticalEligibilityDurationInYears} years, making you ineligible.`,
+      const anchorLabel = lastSabbaticalLeaveEndDate
+        ? "last sabbatical leave end date"
+        : "employment start date";
+      setSabbaticalEligibilityWarning(
+        `The leave start date must be at least ${sabbaticalEligibilityDurationInYears} years after the ${anchorLabel}.`,
       );
-      setEligibilityPayload((prev) => ({
-        ...prev,
-        isEligible: false,
-      }));
     } else {
-      setErrorMessage("");
-      setEligibilityPayload((prev) => ({
-        ...prev,
-        isEligible: true,
-      }));
+      setSabbaticalEligibilityWarning("");
     }
   }, [
     lastSabbaticalLeaveEndDate,
-    sabbaticalEndDateFieldEditable,
+    leaveStartDate,
+    userInfo?.employmentStartDate,
     sabbaticalLeaveEligibilityDuration,
   ]);
+
   // Validate leave dates to be stay within eligibility duration
   useEffect(() => {
     if (!leaveStartDate || !leaveEndDate) {
@@ -313,17 +239,10 @@ export default function ApplyTab({
       return;
     }
 
-    // Validate last sabbatical leave end date
-    if (lastSabbaticalLeaveEndDate) {
-      const todayUtc = dayjs.utc().startOf("day");
-      const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
-      if (diffDays < sabbaticalLeaveEligibilityDuration) {
-        enqueueSnackbar(
-          `The last sabbatical leave end date should be at least ${sabbaticalEligibilityDurationInYears} years before today.`,
-          { variant: "error" },
-        );
-        return;
-      }
+    // Validate eligibility duration against the leave request start date
+    if (sabbaticalEligibilityWarning) {
+      enqueueSnackbar(sabbaticalEligibilityWarning, { variant: "error" });
+      return;
     }
 
     if (!managerApprovalChecked) {
@@ -427,26 +346,22 @@ export default function ApplyTab({
                 format="YYYY-MM-DD"
                 disabled
               />
-              {canRenderSabbaticalFormField && (
-                <DatePicker
-                  label="Last sabbatical leave end date"
-                  sx={{ flex: 1 }}
-                  maxDate={dayjs().subtract(sabbaticalEligibilityDurationInYears, "year")}
-                  value={lastSabbaticalLeaveEndDate ? dayjs(lastSabbaticalLeaveEndDate) : null}
-                  onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
-                  disabled={!sabbaticalEndDateFieldEditable}
-                  format="YYYY-MM-DD"
-                  disableFuture
-                />
-              )}
+              <DatePicker
+                label="Last sabbatical leave end date"
+                sx={{ flex: 1 }}
+                value={lastSabbaticalLeaveEndDate ? dayjs(lastSabbaticalLeaveEndDate) : null}
+                onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
+                disabled={!sabbaticalEndDateFieldEditable}
+                format="YYYY-MM-DD"
+                minDate={userInfo?.employmentStartDate ? dayjs(userInfo.employmentStartDate) : undefined}
+                {...(sabbaticalEndDateFieldEditable && { disableFuture: true })}
+              />
             </Stack>
-            {!eligibilityPayload?.isEligible && (
+            {sabbaticalEligibilityWarning && (
               <Alert variant="outlined" severity="warning">
-                {errorMessage}
+                {sabbaticalEligibilityWarning}
               </Alert>
             )}
-            {eligibilityPayload?.isEligible && (
-              <>
                 <Stack
                   direction={{ xs: "column", md: "row" }}
                   gap="2rem"
@@ -460,6 +375,9 @@ export default function ApplyTab({
                       setLeaveStartDate(newValue);
                       setStartDateError(false);
                       setDurationExceedError(false);
+                      if (newValue && leaveEndDate && newValue.isAfter(leaveEndDate)) {
+                        setLeaveEndDate(null);
+                      }
                     }}
                     format="YYYY-MM-DD"
                     disablePast
@@ -599,10 +517,9 @@ export default function ApplyTab({
                 <Box mx={{ xs: "auto", md: "0" }} ml={{ md: "auto" }}>
                   <CustomButton label="Apply" onClick={handleOpenDialog} disabled={isSubmitting} />
                 </Box>
-              </>
-            )}
             </>
             )}
+
           </FormContainer>
         </Stack>
       )}
