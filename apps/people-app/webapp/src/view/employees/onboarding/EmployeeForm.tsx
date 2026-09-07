@@ -185,11 +185,21 @@ const toJobUpdatePayload = (
   // officeId, and cascade resets always write the sentinel directly for unitId — see
   // handleBusinessUnitChange/handleTeamChange/handleSubTeamChange). This guard just makes
   // sure nothing malformed reaches the wire regardless.
-  officeId: values.officeId > 0 ? values.officeId : OFFICE_CLEAR_SENTINEL,
+  officeId:
+    values.officeId > 0
+      ? values.officeId
+      : values.officeId === OFFICE_CLEAR_SENTINEL
+        ? OFFICE_CLEAR_SENTINEL
+        : null,
   teamId: values.teamId > 0 ? values.teamId : null,
   subTeamId: values.subTeamId > 0 ? values.subTeamId : null,
   businessUnitId: values.businessUnitId > 0 ? values.businessUnitId : null,
-  unitId: values.unitId > 0 ? values.unitId : UNIT_CLEAR_SENTINEL,
+  unitId:
+    values.unitId > 0
+      ? values.unitId
+      : values.unitId === UNIT_CLEAR_SENTINEL
+        ? UNIT_CLEAR_SENTINEL
+        : null,
   houseId: values.houseId > 0 ? values.houseId : null,
   continuousServiceRecord: values.isRelocation
     ? (values.continuousServiceRecord ?? null)
@@ -206,8 +216,11 @@ const toPersonalUpdatePayload = (
   nicOrPassport: values.personalInfo.nicOrPassport ?? null,
   firstName: values.personalInfo.firstName ?? null,
   lastName: values.personalInfo.lastName ?? null,
-  fullName:
-    `${values.personalInfo.firstName ?? ""} ${values.personalInfo.lastName ?? ""}`.trim() || null,
+  fullName: deriveFullName(
+    values.personalInfo.fullName,
+    values.personalInfo.firstName,
+    values.personalInfo.lastName,
+  ) || null,
   title: values.personalInfo.title ?? null,
   dob: values.personalInfo.dob ?? null,
   gender: values.personalInfo.gender ?? null,

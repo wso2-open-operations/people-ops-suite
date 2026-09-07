@@ -25,7 +25,18 @@
 -- by houseIdForEmployeeId for employee IDs with a valid numeric suffix.
 --
 -- Only rows with a NULL house_id are updated; existing house assignments
--- are preserved.
+-- are preserved. This also backfills employees whose house_id was already
+-- NULL before automatic house assignment was introduced, not only rows
+-- affected by the update bug. Re-running this script is safe because the
+-- update remains limited to NULL house_id values.
+
+-- Report NULL house_id rows whose employee IDs cannot be mapped by the
+-- same numeric-suffix rules used by the application. These rows need
+-- separate review and are intentionally not assigned house 1 by default.
+SELECT employee_id
+FROM employee
+WHERE house_id IS NULL
+    AND employee_id NOT REGEXP '^[^0-9]*[0-9]+$';
 
 UPDATE employee
 SET

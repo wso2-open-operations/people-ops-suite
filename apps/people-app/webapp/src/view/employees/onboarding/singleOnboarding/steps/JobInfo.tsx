@@ -836,9 +836,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         initialLoadRef.current.offices = true;
 
         if (!currentCompanyId || currentCompanyId !== newCompanyId) {
-          // Reset to an unresolved state when the company changes.
-          // The user must select an office or explicitly choose "None".
-          setFieldValue("officeId", 0);
+          setFieldValue("officeId", OFFICE_CLEAR_SENTINEL);
           setFieldValue("workLocation", "");
         }
       }

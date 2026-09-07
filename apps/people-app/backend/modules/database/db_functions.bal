@@ -932,16 +932,16 @@ public isolated function updateEmployeePersonalInfo(string employeeId, UpdateEmp
         EmergencyContact[]? contactsOpt = payload.emergencyContacts;
         if contactsOpt is EmergencyContact[] {
             check syncEmergencyContacts(employeeId, contactsOpt, updatedBy);
-        } else {
-            check checkAffectedCount(executionResult.affectedRowCount);
         }
+        check checkAffectedCount(executionResult.affectedRowCount);
 
         // employee.first_name/last_name are denormalized copies of personal_info's, read by
         // the directory, search, and employee-detail views. Keep them in sync whenever a name
         // field is part of this edit, or those views keep showing the pre-edit name.
         if payload.firstName != () || payload.lastName != () {
-            _ = check databaseClient->execute(
-            updateEmployeeNameQuery(employeeId, payload, updatedBy));
+            sql:ExecutionResult nameUpdateResult = check databaseClient->execute(
+                updateEmployeeNameQuery(employeeId, payload, updatedBy));
+            check checkAffectedCount(nameUpdateResult.affectedRowCount);
         }
 
         check commit;
