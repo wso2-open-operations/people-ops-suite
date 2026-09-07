@@ -20,8 +20,7 @@ import ballerina/http;
 # + userAssertion - End-user assertion to forward to the payment service
 # + return - The caller's wallets, or error
 public isolated function getUserWallets(string userAssertion) returns WalletDetails[]|error {
-    WalletDetails[] wallets = check transactionClient->/wallets/me.get({[USER_ASSERTION_HEADER]: userAssertion});
-    return wallets;
+    return check transactionClient->/wallets/me.get({[USER_ASSERTION_HEADER]: userAssertion});
 }
 
 # Collect a payment from the payer wallet to the master wallet.
