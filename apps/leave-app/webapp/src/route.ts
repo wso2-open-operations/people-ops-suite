@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import AssessmentIcon from "@mui/icons-material/Assessment";
+import EditCalendarIcon from "@mui/icons-material/EditCalendar";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import HistoryIcon from "@mui/icons-material/History";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
@@ -26,6 +27,7 @@ import React from "react";
 import OutletWrapper from "@component/common/OutletWrapper";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
+import RecordEmployeeLeave from "@view/EmployeeLeave/RecordEmployeeLeave";
 import GeneralLeave from "@view/GeneralLeave/GeneralLeave";
 import AdminSabbaticalTab from "@view/LeadReport/panel/AdminSabbaticalTab";
 import LeadReportTab from "@view/LeadReport/panel/LeadReportTab";
@@ -123,6 +125,23 @@ export const routes: RouteObjectWithMeta[] = [
         element: React.createElement(SabbaticalLeaveHistory),
         allowRoles: [Role.EMPLOYEE, Role.LEAD],
         denyRoles: [Role.INTERN],
+      },
+    ],
+  },
+  {
+    path: "employee-leave",
+    text: "Employee Leave",
+    icon: React.createElement(EditCalendarIcon),
+    element: React.createElement(OutletWrapper),
+    // People Ops only: recording leave for another employee is an admin action.
+    allowRoles: [Role.PEOPLE_OPS_TEAM],
+    children: [
+      {
+        path: "record",
+        text: "Record Leave",
+        icon: React.createElement(EditCalendarIcon),
+        element: React.createElement(RecordEmployeeLeave),
+        allowRoles: [Role.PEOPLE_OPS_TEAM],
       },
     ],
   },
