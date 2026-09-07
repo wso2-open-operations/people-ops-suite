@@ -20,6 +20,18 @@ const int GSHEET_CONFIG_RETRY_COUNT = 3;
 # Google Sheet retry configuration for wait interval in seconds.
 const decimal GSHEET_CONFIG_RETRY_INTERVAL = 3.0;
 
+# Header used to forward the end-user assertion to the payment service.
+const USER_ASSERTION_HEADER = "X-User-Assertion";
+
+# Originating feature reported to the payment service for car park payments.
+const PARKING_PAYMENT_SOURCE = "PARKING";
+
+# Reference prefix for car park payments.
+public const PARKING_PAYMENT_REFERENCE_PREFIX = "parking-";
+
+# Generic message used when the payment service rejects a payment without a specific reason.
+const PAYMENT_REJECTED_MESSAGE = "Payment could not be completed.";
+
 # Master wallet address for car park O2C payments.
 public configurable string masterWalletAddress = ?;
 

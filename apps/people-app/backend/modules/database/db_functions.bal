@@ -1302,22 +1302,7 @@ public isolated function getParkingReservationById(int reservationId) returns Pa
     return row is sql:NoRowsError ? () : row;
 }
 
-# Get parking reservation id by transaction hash.
-#
-# + transactionHash - Blockchain transaction hash
-# + return - Reservation id or nil
-public isolated function getParkingReservationByTransactionHash(string transactionHash)
-        returns ReservationIdRow|error? {
-
-    ReservationIdRow|error row = databaseClient->queryRow(
-        getParkingReservationByTransactionHashQuery(transactionHash));
-    if row is sql:NoRowsError {
-        return ();
-    }
-    return row;
-}
-
-# Update reservation status and optional transaction_hash.
+# Update reservation status and optional payment reference.
 #
 # + payload - Update payload
 # + return - True if updated
