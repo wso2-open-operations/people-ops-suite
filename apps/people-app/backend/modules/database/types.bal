@@ -991,11 +991,13 @@ public type UpdateEmployeePersonalInfoPayload record {|
     # National Identity Card number or Passport
     @constraint:String {maxLength: 100}
     string? nicOrPassport = ();
-    # First name
-    @constraint:String {maxLength: 100}
+    # First name. minLength guards against a blank string being accepted as "set the name to
+    # empty" — see updateEmployeeNameQuery, which forwards this value into employee.first_name
+    # whenever it is non-nil, with no separate blank check of its own.
+    @constraint:String {minLength: 1, maxLength: 100}
     string? firstName = ();
-    # Last name
-    @constraint:String {maxLength: 100}
+    # Last name. Same minLength rationale as firstName above.
+    @constraint:String {minLength: 1, maxLength: 100}
     string? lastName = ();
     # Full name
     @constraint:String {maxLength: 255}
@@ -1086,7 +1088,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     int? employmentTypeId = ();
     # Designation ID
     int? designationId = ();
-    # Office ID
+    # Office ID; -1 (OFFICE_CLEAR_SENTINEL) clears it to NULL, nil leaves it unchanged.
+    # NOTE: the edit form only sends this field when it actually changed, so nil (absent from
+    # the request) must NEVER be treated as "clear" here — see updateEmployeeJobInfoQuery.
     int? officeId = ();
     # Team ID
     int? teamId = ();
@@ -1094,9 +1098,12 @@ public type UpdateEmployeeJobInfoPayload record {|
     int? subTeamId = ();
     # Business unit ID
     int? businessUnitId = ();
-    # Unit ID
+    # Unit ID; -1 (UNIT_CLEAR_SENTINEL) clears it to NULL, nil leaves it unchanged.
+    # NOTE: same caveat as officeId above — absence must never be treated as "clear."
     int? unitId = ();
-    # House ID
+    # House ID. The House selection does not provide a "None" option,
+    # so there is no way to clear houseId through this payload and no clear
+    # sentinel is required.
     int? houseId = ();
     # Continuous service record
     @constraint:String {maxLength: 99}

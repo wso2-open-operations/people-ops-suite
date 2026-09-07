@@ -68,6 +68,14 @@ export const JOB_BAND_CLEAR_SENTINEL = -1;
 //   - field === any other int  -> set the column to that value
 export const CAREER_FUNCTION_CLEAR_SENTINEL = -1;
 
+// Sentinels used for employee job-info updates.
+// The backend distinguishes an omitted field from an explicit clear:
+//   - field absent -> leave the column unchanged
+//   - field === *_CLEAR_SENTINEL (-1) -> clear the column to NULL
+//   - any other valid ID -> set the column to that value
+export const OFFICE_CLEAR_SENTINEL = -1;
+export const UNIT_CLEAR_SENTINEL = -1;
+
 // NOTE: `jobBand` and `careerFunctionId` follow a three-state sentinel contract on the backend:
 //   - absent / null -> leave the existing value unchanged
 //   - JOB_BAND_CLEAR_SENTINEL / CAREER_FUNCTION_CLEAR_SENTINEL (-1) -> clear the column to NULL
