@@ -991,11 +991,13 @@ public type UpdateEmployeePersonalInfoPayload record {|
     # National Identity Card number or Passport
     @constraint:String {maxLength: 100}
     string? nicOrPassport = ();
-    # First name
-    @constraint:String {maxLength: 100}
+    # First name. minLength guards against a blank string being accepted as "set the name to
+    # empty" — see updateEmployeeNameQuery, which forwards this value into employee.first_name
+    # whenever it is non-nil, with no separate blank check of its own.
+    @constraint:String {minLength: 1, maxLength: 100}
     string? firstName = ();
-    # Last name
-    @constraint:String {maxLength: 100}
+    # Last name. Same minLength rationale as firstName above.
+    @constraint:String {minLength: 1, maxLength: 100}
     string? lastName = ();
     # Full name
     @constraint:String {maxLength: 255}
