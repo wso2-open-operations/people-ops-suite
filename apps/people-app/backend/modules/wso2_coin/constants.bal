@@ -20,6 +20,9 @@ const int GSHEET_CONFIG_RETRY_COUNT = 3;
 # Google Sheet retry configuration for wait interval in seconds.
 const decimal GSHEET_CONFIG_RETRY_INTERVAL = 3.0;
 
+# Required scheme for the transaction endpoint so forwarded assertions stay encrypted in transit.
+const HTTPS_SCHEME = "https://";
+
 # Header used to forward the end-user assertion to the payment service.
 const USER_ASSERTION_HEADER = "X-User-Assertion";
 
