@@ -2471,25 +2471,17 @@ isolated function getParkingReservationByIdQuery(int reservationId) returns sql:
     INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id
     WHERE pr.id = ${reservationId}`;
 
-# Update parking reservation status and optional payment reference.
+# Atomically confirm a pending parking reservation (PENDING -> CONFIRMED).
 #
-# + payload - Update payload
-# + return - Query to update reservation
-isolated function updateParkingReservationStatusQuery(UpdateParkingReservationStatusPayload payload)
-    returns sql:ParameterizedQuery {
-
-    sql:ParameterizedQuery mainQuery = `UPDATE parking_reservation SET`;
-
-    sql:ParameterizedQuery[] setClauses = [` status = ${payload.status}`, ` updated_by = ${payload.updatedBy}`];
-
-    if payload.paymentReference is string {
-        setClauses.push(` transaction_hash = ${payload.paymentReference}`);
-    }
-
-    mainQuery = buildSqlUpdateQuery(mainQuery, setClauses);
-
-    return sql:queryConcat(mainQuery, ` WHERE id = ${payload.reservationId}`);
-}
+# + reservationId - Reservation id
+# + paymentReference - Payment reference to persist
+# + updatedBy - User performing the confirmation
+# + return - Query that transitions the reservation only while it is still PENDING
+isolated function confirmParkingReservationQuery(int reservationId, string paymentReference, string updatedBy)
+    returns sql:ParameterizedQuery =>
+    `UPDATE parking_reservation
+        SET status = ${CONFIRMED}, transaction_hash = ${paymentReference}, updated_by = ${updatedBy}
+        WHERE id = ${reservationId} AND status = ${PENDING}`;
 
 # Get parking reservations by employee.
 #

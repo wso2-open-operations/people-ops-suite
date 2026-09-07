@@ -2261,6 +2261,15 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string fromAddress = body.fromAddress.trim();
+        if fromAddress.length() == 0 {
+            log:printWarn("Parking reservation confirmation missing payer wallet address",
+                    invokerEmail = userInfo.email, reservationId = body.reservationId);
+            return <http:BadRequest>{
+                body: {message: "A payer wallet address is required."}
+            };
+        }
+
         database:ParkingReservationDetails|error? reservation = database:getParkingReservationById(body.reservationId);
 
         if reservation is error {
@@ -2286,19 +2295,26 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string paymentReference = wso2_coin:PARKING_PAYMENT_REFERENCE_PREFIX + reservation.id.toString();
-        wso2_coin:CollectPaymentResponse|error payment = wso2_coin:collectPayment(userAssertion, body.fromAddress,
+        wso2_coin:CollectPaymentResponse|error payment = wso2_coin:collectPayment(userAssertion, fromAddress,
                 reservation.coinsAmount, paymentReference);
         if payment is wso2_coin:PaymentError {
             wso2_coin:PaymentErrorDetail detail = payment.detail();
             log:printWarn("Parking payment rejected by the payment service", invokerEmail = userInfo.email,
                     reservationId = reservation.id, statusCode = detail.statusCode);
-            if detail.statusCode == http:STATUS_FORBIDDEN {
-                return <http:Forbidden>{
-                    body: {message: "The selected wallet does not belong to you."}
-                };
+            match detail.statusCode {
+                http:STATUS_FORBIDDEN => {
+                    return <http:Forbidden>{
+                        body: {message: "The selected wallet does not belong to you."}
+                    };
+                }
+                http:STATUS_BAD_REQUEST|http:STATUS_CONFLICT => {
+                    return <http:BadRequest>{
+                        body: {message: detail.reason}
+                    };
+                }
             }
-            return <http:BadRequest>{
-                body: {message: detail.reason}
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while confirming reservation."}
             };
         }
         if payment is error {
@@ -2309,21 +2325,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean|error updated = database:updateParkingReservationStatus({
-                                                                            reservationId: reservation.id,
-                                                                            status: database:CONFIRMED,
-                                                                            paymentReference: payment.reference,
-                                                                            updatedBy: userInfo.email
-                                                                        });
-        if updated is error {
-            log:printError("Error confirming reservation", updated);
+        // Transition PENDING -> CONFIRMED atomically so two concurrent confirms cannot both proceed.
+        boolean|error confirmed = database:confirmParkingReservation(reservation.id, payment.reference,
+                userInfo.email);
+        if confirmed is error {
+            log:printError("Error confirming reservation", confirmed, invokerEmail = userInfo.email,
+                    reservationId = reservation.id);
             return <http:InternalServerError>{
                 body: {message: "Error occurred while confirming reservation."}
-            };
-        }
-        if !updated {
-            return <http:InternalServerError>{
-                body: {message: "Failed to update reservation status."}
             };
         }
 
@@ -2335,7 +2344,21 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Append to Google Sheet.
+        if !confirmed {
+            // A concurrent request already transitioned this reservation. The payment used the
+            // deterministic parking-<id> reference, so it was charged at most once.
+            if confirmedReservation.status == database:CONFIRMED {
+                return confirmedReservation;
+            }
+            log:printWarn("Parking reservation confirmation lost a concurrent transition",
+                    invokerEmail = userInfo.email, reservationId = reservation.id,
+                    status = confirmedReservation.status);
+            return <http:BadRequest>{
+                body: {message: string `Reservation is ${confirmedReservation.status.toString()}. Cannot confirm.`}
+            };
+        }
+
+        // This request performed the transition — append to Google Sheet.
         error? sheetErr = wso2_coin:appendParkingReservation(confirmedReservation);
         if sheetErr is error {
             log:printError("Failed to append parking reservation to Google Sheet", sheetErr,

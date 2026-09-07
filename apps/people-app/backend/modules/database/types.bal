@@ -1256,18 +1256,6 @@ public type AddParkingReservationPayload record {|
     string createdBy;
 |};
 
-# [Database] Payload to update parking reservation status.
-public type UpdateParkingReservationStatusPayload record {|
-    # Reservation id
-    int reservationId;
-    # New status
-    ParkingReservationStatus status;
-    # Payment reference
-    string? paymentReference;
-    # Updated by
-    string updatedBy;
-|};
-
 # [Database] Parking reservation details (slot, floor, vehicle).
 public type ParkingReservationDetails record {|
     # Reservation identifier

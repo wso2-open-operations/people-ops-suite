@@ -1302,14 +1302,16 @@ public isolated function getParkingReservationById(int reservationId) returns Pa
     return row is sql:NoRowsError ? () : row;
 }
 
-# Update reservation status and optional payment reference.
+# Atomically confirm a pending parking reservation (PENDING -> CONFIRMED).
 #
-# + payload - Update payload
-# + return - True if updated
-public isolated function updateParkingReservationStatus(UpdateParkingReservationStatusPayload payload)
+# + reservationId - Reservation id
+# + paymentReference - Payment reference to persist
+# + updatedBy - User performing the confirmation
+# + return - True if a pending reservation was transitioned, false if none matched (already transitioned), or error
+public isolated function confirmParkingReservation(int reservationId, string paymentReference, string updatedBy)
     returns boolean|error {
     sql:ExecutionResult result = check databaseClient->execute(
-        updateParkingReservationStatusQuery(payload));
+        confirmParkingReservationQuery(reservationId, paymentReference, updatedBy));
     return result.affectedRowCount > 0;
 }
 
