@@ -230,7 +230,10 @@ export default function Me({
   // details, emergency contacts) is admin-or-self only, matching the backend. A lead viewing a
   // team member sees their work details but not this, so the section is not rendered and never
   // requested — the request would 403 and surface an error snackbar.
-  const isSelfView = !employeeId;
+  // Self means the same person, not merely the absence of a route param: /employees/:employeeId
+  // is open to LEAD, so a lead reaching their own detail page directly is still self and keeps
+  // the section the backend would serve them.
+  const isSelfView = !employeeId || employeeId === userInfo?.employeeId;
   const canViewPersonalInfo = isSelfView || roles.includes(Role.ADMIN);
   const { employee, state: employeeState } = useAppSelector(
     (state) => state.employee,
