@@ -22,10 +22,6 @@ export type ParkingPaymentContextState = {
   coinsAmount: DecimalLike;
   bookingDate: string; // YYYY-MM-DD
   reservationId?: number;
-  // Set after Wallet payment returns.
-  paymentStatus?: "SUCCESS" | "FAILED";
-  transactionHash?: string;
-  error?: string;
 };
 
 const PAYMENT_CONTEXT_KEY = "people_parking_payment_context";
@@ -34,7 +30,7 @@ const CONFIRMATION_KEY = "people_parking_confirmation";
 export function setParkingPaymentContextState(
   state: ParkingPaymentContextState,
 ) {
-  // Persist across WebView reloads during wallet handoff.
+  // Persist across WebView reloads.
   localStorage.setItem(PAYMENT_CONTEXT_KEY, JSON.stringify(state));
 }
 

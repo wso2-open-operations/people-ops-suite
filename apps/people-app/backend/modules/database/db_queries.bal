@@ -1529,7 +1529,6 @@ isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
     JOIN company c ON c.id = ${companyId}
     WHERE et.id = ${employmentTypeId}`;
 
-
 # Fetch and lock the current numeric maximum within a digit-family sequence, scoped purely by the
 # ID string pattern (prefix + leading digit) rather than by employment type. This means an
 # employee tagged with any type — including inactive/legacy ones the caller never listed — can
@@ -2459,7 +2458,7 @@ isolated function getParkingReservationByIdQuery(int reservationId) returns sql:
         v.vehicle_registration_number as 'vehicleRegistrationNumber',
         v.vehicle_type as 'vehicleType',
         pr.status,
-        pr.transaction_hash as 'transactionHash',
+        pr.transaction_hash as 'paymentReference',
         pr.coins_amount as 'coinsAmount',
         pf.name as 'floorName',
         DATE_FORMAT(pr.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
@@ -2472,37 +2471,17 @@ isolated function getParkingReservationByIdQuery(int reservationId) returns sql:
     INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id
     WHERE pr.id = ${reservationId}`;
 
-# Get parking reservation id by transaction hash.
+# Atomically confirm a pending parking reservation (PENDING -> CONFIRMED).
 #
-# + transactionHash - Blockchain transaction hash
-# + return - Query to get reservation id if hash is already used
-isolated function getParkingReservationByTransactionHashQuery(string transactionHash)
+# + reservationId - Reservation id
+# + paymentReference - Payment reference to persist
+# + updatedBy - User performing the confirmation
+# + return - Query that transitions the reservation only while it is still PENDING
+isolated function confirmParkingReservationQuery(int reservationId, string paymentReference, string updatedBy)
     returns sql:ParameterizedQuery =>
-    `SELECT
-        id
-    FROM parking_reservation
-    WHERE transaction_hash = ${transactionHash}
-    LIMIT 1`;
-
-# Update parking reservation status and optional transaction_hash.
-#
-# + payload - Update payload
-# + return - Query to update reservation
-isolated function updateParkingReservationStatusQuery(UpdateParkingReservationStatusPayload payload)
-    returns sql:ParameterizedQuery {
-
-    sql:ParameterizedQuery mainQuery = `UPDATE parking_reservation SET`;
-
-    sql:ParameterizedQuery[] setClauses = [` status = ${payload.status}`, ` updated_by = ${payload.updatedBy}`];
-
-    if payload.transactionHash is string {
-        setClauses.push(` transaction_hash = ${payload.transactionHash}`);
-    }
-
-    mainQuery = buildSqlUpdateQuery(mainQuery, setClauses);
-
-    return sql:queryConcat(mainQuery, ` WHERE id = ${payload.reservationId}`);
-}
+    `UPDATE parking_reservation
+        SET status = ${CONFIRMED}, transaction_hash = ${paymentReference}, updated_by = ${updatedBy}
+        WHERE id = ${reservationId} AND status = ${PENDING}`;
 
 # Get parking reservations by employee.
 #
@@ -2523,7 +2502,7 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
         v.vehicle_registration_number as 'vehicleRegistrationNumber',
         v.vehicle_type as 'vehicleType',
         pr.status,
-        pr.transaction_hash as 'transactionHash',
+        pr.transaction_hash as 'paymentReference',
         pr.coins_amount as 'coinsAmount',
         pf.name as 'floorName',
         DATE_FORMAT(pr.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',

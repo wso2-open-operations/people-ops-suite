@@ -17,9 +17,14 @@
 export type DecimalLike = number | string;
 
 export interface CarParkConfigResponse {
-  publicWalletAddress: string;
   reservationWindowStartHour: number;
   reservationWindowEndHour: number;
+}
+
+export interface WalletDetails {
+  walletAddress: string;
+  balance: DecimalLike;
+  defaultWallet: boolean;
 }
 
 export interface ParkingFloor {
@@ -57,7 +62,7 @@ export interface ParkingReservationDetails {
   vehicleRegistrationNumber: string;
   vehicleType: string | null;
   status: ParkingReservationStatus | string;
-  transactionHash: string | null;
+  paymentReference: string | null;
   coinsAmount: DecimalLike;
   floorName: string;
   createdOn: string;
@@ -68,7 +73,7 @@ export interface ParkingReservationDetails {
 
 export interface ConfirmParkingReservationRequest {
   reservationId: number;
-  transactionHash: string;
+  fromAddress: string;
 }
 
 export interface CreateParkingReservationRequest {

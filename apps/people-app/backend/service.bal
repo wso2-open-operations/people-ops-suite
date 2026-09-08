@@ -1842,10 +1842,41 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return {
-            publicWalletAddress: wso2_coin:masterWalletAddress,
             reservationWindowStartHour: wso2_coin:reservationWindowStartHour,
             reservationWindowEndHour: wso2_coin:reservationWindowEndHour
         };
+    }
+
+    # List the current user's wallets available for car park payments.
+    #
+    # + return - The caller's wallets with balances, or error response
+    resource function get parkings/wallets(http:RequestContext ctx, http:Request request)
+        returns wso2_coin:WalletDetails[]|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        string|error userAssertion = request.getHeader(authorization:JWT_ASSERTION_HEADER);
+        if userAssertion is error {
+            log:printError("Missing user assertion header while listing wallets", userAssertion,
+                    invokerEmail = userInfo.email);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while fetching wallets."}
+            };
+        }
+
+        wso2_coin:WalletDetails[]|error wallets = wso2_coin:getUserWallets(userAssertion);
+        if wallets is error {
+            log:printError("Error fetching user wallets", wallets, invokerEmail = userInfo.email);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while fetching wallets."}
+            };
+        }
+        return wallets;
     }
 
     # List parking floors.
@@ -2206,17 +2237,36 @@ service http:InterceptableService / on new http:Listener(9090) {
         return response;
     }
 
-    # Confirm parking reservation with transaction hash.
+    # Confirm a parking reservation by collecting payment from the selected wallet.
     #
-    # + body - Request containing transaction hash and optional reservation ID
+    # + body - Request containing the reservation ID and the payer wallet address
     # + return - Reservation details with CONFIRMED status or error response
-    resource function post parkings/reservations/confirm(http:RequestContext ctx, ConfirmParkingReservationRequest body)
+    resource function post parkings/reservations/confirm(http:RequestContext ctx, http:Request request,
+            ConfirmParkingReservationRequest body)
         returns database:ParkingReservationDetails|http:BadRequest|http:InternalServerError|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        string|error userAssertion = request.getHeader(authorization:JWT_ASSERTION_HEADER);
+        if userAssertion is error {
+            log:printError("Missing user assertion header while confirming reservation", userAssertion,
+                    invokerEmail = userInfo.email);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while confirming reservation."}
+            };
+        }
+
+        string fromAddress = body.fromAddress.trim();
+        if fromAddress.length() == 0 {
+            log:printWarn("Parking reservation confirmation missing payer wallet address",
+                    invokerEmail = userInfo.email, reservationId = body.reservationId);
+            return <http:BadRequest>{
+                body: {message: "A payer wallet address is required."}
             };
         }
 
@@ -2229,56 +2279,60 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if reservation is () || reservation.employeeEmail != userInfo.email {
+            log:printWarn("Unauthorized parking reservation confirmation attempt", invokerEmail = userInfo.email,
+                    reservationId = body.reservationId);
             return <http:Forbidden>{
                 body: {message: "You are not allowed to confirm this reservation."}
             };
         }
 
         if reservation.status != database:PENDING {
+            log:printWarn("Attempt to confirm a non-pending parking reservation", invokerEmail = userInfo.email,
+                    reservationId = reservation.id, status = reservation.status);
             return <http:BadRequest>{
                 body: {message: string `Reservation is already ${reservation.status.toString()}. Cannot confirm.`}
             };
         }
 
-        // Prevent reuse of the same blockchain transaction hash across multiple reservations.
-        database:ReservationIdRow|error? existingTx =
-            database:getParkingReservationByTransactionHash(body.transactionHash);
-        if existingTx is error {
-            log:printError("Error checking transaction hash reuse", existingTx);
-            return <http:InternalServerError>{
-                body: {message: "Error occurred while verifying transaction hash."}
-            };
-        }
-        if existingTx is database:ReservationIdRow && existingTx.id != reservation.id {
-            return <http:BadRequest>{
-                body: {message: "This transaction hash has already been used for another reservation."}
-            };
-        }
-
-        error? confirmErr = wso2_coin:confirmTransaction(body.transactionHash, wso2_coin:masterWalletAddress,
-                reservation.coinsAmount);
-        if confirmErr is error {
-            log:printError("Error confirming transaction", confirmErr);
-            return <http:BadRequest>{
-                body: {message: "Transaction verification failed."}
-            };
-        }
-
-        boolean|error updated = database:updateParkingReservationStatus({
-                                                                            reservationId: reservation.id,
-                                                                            status: database:CONFIRMED,
-                                                                            transactionHash: body.transactionHash,
-                                                                            updatedBy: userInfo.email
-                                                                        });
-        if updated is error {
-            log:printError("Error confirming reservation", updated);
+        string paymentReference = wso2_coin:PARKING_PAYMENT_REFERENCE_PREFIX + reservation.id.toString();
+        wso2_coin:CollectPaymentResponse|error payment = wso2_coin:collectPayment(userAssertion, fromAddress,
+                reservation.coinsAmount, paymentReference);
+        if payment is wso2_coin:PaymentError {
+            wso2_coin:PaymentErrorDetail detail = payment.detail();
+            log:printWarn("Parking payment rejected by the payment service", invokerEmail = userInfo.email,
+                    reservationId = reservation.id, statusCode = detail.statusCode);
+            match detail.statusCode {
+                http:STATUS_FORBIDDEN => {
+                    return <http:Forbidden>{
+                        body: {message: "The selected wallet does not belong to you."}
+                    };
+                }
+                http:STATUS_BAD_REQUEST|http:STATUS_CONFLICT => {
+                    return <http:BadRequest>{
+                        body: {message: detail.reason}
+                    };
+                }
+            }
             return <http:InternalServerError>{
                 body: {message: "Error occurred while confirming reservation."}
             };
         }
-        if !updated {
+        if payment is error {
+            log:printError("Error collecting parking payment", payment, invokerEmail = userInfo.email,
+                    reservationId = reservation.id);
             return <http:InternalServerError>{
-                body: {message: "Failed to update reservation status."}
+                body: {message: "Error occurred while confirming reservation."}
+            };
+        }
+
+        // Transition PENDING -> CONFIRMED atomically so two concurrent confirms cannot both proceed.
+        boolean|error confirmed = database:confirmParkingReservation(reservation.id, payment.reference,
+                userInfo.email);
+        if confirmed is error {
+            log:printError("Error confirming reservation", confirmed, invokerEmail = userInfo.email,
+                    reservationId = reservation.id);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while confirming reservation."}
             };
         }
 
@@ -2290,7 +2344,21 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Append to Google Sheet.
+        if !confirmed {
+            // A concurrent request already transitioned this reservation. The payment used the
+            // deterministic parking-<id> reference, so it was charged at most once.
+            if confirmedReservation.status == database:CONFIRMED {
+                return confirmedReservation;
+            }
+            log:printWarn("Parking reservation confirmation lost a concurrent transition",
+                    invokerEmail = userInfo.email, reservationId = reservation.id,
+                    status = confirmedReservation.status);
+            return <http:BadRequest>{
+                body: {message: string `Reservation is ${confirmedReservation.status.toString()}. Cannot confirm.`}
+            };
+        }
+
+        // This request performed the transition — append to Google Sheet.
         error? sheetErr = wso2_coin:appendParkingReservation(confirmedReservation);
         if sheetErr is error {
             log:printError("Failed to append parking reservation to Google Sheet", sheetErr,

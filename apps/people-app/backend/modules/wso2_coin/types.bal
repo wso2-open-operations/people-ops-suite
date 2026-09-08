@@ -40,48 +40,49 @@ public type ClientAuthConfig record {|
     string clientSecret;
 |};
 
-# Transaction details payload.
-public type TransactionDetailsPayload record {|
-    # Transaction hash (0x-prefixed).
-    string txHash;
-    # Whether the node knows this transaction.
-    boolean found;
-    # True when mined and executed successfully.
-    boolean success;
-    # One of TransactionStatus values.
-    string status;
-    # ISO-8601 block time, or () if not mined/unknown.
-    string? timestamp;
-    # Readable token amount for transfer, or ().
-    string? amountFormatted;
-    # Raw provider transaction, or () when transaction not found.
-    json? txDetails;
-    # Decoded calldata when ABI matches, otherwise ().
-    json? decodedData;
-|};
-
-# Decoded transaction data for recipient validation.
-public type DecodedDataForRecipient record {
-    # Decoded function name (e.g., transfer).
-    string name;
-    # Decoded argument list.
-    string[] args;
+# Wallet owned by the caller, as returned by the payment service.
+public type WalletDetails record {
+    # Wallet address.
+    string walletAddress;
+    # Current balance in coins.
+    decimal balance;
+    # Whether this is the caller's default wallet.
+    boolean defaultWallet;
 };
 
-# Response envelope.
-public type TransactionDetailsResponse record {|
-    # API response message.
-    string message;
-    # HTTP status code of the response.
-    int httpCode;
-    # Transaction details payload.
-    TransactionDetailsPayload payload;
+# Request body sent to the payment service to collect a payment.
+public type CollectPaymentRequest record {|
+    # Payer wallet address.
+    string fromAddress;
+    # Payee wallet address.
+    string toAddress;
+    # Amount to collect in coins.
+    decimal amount;
+    # Idempotency reference for the payment.
+    string reference;
+    # Originating feature of the payment.
+    string 'source;
 |};
 
-# Transaction status from get-transaction-details API.
-public enum TransactionStatus {
-    SUCCESS = "SUCCESS",
-    FAILED = "FAILED",
-    PENDING = "PENDING",
-    NOT_FOUND = "NOT_FOUND"
-}
+# Response returned by the payment service on a successful collection.
+public type CollectPaymentResponse record {
+    # Idempotency reference for the payment.
+    string reference;
+    # Payer wallet address.
+    string fromAddress;
+    # Payee wallet address.
+    string toAddress;
+    # Amount collected in coins.
+    decimal amount;
+};
+
+# Detail carried by a payment rejection from the payment service.
+public type PaymentErrorDetail record {|
+    # HTTP status code returned by the payment service.
+    int statusCode;
+    # Human-readable reason surfaced by the payment service.
+    string reason;
+|};
+
+# Raised when the payment service rejects a payment (non-2xx response).
+public type PaymentError distinct error<PaymentErrorDetail>;

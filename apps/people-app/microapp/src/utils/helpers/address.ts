@@ -14,25 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export const TOPIC = {
-  TOKEN: "token",
-  QR_REQUEST: "qr_request",
-  ALERT: "alert",
-  CONFIRM_ALERT: "confirm_alert",
-  TOTP: "totp",
-  NATIVE_LOG: "native_log",
-  NAVIGATE_TO_MY_APPS: "close_webview",
-  DEVICE_SAFE_AREA_INSETS: "device_safe_area_insets",
-  MICRO_APP_VERSION: "micro_app_version",
-};
-
-export type TopicType = (typeof TOPIC)[keyof typeof TOPIC];
-
-export type LogLevel = "error" | "warn" | "info" | "debug";
-
-export interface EdgeInsets {
-  top: number;
-  bottom: number;
-  left: number;
-  right: number;
+/**
+ * Shorten a wallet address to its first 6 and last 4 characters
+ * (e.g. `0x1234…ab12`). Short values are returned unchanged.
+ */
+export function truncateAddress(address: string | null | undefined): string {
+  const value = (address ?? "").trim();
+  if (value.length <= 12) return value;
+  return `${value.slice(0, 6)}…${value.slice(-4)}`;
 }

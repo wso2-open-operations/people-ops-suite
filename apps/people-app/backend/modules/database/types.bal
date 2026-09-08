@@ -1226,8 +1226,8 @@ public type ParkingReservation record {|
     int vehicleId;
     # Reservation status
     ParkingReservationStatus status;
-    # Transaction hash
-    string? transactionHash;
+    # Payment reference
+    string? paymentReference;
     # Amount to be paid in coins
     decimal coinsAmount;
     # Timestamp when created
@@ -1256,18 +1256,6 @@ public type AddParkingReservationPayload record {|
     string createdBy;
 |};
 
-# [Database] Payload to update parking reservation status.
-public type UpdateParkingReservationStatusPayload record {|
-    # Reservation id
-    int reservationId;
-    # New status
-    ParkingReservationStatus status;
-    # Transaction hash
-    string? transactionHash;
-    # Updated by
-    string updatedBy;
-|};
-
 # [Database] Parking reservation details (slot, floor, vehicle).
 public type ParkingReservationDetails record {|
     # Reservation identifier
@@ -1286,8 +1274,8 @@ public type ParkingReservationDetails record {|
     string? vehicleType;
     # Reservation status
     ParkingReservationStatus status;
-    # Transaction hash
-    string? transactionHash;
+    # Payment reference
+    string? paymentReference;
     # Amount to be paid in coins
     decimal coinsAmount;
     # Floor name (e.g. "Ground Floor")

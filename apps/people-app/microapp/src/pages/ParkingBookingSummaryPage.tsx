@@ -14,13 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
+  AccountBalanceWalletSharp,
+  ArrowForwardSharp,
+  ArrowRightAltSharp,
   CalendarMonthSharp,
   DirectionsCarSharp,
-  ArrowForwardSharp,
   KeyboardBackspaceSharp,
   WarningAmberSharp,
 } from "@mui/icons-material";
@@ -30,37 +32,36 @@ import { PageTransitionWrapper } from "@/components/shared";
 import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 import { serviceUrls } from "@/config/config";
 import type {
-  CarParkConfigResponse,
   CreateParkingReservationResponse,
   VehicleResponse,
+  WalletDetails,
 } from "@/types";
 import { getTodayBookingDate, formatBookingDate } from "@/utils/helpers/date";
-import { formatCoins } from "@/utils/helpers/coins";
+import { formatCoins, toNumber } from "@/utils/helpers/coins";
+import { truncateAddress } from "@/utils/helpers/address";
 import {
   getParkingPaymentContextState,
   setParkingPaymentContextState,
   clearParkingPaymentContextState,
 } from "@/utils/parkingStorage";
 import {
-  PARKING_WALLET_PAYMENT_ERROR_KEY,
-  PARKING_WALLET_PAYMENT_STATUS_KEY,
-  PARKING_WALLET_PAYMENT_TX_HASH_KEY,
-  clearWalletParkingPaymentBridgeKeys,
   confirmParkingReservation,
   fetchParkingReservationById,
+  fetchUserWallets,
   finalizeParkingConfirmationAfterSuccess,
 } from "@/utils/parkingConfirm";
 import { Logger } from "@/utils/logger";
-import { getLocalDataAsync, requestOpenMicroApp } from "@/components/microapp-bridge";
 
 type VehicleOption = {
   vehicleId: number;
   vehicleRegistrationNumber: string;
 };
 
+const PARKING_PAYEE_LABEL = "Car Park";
+const INSUFFICIENT_BALANCE_HINT = "Insufficient balance for this booking.";
+
 function ParkingBookingSummaryPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { handleRequest, handleRequestWithNewToken } = useHttp();
 
   const paymentContext = getParkingPaymentContextState();
@@ -72,31 +73,37 @@ function ParkingBookingSummaryPage() {
 
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [vehicleId, setVehicleId] = useState<number | undefined>(undefined);
-
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [vehiclesSetupRequired, setVehiclesSetupRequired] = useState(false);
+
+  const [wallets, setWallets] = useState<WalletDetails[]>([]);
+  const [walletAddress, setWalletAddress] = useState<string | undefined>(
+    undefined,
+  );
+  const [loadingWallets, setLoadingWallets] = useState(true);
+  const [walletsUnavailable, setWalletsUnavailable] = useState(false);
+
   const [busyConfirm, setBusyConfirm] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const [showPaymentFailureModal, setShowPaymentFailureModal] = useState(false);
 
-  useEffect(() => {
-    const routeState = location.state as { resumeError?: string } | null;
-    if (!routeState?.resumeError) return;
+  const selectedWallet = useMemo(
+    () => wallets.find((w) => w.walletAddress === walletAddress),
+    [wallets, walletAddress],
+  );
 
-    setError(routeState.resumeError);
-    setShowPaymentFailureModal(true);
-    navigate(location.pathname, { replace: true, state: null });
-  }, [location.pathname, location.state, navigate]);
+  const insufficientBalance = useMemo(() => {
+    if (!selectedWallet) return false;
+    return toNumber(selectedWallet.balance) < toNumber(expectedCoins);
+  }, [selectedWallet, expectedCoins]);
 
   useEffect(() => {
     if (!hasPaymentContext) return;
 
     let cancelled = false;
 
-    setLoadingVehicles(true);
-    setError(undefined);
-
-    const init = async () => {
+    const loadVehicles = async () => {
+      setLoadingVehicles(true);
       try {
         const email = await getEmailAsync();
         if (cancelled) return;
@@ -125,9 +132,7 @@ function ParkingBookingSummaryPage() {
               .filter((v) => String(v.vehicleType) === "CAR")
               .map((v) => ({
                 vehicleId: v.vehicleId as number,
-                vehicleRegistrationNumber: String(
-                  v.vehicleRegistrationNumber,
-                ),
+                vehicleRegistrationNumber: String(v.vehicleRegistrationNumber),
               }));
 
             setVehicles(options);
@@ -138,15 +143,12 @@ function ParkingBookingSummaryPage() {
           (err) => {
             if (cancelled) return;
             setError(String(err ?? "Failed to load vehicles"));
-            setShowPaymentFailureModal(false);
             setVehicles([]);
             setVehicleId(undefined);
             setVehiclesSetupRequired(true);
             setLoadingVehicles(false);
           },
-          (loading) => {
-            if (!cancelled) setLoadingVehicles(loading);
-          },
+          () => {},
         );
       } catch (e) {
         if (cancelled) return;
@@ -158,7 +160,33 @@ function ParkingBookingSummaryPage() {
       }
     };
 
-    init();
+    const loadWallets = async () => {
+      setLoadingWallets(true);
+      try {
+        const list = await fetchUserWallets(
+          handleRequest,
+          handleRequestWithNewToken,
+        );
+        if (cancelled) return;
+
+        setWallets(list);
+        setWalletsUnavailable(list.length === 0);
+        const preferred =
+          list.find((w) => w.defaultWallet) ?? list[0] ?? undefined;
+        setWalletAddress(preferred?.walletAddress);
+      } catch (e) {
+        if (cancelled) return;
+        Logger.error("Failed to load wallets", e);
+        setWallets([]);
+        setWalletsUnavailable(true);
+        setWalletAddress(undefined);
+      } finally {
+        if (!cancelled) setLoadingWallets(false);
+      }
+    };
+
+    void loadVehicles();
+    void loadWallets();
 
     return () => {
       cancelled = true;
@@ -190,71 +218,21 @@ function ParkingBookingSummaryPage() {
     });
   };
 
-  const waitForWalletPaymentResult = async (): Promise<{
-    status: "SUCCESS" | "FAILED";
-    txHash?: string;
-    error?: string;
-  }> => {
-    const TIMEOUT_MS = 45_000;
-    const INTERVAL_MS = 700;
-    const startedAt = Date.now();
-
-    while (Date.now() - startedAt < TIMEOUT_MS) {
-      try {
-        const status = await getLocalDataAsync(
-          PARKING_WALLET_PAYMENT_STATUS_KEY,
-        );
-        if (status) {
-          const parsedStatus =
-            status === "SUCCESS" || status === "FAILED"
-              ? status
-              : ("FAILED" as const);
-
-          if (parsedStatus === "SUCCESS") {
-            const txHash = await getLocalDataAsync(
-              PARKING_WALLET_PAYMENT_TX_HASH_KEY,
-            );
-            if (txHash) {
-              return { status: "SUCCESS", txHash: String(txHash) };
-            }
-            // Status may be written slightly before txHash; keep polling.
-            continue;
-          }
-
-          const error = await getLocalDataAsync(
-            PARKING_WALLET_PAYMENT_ERROR_KEY,
-          );
-          return {
-            status: "FAILED",
-            error: error ? String(error) : undefined,
-          };
-        }
-      } catch {
-        // Ignore polling errors; keep waiting.
-      }
-
-      await new Promise((r) => setTimeout(r, INTERVAL_MS));
-    }
-
-    throw new Error("Payment timed out");
-  };
-
   const handleConfirmAndPay = async () => {
-    if (!paymentContext || !vehicleId) return;
-    if (busyConfirm) return;
+    if (!paymentContext || !vehicleId || !selectedWallet) return;
+    if (busyConfirm || insufficientBalance) return;
 
     setBusyConfirm(true);
     setError(undefined);
     setShowPaymentFailureModal(false);
 
     let reservationId = paymentContext.reservationId;
-    let coinsAmount = paymentContext.coinsAmount;
 
     try {
-      // Recovery path: if a reservation was already created on a previous attempt,
-      // never create a second one or open the wallet again — that would charge the
-      // user twice. Reuse it, and settle it without re-charging when it is already
-      // paid or confirmed.
+      // Recovery path: if a reservation was already created on a previous
+      // attempt, reuse it rather than creating a second one. A payment is
+      // idempotent on its reference, so re-confirming a still-pending
+      // reservation cannot charge twice.
       if (reservationId) {
         const existing = await fetchParkingReservationById(
           handleRequest,
@@ -263,109 +241,40 @@ function ParkingBookingSummaryPage() {
         );
 
         if (existing.status === "CONFIRMED") {
-          // A prior attempt succeeded but surfaced a spurious error: finish
-          // without charging again.
-          await finalizeParkingConfirmationAfterSuccess(existing, navigate);
+          finalizeParkingConfirmationAfterSuccess(existing, navigate);
           return;
-        } else if (existing.status === "PENDING") {
-          // A prior wallet payment succeeded but was never confirmed: confirm
-          // with that transaction hash instead of paying again.
-          const priorStatus = await getLocalDataAsync(
-            PARKING_WALLET_PAYMENT_STATUS_KEY,
-          );
-          if (String(priorStatus) === "SUCCESS") {
-            const priorTxRaw = await getLocalDataAsync(
-              PARKING_WALLET_PAYMENT_TX_HASH_KEY,
-            );
-            const priorTx = priorTxRaw ? String(priorTxRaw).trim() : "";
-            if (priorTx) {
-              const confirmed = await confirmParkingReservation(
-                handleRequest,
-                handleRequestWithNewToken,
-                reservationId,
-                priorTx,
-              );
-              await finalizeParkingConfirmationAfterSuccess(confirmed, navigate);
-              return;
-            }
-          }
-          coinsAmount = existing.coinsAmount;
-        } else {
-          // Stale reservation (e.g. EXPIRED after the pending window lapsed).
-          // Reusing it would charge the wallet again only for the confirm to be
-          // rejected server-side, so discard it and create a fresh one below.
+        }
+        if (existing.status !== "PENDING") {
+          // Stale reservation (e.g. EXPIRED); create a fresh one below.
           reservationId = undefined;
         }
       }
 
       if (!reservationId) {
-        // Stage 1: create a pending reservation in backend. The backend enforces
-        // one active booking per employee/day and is idempotent for a same-slot
-        // retry, so this cannot silently create a duplicate.
         const reservation = await createReservation();
         reservationId = reservation.reservationId;
-        coinsAmount = reservation.coinsAmount;
 
         setParkingPaymentContextState({
           ...paymentContext,
           reservationId,
-          coinsAmount,
+          coinsAmount: reservation.coinsAmount,
         });
-      }
-
-      // Stage 2: ask Wallet to transfer coins, then confirm reservation with txHash.
-      const carParkConfig = await new Promise<CarParkConfigResponse>(
-        (resolve, reject) => {
-          executeWithTokenHandling(
-            handleRequest,
-            handleRequestWithNewToken,
-            serviceUrls.fetchCarParkConfigs(),
-            "GET",
-            null,
-            (data) => resolve(data as CarParkConfigResponse),
-            (err) => reject(err),
-            () => {},
-          );
-        },
-      );
-
-      // Reset previous payment result
-      await clearWalletParkingPaymentBridgeKeys();
-
-      // Wallet will use launchData to set the "send" form and navigate to confirm.
-      requestOpenMicroApp("com.wso2.superapp.microapp.wallet", {
-        initialRoute: "/send",
-        wallet_address: carParkConfig.publicWalletAddress,
-        coin_amount: coinsAmount,
-        source_app_id: "com.wso2.superapp.microapp.people",
-        return_app_id: "com.wso2.superapp.microapp.people",
-        return_route: "/services/parking/summary",
-      });
-
-      const paymentResult = await waitForWalletPaymentResult();
-
-      if (paymentResult.status !== "SUCCESS" || !paymentResult.txHash) {
-        throw new Error(
-          paymentResult.error ??
-            "Payment unsuccessful. Please try again.",
-        );
       }
 
       const confirmed = await confirmParkingReservation(
         handleRequest,
         handleRequestWithNewToken,
         reservationId,
-        paymentResult.txHash,
+        selectedWallet.walletAddress,
       );
 
-      await finalizeParkingConfirmationAfterSuccess(confirmed, navigate);
+      finalizeParkingConfirmationAfterSuccess(confirmed, navigate);
     } catch (e) {
-      // A concurrent confirmation (ParkingWalletReturnResume) may have already
-      // succeeded, or our confirm response was lost mid-flight. Verify server
-      // state before declaring failure so a booking that actually went through
-      // never shows a false "payment failed" error (which drove the duplicate
-      // re-submissions this flow was fixed for).
-      const rid = getParkingPaymentContextState()?.reservationId ?? reservationId;
+      // A confirm response can be lost mid-flight after the payment succeeded.
+      // Verify server state before declaring failure so a booking that went
+      // through never shows a false error.
+      const rid =
+        getParkingPaymentContextState()?.reservationId ?? reservationId;
       if (rid) {
         try {
           const existing = await fetchParkingReservationById(
@@ -374,7 +283,7 @@ function ParkingBookingSummaryPage() {
             rid,
           );
           if (existing.status === "CONFIRMED") {
-            await finalizeParkingConfirmationAfterSuccess(existing, navigate);
+            finalizeParkingConfirmationAfterSuccess(existing, navigate);
             return;
           }
         } catch (verifyErr) {
@@ -415,6 +324,13 @@ function ParkingBookingSummaryPage() {
     );
   }
 
+  const confirmDisabled =
+    busyConfirm ||
+    !vehicleId ||
+    vehiclesSetupRequired ||
+    !selectedWallet ||
+    insufficientBalance;
+
   const topContent = (
     <section className="px-4 mt-2 pb-4">
       <div className="bg-white border border-[#E5E5E5] rounded-[1.2rem] px-4 pt-5 pb-6 shadow-sm">
@@ -444,7 +360,9 @@ function ParkingBookingSummaryPage() {
             <div className="w-10 h-10 rounded-full bg-[#EAF3FF] grid place-items-center">
               <DirectionsCarSharp style={{ color: "#0B64C0" }} />
             </div>
-            <div className="text-[13px] font-bold text-[#808080]">Select Vehicle</div>
+            <div className="text-[13px] font-bold text-[#808080]">
+              Select Vehicle
+            </div>
           </div>
 
           <div className="mt-3">
@@ -491,6 +409,88 @@ function ParkingBookingSummaryPage() {
           </div>
         </div>
 
+        <div className="mt-6 border-t border-dashed border-[#E5E5E5] pt-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#EAF3FF] grid place-items-center">
+              <AccountBalanceWalletSharp style={{ color: "#0B64C0" }} />
+            </div>
+            <div className="text-[13px] font-bold text-[#808080]">Pay From</div>
+          </div>
+
+          <div className="mt-3">
+            {loadingWallets ? (
+              <div className="grid place-items-center py-6">
+                <CircularProgress size={26} sx={{ color: "#ff7300" }} />
+              </div>
+            ) : walletsUnavailable ? (
+              <div className="text-sm font-medium text-[#808080] py-3">
+                No wallet is available for payment right now. Please try again
+                later.
+              </div>
+            ) : (
+              <>
+                <Select
+                  value={walletAddress ?? ""}
+                  onChange={(e) => setWalletAddress(String(e.target.value))}
+                  displayEmpty
+                  fullWidth
+                  sx={{
+                    fontWeight: 700,
+                    backgroundColor: "#F4F4F4",
+                    borderRadius: "12px",
+                    height: 48,
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Select a wallet
+                  </MenuItem>
+                  {wallets.map((w) => (
+                    <MenuItem key={w.walletAddress} value={w.walletAddress}>
+                      <span className="flex items-center justify-between w-full gap-3">
+                        <span className="font-bold text-[#1F2A44]">
+                          {truncateAddress(w.walletAddress)}
+                          {w.defaultWallet ? " · Default" : ""}
+                        </span>
+                        <span className="text-[#808080] font-semibold">
+                          {formatCoins(w.balance)} O2C
+                        </span>
+                      </span>
+                    </MenuItem>
+                  ))}
+                </Select>
+
+                {selectedWallet && (
+                  <div className="mt-3 flex items-center justify-between rounded-[0.9rem] bg-[#F8FAFC] border border-[#EEF1F5] px-3 py-2">
+                    <div className="text-left">
+                      <div className="text-[11px] font-bold text-[#808080] tracking-wider">
+                        FROM
+                      </div>
+                      <div className="text-[14px] font-extrabold text-[#1F2A44]">
+                        {truncateAddress(selectedWallet.walletAddress)}
+                      </div>
+                    </div>
+                    <ArrowRightAltSharp style={{ color: "#9CA3AF" }} />
+                    <div className="text-right">
+                      <div className="text-[11px] font-bold text-[#808080] tracking-wider">
+                        TO
+                      </div>
+                      <div className="text-[14px] font-extrabold text-[#1F2A44]">
+                        {PARKING_PAYEE_LABEL}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {insufficientBalance && (
+                  <div className="mt-2 text-[12.8px] font-semibold text-[#C0392B]">
+                    {INSUFFICIENT_BALANCE_HINT}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
         <div className="mt-6 border-t border-[#E5E5E5] pt-5">
           <div className="flex items-center gap-3 w-full">
             <div className="w-10 h-10 rounded-full bg-[#EAF3FF] grid place-items-center">
@@ -506,7 +506,9 @@ function ParkingBookingSummaryPage() {
 
         <div className="mt-4 border-t border-dashed border-[#E5E5E5] pt-4">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium text-[#808080]">Amount to Pay</div>
+            <div className="text-sm font-medium text-[#808080]">
+              Amount to Pay
+            </div>
             <div className="text-[26px] font-extrabold text-[#ff7300]">
               {formatCoins(expectedCoins)}{" "}
               <span className="text-[#1F2A44] text-[18px]">O2C</span>
@@ -530,16 +532,14 @@ function ParkingBookingSummaryPage() {
                 Payment Unsuccessful
               </div>
               <div className="text-[#808080] text-sm mt-2">
-                <div className="px-2 py-1">
-                  {error ?? "Please try again."}
-                </div>
+                <div className="px-2 py-1">{error ?? "Please try again."}</div>
               </div>
 
               <div className="mt-4 flex gap-3">
                 <button
                   type="button"
                   className="flex-1 py-[0.7rem] px-3 text-[15px] font-semibold rounded-[0.7rem] bg-primary text-white disabled:bg-[#F4F4F4] disabled:text-[#A7A7A7]"
-                  disabled={busyConfirm}
+                  disabled={confirmDisabled}
                   onClick={() => {
                     setShowPaymentFailureModal(false);
                     setError(undefined);
@@ -556,7 +556,6 @@ function ParkingBookingSummaryPage() {
                     setShowPaymentFailureModal(false);
                     setError(undefined);
                     clearParkingPaymentContextState();
-                    Logger.info("ParkingBookingSummaryPage: payment context cleared on user dismiss");
                     navigate("/services/parking");
                   }}
                 >
@@ -571,7 +570,7 @@ function ParkingBookingSummaryPage() {
           <button
             type="button"
             className="w-full p-[0.9rem] text-lg font-semibold rounded-[0.7rem] bg-primary text-white disabled:bg-[#F4F4F4] disabled:text-[#A7A7A7]"
-            disabled={busyConfirm || !vehicleId || vehiclesSetupRequired}
+            disabled={confirmDisabled}
             onClick={handleConfirmAndPay}
           >
             <span className="flex items-center justify-center gap-2">
@@ -611,13 +610,11 @@ function ParkingBookingSummaryPage() {
         )}
 
         <div className="px-4 text-[12.5px] font-medium text-[#808080] mt-1 text-center">
-          Payment will be deducted from your Wallet
+          Payment will be deducted from your selected wallet.
         </div>
-
       </div>
     </PageTransitionWrapper>
   );
 }
 
 export default ParkingBookingSummaryPage;
-
