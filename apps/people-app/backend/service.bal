@@ -2096,7 +2096,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                                      employeeEmail: userInfo.email,
                                                                      vehicleId: body.vehicleId,
                                                                      coinsAmount: slot.coinsPerSlot,
-                                                                     transactionHash: transactionHash,
+                                                                     transactionHash,
                                                                      createdBy: userInfo.email
                                                                  });
         if reservationId is database:DuplicateActiveReservationError {
