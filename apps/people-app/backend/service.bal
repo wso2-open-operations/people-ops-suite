@@ -639,11 +639,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         return serviceRecords;
     }
 
-    # Fetch all employees' basic information.
+    # Fetch all active employees' directory information. Available to every authenticated user.
     #
-    # + return - All employees' basic information
+    # + return - All active employees' directory information
     resource function get employees/basic\-info(http:RequestContext ctx)
-        returns database:EmployeeBasicInfo[]|http:Forbidden|http:InternalServerError {
+        returns database:EmployeeDirectoryInfo[]|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -654,17 +654,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view employees basic information", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view employees basic information"
-                }
-            };
-        }
-
-        database:EmployeeBasicInfo[]|error employeesBasicInfos = database:getAllEmployeesBasicInfo();
+        database:EmployeeDirectoryInfo[]|error employeesBasicInfos = database:getAllEmployeesBasicInfo();
         if employeesBasicInfos is error {
             string customErr = "Error occurred while fetching employees' basic information";
             log:printError(customErr, employeesBasicInfos);

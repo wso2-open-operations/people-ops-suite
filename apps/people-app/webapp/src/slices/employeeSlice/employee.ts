@@ -81,6 +81,21 @@ export interface EmployeeBasicInfo {
   employeeThumbnail?: string;
 }
 
+export interface EmployeeDirectoryInfo extends EmployeeBasicInfo {
+  designation: string;
+  externalDesignation: string | null;
+  jobBand: number | null;
+  startDate: string;
+  managerEmail: string;
+  businessUnit: string;
+  team: string;
+  subTeam: string | null;
+  unit: string | null;
+  employmentType: string;
+  company: string;
+  workLocation: string;
+}
+
 export interface Manager {
   employeeId: string;
   workEmail: string;
@@ -271,7 +286,7 @@ interface EmployeesState {
   stateMessage: string | null;
   errorMessage: string | null;
   employee: Employee | null;
-  employeesBasicInfo: EmployeeBasicInfo[];
+  employeesBasicInfo: EmployeeDirectoryInfo[];
   filteredEmployeesResponse: FilteredEmployeesResponse;
   continuousServiceRecord: ContinuousServiceRecordInfo[];
   updateJobInfoState: State;
@@ -353,7 +368,7 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
       const resp = await APIService.getInstance().get(
         `${AppConfig.serviceUrls.employeesBasicInfo}`,
       );
-      return resp.data as EmployeeBasicInfo[];
+      return resp.data as EmployeeDirectoryInfo[];
     } catch (error: any) {
       if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =

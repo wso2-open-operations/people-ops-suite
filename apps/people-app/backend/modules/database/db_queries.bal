@@ -50,14 +50,38 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
 # + return - Query to get all employees basic information
 isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
     `SELECT
-        employee_id,
-        first_name,
-        last_name,
-        work_email,
-        employee_thumbnail,
-        external_designation AS externalDesignation
-    FROM employee
-    WHERE employee_status = 'Active';`;
+        e.employee_id,
+        e.first_name,
+        e.last_name,
+        e.work_email,
+        e.employee_thumbnail,
+        CONCAT(
+            d.designation,
+            CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
+                THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END,
+            CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
+                THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END
+        ) AS designation,
+        e.external_designation AS externalDesignation,
+        d.job_band AS jobBand,
+        e.start_date AS startDate,
+        e.manager_email AS managerEmail,
+        bu.name AS businessUnit,
+        t.name AS team,
+        st.name AS subTeam,
+        u.name AS unit,
+        et.name AS employmentType,
+        c.name AS company,
+        e.work_location AS workLocation
+    FROM employee e
+        INNER JOIN designation d ON e.designation_id = d.id
+        INNER JOIN business_unit bu ON e.business_unit_id = bu.id
+        INNER JOIN team t ON e.team_id = t.id
+        INNER JOIN employment_type et ON e.employment_type_id = et.id
+        INNER JOIN company c ON c.id = e.company_id
+        LEFT JOIN sub_team st ON e.sub_team_id = st.id
+        LEFT JOIN unit u ON e.unit_id = u.id
+    WHERE e.employee_status = 'Active';`;
 
 # Fetch employee ID by primary key ID.
 #
