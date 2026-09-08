@@ -38,6 +38,8 @@ public type ClientAuthConfig record {|
     string clientId;
     # Client Secret
     string clientSecret;
+    # OAuth2 scopes to request for the transaction-service token
+    string[] scopes = [];
 |};
 
 # Wallet owned by the caller, as returned by the payment service.
