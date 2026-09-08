@@ -50,11 +50,11 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
 # + return - Query to get all employees basic information
 isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
     `SELECT
-        e.employee_id,
-        e.first_name,
-        e.last_name,
-        e.work_email,
-        e.employee_thumbnail,
+        e.employee_id AS employeeId,
+        e.first_name AS firstName,
+        e.last_name AS lastName,
+        e.work_email AS workEmail,
+        e.employee_thumbnail AS employeeThumbnail,
         CONCAT(
             d.designation,
             CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
