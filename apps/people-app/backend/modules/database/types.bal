@@ -108,6 +108,33 @@ public type EmployeeBasicInfo record {|
     string? externalDesignation?;
 |};
 
+# Employee information for the employee directory listing.
+public type EmployeeDirectoryInfo record {|
+    *EmployeeBasicInfo;
+    # Job band of the employee's designation
+    int? jobBand;
+    # Start date of employment
+    string startDate;
+    # Manager email
+    string managerEmail;
+    # Business unit
+    string businessUnit;
+    # Team
+    string team;
+    # Sub-team
+    string? subTeam;
+    # Unit
+    string? unit;
+    # Employment type
+    string employmentType;
+    # Company name
+    string company;
+    # Work location
+    string workLocation;
+    # Employee status ("Active" or "Marked leaver")
+    string employeeStatus;
+|};
+
 # User information with privileges.
 public type UserInfo record {|
     *EmployeeBasicInfo;

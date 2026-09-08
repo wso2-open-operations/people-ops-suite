@@ -25,13 +25,14 @@ public isolated function getEmployeeBasicInfo(string email) returns EmployeeBasi
     return employeeBasicInfo is sql:NoRowsError ? () : employeeBasicInfo;
 }
 
-# Fetch all employees' basic information.
+# Fetch directory information for all currently employed staff (Active and Marked leaver).
 #
-# + return - All employees' basic information
-public isolated function getAllEmployeesBasicInfo() returns EmployeeBasicInfo[]|error {
-    stream<EmployeeBasicInfo, error?> employeeBasicInfoStream = databaseClient->query(getAllEmployeesBasicInfoQuery());
-    return from EmployeeBasicInfo employeesBasicInfo in employeeBasicInfoStream
-        select employeesBasicInfo;
+# + return - Directory information for Active and Marked leaver employees
+public isolated function getAllEmployeesBasicInfo() returns EmployeeDirectoryInfo[]|error {
+    stream<EmployeeDirectoryInfo, error?> employeeDirectoryInfoStream =
+        databaseClient->query(getAllEmployeesBasicInfoQuery());
+    return from EmployeeDirectoryInfo employeeDirectoryInfo in employeeDirectoryInfoStream
+        select employeeDirectoryInfo;
 }
 
 # Get employee ID by EPF.
