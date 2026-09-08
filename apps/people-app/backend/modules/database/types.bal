@@ -1252,6 +1252,8 @@ public type AddParkingReservationPayload record {|
     int vehicleId;
     # Amount to be paid in coins
     decimal coinsAmount;
+    # Transaction hash minted at create, reused as the payment idempotency key on confirm
+    string transactionHash;
     # User who created the parking reservation record
     string createdBy;
 |};
