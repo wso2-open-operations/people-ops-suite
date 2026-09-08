@@ -639,9 +639,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         return serviceRecords;
     }
 
-    # Fetch all active employees' directory information. Available to every authenticated user.
+    # Fetch directory information for all currently employed staff (Active and Marked leaver).
+    # Available to every authenticated user.
     #
-    # + return - All active employees' directory information
+    # + return - Directory information for Active and Marked leaver employees
     resource function get employees/basic\-info(http:RequestContext ctx)
         returns database:EmployeeDirectoryInfo[]|http:InternalServerError {
 

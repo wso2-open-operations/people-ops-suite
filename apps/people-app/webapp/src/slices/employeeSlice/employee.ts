@@ -94,6 +94,7 @@ export interface EmployeeDirectoryInfo extends EmployeeBasicInfo {
   employmentType: string;
   company: string;
   workLocation: string;
+  employeeStatus: string;
 }
 
 export interface Manager {

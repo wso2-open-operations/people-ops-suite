@@ -131,6 +131,8 @@ public type EmployeeDirectoryInfo record {|
     string company;
     # Work location
     string workLocation;
+    # Employee status ("Active" or "Marked leaver")
+    string employeeStatus;
 |};
 
 # User information with privileges.
