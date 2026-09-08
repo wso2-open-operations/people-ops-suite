@@ -486,10 +486,12 @@ function InfoBox({
 function formatTransactionTime(value: string | null | undefined): string {
   const raw = (value ?? "").trim();
   if (!raw) return "";
-  // DB timestamps look like "2026-09-08 06:33:15.556"; make them Safari-parseable.
-  const parsed = new Date(raw.replace(" ", "T").slice(0, 19));
+  // DB timestamps are UTC and look like "2026-09-08 06:33:15.556"; make them
+  // Safari-parseable and mark them UTC ("Z") so the time renders in the device's
+  // local timezone.
+  const parsed = new Date(raw.replace(" ", "T").slice(0, 19) + "Z");
   if (Number.isNaN(parsed.getTime())) return raw;
-  return parsed.toLocaleTimeString("en-US", {
+  return parsed.toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
