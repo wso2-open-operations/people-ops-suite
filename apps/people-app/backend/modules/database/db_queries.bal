@@ -2462,21 +2462,23 @@ isolated function addParkingReservationQuery(AddParkingReservationPayload payloa
         slot_id, 
         booking_date, 
         employee_email, 
-        vehicle_id, 
-        status, 
-        coins_amount, 
-        created_by, 
+        vehicle_id,
+        status,
+        coins_amount,
+        transaction_hash,
+        created_by,
         updated_by
     )
     VALUES
     (
         ${payload.slotId},
-        ${payload.bookingDate}, 
-        ${payload.employeeEmail}, 
+        ${payload.bookingDate},
+        ${payload.employeeEmail},
         ${payload.vehicleId},
-        ${PENDING}, 
-        ${payload.coinsAmount}, 
-        ${payload.createdBy}, 
+        ${PENDING},
+        ${payload.coinsAmount},
+        ${payload.transactionHash},
+        ${payload.createdBy},
         ${payload.createdBy}
     );
 `;
