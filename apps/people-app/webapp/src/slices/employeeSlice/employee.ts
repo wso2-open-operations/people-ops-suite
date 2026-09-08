@@ -83,7 +83,6 @@ export interface EmployeeBasicInfo {
 
 export interface EmployeeDirectoryInfo extends EmployeeBasicInfo {
   designation: string;
-  externalDesignation: string | null;
   jobBand: number | null;
   startDate: string;
   managerEmail: string;

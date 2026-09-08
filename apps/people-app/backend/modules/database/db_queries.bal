@@ -62,7 +62,6 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
             CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
                 THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END
         ) AS designation,
-        e.external_designation AS externalDesignation,
         d.job_band AS jobBand,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
