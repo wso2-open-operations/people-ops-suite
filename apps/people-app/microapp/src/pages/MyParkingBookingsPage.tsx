@@ -468,7 +468,7 @@ function InfoBox({
           <button
             type="button"
             onClick={handleCopy}
-            aria-label="Copy"
+            aria-label={copied ? "Copied" : "Copy"}
             className="shrink-0 text-[#808080] active:text-[#1F2A44]"
           >
             {copied ? (

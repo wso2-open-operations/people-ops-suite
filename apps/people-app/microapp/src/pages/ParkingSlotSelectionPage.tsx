@@ -488,7 +488,7 @@ function ParkingSlotSelectionPage() {
         </section>
 
         <div className="fixed left-4 right-4 bottom-[calc(84px+var(--safe-bottom))]">
-          {!existingBooking && reservationConfigLoaded && !isBookingWindowActive && (
+          {reservationConfigLoaded && !isBookingWindowActive && (
             <div className="bg-[#FFF7EB] rounded-[1rem] shadow-[0_8px_24px_rgba(0,0,0,0.08)] border border-[#FFB74D] px-4 py-3">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 shrink-0">
@@ -510,7 +510,7 @@ function ParkingSlotSelectionPage() {
             </div>
           )}
 
-          {!existingBooking && isBookingWindowActive && selectedSlot && (
+          {isBookingWindowActive && selectedSlot && (
             <div className="bg-white rounded-[1rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-[#E5E5E5] p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
