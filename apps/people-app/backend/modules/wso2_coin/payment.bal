@@ -36,7 +36,7 @@ public isolated function collectPayment(string userAssertion, string fromAddress
     CollectPaymentRequest payload = {
         fromAddress,
         toAddress: masterWalletAddress,
-        amount,
+        amount: amount.toString(),
         reference,
         'source: PARKING_PAYMENT_SOURCE
     };
