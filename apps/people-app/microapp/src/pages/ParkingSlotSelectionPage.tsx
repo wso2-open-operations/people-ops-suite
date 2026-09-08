@@ -170,7 +170,9 @@ function ParkingSlotSelectionPage() {
         setReservationConfigLoaded(true);
       },
       () => {
-        /* keep defaults */
+        // keep the default hours, but mark config resolved so the view-only
+        // warning stays consistent with the (default-hours) booking window.
+        setReservationConfigLoaded(true);
       },
       () => {
         /* no loading UI for config */
