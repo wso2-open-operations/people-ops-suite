@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { ConfirmationType, State } from "@/types/types";
+import { ConfirmationType, EmployeeStatus, State } from "@/types/types";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import {
   BadgeOutlined,
@@ -50,11 +50,13 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useTheme,
 } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import type { Theme } from "@mui/material/styles";
 import { alpha } from "@mui/material/styles";
 import {
+  Employee,
   fetchEmployee,
   fetchEmployeeQrCode,
   resetEmployee,
@@ -71,6 +73,7 @@ import {
   calculateServiceLength,
   formatServiceLength,
   formatDate,
+  formatDaysUntil,
   isPresentOrFuture,
 } from "@root/src/utils/utils";
 import {
@@ -159,6 +162,107 @@ const FieldInput = ({
       InputLabelProps={{ style: { fontSize: 15 } }}
       fullWidth
     />
+  );
+};
+
+/**
+ * Tinted strip across the foot of the profile header carrying a departing employee's
+ * last day in office and final day of employment.
+ *
+ * Renders only for Left and Marked leaver — an active employee has no departure dates, so
+ * the band's presence is itself the signal. A missing date is omitted rather than shown as
+ * a dash, and the band is skipped entirely when neither date is set.
+ */
+const DepartureBand = ({ employee }: { employee: Employee | null }) => {
+  const theme = useTheme();
+  const status = employee?.employeeStatus;
+
+  if (
+    !employee ||
+    (status !== EmployeeStatus.Left && status !== EmployeeStatus.MarkedLeaver)
+  ) {
+    return null;
+  }
+
+  const dates = [
+    { label: "Last day in office", value: employee.finalDayInOffice },
+    { label: "Final day of employment", value: employee.finalDayOfEmployment },
+  ].filter((date) => Boolean(date.value));
+
+  if (dates.length === 0) return null;
+
+  const mainColor =
+    status === EmployeeStatus.MarkedLeaver
+      ? theme.palette.warning.main
+      : theme.palette.error.main;
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: 3.25,
+        // The header Paper paints a radial gradient over inset: 0 via &:after; sit above it
+        // so the band's own tint reads cleanly.
+        position: "relative",
+        zIndex: 1,
+        // Bleed out to the header Paper's edges, cancelling its responsive padding so the
+        // band spans full width. The Paper clips its own radius via overflow: hidden.
+        mt: { xs: 2, sm: 2.5 },
+        mx: { xs: -2.25, sm: -3.25 },
+        mb: { xs: -2.25, sm: -3.25 },
+        px: { xs: 2.25, sm: 3.25 },
+        py: 1.5,
+        borderTop: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+        borderLeft: `3px solid ${mainColor}`,
+        backgroundColor: alpha(
+          mainColor,
+          theme.palette.mode === "dark" ? 0.12 : 0.08,
+        ),
+      }}
+    >
+      {dates.map((date) => {
+        const daysUntil = formatDaysUntil(date.value);
+        return (
+          <Box key={date.label}>
+            <Typography
+              sx={{
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color: theme.palette.text.secondary,
+              }}
+            >
+              {date.label}
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: 14.5,
+                fontWeight: 600,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {formatDate(date.value, "-")}
+              {daysUntil && (
+                <Box
+                  component="span"
+                  sx={{
+                    ml: 0.75,
+                    fontSize: 12.5,
+                    fontWeight: 400,
+                    color: theme.palette.text.secondary,
+                  }}
+                >
+                  {daysUntil}
+                </Box>
+              )}
+            </Typography>
+          </Box>
+        );
+      })}
+    </Box>
   );
 };
 
@@ -655,6 +759,27 @@ export default function Me({
                     spacing={1}
                     sx={{ mt: 1.25, flexWrap: "wrap", rowGap: 1 }}
                   >
+                    {employee?.employeeStatus && (
+                      <Chip
+                        size="medium"
+                        variant="outlined"
+                        label={employee.employeeStatus}
+                        sx={(theme) => ({
+                          ...getEmployeeStatusChipStyles(
+                            employee.employeeStatus,
+                          )(theme),
+                          height: 34,
+                          "& .MuiChip-label": {
+                            px: 1,
+                            fontSize: 13,
+                            fontWeight: 700,
+                            lineHeight: 1,
+                            textTransform: "capitalize",
+                          },
+                        })}
+                      />
+                    )}
+
                     {employee?.employeeId && (
                       <Chip
                         size="medium"
@@ -733,6 +858,7 @@ export default function Me({
               )}
           </Stack>
         </Stack>
+        <DepartureBand employee={employee} />
       </Paper>
       <Accordion
         defaultExpanded

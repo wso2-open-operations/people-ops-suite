@@ -16,6 +16,7 @@
 
 import { ServiceLength } from "@src/types/types";
 import { DATE_FMT } from "@config/constant";
+import { differenceInCalendarDays } from "date-fns/differenceInCalendarDays";
 import { differenceInMonths } from "date-fns/differenceInMonths";
 import { differenceInYears } from "date-fns/differenceInYears";
 import { isAfter } from "date-fns/isAfter";
@@ -129,6 +130,24 @@ export const isPresentOrFuture = (isoDate?: string | null): boolean => {
   todayStart.setHours(0, 0, 0, 0);
   parsedDate.setHours(0, 0, 0, 0);
   return parsedDate >= todayStart;
+};
+
+/**
+ * Human-readable distance to an upcoming date, e.g. "in 35 days", "tomorrow", "today".
+ * Returns null for past dates, unparseable input, or no input — callers render nothing.
+ */
+export const formatDaysUntil = (isoDate?: string | null): string | null => {
+  if (!isoDate) return null;
+  const parsedDate = parseStrictYyyyMmDd(isoDate);
+  if (!parsedDate) return null;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  parsedDate.setHours(0, 0, 0, 0);
+  const days = differenceInCalendarDays(parsedDate, todayStart);
+  if (days < 0) return null;
+  if (days === 0) return "today";
+  if (days === 1) return "tomorrow";
+  return `in ${days} days`;
 };
 
 export const toSentenceCase = (value: string): string => {

@@ -1,6 +1,6 @@
 {
   "name": "people_app",
-  "version": "1.1.10",
+  "version": "1.1.11",
   "private": true,
   "dependencies": {
     "@asgardeo/auth-react": "5.1.2",
@@ -113,5 +113,22 @@
   },
   "resolutions": {
     "@mui/x-date-pickers/date-fns": "^4.1.0"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^@root/(.*)$": "<rootDir>/$1",
+      "^@src/(.*)$": "<rootDir>/src/$1",
+      "^@app/(.*)$": "<rootDir>/src/app/$1",
+      "^@assets/(.*)$": "<rootDir>/src/assets/$1",
+      "^@component/(.*)$": "<rootDir>/src/component/$1",
+      "^@config/(.*)$": "<rootDir>/src/config/$1",
+      "^@context/(.*)$": "<rootDir>/src/context/$1",
+      "^@layout/(.*)$": "<rootDir>/src/layout/$1",
+      "^@slices/(.*)$": "<rootDir>/src/slices/$1",
+      "^@view/(.*)$": "<rootDir>/src/view/$1",
+      "^@utils/(.*)$": "<rootDir>/src/utils/$1",
+      "^@/types/(.*)$": "<rootDir>/src/types/$1",
+      "^date-fns/(.*)$": "<rootDir>/node_modules/date-fns/$1.cjs"
+    }
   }
 }
