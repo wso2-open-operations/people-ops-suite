@@ -28,6 +28,7 @@ import people.wso2_coin;
 import ballerina/http;
 import ballerina/log;
 import ballerina/time;
+import ballerina/uuid;
 
 @display {
     label: "People Service",
@@ -2072,6 +2073,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Mint the transaction hash up front (0x + 64 hex); it is reused as the payment
+        // idempotency key on confirm, so retries never double-charge.
+        string transactionHash = "0x" + (re `-`).replaceAll(uuid:createType4AsString(), "")
+            + (re `-`).replaceAll(uuid:createType4AsString(), "");
+
         // Insert a new PENDING row
         int|error reservationId = database:addParkingReservation({
                                                                      slotId: body.slotId,
@@ -2079,6 +2085,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                                      employeeEmail: userInfo.email,
                                                                      vehicleId: body.vehicleId,
                                                                      coinsAmount: slot.coinsPerSlot,
+                                                                     transactionHash,
                                                                      createdBy: userInfo.email
                                                                  });
         if reservationId is database:DuplicateActiveReservationError {
@@ -2283,7 +2290,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string paymentReference = wso2_coin:PARKING_PAYMENT_REFERENCE_PREFIX + reservation.id.toString();
+        // Reuse the transaction hash minted at create as the idempotency key; fall back to the
+        // reservation-derived reference for any row created before this field was populated.
+        string paymentReference = reservation.paymentReference
+            ?: (wso2_coin:PARKING_PAYMENT_REFERENCE_PREFIX + reservation.id.toString());
         wso2_coin:CollectPaymentResponse|error payment = wso2_coin:collectPayment(userAssertion, fromAddress,
                 reservation.coinsAmount, paymentReference);
         if payment is wso2_coin:PaymentError {

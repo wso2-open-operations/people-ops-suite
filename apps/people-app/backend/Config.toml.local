@@ -45,6 +45,7 @@ transactionEndpoint = ""
 tokenUrl = ""
 clientId = ""
 clientSecret = ""
+scopes = []
 
 [people.wso2_coin.parkingSheetConfig]
 tokenUrl = ""

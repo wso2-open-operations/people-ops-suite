@@ -18,12 +18,16 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { CircularProgress, IconButton } from "@mui/material";
 import {
+  AccessTimeSharp,
   CalendarMonthSharp,
   CheckCircleSharp,
   CloseSharp,
+  ContentCopySharp,
   DirectionsCarSharp,
+  DoneSharp,
   LocationOnSharp,
   PaidSharp,
+  ReceiptLongSharp,
   KeyboardBackspaceSharp,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +37,7 @@ import useHttp, { executeWithTokenHandling } from "@/utils/http";
 import { serviceUrls } from "@/config/config";
 import { getTodayBookingDate, formatBookingDate } from "@/utils/helpers/date";
 import { formatCoins } from "@/utils/helpers/coins";
+import { truncateAddress } from "@/utils/helpers/address";
 
 function MyParkingBookingsPage() {
   const navigate = useNavigate();
@@ -278,9 +283,30 @@ function MyParkingBookingsPage() {
 
                   <div className="mt-3">
                     <InfoBox
+                      label="Time"
+                      value={formatTransactionTime(details.createdOn)}
+                      icon={
+                        <AccessTimeSharp
+                          style={{ fontSize: 18, color: "#808080" }}
+                        />
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <InfoBox
                       label="Payment Reference"
-                      value={getPaymentReferenceDisplay(details.paymentReference)}
-                      icon={<span className="text-[#808080] font-bold">Ref</span>}
+                      value={
+                        details.paymentReference
+                          ? truncateAddress(details.paymentReference)
+                          : "Not available for this reservation."
+                      }
+                      copyValue={details.paymentReference ?? undefined}
+                      icon={
+                        <ReceiptLongSharp
+                          style={{ fontSize: 18, color: "#808080" }}
+                        />
+                      }
                     />
                   </div>
                 </div>
@@ -307,12 +333,6 @@ function ReservationStatusBadge({ status }: { status: ParkingReservationStatus |
       CONFIRMED
     </div>
   );
-}
-
-function getPaymentReferenceDisplay(reference: string | null): string {
-  const normalized = (reference ?? "").trim();
-  if (!normalized) return "Not available for this reservation.";
-  return normalized;
 }
 
 function ActiveBookingCard({
@@ -415,22 +435,67 @@ function InfoBox({
   label,
   value,
   icon,
+  copyValue,
 }: {
   label: string;
   value: string;
   icon?: ReactNode;
+  copyValue?: string;
 }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    if (!copyValue) return;
+    navigator.clipboard
+      ?.writeText(copyValue)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => {});
+  };
+
   return (
     <div className="bg-white border border-[#E5E5E5] rounded-[0.8rem] py-3 px-3">
       <div className="flex items-center gap-2 text-[#808080] text-[12px] font-bold">
         {icon}
         <span>{label}</span>
       </div>
-      <div className="text-[#1F2A44] font-extrabold text-[15px] mt-1">
-        {value}
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1 truncate text-[#1F2A44] font-extrabold text-[15px]">
+          {value}
+        </div>
+        {copyValue && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            aria-label={copied ? "Copied" : "Copy"}
+            className="shrink-0 text-[#808080] active:text-[#1F2A44]"
+          >
+            {copied ? (
+              <DoneSharp style={{ fontSize: 18, color: "#2ECC71" }} />
+            ) : (
+              <ContentCopySharp style={{ fontSize: 18 }} />
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
+}
+
+function formatTransactionTime(value: string | null | undefined): string {
+  const raw = (value ?? "").trim();
+  if (!raw) return "";
+  // DB timestamps are UTC and look like "2026-09-08 06:33:15.556"; make them
+  // Safari-parseable and mark them UTC ("Z") so the time renders in the device's
+  // local timezone.
+  const parsed = new Date(raw.replace(" ", "T").slice(0, 19) + "Z");
+  if (Number.isNaN(parsed.getTime())) return raw;
+  return parsed.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 export default MyParkingBookingsPage;

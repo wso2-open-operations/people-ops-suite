@@ -38,14 +38,16 @@ public type ClientAuthConfig record {|
     string clientId;
     # Client Secret
     string clientSecret;
+    # OAuth2 scopes to request for the transaction-service token
+    string[] scopes = [];
 |};
 
 # Wallet owned by the caller, as returned by the payment service.
 public type WalletDetails record {
     # Wallet address.
     string walletAddress;
-    # Current balance in coins.
-    decimal balance;
+    # Current balance in coins (decimal serialized as a string, matching the transaction service).
+    string balance;
     # Whether this is the caller's default wallet.
     boolean defaultWallet;
 };
@@ -56,8 +58,8 @@ public type CollectPaymentRequest record {|
     string fromAddress;
     # Payee wallet address.
     string toAddress;
-    # Amount to collect in coins.
-    decimal amount;
+    # Amount to collect in coins (decimal serialized as a string, matching the transaction service).
+    string amount;
     # Idempotency reference for the payment.
     string reference;
     # Originating feature of the payment.
@@ -72,8 +74,8 @@ public type CollectPaymentResponse record {
     string fromAddress;
     # Payee wallet address.
     string toAddress;
-    # Amount collected in coins.
-    decimal amount;
+    # Amount collected in coins (decimal serialized as a string, matching the transaction service).
+    string amount;
 };
 
 # Detail carried by a payment rejection from the payment service.
