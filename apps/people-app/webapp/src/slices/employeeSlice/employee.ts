@@ -680,7 +680,10 @@ const EmployeeSlice = createSlice({
       state.stateMessage = null;
       state.errorMessage = null;
       state.employee = null;
-      state.employeesBasicInfo = [];
+      // employeesBasicInfo is a session-wide directory cache, not per-employee state, and
+      // its fetch is guarded on employeeBasicInfoState being idle. Clearing the data here
+      // without also resetting that flag left consumers (PeopleChip, EmployeeEmailSelect)
+      // with an empty directory that never refetched until a full page reload.
       state.continuousServiceRecord = [];
       state.updateJobInfoState = State.idle;
       state.updateJobInfoMessage = null;

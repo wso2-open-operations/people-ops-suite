@@ -88,6 +88,9 @@ import { array, object, string } from "yup";
 import { Role, selectRoles } from "@slices/authSlice/auth";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import EmployeeHistory from "@component/employeeHistory/EmployeeHistory";
+import PeopleChip, {
+  PeopleChipList,
+} from "@component/PeopleChip/PeopleChip";
 
 const ReadOnly = ({
   label,
@@ -1042,43 +1045,32 @@ export default function Me({
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                 <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Lead Email
+                  <Typography
+                    color="text.secondary"
+                    sx={{ fontWeight: 500, mb: 0.75 }}
+                  >
+                    Lead
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.managerEmail || "-"}
-                  </Typography>
+                  {employee.managerEmail ? (
+                    <PeopleChip email={employee.managerEmail} size="lg" />
+                  ) : (
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      -
+                    </Typography>
+                  )}
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography
                     color="text.secondary"
                     sx={{ fontWeight: 500, mb: 0.75 }}
                   >
-                    Additional Lead Emails
+                    Additional Leads
                   </Typography>
 
                   {employee.additionalManagerEmails ? (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 0.25,
-                      }}
-                    >
-                      {employee.additionalManagerEmails
-                        .split(",")
-                        .map((e) => e.trim())
-                        .filter(Boolean)
-                        .map((email) => (
-                          <Typography
-                            key={email}
-                            variant="h6"
-                            sx={{ fontWeight: 600 }}
-                          >
-                            {email}
-                          </Typography>
-                        ))}
-                    </Box>
+                    <PeopleChipList
+                      emails={employee.additionalManagerEmails}
+                    />
                   ) : (
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
                       -
