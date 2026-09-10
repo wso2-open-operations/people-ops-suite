@@ -23,6 +23,7 @@ import {
 } from "@config/constant";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import type { RootState } from "@slices/store";
 import { APIService } from "@utils/apiService";
 import { HttpStatusCode, isCancel } from "axios";
 
@@ -361,7 +362,11 @@ export const fetchEmployee = createAsyncThunk(
   },
 );
 
-export const fetchEmployeesBasicInfo = createAsyncThunk(
+export const fetchEmployeesBasicInfo = createAsyncThunk<
+  EmployeeDirectoryInfo[],
+  void,
+  { state: RootState }
+>(
   "employees/fetchEmployeesBasicInfo",
   async (_, { dispatch, rejectWithValue }) => {
     try {
@@ -385,6 +390,14 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
 
       return rejectWithValue(errorMessage);
     }
+  },
+  {
+    // Guard centrally rather than in each caller's effect. Several consumers (every
+    // PeopleChip on a profile, EmployeeEmailSelect) mount in the same render commit, and
+    // each would read State.idle before any of them observes State.loading — one full
+    // directory request per component. Checking at dispatch collapses those to one.
+    condition: (_, { getState }) =>
+      getState().employee.employeeBasicInfoState === State.idle,
   },
 );
 

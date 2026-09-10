@@ -35,8 +35,10 @@ export function emailKey(email: string): string {
  * (the directory query inner-joins team/business unit/designation). Callers must handle a
  * `null` entry by falling back to the raw email.
  *
- * Fetches once per session: the thunk only fires while the slice is still `idle`, and every
- * consumer shares the same cached result.
+ * Fetches once per session, including when several consumers mount in the same render
+ * commit: the thunk carries a `condition` guard that drops any dispatch made while the
+ * directory is already loading or loaded, so every consumer shares one request and one
+ * cached result.
  */
 export function useEmployeeDirectory(): {
   lookup: (email: string | null | undefined) => EmployeeBasicInfo | null;
