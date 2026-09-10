@@ -20,6 +20,9 @@ import { useFormikContext } from "formik";
 import { useAppSelector } from "@slices/store";
 import { CreateEmployeeFormValues } from "@root/src/types/types";
 import { formatDate } from "@utils/utils";
+import PeopleChip, {
+  PeopleChipList,
+} from "@component/PeopleChip/PeopleChip";
 import {
   PersonOutline,
   CakeOutlined,
@@ -84,7 +87,13 @@ const SectionHeader = React.memo(
 );
 
 const ReviewField = React.memo(
-  ({ label, value }: { label: string; value: string | null | undefined }) => {
+  ({
+    label,
+    value,
+  }: {
+    label: string;
+    value: React.ReactNode | string | null | undefined;
+  }) => {
     const theme = useTheme();
     return (
       <Box>
@@ -101,6 +110,7 @@ const ReviewField = React.memo(
           {label}
         </Typography>
         <Typography
+          component="div"
           variant="body2"
           sx={{
             color: alpha(theme.palette.text.secondary, 0.85),
@@ -488,16 +498,25 @@ export default function ReviewStep({ isEditMode }: ReviewStepProps) {
         />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Lead Email" value={values.managerEmail} />
+            <ReviewField
+              label="Lead"
+              value={
+                values.managerEmail ? (
+                  <PeopleChip email={values.managerEmail} />
+                ) : null
+              }
+            />
           </Grid>
 
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
-              label="Additional Lead Emails"
+              label="Additional Leads"
               value={
-                values.additionalManagerEmail?.length
-                  ? values.additionalManagerEmail.join(", ")
-                  : "—"
+                values.additionalManagerEmail?.length ? (
+                  <PeopleChipList emails={values.additionalManagerEmail} />
+                ) : (
+                  "—"
+                )
               }
             />
           </Grid>
