@@ -31,6 +31,7 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
         e.last_name,
         e.work_email,
         e.employee_thumbnail,
+        e.work_location AS workLocation,
         CONCAT(
             d.designation,
             CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
