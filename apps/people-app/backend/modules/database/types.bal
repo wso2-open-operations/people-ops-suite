@@ -106,6 +106,9 @@ public type EmployeeBasicInfo record {|
     string designation?;
     # External-facing designation
     string? externalDesignation?;
+    # Work location of the Employee
+    @sql:Column {name: "work_location"}
+    string workLocation?;
 |};
 
 # Employee information for the employee directory listing.
