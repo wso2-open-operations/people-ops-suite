@@ -106,15 +106,8 @@ public type EmployeeBasicInfo record {|
     string designation?;
     # External-facing designation
     string? externalDesignation?;
-    # Work location (e.g. "Sri Lanka", "India"). Optional here, matching
-    # `designation`/`externalDesignation` above on this same record: the only
-    # query that binds directly to EmployeeBasicInfo today is
-    # getEmployeeBasicInfoQuery (behind /user-info), which always selects it —
-    # the underlying `employee.work_location` column is itself NOT NULL — but
-    # optional keeps this record's own fields uniformly "may or may not be
-    # selected", which is what makes an override like EmployeeDirectoryInfo's
-    # own (required) `workLocation` below a safe narrowing rather than a
-    # same-type redeclaration.
+    # Work location of the Employee
+    @sql:Column {name: "work_location"}
     string workLocation?;
 |};
 
