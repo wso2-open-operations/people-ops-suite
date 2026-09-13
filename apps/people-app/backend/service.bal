@@ -55,6 +55,19 @@ service class ErrorInterceptor {
     }
 }
 
+# Whether the caller may read any employee's record.
+#
+# Admins have always been able to; the employee-view role grants the same visibility
+# without any ability to change a record. Both are IAM-group-backed, so this is a pure
+# group check with no database lookup.
+#
+# + userInfo - Invoker's JWT payload
+# + return - true when the caller may read any employee
+isolated function canReadAnyEmployee(authorization:CustomJwtPayload userInfo) returns boolean =>
+    authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_VIEW_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.RESIGNATION_ROLE], userInfo.groups);
+
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Service initialization.
@@ -119,6 +132,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups) {
             privileges.push(authorization:SERVICE_DESK_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_VIEW_ROLE], userInfo.groups) {
+            privileges.push(authorization:EMPLOYEE_VIEW_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.RESIGNATION_ROLE], userInfo.groups) {
+            privileges.push(authorization:RESIGNATION_PRIVILEGE);
         }
         boolean|error isLeadUser = database:isLead(userInfo.email);
         if isLeadUser is error {
@@ -213,7 +232,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
         boolean isSelf = employeeInfo != () && employeeInfo.workEmail == userInfo.email;
         if !hasAdminAccess && !isSelf {
             boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
@@ -269,7 +288,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         // NIC/passport, date of birth, gender, home address, personal contact details and
         // emergency contacts — none of which a lead needs in order to manage someone. Unlike the
         // history endpoint there is no lead projection here: the whole record is withheld.
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
         boolean isSelf = employeeInfo != () && employeeInfo.workEmail == userInfo.email;
         if !hasAdminAccess && !isSelf {
             log:printWarn("User is not authorized to view this employee's personal information",
@@ -389,8 +408,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess
-            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
 
         if !hasAdminAccess {
             boolean|error isLeadUser = database:isLead(userInfo.email);
@@ -434,8 +452,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess
-            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
 
         string sortField = payload.sort.sortField;
         if !database:EmployeeSortField.hasKey(sortField) {
@@ -1544,6 +1561,63 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
+    # Record an employee's resignation.
+    #
+    # A dedicated route rather than a rule inside the job-info handler: the permission is
+    # then structural — this role may call this endpoint, and this endpoint can only write
+    # these three fields. A field-level check on the 25-field job-info payload would be a
+    # negative rule that has to stay correct about every other field, and would silently
+    # widen the moment a new one is added.
+    #
+    # Employment status is not accepted from the caller; recording a departure is what
+    # makes someone a leaver, so it is set to "Marked leaver" here.
+    #
+    # + employeeId - Employee ID
+    # + payload - Resignation details
+    # + return - HTTP OK or HTTP errors
+    resource function patch employees/[string employeeId]/resignation(http:RequestContext ctx,
+            @http:Payload database:UpdateResignationPayload payload)
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        boolean isAuthorized =
+            authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+            || authorization:checkPermissions([authorization:authorizedRoles.RESIGNATION_ROLE], userInfo.groups);
+        if !isAuthorized {
+            log:printWarn("User is not authorized to record a resignation", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to record a resignation"}
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
+        if employeeInfo is error {
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        if employeeInfo is () {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
+        }
+
+        error? updateResult = database:updateResignation(employeeId, payload, userInfo.email);
+        if updateResult is error {
+            string customErr = string `Error occurred while recording the resignation for ID: ${employeeId}`;
+            log:printError(customErr, updateResult, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        return http:OK;
+    }
+
     # Update employee job information.
     #
     # + employeeId - Employee ID
@@ -2180,7 +2254,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
-        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+        // Employee reports only. QR code generation stays with admin and service desk,
+        // which is checked on its own endpoint.
+        if !canReadAnyEmployee(userInfo) {
             log:printWarn("User is not authorized to access reports", invokerEmail = userInfo.email);
             return <http:Forbidden>{
                 body: {message: "You are not authorized to access reports"}
@@ -3220,8 +3296,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         //   designation, manager, status and dates through the sibling employee endpoint;
         //   history adds only *when* those changed, so withholding it would be inconsistent.
         // - Self gets the employee projection: no actionBy, no system rows.
-        boolean hasFullProjection = authorization:checkPermissions(
-                [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        // The employee-view role reads any employee's record, so it gets the same
+        // projection an admin does: the fallback below is self-only, which would
+        // otherwise deny it a history it is allowed to see.
+        boolean hasFullProjection = canReadAnyEmployee(userInfo);
 
         if !hasFullProjection {
             // Two conditions, and both are required.

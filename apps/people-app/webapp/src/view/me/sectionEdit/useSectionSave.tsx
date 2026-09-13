@@ -28,9 +28,11 @@ import {
   UpdateEmployeeJobInfoPayload,
   fetchEmployee,
   updateEmployeeJobInfo,
+  updateResignation,
   validateEpf,
 } from "@slices/employeeSlice/employee";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { Role, selectRoles } from "@slices/authSlice/auth";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
   fetchEmployeePersonalInfo,
@@ -132,6 +134,9 @@ export const useSectionSave = (employeeId: string | undefined) => {
   const dispatch = useAppDispatch();
   const { showConfirmation } = useConfirmationModalContext();
   const org = useAppSelector((state) => state.organization);
+  // Admins write resignation fields through job-info, atomically with any general
+  // changes; a resignation-only caller cannot use that endpoint at all.
+  const isAdmin = useAppSelector(selectRoles).includes(Role.ADMIN);
   const [isSaving, setIsSaving] = useState(false);
 
   const save = useCallback(
@@ -184,6 +189,62 @@ export const useSectionSave = (employeeId: string | undefined) => {
                     return;
                   }
                   await dispatch(fetchEmployeePersonalInfo(employeeId));
+                  resolve(true);
+                } finally {
+                  setIsSaving(false);
+                }
+              })();
+            },
+            "Update",
+            "Cancel",
+          );
+        });
+      }
+
+      // A caller who may record a resignation but not edit an employee uses the
+      // dedicated endpoint: job-info is admin-only, so the shared path below would be
+      // rejected for them. Admins keep using job-info, which writes resignation and
+      // general fields in one atomic call.
+      if (section === "resignation" && !isAdmin) {
+        const current = toJobUpdatePayload(currentValues);
+        const finalDayInOffice = current.finalDayInOffice ?? "";
+        const finalDayOfEmployment = current.finalDayOfEmployment ?? "";
+        const resignationReason = current.resignationReason ?? "";
+
+        const changes = buildChangeSummary(
+          {
+            finalDayInOffice,
+            finalDayOfEmployment,
+            resignationReason,
+          },
+          toJobUpdatePayload(initialValues),
+          org,
+        );
+
+        return await new Promise<boolean>((resolve) => {
+          showConfirmation(
+            "Confirm Update",
+            <ChangeList title={SECTION_TITLES[section]} changes={changes} />,
+            ConfirmationType.accept,
+            () => {
+              void (async () => {
+                setIsSaving(true);
+                try {
+                  const result = await dispatch(
+                    updateResignation({
+                      employeeId,
+                      payload: {
+                        finalDayInOffice,
+                        finalDayOfEmployment,
+                        resignationReason,
+                      },
+                    }),
+                  );
+                  if (updateResignation.rejected.match(result)) {
+                    resolve(false);
+                    return;
+                  }
+                  await dispatch(fetchEmployee(employeeId));
                   resolve(true);
                 } finally {
                   setIsSaving(false);
@@ -312,7 +373,7 @@ export const useSectionSave = (employeeId: string | undefined) => {
         // the correct outcome for a cancel.
       });
     },
-    [dispatch, employeeId, org, showConfirmation],
+    [dispatch, employeeId, isAdmin, org, showConfirmation],
   );
 
   return { save, isSaving };

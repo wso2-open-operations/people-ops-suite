@@ -121,14 +121,14 @@ export const routes: RouteObjectWithRole[] = [
     text: "Employees",
     icon: React.createElement(BadgeSharp),
     element: React.createElement(EmployeesRoot),
-    allowRoles: [Role.ADMIN],
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
     children: [
       {
         path: "/employees/view",
         text: "All",
         element: React.createElement(View.employeesList),
         icon: React.createElement(Groups),
-        allowRoles: [Role.ADMIN],
+        allowRoles: [Role.ADMIN, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
       },
       {
         path: "/employees/my-team",
@@ -177,21 +177,21 @@ export const routes: RouteObjectWithRole[] = [
     text: "Reports",
     icon: React.createElement(AssessmentIcon),
     element: React.createElement(ReportsRoot),
-    allowRoles: [Role.ADMIN, Role.SERVICE_DESK],
+    allowRoles: [Role.ADMIN, Role.SERVICE_DESK, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
     children: [
       {
         path: "/reports/active-employees",
         text: "Active Employees",
         icon: React.createElement(Groups),
         element: React.createElement(View.activeEmployeesReport),
-        allowRoles: [Role.ADMIN],
+        allowRoles: [Role.ADMIN, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
       },
       {
         path: "/reports/inactive-employees",
         text: "Resignations",
         icon: React.createElement(PersonOffIcon),
         element: React.createElement(View.resignationReport),
-        allowRoles: [Role.ADMIN],
+        allowRoles: [Role.ADMIN, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
       },
       {
         path: "/reports/qr-codes",
@@ -239,7 +239,9 @@ export const routes: RouteObjectWithRole[] = [
     text: "Employees",
     icon: React.createElement(GroupsIcon),
     element: React.createElement(View.employeeDetails),
-    allowRoles: [Role.ADMIN, Role.LEAD],
+    // EMPLOYEE_VIEW reads profiles but cannot change them: the inline section editors
+    // gate on Role.ADMIN, so the page renders read-only for this role.
+    allowRoles: [Role.ADMIN, Role.LEAD, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
     hideFromSidebar: true,
   },
 ];

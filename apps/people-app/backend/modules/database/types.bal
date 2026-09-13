@@ -1173,6 +1173,23 @@ public type UpdateEmployeeJobInfoPayload record {|
     string? resignationReason = ();
 |};
 
+# [Database] Payload for updating an employee's resignation details.
+#
+# Employment status is deliberately absent: recording a departure is what makes someone
+# a leaver, so the status is derived from this call rather than supplied by the caller.
+# Accepting it would let a narrow resignation permission set an arbitrary status.
+public type UpdateResignationPayload record {|
+    # Last day the employee is physically in office
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string finalDayInOffice;
+    # Final day of employment
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string finalDayOfEmployment;
+    # Reason for leaving
+    @constraint:String {maxLength: 300, minLength: 1}
+    string resignationReason;
+|};
+
 # [Database] Insert type for vehicle.
 public type AddVehiclePayload record {|
     # Owner of the vehicle

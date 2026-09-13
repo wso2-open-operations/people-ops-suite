@@ -30,6 +30,10 @@ public type AppRoles record {|
     string ADMIN_ROLE;
     # Role for the service desk
     string SERVICE_DESK_ROLE;
+    # Role granting read-only access to employee profiles and employee reports
+    string EMPLOYEE_VIEW_ROLE;
+    # Role granting employee-view access plus the ability to record a resignation
+    string RESIGNATION_ROLE;
     # Roles for the external users(for vehicle saving purpose)
     string[] EXTERNAL_USER_ROLES = [];
 |};

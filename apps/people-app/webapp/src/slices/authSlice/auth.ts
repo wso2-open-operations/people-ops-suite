@@ -16,7 +16,14 @@
 
 import { State } from "@/types/types";
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
-import { ADMIN_PRIVILEGE, LEAD_PRIVILEGE, SERVICE_DESK_PRIVILEGE, SnackMessage } from "@config/constant";
+import {
+  ADMIN_PRIVILEGE,
+  EMPLOYEE_VIEW_PRIVILEGE,
+  RESIGNATION_PRIVILEGE,
+  LEAD_PRIVILEGE,
+  SERVICE_DESK_PRIVILEGE,
+  SnackMessage,
+} from "@config/constant";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
@@ -26,6 +33,8 @@ export enum Role {
   LEAD = "LEAD",
   ADMIN = "ADMIN",
   SERVICE_DESK = "SERVICE_DESK",
+  EMPLOYEE_VIEW = "EMPLOYEE_VIEW",
+  RESIGNATION = "RESIGNATION",
 }
 
 interface AuthState {
@@ -97,6 +106,12 @@ export const loadPrivileges = createAsyncThunk(
     }
     if (userPrivileges.includes(ADMIN_PRIVILEGE)) {
       roles.push(Role.ADMIN);
+    }
+    if (userPrivileges.includes(EMPLOYEE_VIEW_PRIVILEGE)) {
+      roles.push(Role.EMPLOYEE_VIEW);
+    }
+    if (userPrivileges.includes(RESIGNATION_PRIVILEGE)) {
+      roles.push(Role.RESIGNATION);
     }
     if (userPrivileges.includes(SERVICE_DESK_PRIVILEGE)) {
       roles.push(Role.SERVICE_DESK);

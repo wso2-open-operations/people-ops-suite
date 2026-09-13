@@ -96,6 +96,7 @@ import PeopleChip, {
 import EditableSection from "@view/me/sectionEdit/EditableSection";
 import GeneralInfoFields from "@view/me/sectionEdit/GeneralInfoFields";
 import PersonalInfoFields from "@view/me/sectionEdit/PersonalInfoFields";
+import ResignEmployeeDialog from "@view/me/sectionEdit/ResignEmployeeDialog";
 import ResignationFields from "@view/me/sectionEdit/ResignationFields";
 import { SectionEditProvider } from "@view/me/sectionEdit/SectionEditProvider";
 
@@ -441,7 +442,11 @@ export default function Me({
   // is open to LEAD, so a lead reaching their own detail page directly is still self and keeps
   // the section the backend would serve them.
   const isSelfView = !employeeId || employeeId === userInfo?.employeeId;
-  const canViewPersonalInfo = isSelfView || roles.includes(Role.ADMIN);
+  const canViewPersonalInfo =
+    isSelfView ||
+    roles.includes(Role.ADMIN) ||
+    roles.includes(Role.EMPLOYEE_VIEW) ||
+    roles.includes(Role.RESIGNATION);
   // Inline section editing is offered wherever the wizard's Edit button is: an admin
   // viewing another employee's profile. `readOnly` marks that admin-viewing-someone-else
   // case (it gates the read-only rendering of the personal-info form), and the My Team
@@ -451,9 +456,25 @@ export default function Me({
     !!targetEmployeeId &&
     roles.includes(Role.ADMIN) &&
     !location.state?.fromMyTeam;
+  // The resignation role edits that one section and nothing else, so it is a separate
+  // flag rather than a widening of canEditSections — which also gates General and
+  // Personal Information.
+  const canEditResignation =
+    canEditSections ||
+    (readOnly &&
+      !!targetEmployeeId &&
+      roles.includes(Role.RESIGNATION) &&
+      !location.state?.fromMyTeam);
   const { employee, state: employeeState } = useAppSelector(
     (state) => state.employee,
   );
+  // Resigning an active employee is a different action from correcting an existing
+  // departure: it asks only for the three details, and the backend derives the status.
+  // The Resignation Details section stays as it is — there is nothing to correct until
+  // someone has actually left.
+  const canResignEmployee =
+    canEditResignation && employee?.employeeStatus === EmployeeStatus.Active;
+  const [isResignDialogOpen, setResignDialogOpen] = useState(false);
   const { personalInfo, state: personalInfoState } = useAppSelector(
     (state) => state.employeePersonalInfo,
   );
@@ -940,6 +961,17 @@ export default function Me({
               alignItems="center"
               sx={{ alignSelf: "center" }}
             >
+              {canResignEmployee && (
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  startIcon={<PersonOffIcon />}
+                  onClick={() => setResignDialogOpen(true)}
+                  sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+                >
+                  Resign
+                </Button>
+              )}
               {employee && (
                 <Tooltip
                   title={
@@ -1385,7 +1417,7 @@ export default function Me({
           employee={employee}
           personalInfo={personalInfo}
           employeeId={targetEmployeeId}
-          canEdit={canEditSections}
+          canEdit={canEditResignation}
         />
         {/* An admin editing another employee gets the full personal-information editor,
             matching what the onboarding wizard lets them change. The existing form below
@@ -2078,6 +2110,14 @@ export default function Me({
             </Button>
           </DialogActions>
         </Dialog>
+        {targetEmployeeId && employee && (
+          <ResignEmployeeDialog
+            open={isResignDialogOpen}
+            employeeId={targetEmployeeId}
+            employeeName={`${employee.firstName} ${employee.lastName}`.trim()}
+            onClose={() => setResignDialogOpen(false)}
+          />
+        )}
       </Box>
     </SectionEditProvider>
   );

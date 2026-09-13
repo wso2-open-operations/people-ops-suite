@@ -23,3 +23,8 @@ public const ADMIN_PRIVILEGE = 999;
 public const EMPLOYEE_PRIVILEGE = 987;
 public const LEAD_PRIVILEGE = 993;
 public const SERVICE_DESK_PRIVILEGE = 991;
+# Read-only visibility of employee profiles and access to employee reports, without any
+# ability to change a record.
+public const EMPLOYEE_VIEW_PRIVILEGE = 989;
+# Everything the employee-view role sees, plus the ability to record a departure.
+public const RESIGNATION_PRIVILEGE = 985;

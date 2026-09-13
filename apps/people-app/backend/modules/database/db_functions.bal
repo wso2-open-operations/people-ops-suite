@@ -1026,6 +1026,45 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
     }
 }
 
+# Record an employee's resignation details and mark them a leaver.
+#
+# Status is derived rather than accepted: recording a departure is what makes someone a
+# leaver, so this reuses the job-info update with the status set here. That keeps the
+# resignation table sync and the transaction identical to the admin path, rather than a
+# second way to write the same rows.
+#
+# + employeeId - Employee ID
+# + payload - Resignation details
+# + updatedBy - User performing the update
+# + return - Nil or error
+public isolated function updateResignation(string employeeId, UpdateResignationPayload payload, string updatedBy)
+    returns error? {
+
+    Employee|error? employee = getEmployeeInfo(employeeId);
+    if employee is error {
+        return employee;
+    }
+    if employee is () {
+        return error(string `Employee not found for ID: ${employeeId}`);
+    }
+
+    // Resigning someone is what moves them to "Marked leaver", and only an active
+    // employee can be resigned. Correcting the details of someone who has already left
+    // must not resurrect their departure: setting the status unconditionally would move
+    // a "Left" employee back to "Marked leaver".
+    EmployeeStatus? newStatus =
+        employee.employeeStatus == EMPLOYEE_ACTIVE ? EMPLOYEE_MARKED_LEAVER : ();
+
+    UpdateEmployeeJobInfoPayload jobInfoPayload = {
+        employeeStatus: newStatus,
+        finalDayInOffice: payload.finalDayInOffice,
+        finalDayOfEmployment: payload.finalDayOfEmployment,
+        resignationReason: payload.resignationReason
+    };
+
+    return updateEmployeeJobInfo(employeeId, jobInfoPayload, updatedBy);
+}
+
 # Check whether the job-info update payload contains any leaver-specific fields.
 #
 # + payload - Job information update payload
