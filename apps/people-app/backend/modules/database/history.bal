@@ -46,6 +46,7 @@ final readonly & string[] SYSTEM_ACTORS = ["MIGRATION", "system-scheduler"];
 # employee_thumbnail and id. Bulk migrations re-write those columns on rows whose
 # meaningful values never changed, so diffing them buries the real changes.
 final readonly & string[] TRACKED_EMPLOYEE_FIELDS = [
+    "employee_id", "work_email",
     "business_unit_id", "team_id", "sub_team_id", "unit_id",
     "designation_id", "employment_type_id", "company_id", "office_id",
     "manager_email", "employee_status", "work_location",

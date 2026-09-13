@@ -62,6 +62,10 @@ import {
   resetQrCode,
 } from "@root/src/slices/employeeSlice/employee";
 import {
+  fetchEmployeeHistory,
+  resetEmployeeHistory,
+} from "@root/src/slices/employeeSlice/employeeHistory";
+import {
   EmployeePersonalInfo,
   fetchEmployeePersonalInfo,
   resetPersonalInfo,
@@ -90,9 +94,9 @@ import { array, object, string } from "yup";
 import { Role, selectRoles } from "@slices/authSlice/auth";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import EmployeeHistory from "@component/employeeHistory/EmployeeHistory";
-import PeopleChip, {
-  PeopleChipList,
-} from "@component/PeopleChip/PeopleChip";
+import FieldValue, { FieldLabel } from "@view/me/fieldHistory/FieldValue";
+import { AUDIT_FIELDS } from "@view/me/fieldHistory/fields";
+import PeopleChip, { PeopleChipList } from "@component/PeopleChip/PeopleChip";
 import EditableSection from "@view/me/sectionEdit/EditableSection";
 import GeneralInfoFields from "@view/me/sectionEdit/GeneralInfoFields";
 import PersonalInfoFields from "@view/me/sectionEdit/PersonalInfoFields";
@@ -103,14 +107,21 @@ import { SectionEditProvider } from "@view/me/sectionEdit/SectionEditProvider";
 const ReadOnly = ({
   label,
   value,
+  historyField,
+  onViewAll,
 }: {
   label: string;
   value?: string | number | null;
+  /** Audit column name; omitted for values the backend does not track. */
+  historyField?: string;
+  onViewAll?: () => void;
 }) => (
   <>
-    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-      {label}
-    </Typography>
+    <FieldLabel
+      label={label}
+      historyField={historyField}
+      onViewAll={onViewAll}
+    />
     <Typography variant="h6" sx={{ fontWeight: 600 }}>
       {value || "-"}
     </Typography>
@@ -177,9 +188,13 @@ const FieldInput = ({
 const PersonalInfoReadOnly = ({
   personalInfo,
   age,
+  canViewFieldHistory,
+  onViewAll,
 }: {
   personalInfo: EmployeePersonalInfo | null;
   age: number | null;
+  canViewFieldHistory: boolean;
+  onViewAll: () => void;
 }) => {
   if (!personalInfo) {
     return (
@@ -189,25 +204,96 @@ const PersonalInfoReadOnly = ({
     );
   }
 
-  const rows: { label: string; value: string | number | null }[] = [
-    { label: "Title", value: personalInfo.title },
-    { label: "First Name", value: personalInfo.firstName },
-    { label: "Last Name", value: personalInfo.lastName },
+  // `historyField` is omitted where the backend does not track the column: Full Name is
+  // generated from first and last name, and Age is computed from the date of birth, so
+  // neither is a stored value that could have changed on its own.
+  const rows: {
+    label: string;
+    value: string | number | null;
+    historyField?: string;
+  }[] = [
+    {
+      label: "Title",
+      value: personalInfo.title,
+      historyField: AUDIT_FIELDS.title,
+    },
+    {
+      label: "First Name",
+      value: personalInfo.firstName,
+      historyField: AUDIT_FIELDS.firstName,
+    },
+    {
+      label: "Last Name",
+      value: personalInfo.lastName,
+      historyField: AUDIT_FIELDS.lastName,
+    },
     { label: "Full Name", value: personalInfo.fullName },
-    { label: "NIC/Passport", value: personalInfo.nicOrPassport },
-    { label: "Date of Birth", value: formatDate(personalInfo.dob, "-") },
+    {
+      label: "NIC/Passport",
+      value: personalInfo.nicOrPassport,
+      historyField: AUDIT_FIELDS.nicOrPassport,
+    },
+    {
+      label: "Date of Birth",
+      value: formatDate(personalInfo.dob, "-"),
+      historyField: AUDIT_FIELDS.dob,
+    },
     { label: "Age", value: age },
-    { label: "Gender", value: personalInfo.gender },
-    { label: "Nationality", value: personalInfo.nationality },
-    { label: "Personal Email", value: personalInfo.personalEmail },
-    { label: "Personal Phone", value: personalInfo.personalPhone },
-    { label: "Resident Number", value: personalInfo.residentNumber },
-    { label: "Address Line 1", value: personalInfo.addressLine1 },
-    { label: "Address Line 2", value: personalInfo.addressLine2 },
-    { label: "City", value: personalInfo.city },
-    { label: "State/Province", value: personalInfo.stateOrProvince },
-    { label: "Postal Code", value: personalInfo.postalCode },
-    { label: "Country", value: personalInfo.country },
+    {
+      label: "Gender",
+      value: personalInfo.gender,
+      historyField: AUDIT_FIELDS.gender,
+    },
+    {
+      label: "Nationality",
+      value: personalInfo.nationality,
+      historyField: AUDIT_FIELDS.nationality,
+    },
+    {
+      label: "Personal Email",
+      value: personalInfo.personalEmail,
+      historyField: AUDIT_FIELDS.personalEmail,
+    },
+    {
+      label: "Personal Phone",
+      value: personalInfo.personalPhone,
+      historyField: AUDIT_FIELDS.personalPhone,
+    },
+    {
+      label: "Resident Number",
+      value: personalInfo.residentNumber,
+      historyField: AUDIT_FIELDS.residentNumber,
+    },
+    {
+      label: "Address Line 1",
+      value: personalInfo.addressLine1,
+      historyField: AUDIT_FIELDS.addressLine1,
+    },
+    {
+      label: "Address Line 2",
+      value: personalInfo.addressLine2,
+      historyField: AUDIT_FIELDS.addressLine2,
+    },
+    {
+      label: "City",
+      value: personalInfo.city,
+      historyField: AUDIT_FIELDS.city,
+    },
+    {
+      label: "State/Province",
+      value: personalInfo.stateOrProvince,
+      historyField: AUDIT_FIELDS.stateOrProvince,
+    },
+    {
+      label: "Postal Code",
+      value: personalInfo.postalCode,
+      historyField: AUDIT_FIELDS.postalCode,
+    },
+    {
+      label: "Country",
+      value: personalInfo.country,
+      historyField: AUDIT_FIELDS.country,
+    },
   ];
 
   return (
@@ -215,7 +301,12 @@ const PersonalInfoReadOnly = ({
       <Grid container rowSpacing={1.5} columnSpacing={3}>
         {rows.map((row) => (
           <Grid item xs={12} sm={6} md={3} key={row.label}>
-            <ReadOnly label={row.label} value={row.value} />
+            <ReadOnly
+              label={row.label}
+              value={row.value}
+              historyField={canViewFieldHistory ? row.historyField : undefined}
+              onViewAll={onViewAll}
+            />
           </Grid>
         ))}
       </Grid>
@@ -271,11 +362,15 @@ const ResignationDetails = ({
   personalInfo,
   employeeId,
   canEdit,
+  canViewFieldHistory,
+  onViewAll,
 }: {
   employee: Employee | null;
   personalInfo: EmployeePersonalInfo | null;
   employeeId: string | undefined;
   canEdit: boolean;
+  canViewFieldHistory: boolean;
+  onViewAll: () => void;
 }) => {
   const theme = useTheme();
   const status = employee?.employeeStatus;
@@ -301,10 +396,15 @@ const ResignationDetails = ({
   // recording when the leaver record was created, not a date anyone chose. Displaying it
   // beside these dates invites reading it as the date the employee resigned.
   const dates = [
-    { label: "Last Day in Office", value: employee.finalDayInOffice },
+    {
+      label: "Last Day in Office",
+      value: employee.finalDayInOffice,
+      historyField: AUDIT_FIELDS.finalDayInOffice,
+    },
     {
       label: "Final Day of Employment",
       value: employee.finalDayOfEmployment,
+      historyField: AUDIT_FIELDS.finalDayOfEmployment,
     },
   ];
 
@@ -324,9 +424,13 @@ const ResignationDetails = ({
             const daysUntil = formatDaysUntil(date.value);
             return (
               <Grid item xs={12} sm={6} md={3} key={date.label}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  {date.label}
-                </Typography>
+                <FieldLabel
+                  label={date.label}
+                  historyField={
+                    canViewFieldHistory ? date.historyField : undefined
+                  }
+                  onViewAll={onViewAll}
+                />
                 <Typography
                   variant="h6"
                   sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
@@ -350,9 +454,13 @@ const ResignationDetails = ({
             );
           })}
           <Grid item xs={12} sm={6} md={3}>
-            <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-              Resignation Reason
-            </Typography>
+            <FieldLabel
+              label="Resignation Reason"
+              historyField={
+                canViewFieldHistory ? AUDIT_FIELDS.resignationReason : undefined
+              }
+              onViewAll={onViewAll}
+            />
             {/* A reason may be free text rather than one of the predefined options,
               so it wraps instead of being clipped to one line. */}
             <Typography
@@ -465,6 +573,26 @@ export default function Me({
       !!targetEmployeeId &&
       roles.includes(Role.RESIGNATION) &&
       !location.state?.fromMyTeam);
+  // Per-field history is offered on someone else's profile, not on a person's own.
+  // The backend strips attribution from a self-view, so the popover would report when
+  // a field changed but never by whom — a half-answer beside every field.
+  const canViewFieldHistory = !isSelfView && !!targetEmployeeId;
+  const historyRef = useRef<HTMLDivElement | null>(null);
+  // Opens the timeline and brings it into view, so "View full history" in a field
+  // popover lands the reader on the section rather than expanding it offscreen.
+  const openFullHistory = () => {
+    setHistoryExpanded(true);
+    setHasExpandedHistory(true);
+    window.setTimeout(
+      () =>
+        historyRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        }),
+      0,
+    );
+  };
+
   const { employee, state: employeeState } = useAppSelector(
     (state) => state.employee,
   );
@@ -572,7 +700,21 @@ export default function Me({
     if (canViewPersonalInfo) {
       dispatch(fetchEmployeePersonalInfo(targetEmployeeId));
     }
-  }, [targetEmployeeId, canViewPersonalInfo, dispatch]);
+    // Fetched with the record rather than when the History section is first opened,
+    // because the per-field controls need it too and one response covers every field:
+    // twenty controls cost this single request. Cleared on unmount so the next
+    // employee's profile never shows a previous timeline while its own fetch is in
+    // flight.
+    if (canViewFieldHistory) {
+      dispatch(fetchEmployeeHistory(targetEmployeeId));
+    }
+  }, [targetEmployeeId, canViewPersonalInfo, canViewFieldHistory, dispatch]);
+
+  useEffect(() => {
+    return () => {
+      dispatch(resetEmployeeHistory());
+    };
+  }, [dispatch]);
 
   useEffect(() => {
     return () => {
@@ -1049,15 +1191,16 @@ export default function Me({
                 <Box>
                   <Grid container rowSpacing={1.5} columnSpacing={3}>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Employee ID
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {employee.employeeId || "-"}
-                      </Typography>
+                      <FieldValue
+                        label="Employee ID"
+                        value={employee.employeeId || "-"}
+                        historyField={
+                          canViewFieldHistory
+                            ? AUDIT_FIELDS.employeeId
+                            : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <Typography
@@ -1071,51 +1214,53 @@ export default function Me({
                       </Typography>
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Work Email
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {employee.workEmail}
-                      </Typography>
+                      <FieldValue
+                        label="Work Email"
+                        value={employee.workEmail}
+                        historyField={
+                          canViewFieldHistory
+                            ? AUDIT_FIELDS.workEmail
+                            : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        EPF
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {employee.epf || "-"}
-                      </Typography>
+                      <FieldValue
+                        label="EPF"
+                        value={employee.epf || "-"}
+                        historyField={
+                          canViewFieldHistory ? AUDIT_FIELDS.epf : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Designation
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {designationText}
-                      </Typography>
+                      <FieldValue
+                        label="Designation"
+                        value={designationText}
+                        historyField={
+                          canViewFieldHistory
+                            ? AUDIT_FIELDS.designation
+                            : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                     </Grid>
                     {employee?.externalDesignation && (
                       <Grid item xs={12} sm={6} md={3}>
-                        <Typography
-                          color="text.secondary"
-                          sx={{ fontWeight: 500 }}
-                        >
-                          External Designation
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          {employee.externalDesignation}
-                        </Typography>
+                        <FieldValue
+                          label="External Designation"
+                          value={employee.externalDesignation}
+                          historyField={
+                            canViewFieldHistory
+                              ? AUDIT_FIELDS.externalDesignation
+                              : undefined
+                          }
+                          onViewAll={openFullHistory}
+                        />
                       </Grid>
                     )}
                     <Grid item xs={12} sm={6} md={3}>
@@ -1132,93 +1277,93 @@ export default function Me({
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Business Unit
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {employee.businessUnit || "-"}
-                      </Typography>
+                      <FieldValue
+                        label="Business Unit"
+                        value={employee.businessUnit || "-"}
+                        historyField={
+                          canViewFieldHistory
+                            ? AUDIT_FIELDS.businessUnit
+                            : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Team
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {employee.team}
-                      </Typography>
+                      <FieldValue
+                        label="Team"
+                        value={employee.team}
+                        historyField={
+                          canViewFieldHistory ? AUDIT_FIELDS.team : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Sub Team
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {employee.subTeam || "-"}
-                      </Typography>
+                      <FieldValue
+                        label="Sub Team"
+                        value={employee.subTeam || "-"}
+                        historyField={
+                          canViewFieldHistory ? AUDIT_FIELDS.subTeam : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Unit
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {employee.unit || "N/A"}
-                      </Typography>
+                      <FieldValue
+                        label="Unit"
+                        value={employee.unit || "N/A"}
+                        historyField={
+                          canViewFieldHistory ? AUDIT_FIELDS.unit : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Company
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {employee.company || "-"}
-                      </Typography>
+                      <FieldValue
+                        label="Company"
+                        value={employee.company || "-"}
+                        historyField={
+                          canViewFieldHistory ? AUDIT_FIELDS.company : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Office
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {employee.office || "-"}
-                      </Typography>
+                      <FieldValue
+                        label="Office"
+                        value={employee.office || "-"}
+                        historyField={
+                          canViewFieldHistory ? AUDIT_FIELDS.office : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Work Location
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {employee.workLocation || "-"}
-                      </Typography>
+                      <FieldValue
+                        label="Work Location"
+                        value={employee.workLocation || "-"}
+                        historyField={
+                          canViewFieldHistory
+                            ? AUDIT_FIELDS.workLocation
+                            : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Employment Type
-                      </Typography>
+                      <FieldLabel
+                        label="Employment Type"
+                        historyField={
+                          canViewFieldHistory
+                            ? AUDIT_FIELDS.employmentType
+                            : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
 
                       <Box sx={{ mt: 1 }}>
                         {employee.employmentType ? (
@@ -1256,12 +1401,13 @@ export default function Me({
                       </Box>
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        House
-                      </Typography>
+                      <FieldLabel
+                        label="House"
+                        historyField={
+                          canViewFieldHistory ? AUDIT_FIELDS.house : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                       <Box sx={{ mt: 1 }}>
                         {employee.house ? (
                           <Chip
@@ -1298,12 +1444,15 @@ export default function Me({
                       </Box>
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Employee Status
-                      </Typography>
+                      <FieldLabel
+                        label="Employee Status"
+                        historyField={
+                          canViewFieldHistory
+                            ? AUDIT_FIELDS.employeeStatus
+                            : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
 
                       <Box sx={{ mt: 1 }}>
                         {employee.employeeStatus ? (
@@ -1325,12 +1474,15 @@ export default function Me({
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500 }}
-                      >
-                        Start Date
-                      </Typography>
+                      <FieldLabel
+                        label="Start Date"
+                        historyField={
+                          canViewFieldHistory
+                            ? AUDIT_FIELDS.startDate
+                            : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>
                         {formatDate(employee.startDate, "-")}
                       </Typography>
@@ -1361,12 +1513,15 @@ export default function Me({
                     </Grid>
                     {isPresentOrFuture(employee?.probationEndDate) && (
                       <Grid item xs={12} sm={6} md={3}>
-                        <Typography
-                          color="text.secondary"
-                          sx={{ fontWeight: 500 }}
-                        >
-                          Probation End Date
-                        </Typography>
+                        <FieldLabel
+                          label="Probation End Date"
+                          historyField={
+                            canViewFieldHistory
+                              ? AUDIT_FIELDS.probationEndDate
+                              : undefined
+                          }
+                          onViewAll={openFullHistory}
+                        />
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
                           {formatDate(employee.probationEndDate, "N/A")}
                         </Typography>
@@ -1374,12 +1529,15 @@ export default function Me({
                     )}
                     {employee.agreementEndDate ? (
                       <Grid item xs={12} sm={6} md={3}>
-                        <Typography
-                          color="text.secondary"
-                          sx={{ fontWeight: 500 }}
-                        >
-                          Agreement End Date
-                        </Typography>
+                        <FieldLabel
+                          label="Agreement End Date"
+                          historyField={
+                            canViewFieldHistory
+                              ? AUDIT_FIELDS.agreementEndDate
+                              : undefined
+                          }
+                          onViewAll={openFullHistory}
+                        />
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
                           {formatDate(employee.agreementEndDate, "-")}
                         </Typography>
@@ -1388,12 +1546,14 @@ export default function Me({
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500, mb: 0.75 }}
-                      >
-                        Lead
-                      </Typography>
+                      <FieldLabel
+                        label="Lead"
+                        mb={0.75}
+                        historyField={
+                          canViewFieldHistory ? AUDIT_FIELDS.manager : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
                       {employee.managerEmail ? (
                         <PeopleChip email={employee.managerEmail} size="lg" />
                       ) : (
@@ -1403,12 +1563,16 @@ export default function Me({
                       )}
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ fontWeight: 500, mb: 0.75 }}
-                      >
-                        Additional Leads
-                      </Typography>
+                      <FieldLabel
+                        label="Additional Leads"
+                        mb={0.75}
+                        historyField={
+                          canViewFieldHistory
+                            ? AUDIT_FIELDS.additionalManager
+                            : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
 
                       {employee.additionalManagerEmails ? (
                         <PeopleChipList
@@ -1442,6 +1606,8 @@ export default function Me({
           )}
         />
         <ResignationDetails
+          canViewFieldHistory={canViewFieldHistory}
+          onViewAll={openFullHistory}
           employee={employee}
           personalInfo={personalInfo}
           employeeId={targetEmployeeId}
@@ -1463,7 +1629,12 @@ export default function Me({
               <PersonalInfoFields isSaving={isSaving} />
             )}
             renderReadOnly={() => (
-              <PersonalInfoReadOnly personalInfo={personalInfo} age={age} />
+              <PersonalInfoReadOnly
+                personalInfo={personalInfo}
+                age={age}
+                canViewFieldHistory={canViewFieldHistory}
+                onViewAll={openFullHistory}
+              />
             )}
           />
         )}
@@ -2048,6 +2219,7 @@ export default function Me({
         )}
 
         <Accordion
+          ref={historyRef}
           expanded={historyExpanded}
           onChange={(_, expanded) => {
             setHistoryExpanded(expanded);
