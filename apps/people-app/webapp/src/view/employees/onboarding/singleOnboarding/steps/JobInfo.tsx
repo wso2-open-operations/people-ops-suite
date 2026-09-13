@@ -157,6 +157,13 @@ export const createJobInfoValidationSchema = (
     companyId: Yup.number()
       .required("Company is required")
       .min(1, "Select a valid company"),
+    // Every employee belongs to a house. Onboarding assigns one automatically from the
+    // employee ID, so a missing one means a record that predates that — and it has to
+    // be set before the record can be saved again, since a house-less employee cannot
+    // have a QR code generated.
+    houseId: Yup.number()
+      .required("House is required")
+      .min(1, "Select a valid house"),
     officeId: Yup.number()
       .optional()
       .notOneOf([0], 'Select an office or explicitly choose "None"'),

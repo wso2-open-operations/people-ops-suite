@@ -454,7 +454,6 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
               label: h.name,
             })),
             (id) => setFieldValue("houseId", id),
-            { includeNone: true },
           )}
         </Cell>
       </Cluster>
