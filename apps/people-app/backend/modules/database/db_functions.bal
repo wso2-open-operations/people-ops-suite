@@ -1007,6 +1007,8 @@ isolated function syncAdditionalManagers(string employeeId, Email[] desiredEmail
 public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
     returns error? {
 
+    check validateResignationDateOrder(employeeId, payload);
+
     transaction {
         sql:ExecutionResult executionResult =
             check databaseClient->execute(updateEmployeeJobInfoQuery(employeeId, payload, updatedBy));
@@ -1063,6 +1065,48 @@ public isolated function updateResignation(string employeeId, UpdateResignationP
     };
 
     return updateEmployeeJobInfo(employeeId, jobInfoPayload, updatedBy);
+}
+
+# Reject a departure whose employment ends before the employee stops coming in.
+#
+# Either date may be absent from the payload while the other is being changed, so the
+# effective pair is the incoming value falling back to what is already stored — checking
+# only the payload would let a one-sided edit produce an impossible pair.
+#
+# Dates are ISO "YYYY-MM-DD", which compares correctly as a string.
+#
+# + employeeId - Employee ID
+# + payload - Job information update payload
+# + return - Nil when the order is possible, otherwise an error
+isolated function validateResignationDateOrder(string employeeId, UpdateEmployeeJobInfoPayload payload)
+    returns error? {
+
+    string? incomingInOffice = payload.finalDayInOffice;
+    string? incomingOfEmployment = payload.finalDayOfEmployment;
+
+    if incomingInOffice is () && incomingOfEmployment is () {
+        return;
+    }
+
+    string? storedInOffice = ();
+    string? storedOfEmployment = ();
+    if incomingInOffice is () || incomingOfEmployment is () {
+        Employee|error? employee = getEmployeeInfo(employeeId);
+        if employee is error {
+            return employee;
+        }
+        if employee is Employee {
+            storedInOffice = employee.finalDayInOffice;
+            storedOfEmployment = employee.finalDayOfEmployment;
+        }
+    }
+
+    string? inOffice = incomingInOffice ?: storedInOffice;
+    string? ofEmployment = incomingOfEmployment ?: storedOfEmployment;
+
+    if inOffice is string && ofEmployment is string && ofEmployment < inOffice {
+        return error(RESIGNATION_DATE_ORDER_ERROR);
+    }
 }
 
 # Check whether the job-info update payload contains any leaver-specific fields.

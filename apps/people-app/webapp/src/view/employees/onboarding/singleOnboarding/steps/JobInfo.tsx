@@ -49,7 +49,12 @@ import {
   type ContinuousServiceRecordInfo,
 } from "@slices/employeeSlice/employee";
 import { EmployeeStatus } from "@/types/types";
-import { normalizeEmail, sortAndFormatOptions } from "@utils/utils";
+import {
+  RESIGNATION_DATE_ORDER_MESSAGE,
+  isResignationDateOrderValid,
+  normalizeEmail,
+  sortAndFormatOptions,
+} from "@utils/utils";
 import { ResignationReasons } from "@config/constant";
 import {
   canonicalizeReason,
@@ -203,7 +208,18 @@ export const createJobInfoValidationSchema = (
           status === EmployeeStatus.MarkedLeaver || status === EmployeeStatus.Left,
         then: (schema) =>
           schema.required("Required when status is Marked leaver or Left"),
-      }),
+      })
+      // Employment cannot end before someone stops coming in. The same day is valid.
+      .test(
+        "after-final-day-in-office",
+        RESIGNATION_DATE_ORDER_MESSAGE,
+        function (value) {
+          return isResignationDateOrderValid(
+            this.parent.finalDayInOffice,
+            value,
+          );
+        },
+      ),
     resignationReason: Yup.string()
       .max(300, "Resignation reason must be at most 300 characters")
       .transform((value) =>

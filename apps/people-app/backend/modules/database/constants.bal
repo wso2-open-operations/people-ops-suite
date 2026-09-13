@@ -57,3 +57,7 @@ public const OFFICE_CLEAR_SENTINEL = -1;
 
 # Sentinel value for updateEmployeeJobInfoQuery's unitId parameter that clears unit_id to NULL.
 public const UNIT_CLEAR_SENTINEL = -1;
+
+# Message returned when a departure's final day of employment precedes its last day in office.
+public const RESIGNATION_DATE_ORDER_ERROR =
+        "Final day of employment cannot be before the last day in office";

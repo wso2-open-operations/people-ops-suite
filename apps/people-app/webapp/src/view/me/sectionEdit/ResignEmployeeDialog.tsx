@@ -34,6 +34,10 @@ import {
   updateResignation,
 } from "@slices/employeeSlice/employee";
 import { useAppDispatch } from "@slices/store";
+import {
+  RESIGNATION_DATE_ORDER_MESSAGE,
+  isResignationDateOrderValid,
+} from "@utils/utils";
 
 import ResignationReasonField from "@view/me/sectionEdit/ResignationReasonField";
 
@@ -76,6 +80,12 @@ const ResignEmployeeDialog = ({
     resignationReason: !resignationReason?.trim(),
   };
   const hasMissing = Object.values(missing).some(Boolean);
+  // Employment cannot end before someone stops coming in; the same day is valid.
+  const isDateOrderInvalid = !isResignationDateOrderValid(
+    finalDayInOffice,
+    finalDayOfEmployment,
+  );
+  const canSubmit = !hasMissing && !isDateOrderInvalid;
 
   const reset = () => {
     setFinalDayInOffice(null);
@@ -92,7 +102,7 @@ const ResignEmployeeDialog = ({
 
   const handleSubmit = async () => {
     setTouched(true);
-    if (hasMissing) return;
+    if (!canSubmit) return;
 
     setIsSaving(true);
     try {
@@ -123,6 +133,7 @@ const ResignEmployeeDialog = ({
     value: string | null,
     onChange: (v: string | null) => void,
     isMissing: boolean,
+    orderError?: boolean,
   ) => (
     <DatePicker
       label={`${label} *`}
@@ -137,8 +148,12 @@ const ResignEmployeeDialog = ({
         textField: {
           size: "small",
           fullWidth: true,
-          error: touched && isMissing,
-          helperText: touched && isMissing ? `${label} is required` : undefined,
+          error: (touched && isMissing) || Boolean(orderError),
+          helperText: orderError
+            ? RESIGNATION_DATE_ORDER_MESSAGE
+            : touched && isMissing
+              ? `${label} is required`
+              : undefined,
         },
       }}
     />
@@ -170,6 +185,7 @@ const ResignEmployeeDialog = ({
               finalDayOfEmployment,
               setFinalDayOfEmployment,
               missing.finalDayOfEmployment,
+              isDateOrderInvalid,
             )}
           </Grid>
           <Grid item xs={12}>
@@ -200,7 +216,7 @@ const ResignEmployeeDialog = ({
           variant="contained"
           color="secondary"
           onClick={handleSubmit}
-          disabled={isSaving}
+          disabled={isSaving || isDateOrderInvalid}
           startIcon={
             isSaving ? <CircularProgress size={16} color="inherit" /> : undefined
           }

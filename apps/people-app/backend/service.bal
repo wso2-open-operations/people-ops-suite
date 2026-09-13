@@ -1577,7 +1577,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - HTTP OK or HTTP errors
     resource function patch employees/[string employeeId]/resignation(http:RequestContext ctx,
             @http:Payload database:UpdateResignationPayload payload)
-        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+        returns http:Ok|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1610,6 +1610,14 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         error? updateResult = database:updateResignation(employeeId, payload, userInfo.email);
         if updateResult is error {
+            // An impossible date pair is the caller's mistake, not a server fault, so it
+            // is reported as such with the reason rather than a generic failure.
+            if updateResult.message() == database:RESIGNATION_DATE_ORDER_ERROR {
+                log:printWarn(database:RESIGNATION_DATE_ORDER_ERROR, employeeId = employeeId);
+                return <http:BadRequest>{
+                    body: {message: database:RESIGNATION_DATE_ORDER_ERROR}
+                };
+            }
             string customErr = string `Error occurred while recording the resignation for ID: ${employeeId}`;
             log:printError(customErr, updateResult, employeeId = employeeId);
             return <http:InternalServerError>{body: {message: customErr}};
