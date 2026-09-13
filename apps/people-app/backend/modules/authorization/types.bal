@@ -34,6 +34,8 @@ public type AppRoles record {|
     string EMPLOYEE_VIEW_ROLE;
     # Role granting employee-view access plus the ability to record a resignation
     string RESIGNATION_ROLE;
+    # Role granting access to the QR code report only
+    string QR_EXPORT_ROLE;
     # Roles for the external users(for vehicle saving purpose)
     string[] EXTERNAL_USER_ROLES = [];
 |};

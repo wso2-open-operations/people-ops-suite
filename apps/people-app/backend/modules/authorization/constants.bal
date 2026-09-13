@@ -28,3 +28,5 @@ public const SERVICE_DESK_PRIVILEGE = 991;
 public const EMPLOYEE_VIEW_PRIVILEGE = 989;
 # Everything the employee-view role sees, plus the ability to record a departure.
 public const RESIGNATION_PRIVILEGE = 985;
+# Access to the QR code report and nothing else: no employee profile visibility.
+public const QR_EXPORT_PRIVILEGE = 983;

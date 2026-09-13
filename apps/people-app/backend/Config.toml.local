@@ -6,6 +6,7 @@ ADMIN_ROLE = ""
 SERVICE_DESK_ROLE = ""
 EMPLOYEE_VIEW_ROLE = ""
 RESIGNATION_ROLE = ""
+QR_EXPORT_ROLE = ""
 EXTERNAL_USER_ROLES = [];
 
 [people.database.dbConfig]

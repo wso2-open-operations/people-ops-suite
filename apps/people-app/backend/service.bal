@@ -63,6 +63,19 @@ service class ErrorInterceptor {
 #
 # + userInfo - Invoker's JWT payload
 # + return - true when the caller may read any employee
+# Whether the caller may use the QR code report.
+#
+# The QR export role reaches this and nothing else: it grants no visibility of an
+# employee profile, so it is checked separately from canReadAnyEmployee rather than
+# folded into it.
+#
+# + userInfo - Invoker's JWT payload
+# + return - true when the caller may search for and download QR codes
+isolated function canExportQrCodes(authorization:CustomJwtPayload userInfo) returns boolean =>
+    authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.QR_EXPORT_ROLE], userInfo.groups);
+
 isolated function canReadAnyEmployee(authorization:CustomJwtPayload userInfo) returns boolean =>
     authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
     || authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_VIEW_ROLE], userInfo.groups)
@@ -138,6 +151,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if authorization:checkPermissions([authorization:authorizedRoles.RESIGNATION_ROLE], userInfo.groups) {
             privileges.push(authorization:RESIGNATION_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.QR_EXPORT_ROLE], userInfo.groups) {
+            privileges.push(authorization:QR_EXPORT_PRIVILEGE);
         }
         boolean|error isLeadUser = database:isLead(userInfo.email);
         if isLeadUser is error {
@@ -337,9 +353,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
         }
 
-        boolean hasQrExportAccess
-                = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
-                || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
+        boolean hasQrExportAccess = canExportQrCodes(userInfo);
 
         database:Employee|error? employee = database:getEmployeeInfo(employeeId);
         if employee is error {
@@ -538,9 +552,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasQrSearchAccess
-            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
-            || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
+        boolean hasQrSearchAccess = canExportQrCodes(userInfo);
 
         if !hasQrSearchAccess {
             log:printWarn("User is not authorized to search employees for QR export",

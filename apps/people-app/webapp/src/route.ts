@@ -79,7 +79,14 @@ const ReportsRoot = () => {
   const { pathname } = useLocation();
   const roles = useSelector(selectRoles);
   if (pathname === "/reports") {
-    const redirectTo = roles.includes(Role.ADMIN)
+    // Land on a report the caller can actually open: the employee reports and the QR
+    // report are reachable by different roles, and sending someone to one they cannot
+    // open would show them a 404 from their own sidebar.
+    const canSeeEmployeeReports =
+      roles.includes(Role.ADMIN) ||
+      roles.includes(Role.EMPLOYEE_VIEW) ||
+      roles.includes(Role.RESIGNATION);
+    const redirectTo = canSeeEmployeeReports
       ? "/reports/active-employees"
       : "/reports/qr-codes";
     return React.createElement(Navigate, { to: redirectTo, replace: true });
@@ -177,7 +184,13 @@ export const routes: RouteObjectWithRole[] = [
     text: "Reports",
     icon: React.createElement(AssessmentIcon),
     element: React.createElement(ReportsRoot),
-    allowRoles: [Role.ADMIN, Role.SERVICE_DESK, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
+    allowRoles: [
+      Role.ADMIN,
+      Role.SERVICE_DESK,
+      Role.EMPLOYEE_VIEW,
+      Role.RESIGNATION,
+      Role.QR_EXPORT,
+    ],
     children: [
       {
         path: "/reports/active-employees",
@@ -198,7 +211,7 @@ export const routes: RouteObjectWithRole[] = [
         text: "QR Codes",
         icon: React.createElement(QrCode2Icon),
         element: React.createElement(View.qrCodesReport),
-        allowRoles: [Role.ADMIN, Role.SERVICE_DESK],
+        allowRoles: [Role.ADMIN, Role.SERVICE_DESK, Role.QR_EXPORT],
       },
     ],
   },

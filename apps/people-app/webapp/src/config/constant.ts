@@ -40,6 +40,8 @@ export const SERVICE_DESK_PRIVILEGE = 991;
 export const EMPLOYEE_VIEW_PRIVILEGE = 989;
 /** Employee-view access plus the ability to record a resignation. */
 export const RESIGNATION_PRIVILEGE = 985;
+/** Access to the QR code report only. */
+export const QR_EXPORT_PRIVILEGE = 983;
 export const DEFAULT_LIMIT_VALUE = 10;
 export const DEFAULT_OFFSET_VALUE = 0;
 export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];

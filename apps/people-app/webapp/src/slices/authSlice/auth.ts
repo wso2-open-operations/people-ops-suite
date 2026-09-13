@@ -19,6 +19,7 @@ import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import {
   ADMIN_PRIVILEGE,
   EMPLOYEE_VIEW_PRIVILEGE,
+  QR_EXPORT_PRIVILEGE,
   RESIGNATION_PRIVILEGE,
   LEAD_PRIVILEGE,
   SERVICE_DESK_PRIVILEGE,
@@ -35,6 +36,7 @@ export enum Role {
   SERVICE_DESK = "SERVICE_DESK",
   EMPLOYEE_VIEW = "EMPLOYEE_VIEW",
   RESIGNATION = "RESIGNATION",
+  QR_EXPORT = "QR_EXPORT",
 }
 
 interface AuthState {
@@ -112,6 +114,9 @@ export const loadPrivileges = createAsyncThunk(
     }
     if (userPrivileges.includes(RESIGNATION_PRIVILEGE)) {
       roles.push(Role.RESIGNATION);
+    }
+    if (userPrivileges.includes(QR_EXPORT_PRIVILEGE)) {
+      roles.push(Role.QR_EXPORT);
     }
     if (userPrivileges.includes(SERVICE_DESK_PRIVILEGE)) {
       roles.push(Role.SERVICE_DESK);
