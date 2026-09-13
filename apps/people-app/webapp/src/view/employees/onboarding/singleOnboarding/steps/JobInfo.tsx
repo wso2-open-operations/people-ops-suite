@@ -49,7 +49,7 @@ import {
   type ContinuousServiceRecordInfo,
 } from "@slices/employeeSlice/employee";
 import { EmployeeStatus } from "@/types/types";
-import { sortAndFormatOptions } from "@utils/utils";
+import { normalizeEmail, sortAndFormatOptions } from "@utils/utils";
 import { ResignationReasons } from "@config/constant";
 import {
   canonicalizeReason,
@@ -955,7 +955,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
               onChange={handleChange}
               onBlur={(e: { target: { value: string } }) => {
                 handleBlur(e);
-                const email = e.target.value?.trim();
+                // Normalise on blur rather than per keystroke, so the field does not
+                // fight someone typing a capital letter mid-address.
+                const email = normalizeEmail(e.target.value ?? "");
+                if (email !== (values.workEmail ?? "")) {
+                  setFieldValue("workEmail", email);
+                }
                 if (email && Yup.string().email().isValidSync(email)) {
                   dispatch(fetchContinuousServiceRecord(email));
                 } else {

@@ -35,7 +35,7 @@ import {
   EmployeeGenders,
   EmployeeTitle,
 } from "@config/constant";
-import { sortAndFormatOptions } from "@utils/utils";
+import { normalizeEmail, sortAndFormatOptions } from "@utils/utils";
 
 type PersonalInfoValues = CreateEmployeeFormValues["personalInfo"];
 
@@ -118,7 +118,17 @@ const PersonalInfoFields = ({ isSaving }: { isSaving: boolean }) => {
         name={name}
         value={(values.personalInfo[field] as string) ?? ""}
         onChange={handleChange}
-        onBlur={handleBlur}
+        onBlur={(e) => {
+          handleBlur(e);
+          // Email is stored lowercase so the same address is never recorded in two
+          // different casings. Normalising on blur leaves typing untouched.
+          if (field === "personalEmail") {
+            const normalized = normalizeEmail(e.target.value ?? "");
+            if (normalized !== (values.personalInfo[field] ?? "")) {
+              setFieldValue(name, normalized);
+            }
+          }
+        }}
         disabled={isSaving}
         error={err(name)}
         helperText={errText(name)}

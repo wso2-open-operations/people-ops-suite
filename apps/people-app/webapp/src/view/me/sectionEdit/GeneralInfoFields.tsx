@@ -37,7 +37,7 @@ import {
 import { useAppDispatch } from "@slices/store";
 import { UNIT_CLEAR_SENTINEL } from "@slices/careerFunctionSlice/careerFunction";
 import { useAppSelector } from "@slices/store";
-import { sortAndFormatOptions } from "@utils/utils";
+import { normalizeEmail, sortAndFormatOptions } from "@utils/utils";
 
 import ResignationReasonField from "@view/me/sectionEdit/ResignationReasonField";
 import { useEmploymentRules } from "@view/me/sectionEdit/useEmploymentRules";
@@ -286,9 +286,14 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
             helperText={errText("workEmail")}
             onBlur={(e) => {
               handleBlur(e);
+              // Stored lowercase so the same address is never recorded in two casings;
+              // normalising on blur leaves typing untouched.
+              const email = normalizeEmail(e.target.value ?? "");
+              if (email !== (values.workEmail ?? "")) {
+                setFieldValue("workEmail", email);
+              }
               // Prior employment under the same address is what makes an employee a
               // relocation, so the lookup is keyed on the email as the wizard does.
-              const email = e.target.value?.trim();
               if (email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
                 dispatch(fetchContinuousServiceRecord(email));
               } else {

@@ -251,3 +251,16 @@ export const countCsvDataRows = (rows: string[][]): number => {
 // Strips the Byte Order Mark (BOM) from the beginning of a string if it exists.
 export const stripBom = (text: string): string =>
   text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+
+/**
+ * Normalises an email address for storage.
+ *
+ * Addresses are case-insensitive in practice, and the backend already compares them with
+ * LOWER(), but whatever case was typed is what gets stored — so the same person could be
+ * recorded as TEST@wso2.com in one place and test@wso2.com in another. Lowercasing at the
+ * input keeps what is written consistent.
+ *
+ * Surrounding whitespace is dropped too, since a trailing space from a paste is invisible
+ * in the field but survives into the record.
+ */
+export const normalizeEmail = (value: string): string => value.trim().toLowerCase();
