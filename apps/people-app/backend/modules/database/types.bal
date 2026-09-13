@@ -201,6 +201,32 @@ public type Employee record {|
     string? additionalManagerEmails;
     # Gender (from employee personal info)
     string? gender;
+    # NIC or passport number (from employee personal info)
+    string? nicOrPassport;
+    # Date of birth (from employee personal info)
+    string? dateOfBirth;
+    # Nationality (from employee personal info)
+    string? nationality;
+    # Personal email address (from employee personal info)
+    string? personalEmail;
+    # Personal phone number (from employee personal info)
+    string? personalPhone;
+    # Resident number (from employee personal info)
+    string? residentNumber;
+    # Address line 1 (from employee personal info)
+    string? addressLine1;
+    # Address line 2 (from employee personal info)
+    string? addressLine2;
+    # City (from employee personal info)
+    string? city;
+    # State or province (from employee personal info)
+    string? stateOrProvince;
+    # Postal code (from employee personal info)
+    string? postalCode;
+    # Country (from employee personal info)
+    string? country;
+    # Emergency contacts, flattened as "name - relationship - mobile" entries
+    string? emergencyContacts;
     # Employee status
     string employeeStatus;
     # Continuous service record reference (Employee ID)

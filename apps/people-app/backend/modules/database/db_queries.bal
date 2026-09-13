@@ -310,6 +310,29 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             h.name AS house,
             e.house_id AS houseId,
             pi.gender AS gender,
+            pi.nic_or_passport AS nicOrPassport,
+            pi.dob AS dateOfBirth,
+            pi.nationality AS nationality,
+            pi.personal_email AS personalEmail,
+            pi.personal_phone AS personalPhone,
+            pi.resident_number AS residentNumber,
+            pi.address_line_1 AS addressLine1,
+            pi.address_line_2 AS addressLine2,
+            pi.city AS city,
+            pi.state_or_province AS stateOrProvince,
+            pi.postal_code AS postalCode,
+            pi.country AS country,
+            -- Emergency contacts are one-to-many, so they are flattened into a single
+            -- cell here rather than widening the row: an employee may have any number
+            -- of them, and fixed "Contact 1/2/3" columns would truncate or pad.
+            (
+                SELECT GROUP_CONCAT(
+                    CONCAT_WS(' - ', piec.name, piec.relationship, piec.mobile)
+                    ORDER BY piec.id SEPARATOR '; '
+                )
+                FROM personal_info_emergency_contacts piec
+                WHERE piec.personal_info_id = pi.id AND piec.is_active = 1
+            ) AS emergencyContacts,
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
