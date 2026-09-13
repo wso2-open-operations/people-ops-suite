@@ -22,6 +22,7 @@ import QrCode2Icon from "@mui/icons-material/QrCode2";
 import DownloadIcon from "@mui/icons-material/Download";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   Alert,
@@ -111,7 +112,10 @@ function QrCodesReportContent() {
       .join("")
       .trim()
       .slice(0, SEARCH_MAX_LENGTH);
-    debounceRef.current = setTimeout(() => performSearch(sanitized), SEARCH_DEBOUNCE_MS);
+    debounceRef.current = setTimeout(
+      () => performSearch(sanitized),
+      SEARCH_DEBOUNCE_MS,
+    );
   }
 
   /**
@@ -158,9 +162,10 @@ function QrCodesReportContent() {
         const skipped = additions.length - added.length;
         dispatch(
           enqueueSnackbarMessage({
-            message: skipped > 0
-              ? `Added ${added.length}; ${skipped} not added, the limit is ${QR_EXPORT_LIMIT}.`
-              : `Added ${added.length} employee${added.length === 1 ? "" : "s"} who started on ${startDate}.`,
+            message:
+              skipped > 0
+                ? `Added ${added.length}; ${skipped} not added, the limit is ${QR_EXPORT_LIMIT}.`
+                : `Added ${added.length} employee${added.length === 1 ? "" : "s"} who started on ${startDate}.`,
             type: skipped > 0 ? "warning" : "success",
           }),
         );
@@ -198,7 +203,9 @@ function QrCodesReportContent() {
         const url = URL.createObjectURL(response.data as Blob);
         const a = document.createElement("a");
         a.href = url;
-        const safeName = `${emp.firstName}_${emp.lastName}`.replace(/[^\w\s-]/g, "").trim();
+        const safeName = `${emp.firstName}_${emp.lastName}`
+          .replace(/[^\w\s-]/g, "")
+          .trim();
         a.download = `${emp.employeeId}-${safeName}.png`;
         document.body.appendChild(a);
         a.click();
@@ -231,13 +238,16 @@ function QrCodesReportContent() {
             "& .MuiAlert-icon": { alignItems: "center" },
           }}
         >
-          Search for employees and add them to the list. Click <strong>Export QR Codes</strong> to
-          save each QR as an individual PNG file. <br />
-          A maximum of <strong>{QR_EXPORT_LIMIT} employees</strong> can be exported at a time.
+          Search for employees and add them to the list. Click{" "}
+          <strong>Export QR Codes</strong> to save each QR as an individual PNG
+          file. <br />A maximum of <strong>{QR_EXPORT_LIMIT} employees</strong>{" "}
+          can be exported at a time.
         </Alert>
       </Box>
 
-      <Box sx={{ px: 2, pb: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+      <Box
+        sx={{ px: 2, pb: 2, display: "flex", flexDirection: "column", gap: 2 }}
+      >
         {/* Add a whole joining cohort at once: picking each person out of the search is
             the slow path when badges are printed for everyone who started on a day. */}
         <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
@@ -254,7 +264,6 @@ function QrCodesReportContent() {
               textField: {
                 size: "small",
                 sx: { minWidth: 200 },
-                helperText: "Adds everyone who started on this day",
               },
             }}
           />
@@ -266,13 +275,29 @@ function QrCodesReportContent() {
             startIcon={
               startDateLoading ? (
                 <CircularProgress size={16} color="inherit" />
-              ) : undefined
+              ) : (
+                <GroupAddIcon />
+              )
             }
-            sx={{ textTransform: "none", mt: 0.25, whiteSpace: "nowrap" }}
+            // Styled as Clear All is: this is a list-management action alongside it,
+            // not something competing with Export for attention.
+            sx={{
+              textTransform: "none",
+              whiteSpace: "nowrap",
+              color: "text.secondary",
+              borderColor: "divider",
+              height: 40,
+            }}
           >
-            {startDateLoading ? "Adding..." : "Add all"}
+            {startDateLoading ? "Adding..." : "Add All"}
           </Button>
         </Box>
+        <Typography
+          color="text.secondary"
+          sx={{ fontSize: 12, mt: -1.25, ml: 0.25 }}
+        >
+          Adds every active employee who started on that day to the list below.
+        </Typography>
         {/* Search */}
         <Autocomplete
           key={autocompleteKey}
@@ -409,22 +434,33 @@ function QrCodesReportContent() {
                         flexShrink: 0,
                       }}
                     >
-                      {missingHouse
-                        ? <WarningAmberIcon sx={{ fontSize: 20 }} />
-                        : getInitials(emp.firstName, emp.lastName)}
+                      {missingHouse ? (
+                        <WarningAmberIcon sx={{ fontSize: 20 }} />
+                      ) : (
+                        getInitials(emp.firstName, emp.lastName)
+                      )}
                     </Avatar>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography variant="body2" fontWeight={600} noWrap>
                         {emp.firstName} {emp.lastName}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" noWrap>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        noWrap
+                      >
                         {emp.workEmail} · {emp.employeeId}
                       </Typography>
                       {missingHouse && (
                         <Typography
                           variant="caption"
                           color="error"
-                          sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25 }}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            mt: 0.25,
+                          }}
                         >
                           <WarningAmberIcon sx={{ fontSize: 13 }} />
                           No house assigned — QR code cannot be generated
@@ -432,7 +468,10 @@ function QrCodesReportContent() {
                       )}
                     </Box>
                     <Tooltip title="Remove">
-                      <IconButton size="small" onClick={() => handleRemove(emp.employeeId)}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemove(emp.employeeId)}
+                      >
                         <CloseIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </Tooltip>
@@ -445,7 +484,14 @@ function QrCodesReportContent() {
         )}
 
         {/* Actions */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 1.5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: 1.5,
+          }}
+        >
           {selected.length > 0 && (
             <Button
               variant="outlined"
@@ -453,23 +499,37 @@ function QrCodesReportContent() {
               startIcon={<DeleteSweepIcon />}
               onClick={handleClearAll}
               disabled={isDownloading}
-              sx={{ textTransform: "none", color: "text.secondary", borderColor: "divider" }}
+              sx={{
+                textTransform: "none",
+                color: "text.secondary",
+                borderColor: "divider",
+              }}
             >
               Clear All
             </Button>
           )}
           <Tooltip
-            title={hasUnexportable ? "Remove employees with no house assigned before exporting" : ""}
+            title={
+              hasUnexportable
+                ? "Remove employees with no house assigned before exporting"
+                : ""
+            }
           >
             <span>
               <Button
                 variant="contained"
                 color="secondary"
                 startIcon={
-                  isDownloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />
+                  isDownloading ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : (
+                    <DownloadIcon />
+                  )
                 }
                 onClick={handleDownload}
-                disabled={selected.length === 0 || isDownloading || hasUnexportable}
+                disabled={
+                  selected.length === 0 || isDownloading || hasUnexportable
+                }
                 sx={{ textTransform: "none" }}
               >
                 {isDownloading
