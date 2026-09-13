@@ -18,6 +18,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 import { ConfirmationType } from "@/types/types";
 import { useConfirmationModalContext } from "@context/DialogContext";
@@ -101,12 +102,12 @@ const SectionEditHeader = ({
             <>
               <Button
                 size="small"
-                variant="outlined"
+                variant="text"
                 color="inherit"
                 startIcon={<CloseIcon />}
                 disabled={isSaving}
                 onClick={handleCancel}
-                sx={{ textTransform: "none" }}
+                sx={{ textTransform: "none", color: "text.secondary" }}
               >
                 Cancel
               </Button>
@@ -134,8 +135,7 @@ const SectionEditHeader = ({
           ) : (
             <Button
               size="small"
-              variant="outlined"
-              color="inherit"
+              variant="text"
               startIcon={<EditOutlinedIcon />}
               // Editing two sections at once could patch a stale copy of the record
               // from whichever saves second.
@@ -149,7 +149,17 @@ const SectionEditHeader = ({
                 stop(e);
                 beginEdit(section);
               }}
-              sx={{ textTransform: "none" }}
+              sx={(theme) => ({
+                textTransform: "none",
+                fontWeight: 600,
+                color: theme.palette.secondary.contrastText,
+                "&:hover": {
+                  backgroundColor: alpha(
+                    theme.palette.secondary.contrastText,
+                    theme.palette.mode === "dark" ? 0.16 : 0.08,
+                  ),
+                },
+              })}
             >
               Edit
             </Button>

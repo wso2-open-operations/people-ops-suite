@@ -721,6 +721,35 @@ export default function Me({
     };
   };
 
+  // Sits in the header beside the chips, so it borrows their surface, radius and
+  // shadow rather than arriving as a default outlined button. Slightly taller than
+  // a chip (38 vs 34) so it still reads as the actionable element in the row.
+  const resignButtonSx = (theme: Theme) => {
+    const isDark = theme.palette.mode === "dark";
+    const orange = theme.palette.secondary.contrastText;
+
+    return {
+      textTransform: "none",
+      whiteSpace: "nowrap",
+      borderRadius: 999,
+      height: 38,
+      px: 2,
+      fontWeight: 600,
+      fontSize: 13,
+      color: orange,
+      backgroundColor: isDark
+        ? alpha(theme.palette.background.paper, 0.6)
+        : theme.palette.common.white,
+      border: `1px solid ${alpha(orange, isDark ? 0.45 : 0.35)}`,
+      boxShadow: isDark ? "none" : `0 6px 18px ${alpha("#000", 0.06)}`,
+      "&:hover": {
+        backgroundColor: alpha(orange, isDark ? 0.16 : 0.08),
+        borderColor: alpha(orange, isDark ? 0.7 : 0.55),
+        boxShadow: isDark ? "none" : `0 6px 18px ${alpha("#000", 0.08)}`,
+      },
+    };
+  };
+
   const handleQrOpen = () => {
     setQrDialogOpen(true);
     if (targetEmployeeId) dispatch(fetchEmployeeQrCode(targetEmployeeId));
@@ -964,10 +993,9 @@ export default function Me({
               {canResignEmployee && (
                 <Button
                   variant="outlined"
-                  color="inherit"
                   startIcon={<PersonOffIcon />}
                   onClick={() => setResignDialogOpen(true)}
-                  sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+                  sx={(theme) => resignButtonSx(theme)}
                 >
                   Resign
                 </Button>
