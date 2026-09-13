@@ -23,6 +23,9 @@ const SOURCE_TABLE_PERSONAL_INFO_AUDIT = "personal_info_audit";
 # Source table name for employee_additional_managers_audit snapshots.
 const SOURCE_TABLE_ADDITIONAL_MANAGERS_AUDIT = "employee_additional_managers_audit";
 
+# Source table name for resignation_audit snapshots.
+const SOURCE_TABLE_RESIGNATION_AUDIT = "resignation_audit";
+
 # Synthetic field name for additional-manager events, which describe a relationship
 # rather than a column on the employee row.
 const FIELD_ADDITIONAL_MANAGER = "additional_manager";
@@ -62,6 +65,16 @@ final readonly & string[] TRACKED_PERSONAL_INFO_FIELDS = [
     "postal_code", "country", "nationality"
 ];
 
+# Resignation fields surfaced in the history.
+#
+# `date` is deliberately excluded: it is an audit timestamp the backend sets itself
+# rather than something anyone enters, so tracking it would emit a second event on
+# every resignation write. The audit columns are excluded for the same reason as on
+# the employee table.
+final readonly & string[] TRACKED_RESIGNATION_FIELDS = [
+    "final_day_in_office", "final_day_of_employment", "reason"
+];
+
 # The tracked field list for a given audit source.
 #
 # + sourceTable - Audit table the snapshot came from
@@ -72,6 +85,9 @@ isolated function trackedFieldsFor(string sourceTable) returns string[] {
     }
     if sourceTable == SOURCE_TABLE_PERSONAL_INFO_AUDIT {
         return TRACKED_PERSONAL_INFO_FIELDS;
+    }
+    if sourceTable == SOURCE_TABLE_RESIGNATION_AUDIT {
+        return TRACKED_RESIGNATION_FIELDS;
     }
     return [];
 }

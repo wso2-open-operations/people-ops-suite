@@ -2812,6 +2812,31 @@ isolated function getEmployeeAdditionalManagersAuditSnapshotsQuery(int[] employe
     );
 }
 
+# Fetch audit snapshots from the resignation_audit table for a set of employee rows.
+#
+# resignation keys on employee_id, so its audit keys on employee_pk_id exactly as employee_audit does
+# and needs none of the anchor-row indirection personal_info_audit requires.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning resignation_audit rows tagged with their source table
+isolated function getResignationAuditSnapshotsQuery(int[] employeePkIds) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildIntInClause(employeePkIds);
+    return sql:queryConcat(
+            `SELECT
+                employee_pk_id AS employeePkId,
+                'resignation_audit' AS sourceTable,
+                action_type AS actionType,
+                action_by AS actionBy,
+                action_on AS actionOn,
+                data AS data
+            FROM resignation_audit
+            WHERE employee_pk_id IN (`,
+            inClause,
+            `)
+            ORDER BY action_on ASC`
+    );
+}
+
 # Fetch audit snapshots from the personal_info_audit table for the person behind a set of employee rows.
 #
 # personal_info_audit keys on personal_info_pk_id, not employee_pk_id. All employee rows belonging to one

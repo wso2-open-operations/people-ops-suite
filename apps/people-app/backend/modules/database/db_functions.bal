@@ -1773,8 +1773,17 @@ public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSna
         check from AuditSnapshot snapshot in additionalManagersAuditStream
         select snapshot;
 
-    AuditSnapshot[] allSnapshots =
-        [...employeeAuditSnapshots, ...personalInfoAuditSnapshots, ...additionalManagersAuditSnapshots];
+    stream<AuditSnapshot, error?> resignationAuditStream =
+        databaseClient->query(getResignationAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] resignationAuditSnapshots = check from AuditSnapshot snapshot in resignationAuditStream
+        select snapshot;
+
+    AuditSnapshot[] allSnapshots = [
+        ...employeeAuditSnapshots,
+        ...personalInfoAuditSnapshots,
+        ...additionalManagersAuditSnapshots,
+        ...resignationAuditSnapshots
+    ];
     return from AuditSnapshot snapshot in allSnapshots
         order by snapshot.actionOn ascending
         select snapshot;

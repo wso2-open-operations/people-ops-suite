@@ -42,8 +42,8 @@ import {
   PromotionRecord,
 } from "@slices/employeeSlice/employeeHistory";
 
-// Raw audit column names -> reader-facing labels. Keep in sync with
-// TRACKED_EMPLOYEE_FIELDS in backend/modules/database/history.bal.
+// Raw audit column names -> reader-facing labels. Keep in sync with the
+// TRACKED_*_FIELDS lists in backend/modules/database/history.bal.
 const FIELD_LABELS: Record<string, string> = {
   business_unit_id: "Business Unit",
   team_id: "Team",
@@ -81,6 +81,11 @@ const FIELD_LABELS: Record<string, string> = {
   postal_code: "Postal Code",
   country: "Country",
   nationality: "Nationality",
+  // resignation_audit fields. Labelled as they appear in the Resignation Details
+  // section, so a reader sees the same wording in the timeline and on the record.
+  final_day_in_office: "Last Day in Office",
+  final_day_of_employment: "Final Day of Employment",
+  reason: "Resignation Reason",
   // employee_additional_managers_audit
   additional_manager: "Additional Manager",
 };
