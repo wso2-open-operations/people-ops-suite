@@ -14,6 +14,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+
 import CommonPage from "@layout/pages/CommonPage";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -61,6 +64,8 @@ function QrCodesReportContent() {
   const dispatch = useAppDispatch();
 
   const [selected, setSelected] = useState<EmployeeQrInfo[]>([]);
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [startDateLoading, setStartDateLoading] = useState(false);
   const [autocompleteKey, setAutocompleteKey] = useState(0);
   const [searchOptions, setSearchOptions] = useState<EmployeeQrInfo[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -107,6 +112,63 @@ function QrCodesReportContent() {
       .trim()
       .slice(0, SEARCH_MAX_LENGTH);
     debounceRef.current = setTimeout(() => performSearch(sanitized), SEARCH_DEBOUNCE_MS);
+  }
+
+  /**
+   * Adds everyone who started on the chosen day to the export list.
+   *
+   * A joining cohort is the usual reason to print badges in bulk, and picking each
+   * person out of the search one at a time is the slow path this avoids. Anyone already
+   * selected is skipped rather than duplicated, and the export limit still applies —
+   * the list is truncated to it and the surplus reported.
+   */
+  async function handleAddByStartDate() {
+    if (!startDate) return;
+    setStartDateLoading(true);
+    try {
+      const action = await dispatch(
+        fetchQrCodeEmployees({
+          filters: {
+            employeeStatus: EmployeeStatus.Active,
+            startDate,
+          },
+          pagination: { limit: SEARCH_LIMIT, offset: 0 },
+          sort: { sortField: "startDate", sortOrder: "DESC" },
+        }),
+      );
+      if (!fetchQrCodeEmployees.fulfilled.match(action)) return;
+
+      const matches = action.payload.employees;
+      if (matches.length === 0) {
+        dispatch(
+          enqueueSnackbarMessage({
+            message: `No active employees started on ${startDate}.`,
+            type: "warning",
+          }),
+        );
+        return;
+      }
+
+      setSelected((prev) => {
+        const existing = new Set(prev.map((e) => e.employeeId));
+        const additions = matches.filter((e) => !existing.has(e.employeeId));
+        const room = QR_EXPORT_LIMIT - prev.length;
+        const added = additions.slice(0, Math.max(room, 0));
+
+        const skipped = additions.length - added.length;
+        dispatch(
+          enqueueSnackbarMessage({
+            message: skipped > 0
+              ? `Added ${added.length}; ${skipped} not added, the limit is ${QR_EXPORT_LIMIT}.`
+              : `Added ${added.length} employee${added.length === 1 ? "" : "s"} who started on ${startDate}.`,
+            type: skipped > 0 ? "warning" : "success",
+          }),
+        );
+        return [...prev, ...added];
+      });
+    } finally {
+      setStartDateLoading(false);
+    }
   }
 
   function handleSelect(_: unknown, value: EmployeeQrInfo | null) {
@@ -176,6 +238,41 @@ function QrCodesReportContent() {
       </Box>
 
       <Box sx={{ px: 2, pb: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+        {/* Add a whole joining cohort at once: picking each person out of the search is
+            the slow path when badges are printed for everyone who started on a day. */}
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
+          <DatePicker
+            label="Start date"
+            format="YYYY-MM-DD"
+            value={startDate ? dayjs(startDate) : null}
+            disabled={atLimit || startDateLoading}
+            onChange={(v: dayjs.Dayjs | null) =>
+              setStartDate(v ? v.format("YYYY-MM-DD") : null)
+            }
+            slotProps={{
+              field: { clearable: true },
+              textField: {
+                size: "small",
+                sx: { minWidth: 200 },
+                helperText: "Adds everyone who started on this day",
+              },
+            }}
+          />
+          <Button
+            variant="outlined"
+            color="inherit"
+            disabled={!startDate || atLimit || startDateLoading}
+            onClick={handleAddByStartDate}
+            startIcon={
+              startDateLoading ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : undefined
+            }
+            sx={{ textTransform: "none", mt: 0.25, whiteSpace: "nowrap" }}
+          >
+            {startDateLoading ? "Adding..." : "Add all"}
+          </Button>
+        </Box>
         {/* Search */}
         <Autocomplete
           key={autocompleteKey}

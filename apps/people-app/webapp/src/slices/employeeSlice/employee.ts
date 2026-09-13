@@ -146,6 +146,8 @@ export type QrEmployeesResponse = {
 
 export type QrCodeSearchFilters = {
   employeeStatus?: EmployeeStatus;
+  /** Matches employees whose start date is exactly this day (YYYY-MM-DD). */
+  startDate?: string;
 };
 
 export type QrCodeSearchPayload = {
@@ -172,6 +174,8 @@ export type Filters = {
   employeeStatuses?: EmployeeStatus[];
   directReports?: boolean;
   excludeFutureStartDate?: boolean;
+  /** Matches employees whose start date is exactly this day (YYYY-MM-DD). */
+  startDate?: string;
   includeMarkedLeavers?: boolean;
 };
 

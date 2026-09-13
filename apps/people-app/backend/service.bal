@@ -580,7 +580,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         database:EmployeesResponse|error result = database:getEmployees({
                                                                             searchString: payload.searchString,
-                                                                            filters: {employeeStatus: payload.filters.employeeStatus},
+                                                                            filters: {
+                                                                                employeeStatus: payload.filters.employeeStatus,
+                                                                                startDate: payload.filters.startDate
+                                                                            },
                                                                             pagination: payload.pagination,
                                                                             sort: payload.sort
                                                                         });

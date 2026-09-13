@@ -345,6 +345,8 @@ public type EmployeeFilters record {|
     boolean? directReports = ();
     # When true, excludes employees whose start date is in the future
     boolean? excludeFutureStartDate = ();
+    # Matches employees whose start date is exactly this day
+    string? startDate = ();
     # When true, includes employees with "Marked leaver" status alongside the primary employeeStatus filter
     boolean? includeMarkedLeavers = ();
 |};
@@ -458,6 +460,10 @@ public type EmployeeQrInfoResponse record {|
 public type QrCodeSearchFilters record {|
     # Employee status
     string? employeeStatus = ();
+    # Matches employees whose start date is exactly this day, so a joining cohort can be
+    # selected for badge printing without picking each person out of the search
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string? startDate = ();
 |};
 
 # Search payload for the QR code export endpoint.
