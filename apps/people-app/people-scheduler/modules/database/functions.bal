@@ -294,13 +294,16 @@ isolated function syncAdditionalManagers(int employeePkId, json desired, string 
     string[] currentEmails = check from record {|string email;|} row in currentStream
         select row.email;
 
+    // Both sides keyed lowercase at the comparison itself. The query already lowercases
+    // what it returns, but nothing here says so, and a caller that fetched these emails
+    // any other way would silently deactivate and re-add every one of them.
     map<string> currentMap = map from string email in currentEmails
-        select [email, email];
+        select [email.toLowerAscii(), email];
     map<string> desiredMap = map from string email in desiredEmails
         select [email.toLowerAscii(), email];
 
     sql:ParameterizedQuery[] deactivations = from string current in currentEmails
-        where !desiredMap.hasKey(current)
+        where !desiredMap.hasKey(current.toLowerAscii())
         select deactivateAdditionalManagerQuery(employeePkId, current, actor);
     if deactivations.length() > 0 {
         _ = check databaseClient->batchExecute(deactivations);
