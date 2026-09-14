@@ -2938,3 +2938,105 @@ isolated function isCurrentEmploymentQuery(string employeeId) returns sql:Parame
             LIMIT 1
         )
      LIMIT 1;`;
+
+# Insert a scheduled change.
+#
+# + employeeId - Employee table primary key
+# + payload - Effective date and the fields to change
+# + expected - What those fields hold now, for the supersede check on the day
+# + createdBy - Email of the person scheduling the change
+# + return - Parameterized insert query
+isolated function insertScheduledChangeQuery(int employeeId, string effectiveDate,
+        string columnChanges, string expected, string createdBy) returns sql:ParameterizedQuery =>
+    `INSERT INTO scheduled_employee_change
+            (employee_id, effective_date, changes, expected, created_by, updated_by)
+        VALUES (${employeeId}, ${effectiveDate}, ${columnChanges}, ${expected},
+            ${createdBy}, ${createdBy})`;
+
+# Fetch the scheduled changes for one employee, newest first.
+#
+# + employeeId - Employee table primary key
+# + pendingOnly - Limit to changes still waiting for their date
+# + return - Parameterized query returning scheduled_employee_change rows
+isolated function getScheduledChangesQuery(int employeeId, boolean pendingOnly)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery base = `SELECT
+            id,
+            employee_id AS employeeId,
+            DATE_FORMAT(effective_date, '%Y-%m-%d') AS effectiveDate,
+            changes,
+            expected,
+            status,
+            DATE_FORMAT(applied_on, '%Y-%m-%d %H:%i:%s') AS appliedOn,
+            failure_reason AS failureReason,
+            created_by AS createdBy,
+            DATE_FORMAT(created_on, '%Y-%m-%d %H:%i:%s') AS createdOn
+        FROM scheduled_employee_change
+        WHERE employee_id = ${employeeId}`;
+    sql:ParameterizedQuery pending = ` AND status = 'PENDING'`;
+    sql:ParameterizedQuery ordering = ` ORDER BY effective_date ASC, id ASC`;
+    return pendingOnly
+        ? sql:queryConcat(base, pending, ordering)
+        : sql:queryConcat(base, ordering);
+}
+
+# Fetch one scheduled change by id.
+#
+# + id - Scheduled change id
+# + return - Parameterized query returning the row, with the employee's identifier
+isolated function getScheduledChangeByIdQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT
+        sc.id,
+        sc.employee_id AS employeeId,
+        e.employee_id AS employeeIdentifier,
+        DATE_FORMAT(sc.effective_date, '%Y-%m-%d') AS effectiveDate,
+        sc.changes,
+        sc.expected,
+        sc.status,
+        DATE_FORMAT(sc.applied_on, '%Y-%m-%d %H:%i:%s') AS appliedOn,
+        sc.failure_reason AS failureReason,
+        sc.created_by AS createdBy,
+        DATE_FORMAT(sc.created_on, '%Y-%m-%d %H:%i:%s') AS createdOn
+    FROM scheduled_employee_change sc
+    JOIN employee e ON e.id = sc.employee_id
+    WHERE sc.id = ${id}`;
+
+# Fetch every pending change whose effective date has arrived.
+#
+# Ordered oldest first so two changes to one employee land in the order they were meant
+# to take effect rather than in insertion order.
+#
+# + return - Parameterized query returning due scheduled_employee_change rows
+isolated function getDueScheduledChangesQuery() returns sql:ParameterizedQuery =>
+    `SELECT
+        sc.id,
+        sc.employee_id AS employeeId,
+        e.employee_id AS employeeIdentifier,
+        DATE_FORMAT(sc.effective_date, '%Y-%m-%d') AS effectiveDate,
+        sc.changes,
+        sc.expected,
+        sc.status,
+        DATE_FORMAT(sc.applied_on, '%Y-%m-%d %H:%i:%s') AS appliedOn,
+        sc.failure_reason AS failureReason,
+        sc.created_by AS createdBy,
+        DATE_FORMAT(sc.created_on, '%Y-%m-%d %H:%i:%s') AS createdOn
+    FROM scheduled_employee_change sc
+    JOIN employee e ON e.id = sc.employee_id
+    WHERE sc.status = 'PENDING' AND sc.effective_date <= CURDATE()
+    ORDER BY sc.effective_date ASC, sc.id ASC`;
+
+# Move a scheduled change out of PENDING.
+#
+# + id - Scheduled change id
+# + status - Status to record
+# + failureReason - Why it was not applied, where that applies
+# + updatedBy - Who or what closed the row out
+# + return - Parameterized update query
+isolated function updateScheduledChangeStatusQuery(int id, string status, string? failureReason,
+        string updatedBy) returns sql:ParameterizedQuery =>
+    `UPDATE scheduled_employee_change
+     SET status = ${status},
+         applied_on = CASE WHEN ${status} = 'APPLIED' THEN CURRENT_TIMESTAMP(6) ELSE applied_on END,
+         failure_reason = ${failureReason},
+         updated_by = ${updatedBy}
+     WHERE id = ${id} AND status = 'PENDING'`;

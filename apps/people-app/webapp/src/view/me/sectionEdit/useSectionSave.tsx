@@ -31,6 +31,15 @@ import {
   updateResignation,
   validateEpf,
 } from "@slices/employeeSlice/employee";
+import { fetchEmployeeHistory } from "@slices/employeeSlice/employeeHistory";
+import {
+  fetchScheduledChanges,
+  scheduleChange,
+} from "@slices/employeeSlice/scheduledChanges";
+import ScheduleChoice, {
+  ScheduleSelection,
+} from "@view/me/sectionEdit/ScheduleChoice";
+
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { Role, selectRoles } from "@slices/authSlice/auth";
 import { useAppDispatch, useAppSelector } from "@slices/store";
@@ -45,9 +54,62 @@ import {
 } from "@view/employees/onboarding/EmployeeForm";
 import {
   ChangeRow,
+  FIELD_LABELS,
   buildChangeSummary,
   buildPersonalChangeSummary,
 } from "@view/me/sectionEdit/changeSummary";
+
+// Payload field to the database column the scheduler stores it under. Only the fields
+// a change can target need mapping: a pending change records columns, while the form
+// works in payload names, so the two have to be lined up to spot a clash.
+const PAYLOAD_TO_COLUMN: Record<string, string> = {
+  epf: "epf",
+  companyId: "company_id",
+  workLocation: "work_location",
+  workEmail: "work_email",
+  startDate: "start_date",
+  secondaryJobTitle: "secondary_job_title",
+  jobRole: "job_role",
+  externalDesignation: "external_designation",
+  managerEmail: "manager_email",
+  probationEndDate: "probation_end_date",
+  agreementEndDate: "agreement_end_date",
+  employmentTypeId: "employment_type_id",
+  designationId: "designation_id",
+  officeId: "office_id",
+  teamId: "team_id",
+  subTeamId: "sub_team_id",
+  businessUnitId: "business_unit_id",
+  unitId: "unit_id",
+  houseId: "house_id",
+  additionalManagerEmails: "additional_manager_emails",
+};
+
+/**
+ * Fields in this edit that already have a change queued against them.
+ *
+ * Named rather than blocked: two changes to one field are allowed and apply in date
+ * order, but an admin should not find out about the earlier one after the fact.
+ */
+const conflictingFieldLabels = (
+  payload: Record<string, unknown>,
+  pending: { changes: Record<string, unknown> }[],
+): string[] => {
+  const queued = new Set<string>();
+  pending.forEach((change) =>
+    Object.keys(change.changes ?? {}).forEach((column) => queued.add(column)),
+  );
+
+  return Object.keys(payload)
+    .filter((field) => {
+      const column = PAYLOAD_TO_COLUMN[field];
+      return column ? queued.has(column) : false;
+    })
+    .map(
+      (field) =>
+        FIELD_LABELS[field as keyof UpdateEmployeeJobInfoPayload] ?? field,
+    );
+};
 
 /** Job-info fields belonging to each editable profile section. */
 const SECTION_FIELDS: Record<string, (keyof UpdateEmployeeJobInfoPayload)[]> = {
@@ -86,9 +148,16 @@ const SECTION_FIELDS: Record<string, (keyof UpdateEmployeeJobInfoPayload)[]> = {
 const ChangeList = ({
   title,
   changes,
+  schedulable,
+  pendingConflicts,
+  onScheduleChange,
 }: {
   title: string;
   changes: ChangeRow[];
+  /** Whether this section's fields can be given a future effective date. */
+  schedulable?: boolean;
+  pendingConflicts?: string[];
+  onScheduleChange?: (selection: ScheduleSelection) => void;
 }) => (
   <Box>
     <Typography variant="body1" sx={{ mb: changes.length ? 1.5 : 0 }}>
@@ -112,6 +181,12 @@ const ChangeList = ({
         </Typography>
       </Box>
     ))}
+    {schedulable && onScheduleChange && (
+      <ScheduleChoice
+        pendingConflicts={pendingConflicts ?? []}
+        onChange={onScheduleChange}
+      />
+    )}
   </Box>
 );
 
@@ -137,6 +212,11 @@ export const useSectionSave = (employeeId: string | undefined) => {
   // Admins write resignation fields through job-info, atomically with any general
   // changes; a resignation-only caller cannot use that endpoint at all.
   const isAdmin = useAppSelector(selectRoles).includes(Role.ADMIN);
+  // Read rather than fetched here: the profile loads the pending changes with the
+  // record, so the dialog can warn about a clash without a round trip mid-save.
+  const pendingChanges = useAppSelector(
+    (state) => state.scheduledChanges.changes,
+  );
   const [isSaving, setIsSaving] = useState(false);
 
   const save = useCallback(
@@ -189,6 +269,10 @@ export const useSectionSave = (employeeId: string | undefined) => {
                     return;
                   }
                   await dispatch(fetchEmployeePersonalInfo(employeeId));
+                  // The per-field history controls read the same fetched history, so it
+                  // is re-read after a save — otherwise the change just made has no
+                  // entry beside the field until the page is loaded again.
+                  dispatch(fetchEmployeeHistory(employeeId));
                   resolve(true);
                 } finally {
                   setIsSaving(false);
@@ -245,6 +329,7 @@ export const useSectionSave = (employeeId: string | undefined) => {
                     return;
                   }
                   await dispatch(fetchEmployee(employeeId));
+                  dispatch(fetchEmployeeHistory(employeeId));
                   resolve(true);
                 } finally {
                   setIsSaving(false);
@@ -347,11 +432,48 @@ export const useSectionSave = (employeeId: string | undefined) => {
           // Re-read so the section renders what was actually persisted rather than
           // the values that were sent — the backend derives some fields on write.
           await dispatch(fetchEmployee(employeeId));
+          dispatch(fetchEmployeeHistory(employeeId));
           return true;
         } finally {
           setIsSaving(false);
         }
       };
+
+      // Writes the edit as a pending change instead of applying it, leaving the
+      // record as it is until the date arrives.
+      const applySchedule = async (effectiveDate: string): Promise<boolean> => {
+        setIsSaving(true);
+        try {
+          const result = await dispatch(
+            scheduleChange({
+              employeeId,
+              effectiveDate,
+              changes: payload as Record<string, unknown>,
+            }),
+          );
+          if (scheduleChange.rejected.match(result)) {
+            // The thunk has already surfaced the reason, which for a refused field
+            // names the field: leaving the editor open lets it be corrected.
+            return false;
+          }
+          await dispatch(fetchScheduledChanges(employeeId));
+          return true;
+        } finally {
+          setIsSaving(false);
+        }
+      };
+
+      // Scheduling is offered for general information only: resignation details and
+      // personal information are written through their own endpoints, which the
+      // scheduler has no path to.
+      const schedulable = section === "general";
+      const pendingConflicts = schedulable
+        ? conflictingFieldLabels(payload, pendingChanges)
+        : [];
+
+      // Default to the unchanged behaviour, so a dialog dismissed without touching
+      // the choice applies now exactly as it always did.
+      let selection: ScheduleSelection = { mode: "now" };
 
       // The dialog is driven by a callback rather than a promise, so bridge it into
       // one: the caller needs to know whether the section may leave edit mode, and
@@ -359,9 +481,31 @@ export const useSectionSave = (employeeId: string | undefined) => {
       return await new Promise<boolean>((resolve) => {
         showConfirmation(
           "Confirm Update",
-          <ChangeList title={SECTION_TITLES[section]} changes={changes} />,
+          <ChangeList
+            title={SECTION_TITLES[section]}
+            changes={changes}
+            schedulable={schedulable}
+            pendingConflicts={pendingConflicts}
+            onScheduleChange={(next) => {
+              selection = next;
+            }}
+          />,
           ConfirmationType.accept,
           () => {
+            if (selection.mode === "scheduled") {
+              if (!selection.effectiveDate) {
+                dispatch(
+                  enqueueSnackbarMessage({
+                    message: "Pick an effective date, or choose Apply now.",
+                    type: "warning",
+                  }),
+                );
+                resolve(false);
+                return;
+              }
+              void applySchedule(selection.effectiveDate).then(resolve);
+              return;
+            }
             void applyUpdate().then(resolve);
           },
           "Update",
@@ -373,7 +517,7 @@ export const useSectionSave = (employeeId: string | undefined) => {
         // the correct outcome for a cancel.
       });
     },
-    [dispatch, employeeId, isAdmin, org, showConfirmation],
+    [dispatch, employeeId, isAdmin, org, pendingChanges, showConfirmation],
   );
 
   return { save, isSaving };

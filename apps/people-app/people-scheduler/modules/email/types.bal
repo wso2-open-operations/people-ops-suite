@@ -30,8 +30,16 @@ type EmailServiceConfig record {|
     string emailServiceEndpoint;
     # Auth Configurations
     Oauth2Config oauthConfig;
-    # Recipient email(s) as string array
-    string[] to;
+    # Recipient email(s) for the leaver auto-transition summary.
+    #
+    # Each job names its own recipients rather than sharing one list: the summaries
+    # answer to different people, this one being an offboarding notice while the
+    # scheduled-change summary reports whether planned changes to employee records
+    # landed. Required, so a new job cannot quietly inherit an audience nobody chose
+    # for it.
+    string[] leaverTransitionRecipients;
+    # Recipient email(s) for the scheduled-change summary.
+    string[] scheduledChangeRecipients;
     # Sender email
     string 'from;
 |};

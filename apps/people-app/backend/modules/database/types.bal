@@ -1582,3 +1582,63 @@ public type HistoryLookupName record {|
     # The human-readable name
     string name;
 |};
+
+# Status of a scheduled change.
+public enum ScheduledChangeStatus {
+    SCHEDULED_CHANGE_PENDING = "PENDING",
+    SCHEDULED_CHANGE_APPLIED = "APPLIED",
+    SCHEDULED_CHANGE_CANCELLED = "CANCELLED",
+    SCHEDULED_CHANGE_SUPERSEDED = "SUPERSEDED",
+    SCHEDULED_CHANGE_FAILED = "FAILED"
+}
+
+# A change to an employee's general information waiting for its effective date.
+public type ScheduledChange record {|
+    # Scheduled change id
+    int id;
+    # Employee table primary key the change applies to
+    int employeeId;
+    # Employee ID as people refer to it, for display and logging
+    string employeeIdentifier?;
+    # Date the change takes effect
+    string effectiveDate;
+    # Fields being changed, shaped as an UpdateEmployeeJobInfoPayload
+    json changes;
+    # What those same fields held when the change was scheduled
+    json expected;
+    # Where the change is in its life
+    string status;
+    # When it was written to the employee record, if it was
+    string? appliedOn;
+    # Why it could not be applied, if it could not
+    string? failureReason;
+    # Who scheduled it
+    string createdBy;
+    # When it was scheduled
+    string createdOn;
+|};
+
+# Payload for scheduling a change to an employee's general information.
+public type ScheduleChangePayload record {|
+    # Date the change takes effect; today or later
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string effectiveDate;
+    # Fields to change when that date arrives
+    UpdateEmployeeJobInfoPayload changes;
+|};
+
+# One scheduled change the sweep acted on, for the run's summary.
+public type ScheduledChangeOutcome record {|
+    # Scheduled change id
+    int id;
+    # Employee ID as people refer to it
+    string employeeId;
+    # Employee's full name
+    string employeeName;
+    # Date the change was due
+    string effectiveDate;
+    # What the sweep did with it
+    string status;
+    # Why it was not applied, where that applies
+    string? failureReason;
+|};

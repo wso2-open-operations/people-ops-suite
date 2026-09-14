@@ -40,7 +40,8 @@ export const FieldLabel = ({
   mb,
 }: {
   label: string;
-  historyField?: string;
+  /** Audit column name, or several for a value composed from more than one column. */
+  historyField?: string | string[];
   onViewAll?: () => void;
   /** Gap below the label, for values that need more room than plain text. */
   mb?: number;
@@ -67,8 +68,8 @@ const FieldValue = ({
   /** Plain value; omit and pass `children` for a chip or any richer rendering. */
   value?: ReactNode;
   children?: ReactNode;
-  /** Audit column name. Omitted for fields the backend does not track. */
-  historyField?: string;
+  /** Audit column name, or several for a value composed from more than one column. */
+  historyField?: string | string[];
   onViewAll?: () => void;
 }) => (
   <Box>

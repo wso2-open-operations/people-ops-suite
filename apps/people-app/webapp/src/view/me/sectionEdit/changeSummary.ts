@@ -26,7 +26,7 @@ export interface ChangeRow {
 }
 
 /** Human-readable labels for the payload keys an admin can change. */
-const FIELD_LABELS: Partial<
+export const FIELD_LABELS: Partial<
   Record<keyof UpdateEmployeeJobInfoPayload, string>
 > = {
   epf: "EPF",

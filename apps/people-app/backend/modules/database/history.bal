@@ -249,7 +249,15 @@ isolated function toDisplayValue(json value) returns string? {
 # + actionBy - Value of the audit row's action_by column
 # + return - True when the actor is a known system actor
 isolated function isSystemActor(string actionBy) returns boolean {
-    return SYSTEM_ACTORS.indexOf(actionBy) !is ();
+    // Prefix rather than exact match: a change applied by the scheduler on someone's
+    // behalf is recorded as "system-scheduler on behalf of <email>", and is still
+    // automation carrying out an earlier decision rather than a person acting now.
+    foreach string systemActor in SYSTEM_ACTORS {
+        if actionBy == systemActor || actionBy.startsWith(systemActor + " ") {
+            return true;
+        }
+    }
+    return false;
 }
 
 # Resolve raw foreign-key values on history events to human-readable names.

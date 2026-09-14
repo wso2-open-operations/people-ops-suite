@@ -40,13 +40,29 @@ import { useAppSelector } from "@slices/store";
  * changes recorded" teaches a reader that clicking is not worth it, which costs the
  * fields that do have history.
  */
+/**
+ * Column names a composite popover may show, as a reader knows them.
+ *
+ * Only the columns the profile folds into another field need naming here: a popover for
+ * a single column is already titled with that field's own label.
+ */
+const FIELD_LABELS: Record<string, string> = {
+  designation_id: "Designation",
+  secondary_job_title: "Secondary job title",
+  job_role: "Job role",
+};
+
 const FieldHistory = ({
   field,
   label,
   onViewAll,
 }: {
-  /** Audit column name, as it arrives on an event's `field`. */
-  field: string;
+  /**
+   * Audit column name, as it arrives on an event's `field`. Several may be given for a
+   * value the profile composes from more than one column, so the control covers what
+   * the field actually shows rather than one of its parts.
+   */
+  field: string | string[];
   /** Field name as shown on the profile, used as the popover heading. */
   label: string;
   /** Opens the full timeline; omitted when there is nowhere to send the reader. */
@@ -55,10 +71,14 @@ const FieldHistory = ({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const history = useAppSelector((state) => state.employeeHistory.history);
 
-  const events = useMemo(
-    () => (history?.events ?? []).filter((event) => event.field === field),
-    [history, field],
-  );
+  const isComposite = Array.isArray(field) && field.length > 1;
+
+  const events = useMemo(() => {
+    const fields = Array.isArray(field) ? field : [field];
+    return (history?.events ?? []).filter((event) =>
+      fields.includes(event.field),
+    );
+  }, [history, field]);
 
   if (events.length === 0) return null;
 
@@ -158,6 +178,11 @@ const FieldHistory = ({
             <Typography
               sx={{ fontSize: 11.5, color: "text.disabled", mt: 0.25 }}
             >
+              {/* Named only when the popover covers more than one column, where a bare
+                  pair of values would not say which part of the field moved. */}
+              {isComposite && FIELD_LABELS[event.field]
+                ? `${FIELD_LABELS[event.field]} · `
+                : ""}
               {new Date(event.occurredOn).toLocaleDateString(undefined, {
                 day: "numeric",
                 month: "short",

@@ -3461,4 +3461,165 @@ service http:InterceptableService / on new http:Listener(9090) {
             promotionsUnavailable: promotionsUnavailable
         };
     }
+
+    # Schedule a change to an employee's general information for a future date.
+    #
+    # The same edit an admin can apply immediately, held until the date it should take
+    # effect: a promotion effective the first of the month, a transfer effective when the
+    # quarter starts. The scheduler applies it on the day through a plain update, so the
+    # audit trail and the profile history read exactly as they would for a change made by
+    # hand.
+    #
+    # The caller sends what the targeted fields hold now alongside the change. The sweep
+    # compares against it on the day, so a change overtaken by a direct edit to the same
+    # field is reported rather than quietly undoing the more recent decision.
+    #
+    # + employeeId - Employee ID
+    # + payload - Effective date and the fields to change
+    # + return - HTTP Created with the scheduled change id, or HTTP errors
+    resource function post employees/[string employeeId]/scheduled\-changes(http:RequestContext ctx,
+            @http:Payload database:ScheduleChangePayload payload)
+        returns http:Created|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        // Scheduling is the same act as editing, deferred, so it is gated the same way the
+        // inline section editor is.
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to schedule an employee change",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to schedule a change"}
+            };
+        }
+
+        // Today is refused along with the past: the sweep runs once a day, so a change
+        // dated today lands either immediately or a day late depending on whether it has
+        // already run. An edit meant to take effect now should be applied now.
+        if !isFutureDate(payload.effectiveDate) {
+            return <http:BadRequest>{
+                body: {message: "The effective date must be a future date"}
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
+        if employeeInfo is error {
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        if employeeInfo is () {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
+        }
+
+        // Refused while somebody is present to be told. A field the sweep cannot write
+        // would otherwise sit pending until its date and fail there, long after the person
+        // who scheduled it has moved on.
+        string|error columnChanges = toSchedulableColumns(payload.changes);
+        if columnChanges is error {
+            return <http:BadRequest>{body: {message: columnChanges.message()}};
+        }
+
+        int|error scheduled = database:scheduleEmployeeChange(employeeId, payload.effectiveDate,
+                columnChanges, expectedValuesFor(employeeInfo, columnChanges), userInfo.email);
+        if scheduled is error {
+            string customErr = string `Error occurred while scheduling a change for ID: ${employeeId}`;
+            log:printError(customErr, scheduled, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        return <http:Created>{body: {id: scheduled}};
+    }
+
+    # Fetch an employee's scheduled changes.
+    #
+    # + employeeId - Employee ID
+    # + pendingOnly - Limit to changes still waiting for their date
+    # + return - The scheduled changes, or HTTP errors
+    resource function get employees/[string employeeId]/scheduled\-changes(http:RequestContext ctx,
+            boolean pendingOnly = true)
+        returns database:ScheduledChange[]|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        // Read access matches the profile: anyone who may read the record may see what is
+        // queued against it, so the record is never shown as settled when it is not.
+        if !canReadAnyEmployee(userInfo) {
+            log:printWarn("User is not authorized to view scheduled changes",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to view scheduled changes"}
+            };
+        }
+
+        database:ScheduledChange[]|error changes = database:getScheduledChanges(employeeId, pendingOnly);
+        if changes is error {
+            string customErr = string `Error occurred while fetching scheduled changes for ID: ${employeeId}`;
+            log:printError(customErr, changes, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return changes;
+    }
+
+    # Withdraw a scheduled change before its date arrives.
+    #
+    # + employeeId - Employee ID
+    # + changeId - Scheduled change id
+    # + return - HTTP OK, or HTTP errors
+    resource function delete employees/[string employeeId]/scheduled\-changes/[int changeId](
+            http:RequestContext ctx)
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to cancel a scheduled change",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to cancel a scheduled change"}
+            };
+        }
+
+        database:ScheduledChange|error? existing = database:getScheduledChangeById(changeId);
+        if existing is error {
+            string customErr = string `Error occurred while fetching scheduled change: ${changeId}`;
+            log:printError(customErr, existing, changeId = changeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        // The id is checked against the employee in the path as well as existing at all,
+        // so a change cannot be cancelled through another employee's URL.
+        if existing is () || existing.employeeIdentifier != employeeId {
+            return <http:NotFound>{body: {message: "Scheduled change not found"}};
+        }
+
+        boolean|error cancelled = database:cancelScheduledChange(changeId, userInfo.email);
+        if cancelled is error {
+            string customErr = string `Error occurred while cancelling scheduled change: ${changeId}`;
+            log:printError(customErr, cancelled, changeId = changeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        if !cancelled {
+            // Already applied or already cancelled: there is no pending change to withdraw.
+            return <http:NotFound>{body: {message: "No pending scheduled change to cancel"}};
+        }
+
+        return http:OK;
+    }
 }

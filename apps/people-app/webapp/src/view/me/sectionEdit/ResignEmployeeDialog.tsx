@@ -33,6 +33,7 @@ import {
   fetchEmployee,
   updateResignation,
 } from "@slices/employeeSlice/employee";
+import { fetchEmployeeHistory } from "@slices/employeeSlice/employeeHistory";
 import { useAppDispatch } from "@slices/store";
 import {
   RESIGNATION_DATE_ORDER_MESSAGE,
@@ -121,6 +122,9 @@ const ResignEmployeeDialog = ({
       // Re-read so the header chip and the newly-visible Resignation Details section
       // reflect what was actually persisted.
       await dispatch(fetchEmployee(employeeId));
+      // Resigning writes employment status and the resignation details, so the field
+      // history beside them is re-read for the same reason a section save does it.
+      dispatch(fetchEmployeeHistory(employeeId));
       reset();
       onClose();
     } finally {
@@ -218,7 +222,9 @@ const ResignEmployeeDialog = ({
           onClick={handleSubmit}
           disabled={isSaving || isDateOrderInvalid}
           startIcon={
-            isSaving ? <CircularProgress size={16} color="inherit" /> : undefined
+            isSaving ? (
+              <CircularProgress size={16} color="inherit" />
+            ) : undefined
           }
           sx={{ textTransform: "none" }}
         >

@@ -65,6 +65,10 @@ export const AppConfig = {
       SERVICE_BASE_URL + `/employees/${employeeId}/resignation`,
     employeeHistory: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/history`,
+    scheduledChanges: (employeeId: string) =>
+      SERVICE_BASE_URL + `/employees/${employeeId}/scheduled-changes`,
+    scheduledChange: (employeeId: string, changeId: number) =>
+      SERVICE_BASE_URL + `/employees/${employeeId}/scheduled-changes/${changeId}`,
     employeeQrCode: (employeeId: string) => `${SERVICE_BASE_URL}/employees/${employeeId}/qr-code`,
     qrCodesSearch: SERVICE_BASE_URL + "/reports/qr-codes/search",
 

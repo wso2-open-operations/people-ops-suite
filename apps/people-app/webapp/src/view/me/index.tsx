@@ -66,6 +66,10 @@ import {
   resetEmployeeHistory,
 } from "@root/src/slices/employeeSlice/employeeHistory";
 import {
+  fetchScheduledChanges,
+  resetScheduledChanges,
+} from "@root/src/slices/employeeSlice/scheduledChanges";
+import {
   EmployeePersonalInfo,
   fetchEmployeePersonalInfo,
   resetPersonalInfo,
@@ -95,6 +99,7 @@ import { Role, selectRoles } from "@slices/authSlice/auth";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import EmployeeHistory from "@component/employeeHistory/EmployeeHistory";
 import FieldValue, { FieldLabel } from "@view/me/fieldHistory/FieldValue";
+import PendingChangesBanner from "@view/me/sectionEdit/PendingChangesBanner";
 import { AUDIT_FIELDS } from "@view/me/fieldHistory/fields";
 import PeopleChip, { PeopleChipList } from "@component/PeopleChip/PeopleChip";
 import EditableSection from "@view/me/sectionEdit/EditableSection";
@@ -593,6 +598,9 @@ export default function Me({
     );
   };
 
+  const pendingChanges = useAppSelector(
+    (state) => state.scheduledChanges.changes,
+  );
   const { employee, state: employeeState } = useAppSelector(
     (state) => state.employee,
   );
@@ -707,12 +715,17 @@ export default function Me({
     // flight.
     if (canViewFieldHistory) {
       dispatch(fetchEmployeeHistory(targetEmployeeId));
+      // Read with the record so the profile can say what is queued against it. A
+      // change scheduled months ahead is invisible otherwise, and the record reads as
+      // settled when it is not.
+      dispatch(fetchScheduledChanges(targetEmployeeId));
     }
   }, [targetEmployeeId, canViewPersonalInfo, canViewFieldHistory, dispatch]);
 
   useEffect(() => {
     return () => {
       dispatch(resetEmployeeHistory());
+      dispatch(resetScheduledChanges());
     };
   }, [dispatch]);
 
@@ -1165,6 +1178,13 @@ export default function Me({
             </Stack>
           </Stack>
         </Paper>
+        {targetEmployeeId && (
+          <PendingChangesBanner
+            employeeId={targetEmployeeId}
+            changes={pendingChanges}
+            canCancel={canEditSections}
+          />
+        )}
         <EditableSection
           title="General Information"
           section="general"
@@ -1241,9 +1261,17 @@ export default function Me({
                       <FieldValue
                         label="Designation"
                         value={designationText}
+                        // The backend composes this value from the designation, the
+                        // secondary job title and the job role, so its history covers all
+                        // three. Filtering to the designation alone would show nothing
+                        // when one of the other two is what changed on screen.
                         historyField={
                           canViewFieldHistory
-                            ? AUDIT_FIELDS.designation
+                            ? [
+                                AUDIT_FIELDS.designation,
+                                AUDIT_FIELDS.secondaryJobTitle,
+                                AUDIT_FIELDS.jobRole,
+                              ]
                             : undefined
                         }
                         onViewAll={openFullHistory}

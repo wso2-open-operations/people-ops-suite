@@ -858,3 +858,135 @@ public isolated function assignPromotionsToPeriods(database:EmploymentPeriod[] p
             promotions: bucketed[index]
         };
 }
+
+# Payload field name to the employee column it writes, for scheduled changes.
+#
+# The map is the allowlist: a field absent from it cannot be scheduled, and the scheduler
+# refuses anything outside the same set when it applies the change. Resignation fields
+# and employment status are deliberately absent — recording a departure is its own
+# action with its own endpoint, not a field edit deferred.
+final readonly & map<string> SCHEDULABLE_FIELD_COLUMNS = {
+    "epf": "epf",
+    "companyId": "company_id",
+    "workLocation": "work_location",
+    "workEmail": "work_email",
+    "startDate": "start_date",
+    "secondaryJobTitle": "secondary_job_title",
+    "jobRole": "job_role",
+    "externalDesignation": "external_designation",
+    "managerEmail": "manager_email",
+    "probationEndDate": "probation_end_date",
+    "agreementEndDate": "agreement_end_date",
+    "employmentTypeId": "employment_type_id",
+    "designationId": "designation_id",
+    "officeId": "office_id",
+    "teamId": "team_id",
+    "subTeamId": "sub_team_id",
+    "businessUnitId": "business_unit_id",
+    "unitId": "unit_id",
+    "houseId": "house_id",
+    "additionalManagerEmails": "additional_manager_emails"
+};
+
+# Employee record field holding the current value of each schedulable column.
+#
+# The employee record exposes resolved names for some fields and raw ids for others; this
+# names the one the column is compared against, so the supersede check reads the same
+# value the scheduler will.
+final readonly & map<string> SCHEDULABLE_COLUMN_SOURCES = {
+    "epf": "epf",
+    "company_id": "companyId",
+    "work_location": "workLocation",
+    "work_email": "workEmail",
+    "start_date": "startDate",
+    "secondary_job_title": "secondaryJobTitle",
+    "job_role": "jobRole",
+    "external_designation": "externalDesignation",
+    "manager_email": "managerEmail",
+    "probation_end_date": "probationEndDate",
+    "agreement_end_date": "agreementEndDate",
+    "employment_type_id": "employmentTypeId",
+    "designation_id": "designationId",
+    "office_id": "officeId",
+    "team_id": "teamId",
+    "sub_team_id": "subTeamId",
+    "business_unit_id": "businessUnitId",
+    "unit_id": "unitId",
+    "house_id": "houseId"
+};
+
+# True when a date string is later than today, in the server's own reckoning of today.
+#
+# Today is excluded rather than allowed: the sweep runs once a day, so a change dated
+# today is applied immediately if the sweep has yet to run and a day late if it has
+# already run. Which of those happens would depend on the time of day it was scheduled,
+# so it is refused and the caller is told to apply now or pick a later date.
+#
+# + date - Date in YYYY-MM-DD form
+# + return - True when the date is tomorrow or later
+isolated function isFutureDate(string date) returns boolean {
+    time:Utc tomorrow = time:utcAddSeconds(time:utcNow(), 86400);
+    string tomorrowDate = time:utcToString(tomorrow).substring(0, 10);
+    return date >= tomorrowDate;
+}
+
+# Translate a job-info payload into the columns a scheduled change writes.
+#
+# Only the fields actually set are carried, so a scheduled change records the edit that
+# was made rather than every field the payload could hold. A field outside the allowlist
+# is an error rather than a silent omission: the caller asked for something that cannot
+# be scheduled and should be told so.
+#
+# + payload - The fields to change
+# + return - Column name to value as a JSON string, or an error naming the field that
+# cannot be scheduled
+isolated function toSchedulableColumns(database:UpdateEmployeeJobInfoPayload payload)
+    returns string|error {
+
+    map<json> asMap = check payload.toJson().cloneWithType();
+    map<json> columns = {};
+
+    foreach string 'field in asMap.keys() {
+        json value = asMap.get('field);
+        // An unset optional field is absent from the change, not a request to null the
+        // column: the payload cannot tell the two apart, and clearing a field nobody
+        // touched would be the more damaging reading.
+        if value is () {
+            continue;
+        }
+        if !SCHEDULABLE_FIELD_COLUMNS.hasKey('field) {
+            return error(string `${'field} cannot be scheduled for a future date`);
+        }
+        columns[SCHEDULABLE_FIELD_COLUMNS.get('field)] = value;
+    }
+
+    if columns.length() == 0 {
+        return error("No schedulable fields were provided");
+    }
+    return columns.toJsonString();
+}
+
+# Capture what the targeted columns hold now, for the supersede check on the day.
+#
+# + employee - The employee's current record
+# + columnChanges - The change, as column name to value
+# + return - Column name to current value as a JSON string
+isolated function expectedValuesFor(database:Employee employee, string columnChanges) returns string {
+    map<json>|error changes = trap <map<json>>checkpanic columnChanges.fromJsonString();
+    map<json>|error current = employee.toJson().cloneWithType();
+    if changes is error || current is error {
+        return "{}";
+    }
+
+    map<json> expected = {};
+    foreach string column in changes.keys() {
+        if !SCHEDULABLE_COLUMN_SOURCES.hasKey(column) {
+            // Additional managers are a set in another table rather than a column, so
+            // they are not part of the comparison.
+            continue;
+        }
+        string sourceField = SCHEDULABLE_COLUMN_SOURCES.get(column);
+        expected[column] = current.hasKey(sourceField) ? current.get(sourceField) : ();
+    }
+    return expected.toJsonString();
+}

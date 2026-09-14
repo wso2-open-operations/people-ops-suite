@@ -110,3 +110,55 @@ BEGIN
   );
 END//
 DELIMITER ;
+
+-- ---------------------------------------------------------------------------
+-- Scheduled employee changes
+--
+-- An edit to an employee's general information can be given a future date
+-- instead of being applied on save: a promotion effective the first of the
+-- month, a transfer effective when the quarter starts. The row holds the change
+-- until that date, and the scheduler applies it through the same update path an
+-- immediate save uses.
+--
+-- `changes` holds only the fields being changed, in the shape the job-info
+-- update payload expects, so applying a row is handing it straight to that
+-- function rather than translating between two formats.
+--
+-- `expected` holds what those same fields were when the change was scheduled.
+-- A change queued months ahead can be overtaken by an immediate edit to the
+-- same field; comparing against this on the day tells the difference between a
+-- change that still makes sense and one that would silently undo somebody's
+-- more recent decision.
+--
+-- Statuses:
+--   PENDING    -- waiting for its effective date
+--   APPLIED    -- written to the employee record
+--   CANCELLED  -- withdrawn by a person before it was applied
+--   SUPERSEDED -- a field had moved on from `expected`, so it was not applied
+--   FAILED     -- the update was attempted and errored; `failure_reason` says why
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE `scheduled_employee_change` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `employee_id` INT NOT NULL,
+  `effective_date` DATE NOT NULL,
+  `changes` JSON NOT NULL,
+  `expected` JSON NOT NULL,
+  `status` ENUM('PENDING', 'APPLIED', 'CANCELLED', 'SUPERSEDED', 'FAILED')
+    NOT NULL DEFAULT 'PENDING',
+  `applied_on` TIMESTAMP(6) NULL,
+  `failure_reason` VARCHAR(500) NULL,
+  `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  -- The sweep asks one question: which rows are due today? Both columns are in
+  -- the index so it is answered without reading the table.
+  KEY `idx_sched_change_due` (`status`, `effective_date`),
+  -- The profile asks the other: what is pending for this employee?
+  KEY `idx_sched_change_employee` (`employee_id`, `status`),
+  CONSTRAINT `fk_sched_change_employee`
+    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;

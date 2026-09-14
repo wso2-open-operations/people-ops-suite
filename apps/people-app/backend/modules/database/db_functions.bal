@@ -1824,3 +1824,264 @@ public isolated function isCurrentEmployment(string employeeId) returns boolean|
     }
     return true;
 }
+
+# Schedule a change to an employee's general information.
+#
+# The caller supplies what the fields hold now, so the sweep can tell on the day whether
+# the change still makes sense or whether somebody has since edited the same field.
+#
+# + employeeId - Employee ID
+# + payload - Effective date and the fields to change
+# + expected - What those fields hold at the time of scheduling
+# + createdBy - Email of the person scheduling the change
+# + return - The new scheduled change id, or an error
+public isolated function scheduleEmployeeChange(string employeeId, string effectiveDate,
+        string columnChanges, string expected, string createdBy) returns int|error {
+
+    Employee|error? employee = getEmployeeInfo(employeeId);
+    if employee is error {
+        return employee;
+    }
+    if employee is () {
+        return error(string `No employee found for the ID: ${employeeId}`);
+    }
+
+    int employeePkId = check databaseClient->queryRow(
+        `SELECT id FROM employee WHERE employee_id = ${employeeId}`);
+
+    sql:ExecutionResult result = check databaseClient->execute(
+        insertScheduledChangeQuery(employeePkId, effectiveDate, columnChanges, expected, createdBy));
+
+    int|string? lastInsertId = result.lastInsertId;
+    if lastInsertId !is int {
+        return error("Unable to obtain the scheduled change ID");
+    }
+    return lastInsertId;
+}
+
+# Fetch the scheduled changes for an employee.
+#
+# + employeeId - Employee ID
+# + pendingOnly - Limit to changes still waiting for their date
+# + return - Scheduled changes, soonest first, or an error
+public isolated function getScheduledChanges(string employeeId, boolean pendingOnly)
+    returns ScheduledChange[]|error {
+
+    Employee|error? employee = getEmployeeInfo(employeeId);
+    if employee is error {
+        return employee;
+    }
+    if employee is () {
+        return error(string `No employee found for the ID: ${employeeId}`);
+    }
+
+    int employeePkId = check databaseClient->queryRow(
+        `SELECT id FROM employee WHERE employee_id = ${employeeId}`);
+
+    stream<ScheduledChange, error?> resultStream =
+        databaseClient->query(getScheduledChangesQuery(employeePkId, pendingOnly));
+    return from ScheduledChange change in resultStream
+        select change;
+}
+
+# Fetch one scheduled change by id.
+#
+# + id - Scheduled change id
+# + return - The change, () when no such row exists, or an error
+public isolated function getScheduledChangeById(int id) returns ScheduledChange|error? {
+    ScheduledChange|error change = databaseClient->queryRow(getScheduledChangeByIdQuery(id));
+    return change is sql:NoRowsError ? () : change;
+}
+
+# Withdraw a scheduled change before its date arrives.
+#
+# The update is conditional on the row still being PENDING, so cancelling a change the
+# sweep has already applied reports as not found rather than rewriting a closed row.
+#
+# + id - Scheduled change id
+# + cancelledBy - Email of the person cancelling
+# + return - True when a pending row was cancelled, false when there was none, or an error
+public isolated function cancelScheduledChange(int id, string cancelledBy) returns boolean|error {
+    sql:ExecutionResult result = check databaseClient->execute(
+        updateScheduledChangeStatusQuery(id, SCHEDULED_CHANGE_CANCELLED, (), cancelledBy));
+    return result.affectedRowCount > 0;
+}
+
+# Apply every scheduled change whose effective date has arrived.
+#
+# Each change is written through updateEmployeeJobInfo, the same function an immediate
+# save calls, so validation, the audit triggers and the history all behave exactly as
+# they do for a change made by hand. The scheduler's actor is recorded as the one making
+# it, which the history already recognises as a system actor rather than a person.
+#
+# A change is only applied while the fields it targets still hold what they held when it
+# was scheduled. A change queued months ahead can be overtaken by an immediate edit to
+# the same field; applying it regardless would quietly undo the more recent decision, so
+# it is marked SUPERSEDED and reported instead.
+#
+# One change failing does not stop the others: each is recorded against its own row and
+# the sweep continues, so a single bad row cannot hold up everyone else's changes.
+#
+# + appliedBy - Actor to record against the changes, e.g. the scheduler
+# + return - What happened to each change that was due, or an error if they could not be read
+public isolated function applyDueScheduledChanges(string appliedBy)
+    returns ScheduledChangeOutcome[]|error {
+
+    stream<ScheduledChange, error?> dueStream = databaseClient->query(getDueScheduledChangesQuery());
+    ScheduledChange[] due = check from ScheduledChange change in dueStream
+        select change;
+
+    ScheduledChangeOutcome[] outcomes = [];
+
+    foreach ScheduledChange change in due {
+        string employeeIdentifier = change.employeeIdentifier ?: "";
+        Employee|error? employee = getEmployeeInfo(employeeIdentifier);
+
+        if employee is error || employee is () {
+            string reason = employee is error
+                ? employee.message()
+                : string `No employee found for the ID: ${employeeIdentifier}`;
+            check closeScheduledChange(change.id, SCHEDULED_CHANGE_FAILED, reason, appliedBy);
+            outcomes.push({
+                id: change.id,
+                employeeId: employeeIdentifier,
+                employeeName: "",
+                effectiveDate: change.effectiveDate,
+                status: SCHEDULED_CHANGE_FAILED,
+                failureReason: reason
+            });
+            continue;
+        }
+
+        string employeeName = string `${employee.firstName} ${employee.lastName}`.trim();
+
+        string? supersededBy = findSupersedingField(employee, change.expected);
+        if supersededBy is string {
+            string reason = string `${supersededBy} was changed after this was scheduled`;
+            check closeScheduledChange(change.id, SCHEDULED_CHANGE_SUPERSEDED, reason, appliedBy);
+            outcomes.push({
+                id: change.id,
+                employeeId: employeeIdentifier,
+                employeeName,
+                effectiveDate: change.effectiveDate,
+                status: SCHEDULED_CHANGE_SUPERSEDED,
+                failureReason: reason
+            });
+            continue;
+        }
+
+        UpdateEmployeeJobInfoPayload|error payload = change.changes.cloneWithType();
+        if payload is error {
+            string reason = string `Stored change could not be read: ${payload.message()}`;
+            check closeScheduledChange(change.id, SCHEDULED_CHANGE_FAILED, reason, appliedBy);
+            outcomes.push({
+                id: change.id,
+                employeeId: employeeIdentifier,
+                employeeName,
+                effectiveDate: change.effectiveDate,
+                status: SCHEDULED_CHANGE_FAILED,
+                failureReason: reason
+            });
+            continue;
+        }
+
+        error? applyResult = updateEmployeeJobInfo(employeeIdentifier, payload, appliedBy);
+        if applyResult is error {
+            string reason = applyResult.message();
+            check closeScheduledChange(change.id, SCHEDULED_CHANGE_FAILED, reason, appliedBy);
+            outcomes.push({
+                id: change.id,
+                employeeId: employeeIdentifier,
+                employeeName,
+                effectiveDate: change.effectiveDate,
+                status: SCHEDULED_CHANGE_FAILED,
+                failureReason: reason
+            });
+            continue;
+        }
+
+        check closeScheduledChange(change.id, SCHEDULED_CHANGE_APPLIED, (), appliedBy);
+        outcomes.push({
+            id: change.id,
+            employeeId: employeeIdentifier,
+            employeeName,
+            effectiveDate: change.effectiveDate,
+            status: SCHEDULED_CHANGE_APPLIED,
+            failureReason: ()
+        });
+    }
+
+    return outcomes;
+}
+
+# Move a scheduled change out of PENDING.
+#
+# + id - Scheduled change id
+# + status - Status to record
+# + failureReason - Why it was not applied, where that applies
+# + updatedBy - Who or what closed the row out
+# + return - Error if the update fails
+isolated function closeScheduledChange(int id, string status, string? failureReason,
+        string updatedBy) returns error? {
+    _ = check databaseClient->execute(
+        updateScheduledChangeStatusQuery(id, status, failureReason, updatedBy));
+}
+
+# Reader-facing names for the fields a change can target, for the supersede message.
+final readonly & map<string> SCHEDULED_FIELD_LABELS = {
+    "epf": "EPF",
+    "companyId": "Company",
+    "workLocation": "Work location",
+    "workEmail": "Work email",
+    "startDate": "Start date",
+    "secondaryJobTitle": "Secondary job title",
+    "jobRole": "Job role",
+    "externalDesignation": "External designation",
+    "managerEmail": "Lead",
+    "probationEndDate": "Probation end date",
+    "agreementEndDate": "Agreement end date",
+    "employmentTypeId": "Employment type",
+    "designationId": "Designation",
+    "officeId": "Office",
+    "teamId": "Team",
+    "subTeamId": "Sub team",
+    "businessUnitId": "Business unit",
+    "unitId": "Unit",
+    "houseId": "House"
+};
+
+# Find the first field that has moved on from what a scheduled change expected.
+#
+# Compares against the employee's current values rather than a fresh audit read: the
+# question is only whether what the change was built on still holds, and the record
+# itself is the answer to that.
+#
+# + employee - The employee's current record
+# + expected - What the scheduled fields held when the change was scheduled
+# + return - Reader-facing name of the first field that no longer matches, or () when
+# every field still holds what was expected
+isolated function findSupersedingField(Employee employee, json expected) returns string? {
+    map<json>|error expectedFields = expected.cloneWithType();
+    if expectedFields is error {
+        // An unreadable expectation cannot be checked against, so the change is let
+        // through rather than blocked on a comparison that cannot be made. The apply
+        // step still validates the payload itself.
+        return ();
+    }
+
+    map<json>|error currentFields = employee.toJson().cloneWithType();
+    if currentFields is error {
+        return ();
+    }
+
+    foreach string 'field in expectedFields.keys() {
+        json expectedValue = expectedFields['field];
+        json currentValue = currentFields.hasKey('field) ? currentFields['field] : ();
+        if expectedValue != currentValue {
+            return SCHEDULED_FIELD_LABELS.hasKey('field)
+                ? SCHEDULED_FIELD_LABELS.get('field)
+                : 'field;
+        }
+    }
+    return ();
+}

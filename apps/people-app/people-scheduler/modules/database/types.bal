@@ -54,3 +54,49 @@ public type LeaverTransition record {|
     @sql:Column {name: "final_day_of_employment"}
     string finalDayOfEmployment;
 |};
+
+# A change to an employee's general information waiting for its effective date.
+public type ScheduledChange record {|
+    # Scheduled change id
+    int id;
+    # Employee table primary key the change applies to
+    @sql:Column {name: "employee_pk_id"}
+    int employeePkId;
+    # External employee ID
+    @sql:Column {name: "employee_id"}
+    string employeeId;
+    # First name
+    @sql:Column {name: "first_name"}
+    string firstName;
+    # Last name
+    @sql:Column {name: "last_name"}
+    string lastName;
+    # Date the change takes effect
+    @sql:Column {name: "effective_date"}
+    string effectiveDate;
+    # Fields being changed, as column-name to value
+    json changes;
+    # What those same fields held when the change was scheduled
+    json expected;
+    # Who scheduled it
+    @sql:Column {name: "created_by"}
+    string createdBy;
+|};
+
+# What the sweep did with one scheduled change, for the run's summary.
+public type ScheduledChangeOutcome record {|
+    # Scheduled change id
+    int id;
+    # External employee ID
+    string employeeId;
+    # Employee's full name
+    string employeeName;
+    # Date the change was due
+    string effectiveDate;
+    # Applied, superseded or failed
+    string status;
+    # Why it was not applied, where that applies
+    string? failureReason;
+    # Reader-facing names of the fields the change set
+    string[] fields;
+|};

@@ -376,6 +376,35 @@ CREATE TABLE `resignation` (
     FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
 );
 
+-- Scheduled employee changes
+--
+-- An edit to an employee's general information can be given a future date instead of
+-- being applied on save. `changes` holds only the fields being changed, in the shape the
+-- job-info update payload expects; `expected` holds what those fields were when the
+-- change was scheduled, so the sweep can tell a change that still makes sense from one
+-- that would undo a more recent decision.
+CREATE TABLE `scheduled_employee_change` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `employee_id` INT NOT NULL,
+  `effective_date` DATE NOT NULL,
+  `changes` JSON NOT NULL,
+  `expected` JSON NOT NULL,
+  `status` ENUM('PENDING', 'APPLIED', 'CANCELLED', 'SUPERSEDED', 'FAILED')
+    NOT NULL DEFAULT 'PENDING',
+  `applied_on` TIMESTAMP(6) NULL,
+  `failure_reason` VARCHAR(500) NULL,
+  `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  KEY `idx_sched_change_due` (`status`, `effective_date`),
+  KEY `idx_sched_change_employee` (`employee_id`, `status`),
+  CONSTRAINT `fk_sched_change_employee`
+    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
 -- Additional_managers table
 CREATE TABLE `employee_additional_managers` (
   `id` INT NOT NULL AUTO_INCREMENT,
