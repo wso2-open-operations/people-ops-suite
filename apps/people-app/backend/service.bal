@@ -1337,9 +1337,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         string employeeId = generatedEmployeeId;
 
-        // House is assigned automatically from the employee ID's numeric part — not a
-        // user-editable choice, and not known until the ID above is resolved.
-        int|error autoHouseId = database:houseIdForEmployeeId(employeeId);
+        // House is assigned automatically — a returning employee keeps the one they had,
+        // everyone else gets it from the employee ID's numeric part. Not a user-editable
+        // choice, and not known until the ID above is resolved.
+        int|error autoHouseId = database:resolveHouseIdForNewEmployee(payload.workEmail, employeeId);
         if autoHouseId is error {
             log:printError("Error occurred while computing automatic house assignment",
                     autoHouseId, employeeId = employeeId);

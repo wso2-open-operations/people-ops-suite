@@ -3041,3 +3041,25 @@ isolated function updateScheduledChangeStatusQuery(int id, string status, string
          failure_reason = ${failureReason},
          updated_by = ${updatedBy}
      WHERE id = ${id} AND status = 'PENDING'`;
+
+# Fetch the house from a returning employee's most recent previous employment.
+#
+# The most recent employment only, ordered by start date and then by id for two starting
+# the same day. It is not searched backwards for one that happens to carry a house: the
+# house someone should return to is the one from where they last were, and reaching past
+# that into an older employment would hand them an affiliation they may have left behind
+# several roles ago. Where the latest employment has no house, the caller falls back to
+# deriving one from the employee ID.
+#
+# The house is joined rather than read directly, so one that has since been removed reads
+# as absent and takes the same fallback.
+#
+# + workEmail - Work email of the employee being onboarded
+# + return - Parameterized query returning the previous house id, if there is one
+isolated function getPreviousHouseIdQuery(string workEmail) returns sql:ParameterizedQuery =>
+    `SELECT h.id AS houseId
+     FROM employee e
+     LEFT JOIN house h ON h.id = e.house_id
+     WHERE e.work_email = ${workEmail}
+     ORDER BY e.start_date DESC, e.id DESC
+     LIMIT 1`;

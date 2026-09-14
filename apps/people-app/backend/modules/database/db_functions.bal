@@ -562,9 +562,10 @@ public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, stri
         transaction {
             foreach CreateEmployeePayload payload in payloads {
                 string employeeId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
-                // House is assigned automatically from the employee ID's numeric part — not
-                // known until the ID above is resolved, so this can't happen in buildBulkPayloads.
-                payload.houseId = check houseIdForEmployeeId(employeeId);
+                // House is assigned automatically — a returning employee keeps the one they
+                // had, everyone else gets it from the employee ID's numeric part. Not known
+                // until the ID above is resolved, so this can't happen in buildBulkPayloads.
+                payload.houseId = check resolveHouseIdForNewEmployee(payload.workEmail, employeeId);
                 int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
                 _ = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
                 check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
@@ -797,6 +798,44 @@ isolated function extractNumericSuffix(string employeeId) returns int|error {
         return error(string `Employee ID '${employeeId}' has no numeric part`);
     }
     return check int:fromString(employeeId.substring(i));
+}
+
+# Resolve the house for an employee being onboarded.
+#
+# Someone returning to WSO2 keeps the house they had before: the house is a long-standing
+# affiliation rather than a property of the employee ID, and giving a returning colleague a
+# different one because their new ID divides differently would be arbitrary to them.
+#
+# Their previous employment is found by work email, taking the most recent one only. Where
+# there is no previous employment, or that employment carries no house, the house is derived
+# from the employee ID as it always has been — house assignment is recent, so most records
+# have none yet and fall through to that.
+#
+# + workEmail - Work email of the employee being onboarded
+# + employeeId - The employee's newly assigned employee ID
+# + return - The house ID to assign, or an error if the employee ID has no numeric part
+public isolated function resolveHouseIdForNewEmployee(string workEmail, string employeeId)
+    returns int|error {
+
+    // Nullable, not int: the row exists whenever there is a previous employment, and
+    // carries a null house when that employment predates house assignment or its house has
+    // since been removed. Both take the same fallback as having no previous employment.
+    record {|int? houseId;|}|error previous =
+        databaseClient->queryRow(getPreviousHouseIdQuery(workEmail));
+
+    if previous is record {|int? houseId;|} {
+        int? previousHouseId = previous.houseId;
+        if previousHouseId is int {
+            return previousHouseId;
+        }
+        return houseIdForEmployeeId(employeeId);
+    }
+    // sql:NoRowsError is the ordinary case — a first-time joiner. Anything else is a real
+    // fault and is left to surface rather than silently falling back.
+    if previous !is sql:NoRowsError {
+        return previous;
+    }
+    return houseIdForEmployeeId(employeeId);
 }
 
 # Compute the automatically-assigned house for a newly created employee, deterministically
