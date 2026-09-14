@@ -491,7 +491,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if hasAdminAccess && !payload.leadOnly {
-            database:EmployeesResponse|error employees = database:getEmployees(payload);
+            database:EmployeesResponse|error employees = database:getEmployees(payload, includePersonalInfo = true);
             if employees is error {
                 string customErr = "Error occurred while fetching employees";
                 log:printError(customErr, employees);
@@ -525,7 +525,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Lead: results restricted to their subordinates.
-        database:EmployeesResponse|error employees = database:getEmployees(payload, userInfo.email);
+        database:EmployeesResponse|error employees =
+            database:getEmployees(payload, userInfo.email, includePersonalInfo = true);
         if employees is error {
             string customErr = "Error occurred while fetching employees";
             log:printError(customErr, employees);
@@ -2292,7 +2293,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         int offset = 0;
 
         while fetchMore {
-            database:EmployeesResponse|error pageResult = database:getEmployees({
+            database:EmployeesResponse|error pageResult = database:getEmployees(includePersonalInfo = true, payload = {
                                                                                     searchString: (),
                                                                                     filters: payload.filters,
                                                                                     pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},

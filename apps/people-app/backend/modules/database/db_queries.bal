@@ -242,12 +242,13 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
 # + payload - Get employees filter payload
 # + leadEmail - If provided, restricts results to subordinates of this lead
 # + return - Parameterized query for fetching employees
-isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadEmail = ()) returns sql:ParameterizedQuery {
+isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadEmail = (),
+        boolean includePersonalInfo = false) returns sql:ParameterizedQuery {
 
     int 'limit = payload.pagination.'limit;
     int offset = payload.pagination.offset;
 
-    sql:ParameterizedQuery baseQuery = `
+    sql:ParameterizedQuery selectPrefix = `
         SELECT
             e.employee_id AS employeeId,
             e.first_name AS firstName,
@@ -310,6 +311,12 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.company_id AS companyId,
             h.name AS house,
             e.house_id AS houseId,
+            -- Personal information is selected only where the caller is entitled to it. The
+            -- columns are omitted from the SQL rather than blanked afterwards, so data nobody
+            -- may see is never read out of the database at all.
+        `;
+
+    sql:ParameterizedQuery personalInfoColumns = `
             pi.gender AS gender,
             pi.nic_or_passport AS nicOrPassport,
             pi.dob AS dateOfBirth,
@@ -334,6 +341,9 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
                 FROM personal_info_emergency_contacts piec
                 WHERE piec.personal_info_id = pi.id AND piec.is_active = 1
             ) AS emergencyContacts,
+        `;
+
+    sql:ParameterizedQuery remainingQuery = `
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
@@ -377,6 +387,12 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             ) mgr ON mgr.managerEmail = LOWER(e.manager_email)
             LEFT JOIN resignation r ON r.employee_id = e.id
         `;
+
+    // Defaults to excluding personal information, so a caller that has not been considered
+    // gets a field it did not expect rather than data it may not see.
+    sql:ParameterizedQuery baseQuery = includePersonalInfo
+        ? sql:queryConcat(selectPrefix, personalInfoColumns, remainingQuery)
+        : sql:queryConcat(selectPrefix, remainingQuery);
 
     sql:ParameterizedQuery[] filters = [];
 

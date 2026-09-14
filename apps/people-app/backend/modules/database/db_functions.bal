@@ -86,8 +86,10 @@ public isolated function getEmployeeInfo(string employeeId) returns Employee|err
 # + payload - Get employees filter payload
 # + leadEmail - If provided, restricts results to subordinates of this lead
 # + return - List of employees or error
-public isolated function getEmployees(EmployeeSearchPayload payload, string? leadEmail = ()) returns EmployeesResponse|error {
-    stream<EmployeeRecord, error?> resultStream = databaseClient->query(getEmployeesQuery(payload, leadEmail));
+public isolated function getEmployees(EmployeeSearchPayload payload, string? leadEmail = (),
+        boolean includePersonalInfo = false) returns EmployeesResponse|error {
+    stream<EmployeeRecord, error?> resultStream =
+        databaseClient->query(getEmployeesQuery(payload, leadEmail, includePersonalInfo));
 
     int totalCount = 0;
     Employee[] employees = [];
