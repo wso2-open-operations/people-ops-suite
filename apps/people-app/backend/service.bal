@@ -3524,13 +3524,22 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Refused while somebody is present to be told. A field the sweep cannot write
         // would otherwise sit pending until its date and fail there, long after the person
         // who scheduled it has moved on.
-        string|error columnChanges = toSchedulableColumns(payload.changes);
+        map<json>|error columnChanges = toSchedulableColumns(payload.changes);
         if columnChanges is error {
             return <http:BadRequest>{body: {message: columnChanges.message()}};
         }
 
+        // Refused rather than scheduled without it: the sweep compares against these on
+        // the day, and a change carrying none would be applied without that check.
+        map<json>|error expected = expectedValuesFor(employeeInfo, columnChanges);
+        if expected is error {
+            string customErr = string `Error occurred while recording the current values for ID: ${employeeId}`;
+            log:printError(customErr, expected, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
         int|error scheduled = database:scheduleEmployeeChange(employeeId, payload.effectiveDate,
-                columnChanges, expectedValuesFor(employeeInfo, columnChanges), userInfo.email);
+                columnChanges.toJsonString(), expected.toJsonString(), userInfo.email);
         if scheduled is error {
             string customErr = string `Error occurred while scheduling a change for ID: ${employeeId}`;
             log:printError(customErr, scheduled, employeeId = employeeId);

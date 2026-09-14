@@ -938,10 +938,9 @@ isolated function isFutureDate(string date) returns boolean {
 # be scheduled and should be told so.
 #
 # + payload - The fields to change
-# + return - Column name to value as a JSON string, or an error naming the field that
-# cannot be scheduled
+# + return - Column name to value, or an error naming the field that cannot be scheduled
 isolated function toSchedulableColumns(database:UpdateEmployeeJobInfoPayload payload)
-    returns string|error {
+    returns map<json>|error {
 
     map<json> asMap = check payload.toJson().cloneWithType();
     map<json> columns = {};
@@ -963,19 +962,23 @@ isolated function toSchedulableColumns(database:UpdateEmployeeJobInfoPayload pay
     if columns.length() == 0 {
         return error("No schedulable fields were provided");
     }
-    return columns.toJsonString();
+    return columns;
 }
 
 # Capture what the targeted columns hold now, for the supersede check on the day.
 #
 # + employee - The employee's current record
-# + columnChanges - The change, as column name to value
-# + return - Column name to current value as a JSON string
-isolated function expectedValuesFor(database:Employee employee, string columnChanges) returns string {
-    map<json>|error changes = trap <map<json>>checkpanic columnChanges.fromJsonString();
+# + changes - The change, as column name to value
+# + return - Column name to current value, or an error when they could not be read
+isolated function expectedValuesFor(database:Employee employee, map<json> changes)
+    returns map<json>|error {
+
+    // An error rather than an empty map: an empty expectation reads to the sweep as
+    // "nothing to compare", which is how a failure here would silently disable the
+    // supersede check months later, when the change applies.
     map<json>|error current = employee.toJson().cloneWithType();
-    if changes is error || current is error {
-        return "{}";
+    if current is error {
+        return error(string `Could not read the employee's current values: ${current.message()}`);
     }
 
     map<json> expected = {};
@@ -988,5 +991,5 @@ isolated function expectedValuesFor(database:Employee employee, string columnCha
         string sourceField = SCHEDULABLE_COLUMN_SOURCES.get(column);
         expected[column] = current.hasKey(sourceField) ? current.get(sourceField) : ();
     }
-    return expected.toJsonString();
+    return expected;
 }

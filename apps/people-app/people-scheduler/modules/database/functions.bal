@@ -161,7 +161,14 @@ isolated function applyOneScheduledChange(ScheduledChange change, string actor)
 
     string[] fieldNames = readerFacingNames(changes);
 
-    string? supersededBy = findSupersedingField(change.employeePkId, change.expected);
+    string?|error supersededBy = findSupersedingField(change.employeePkId, change.expected);
+    if supersededBy is error {
+        // Left FAILED rather than applied: the check could not run, so whether this
+        // change still makes sense is unknown. It surfaces in the summary for somebody
+        // to look at instead of being written on an assumption.
+        return closeWith(change, employeeName, fieldNames, SCHEDULED_CHANGE_FAILED,
+                string `Could not verify the change is still valid: ${supersededBy.message()}`, actor);
+    }
     if supersededBy is string {
         return closeWith(change, employeeName, fieldNames, SCHEDULED_CHANGE_SUPERSEDED,
                 string `${supersededBy} was changed after this was scheduled`, actor);
@@ -319,30 +326,42 @@ isolated function syncAdditionalManagers(int employeePkId, json desired, string 
 
 # Find the first targeted field that has moved on from what the change expected.
 #
+# Returns an error when the comparison could not be made at all, which the caller treats
+# as a reason not to apply. "Could not check" is not "nothing has changed": a database
+# hiccup on the day, or an expectation that was never captured, would otherwise wave the
+# change through at exactly the moment this check exists for, quietly overwriting a more
+# recent decision with nobody watching.
+#
 # + employeePkId - Employee table primary key
 # + expected - What the targeted fields held when the change was scheduled
-# + return - Reader-facing name of the first field that no longer matches, or () when
-# every field still holds what was expected
-isolated function findSupersedingField(int employeePkId, json expected) returns string? {
+# + return - Reader-facing name of the first field that no longer matches, () when every
+# field still holds what was expected, or an error when the comparison could not be made
+isolated function findSupersedingField(int employeePkId, json expected)
+    returns string?|error {
+
     map<json>|error expectedFields = expected.cloneWithType();
-    if expectedFields is error || expectedFields.length() == 0 {
-        // Nothing to compare against; the change is applied on its own terms. The
-        // allowlist still governs what it may write.
-        return ();
+    if expectedFields is error {
+        return error("the expected values recorded with this change could not be read");
+    }
+    if expectedFields.length() == 0 {
+        // Written when the change was scheduled and empty ever since, which means the
+        // snapshot was never captured rather than that there is nothing to compare.
+        // Applying on that basis is the overwrite this check exists to prevent.
+        return error("no expected values were recorded when this change was scheduled");
     }
 
     record {|json snapshot;|}|error row = databaseClient->queryRow(getEmployeeSnapshotQuery(employeePkId));
     if row is error {
-        return ();
+        return error(string `the employee's current values could not be read: ${row.message()}`);
     }
 
     json|error parsed = row.snapshot is string ? (<string>row.snapshot).fromJsonString() : row.snapshot;
     if parsed is error {
-        return ();
+        return error(string `the employee's current values could not be parsed: ${parsed.message()}`);
     }
     map<json>|error current = parsed.cloneWithType();
     if current is error {
-        return ();
+        return error(string `the employee's current values could not be read: ${current.message()}`);
     }
 
     foreach string column in expectedFields.keys() {
