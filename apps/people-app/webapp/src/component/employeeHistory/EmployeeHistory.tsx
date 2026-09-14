@@ -87,6 +87,9 @@ const FIELD_LABELS: Record<string, string> = {
   final_day_in_office: "Last Day in Office",
   final_day_of_employment: "Final Day of Employment",
   reason: "Resignation Reason",
+  // resignation_audit: one event for the resignation being entered, rather than three
+  // field changes for details that were entered together.
+  resignation_recorded: "Resignation Recorded",
   // employee_additional_managers_audit
   additional_manager: "Additional Manager",
 };

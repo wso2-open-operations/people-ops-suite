@@ -30,6 +30,15 @@ const SOURCE_TABLE_RESIGNATION_AUDIT = "resignation_audit";
 # rather than a column on the employee row.
 const FIELD_ADDITIONAL_MANAGER = "additional_manager";
 
+# Synthetic field name for the event recording that a resignation was entered.
+#
+# The first resignation snapshot is an INSERT, which the baseline rule would otherwise
+# suppress. For the employee table that rule is right — an onboarding INSERT sets twenty
+# fields at once and the timeline shows a single "joined" marker instead. A resignation
+# row does not exist until somebody resigns, so its INSERT is the event: the moment the
+# departure was recorded, by a named person, on a known date.
+const FIELD_RESIGNATION_RECORDED = "resignation_recorded";
+
 # Action type recorded when a row is soft-deleted (is_active flipped to 0).
 const ACTION_TYPE_DELETE = "DELETE";
 
@@ -138,6 +147,29 @@ public isolated function buildHistoryEvents(AuditSnapshot[] snapshots) returns H
             continue;
         }
 
+        // A resignation being entered is reported as one event rather than three field
+        // changes: the three details are entered together in a single act, and listing
+        // them separately would read as three decisions where there was one.
+        if snapshot.sourceTable == SOURCE_TABLE_RESIGNATION_AUDIT
+            && snapshot.actionType == ACTION_TYPE_INSERT {
+            events.push({
+                employeePkId: snapshot.employeePkId,
+                'field: FIELD_RESIGNATION_RECORDED,
+                sourceTable: snapshot.sourceTable,
+                // No previous value: nothing preceded the resignation being recorded.
+                previousValue: (),
+                currentValue: resignationSummary(snapshot.data),
+                occurredOn: snapshot.actionOn,
+                actionBy: snapshot.actionBy,
+                isSystem: isSystemActor(snapshot.actionBy)
+            });
+            // Still recorded as the baseline, so a later correction to any of the three
+            // fields diffs against what was originally entered.
+            previousByRecord[string `${snapshot.employeePkId}|${snapshot.sourceTable}`] =
+                snapshot.data;
+            continue;
+        }
+
         string recordKey = string `${snapshot.employeePkId}|${snapshot.sourceTable}`;
 
         // hasKey, not `previous is json`: a JSON null is itself a valid json value, so an
@@ -186,6 +218,33 @@ public isolated function buildHistoryEvents(AuditSnapshot[] snapshots) returns H
 #
 # + snapshot - Audit snapshot from employee_additional_managers_audit
 # + return - The event, or () when the snapshot records no meaningful change
+# The value shown against a recorded resignation.
+#
+# The reason, then when the employment ends — short enough to read as a value rather
+# than a sentence, which is how every other row in the timeline reads.
+#
+# The date is named rather than left bare: a resignation carries two dates, and "final
+# day" is the one the profile uses for this field. Calling it "last day" would name the
+# other one, which is the day the person stops coming in.
+#
+# + data - The resignation audit snapshot
+# + return - The value to show, or () when the row carried nothing worth reporting
+isolated function resignationSummary(json data) returns string? {
+    string? reason = toDisplayValue(getField(data, "reason"));
+    string? finalDay = toDisplayValue(getField(data, "final_day_of_employment"));
+
+    if reason is string && finalDay is string {
+        return string `${reason} · final day ${finalDay}`;
+    }
+    if reason is string {
+        return reason;
+    }
+    if finalDay is string {
+        return string `Final day ${finalDay}`;
+    }
+    return ();
+}
+
 isolated function buildAdditionalManagerEvent(AuditSnapshot snapshot) returns HistoryEvent? {
     string? managerEmail = toDisplayValue(getField(snapshot.data, "additional_manager_email"));
     if managerEmail is () {

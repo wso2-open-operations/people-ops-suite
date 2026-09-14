@@ -67,6 +67,7 @@ export const AUDIT_FIELDS = {
   country: "country",
   nationality: "nationality",
   // resignation_audit
+  resignationRecorded: "resignation_recorded",
   finalDayInOffice: "final_day_in_office",
   finalDayOfEmployment: "final_day_of_employment",
   resignationReason: "reason",
