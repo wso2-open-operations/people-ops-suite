@@ -524,9 +524,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Lead: results restricted to their subordinates.
+        // Lead: results restricted to their subordinates, and without personal information.
+        // A lead sees a subordinate's work details but not their NIC, date of birth, home
+        // address or emergency contacts — the same rule the personal-info endpoint states,
+        // where the whole record is withheld from a lead rather than projected.
         database:EmployeesResponse|error employees =
-            database:getEmployees(payload, userInfo.email, includePersonalInfo = true);
+            database:getEmployees(payload, userInfo.email);
         if employees is error {
             string customErr = "Error occurred while fetching employees";
             log:printError(customErr, employees);
