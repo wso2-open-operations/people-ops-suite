@@ -521,9 +521,17 @@ export const useSectionSave = (employeeId: string | undefined) => {
           "Cancel",
         );
 
-        // showConfirmation gives no dismissal callback, so a cancelled dialog simply
-        // never resolves this promise. Edit mode is left open either way, which is
-        // the correct outcome for a cancel.
+        // showConfirmation reports OK but not dismissal, so pressing Cancel or the close
+        // icon resolves nothing: this promise stays pending for the life of the form
+        // instance. Edit mode is left open either way, which is the right outcome for a
+        // cancel, so nothing is visibly wrong today.
+        //
+        // It is only harmless because nothing here reads Formik's isSubmitting, which
+        // stays true once a cancelled save leaves it that way. Do not gate anything on
+        // it in this section — `disabled={isSubmitting}` on Save, as four dialogs
+        // elsewhere in this app do, would make the section unsavable after one cancel,
+        // with no error to explain it. Give showConfirmation an onCancel and resolve
+        // false here before adding any such thing.
       });
     },
     [dispatch, employeeId, isAdmin, org, pendingChanges, showConfirmation],
