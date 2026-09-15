@@ -3067,15 +3067,17 @@ isolated function updateScheduledChangeStatusQuery(int id, string status, string
 # several roles ago. Where the latest employment has no house, the caller falls back to
 # deriving one from the employee ID.
 #
-# The house is joined rather than read directly, so one that has since been removed reads
-# as absent and takes the same fallback.
+# The house is joined rather than read directly, and the join carries `is_active = 1`, so a
+# house that has since been retired reads as absent and takes the same fallback. Houses are
+# soft-deleted, so matching on id alone would keep resolving one and hand the returning
+# employee a house the House dropdown no longer offers.
 #
 # + workEmail - Work email of the employee being onboarded
 # + return - Parameterized query returning the previous house id, if there is one
 isolated function getPreviousHouseIdQuery(string workEmail) returns sql:ParameterizedQuery =>
     `SELECT h.id AS houseId
      FROM employee e
-     LEFT JOIN house h ON h.id = e.house_id
+     LEFT JOIN house h ON h.id = e.house_id AND h.is_active = 1
      WHERE e.work_email = ${workEmail}
      ORDER BY e.start_date DESC, e.id DESC
      LIMIT 1`;
