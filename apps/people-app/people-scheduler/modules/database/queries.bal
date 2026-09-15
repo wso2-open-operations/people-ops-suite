@@ -71,6 +71,11 @@ isolated function transitionExpiredLeaversQuery(string actor, string[] employeeI
 # Ordered by effective date then id, so two changes to the same employee land in the
 # order they were meant to take effect rather than in whatever order they were entered.
 #
+# UTC_DATE rather than CURDATE, matching the leaver query above and the backend's own
+# check that an effective date is in the future. On a server ahead of UTC the local date
+# rolls over first, so CURDATE would treat a change as due during those hours before UTC
+# agrees — applying it earlier than the date the API accepted it for.
+#
 # + return - Query returning due scheduled_employee_change rows with employee details
 isolated function getDueScheduledChangesQuery() returns sql:ParameterizedQuery =>
     `SELECT
@@ -87,7 +92,7 @@ isolated function getDueScheduledChangesQuery() returns sql:ParameterizedQuery =
      INNER JOIN employee e ON e.id = sc.employee_id
      INNER JOIN personal_info pi ON pi.id = e.personal_info_id
      WHERE sc.status = 'PENDING'
-       AND sc.effective_date <= CURDATE()
+       AND sc.effective_date <= UTC_DATE()
      ORDER BY sc.effective_date ASC, sc.id ASC`;
 
 # Move a scheduled change out of PENDING.
