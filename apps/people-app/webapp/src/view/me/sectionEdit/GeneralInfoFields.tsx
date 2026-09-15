@@ -35,7 +35,10 @@ import {
   resetContinuousService,
 } from "@slices/employeeSlice/employee";
 import { useAppDispatch } from "@slices/store";
-import { UNIT_CLEAR_SENTINEL } from "@slices/careerFunctionSlice/careerFunction";
+import {
+  OFFICE_CLEAR_SENTINEL,
+  UNIT_CLEAR_SENTINEL,
+} from "@slices/careerFunctionSlice/careerFunction";
 import { useAppSelector } from "@slices/store";
 import { normalizeEmail, sortAndFormatOptions } from "@utils/utils";
 
@@ -424,7 +427,10 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
               id: o.id,
               label: o.name,
             })),
-            (id) => setFieldValue("officeId", id),
+            // None arrives from the select as 0, which the schema rejects outright and
+            // the backend would try to write as a literal office id. The clear is an
+            // explicit -1, the same conversion the Unit field below makes.
+            (id) => setFieldValue("officeId", id || OFFICE_CLEAR_SENTINEL),
             { disabled: !values.companyId, includeNone: true },
           )}
         </Cell>
