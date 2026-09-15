@@ -55,6 +55,12 @@ public type DuplicateCareerFunctionError distinct error;
 # violation), so the caller gets a 400 rather than an opaque 500.
 public type UnknownCareerFunctionError distinct error;
 
+# Raised when a departure's final day of employment precedes its last day in office, so the
+# caller gets a 400 naming the problem rather than an opaque 500. The type carries that
+# meaning, not the message: RESIGNATION_DATE_ORDER_ERROR supplies the wording and can be
+# reworded without changing which status the caller receives.
+public type InvalidResignationDatesError distinct error;
+
 # [Configurable] Database configs.
 # Deliberately flat (primitive fields only) rather than embedding mysql:Options/
 # sql:ConnectionPool directly: Choreo's config UI introspects configurable variable

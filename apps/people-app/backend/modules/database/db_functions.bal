@@ -1146,7 +1146,7 @@ isolated function validateResignationDateOrder(string employeeId, UpdateEmployee
     string? ofEmployment = incomingOfEmployment ?: storedOfEmployment;
 
     if inOffice is string && ofEmployment is string && ofEmployment < inOffice {
-        return error(RESIGNATION_DATE_ORDER_ERROR);
+        return error InvalidResignationDatesError(RESIGNATION_DATE_ORDER_ERROR);
     }
 }
 

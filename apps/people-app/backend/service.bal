@@ -1631,12 +1631,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         error? updateResult = database:updateResignation(employeeId, payload, userInfo.email);
         if updateResult is error {
             // An impossible date pair is the caller's mistake, not a server fault, so it
-            // is reported as such with the reason rather than a generic failure.
-            if updateResult.message() == database:RESIGNATION_DATE_ORDER_ERROR {
-                log:printWarn(database:RESIGNATION_DATE_ORDER_ERROR, employeeId = employeeId);
-                return <http:BadRequest>{
-                    body: {message: database:RESIGNATION_DATE_ORDER_ERROR}
-                };
+            // is reported as such with the reason rather than a generic failure. Matched
+            // on the error type rather than its message: the wording is a user-facing
+            // string and rewording it should not turn somebody's bad input into a 500.
+            if updateResult is database:InvalidResignationDatesError {
+                log:printWarn(updateResult.message(), employeeId = employeeId);
+                return <http:BadRequest>{body: {message: updateResult.message()}};
             }
             string customErr = string `Error occurred while recording the resignation for ID: ${employeeId}`;
             log:printError(customErr, updateResult, employeeId = employeeId);
