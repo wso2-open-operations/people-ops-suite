@@ -171,12 +171,22 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
     [designations],
   );
 
-  // Work locations come from the selected company's offices, so an admin cannot pick a
-  // location the company does not operate in.
+  // Work locations belong to the company, not to its offices: they come from
+  // companies_allowed_locations, which the companies endpoint returns as
+  // allowedLocations. The Office payload is {id, name, location} — a closed record with
+  // no working locations on it — so reading them from offices produced an empty list for
+  // every company and left this field unsettable.
+  //
+  // Scoped to the selected company, the same list onboarding offers and the same one
+  // useEmploymentRules matches against for the probation period, so a location that can
+  // be picked here is one those rules recognise.
   const workLocationOptions = useMemo(() => {
-    const all = offices.flatMap((o) => o.workingLocations ?? []);
-    return sortAndFormatOptions(Array.from(new Set(all)), (loc) => loc);
-  }, [offices]);
+    const allowed =
+      companies.find((c) => c.id === values.companyId)?.allowedLocations ?? [];
+    return sortAndFormatOptions(allowed, (item) => item.location).map(
+      (item) => item.location,
+    );
+  }, [companies, values.companyId]);
 
   const isLeaver =
     values.employeeStatus === EmployeeStatus.MarkedLeaver ||
