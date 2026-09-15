@@ -52,7 +52,11 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
 import { useEffect, useRef, useState } from "react";
 
-const QR_EXPORT_LIMIT = 50;
+// Each export is one request per employee to the QR service and one browser download,
+// both serial, so the cap is about what that mechanism can carry rather than any server
+// limit — there is none. Sized above a real joining cohort so it is not hit in normal
+// use; a bulk export well beyond this wants a single server-generated archive instead.
+const QR_EXPORT_LIMIT = 100;
 const SEARCH_LIMIT = 20;
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -157,24 +161,35 @@ function QrCodesReportContent() {
         return;
       }
 
-      setSelected((prev) => {
-        const existing = new Set(prev.map((e) => e.employeeId));
-        const additions = matches.filter((e) => !existing.has(e.employeeId));
-        const room = QR_EXPORT_LIMIT - prev.length;
-        const added = additions.slice(0, Math.max(room, 0));
+      // Worked out before the update rather than inside it: a state updater has to be a
+      // pure function of its argument, and React may run it more than once — StrictMode
+      // does in development — which dispatched the snackbar twice. Reading `selected`
+      // directly is safe here because this handler is awaited behind startDateLoading
+      // and is the only writer while it runs.
+      const existing = new Set(selected.map((e) => e.employeeId));
+      const additions = matches.filter((e) => !existing.has(e.employeeId));
+      const room = QR_EXPORT_LIMIT - selected.length;
+      const added = additions.slice(0, Math.max(room, 0));
 
-        const skipped = additions.length - added.length;
-        dispatch(
-          enqueueSnackbarMessage({
-            message:
-              skipped > 0
-                ? `Added ${added.length}; ${skipped} not added, the limit is ${QR_EXPORT_LIMIT}.`
-                : `Added ${added.length} employee${added.length === 1 ? "" : "s"} who started on ${startDate}.`,
-            type: skipped > 0 ? "warning" : "success",
-          }),
-        );
-        return [...prev, ...added];
-      });
+      // Two ways a cohort comes up short, and both have to be counted. The request asks
+      // for QR_EXPORT_LIMIT rows, so a larger cohort is cut off by the server before the
+      // client ever sees it: totalCount reports the real size. Counting only what came
+      // back reported "Added 100" for a 120-person intake and never mentioned the other
+      // twenty, leaving the admin to print badges for a cohort they thought was whole.
+      const notReturned = Math.max(action.payload.totalCount - matches.length, 0);
+      const skipped = additions.length - added.length + notReturned;
+
+      setSelected((prev) => [...prev, ...added]);
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message:
+            skipped > 0
+              ? `Added ${added.length}; ${skipped} not added, the limit is ${QR_EXPORT_LIMIT}.`
+              : `Added ${added.length} employee${added.length === 1 ? "" : "s"} who started on ${startDate}.`,
+          type: skipped > 0 ? "warning" : "success",
+        }),
+      );
     } finally {
       setStartDateLoading(false);
     }
