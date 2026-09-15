@@ -1,4 +1,9 @@
+DROP TABLE IF EXISTS resignation_audit;
 DROP TABLE IF EXISTS resignation;
+DROP TABLE IF EXISTS scheduled_employee_change;
+DROP TABLE IF EXISTS parking_reservation;
+DROP TABLE IF EXISTS parking_slot;
+DROP TABLE IF EXISTS parking_floor;
 DROP TABLE IF EXISTS vehicle;
 DROP TABLE IF EXISTS employee_additional_managers_audit;
 DROP TABLE IF EXISTS employee_audit;
@@ -11,6 +16,7 @@ DROP TABLE IF EXISTS recruit;
 DROP TABLE IF EXISTS business_unit_team_sub_team_unit;
 DROP TABLE IF EXISTS business_unit_team_sub_team;
 DROP TABLE IF EXISTS business_unit_team;
+DROP TABLE IF EXISTS team_asgardeo_groups;
 DROP TABLE IF EXISTS unit;
 DROP TABLE IF EXISTS sub_team;
 DROP TABLE IF EXISTS team;
@@ -26,7 +32,6 @@ DROP TABLE IF EXISTS employment_type_idp_group;
 DROP TABLE IF EXISTS employment_type;
 DROP TABLE IF EXISTS personal_info_emergency_contacts;
 DROP TABLE IF EXISTS personal_info;
-DROP TABLE IF EXISTS team_asgardeo_groups;
 
 CREATE TABLE `vehicle` (
   `vehicle_id` int NOT NULL AUTO_INCREMENT,
