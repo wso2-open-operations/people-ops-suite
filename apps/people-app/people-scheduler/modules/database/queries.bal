@@ -171,14 +171,23 @@ isolated function deactivateAdditionalManagerQuery(int employeePkId, string emai
        AND LOWER(additional_manager_email) = LOWER(${email})
        AND is_active = 1`;
 
-# Add one additional manager.
+# Add one additional manager, or reactivate them if they were removed before.
+#
+# Removal deactivates the row rather than deleting it, and the unique key spans the
+# employee and the email regardless of is_active, so a plain insert fails for anyone who
+# has ever held the role. Reinstating somebody who was removed earlier is ordinary, and
+# this matches how the employee endpoint writes the same table.
 #
 # + employeePkId - Employee table primary key
 # + email - Additional manager email
 # + actor - System actor performing the update
-# + return - Query to insert one additional manager
+# + return - Query to insert or reactivate one additional manager
 isolated function addAdditionalManagerQuery(int employeePkId, string email, string actor)
     returns sql:ParameterizedQuery =>
     `INSERT INTO employee_additional_managers
         (employee_pk_id, additional_manager_email, is_active, created_by, updated_by)
-     VALUES (${employeePkId}, ${email}, 1, ${actor}, ${actor})`;
+     VALUES (${employeePkId}, ${email}, 1, ${actor}, ${actor})
+     ON DUPLICATE KEY UPDATE
+        is_active = 1,
+        updated_by = ${actor},
+        updated_on = CURRENT_TIMESTAMP(6)`;

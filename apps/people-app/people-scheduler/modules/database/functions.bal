@@ -324,6 +324,50 @@ isolated function syncAdditionalManagers(int employeePkId, json desired, string 
     }
 }
 
+# The employee's active additional managers, normalised for comparison.
+#
+# + employeePkId - Employee table primary key
+# + return - The distinct emails, lowercased and sorted, or an error
+isolated function activeAdditionalManagers(int employeePkId) returns string[]|error {
+    stream<record {|string email;|}, error?> currentStream =
+        databaseClient->query(getActiveAdditionalManagersQuery(employeePkId));
+    string[] emails = check from record {|string email;|} row in currentStream
+        select row.email;
+    return normalizedEmailSet(emails);
+}
+
+# Normalise a set of emails so that only membership matters to a comparison.
+#
+# Lowercased because these are written and matched case-insensitively, trimmed because the
+# scheduled change carries whatever was typed, and sorted because neither the stored order
+# nor the order somebody entered them says anything about the set. Without this,
+# reordering two leads would read as somebody else's edit and supersede the change.
+#
+# + emails - Comma-separated emails, an email array, or ()
+# + return - The distinct emails, lowercased and sorted
+isolated function normalizedEmailSet(json emails) returns string[] {
+    string[] parts = [];
+    if emails is string {
+        parts = re `,`.split(emails);
+    } else if emails is json[] {
+        foreach json entry in emails {
+            if entry is string {
+                parts.push(entry);
+            }
+        }
+    }
+
+    map<()> seen = {};
+    foreach string part in parts {
+        string trimmed = part.trim().toLowerAscii();
+        if trimmed.length() > 0 {
+            seen[trimmed] = ();
+        }
+    }
+    string[] unique = seen.keys();
+    return unique.sort();
+}
+
 # Find the first targeted field that has moved on from what the change expected.
 #
 # Returns an error when the comparison could not be made at all, which the caller treats
@@ -365,7 +409,20 @@ isolated function findSupersedingField(int employeePkId, json expected)
     }
 
     foreach string column in expectedFields.keys() {
+        // Additional managers are a set in their own table, not a column on the snapshot
+        // above, so they are read and compared as a set. Membership is what matters:
+        // both sides are lowercased and sorted, since the sweep writes them
+        // case-insensitively and neither side's ordering means anything.
         if column == ADDITIONAL_MANAGERS_KEY {
+            string[]|error currentManagers = activeAdditionalManagers(employeePkId);
+            if currentManagers is error {
+                return error(string `the employee's additional leads could not be read: ${
+                    currentManagers.message()}`);
+            }
+            string[] expectedManagers = normalizedEmailSet(expectedFields.get(column));
+            if expectedManagers.toString() != currentManagers.toString() {
+                return "Additional leads";
+            }
             continue;
         }
         json expectedValue = expectedFields.get(column);

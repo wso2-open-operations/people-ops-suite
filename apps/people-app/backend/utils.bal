@@ -983,13 +983,64 @@ isolated function expectedValuesFor(database:Employee employee, map<json> change
 
     map<json> expected = {};
     foreach string column in changes.keys() {
+        // Additional managers live in their own table rather than in an employee column,
+        // so they are snapshotted as the normalised set the sweep will compare against
+        // rather than read from SCHEDULABLE_COLUMN_SOURCES.
+        if column == SCHEDULED_ADDITIONAL_MANAGERS_COLUMN {
+            expected[column] = normalizedEmailSet(employee.additionalManagerEmails);
+            continue;
+        }
         if !SCHEDULABLE_COLUMN_SOURCES.hasKey(column) {
-            // Additional managers are a set in another table rather than a column, so
-            // they are not part of the comparison.
             continue;
         }
         string sourceField = SCHEDULABLE_COLUMN_SOURCES.get(column);
         expected[column] = current.hasKey(sourceField) ? current.get(sourceField) : ();
     }
+
+    // The promise this function's own contract makes, and the one the endpoint relies on
+    // to refuse a change while somebody is present to be told. An empty map reaches the
+    // sweep as "nothing to compare" months later, where it is refused far from anyone who
+    // could act on it.
+    if expected.length() == 0 {
+        return error("The current values for this change could not be recorded");
+    }
     return expected;
+}
+
+# Column name the additional managers set is carried under in a scheduled change.
+#
+# Matches ADDITIONAL_MANAGERS_KEY in the scheduler, which reads these same rows.
+const string SCHEDULED_ADDITIONAL_MANAGERS_COLUMN = "additional_manager_emails";
+
+# Normalise a set of emails so that only membership matters to a comparison.
+#
+# Lowercased because the sweep writes and matches these case-insensitively, trimmed
+# because the payload carries whatever was typed, and sorted because neither the stored
+# order nor the order somebody entered them says anything about the set itself. Without
+# this, reordering two leads would read as a change somebody else had made and supersede
+# the scheduled one.
+#
+# + emails - Comma-separated emails, an email array, or ()
+# + return - The distinct emails, lowercased and sorted
+isolated function normalizedEmailSet(json emails) returns string[] {
+    string[] parts = [];
+    if emails is string {
+        parts = re `,`.split(emails);
+    } else if emails is json[] {
+        foreach json entry in emails {
+            if entry is string {
+                parts.push(entry);
+            }
+        }
+    }
+
+    map<()> seen = {};
+    foreach string part in parts {
+        string trimmed = part.trim().toLowerAscii();
+        if trimmed.length() > 0 {
+            seen[trimmed] = ();
+        }
+    }
+    string[] unique = seen.keys();
+    return unique.sort();
 }
