@@ -682,7 +682,11 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
           validationSchema={
             activeStep === 0
               ? personalInfoValidationSchema
-              : createJobInfoValidationSchema(employmentTypes)
+              : // requireHouse tracks isEditMode because the House field itself is only
+                // rendered in edit mode; the server assigns the house when onboarding.
+                createJobInfoValidationSchema(employmentTypes, {
+                  requireHouse: isEditMode,
+                })
           }
           onSubmit={async (values, actions) => {
             if (activeStep !== EmployeeFormSteps.length - 1) {

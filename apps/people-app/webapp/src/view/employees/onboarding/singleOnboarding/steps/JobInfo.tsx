@@ -121,6 +121,9 @@ const SECTION_HEADER_BOX_SX = {
 
 export const createJobInfoValidationSchema = (
   employmentTypes?: { id: number; name: string }[],
+  // Onboarding has no House field to fill in, so the requirement below is only applied
+  // where there is one to answer it — see the note on houseId.
+  { requireHouse = true }: { requireHouse?: boolean } = {},
 ) =>
   Yup.object().shape({
     workEmail: Yup.string()
@@ -162,13 +165,17 @@ export const createJobInfoValidationSchema = (
     companyId: Yup.number()
       .required("Company is required")
       .min(1, "Select a valid company"),
-    // Every employee belongs to a house. Onboarding assigns one automatically from the
-    // employee ID, so a missing one means a record that predates that — and it has to
-    // be set before the record can be saved again, since a house-less employee cannot
-    // have a QR code generated.
-    houseId: Yup.number()
-      .required("House is required")
-      .min(1, "Select a valid house"),
+    // Every employee belongs to a house. Onboarding assigns one on the server — from the
+    // employee's previous employment where they are rejoining, otherwise derived from the
+    // employee ID — and shows no House field, so requiring one there would fail a form
+    // that offers no way to satisfy it.
+    //
+    // The profile editor does show the field, and there a missing house means a record
+    // predating automatic assignment: it has to be set before the record can be saved
+    // again, since a house-less employee cannot have a QR code generated.
+    houseId: requireHouse
+      ? Yup.number().required("House is required").min(1, "Select a valid house")
+      : Yup.number().nullable(),
     officeId: Yup.number()
       .optional()
       .notOneOf([0], 'Select an office or explicitly choose "None"'),
