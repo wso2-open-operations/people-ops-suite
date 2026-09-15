@@ -30,8 +30,10 @@ export interface ScheduledChange {
   id: number;
   employeeId: number;
   // Employee ID as people refer to it (LK1234), not the numeric key above. The reducer
-  // checks it before accepting a response — see requestedFor.
-  employeeIdentifier: string;
+  // checks it before accepting a response — see requestedFor. Optional because a
+  // backend older than the field omits it; the reducer treats absent as "cannot say"
+  // rather than as a mismatch.
+  employeeIdentifier?: string;
   effectiveDate: string;
   changes: Record<string, unknown>;
   expected: Record<string, unknown>;
@@ -186,7 +188,16 @@ const ScheduledChangesSlice = createSlice({
         // The rows carry the employee they belong to, so the check is against what the
         // server actually returned rather than against what this app believes it asked
         // for.
-        if (changes.some((c) => c.employeeIdentifier !== employeeId)) {
+        //
+        // Only a stated disagreement counts. A backend older than the field sends no
+        // identifier at all, and treating that as a mismatch would empty the banner
+        // with no way to tell why; the requestedFor check above still covers the
+        // out-of-order case there, which is the one that actually happens.
+        if (
+          changes.some(
+            (c) => c.employeeIdentifier && c.employeeIdentifier !== employeeId,
+          )
+        ) {
           state.state = State.failed;
           state.errorMessage = "Scheduled changes did not match the employee requested";
           state.changes = [];
