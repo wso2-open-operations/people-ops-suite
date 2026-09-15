@@ -136,7 +136,11 @@ function QrCodesReportContent() {
             employeeStatus: EmployeeStatus.Active,
             startDate,
           },
-          pagination: { limit: SEARCH_LIMIT, offset: 0 },
+          // The export cap, not the type-ahead's limit: this asks for a whole cohort,
+          // and anything beyond what the export can hold is reported as skipped below.
+          // Requesting the dropdown's 20 silently returned a partial cohort and still
+          // said it had added everyone.
+          pagination: { limit: QR_EXPORT_LIMIT, offset: 0 },
           sort: { sortField: "startDate", sortOrder: "DESC" },
         }),
       );
