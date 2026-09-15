@@ -50,7 +50,7 @@ public isolated function notifyScheduledChanges(database:ScheduledChangeOutcome[
 
     int notApplied = 0;
     foreach database:ScheduledChangeOutcome outcome in outcomes {
-        if outcome.status != "APPLIED" {
+        if outcome.status != database:SCHEDULED_CHANGE_APPLIED {
             notApplied += 1;
         }
     }
@@ -100,16 +100,16 @@ isolated function buildScheduledChangeRows(database:ScheduledChangeOutcome[] out
     returns string {
 
     database:ScheduledChangeOutcome[] sorted = from database:ScheduledChangeOutcome o in outcomes
-        order by o.status == "APPLIED" ? 1 : 0 ascending, o.employeeId ascending
+        order by o.status == database:SCHEDULED_CHANGE_APPLIED ? 1 : 0 ascending, o.employeeId ascending
         select o;
 
     string cellBase = "padding:10px 12px; border-bottom:1px solid #eef1f4; vertical-align:top;";
     string rows = "";
 
     foreach database:ScheduledChangeOutcome outcome in sorted {
-        string statusColour = outcome.status == "APPLIED"
+        string statusColour = outcome.status == database:SCHEDULED_CHANGE_APPLIED
             ? "#2e7d32"
-            : (outcome.status == "SUPERSEDED" ? "#a06000" : "#c62828");
+            : (outcome.status == database:SCHEDULED_CHANGE_SUPERSEDED ? "#a06000" : "#c62828");
         string detail = outcome.failureReason ?: string:'join(", ", ...outcome.fields);
 
         rows += string `<tr>` +

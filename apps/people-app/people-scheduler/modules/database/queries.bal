@@ -105,8 +105,8 @@ isolated function getDueScheduledChangesQuery() returns sql:ParameterizedQuery =
 # + failureReason - Why it was not applied, where that applies
 # + actor - System actor closing the row out
 # + return - Query to close out one scheduled change
-isolated function closeScheduledChangeQuery(int id, string status, string? failureReason,
-        string actor) returns sql:ParameterizedQuery =>
+isolated function closeScheduledChangeQuery(int id, ScheduledChangeStatus status,
+        string? failureReason, string actor) returns sql:ParameterizedQuery =>
     `UPDATE scheduled_employee_change
      SET status = ${status},
          applied_on = CASE WHEN ${status} = 'APPLIED' THEN CURRENT_TIMESTAMP(6) ELSE applied_on END,

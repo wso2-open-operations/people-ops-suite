@@ -1618,12 +1618,15 @@ public type ScheduledChange record {|
     string employeeIdentifier;
     # Date the change takes effect
     string effectiveDate;
-    # Fields being changed, shaped as an UpdateEmployeeJobInfoPayload
+    # Fields being changed, keyed by database column rather than by the payload field
+    # names the form uses — house_id, not houseId — because that is the shape the sweep
+    # applies and the shape expected below is captured in.
     json changes;
-    # What those same fields held when the change was scheduled
+    # What those same fields held when the change was scheduled, keyed the same way
     json expected;
-    # Where the change is in its life
-    string status;
+    # Where the change is in its life. Typed as the enum rather than a string: the column
+    # is a MySQL ENUM over exactly these five values, so nothing else can be read back.
+    ScheduledChangeStatus status;
     # When it was written to the employee record, if it was
     string? appliedOn;
     # Why it could not be applied, if it could not

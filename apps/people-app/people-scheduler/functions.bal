@@ -77,8 +77,8 @@ isolated function runScheduledChanges() returns error? {
     int failed = 0;
     foreach database:ScheduledChangeOutcome outcome in outcomes {
         match outcome.status {
-            "APPLIED" => { applied += 1; }
-            "SUPERSEDED" => { superseded += 1; }
+            database:SCHEDULED_CHANGE_APPLIED => { applied += 1; }
+            database:SCHEDULED_CHANGE_SUPERSEDED => { superseded += 1; }
             _ => { failed += 1; }
         }
     }

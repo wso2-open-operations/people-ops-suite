@@ -70,11 +70,6 @@ const string ON_BEHALF_OF = " on behalf of ";
 # Longest actor an audit column will hold, matching action_by and updated_by.
 const int MAX_ACTOR_LENGTH = 254;
 
-# Statuses a scheduled change can be closed out with.
-const string SCHEDULED_CHANGE_APPLIED = "APPLIED";
-const string SCHEDULED_CHANGE_SUPERSEDED = "SUPERSEDED";
-const string SCHEDULED_CHANGE_FAILED = "FAILED";
-
 # Columns a scheduled change may set, mapped to the name a reader sees.
 #
 # The allowlist is the security boundary as well as the documentation: the sweep builds
@@ -489,7 +484,8 @@ isolated function readerFacingNames(map<json> changes) returns string[] {
 # + actor - System actor closing the row out
 # + return - The outcome to report
 isolated function closeWith(ScheduledChange change, string employeeName, string[] fields,
-        string status, string? failureReason, string actor) returns ScheduledChangeOutcome {
+        ScheduledChangeStatus status, string? failureReason, string actor)
+    returns ScheduledChangeOutcome {
 
     sql:ExecutionResult|error closed = databaseClient->execute(
             closeScheduledChangeQuery(change.id, status, failureReason, actor));
