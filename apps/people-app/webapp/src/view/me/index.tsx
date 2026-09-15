@@ -582,6 +582,19 @@ export default function Me({
   // The backend strips attribution from a self-view, so the popover would report when
   // a field changed but never by whom — a half-answer beside every field.
   const canViewFieldHistory = !isSelfView && !!targetEmployeeId;
+  // Mirrors canReadAnyEmployee on the backend. A lead is not in it: lead status is
+  // resolved from the database rather than an IAM group, so GET /scheduled-changes
+  // refuses them. Fetching anyway would 403 on every team member's profile and raise an
+  // error snackbar over a page that is otherwise working — the same reason the personal
+  // information section above is never requested when it would be refused.
+  //
+  // The history fetch below keeps the wider gate: that endpoint does serve leads, with a
+  // reduced projection, so their per-field history icons are unaffected.
+  const canViewScheduledChanges =
+    canViewFieldHistory &&
+    (roles.includes(Role.ADMIN) ||
+      roles.includes(Role.EMPLOYEE_VIEW) ||
+      roles.includes(Role.RESIGNATION));
   const historyRef = useRef<HTMLDivElement | null>(null);
   // Opens the timeline and brings it into view, so "View full history" in a field
   // popover lands the reader on the section rather than expanding it offscreen.
@@ -715,12 +728,20 @@ export default function Me({
     // flight.
     if (canViewFieldHistory) {
       dispatch(fetchEmployeeHistory(targetEmployeeId));
-      // Read with the record so the profile can say what is queued against it. A
-      // change scheduled months ahead is invisible otherwise, and the record reads as
-      // settled when it is not.
+    }
+    // Read with the record so the profile can say what is queued against it. A
+    // change scheduled months ahead is invisible otherwise, and the record reads as
+    // settled when it is not.
+    if (canViewScheduledChanges) {
       dispatch(fetchScheduledChanges(targetEmployeeId));
     }
-  }, [targetEmployeeId, canViewPersonalInfo, canViewFieldHistory, dispatch]);
+  }, [
+    targetEmployeeId,
+    canViewPersonalInfo,
+    canViewFieldHistory,
+    canViewScheduledChanges,
+    dispatch,
+  ]);
 
   // Keyed on the employee, not just on unmount: when the profile switches without
   // remounting, the previous employee's rows would otherwise stay on screen until the
