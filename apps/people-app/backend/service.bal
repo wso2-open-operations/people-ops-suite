@@ -1743,7 +1743,15 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if isLeaverStatus {
+        // Keyed on the status this request sets, not on the status the employee already
+        // holds. The rule is "recording a departure has to say when and why", which is
+        // about the moment somebody becomes a leaver. Reading isLeaverStatus here instead
+        // asked "is this person a leaver", which is true forever once they have left — so
+        // every later edit of their record, a job role or a team on its own, was refused
+        // unless it resent all three resignation fields.
+        boolean isBecomingLeaver = payload.employeeStatus == database:EMPLOYEE_LEFT
+            || payload.employeeStatus == database:EMPLOYEE_MARKED_LEAVER;
+        if isBecomingLeaver {
             string? payloadFinalDayInOffice = payload.finalDayInOffice;
             string? payloadFinalDayOfEmployment = payload.finalDayOfEmployment;
             string? payloadResignationReason = payload.resignationReason;
