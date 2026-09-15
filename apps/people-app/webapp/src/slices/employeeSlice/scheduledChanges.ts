@@ -29,6 +29,9 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 export interface ScheduledChange {
   id: number;
   employeeId: number;
+  // Employee ID as people refer to it (LK1234), not the numeric key above. The reducer
+  // checks it before accepting a response — see requestedFor.
+  employeeIdentifier: string;
   effectiveDate: string;
   changes: Record<string, unknown>;
   expected: Record<string, unknown>;
@@ -45,6 +48,12 @@ interface ScheduledChangesState {
   errorMessage: string | null;
   changes: ScheduledChange[];
   submitState: State;
+  // Whose changes the newest request asked for. Each profile has its own URL, so the
+  // shared cancel-token map never cancels the previous employee's request: both stay in
+  // flight and can resolve in either order. Responses are matched against this before
+  // they are accepted, so a slow one for the profile just left cannot paint its rows
+  // under the name of the profile now open — rows the banner offers to cancel.
+  requestedFor: string | null;
 }
 
 const initialState: ScheduledChangesState = {
@@ -53,6 +62,7 @@ const initialState: ScheduledChangesState = {
   errorMessage: null,
   changes: [],
   submitState: State.idle,
+  requestedFor: null,
 };
 
 export const fetchScheduledChanges = createAsyncThunk(
@@ -62,7 +72,10 @@ export const fetchScheduledChanges = createAsyncThunk(
       const response = await APIService.getInstance().get(
         AppConfig.serviceUrls.scheduledChanges(employeeId),
       );
-      return response.data as ScheduledChange[];
+      return {
+        employeeId,
+        changes: response.data as ScheduledChange[],
+      };
     } catch (error: any) {
       if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
@@ -155,18 +168,35 @@ const ScheduledChangesSlice = createSlice({
       state.stateMessage = null;
       state.errorMessage = null;
       state.changes = [];
+      state.requestedFor = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchScheduledChanges.pending, (state) => {
+      .addCase(fetchScheduledChanges.pending, (state, action) => {
         state.state = State.loading;
+        // The newest request wins: anything still in flight for a previous employee is
+        // ignored when it lands.
+        state.requestedFor = action.meta.arg;
+        state.changes = [];
       })
       .addCase(fetchScheduledChanges.fulfilled, (state, action) => {
+        const { employeeId, changes } = action.payload;
+        if (employeeId !== state.requestedFor) return;
+        // The rows carry the employee they belong to, so the check is against what the
+        // server actually returned rather than against what this app believes it asked
+        // for.
+        if (changes.some((c) => c.employeeIdentifier !== employeeId)) {
+          state.state = State.failed;
+          state.errorMessage = "Scheduled changes did not match the employee requested";
+          state.changes = [];
+          return;
+        }
         state.state = State.success;
-        state.changes = action.payload;
+        state.changes = changes;
       })
       .addCase(fetchScheduledChanges.rejected, (state, action) => {
+        if (action.meta.arg !== state.requestedFor) return;
         state.state = State.failed;
         state.errorMessage = action.payload as string;
       })

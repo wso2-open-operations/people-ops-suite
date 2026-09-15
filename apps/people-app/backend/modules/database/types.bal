@@ -1601,8 +1601,11 @@ public type ScheduledChange record {|
     int id;
     # Employee table primary key the change applies to
     int employeeId;
-    # Employee ID as people refer to it, for display and logging
-    string employeeIdentifier?;
+    # Employee ID as people refer to it. Every read path joins the employee table for
+    # it, so a caller can tell whose rows these are without resolving the primary key:
+    # the profile page checks it before rendering, since a response can arrive after the
+    # viewer has moved to somebody else.
+    string employeeIdentifier;
     # Date the change takes effect
     string effectiveDate;
     # Fields being changed, shaped as an UpdateEmployeeJobInfoPayload

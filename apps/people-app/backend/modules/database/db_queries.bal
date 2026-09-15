@@ -2974,24 +2974,26 @@ isolated function insertScheduledChangeQuery(int employeeId, string effectiveDat
 #
 # + employeeId - Employee table primary key
 # + pendingOnly - Limit to changes still waiting for their date
-# + return - Parameterized query returning scheduled_employee_change rows
+# + return - Parameterized query returning the rows, with the employee's identifier
 isolated function getScheduledChangesQuery(int employeeId, boolean pendingOnly)
     returns sql:ParameterizedQuery {
     sql:ParameterizedQuery base = `SELECT
-            id,
-            employee_id AS employeeId,
-            DATE_FORMAT(effective_date, '%Y-%m-%d') AS effectiveDate,
-            changes,
-            expected,
-            status,
-            DATE_FORMAT(applied_on, '%Y-%m-%d %H:%i:%s') AS appliedOn,
-            failure_reason AS failureReason,
-            created_by AS createdBy,
-            DATE_FORMAT(created_on, '%Y-%m-%d %H:%i:%s') AS createdOn
-        FROM scheduled_employee_change
-        WHERE employee_id = ${employeeId}`;
-    sql:ParameterizedQuery pending = ` AND status = 'PENDING'`;
-    sql:ParameterizedQuery ordering = ` ORDER BY effective_date ASC, id ASC`;
+            sc.id,
+            sc.employee_id AS employeeId,
+            e.employee_id AS employeeIdentifier,
+            DATE_FORMAT(sc.effective_date, '%Y-%m-%d') AS effectiveDate,
+            sc.changes,
+            sc.expected,
+            sc.status,
+            DATE_FORMAT(sc.applied_on, '%Y-%m-%d %H:%i:%s') AS appliedOn,
+            sc.failure_reason AS failureReason,
+            sc.created_by AS createdBy,
+            DATE_FORMAT(sc.created_on, '%Y-%m-%d %H:%i:%s') AS createdOn
+        FROM scheduled_employee_change sc
+        JOIN employee e ON e.id = sc.employee_id
+        WHERE sc.employee_id = ${employeeId}`;
+    sql:ParameterizedQuery pending = ` AND sc.status = 'PENDING'`;
+    sql:ParameterizedQuery ordering = ` ORDER BY sc.effective_date ASC, sc.id ASC`;
     return pendingOnly
         ? sql:queryConcat(base, pending, ordering)
         : sql:queryConcat(base, ordering);

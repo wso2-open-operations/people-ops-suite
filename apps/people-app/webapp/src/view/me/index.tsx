@@ -722,12 +722,15 @@ export default function Me({
     }
   }, [targetEmployeeId, canViewPersonalInfo, canViewFieldHistory, dispatch]);
 
+  // Keyed on the employee, not just on unmount: when the profile switches without
+  // remounting, the previous employee's rows would otherwise stay on screen until the
+  // new fetch resolves.
   useEffect(() => {
     return () => {
       dispatch(resetEmployeeHistory());
       dispatch(resetScheduledChanges());
     };
-  }, [dispatch]);
+  }, [dispatch, targetEmployeeId]);
 
   useEffect(() => {
     return () => {
