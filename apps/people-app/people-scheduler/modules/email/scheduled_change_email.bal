@@ -100,7 +100,7 @@ isolated function buildScheduledChangeRows(database:ScheduledChangeOutcome[] out
     returns string {
 
     database:ScheduledChangeOutcome[] sorted = from database:ScheduledChangeOutcome o in outcomes
-        order by o.status == "APPLIED" ? 1 : 0 descending, o.employeeId ascending
+        order by o.status == "APPLIED" ? 1 : 0 ascending, o.employeeId ascending
         select o;
 
     string cellBase = "padding:10px 12px; border-bottom:1px solid #eef1f4; vertical-align:top;";
