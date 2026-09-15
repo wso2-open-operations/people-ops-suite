@@ -1630,18 +1630,3 @@ public type ScheduleChangePayload record {|
     UpdateEmployeeJobInfoPayload changes;
 |};
 
-# One scheduled change the sweep acted on, for the run's summary.
-public type ScheduledChangeOutcome record {|
-    # Scheduled change id
-    int id;
-    # Employee ID as people refer to it
-    string employeeId;
-    # Employee's full name
-    string employeeName;
-    # Date the change was due
-    string effectiveDate;
-    # What the sweep did with it
-    string status;
-    # Why it was not applied, where that applies
-    string? failureReason;
-|};

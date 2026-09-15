@@ -3018,29 +3018,6 @@ isolated function getScheduledChangeByIdQuery(int id) returns sql:ParameterizedQ
     JOIN employee e ON e.id = sc.employee_id
     WHERE sc.id = ${id}`;
 
-# Fetch every pending change whose effective date has arrived.
-#
-# Ordered oldest first so two changes to one employee land in the order they were meant
-# to take effect rather than in insertion order.
-#
-# + return - Parameterized query returning due scheduled_employee_change rows
-isolated function getDueScheduledChangesQuery() returns sql:ParameterizedQuery =>
-    `SELECT
-        sc.id,
-        sc.employee_id AS employeeId,
-        e.employee_id AS employeeIdentifier,
-        DATE_FORMAT(sc.effective_date, '%Y-%m-%d') AS effectiveDate,
-        sc.changes,
-        sc.expected,
-        sc.status,
-        DATE_FORMAT(sc.applied_on, '%Y-%m-%d %H:%i:%s') AS appliedOn,
-        sc.failure_reason AS failureReason,
-        sc.created_by AS createdBy,
-        DATE_FORMAT(sc.created_on, '%Y-%m-%d %H:%i:%s') AS createdOn
-    FROM scheduled_employee_change sc
-    JOIN employee e ON e.id = sc.employee_id
-    WHERE sc.status = 'PENDING' AND sc.effective_date <= CURDATE()
-    ORDER BY sc.effective_date ASC, sc.id ASC`;
 
 # Move a scheduled change out of PENDING.
 #
