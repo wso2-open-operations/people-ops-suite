@@ -3507,6 +3507,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         // dated today lands either immediately or a day late depending on whether it has
         // already run. An edit meant to take effect now should be applied now.
         if !isFutureDate(payload.effectiveDate) {
+            log:printWarn("Scheduled change rejected: effective date is not in the future",
+                    employeeId = employeeId, effectiveDate = payload.effectiveDate);
             return <http:BadRequest>{
                 body: {message: "The effective date must be a future date"}
             };
@@ -3529,6 +3531,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         // who scheduled it has moved on.
         map<json>|error columnChanges = toSchedulableColumns(payload.changes);
         if columnChanges is error {
+            log:printWarn("Scheduled change rejected: a field cannot be scheduled",
+                    employeeId = employeeId, reason = columnChanges.message());
             return <http:BadRequest>{body: {message: columnChanges.message()}};
         }
 

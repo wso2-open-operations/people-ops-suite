@@ -500,16 +500,30 @@ isolated function closeWith(ScheduledChange change, string employeeName, string[
     // and reports SUPERSEDED for a change that actually applied. Reporting it here is
     // all that can be done about the inconsistency, but it is what puts it in front of
     // somebody instead of in a log nobody reads.
+    // Only the APPLIED path has written to the employee record; the others are reporting
+    // that nothing was written. Saying "the change was applied" regardless would describe
+    // a superseded or failed change as having taken effect, which is the opposite of what
+    // happened — and four of the five call sites pass a status other than APPLIED.
+    string outcome = status == SCHEDULED_CHANGE_APPLIED
+        ? "the change was applied"
+        : string `the change was not applied (${status.toLowerAscii()})`;
+
     string? closeFailure = ();
     if closed is error {
         log:printError("Failed to record the outcome of a scheduled change",
                 closed, id = change.id, status = status);
-        closeFailure = string `the change was applied but could not be recorded as such: ${closed.message()}`;
+        closeFailure = string `${outcome} but could not be recorded as such: ${closed.message()}`;
     } else if closed.affectedRowCount == 0 {
         // Nothing to close: the row was cancelled while this sweep was working on it.
         log:printWarn("Scheduled change was no longer pending when its outcome was recorded",
                 id = change.id, status = status);
-        closeFailure = "the change was applied but its row was no longer pending";
+        closeFailure = string `${outcome} but its row was no longer pending`;
+    }
+
+    // The reason the change did not apply is worth more to a reader than the close-out
+    // problem alone, so it is carried alongside rather than replaced by it.
+    if closeFailure is string && failureReason is string {
+        closeFailure = string `${failureReason}; ${closeFailure}`;
     }
 
     return {
