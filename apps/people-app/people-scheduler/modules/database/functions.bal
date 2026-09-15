@@ -424,9 +424,23 @@ isolated function closeWith(ScheduledChange change, string employeeName, string[
 
     sql:ExecutionResult|error closed = databaseClient->execute(
             closeScheduledChangeQuery(change.id, status, failureReason, actor));
+
+    // The employee record is already written by the time this runs, so a close-out that
+    // does not land leaves the row PENDING against a record that has moved. Tomorrow's
+    // sweep then compares against `expected`, finds the field changed — by this run —
+    // and reports SUPERSEDED for a change that actually applied. Reporting it here is
+    // all that can be done about the inconsistency, but it is what puts it in front of
+    // somebody instead of in a log nobody reads.
+    string? closeFailure = ();
     if closed is error {
         log:printError("Failed to record the outcome of a scheduled change",
                 closed, id = change.id, status = status);
+        closeFailure = string `the change was applied but could not be recorded as such: ${closed.message()}`;
+    } else if closed.affectedRowCount == 0 {
+        // Nothing to close: the row was cancelled while this sweep was working on it.
+        log:printWarn("Scheduled change was no longer pending when its outcome was recorded",
+                id = change.id, status = status);
+        closeFailure = "the change was applied but its row was no longer pending";
     }
 
     return {
@@ -434,8 +448,8 @@ isolated function closeWith(ScheduledChange change, string employeeName, string[
         employeeId: change.employeeId,
         employeeName,
         effectiveDate: change.effectiveDate,
-        status,
-        failureReason,
+        status: closeFailure is string ? SCHEDULED_CHANGE_FAILED : status,
+        failureReason: closeFailure ?: failureReason,
         fields
     };
 }
