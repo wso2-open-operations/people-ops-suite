@@ -830,6 +830,9 @@ export default function Me({
 
     return {
       p: { xs: 2.25, sm: 3.25 },
+      // The same 16px each section below carries, so the header spaces from whatever
+      // follows it the way the sections space from each other.
+      mb: 2,
       borderRadius: 3,
       position: "relative",
       overflow: "hidden",
