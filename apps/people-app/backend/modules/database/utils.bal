@@ -258,7 +258,10 @@ final string[] & readonly EMPLOYEE_CSV_COLUMNS = [
     "location", "employmentType", "jobRole", "externalDesignation", "jobBand", "startDate",
     "continuousServiceDate", "lengthOfService", "reportsTo", "additionalManager",
     "employeeStatus", "team", "subTeam", "epfNumber", "leadEmail", "businessUnit",
-    "house", "unit", "office", "probationEndDate", "agreementEndDate"
+    "house", "unit", "office", "probationEndDate", "agreementEndDate",
+    "nicOrPassport", "dateOfBirth", "nationality", "personalEmail", "personalPhone",
+    "residentNumber", "addressLine1", "addressLine2", "city", "stateOrProvince",
+    "postalCode", "country", "emergencyContacts"
 ];
 
 # Ordered canonical column keys for the resignation CSV (27 shared + 4 resignation-specific).
@@ -268,7 +271,10 @@ final string[] & readonly RESIGNATION_CSV_COLUMNS = [
     "continuousServiceDate", "lengthOfService", "reportsTo", "additionalManager",
     "employeeStatus", "team", "subTeam", "epfNumber", "leadEmail", "businessUnit",
     "house", "unit", "office", "probationEndDate", "agreementEndDate",
-    "resignationDate", "finalDayInOffice", "finalDayOfEmployment", "resignationReason"
+    "resignationDate", "finalDayInOffice", "finalDayOfEmployment", "resignationReason",
+    "nicOrPassport", "dateOfBirth", "nationality", "personalEmail", "personalPhone",
+    "residentNumber", "addressLine1", "addressLine2", "city", "stateOrProvince",
+    "postalCode", "country", "emergencyContacts"
 ];
 
 # Map from canonical column key to its CSV header label.
@@ -277,6 +283,19 @@ final map<string> & readonly COLUMN_HEADER_MAP = {
     "firstName":             "First Name",
     "lastName":              "Last Name",
     "gender":                "Gender",
+    "nicOrPassport":         "NIC/Passport",
+    "dateOfBirth":           "Date of Birth",
+    "nationality":           "Nationality",
+    "personalEmail":         "Personal Email",
+    "personalPhone":         "Personal Phone",
+    "residentNumber":        "Resident Number",
+    "addressLine1":          "Address Line 1",
+    "addressLine2":          "Address Line 2",
+    "city":                  "City",
+    "stateOrProvince":       "State/Province",
+    "postalCode":            "Postal Code",
+    "country":               "Country",
+    "emergencyContacts":     "Emergency Contacts",
     "workEmail":             "Work Email",
     "company":               "Company",
     "location":              "Location",
@@ -318,6 +337,19 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
         "firstName"             => { return csvEscape(e.firstName); }
         "lastName"              => { return csvEscape(e.lastName); }
         "gender"                => { return csvEscape(e.gender); }
+        "nicOrPassport"         => { return csvEscape(e.nicOrPassport); }
+        "dateOfBirth"           => { return csvEscape(e.dateOfBirth); }
+        "nationality"           => { return csvEscape(e.nationality); }
+        "personalEmail"         => { return csvEscape(e.personalEmail); }
+        "personalPhone"         => { return csvEscape(e.personalPhone); }
+        "residentNumber"        => { return csvEscape(e.residentNumber); }
+        "addressLine1"          => { return csvEscape(e.addressLine1); }
+        "addressLine2"          => { return csvEscape(e.addressLine2); }
+        "city"                  => { return csvEscape(e.city); }
+        "stateOrProvince"       => { return csvEscape(e.stateOrProvince); }
+        "postalCode"            => { return csvEscape(e.postalCode); }
+        "country"               => { return csvEscape(e.country); }
+        "emergencyContacts"     => { return csvEscape(e.emergencyContacts); }
         "workEmail"             => { return csvEscape(e.workEmail); }
         "company"               => { return csvEscape(e.company); }
         "location"              => { return csvEscape(e.workLocation); }

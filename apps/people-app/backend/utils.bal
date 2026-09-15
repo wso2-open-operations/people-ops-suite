@@ -858,3 +858,189 @@ public isolated function assignPromotionsToPeriods(database:EmploymentPeriod[] p
             promotions: bucketed[index]
         };
 }
+
+# Payload field name to the employee column it writes, for scheduled changes.
+#
+# The map is the allowlist: a field absent from it cannot be scheduled, and the scheduler
+# refuses anything outside the same set when it applies the change. Resignation fields
+# and employment status are deliberately absent — recording a departure is its own
+# action with its own endpoint, not a field edit deferred.
+final readonly & map<string> SCHEDULABLE_FIELD_COLUMNS = {
+    "epf": "epf",
+    "companyId": "company_id",
+    "workLocation": "work_location",
+    "workEmail": "work_email",
+    "startDate": "start_date",
+    "secondaryJobTitle": "secondary_job_title",
+    "jobRole": "job_role",
+    "externalDesignation": "external_designation",
+    "managerEmail": "manager_email",
+    "probationEndDate": "probation_end_date",
+    "agreementEndDate": "agreement_end_date",
+    "employmentTypeId": "employment_type_id",
+    "designationId": "designation_id",
+    "officeId": "office_id",
+    "teamId": "team_id",
+    "subTeamId": "sub_team_id",
+    "businessUnitId": "business_unit_id",
+    "unitId": "unit_id",
+    "houseId": "house_id",
+    "additionalManagerEmails": "additional_manager_emails"
+};
+
+# Employee record field holding the current value of each schedulable column.
+#
+# The employee record exposes resolved names for some fields and raw ids for others; this
+# names the one the column is compared against, so the supersede check reads the same
+# value the scheduler will.
+final readonly & map<string> SCHEDULABLE_COLUMN_SOURCES = {
+    "epf": "epf",
+    "company_id": "companyId",
+    "work_location": "workLocation",
+    "work_email": "workEmail",
+    "start_date": "startDate",
+    "secondary_job_title": "secondaryJobTitle",
+    "job_role": "jobRole",
+    "external_designation": "externalDesignation",
+    "manager_email": "managerEmail",
+    "probation_end_date": "probationEndDate",
+    "agreement_end_date": "agreementEndDate",
+    "employment_type_id": "employmentTypeId",
+    "designation_id": "designationId",
+    "office_id": "officeId",
+    "team_id": "teamId",
+    "sub_team_id": "subTeamId",
+    "business_unit_id": "businessUnitId",
+    "unit_id": "unitId",
+    "house_id": "houseId"
+};
+
+# True when a date string is later than today, in the server's own reckoning of today.
+#
+# Today is excluded rather than allowed: the sweep runs once a day, so a change dated
+# today is applied immediately if the sweep has yet to run and a day late if it has
+# already run. Which of those happens would depend on the time of day it was scheduled,
+# so it is refused and the caller is told to apply now or pick a later date.
+#
+# + date - Date in YYYY-MM-DD form
+# + return - True when the date is tomorrow or later
+isolated function isFutureDate(string date) returns boolean {
+    time:Utc tomorrow = time:utcAddSeconds(time:utcNow(), 86400);
+    string tomorrowDate = time:utcToString(tomorrow).substring(0, 10);
+    return date >= tomorrowDate;
+}
+
+# Translate a job-info payload into the columns a scheduled change writes.
+#
+# Only the fields actually set are carried, so a scheduled change records the edit that
+# was made rather than every field the payload could hold. A field outside the allowlist
+# is an error rather than a silent omission: the caller asked for something that cannot
+# be scheduled and should be told so.
+#
+# + payload - The fields to change
+# + return - Column name to value, or an error naming the field that cannot be scheduled
+isolated function toSchedulableColumns(database:UpdateEmployeeJobInfoPayload payload)
+    returns map<json>|error {
+
+    map<json> asMap = check payload.toJson().cloneWithType();
+    map<json> columns = {};
+
+    foreach string 'field in asMap.keys() {
+        json value = asMap.get('field);
+        // An unset optional field is absent from the change, not a request to null the
+        // column: the payload cannot tell the two apart, and clearing a field nobody
+        // touched would be the more damaging reading.
+        if value is () {
+            continue;
+        }
+        if !SCHEDULABLE_FIELD_COLUMNS.hasKey('field) {
+            return error(string `${'field} cannot be scheduled for a future date`);
+        }
+        columns[SCHEDULABLE_FIELD_COLUMNS.get('field)] = value;
+    }
+
+    if columns.length() == 0 {
+        return error("No schedulable fields were provided");
+    }
+    return columns;
+}
+
+# Capture what the targeted columns hold now, for the supersede check on the day.
+#
+# + employee - The employee's current record
+# + changes - The change, as column name to value
+# + return - Column name to current value, or an error when they could not be read
+isolated function expectedValuesFor(database:Employee employee, map<json> changes)
+    returns map<json>|error {
+
+    // An error rather than an empty map: an empty expectation reads to the sweep as
+    // "nothing to compare", which is how a failure here would silently disable the
+    // supersede check months later, when the change applies.
+    map<json>|error current = employee.toJson().cloneWithType();
+    if current is error {
+        return error(string `Could not read the employee's current values: ${current.message()}`);
+    }
+
+    map<json> expected = {};
+    foreach string column in changes.keys() {
+        // Additional managers live in their own table rather than in an employee column,
+        // so they are snapshotted as the normalised set the sweep will compare against
+        // rather than read from SCHEDULABLE_COLUMN_SOURCES.
+        if column == SCHEDULED_ADDITIONAL_MANAGERS_COLUMN {
+            expected[column] = normalizedEmailSet(employee.additionalManagerEmails);
+            continue;
+        }
+        if !SCHEDULABLE_COLUMN_SOURCES.hasKey(column) {
+            continue;
+        }
+        string sourceField = SCHEDULABLE_COLUMN_SOURCES.get(column);
+        expected[column] = current.hasKey(sourceField) ? current.get(sourceField) : ();
+    }
+
+    // The promise this function's own contract makes, and the one the endpoint relies on
+    // to refuse a change while somebody is present to be told. An empty map reaches the
+    // sweep as "nothing to compare" months later, where it is refused far from anyone who
+    // could act on it.
+    if expected.length() == 0 {
+        return error("The current values for this change could not be recorded");
+    }
+    return expected;
+}
+
+# Column name the additional managers set is carried under in a scheduled change.
+#
+# Matches ADDITIONAL_MANAGERS_KEY in the scheduler, which reads these same rows.
+const string SCHEDULED_ADDITIONAL_MANAGERS_COLUMN = "additional_manager_emails";
+
+# Normalise a set of emails so that only membership matters to a comparison.
+#
+# Lowercased because the sweep writes and matches these case-insensitively, trimmed
+# because the payload carries whatever was typed, and sorted because neither the stored
+# order nor the order somebody entered them says anything about the set itself. Without
+# this, reordering two leads would read as a change somebody else had made and supersede
+# the scheduled one.
+#
+# + emails - Comma-separated emails, an email array, or ()
+# + return - The distinct emails, lowercased and sorted
+isolated function normalizedEmailSet(json emails) returns string[] {
+    string[] parts = [];
+    if emails is string {
+        parts = re `,`.split(emails);
+    } else if emails is json[] {
+        foreach json entry in emails {
+            if entry is string {
+                parts.push(entry);
+            }
+        }
+    }
+
+    map<()> seen = {};
+    foreach string part in parts {
+        string trimmed = part.trim().toLowerAscii();
+        if trimmed.length() > 0 {
+            seen[trimmed] = ();
+        }
+    }
+    string[] unique = seen.keys();
+    return unique.sort();
+}

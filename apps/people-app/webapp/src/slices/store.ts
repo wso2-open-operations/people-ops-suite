@@ -23,6 +23,7 @@ import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import employeeReducer from "@slices/employeeSlice/employee";
 import employeeHistoryReducer from "@slices/employeeSlice/employeeHistory";
+import scheduledChangesReducer from "@slices/employeeSlice/scheduledChanges";
 import employeePersonalInfoReducer from "@slices/employeeSlice/employeePersonalInfo";
 import userReducer from "@slices/userSlice/user";
 import organizationReducer from "@slices/organizationSlice/organization";
@@ -39,6 +40,7 @@ export const store = configureStore({
     common: commonReducer,
     employee: employeeReducer,
     employeeHistory: employeeHistoryReducer,
+    scheduledChanges: scheduledChangesReducer,
     employeePersonalInfo: employeePersonalInfoReducer,
     appConfig: appConfigReducer,
     organization: organizationReducer,

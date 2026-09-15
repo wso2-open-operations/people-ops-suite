@@ -22,6 +22,14 @@ export interface ColumnDef {
   label: string;
   /** Display group — aligned to the Onboard page section names. */
   group: string;
+  /**
+   * Personal information, excluded from the default selection.
+   *
+   * These columns carry an employee's private details, so an export only contains them
+   * when an admin deliberately ticks them — a default report stays free of personal data
+   * and matches what existing report consumers already expect.
+   */
+  personal?: boolean;
 }
 
 /** 26 columns available for all employee report types. Groups mirror the Onboard page sections. */
@@ -60,6 +68,23 @@ export const EMPLOYEE_COLUMNS: ColumnDef[] = [
   { key: "additionalManager",     label: "Additional Manager",      group: "Management" },
 ];
 
+/** Personal information columns, offered on every report but never selected by default. */
+export const PERSONAL_COLUMNS: ColumnDef[] = [
+  { key: "nicOrPassport",     label: "NIC/Passport",       group: "Personal", personal: true },
+  { key: "dateOfBirth",       label: "Date of Birth",      group: "Personal", personal: true },
+  { key: "nationality",       label: "Nationality",        group: "Personal", personal: true },
+  { key: "personalEmail",     label: "Personal Email",     group: "Personal", personal: true },
+  { key: "personalPhone",     label: "Personal Phone",     group: "Personal", personal: true },
+  { key: "residentNumber",    label: "Resident Number",    group: "Personal", personal: true },
+  { key: "addressLine1",      label: "Address Line 1",     group: "Personal", personal: true },
+  { key: "addressLine2",      label: "Address Line 2",     group: "Personal", personal: true },
+  { key: "city",              label: "City",               group: "Personal", personal: true },
+  { key: "stateOrProvince",   label: "State/Province",     group: "Personal", personal: true },
+  { key: "postalCode",        label: "Postal Code",        group: "Personal", personal: true },
+  { key: "country",           label: "Country",            group: "Personal", personal: true },
+  { key: "emergencyContacts", label: "Emergency Contacts", group: "Personal", personal: true },
+];
+
 /** 4 extra columns available only on the Resignations report. */
 export const RESIGNATION_EXTRA_COLUMNS: ColumnDef[] = [
   { key: "resignationDate",       label: "Resignation Date",        group: "Resignation" },
@@ -71,11 +96,18 @@ export const RESIGNATION_EXTRA_COLUMNS: ColumnDef[] = [
 /** Returns the full ordered column list for a given report type. */
 export function getColumnsForStatus(isResignation: boolean): ColumnDef[] {
   return isResignation
-    ? [...EMPLOYEE_COLUMNS, ...RESIGNATION_EXTRA_COLUMNS]
-    : EMPLOYEE_COLUMNS;
+    ? [...EMPLOYEE_COLUMNS, ...RESIGNATION_EXTRA_COLUMNS, ...PERSONAL_COLUMNS]
+    : [...EMPLOYEE_COLUMNS, ...PERSONAL_COLUMNS];
 }
 
-/** Returns all canonical keys in default order — used as the "all selected" initial state. */
+/**
+ * The keys selected when a report first loads, and when the selection is reset.
+ *
+ * Personal columns are deliberately left out: they are offered in the selector but an
+ * export carries them only once an admin has asked for them.
+ */
 export function getAllKeys(isResignation: boolean): string[] {
-  return getColumnsForStatus(isResignation).map((c) => c.key);
+  return getColumnsForStatus(isResignation)
+    .filter((c) => !c.personal)
+    .map((c) => c.key);
 }

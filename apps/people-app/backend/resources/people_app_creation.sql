@@ -1,4 +1,9 @@
+DROP TABLE IF EXISTS resignation_audit;
 DROP TABLE IF EXISTS resignation;
+DROP TABLE IF EXISTS scheduled_employee_change;
+DROP TABLE IF EXISTS parking_reservation;
+DROP TABLE IF EXISTS parking_slot;
+DROP TABLE IF EXISTS parking_floor;
 DROP TABLE IF EXISTS vehicle;
 DROP TABLE IF EXISTS employee_additional_managers_audit;
 DROP TABLE IF EXISTS employee_audit;
@@ -11,6 +16,7 @@ DROP TABLE IF EXISTS recruit;
 DROP TABLE IF EXISTS business_unit_team_sub_team_unit;
 DROP TABLE IF EXISTS business_unit_team_sub_team;
 DROP TABLE IF EXISTS business_unit_team;
+DROP TABLE IF EXISTS team_asgardeo_groups;
 DROP TABLE IF EXISTS unit;
 DROP TABLE IF EXISTS sub_team;
 DROP TABLE IF EXISTS team;
@@ -26,7 +32,6 @@ DROP TABLE IF EXISTS employment_type_idp_group;
 DROP TABLE IF EXISTS employment_type;
 DROP TABLE IF EXISTS personal_info_emergency_contacts;
 DROP TABLE IF EXISTS personal_info;
-DROP TABLE IF EXISTS team_asgardeo_groups;
 
 CREATE TABLE `vehicle` (
   `vehicle_id` int NOT NULL AUTO_INCREMENT,
@@ -376,6 +381,35 @@ CREATE TABLE `resignation` (
     FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
 );
 
+-- Scheduled employee changes
+--
+-- An edit to an employee's general information can be given a future date instead of
+-- being applied on save. `changes` holds only the fields being changed, in the shape the
+-- job-info update payload expects; `expected` holds what those fields were when the
+-- change was scheduled, so the sweep can tell a change that still makes sense from one
+-- that would undo a more recent decision.
+CREATE TABLE `scheduled_employee_change` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `employee_id` INT NOT NULL,
+  `effective_date` DATE NOT NULL,
+  `changes` JSON NOT NULL,
+  `expected` JSON NOT NULL,
+  `status` ENUM('PENDING', 'APPLIED', 'CANCELLED', 'SUPERSEDED', 'FAILED')
+    NOT NULL DEFAULT 'PENDING',
+  `applied_on` TIMESTAMP(6) NULL,
+  `failure_reason` VARCHAR(500) NULL,
+  `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  KEY `idx_sched_change_due` (`status`, `effective_date`),
+  KEY `idx_sched_change_employee` (`employee_id`, `status`),
+  CONSTRAINT `fk_sched_change_employee`
+    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
 -- Additional_managers table
 CREATE TABLE `employee_additional_managers` (
   `id` INT NOT NULL AUTO_INCREMENT,
@@ -546,6 +580,22 @@ CREATE TABLE `employee_audit` (
   KEY `idx_emp_audit_employee_pk` (`employee_pk_id`),
   KEY `idx_emp_audit_action_on` (`action_on`),
   CONSTRAINT `fk_emp_audit_employee` FOREIGN KEY (`employee_pk_id`) REFERENCES `employee` (`id`) ON DELETE
+  SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+-- Resignation Audit table
+CREATE TABLE `resignation_audit` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `employee_pk_id` int DEFAULT NULL,
+  `action_type` enum('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+  `action_by` varchar(254) NOT NULL,
+  `db_user` varchar(254) NULL,
+  `action_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `data` json NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_resignation_audit_employee_pk` (`employee_pk_id`),
+  KEY `idx_resignation_audit_action_on` (`action_on`),
+  CONSTRAINT `fk_resignation_audit_employee` FOREIGN KEY (`employee_pk_id`) REFERENCES `employee` (`id`) ON DELETE
   SET NULL ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -1000,6 +1050,86 @@ BEGIN
     NEW.id,         NEW.additional_manager_email, NEW.is_active,
     NEW.created_by, NEW.created_on,
     NEW.updated_by, NEW.updated_on
+  );
+END//
+DELIMITER ;
+
+-- Procedure: prc_resignation_audit
+--
+-- Arguments are passed positionally from both triggers below. Adding a column
+-- means adding it at the same ordinal in this signature and in BOTH CALL
+-- argument lists, or every later argument shifts and the audit JSON is silently
+-- written with values in the wrong keys.
+DELIMITER //
+CREATE PROCEDURE `prc_resignation_audit`(
+  IN p_employee_pk_id           INT,
+  IN p_action_type              VARCHAR(10),
+  IN p_action_by                VARCHAR(254),
+  IN p_final_day_in_office      DATE,
+  IN p_final_day_of_employment  DATE,
+  IN p_reason                   VARCHAR(300),
+  IN p_date                     DATE,
+  IN p_created_by               VARCHAR(254),
+  IN p_created_on               DATETIME(6),
+  IN p_updated_by               VARCHAR(254),
+  IN p_updated_on               DATETIME(6)
+)
+BEGIN
+  INSERT INTO resignation_audit
+    (employee_pk_id, action_type, action_by, db_user, action_on, data)
+  VALUES (
+    p_employee_pk_id,
+    p_action_type,
+    p_action_by,
+    USER(),
+    CURRENT_TIMESTAMP(6),
+    JSON_OBJECT(
+      'employee_id',             p_employee_pk_id,
+      'final_day_in_office',     p_final_day_in_office,
+      'final_day_of_employment', p_final_day_of_employment,
+      'reason',                  p_reason,
+      'date',                    p_date,
+      'created_by',              p_created_by,
+      'created_on',              p_created_on,
+      'updated_by',              p_updated_by,
+      'updated_on',              p_updated_on
+    )
+  );
+END//
+DELIMITER ;
+
+-- Trigger: trg_resignation_audit_insert
+DELIMITER //
+CREATE TRIGGER `trg_resignation_audit_insert`
+AFTER INSERT ON `resignation`
+FOR EACH ROW
+BEGIN
+  CALL prc_resignation_audit(
+    NEW.employee_id,
+    'INSERT',
+    COALESCE(NULLIF(TRIM(NEW.created_by), ''), 'SYSTEM'),
+    NEW.final_day_in_office,  NEW.final_day_of_employment,
+    NEW.reason,               NEW.date,
+    NEW.created_by,           NEW.created_on,
+    NEW.updated_by,           NEW.updated_on
+  );
+END//
+DELIMITER ;
+
+-- Trigger: trg_resignation_audit_update
+DELIMITER //
+CREATE TRIGGER `trg_resignation_audit_update`
+AFTER UPDATE ON `resignation`
+FOR EACH ROW
+BEGIN
+  CALL prc_resignation_audit(
+    NEW.employee_id,
+    'UPDATE',
+    COALESCE(NULLIF(TRIM(NEW.updated_by), ''), 'SYSTEM'),
+    NEW.final_day_in_office,  NEW.final_day_of_employment,
+    NEW.reason,               NEW.date,
+    NEW.created_by,           NEW.created_on,
+    NEW.updated_by,           NEW.updated_on
   );
 END//
 DELIMITER ;

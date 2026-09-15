@@ -16,6 +16,7 @@
 
 import {
   BadgeOutlined,
+  PersonOutlineOutlined,
   WorkOutline,
   CorporateFareOutlined,
   EventOutlined,
@@ -60,6 +61,7 @@ const GROUP_ICONS: Record<string, React.ReactNode> = {
   "Dates & Service": <EventOutlined />,
   "Management":      <SupervisorAccountOutlined />,
   "Resignation":     <ExitToAppOutlined />,
+  "Personal":        <PersonOutlineOutlined />,
 };
 
 export function ColumnSelectorDialog({

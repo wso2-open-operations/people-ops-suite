@@ -86,8 +86,10 @@ public isolated function getEmployeeInfo(string employeeId) returns Employee|err
 # + payload - Get employees filter payload
 # + leadEmail - If provided, restricts results to subordinates of this lead
 # + return - List of employees or error
-public isolated function getEmployees(EmployeeSearchPayload payload, string? leadEmail = ()) returns EmployeesResponse|error {
-    stream<EmployeeRecord, error?> resultStream = databaseClient->query(getEmployeesQuery(payload, leadEmail));
+public isolated function getEmployees(EmployeeSearchPayload payload, string? leadEmail = (),
+        boolean includePersonalInfo = false) returns EmployeesResponse|error {
+    stream<EmployeeRecord, error?> resultStream =
+        databaseClient->query(getEmployeesQuery(payload, leadEmail, includePersonalInfo));
 
     int totalCount = 0;
     Employee[] employees = [];
@@ -562,9 +564,10 @@ public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, stri
         transaction {
             foreach CreateEmployeePayload payload in payloads {
                 string employeeId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
-                // House is assigned automatically from the employee ID's numeric part — not
-                // known until the ID above is resolved, so this can't happen in buildBulkPayloads.
-                payload.houseId = check houseIdForEmployeeId(employeeId);
+                // House is assigned automatically — a returning employee keeps the one they
+                // had, everyone else gets it from the employee ID's numeric part. Not known
+                // until the ID above is resolved, so this can't happen in buildBulkPayloads.
+                payload.houseId = check resolveHouseIdForNewEmployee(payload.workEmail, employeeId);
                 int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
                 _ = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
                 check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
@@ -799,6 +802,44 @@ isolated function extractNumericSuffix(string employeeId) returns int|error {
     return check int:fromString(employeeId.substring(i));
 }
 
+# Resolve the house for an employee being onboarded.
+#
+# Someone returning to WSO2 keeps the house they had before: the house is a long-standing
+# affiliation rather than a property of the employee ID, and giving a returning colleague a
+# different one because their new ID divides differently would be arbitrary to them.
+#
+# Their previous employment is found by work email, taking the most recent one only. Where
+# there is no previous employment, or that employment carries no house, the house is derived
+# from the employee ID as it always has been — house assignment is recent, so most records
+# have none yet and fall through to that.
+#
+# + workEmail - Work email of the employee being onboarded
+# + employeeId - The employee's newly assigned employee ID
+# + return - The house ID to assign, or an error if the employee ID has no numeric part
+public isolated function resolveHouseIdForNewEmployee(string workEmail, string employeeId)
+    returns int|error {
+
+    // Nullable, not int: the row exists whenever there is a previous employment, and
+    // carries a null house when that employment predates house assignment or its house has
+    // since been removed. Both take the same fallback as having no previous employment.
+    record {|int? houseId;|}|error previous =
+        databaseClient->queryRow(getPreviousHouseIdQuery(workEmail));
+
+    if previous is record {|int? houseId;|} {
+        int? previousHouseId = previous.houseId;
+        if previousHouseId is int {
+            return previousHouseId;
+        }
+        return houseIdForEmployeeId(employeeId);
+    }
+    // sql:NoRowsError is the ordinary case — a first-time joiner. Anything else is a real
+    // fault and is left to surface rather than silently falling back.
+    if previous !is sql:NoRowsError {
+        return previous;
+    }
+    return houseIdForEmployeeId(employeeId);
+}
+
 # Compute the automatically-assigned house for a newly created employee, deterministically
 # derived from their employee ID's numeric part: `numericPart % 4` selects the house by a fixed
 # mapping (0 -> CloudBots, 1 -> Titans, 2 -> Legions, 3 -> Wild Boars), matching this system's
@@ -1007,6 +1048,8 @@ isolated function syncAdditionalManagers(string employeeId, Email[] desiredEmail
 public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
     returns error? {
 
+    check validateResignationDateOrder(employeeId, payload);
+
     transaction {
         sql:ExecutionResult executionResult =
             check databaseClient->execute(updateEmployeeJobInfoQuery(employeeId, payload, updatedBy));
@@ -1023,6 +1066,87 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
         }
         check syncResignationRecord(employeeId, payload, updatedBy);
         check commit;
+    }
+}
+
+# Record an employee's resignation details and mark them a leaver.
+#
+# Status is derived rather than accepted: recording a departure is what makes someone a
+# leaver, so this reuses the job-info update with the status set here. That keeps the
+# resignation table sync and the transaction identical to the admin path, rather than a
+# second way to write the same rows.
+#
+# + employeeId - Employee ID
+# + payload - Resignation details
+# + updatedBy - User performing the update
+# + return - Nil or error
+public isolated function updateResignation(string employeeId, UpdateResignationPayload payload, string updatedBy)
+    returns error? {
+
+    Employee|error? employee = getEmployeeInfo(employeeId);
+    if employee is error {
+        return employee;
+    }
+    if employee is () {
+        return error(string `Employee not found for ID: ${employeeId}`);
+    }
+
+    // Resigning someone is what moves them to "Marked leaver", and only an active
+    // employee can be resigned. Correcting the details of someone who has already left
+    // must not resurrect their departure: setting the status unconditionally would move
+    // a "Left" employee back to "Marked leaver".
+    EmployeeStatus? newStatus =
+        employee.employeeStatus == EMPLOYEE_ACTIVE ? EMPLOYEE_MARKED_LEAVER : ();
+
+    UpdateEmployeeJobInfoPayload jobInfoPayload = {
+        employeeStatus: newStatus,
+        finalDayInOffice: payload.finalDayInOffice,
+        finalDayOfEmployment: payload.finalDayOfEmployment,
+        resignationReason: payload.resignationReason
+    };
+
+    return updateEmployeeJobInfo(employeeId, jobInfoPayload, updatedBy);
+}
+
+# Reject a departure whose employment ends before the employee stops coming in.
+#
+# Either date may be absent from the payload while the other is being changed, so the
+# effective pair is the incoming value falling back to what is already stored — checking
+# only the payload would let a one-sided edit produce an impossible pair.
+#
+# Dates are ISO "YYYY-MM-DD", which compares correctly as a string.
+#
+# + employeeId - Employee ID
+# + payload - Job information update payload
+# + return - Nil when the order is possible, otherwise an error
+isolated function validateResignationDateOrder(string employeeId, UpdateEmployeeJobInfoPayload payload)
+    returns error? {
+
+    string? incomingInOffice = payload.finalDayInOffice;
+    string? incomingOfEmployment = payload.finalDayOfEmployment;
+
+    if incomingInOffice is () && incomingOfEmployment is () {
+        return;
+    }
+
+    string? storedInOffice = ();
+    string? storedOfEmployment = ();
+    if incomingInOffice is () || incomingOfEmployment is () {
+        Employee|error? employee = getEmployeeInfo(employeeId);
+        if employee is error {
+            return employee;
+        }
+        if employee is Employee {
+            storedInOffice = employee.finalDayInOffice;
+            storedOfEmployment = employee.finalDayOfEmployment;
+        }
+    }
+
+    string? inOffice = incomingInOffice ?: storedInOffice;
+    string? ofEmployment = incomingOfEmployment ?: storedOfEmployment;
+
+    if inOffice is string && ofEmployment is string && ofEmployment < inOffice {
+        return error InvalidResignationDatesError(RESIGNATION_DATE_ORDER_ERROR);
     }
 }
 
@@ -1690,8 +1814,17 @@ public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSna
         check from AuditSnapshot snapshot in additionalManagersAuditStream
         select snapshot;
 
-    AuditSnapshot[] allSnapshots =
-        [...employeeAuditSnapshots, ...personalInfoAuditSnapshots, ...additionalManagersAuditSnapshots];
+    stream<AuditSnapshot, error?> resignationAuditStream =
+        databaseClient->query(getResignationAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] resignationAuditSnapshots = check from AuditSnapshot snapshot in resignationAuditStream
+        select snapshot;
+
+    AuditSnapshot[] allSnapshots = [
+        ...employeeAuditSnapshots,
+        ...personalInfoAuditSnapshots,
+        ...additionalManagersAuditSnapshots,
+        ...resignationAuditSnapshots
+    ];
     return from AuditSnapshot snapshot in allSnapshots
         order by snapshot.actionOn ascending
         select snapshot;
@@ -1731,4 +1864,86 @@ public isolated function isCurrentEmployment(string employeeId) returns boolean|
         return result;
     }
     return true;
+}
+
+# Schedule a change to an employee's general information.
+#
+# The caller supplies what the fields hold now, so the sweep can tell on the day whether
+# the change still makes sense or whether somebody has since edited the same field.
+#
+# + employeeId - Employee ID
+# + payload - Effective date and the fields to change
+# + expected - What those fields hold at the time of scheduling
+# + createdBy - Email of the person scheduling the change
+# + return - The new scheduled change id, or an error
+public isolated function scheduleEmployeeChange(string employeeId, string effectiveDate,
+        string columnChanges, string expected, string createdBy) returns int|error {
+
+    Employee|error? employee = getEmployeeInfo(employeeId);
+    if employee is error {
+        return employee;
+    }
+    if employee is () {
+        return error(string `No employee found for the ID: ${employeeId}`);
+    }
+
+    int employeePkId = check databaseClient->queryRow(
+        `SELECT id FROM employee WHERE employee_id = ${employeeId}`);
+
+    sql:ExecutionResult result = check databaseClient->execute(
+        insertScheduledChangeQuery(employeePkId, effectiveDate, columnChanges, expected, createdBy));
+
+    int|string? lastInsertId = result.lastInsertId;
+    if lastInsertId !is int {
+        return error("Unable to obtain the scheduled change ID");
+    }
+    return lastInsertId;
+}
+
+# Fetch the scheduled changes for an employee.
+#
+# + employeeId - Employee ID
+# + pendingOnly - Limit to changes still waiting for their date
+# + return - Scheduled changes, soonest first, or an error
+public isolated function getScheduledChanges(string employeeId, boolean pendingOnly)
+    returns ScheduledChange[]|error {
+
+    Employee|error? employee = getEmployeeInfo(employeeId);
+    if employee is error {
+        return employee;
+    }
+    if employee is () {
+        return error(string `No employee found for the ID: ${employeeId}`);
+    }
+
+    int employeePkId = check databaseClient->queryRow(
+        `SELECT id FROM employee WHERE employee_id = ${employeeId}`);
+
+    stream<ScheduledChange, error?> resultStream =
+        databaseClient->query(getScheduledChangesQuery(employeePkId, pendingOnly));
+    return from ScheduledChange change in resultStream
+        select change;
+}
+
+# Fetch one scheduled change by id.
+#
+# + id - Scheduled change id
+# + return - The change, () when no such row exists, or an error
+public isolated function getScheduledChangeById(int id) returns ScheduledChange|error? {
+    ScheduledChange|error change = databaseClient->queryRow(getScheduledChangeByIdQuery(id));
+    return change is sql:NoRowsError ? () : change;
+}
+
+# Withdraw a scheduled change before its date arrives.
+#
+# The update is conditional on the row still being PENDING, so cancelling a change the
+# sweep has already applied reports as not found rather than rewriting a closed row.
+#
+# + id - Scheduled change id
+# + cancelledBy - Email of the person cancelling
+# + return - True when a pending row was cancelled, false when there was none, or an error
+public isolated function cancelScheduledChange(int id, string cancelledBy) returns boolean|error {
+    sql:ExecutionResult result = check databaseClient->execute(
+        updateScheduledChangeStatusQuery(id, SCHEDULED_CHANGE_CANCELLED, (), cancelledBy));
+    return result.affectedRowCount > 0;
 }

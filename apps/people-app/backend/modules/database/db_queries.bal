@@ -242,12 +242,13 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
 # + payload - Get employees filter payload
 # + leadEmail - If provided, restricts results to subordinates of this lead
 # + return - Parameterized query for fetching employees
-isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadEmail = ()) returns sql:ParameterizedQuery {
+isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadEmail = (),
+        boolean includePersonalInfo = false) returns sql:ParameterizedQuery {
 
     int 'limit = payload.pagination.'limit;
     int offset = payload.pagination.offset;
 
-    sql:ParameterizedQuery baseQuery = `
+    sql:ParameterizedQuery selectPrefix = `
         SELECT
             e.employee_id AS employeeId,
             e.first_name AS firstName,
@@ -310,7 +311,39 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.company_id AS companyId,
             h.name AS house,
             e.house_id AS houseId,
+            -- Personal information is selected only where the caller is entitled to it. The
+            -- columns are omitted from the SQL rather than blanked afterwards, so data nobody
+            -- may see is never read out of the database at all.
+        `;
+
+    sql:ParameterizedQuery personalInfoColumns = `
             pi.gender AS gender,
+            pi.nic_or_passport AS nicOrPassport,
+            pi.dob AS dateOfBirth,
+            pi.nationality AS nationality,
+            pi.personal_email AS personalEmail,
+            pi.personal_phone AS personalPhone,
+            pi.resident_number AS residentNumber,
+            pi.address_line_1 AS addressLine1,
+            pi.address_line_2 AS addressLine2,
+            pi.city AS city,
+            pi.state_or_province AS stateOrProvince,
+            pi.postal_code AS postalCode,
+            pi.country AS country,
+            -- Emergency contacts are one-to-many, so they are flattened into a single
+            -- cell here rather than widening the row: an employee may have any number
+            -- of them, and fixed "Contact 1/2/3" columns would truncate or pad.
+            (
+                SELECT GROUP_CONCAT(
+                    CONCAT_WS(' - ', piec.name, piec.relationship, piec.mobile)
+                    ORDER BY piec.id SEPARATOR '; '
+                )
+                FROM personal_info_emergency_contacts piec
+                WHERE piec.personal_info_id = pi.id AND piec.is_active = 1
+            ) AS emergencyContacts,
+        `;
+
+    sql:ParameterizedQuery remainingQuery = `
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
@@ -354,6 +387,12 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             ) mgr ON mgr.managerEmail = LOWER(e.manager_email)
             LEFT JOIN resignation r ON r.employee_id = e.id
         `;
+
+    // Defaults to excluding personal information, so a caller that has not been considered
+    // gets a field it did not expect rather than data it may not see.
+    sql:ParameterizedQuery baseQuery = includePersonalInfo
+        ? sql:queryConcat(selectPrefix, personalInfoColumns, remainingQuery)
+        : sql:queryConcat(selectPrefix, remainingQuery);
 
     sql:ParameterizedQuery[] filters = [];
 
@@ -402,6 +441,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     appendStringFilter(filters, payload.filters.firstName, `LOWER(pi.first_name) = LOWER(${payload.filters.firstName})`);
     appendStringFilter(filters, payload.filters.lastName, `LOWER(pi.last_name) = LOWER(${payload.filters.lastName})`);
     appendStringFilter(filters, payload.filters.dateOfBirth, `pi.dob = ${payload.filters.dateOfBirth}`);
+    appendStringFilter(filters, payload.filters.startDate, `e.start_date = ${payload.filters.startDate}`);
     appendStringFilter(filters, payload.filters.gender, `pi.gender = ${payload.filters.gender}`);
     appendStringFilter(filters, payload.filters.personalEmail, `LOWER(pi.personal_email) = LOWER(${payload.filters.personalEmail})`);
     appendStringFilter(filters, payload.filters.personalPhone, `pi.personal_phone = ${payload.filters.personalPhone}`);
@@ -2789,6 +2829,31 @@ isolated function getEmployeeAdditionalManagersAuditSnapshotsQuery(int[] employe
     );
 }
 
+# Fetch audit snapshots from the resignation_audit table for a set of employee rows.
+#
+# resignation keys on employee_id, so its audit keys on employee_pk_id exactly as employee_audit does
+# and needs none of the anchor-row indirection personal_info_audit requires.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning resignation_audit rows tagged with their source table
+isolated function getResignationAuditSnapshotsQuery(int[] employeePkIds) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildIntInClause(employeePkIds);
+    return sql:queryConcat(
+            `SELECT
+                employee_pk_id AS employeePkId,
+                'resignation_audit' AS sourceTable,
+                action_type AS actionType,
+                action_by AS actionBy,
+                action_on AS actionOn,
+                data AS data
+            FROM resignation_audit
+            WHERE employee_pk_id IN (`,
+            inClause,
+            `)
+            ORDER BY action_on ASC`
+    );
+}
+
 # Fetch audit snapshots from the personal_info_audit table for the person behind a set of employee rows.
 #
 # personal_info_audit keys on personal_info_pk_id, not employee_pk_id. All employee rows belonging to one
@@ -2890,3 +2955,108 @@ isolated function isCurrentEmploymentQuery(string employeeId) returns sql:Parame
             LIMIT 1
         )
      LIMIT 1;`;
+
+# Insert a scheduled change.
+#
+# + employeeId - Employee table primary key
+# + payload - Effective date and the fields to change
+# + expected - What those fields hold now, for the supersede check on the day
+# + createdBy - Email of the person scheduling the change
+# + return - Parameterized insert query
+isolated function insertScheduledChangeQuery(int employeeId, string effectiveDate,
+        string columnChanges, string expected, string createdBy) returns sql:ParameterizedQuery =>
+    `INSERT INTO scheduled_employee_change
+            (employee_id, effective_date, changes, expected, created_by, updated_by)
+        VALUES (${employeeId}, ${effectiveDate}, ${columnChanges}, ${expected},
+            ${createdBy}, ${createdBy})`;
+
+# Fetch the scheduled changes for one employee, newest first.
+#
+# + employeeId - Employee table primary key
+# + pendingOnly - Limit to changes still waiting for their date
+# + return - Parameterized query returning the rows, with the employee's identifier
+isolated function getScheduledChangesQuery(int employeeId, boolean pendingOnly)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery base = `SELECT
+            sc.id,
+            sc.employee_id AS employeeId,
+            e.employee_id AS employeeIdentifier,
+            DATE_FORMAT(sc.effective_date, '%Y-%m-%d') AS effectiveDate,
+            sc.changes,
+            sc.expected,
+            sc.status,
+            DATE_FORMAT(sc.applied_on, '%Y-%m-%d %H:%i:%s') AS appliedOn,
+            sc.failure_reason AS failureReason,
+            sc.created_by AS createdBy,
+            DATE_FORMAT(sc.created_on, '%Y-%m-%d %H:%i:%s') AS createdOn
+        FROM scheduled_employee_change sc
+        JOIN employee e ON e.id = sc.employee_id
+        WHERE sc.employee_id = ${employeeId}`;
+    sql:ParameterizedQuery pending = ` AND sc.status = 'PENDING'`;
+    sql:ParameterizedQuery ordering = ` ORDER BY sc.effective_date ASC, sc.id ASC`;
+    return pendingOnly
+        ? sql:queryConcat(base, pending, ordering)
+        : sql:queryConcat(base, ordering);
+}
+
+# Fetch one scheduled change by id.
+#
+# + id - Scheduled change id
+# + return - Parameterized query returning the row, with the employee's identifier
+isolated function getScheduledChangeByIdQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT
+        sc.id,
+        sc.employee_id AS employeeId,
+        e.employee_id AS employeeIdentifier,
+        DATE_FORMAT(sc.effective_date, '%Y-%m-%d') AS effectiveDate,
+        sc.changes,
+        sc.expected,
+        sc.status,
+        DATE_FORMAT(sc.applied_on, '%Y-%m-%d %H:%i:%s') AS appliedOn,
+        sc.failure_reason AS failureReason,
+        sc.created_by AS createdBy,
+        DATE_FORMAT(sc.created_on, '%Y-%m-%d %H:%i:%s') AS createdOn
+    FROM scheduled_employee_change sc
+    JOIN employee e ON e.id = sc.employee_id
+    WHERE sc.id = ${id}`;
+
+
+# Move a scheduled change out of PENDING.
+#
+# + id - Scheduled change id
+# + status - Status to record
+# + failureReason - Why it was not applied, where that applies
+# + updatedBy - Who or what closed the row out
+# + return - Parameterized update query
+isolated function updateScheduledChangeStatusQuery(int id, string status, string? failureReason,
+        string updatedBy) returns sql:ParameterizedQuery =>
+    `UPDATE scheduled_employee_change
+     SET status = ${status},
+         applied_on = CASE WHEN ${status} = 'APPLIED' THEN CURRENT_TIMESTAMP(6) ELSE applied_on END,
+         failure_reason = ${failureReason},
+         updated_by = ${updatedBy}
+     WHERE id = ${id} AND status = 'PENDING'`;
+
+# Fetch the house from a returning employee's most recent previous employment.
+#
+# The most recent employment only, ordered by start date and then by id for two starting
+# the same day. It is not searched backwards for one that happens to carry a house: the
+# house someone should return to is the one from where they last were, and reaching past
+# that into an older employment would hand them an affiliation they may have left behind
+# several roles ago. Where the latest employment has no house, the caller falls back to
+# deriving one from the employee ID.
+#
+# The house is joined rather than read directly, and the join carries `is_active = 1`, so a
+# house that has since been retired reads as absent and takes the same fallback. Houses are
+# soft-deleted, so matching on id alone would keep resolving one and hand the returning
+# employee a house the House dropdown no longer offers.
+#
+# + workEmail - Work email of the employee being onboarded
+# + return - Parameterized query returning the previous house id, if there is one
+isolated function getPreviousHouseIdQuery(string workEmail) returns sql:ParameterizedQuery =>
+    `SELECT h.id AS houseId
+     FROM employee e
+     LEFT JOIN house h ON h.id = e.house_id AND h.is_active = 1
+     WHERE e.work_email = ${workEmail}
+     ORDER BY e.start_date DESC, e.id DESC
+     LIMIT 1`;

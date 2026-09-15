@@ -49,3 +49,49 @@ isolated function runLeaverTransition() returns error? {
 
     log:printInfo("Leaver auto-transition sweep completed");
 }
+
+# Run the scheduled-change job: apply every change whose effective date has arrived and
+# email a summary.
+#
+# A change that was overtaken by a direct edit to the same field is reported as
+# superseded rather than applied, so the summary is where somebody learns that a planned
+# change did not happen — silently skipping it would leave the decision unmade and
+# unnoticed.
+#
+# + return - Error if the changes could not be read, or if the summary email could not be
+# sent after retries — the changes themselves have already committed either way; this
+# only reports whether the notification step succeeded, so a failed run can be noticed
+# and checked by hand.
+isolated function runScheduledChanges() returns error? {
+    log:printInfo("Scheduled change sweep started");
+
+    database:ScheduledChangeOutcome[] outcomes = check database:applyDueScheduledChanges(SCHEDULER_ACTOR);
+
+    if outcomes.length() == 0 {
+        log:printInfo("Scheduled change sweep completed — no changes due");
+        return;
+    }
+
+    int applied = 0;
+    int superseded = 0;
+    int failed = 0;
+    foreach database:ScheduledChangeOutcome outcome in outcomes {
+        match outcome.status {
+            database:SCHEDULED_CHANGE_APPLIED => { applied += 1; }
+            database:SCHEDULED_CHANGE_SUPERSEDED => { superseded += 1; }
+            _ => { failed += 1; }
+        }
+    }
+
+    log:printInfo("Scheduled change step completed",
+            applied = applied, superseded = superseded, failed = failed);
+
+    error? notifyResult = email:notifyScheduledChanges(outcomes);
+    if notifyResult is error {
+        log:printError("Failed to send scheduled change summary email", notifyResult);
+        log:printInfo("Scheduled change sweep completed");
+        return notifyResult;
+    }
+
+    log:printInfo("Scheduled change sweep completed");
+}

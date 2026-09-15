@@ -14,11 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+
 import CommonPage from "@layout/pages/CommonPage";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
 import DownloadIcon from "@mui/icons-material/Download";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   Alert,
@@ -48,7 +52,11 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
 import { useEffect, useRef, useState } from "react";
 
-const QR_EXPORT_LIMIT = 50;
+// Each export is one request per employee to the QR service and one browser download,
+// both serial, so the cap is about what that mechanism can carry rather than any server
+// limit — there is none. Sized above a real joining cohort so it is not hit in normal
+// use; a bulk export well beyond this wants a single server-generated archive instead.
+const QR_EXPORT_LIMIT = 100;
 const SEARCH_LIMIT = 20;
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -61,6 +69,8 @@ function QrCodesReportContent() {
   const dispatch = useAppDispatch();
 
   const [selected, setSelected] = useState<EmployeeQrInfo[]>([]);
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [startDateLoading, setStartDateLoading] = useState(false);
   const [autocompleteKey, setAutocompleteKey] = useState(0);
   const [searchOptions, setSearchOptions] = useState<EmployeeQrInfo[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -106,7 +116,83 @@ function QrCodesReportContent() {
       .join("")
       .trim()
       .slice(0, SEARCH_MAX_LENGTH);
-    debounceRef.current = setTimeout(() => performSearch(sanitized), SEARCH_DEBOUNCE_MS);
+    debounceRef.current = setTimeout(
+      () => performSearch(sanitized),
+      SEARCH_DEBOUNCE_MS,
+    );
+  }
+
+  /**
+   * Adds everyone who started on the chosen day to the export list.
+   *
+   * A joining cohort is the usual reason to print badges in bulk, and picking each
+   * person out of the search one at a time is the slow path this avoids. Anyone already
+   * selected is skipped rather than duplicated, and the export limit still applies —
+   * the list is truncated to it and the surplus reported.
+   */
+  async function handleAddByStartDate() {
+    if (!startDate) return;
+    setStartDateLoading(true);
+    try {
+      const action = await dispatch(
+        fetchQrCodeEmployees({
+          filters: {
+            employeeStatus: EmployeeStatus.Active,
+            startDate,
+          },
+          // The export cap, not the type-ahead's limit: this asks for a whole cohort,
+          // and anything beyond what the export can hold is reported as skipped below.
+          // Requesting the dropdown's 20 silently returned a partial cohort and still
+          // said it had added everyone.
+          pagination: { limit: QR_EXPORT_LIMIT, offset: 0 },
+          sort: { sortField: "startDate", sortOrder: "DESC" },
+        }),
+      );
+      if (!fetchQrCodeEmployees.fulfilled.match(action)) return;
+
+      const matches = action.payload.employees;
+      if (matches.length === 0) {
+        dispatch(
+          enqueueSnackbarMessage({
+            message: `No active employees started on ${startDate}.`,
+            type: "warning",
+          }),
+        );
+        return;
+      }
+
+      // Worked out before the update rather than inside it: a state updater has to be a
+      // pure function of its argument, and React may run it more than once — StrictMode
+      // does in development — which dispatched the snackbar twice. Reading `selected`
+      // directly is safe here because this handler is awaited behind startDateLoading
+      // and is the only writer while it runs.
+      const existing = new Set(selected.map((e) => e.employeeId));
+      const additions = matches.filter((e) => !existing.has(e.employeeId));
+      const room = QR_EXPORT_LIMIT - selected.length;
+      const added = additions.slice(0, Math.max(room, 0));
+
+      // Two ways a cohort comes up short, and both have to be counted. The request asks
+      // for QR_EXPORT_LIMIT rows, so a larger cohort is cut off by the server before the
+      // client ever sees it: totalCount reports the real size. Counting only what came
+      // back reported "Added 100" for a 120-person intake and never mentioned the other
+      // twenty, leaving the admin to print badges for a cohort they thought was whole.
+      const notReturned = Math.max(action.payload.totalCount - matches.length, 0);
+      const skipped = additions.length - added.length + notReturned;
+
+      setSelected((prev) => [...prev, ...added]);
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message:
+            skipped > 0
+              ? `Added ${added.length}; ${skipped} not added, the limit is ${QR_EXPORT_LIMIT}.`
+              : `Added ${added.length} employee${added.length === 1 ? "" : "s"} who started on ${startDate}.`,
+          type: skipped > 0 ? "warning" : "success",
+        }),
+      );
+    } finally {
+      setStartDateLoading(false);
+    }
   }
 
   function handleSelect(_: unknown, value: EmployeeQrInfo | null) {
@@ -136,7 +222,9 @@ function QrCodesReportContent() {
         const url = URL.createObjectURL(response.data as Blob);
         const a = document.createElement("a");
         a.href = url;
-        const safeName = `${emp.firstName}_${emp.lastName}`.replace(/[^\w\s-]/g, "").trim();
+        const safeName = `${emp.firstName}_${emp.lastName}`
+          .replace(/[^\w\s-]/g, "")
+          .trim();
         a.download = `${emp.employeeId}-${safeName}.png`;
         document.body.appendChild(a);
         a.click();
@@ -169,13 +257,66 @@ function QrCodesReportContent() {
             "& .MuiAlert-icon": { alignItems: "center" },
           }}
         >
-          Search for employees and add them to the list. Click <strong>Export QR Codes</strong> to
-          save each QR as an individual PNG file. <br />
-          A maximum of <strong>{QR_EXPORT_LIMIT} employees</strong> can be exported at a time.
+          Search for employees and add them to the list. Click{" "}
+          <strong>Export QR Codes</strong> to save each QR as an individual PNG
+          file. <br />A maximum of <strong>{QR_EXPORT_LIMIT} employees</strong>{" "}
+          can be exported at a time.
         </Alert>
       </Box>
 
-      <Box sx={{ px: 2, pb: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+      <Box
+        sx={{ px: 2, pb: 2, display: "flex", flexDirection: "column", gap: 2 }}
+      >
+        {/* Add a whole joining cohort at once: picking each person out of the search is
+            the slow path when badges are printed for everyone who started on a day. */}
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
+          <DatePicker
+            label="Start date"
+            format="YYYY-MM-DD"
+            value={startDate ? dayjs(startDate) : null}
+            disabled={atLimit || startDateLoading}
+            onChange={(v: dayjs.Dayjs | null) =>
+              setStartDate(v ? v.format("YYYY-MM-DD") : null)
+            }
+            slotProps={{
+              field: { clearable: true },
+              textField: {
+                size: "small",
+                sx: { minWidth: 200 },
+              },
+            }}
+          />
+          <Button
+            variant="outlined"
+            color="inherit"
+            disabled={!startDate || atLimit || startDateLoading}
+            onClick={handleAddByStartDate}
+            startIcon={
+              startDateLoading ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <GroupAddIcon />
+              )
+            }
+            // Styled as Clear All is: this is a list-management action alongside it,
+            // not something competing with Export for attention.
+            sx={{
+              textTransform: "none",
+              whiteSpace: "nowrap",
+              color: "text.secondary",
+              borderColor: "divider",
+              height: 40,
+            }}
+          >
+            {startDateLoading ? "Adding..." : "Add All"}
+          </Button>
+        </Box>
+        <Typography
+          color="text.secondary"
+          sx={{ fontSize: 12, mt: -1.25, ml: 0.25 }}
+        >
+          Adds every active employee who started on that day to the list below.
+        </Typography>
         {/* Search */}
         <Autocomplete
           key={autocompleteKey}
@@ -312,22 +453,33 @@ function QrCodesReportContent() {
                         flexShrink: 0,
                       }}
                     >
-                      {missingHouse
-                        ? <WarningAmberIcon sx={{ fontSize: 20 }} />
-                        : getInitials(emp.firstName, emp.lastName)}
+                      {missingHouse ? (
+                        <WarningAmberIcon sx={{ fontSize: 20 }} />
+                      ) : (
+                        getInitials(emp.firstName, emp.lastName)
+                      )}
                     </Avatar>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography variant="body2" fontWeight={600} noWrap>
                         {emp.firstName} {emp.lastName}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" noWrap>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        noWrap
+                      >
                         {emp.workEmail} · {emp.employeeId}
                       </Typography>
                       {missingHouse && (
                         <Typography
                           variant="caption"
                           color="error"
-                          sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25 }}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            mt: 0.25,
+                          }}
                         >
                           <WarningAmberIcon sx={{ fontSize: 13 }} />
                           No house assigned — QR code cannot be generated
@@ -335,7 +487,10 @@ function QrCodesReportContent() {
                       )}
                     </Box>
                     <Tooltip title="Remove">
-                      <IconButton size="small" onClick={() => handleRemove(emp.employeeId)}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemove(emp.employeeId)}
+                      >
                         <CloseIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </Tooltip>
@@ -348,7 +503,14 @@ function QrCodesReportContent() {
         )}
 
         {/* Actions */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 1.5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: 1.5,
+          }}
+        >
           {selected.length > 0 && (
             <Button
               variant="outlined"
@@ -356,23 +518,37 @@ function QrCodesReportContent() {
               startIcon={<DeleteSweepIcon />}
               onClick={handleClearAll}
               disabled={isDownloading}
-              sx={{ textTransform: "none", color: "text.secondary", borderColor: "divider" }}
+              sx={{
+                textTransform: "none",
+                color: "text.secondary",
+                borderColor: "divider",
+              }}
             >
               Clear All
             </Button>
           )}
           <Tooltip
-            title={hasUnexportable ? "Remove employees with no house assigned before exporting" : ""}
+            title={
+              hasUnexportable
+                ? "Remove employees with no house assigned before exporting"
+                : ""
+            }
           >
             <span>
               <Button
                 variant="contained"
                 color="secondary"
                 startIcon={
-                  isDownloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />
+                  isDownloading ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : (
+                    <DownloadIcon />
+                  )
                 }
                 onClick={handleDownload}
-                disabled={selected.length === 0 || isDownloading || hasUnexportable}
+                disabled={
+                  selected.length === 0 || isDownloading || hasUnexportable
+                }
                 sx={{ textTransform: "none" }}
               >
                 {isDownloading

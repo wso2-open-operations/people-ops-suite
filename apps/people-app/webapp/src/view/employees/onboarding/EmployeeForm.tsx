@@ -82,7 +82,7 @@ const deriveFullName = (
   last?: string,
 ): string => (full ?? `${first ?? ""} ${last ?? ""}`).trim();
 
-const toFormValues = (
+export const toFormValues = (
   employee: Employee | null,
   personal: EmployeePersonalInfo | null,
 ): CreateEmployeeFormValues => {
@@ -162,7 +162,7 @@ const toFormValues = (
   return base;
 };
 
-const toJobUpdatePayload = (
+export const toJobUpdatePayload = (
   values: CreateEmployeeFormValues,
 ): UpdateEmployeeJobInfoPayload => ({
   epf: values.epf === "" ? null : values.epf,
@@ -210,7 +210,7 @@ const toJobUpdatePayload = (
   resignationReason: values.resignationReason ?? null,
 });
 
-const toPersonalUpdatePayload = (
+export const toPersonalUpdatePayload = (
   values: CreateEmployeeFormValues,
 ): EmployeePersonalInfoUpdate => ({
   nicOrPassport: values.personalInfo.nicOrPassport ?? null,
@@ -327,7 +327,7 @@ function CustomStepIcon(props: StepIconProps) {
   );
 }
 
-const diffObject = <T extends Record<string, any>>(
+export const diffObject = <T extends Record<string, any>>(
   prev: T,
   next: T,
 ): Partial<T> => {
@@ -498,6 +498,16 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
   const dispatch = useAppDispatch();
   const { showConfirmation } = useConfirmationModalContext();
 
+  // Currently always false: employeeEdit.tsx was removed and employeeOnboarding.tsx's
+  // mode="create" is the only call site left, so every isEditMode branch here and in
+  // JobInfo/Review is unreachable. Editing an existing employee now happens in the
+  // profile's inline section editors (view/me/sectionEdit).
+  //
+  // Left in place rather than deleted: the branches span three large files with no tests
+  // over the wizard, and the create path shares that code, so removing them belongs in
+  // its own change where breaking onboarding would be obvious. Treat what they contain as
+  // stale, not as reference — the leaver-fields rule in the edit submit path below is the
+  // pre-fix version of the one corrected in useSectionSave.
   const isEditMode = mode === "edit" && !!employeeId;
 
   const employeeSlice = useAppSelector((s) => s.employee);
@@ -682,7 +692,11 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
           validationSchema={
             activeStep === 0
               ? personalInfoValidationSchema
-              : createJobInfoValidationSchema(employmentTypes)
+              : // requireHouse tracks isEditMode because the House field itself is only
+                // rendered in edit mode; the server assigns the house when onboarding.
+                createJobInfoValidationSchema(employmentTypes, {
+                  requireHouse: isEditMode,
+                })
           }
           onSubmit={async (values, actions) => {
             if (activeStep !== EmployeeFormSteps.length - 1) {

@@ -251,3 +251,37 @@ export const countCsvDataRows = (rows: string[][]): number => {
 // Strips the Byte Order Mark (BOM) from the beginning of a string if it exists.
 export const stripBom = (text: string): string =>
   text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+
+/**
+ * Normalises an email address for storage.
+ *
+ * Addresses are case-insensitive in practice, and the backend already compares them with
+ * LOWER(), but whatever case was typed is what gets stored — so the same person could be
+ * recorded as TEST@wso2.com in one place and test@wso2.com in another. Lowercasing at the
+ * input keeps what is written consistent.
+ *
+ * Surrounding whitespace is dropped too, since a trailing space from a paste is invisible
+ * in the field but survives into the record.
+ */
+export const normalizeEmail = (value: string): string => value.trim().toLowerCase();
+
+/**
+ * Whether a departure's two dates are in a possible order.
+ *
+ * An employee's final day of employment cannot fall before their last day in office —
+ * employment does not end before someone stops coming in. The same day is valid: a last
+ * office day that is also the final day of employment is ordinary.
+ *
+ * Either date missing is treated as valid here; requiredness is a separate rule.
+ */
+export const isResignationDateOrderValid = (
+  finalDayInOffice: string | null | undefined,
+  finalDayOfEmployment: string | null | undefined,
+): boolean => {
+  if (!finalDayInOffice || !finalDayOfEmployment) return true;
+  return finalDayOfEmployment >= finalDayInOffice;
+};
+
+/** The message shown when the two departure dates are the wrong way round. */
+export const RESIGNATION_DATE_ORDER_MESSAGE =
+  "Final day of employment cannot be before the last day in office";

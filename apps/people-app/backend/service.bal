@@ -55,6 +55,32 @@ service class ErrorInterceptor {
     }
 }
 
+# Whether the caller may use the QR code report.
+#
+# The QR export role reaches this and nothing else: it grants no visibility of an
+# employee profile, so it is checked separately from canReadAnyEmployee rather than
+# folded into it.
+#
+# + userInfo - Invoker's JWT payload
+# + return - true when the caller may search for and download QR codes
+isolated function canExportQrCodes(authorization:CustomJwtPayload userInfo) returns boolean =>
+    authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.QR_EXPORT_ROLE], userInfo.groups);
+
+# Whether the caller may read any employee's record.
+#
+# Admins have always been able to; the employee-view role grants the same visibility
+# without any ability to change a record. Both are IAM-group-backed, so this is a pure
+# group check with no database lookup.
+#
+# + userInfo - Invoker's JWT payload
+# + return - true when the caller may read any employee
+isolated function canReadAnyEmployee(authorization:CustomJwtPayload userInfo) returns boolean =>
+    authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_VIEW_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.RESIGNATION_ROLE], userInfo.groups);
+
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Service initialization.
@@ -119,6 +145,15 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups) {
             privileges.push(authorization:SERVICE_DESK_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_VIEW_ROLE], userInfo.groups) {
+            privileges.push(authorization:EMPLOYEE_VIEW_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.RESIGNATION_ROLE], userInfo.groups) {
+            privileges.push(authorization:RESIGNATION_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.QR_EXPORT_ROLE], userInfo.groups) {
+            privileges.push(authorization:QR_EXPORT_PRIVILEGE);
         }
         boolean|error isLeadUser = database:isLead(userInfo.email);
         if isLeadUser is error {
@@ -213,7 +248,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
         boolean isSelf = employeeInfo != () && employeeInfo.workEmail == userInfo.email;
         if !hasAdminAccess && !isSelf {
             boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
@@ -269,7 +304,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         // NIC/passport, date of birth, gender, home address, personal contact details and
         // emergency contacts — none of which a lead needs in order to manage someone. Unlike the
         // history endpoint there is no lead projection here: the whole record is withheld.
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
         boolean isSelf = employeeInfo != () && employeeInfo.workEmail == userInfo.email;
         if !hasAdminAccess && !isSelf {
             log:printWarn("User is not authorized to view this employee's personal information",
@@ -318,9 +353,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
         }
 
-        boolean hasQrExportAccess
-                = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
-                || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
+        boolean hasQrExportAccess = canExportQrCodes(userInfo);
 
         database:Employee|error? employee = database:getEmployeeInfo(employeeId);
         if employee is error {
@@ -389,8 +422,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess
-            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
 
         if !hasAdminAccess {
             boolean|error isLeadUser = database:isLead(userInfo.email);
@@ -434,8 +466,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess
-            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
 
         string sortField = payload.sort.sortField;
         if !database:EmployeeSortField.hasKey(sortField) {
@@ -460,7 +491,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if hasAdminAccess && !payload.leadOnly {
-            database:EmployeesResponse|error employees = database:getEmployees(payload);
+            database:EmployeesResponse|error employees = database:getEmployees(payload, includePersonalInfo = true);
             if employees is error {
                 string customErr = "Error occurred while fetching employees";
                 log:printError(customErr, employees);
@@ -493,8 +524,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Lead: results restricted to their subordinates.
-        database:EmployeesResponse|error employees = database:getEmployees(payload, userInfo.email);
+        // Lead: results restricted to their subordinates, and without personal information.
+        // A lead sees a subordinate's work details but not their NIC, date of birth, home
+        // address or emergency contacts — the same rule the personal-info endpoint states,
+        // where the whole record is withheld from a lead rather than projected.
+        database:EmployeesResponse|error employees =
+            database:getEmployees(payload, userInfo.email);
         if employees is error {
             string customErr = "Error occurred while fetching employees";
             log:printError(customErr, employees);
@@ -521,9 +556,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasQrSearchAccess
-            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
-            || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
+        boolean hasQrSearchAccess = canExportQrCodes(userInfo);
 
         if !hasQrSearchAccess {
             log:printWarn("User is not authorized to search employees for QR export",
@@ -551,7 +584,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         database:EmployeesResponse|error result = database:getEmployees({
                                                                             searchString: payload.searchString,
-                                                                            filters: {employeeStatus: payload.filters.employeeStatus},
+                                                                            filters: {
+                                                                                employeeStatus: payload.filters.employeeStatus,
+                                                                                startDate: payload.filters.startDate
+                                                                            },
                                                                             pagination: payload.pagination,
                                                                             sort: payload.sort
                                                                         });
@@ -1305,9 +1341,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         string employeeId = generatedEmployeeId;
 
-        // House is assigned automatically from the employee ID's numeric part — not a
-        // user-editable choice, and not known until the ID above is resolved.
-        int|error autoHouseId = database:houseIdForEmployeeId(employeeId);
+        // House is assigned automatically — a returning employee keeps the one they had,
+        // everyone else gets it from the employee ID's numeric part. Not a user-editable
+        // choice, and not known until the ID above is resolved.
+        int|error autoHouseId = database:resolveHouseIdForNewEmployee(payload.workEmail, employeeId);
         if autoHouseId is error {
             log:printError("Error occurred while computing automatic house assignment",
                     autoHouseId, employeeId = employeeId);
@@ -1544,6 +1581,71 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
+    # Record an employee's resignation.
+    #
+    # A dedicated route rather than a rule inside the job-info handler: the permission is
+    # then structural — this role may call this endpoint, and this endpoint can only write
+    # these three fields. A field-level check on the 25-field job-info payload would be a
+    # negative rule that has to stay correct about every other field, and would silently
+    # widen the moment a new one is added.
+    #
+    # Employment status is not accepted from the caller; recording a departure is what
+    # makes someone a leaver, so it is set to "Marked leaver" here.
+    #
+    # + employeeId - Employee ID
+    # + payload - Resignation details
+    # + return - HTTP OK or HTTP errors
+    resource function patch employees/[string employeeId]/resignation(http:RequestContext ctx,
+            @http:Payload database:UpdateResignationPayload payload)
+        returns http:Ok|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        boolean isAuthorized =
+            authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+            || authorization:checkPermissions([authorization:authorizedRoles.RESIGNATION_ROLE], userInfo.groups);
+        if !isAuthorized {
+            log:printWarn("User is not authorized to record a resignation", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to record a resignation"}
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
+        if employeeInfo is error {
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        if employeeInfo is () {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
+        }
+
+        error? updateResult = database:updateResignation(employeeId, payload, userInfo.email);
+        if updateResult is error {
+            // An impossible date pair is the caller's mistake, not a server fault, so it
+            // is reported as such with the reason rather than a generic failure. Matched
+            // on the error type rather than its message: the wording is a user-facing
+            // string and rewording it should not turn somebody's bad input into a 500.
+            if updateResult is database:InvalidResignationDatesError {
+                log:printWarn(updateResult.message(), employeeId = employeeId);
+                return <http:BadRequest>{body: {message: updateResult.message()}};
+            }
+            string customErr = string `Error occurred while recording the resignation for ID: ${employeeId}`;
+            log:printError(customErr, updateResult, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        return http:OK;
+    }
+
     # Update employee job information.
     #
     # + employeeId - Employee ID
@@ -1641,7 +1743,15 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if isLeaverStatus {
+        // Keyed on the status this request sets, not on the status the employee already
+        // holds. The rule is "recording a departure has to say when and why", which is
+        // about the moment somebody becomes a leaver. Reading isLeaverStatus here instead
+        // asked "is this person a leaver", which is true forever once they have left — so
+        // every later edit of their record, a job role or a team on its own, was refused
+        // unless it resent all three resignation fields.
+        boolean isBecomingLeaver = payload.employeeStatus == database:EMPLOYEE_LEFT
+            || payload.employeeStatus == database:EMPLOYEE_MARKED_LEAVER;
+        if isBecomingLeaver {
             string? payloadFinalDayInOffice = payload.finalDayInOffice;
             string? payloadFinalDayOfEmployment = payload.finalDayOfEmployment;
             string? payloadResignationReason = payload.resignationReason;
@@ -2180,7 +2290,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
-        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+        // Employee reports only. QR code generation stays with admin and service desk,
+        // which is checked on its own endpoint.
+        if !canReadAnyEmployee(userInfo) {
             log:printWarn("User is not authorized to access reports", invokerEmail = userInfo.email);
             return <http:Forbidden>{
                 body: {message: "You are not authorized to access reports"}
@@ -2192,7 +2304,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         int offset = 0;
 
         while fetchMore {
-            database:EmployeesResponse|error pageResult = database:getEmployees({
+            database:EmployeesResponse|error pageResult = database:getEmployees(includePersonalInfo = true, payload = {
                                                                                     searchString: (),
                                                                                     filters: payload.filters,
                                                                                     pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
@@ -3220,8 +3332,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         //   designation, manager, status and dates through the sibling employee endpoint;
         //   history adds only *when* those changed, so withholding it would be inconsistent.
         // - Self gets the employee projection: no actionBy, no system rows.
-        boolean hasFullProjection = authorization:checkPermissions(
-                [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        // The employee-view role reads any employee's record, so it gets the same
+        // projection an admin does: the fallback below is self-only, which would
+        // otherwise deny it a history it is allowed to see.
+        boolean hasFullProjection = canReadAnyEmployee(userInfo);
 
         if !hasFullProjection {
             // Two conditions, and both are required.
@@ -3359,5 +3473,179 @@ service http:InterceptableService / on new http:Listener(9090) {
             events: projectHistoryEvents(events, hasFullProjection),
             promotionsUnavailable: promotionsUnavailable
         };
+    }
+
+    # Schedule a change to an employee's general information for a future date.
+    #
+    # The same edit an admin can apply immediately, held until the date it should take
+    # effect: a promotion effective the first of the month, a transfer effective when the
+    # quarter starts. The scheduler applies it on the day through a plain update, so the
+    # audit trail and the profile history read exactly as they would for a change made by
+    # hand.
+    #
+    # The caller sends what the targeted fields hold now alongside the change. The sweep
+    # compares against it on the day, so a change overtaken by a direct edit to the same
+    # field is reported rather than quietly undoing the more recent decision.
+    #
+    # + employeeId - Employee ID
+    # + payload - Effective date and the fields to change
+    # + return - HTTP Created with the scheduled change id, or HTTP errors
+    resource function post employees/[string employeeId]/scheduled\-changes(http:RequestContext ctx,
+            @http:Payload database:ScheduleChangePayload payload)
+        returns http:Created|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        // Scheduling is the same act as editing, deferred, so it is gated the same way the
+        // inline section editor is.
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to schedule an employee change",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to schedule a change"}
+            };
+        }
+
+        // Today is refused along with the past: the sweep runs once a day, so a change
+        // dated today lands either immediately or a day late depending on whether it has
+        // already run. An edit meant to take effect now should be applied now.
+        if !isFutureDate(payload.effectiveDate) {
+            log:printWarn("Scheduled change rejected: effective date is not in the future",
+                    employeeId = employeeId, effectiveDate = payload.effectiveDate);
+            return <http:BadRequest>{
+                body: {message: "The effective date must be a future date"}
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
+        if employeeInfo is error {
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        if employeeInfo is () {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
+        }
+
+        // Refused while somebody is present to be told. A field the sweep cannot write
+        // would otherwise sit pending until its date and fail there, long after the person
+        // who scheduled it has moved on.
+        map<json>|error columnChanges = toSchedulableColumns(payload.changes);
+        if columnChanges is error {
+            log:printWarn("Scheduled change rejected: a field cannot be scheduled",
+                    employeeId = employeeId, reason = columnChanges.message());
+            return <http:BadRequest>{body: {message: columnChanges.message()}};
+        }
+
+        // Refused rather than scheduled without it: the sweep compares against these on
+        // the day, and a change carrying none would be applied without that check.
+        map<json>|error expected = expectedValuesFor(employeeInfo, columnChanges);
+        if expected is error {
+            string customErr = string `Error occurred while recording the current values for ID: ${employeeId}`;
+            log:printError(customErr, expected, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        int|error scheduled = database:scheduleEmployeeChange(employeeId, payload.effectiveDate,
+                columnChanges.toJsonString(), expected.toJsonString(), userInfo.email);
+        if scheduled is error {
+            string customErr = string `Error occurred while scheduling a change for ID: ${employeeId}`;
+            log:printError(customErr, scheduled, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        return <http:Created>{body: {id: scheduled}};
+    }
+
+    # Fetch an employee's scheduled changes.
+    #
+    # + employeeId - Employee ID
+    # + pendingOnly - Limit to changes still waiting for their date
+    # + return - The scheduled changes, or HTTP errors
+    resource function get employees/[string employeeId]/scheduled\-changes(http:RequestContext ctx,
+            boolean pendingOnly = true)
+        returns database:ScheduledChange[]|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        // Read access matches the profile: anyone who may read the record may see what is
+        // queued against it, so the record is never shown as settled when it is not.
+        if !canReadAnyEmployee(userInfo) {
+            log:printWarn("User is not authorized to view scheduled changes",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to view scheduled changes"}
+            };
+        }
+
+        database:ScheduledChange[]|error changes = database:getScheduledChanges(employeeId, pendingOnly);
+        if changes is error {
+            string customErr = string `Error occurred while fetching scheduled changes for ID: ${employeeId}`;
+            log:printError(customErr, changes, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return changes;
+    }
+
+    # Withdraw a scheduled change before its date arrives.
+    #
+    # + employeeId - Employee ID
+    # + changeId - Scheduled change id
+    # + return - HTTP OK, or HTTP errors
+    resource function delete employees/[string employeeId]/scheduled\-changes/[int changeId](
+            http:RequestContext ctx)
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to cancel a scheduled change",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to cancel a scheduled change"}
+            };
+        }
+
+        database:ScheduledChange|error? existing = database:getScheduledChangeById(changeId);
+        if existing is error {
+            string customErr = string `Error occurred while fetching scheduled change: ${changeId}`;
+            log:printError(customErr, existing, changeId = changeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        // The id is checked against the employee in the path as well as existing at all,
+        // so a change cannot be cancelled through another employee's URL.
+        if existing is () || existing.employeeIdentifier != employeeId {
+            return <http:NotFound>{body: {message: "Scheduled change not found"}};
+        }
+
+        boolean|error cancelled = database:cancelScheduledChange(changeId, userInfo.email);
+        if cancelled is error {
+            string customErr = string `Error occurred while cancelling scheduled change: ${changeId}`;
+            log:printError(customErr, cancelled, changeId = changeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        if !cancelled {
+            // Already applied or already cancelled: there is no pending change to withdraw.
+            return <http:NotFound>{body: {message: "No pending scheduled change to cancel"}};
+        }
+
+        return http:OK;
     }
 }

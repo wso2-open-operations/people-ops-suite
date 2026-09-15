@@ -55,6 +55,12 @@ public type DuplicateCareerFunctionError distinct error;
 # violation), so the caller gets a 400 rather than an opaque 500.
 public type UnknownCareerFunctionError distinct error;
 
+# Raised when a departure's final day of employment precedes its last day in office, so the
+# caller gets a 400 naming the problem rather than an opaque 500. The type carries that
+# meaning, not the message: RESIGNATION_DATE_ORDER_ERROR supplies the wording and can be
+# reworded without changing which status the caller receives.
+public type InvalidResignationDatesError distinct error;
+
 # [Configurable] Database configs.
 # Deliberately flat (primitive fields only) rather than embedding mysql:Options/
 # sql:ConnectionPool directly: Choreo's config UI introspects configurable variable
@@ -204,6 +210,32 @@ public type Employee record {|
     string? additionalManagerEmails;
     # Gender (from employee personal info)
     string? gender;
+    # NIC or passport number (from employee personal info)
+    string? nicOrPassport;
+    # Date of birth (from employee personal info)
+    string? dateOfBirth;
+    # Nationality (from employee personal info)
+    string? nationality;
+    # Personal email address (from employee personal info)
+    string? personalEmail;
+    # Personal phone number (from employee personal info)
+    string? personalPhone;
+    # Resident number (from employee personal info)
+    string? residentNumber;
+    # Address line 1 (from employee personal info)
+    string? addressLine1;
+    # Address line 2 (from employee personal info)
+    string? addressLine2;
+    # City (from employee personal info)
+    string? city;
+    # State or province (from employee personal info)
+    string? stateOrProvince;
+    # Postal code (from employee personal info)
+    string? postalCode;
+    # Country (from employee personal info)
+    string? country;
+    # Emergency contacts, flattened as "name - relationship - mobile" entries
+    string? emergencyContacts;
     # Employee status
     string employeeStatus;
     # Continuous service record reference (Employee ID)
@@ -322,6 +354,8 @@ public type EmployeeFilters record {|
     boolean? directReports = ();
     # When true, excludes employees whose start date is in the future
     boolean? excludeFutureStartDate = ();
+    # Matches employees whose start date is exactly this day
+    string? startDate = ();
     # When true, includes employees with "Marked leaver" status alongside the primary employeeStatus filter
     boolean? includeMarkedLeavers = ();
 |};
@@ -435,6 +469,10 @@ public type EmployeeQrInfoResponse record {|
 public type QrCodeSearchFilters record {|
     # Employee status
     string? employeeStatus = ();
+    # Matches employees whose start date is exactly this day, so a joining cohort can be
+    # selected for badge printing without picking each person out of the search
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string? startDate = ();
 |};
 
 # Search payload for the QR code export endpoint.
@@ -1146,8 +1184,29 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Final day of employment 
     @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? finalDayOfEmployment = ();
-    # Resignation reason
+    # Resignation reason; whitespace-only is rejected (see UpdateResignationPayload). Left
+    # optional: absence means the field is not part of this edit, not a blank reason.
+    @constraint:String {maxLength: 300, pattern: re `^\s*\S.*$`}
     string? resignationReason = ();
+|};
+
+# [Database] Payload for updating an employee's resignation details.
+#
+# Employment status is deliberately absent: recording a departure is what makes someone
+# a leaver, so the status is derived from this call rather than supplied by the caller.
+# Accepting it would let a narrow resignation permission set an arbitrary status.
+public type UpdateResignationPayload record {|
+    # Last day the employee is physically in office
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string finalDayInOffice;
+    # Final day of employment
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string finalDayOfEmployment;
+    # Reason for leaving. The pattern rejects whitespace-only input: minLength alone sees
+    # the raw value, so "   " satisfies it and stores a reason that reads as blank
+    # wherever a departure is displayed. Same rule as CreateCareerFunctionPayload.
+    @constraint:String {maxLength: 300, pattern: re `^\s*\S.*$`}
+    string resignationReason;
 |};
 
 # [Database] Insert type for vehicle.
@@ -1536,3 +1595,54 @@ public type HistoryLookupName record {|
     # The human-readable name
     string name;
 |};
+
+# Status of a scheduled change.
+public enum ScheduledChangeStatus {
+    SCHEDULED_CHANGE_PENDING = "PENDING",
+    SCHEDULED_CHANGE_APPLIED = "APPLIED",
+    SCHEDULED_CHANGE_CANCELLED = "CANCELLED",
+    SCHEDULED_CHANGE_SUPERSEDED = "SUPERSEDED",
+    SCHEDULED_CHANGE_FAILED = "FAILED"
+}
+
+# A change to an employee's general information waiting for its effective date.
+public type ScheduledChange record {|
+    # Scheduled change id
+    int id;
+    # Employee table primary key the change applies to
+    int employeeId;
+    # Employee ID as people refer to it. Every read path joins the employee table for
+    # it, so a caller can tell whose rows these are without resolving the primary key:
+    # the profile page checks it before rendering, since a response can arrive after the
+    # viewer has moved to somebody else.
+    string employeeIdentifier;
+    # Date the change takes effect
+    string effectiveDate;
+    # Fields being changed, keyed by database column rather than by the payload field
+    # names the form uses — house_id, not houseId — because that is the shape the sweep
+    # applies and the shape expected below is captured in.
+    json changes;
+    # What those same fields held when the change was scheduled, keyed the same way
+    json expected;
+    # Where the change is in its life. Typed as the enum rather than a string: the column
+    # is a MySQL ENUM over exactly these five values, so nothing else can be read back.
+    ScheduledChangeStatus status;
+    # When it was written to the employee record, if it was
+    string? appliedOn;
+    # Why it could not be applied, if it could not
+    string? failureReason;
+    # Who scheduled it
+    string createdBy;
+    # When it was scheduled
+    string createdOn;
+|};
+
+# Payload for scheduling a change to an employee's general information.
+public type ScheduleChangePayload record {|
+    # Date the change takes effect; today or later
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string effectiveDate;
+    # Fields to change when that date arrives
+    UpdateEmployeeJobInfoPayload changes;
+|};
+

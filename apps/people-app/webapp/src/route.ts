@@ -79,7 +79,14 @@ const ReportsRoot = () => {
   const { pathname } = useLocation();
   const roles = useSelector(selectRoles);
   if (pathname === "/reports") {
-    const redirectTo = roles.includes(Role.ADMIN)
+    // Land on a report the caller can actually open: the employee reports and the QR
+    // report are reachable by different roles, and sending someone to one they cannot
+    // open would show them a 404 from their own sidebar.
+    const canSeeEmployeeReports =
+      roles.includes(Role.ADMIN) ||
+      roles.includes(Role.EMPLOYEE_VIEW) ||
+      roles.includes(Role.RESIGNATION);
+    const redirectTo = canSeeEmployeeReports
       ? "/reports/active-employees"
       : "/reports/qr-codes";
     return React.createElement(Navigate, { to: redirectTo, replace: true });
@@ -121,14 +128,14 @@ export const routes: RouteObjectWithRole[] = [
     text: "Employees",
     icon: React.createElement(BadgeSharp),
     element: React.createElement(EmployeesRoot),
-    allowRoles: [Role.ADMIN],
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
     children: [
       {
         path: "/employees/view",
         text: "All",
         element: React.createElement(View.employeesList),
         icon: React.createElement(Groups),
-        allowRoles: [Role.ADMIN],
+        allowRoles: [Role.ADMIN, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
       },
       {
         path: "/employees/my-team",
@@ -162,43 +169,53 @@ export const routes: RouteObjectWithRole[] = [
       },
     ],
   },
-  // Top-level My Team entry shown only for lead-only users (hidden when the user also has admin
-  // access, since admin+lead users see My Team nested under Employees instead).
+  // Top-level My Team entry, for leads who do not see the Employees group — that group
+  // carries its own nested My Team, so anyone who can see it would otherwise get both.
+  //
+  // excludeRoles must therefore mirror the Employees group's allowRoles above. It listed
+  // ADMIN alone, which was right until EMPLOYEE_VIEW and RESIGNATION were given access to
+  // that group: a lead holding either then saw My Team twice.
   {
     path: "/employees/my-team",
     text: "My Team",
     icon: React.createElement(PeopleAltIcon),
     element: React.createElement(View.myTeamView),
     allowRoles: [Role.LEAD],
-    excludeRoles: [Role.ADMIN],
+    excludeRoles: [Role.ADMIN, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
   },
   {
     path: "/reports",
     text: "Reports",
     icon: React.createElement(AssessmentIcon),
     element: React.createElement(ReportsRoot),
-    allowRoles: [Role.ADMIN, Role.SERVICE_DESK],
+    allowRoles: [
+      Role.ADMIN,
+      Role.SERVICE_DESK,
+      Role.EMPLOYEE_VIEW,
+      Role.RESIGNATION,
+      Role.QR_EXPORT,
+    ],
     children: [
       {
         path: "/reports/active-employees",
         text: "Active Employees",
         icon: React.createElement(Groups),
         element: React.createElement(View.activeEmployeesReport),
-        allowRoles: [Role.ADMIN],
+        allowRoles: [Role.ADMIN, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
       },
       {
         path: "/reports/inactive-employees",
         text: "Resignations",
         icon: React.createElement(PersonOffIcon),
         element: React.createElement(View.resignationReport),
-        allowRoles: [Role.ADMIN],
+        allowRoles: [Role.ADMIN, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
       },
       {
         path: "/reports/qr-codes",
         text: "QR Codes",
         icon: React.createElement(QrCode2Icon),
         element: React.createElement(View.qrCodesReport),
-        allowRoles: [Role.ADMIN, Role.SERVICE_DESK],
+        allowRoles: [Role.ADMIN, Role.SERVICE_DESK, Role.QR_EXPORT],
       },
     ],
   },
@@ -239,15 +256,9 @@ export const routes: RouteObjectWithRole[] = [
     text: "Employees",
     icon: React.createElement(GroupsIcon),
     element: React.createElement(View.employeeDetails),
-    allowRoles: [Role.ADMIN, Role.LEAD],
-    hideFromSidebar: true,
-  },
-  {
-    path: "/employees/:employeeId/edit",
-    text: "Edit Employee",
-    icon: React.createElement(GroupsIcon),
-    element: React.createElement(View.employeeEdit),
-    allowRoles: [Role.ADMIN],
+    // EMPLOYEE_VIEW reads profiles but cannot change them: the inline section editors
+    // gate on Role.ADMIN, so the page renders read-only for this role.
+    allowRoles: [Role.ADMIN, Role.LEAD, Role.EMPLOYEE_VIEW, Role.RESIGNATION],
     hideFromSidebar: true,
   },
 ];

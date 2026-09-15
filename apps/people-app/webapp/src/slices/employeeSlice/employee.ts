@@ -146,6 +146,8 @@ export type QrEmployeesResponse = {
 
 export type QrCodeSearchFilters = {
   employeeStatus?: EmployeeStatus;
+  /** Matches employees whose start date is exactly this day (YYYY-MM-DD). */
+  startDate?: string;
 };
 
 export type QrCodeSearchPayload = {
@@ -172,6 +174,8 @@ export type Filters = {
   employeeStatuses?: EmployeeStatus[];
   directReports?: boolean;
   excludeFutureStartDate?: boolean;
+  /** Matches employees whose start date is exactly this day (YYYY-MM-DD). */
+  startDate?: string;
   includeMarkedLeavers?: boolean;
 };
 
@@ -556,6 +560,60 @@ export const updateEmployeeJobInfo = createAsyncThunk(
           ? "Failed to update employee job information"
           : error.response?.data?.message ||
             "An unknown error occurred while updating job information.";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+/** The three fields the dedicated resignation endpoint accepts. */
+export type UpdateResignationPayload = {
+  finalDayInOffice: string;
+  finalDayOfEmployment: string;
+  resignationReason: string;
+};
+
+/**
+ * Records a departure through the dedicated resignation endpoint.
+ *
+ * Employment status is not sent: the backend sets "Marked leaver" as a consequence of
+ * recording the departure, so a caller holding only the resignation permission cannot
+ * set an arbitrary status.
+ */
+export const updateResignation = createAsyncThunk(
+  "employees/updateResignation",
+  async (
+    params: { employeeId: string; payload: UpdateResignationPayload },
+    { dispatch, rejectWithValue },
+  ) => {
+    try {
+      await APIService.getInstance().patch(
+        AppConfig.serviceUrls.resignation(params.employeeId),
+        params.payload,
+      );
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "Resignation details updated successfully!",
+          type: "success",
+        }),
+      );
+
+      return;
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? "Failed to update resignation details"
+          : error.response?.data?.message ||
+            "An unknown error occurred while updating resignation details.";
 
       dispatch(
         enqueueSnackbarMessage({

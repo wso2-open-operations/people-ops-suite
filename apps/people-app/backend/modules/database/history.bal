@@ -23,9 +23,21 @@ const SOURCE_TABLE_PERSONAL_INFO_AUDIT = "personal_info_audit";
 # Source table name for employee_additional_managers_audit snapshots.
 const SOURCE_TABLE_ADDITIONAL_MANAGERS_AUDIT = "employee_additional_managers_audit";
 
+# Source table name for resignation_audit snapshots.
+const SOURCE_TABLE_RESIGNATION_AUDIT = "resignation_audit";
+
 # Synthetic field name for additional-manager events, which describe a relationship
 # rather than a column on the employee row.
 const FIELD_ADDITIONAL_MANAGER = "additional_manager";
+
+# Synthetic field name for the event recording that a resignation was entered.
+#
+# The first resignation snapshot is an INSERT, which the baseline rule would otherwise
+# suppress. For the employee table that rule is right — an onboarding INSERT sets twenty
+# fields at once and the timeline shows a single "joined" marker instead. A resignation
+# row does not exist until somebody resigns, so its INSERT is the event: the moment the
+# departure was recorded, by a named person, on a known date.
+const FIELD_RESIGNATION_RECORDED = "resignation_recorded";
 
 # Action type recorded when a row is soft-deleted (is_active flipped to 0).
 const ACTION_TYPE_DELETE = "DELETE";
@@ -43,6 +55,7 @@ final readonly & string[] SYSTEM_ACTORS = ["MIGRATION", "system-scheduler"];
 # employee_thumbnail and id. Bulk migrations re-write those columns on rows whose
 # meaningful values never changed, so diffing them buries the real changes.
 final readonly & string[] TRACKED_EMPLOYEE_FIELDS = [
+    "employee_id", "work_email",
     "business_unit_id", "team_id", "sub_team_id", "unit_id",
     "designation_id", "employment_type_id", "company_id", "office_id",
     "manager_email", "employee_status", "work_location",
@@ -62,6 +75,16 @@ final readonly & string[] TRACKED_PERSONAL_INFO_FIELDS = [
     "postal_code", "country", "nationality"
 ];
 
+# Resignation fields surfaced in the history.
+#
+# `date` is deliberately excluded: it is an audit timestamp the backend sets itself
+# rather than something anyone enters, so tracking it would emit a second event on
+# every resignation write. The audit columns are excluded for the same reason as on
+# the employee table.
+final readonly & string[] TRACKED_RESIGNATION_FIELDS = [
+    "final_day_in_office", "final_day_of_employment", "reason"
+];
+
 # The tracked field list for a given audit source.
 #
 # + sourceTable - Audit table the snapshot came from
@@ -72,6 +95,9 @@ isolated function trackedFieldsFor(string sourceTable) returns string[] {
     }
     if sourceTable == SOURCE_TABLE_PERSONAL_INFO_AUDIT {
         return TRACKED_PERSONAL_INFO_FIELDS;
+    }
+    if sourceTable == SOURCE_TABLE_RESIGNATION_AUDIT {
+        return TRACKED_RESIGNATION_FIELDS;
     }
     return [];
 }
@@ -118,6 +144,29 @@ public isolated function buildHistoryEvents(AuditSnapshot[] snapshots) returns H
             if managerEvent is HistoryEvent {
                 events.push(managerEvent);
             }
+            continue;
+        }
+
+        // A resignation being entered is reported as one event rather than three field
+        // changes: the three details are entered together in a single act, and listing
+        // them separately would read as three decisions where there was one.
+        if snapshot.sourceTable == SOURCE_TABLE_RESIGNATION_AUDIT
+            && snapshot.actionType == ACTION_TYPE_INSERT {
+            events.push({
+                employeePkId: snapshot.employeePkId,
+                'field: FIELD_RESIGNATION_RECORDED,
+                sourceTable: snapshot.sourceTable,
+                // No previous value: nothing preceded the resignation being recorded.
+                previousValue: (),
+                currentValue: resignationSummary(snapshot.data),
+                occurredOn: snapshot.actionOn,
+                actionBy: snapshot.actionBy,
+                isSystem: isSystemActor(snapshot.actionBy)
+            });
+            // Still recorded as the baseline, so a later correction to any of the three
+            // fields diffs against what was originally entered.
+            previousByRecord[string `${snapshot.employeePkId}|${snapshot.sourceTable}`] =
+                snapshot.data;
             continue;
         }
 
@@ -169,6 +218,33 @@ public isolated function buildHistoryEvents(AuditSnapshot[] snapshots) returns H
 #
 # + snapshot - Audit snapshot from employee_additional_managers_audit
 # + return - The event, or () when the snapshot records no meaningful change
+# The value shown against a recorded resignation.
+#
+# The reason, then when the employment ends — short enough to read as a value rather
+# than a sentence, which is how every other row in the timeline reads.
+#
+# The date is named rather than left bare: a resignation carries two dates, and "final
+# day" is the one the profile uses for this field. Calling it "last day" would name the
+# other one, which is the day the person stops coming in.
+#
+# + data - The resignation audit snapshot
+# + return - The value to show, or () when the row carried nothing worth reporting
+isolated function resignationSummary(json data) returns string? {
+    string? reason = toDisplayValue(getField(data, "reason"));
+    string? finalDay = toDisplayValue(getField(data, "final_day_of_employment"));
+
+    if reason is string && finalDay is string {
+        return string `${reason} · final day ${finalDay}`;
+    }
+    if reason is string {
+        return reason;
+    }
+    if finalDay is string {
+        return string `Final day ${finalDay}`;
+    }
+    return ();
+}
+
 isolated function buildAdditionalManagerEvent(AuditSnapshot snapshot) returns HistoryEvent? {
     string? managerEmail = toDisplayValue(getField(snapshot.data, "additional_manager_email"));
     if managerEmail is () {
@@ -232,7 +308,15 @@ isolated function toDisplayValue(json value) returns string? {
 # + actionBy - Value of the audit row's action_by column
 # + return - True when the actor is a known system actor
 isolated function isSystemActor(string actionBy) returns boolean {
-    return SYSTEM_ACTORS.indexOf(actionBy) !is ();
+    // Prefix rather than exact match: a change applied by the scheduler on someone's
+    // behalf is recorded as "system-scheduler on behalf of <email>", and is still
+    // automation carrying out an earlier decision rather than a person acting now.
+    foreach string systemActor in SYSTEM_ACTORS {
+        if actionBy == systemActor || actionBy.startsWith(systemActor + " ") {
+            return true;
+        }
+    }
+    return false;
 }
 
 # Resolve raw foreign-key values on history events to human-readable names.

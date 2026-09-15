@@ -38,13 +38,14 @@ import {
   EmploymentPeriod,
   fetchEmployeeHistory,
   HistoryEvent,
-  resetEmployeeHistory,
   PromotionRecord,
 } from "@slices/employeeSlice/employeeHistory";
 
-// Raw audit column names -> reader-facing labels. Keep in sync with
-// TRACKED_EMPLOYEE_FIELDS in backend/modules/database/history.bal.
+// Raw audit column names -> reader-facing labels. Keep in sync with the
+// TRACKED_*_FIELDS lists in backend/modules/database/history.bal.
 const FIELD_LABELS: Record<string, string> = {
+  employee_id: "Employee ID",
+  work_email: "Work Email",
   business_unit_id: "Business Unit",
   team_id: "Team",
   sub_team_id: "Sub-team",
@@ -81,6 +82,14 @@ const FIELD_LABELS: Record<string, string> = {
   postal_code: "Postal Code",
   country: "Country",
   nationality: "Nationality",
+  // resignation_audit fields. Labelled as they appear in the Resignation Details
+  // section, so a reader sees the same wording in the timeline and on the record.
+  final_day_in_office: "Last Day in Office",
+  final_day_of_employment: "Final Day of Employment",
+  reason: "Resignation Reason",
+  // resignation_audit: one event for the resignation being entered, rather than three
+  // field changes for details that were entered together.
+  resignation_recorded: "Resignation Recorded",
   // employee_additional_managers_audit
   additional_manager: "Additional Manager",
 };
@@ -613,14 +622,16 @@ export default function EmployeeHistory({ employeeId }: { employeeId: string }) 
   const [view, setView] = useState<HistoryView>("all");
 
   useEffect(() => {
-    if (employeeId) dispatch(fetchEmployeeHistory(employeeId));
-    // Cleared on unmount so the global slice does not hand the next employee's
-    // section a previous timeline before its own fetch resolves.
-    return () => {
-      dispatch(resetEmployeeHistory());
-    };
-    // Fetch once when this component mounts (i.e. on first expand by the parent);
-    // do not add `state` here or every expand/collapse would re-trigger it.
+    // Fetched only when nobody has already done so. The profile page fetches history
+    // with the record, because the per-field controls beside each value read the same
+    // response; this covers the remaining case, where the section is rendered without
+    // that page having asked (a self-view, where field controls are not offered).
+    // Resetting on unmount belongs to whoever owns the fetch, so it is not done here.
+    if (employeeId && state === State.idle) {
+      dispatch(fetchEmployeeHistory(employeeId));
+    }
+    // Deliberately not depending on `state`: it changes as the fetch resolves, and
+    // re-running then would re-issue the request.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employeeId, dispatch]);
 

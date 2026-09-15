@@ -49,7 +49,7 @@ import {
   EmployeeGenders,
 } from "@root/src/config/constant";
 import { CreateEmployeeFormValues } from "@root/src/types/types";
-import { sortAndFormatOptions } from "@utils/utils";
+import { normalizeEmail, sortAndFormatOptions } from "@utils/utils";
 import dayjs from "dayjs";
 
 const PERSONAL_INFO_ICONS = {
@@ -306,7 +306,17 @@ export default function PersonalInfoStep() {
         required={required}
         value={values.personalInfo[field] ?? ""}
         onChange={handleChange}
-        onBlur={handleBlur}
+        onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+          handleBlur(e);
+          // Email is stored lowercase so the same address is never recorded in two
+          // different casings. Normalising on blur leaves typing untouched.
+          if (field === "personalEmail") {
+            const normalized = normalizeEmail(e.target.value ?? "");
+            if (normalized !== (values.personalInfo[field] ?? "")) {
+              setFieldValue(`personalInfo.${field}`, normalized);
+            }
+          }
+        }}
         error={Boolean(
           touched.personalInfo?.[field] && errors.personalInfo?.[field],
         )}
@@ -316,7 +326,7 @@ export default function PersonalInfoStep() {
         textFieldSx={textFieldSx}
       />
     ),
-    [values, errors, touched, handleChange, handleBlur, textFieldSx],
+    [values, errors, touched, handleChange, handleBlur, setFieldValue, textFieldSx],
   );
 
   const nameFields = useMemo(

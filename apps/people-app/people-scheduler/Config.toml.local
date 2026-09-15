@@ -13,7 +13,10 @@ appName = ""
 
 [people_scheduler.email.emailServiceConfig]
 emailServiceEndpoint = ""
-to = [""]
+# Each job names its own recipients: the summaries answer to different people, so
+# neither inherits an audience that was chosen for the other.
+leaverTransitionRecipients = [""]
+scheduledChangeRecipients = [""]
 from = ""
 
 [people_scheduler.email.emailServiceConfig.oauthConfig]
