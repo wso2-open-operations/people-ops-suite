@@ -76,6 +76,9 @@ const Cell = ({ children }: { children: React.ReactNode }) => (
 );
 
 /** An empty contact row, matching the shape the schema validates. */
+// Matches the emergencyContacts .max(4) in personalInfoValidationSchema.
+const MAX_EMERGENCY_CONTACTS = 4;
+
 const EMPTY_CONTACT = {
   name: "",
   relationship: "",
@@ -313,12 +316,29 @@ const PersonalInfoFields = ({ isSaving }: { isSaving: boolean }) => {
                 <Button
                   size="small"
                   startIcon={<AddCircleOutlineIcon />}
-                  disabled={isSaving}
+                  // The schema allows four. Left enabled, the fifth row could be added
+                  // and filled in, and the only sign it was refused would be the form
+                  // failing to save.
+                  disabled={
+                    isSaving ||
+                    (values.personalInfo.emergencyContacts?.length ?? 0) >=
+                      MAX_EMERGENCY_CONTACTS
+                  }
                   onClick={() => push({ ...EMPTY_CONTACT })}
                   sx={{ textTransform: "none" }}
                 >
                   Add contact
                 </Button>
+                {(values.personalInfo.emergencyContacts?.length ?? 0) >=
+                  MAX_EMERGENCY_CONTACTS && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mt: 1 }}
+                  >
+                    Maximum {MAX_EMERGENCY_CONTACTS} emergency contacts reached.
+                  </Typography>
+                )}
               </>
             )}
           </FieldArray>
