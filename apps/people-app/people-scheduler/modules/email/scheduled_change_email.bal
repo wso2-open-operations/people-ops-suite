@@ -113,14 +113,33 @@ isolated function buildScheduledChangeRows(database:ScheduledChangeOutcome[] out
         string detail = outcome.failureReason ?: string:'join(", ", ...outcome.fields);
 
         rows += string `<tr>` +
-            string `<td style="${cellBase} font-size:13px; color:#2b3844;">${outcome.employeeId}</td>` +
-            string `<td style="${cellBase} font-size:13px; color:#2b3844;">${outcome.employeeName}</td>` +
-            string `<td style="${cellBase} font-size:13px; color:#5a6b7b; white-space:nowrap;">${outcome.effectiveDate}</td>` +
+            string `<td style="${cellBase} font-size:13px; color:#2b3844;">${escapeHtml(outcome.employeeId)}</td>` +
+            string `<td style="${cellBase} font-size:13px; color:#2b3844;">${escapeHtml(outcome.employeeName)}</td>` +
+            string `<td style="${cellBase} font-size:13px; color:#5a6b7b; white-space:nowrap;">${escapeHtml(outcome.effectiveDate)}</td>` +
             string `<td style="${cellBase} font-size:13px;">` +
             string `<span style="color:${statusColour}; font-weight:bold;">${outcome.status}</span>` +
-            string `<div style="color:#7a8899; font-size:12px; margin-top:2px;">${detail}</div>` +
+            string `<div style="color:#7a8899; font-size:12px; margin-top:2px;">${escapeHtml(detail)}</div>` +
             string `</td></tr>`;
     }
 
     return rows;
+}
+
+# Make a value safe to place inside the summary's HTML.
+#
+# The detail column carries raw failure text — a database message, not something written
+# for display — and a stray angle bracket in it would be read as markup and swallow the
+# rest of the table. That would take out the one place a superseded or failed change is
+# reported, which is the reason the email exists.
+#
+# Ampersand first: escaping it after the others would re-escape the entities they wrote.
+#
+# + value - The value to place in the HTML
+# + return - The value with HTML's special characters replaced by entities
+isolated function escapeHtml(string value) returns string {
+    string escaped = re `&`.replaceAll(value, "&amp;");
+    escaped = re `<`.replaceAll(escaped, "&lt;");
+    escaped = re `>`.replaceAll(escaped, "&gt;");
+    escaped = re `"`.replaceAll(escaped, "&quot;");
+    return escaped;
 }
