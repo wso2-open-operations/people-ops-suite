@@ -45,11 +45,19 @@ const ResignationFields = ({ isSaving }: { isSaving: boolean }) => {
       ? String(getIn(errors, field))
       : undefined;
 
-  const date = (field: keyof CreateEmployeeFormValues, label: string) => (
+  // minDate is passed only for the final day of employment, held at or after the last day
+  // in office. The pair is validated anyway, on the client and again on the server; this
+  // is so the impossible half of the calendar cannot be picked in the first place.
+  const date = (
+    field: keyof CreateEmployeeFormValues,
+    label: string,
+    minDate?: dayjs.Dayjs,
+  ) => (
     <DatePicker
       label={label}
       format="YYYY-MM-DD"
       value={values[field] ? dayjs(values[field] as string) : null}
+      minDate={minDate}
       disabled={isSaving}
       onChange={(v: dayjs.Dayjs | null) => {
         setFieldTouched(field, true);
@@ -75,7 +83,13 @@ const ResignationFields = ({ isSaving }: { isSaving: boolean }) => {
         {date("finalDayInOffice", "Last Day in Office")}
       </Grid>
       <Grid item xs={12} sm={6} md={4}>
-        {date("finalDayOfEmployment", "Final Day of Employment")}
+        {date(
+          "finalDayOfEmployment",
+          "Final Day of Employment",
+          values.finalDayInOffice
+            ? dayjs(values.finalDayInOffice as string)
+            : undefined,
+        )}
       </Grid>
       <Grid item xs={12} sm={6} md={4}>
         <ResignationReasonField

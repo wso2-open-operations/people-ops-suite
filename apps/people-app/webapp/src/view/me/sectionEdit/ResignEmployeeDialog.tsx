@@ -138,11 +138,16 @@ const ResignEmployeeDialog = ({
     onChange: (v: string | null) => void,
     isMissing: boolean,
     orderError?: boolean,
+    // Only the final day of employment passes this, held at or after the last day in
+    // office, so the impossible half of the calendar cannot be picked. The order is
+    // still validated below and again on the server.
+    minDate?: dayjs.Dayjs,
   ) => (
     <DatePicker
       label={`${label} *`}
       format="YYYY-MM-DD"
       value={value ? dayjs(value) : null}
+      minDate={minDate}
       disabled={isSaving}
       onChange={(v: dayjs.Dayjs | null) =>
         onChange(v ? v.format("YYYY-MM-DD") : null)
@@ -190,6 +195,7 @@ const ResignEmployeeDialog = ({
               setFinalDayOfEmployment,
               missing.finalDayOfEmployment,
               isDateOrderInvalid,
+              finalDayInOffice ? dayjs(finalDayInOffice) : undefined,
             )}
           </Grid>
           <Grid item xs={12}>
