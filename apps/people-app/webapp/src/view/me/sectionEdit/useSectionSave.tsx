@@ -355,15 +355,24 @@ export const useSectionSave = (employeeId: string | undefined) => {
         }
       });
 
-      // Entering a leaver status resets the resignation fields to null, so a diff
-      // against the pre-edit values can come back empty even though the record needs
-      // them written. Send them whenever the resulting status is a leaver status.
+      // Entering a leaver status clears the resignation fields, so the values typed in
+      // afterwards can diff as unchanged against what was there before, and the record
+      // would be saved without them. They are therefore sent alongside a status change
+      // rather than trusted to the diff.
+      //
+      // Only alongside a status change: `payload` holds what differs, so employeeStatus
+      // being in it means the status is moving in this save. Testing the resulting
+      // status instead attached these fields to every later edit of someone who had
+      // already left — where nothing cleared them, so they were rewritten with the
+      // values they already held, and a scheduled change was refused for carrying a
+      // resignation field the admin never touched.
       const current = toJobUpdatePayload(currentValues);
-      const isLeaver =
-        current.employeeStatus === EmployeeStatus.MarkedLeaver ||
-        current.employeeStatus === EmployeeStatus.Left;
+      const isBecomingLeaver =
+        "employeeStatus" in payload &&
+        (current.employeeStatus === EmployeeStatus.MarkedLeaver ||
+          current.employeeStatus === EmployeeStatus.Left);
 
-      if (isLeaver && (section === "general" || section === "resignation")) {
+      if (isBecomingLeaver && (section === "general" || section === "resignation")) {
         payload.finalDayInOffice = current.finalDayInOffice;
         payload.finalDayOfEmployment = current.finalDayOfEmployment;
         payload.resignationReason = current.resignationReason;
