@@ -18,7 +18,10 @@ import { useCallback, useEffect, useRef } from "react";
 import { useFormikContext } from "formik";
 
 import { CreateEmployeeFormValues } from "@/types/types";
-import { UNIT_CLEAR_SENTINEL } from "@slices/careerFunctionSlice/careerFunction";
+import {
+  OFFICE_CLEAR_SENTINEL,
+  UNIT_CLEAR_SENTINEL,
+} from "@slices/careerFunctionSlice/careerFunction";
 import { useAppDispatch } from "@slices/store";
 import {
   fetchBusinessUnits,
@@ -201,13 +204,17 @@ export const useOrgCascade = () => {
         initialLoadRef.current.offices = true;
 
         if (prev !== newCompanyId) {
-          setFieldValue("officeId", 0);
+          // The sentinel, not 0: the schema rejects 0 outright, so clearing the office
+          // this way left the section unsavable with an error naming a field the admin
+          // had not touched. 0 means "nothing chosen"; -1 means "chosen: none", which is
+          // what a cascade clear is.
+          setFieldValue("officeId", OFFICE_CLEAR_SENTINEL);
           // Work location is constrained by the company's allowed locations, so a
           // location chosen under the previous company may no longer be valid.
           setFieldValue("workLocation", "");
         }
       } else {
-        setFieldValue("officeId", 0);
+        setFieldValue("officeId", OFFICE_CLEAR_SENTINEL);
         setFieldValue("workLocation", "");
       }
     },
