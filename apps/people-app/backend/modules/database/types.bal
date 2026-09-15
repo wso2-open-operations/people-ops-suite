@@ -1184,7 +1184,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Final day of employment 
     @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? finalDayOfEmployment = ();
-    # Resignation reason
+    # Resignation reason; whitespace-only is rejected (see UpdateResignationPayload). Left
+    # optional: absence means the field is not part of this edit, not a blank reason.
+    @constraint:String {maxLength: 300, pattern: re `^\s*\S.*$`}
     string? resignationReason = ();
 |};
 
@@ -1200,8 +1202,10 @@ public type UpdateResignationPayload record {|
     # Final day of employment
     @constraint:String {pattern: re `${DATE_PATTERN}`}
     string finalDayOfEmployment;
-    # Reason for leaving
-    @constraint:String {maxLength: 300, minLength: 1}
+    # Reason for leaving. The pattern rejects whitespace-only input: minLength alone sees
+    # the raw value, so "   " satisfies it and stores a reason that reads as blank
+    # wherever a departure is displayed. Same rule as CreateCareerFunctionPayload.
+    @constraint:String {maxLength: 300, pattern: re `^\s*\S.*$`}
     string resignationReason;
 |};
 
