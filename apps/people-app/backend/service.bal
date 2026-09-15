@@ -55,14 +55,6 @@ service class ErrorInterceptor {
     }
 }
 
-# Whether the caller may read any employee's record.
-#
-# Admins have always been able to; the employee-view role grants the same visibility
-# without any ability to change a record. Both are IAM-group-backed, so this is a pure
-# group check with no database lookup.
-#
-# + userInfo - Invoker's JWT payload
-# + return - true when the caller may read any employee
 # Whether the caller may use the QR code report.
 #
 # The QR export role reaches this and nothing else: it grants no visibility of an
@@ -76,6 +68,14 @@ isolated function canExportQrCodes(authorization:CustomJwtPayload userInfo) retu
     || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups)
     || authorization:checkPermissions([authorization:authorizedRoles.QR_EXPORT_ROLE], userInfo.groups);
 
+# Whether the caller may read any employee's record.
+#
+# Admins have always been able to; the employee-view role grants the same visibility
+# without any ability to change a record. Both are IAM-group-backed, so this is a pure
+# group check with no database lookup.
+#
+# + userInfo - Invoker's JWT payload
+# + return - true when the caller may read any employee
 isolated function canReadAnyEmployee(authorization:CustomJwtPayload userInfo) returns boolean =>
     authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
     || authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_VIEW_ROLE], userInfo.groups)

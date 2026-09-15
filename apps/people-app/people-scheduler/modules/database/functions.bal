@@ -381,6 +381,18 @@ isolated function findSupersedingField(int employeePkId, json expected)
 
 # The actor to record for a scheduled change: the scheduler, and who scheduled it.
 #
+# This records who asked for the change, not whether they may still make it. Authority
+# is checked when the change is scheduled and deliberately not re-checked here: the
+# decision was validly made then, and a promotion agreed in October is still owed to the
+# employee if the person who entered it has since changed roles or left. The sweep also
+# has no route to IAM group membership — it runs as a scheduled task with no user
+# identity, which is the same reason it writes to the database rather than calling the
+# API.
+#
+# The consequence worth knowing: a change queued by somebody who later loses the role
+# still applies. Cancelling it is a person's job, and the pending change is visible on
+# the employee's profile for exactly that.
+#
 # + actor - System actor running the sweep
 # + requestedBy - Email of the person who scheduled the change
 # + return - Combined actor, truncated to what the audit columns accept
