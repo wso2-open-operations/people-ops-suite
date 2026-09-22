@@ -311,6 +311,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.company_id AS companyId,
             h.name AS house,
             e.house_id AS houseId,
+            elg.leadershipGroups AS leadershipGroups,
             -- Personal information is selected only where the caller is entitled to it. The
             -- columns are omitted from the SQL rather than blanked afterwards, so data nobody
             -- may see is never read out of the database at all.
@@ -356,6 +357,16 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
                 WHERE is_active = 1
                 GROUP BY employee_pk_id
             ) eam ON eam.employee_pk_id = e.id
+
+            LEFT JOIN (
+                SELECT
+                    el.employee_pk_id,
+                    GROUP_CONCAT(lg.name ORDER BY lg.name SEPARATOR ',') AS leadershipGroups
+                FROM employee_leadership el
+                JOIN leadership_group lg ON lg.id = el.leadership_group_id
+                WHERE el.is_active = 1
+                GROUP BY el.employee_pk_id
+            ) elg ON elg.employee_pk_id = e.id
 
             LEFT JOIN (
                 SELECT
@@ -485,6 +496,20 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
         filters.push(sql:queryConcat(`e.employment_type_id IN (`, buildIntInClause(employmentTypeList), `)`));
     } else {
         appendIntFilter(filters, payload.filters.employmentTypeId, `e.employment_type_id = ${payload.filters.employmentTypeId}`);
+    }
+
+    int[]? leadershipGroupList = payload.filters.leadershipGroupIds;
+    if leadershipGroupList is int[] && leadershipGroupList.length() > 0 {
+        // AND semantics: the employee must hold EVERY selected attribute, unlike the OR
+        // multi-selects above. A correlated IN (SELECT ... HAVING ...) is used rather than a
+        // join plus an outer HAVING so this composes with all three call sites, including
+        // ones that do not GROUP BY.
+        filters.push(sql:queryConcat(
+            `e.id IN (SELECT el_f.employee_pk_id FROM employee_leadership el_f
+              WHERE el_f.is_active = 1 AND el_f.leadership_group_id IN (`,
+            buildIntInClause(leadershipGroupList),
+            `) GROUP BY el_f.employee_pk_id
+              HAVING COUNT(DISTINCT el_f.leadership_group_id) = ${leadershipGroupList.length()})`));
     }
 
     if payload.filters.excludeFutureStartDate == true {
@@ -2231,6 +2256,34 @@ isolated function inactivateAdditionalManagerRelationshipsQuery(string managerEm
      WHERE LOWER(eam.additional_manager_email) = LOWER(${managerEmail})
        AND eam.is_active = 1;`;
 
+# Fetch the leadership attribute IDs an employee currently holds.
+#
+# + employeeId - Employee business key
+# + return - Parameterized query returning active leadership_group_id values
+isolated function getEmployeeLeadershipIdsQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT el.leadership_group_id AS leadershipGroupId
+     FROM employee_leadership el
+     JOIN employee e ON e.id = el.employee_pk_id
+     WHERE e.employee_id = ${employeeId} AND el.is_active = 1;`;
+
+# Assign an attribute, reviving a previously removed row rather than inserting a duplicate.
+#
+# The unique key (employee_pk_id, leadership_group_id) makes a plain INSERT fail for an
+# attribute the employee held before, so this upserts. The SELECT supplies employee_pk_id
+# from the business key.
+#
+# + employeeId - Employee business key
+# + groupId - Leadership attribute to assign
+# + actor - Email recorded in created_by/updated_by, and thus in the audit trail
+# + return - Parameterized upsert
+isolated function assignEmployeeLeadershipQuery(string employeeId, int groupId, string actor)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO employee_leadership
+        (employee_pk_id, leadership_group_id, is_active, created_by, updated_by)
+     SELECT e.id, ${groupId}, 1, ${actor}, ${actor}
+     FROM employee e WHERE e.employee_id = ${employeeId}
+     ON DUPLICATE KEY UPDATE is_active = 1, updated_by = ${actor};`;
+
 # Build query to fetch vehicles.
 #
 # + owner - Filter : Owner of the vehicles
@@ -2711,6 +2764,13 @@ isolated function deleteEmployeeAuditQuery(int employeePkId) returns sql:Paramet
 isolated function deleteEmployeeAdditionalManagersAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
     `DELETE FROM employee_additional_managers_audit WHERE employee_pk_id = ${employeePkId};`;
 
+# Delete leadership attribute audit rows for an employee.
+#
+# + employeePkId - Primary key of the employee row
+# + return - Parameterized query to delete leadership attribute audit rows
+isolated function deleteEmployeeLeadershipAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_leadership_audit WHERE employee_pk_id = ${employeePkId};`;
+
 # Delete emergency contacts audit rows for a personal info record.
 #
 # + personalInfoId - Primary key of the personal_info row
@@ -2831,6 +2891,29 @@ isolated function getEmployeeAdditionalManagersAuditSnapshotsQuery(int[] employe
                 action_on AS actionOn,
                 data AS data
             FROM employee_additional_managers_audit
+            WHERE employee_pk_id IN (`,
+            inClause,
+            `)
+            ORDER BY action_on ASC`
+    );
+}
+
+# Fetch audit snapshots from the employee_leadership_audit table for a set of employee rows.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning employee_leadership_audit rows tagged with their source table
+isolated function getEmployeeLeadershipAuditSnapshotsQuery(int[] employeePkIds)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildIntInClause(employeePkIds);
+    return sql:queryConcat(
+            `SELECT
+                employee_pk_id AS employeePkId,
+                'employee_leadership_audit' AS sourceTable,
+                action_type AS actionType,
+                action_by AS actionBy,
+                action_on AS actionOn,
+                data AS data
+            FROM employee_leadership_audit
             WHERE employee_pk_id IN (`,
             inClause,
             `)

@@ -885,6 +885,12 @@ public type AdditionalManagerEmailRow record {|
     string additionalManagerEmail;
 |};
 
+# A single leadership assignment row, as read back for diffing.
+type LeadershipGroupIdRow record {|
+    # Leadership attribute (leadership_group) ID
+    int leadershipGroupId;
+|};
+
 # Bulk onboarding validation error.
 public type BulkEmployeeError record {|
     # CSV row number (1-based, including header row)

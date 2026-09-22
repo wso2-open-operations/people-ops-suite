@@ -543,6 +543,7 @@ public isolated function deleteEmployeeById(string employeeId) returns error? {
         int employeePkId = ids.id;
         int personalInfoId = ids.personalInfoId;
         _ = check databaseClient->execute(deleteEmployeeAdditionalManagersAuditQuery(employeePkId));
+        _ = check databaseClient->execute(deleteEmployeeLeadershipAuditQuery(employeePkId));
         _ = check databaseClient->execute(deleteEmployeeEmergencyContactsAuditQuery(personalInfoId));
         _ = check databaseClient->execute(deleteEmployeeAuditQuery(employeePkId));
         _ = check databaseClient->execute(deletePersonalInfoAuditQuery(personalInfoId));
@@ -1045,6 +1046,55 @@ isolated function syncAdditionalManagers(string employeeId, Email[] desiredEmail
             select addEmployeeAdditionalManagerQuery(employeePkId, email.trim(), actor);
 
         _ = check databaseClient->batchExecute(insertQueries);
+    }
+}
+
+# Fetch the leadership attribute IDs an employee currently holds.
+#
+# + employeeId - Employee business key
+# + return - Active leadership attribute IDs, or an error
+public isolated function getEmployeeLeadershipIds(string employeeId) returns int[]|error {
+    stream<LeadershipGroupIdRow, error?> result =
+        databaseClient->query(getEmployeeLeadershipIdsQuery(employeeId));
+    return check from LeadershipGroupIdRow row in result
+        select row.leadershipGroupId;
+}
+
+# Replace an employee's leadership attributes with the given set.
+#
+# Attributes the employee holds but that are absent from groupIds are deactivated;
+# attributes in groupIds are assigned, reviving a previously removed row rather than
+# inserting a duplicate. An empty groupIds clears every attribute.
+#
+# + employeeId - Employee business key
+# + groupIds - The complete desired set of attribute IDs
+# + actor - Email of the user making the change, recorded in the audit trail
+# + return - An error if any statement fails
+public isolated function syncEmployeeLeadership(string employeeId, int[] groupIds, string actor)
+    returns error? {
+
+    // Deactivate removals first so clearing an attribute is never skipped by an early return.
+    sql:ParameterizedQuery deactivate = groupIds.length() == 0
+        ? sql:queryConcat(
+            `UPDATE employee_leadership el
+             JOIN employee e ON e.id = el.employee_pk_id
+             SET el.is_active = 0, el.updated_by = ${actor}
+             WHERE e.employee_id = ${employeeId} AND el.is_active = 1`)
+        : sql:queryConcat(
+            `UPDATE employee_leadership el
+             JOIN employee e ON e.id = el.employee_pk_id
+             SET el.is_active = 0, el.updated_by = ${actor}
+             WHERE e.employee_id = ${employeeId} AND el.is_active = 1
+               AND el.leadership_group_id NOT IN (`,
+            buildIntInClause(groupIds), `)`);
+
+    transaction {
+        _ = check databaseClient->execute(deactivate);
+        foreach int groupId in groupIds {
+            _ = check databaseClient->execute(
+                assignEmployeeLeadershipQuery(employeeId, groupId, actor));
+        }
+        check commit;
     }
 }
 
@@ -1804,8 +1854,9 @@ public isolated function getEmploymentPeriods(string employeeId) returns Employm
 # globally-ordered timeline rather than three independently-ordered ones.
 #
 # + employeePkIds - Employee table primary keys belonging to the person
-# + return - Audit snapshots from employee_audit, personal_info_audit, and
-# employee_additional_managers_audit, ordered by action_on ascending across all three
+# + return - Audit snapshots from employee_audit, personal_info_audit,
+# employee_additional_managers_audit, employee_leadership_audit, and resignation_audit,
+# ordered by action_on ascending across all five
 public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSnapshot[]|error {
     stream<AuditSnapshot, error?> employeeAuditStream =
         databaseClient->query(getEmployeeAuditSnapshotsQuery(employeePkIds));
@@ -1823,6 +1874,12 @@ public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSna
         check from AuditSnapshot snapshot in additionalManagersAuditStream
         select snapshot;
 
+    stream<AuditSnapshot, error?> leadershipAuditStream =
+        databaseClient->query(getEmployeeLeadershipAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] leadershipAuditSnapshots =
+        check from AuditSnapshot snapshot in leadershipAuditStream
+        select snapshot;
+
     stream<AuditSnapshot, error?> resignationAuditStream =
         databaseClient->query(getResignationAuditSnapshotsQuery(employeePkIds));
     AuditSnapshot[] resignationAuditSnapshots = check from AuditSnapshot snapshot in resignationAuditStream
@@ -1832,6 +1889,7 @@ public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSna
         ...employeeAuditSnapshots,
         ...personalInfoAuditSnapshots,
         ...additionalManagersAuditSnapshots,
+        ...leadershipAuditSnapshots,
         ...resignationAuditSnapshots
     ];
     return from AuditSnapshot snapshot in allSnapshots
