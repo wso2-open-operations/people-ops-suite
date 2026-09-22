@@ -2331,9 +2331,15 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        database:LeadershipGroup[]|error leadershipGroups = database:getLeadershipGroups();
+        if leadershipGroups is error {
+            log:printError("Error fetching leadership groups for report", leadershipGroups);
+            return <http:InternalServerError>{body: {message: "Error generating report"}};
+        }
+
         string csvContent = payload.filters.employeeStatus == database:EMPLOYEE_LEFT
-            ? database:buildResignationCsv(allEmployees, nameMap, payload.columns)
-            : database:buildEmployeeCsv(allEmployees, nameMap, payload.columns);
+            ? database:buildResignationCsv(allEmployees, nameMap, payload.columns, leadershipGroups)
+            : database:buildEmployeeCsv(allEmployees, nameMap, payload.columns, leadershipGroups);
         string? filterStatus = payload.filters.employeeStatus;
         string statusLabel = filterStatus is () ? "all" : re ` `.replaceAll(filterStatus.toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
