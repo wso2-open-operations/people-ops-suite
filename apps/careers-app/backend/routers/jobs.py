@@ -33,8 +33,8 @@ async def list_jobs(
     _user: dict = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ):
-    token = await get_vacancy_token(settings)
     try:
+        token = await get_vacancy_token(settings)
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"{settings.vacancy_service_base_url}/vacancies/basic-info",
@@ -48,6 +48,9 @@ async def list_jobs(
     except httpx.RequestError as e:
         logger.error("Network error on GET /vacancies/basic-info: %s", e)
         raise HTTPException(status_code=504, detail="Upstream service unreachable")
+    except KeyError as e:
+        logger.error("Malformed token response from upstream on GET /vacancies/basic-info: missing %s", e)
+        raise HTTPException(status_code=502, detail="Invalid response from upstream auth service")
 
 
 @router.get("/org-structure")
@@ -55,8 +58,8 @@ async def get_org_structure(
     _user: dict = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ):
-    token = await get_vacancy_token(settings)
     try:
+        token = await get_vacancy_token(settings)
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"{settings.vacancy_service_base_url}/org-structure",
@@ -70,6 +73,9 @@ async def get_org_structure(
     except httpx.RequestError as e:
         logger.error("Network error on GET /org-structure: %s", e)
         raise HTTPException(status_code=504, detail="Upstream service unreachable")
+    except KeyError as e:
+        logger.error("Malformed token response from upstream on GET /org-structure: missing %s", e)
+        raise HTTPException(status_code=502, detail="Invalid response from upstream auth service")
 
 
 @router.get("/{job_id}")
@@ -78,8 +84,8 @@ async def get_job(
     _user: dict = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ):
-    token = await get_vacancy_token(settings)
     try:
+        token = await get_vacancy_token(settings)
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"{settings.vacancy_service_base_url}/vacancies/{job_id}",
@@ -97,3 +103,6 @@ async def get_job(
     except httpx.RequestError as e:
         logger.error("Network error on GET /vacancies/%s: %s", job_id, e)
         raise HTTPException(status_code=504, detail="Upstream service unreachable")
+    except KeyError as e:
+        logger.error("Malformed token response from upstream on GET /vacancies/%s: missing %s", job_id, e)
+        raise HTTPException(status_code=502, detail="Invalid response from upstream auth service")
