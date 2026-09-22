@@ -208,6 +208,10 @@ public type Employee record {|
     string? managerName;
     # Additional manager email
     string? additionalManagerEmails;
+    # Leadership attribute IDs held by this employee — drives the edit form
+    int[]? leadershipGroupIds = ();
+    # Leadership attribute names, comma-joined and alphabetical — drives the report preview column
+    string? leadershipGroups = ();
     # Gender (from employee personal info)
     string? gender;
     # NIC or passport number (from employee personal info)
@@ -346,6 +350,9 @@ public type EmployeeFilters record {|
     int? employmentTypeId = ();
     # Employment type IDs (multi-select). When non-empty, takes precedence over employmentTypeId.
     int[]? employmentTypeIds = ();
+    # Leadership attribute IDs (multi-select). Matches employees holding ALL of the
+    # given attributes — deliberately AND, unlike the OR multi-selects above.
+    int[]? leadershipGroupIds = ();
     # Employee Status
     string? employeeStatus = ();
     # Employee Statuses (multi-select). When non-empty, takes precedence over employeeStatus/includeMarkedLeavers.
@@ -795,6 +802,16 @@ public type House record {|
     int id;
     # House name
     string name;
+|};
+
+# A leadership attribute an employee can hold.
+public type LeadershipGroup record {|
+    # Identifier
+    int id;
+    # Display name — also the CSV column header for this attribute
+    string name;
+    # Whether it can still be assigned
+    boolean isActive;
 |};
 
 # Manager payload.

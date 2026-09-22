@@ -1518,6 +1518,15 @@ isolated function getAsgardeoGroupsForTeamQuery(int teamId, int employmentTypeId
 isolated function getHousesQuery() returns sql:ParameterizedQuery =>
     `SELECT id, name FROM house WHERE is_active = 1 ORDER BY name`;
 
+# Fetch the assignable leadership attributes.
+#
+# + return - Parameterized query returning active leadership_group rows
+isolated function getLeadershipGroupsQuery() returns sql:ParameterizedQuery =>
+    `SELECT id, name, is_active AS isActive
+     FROM leadership_group
+     WHERE is_active = 1
+     ORDER BY name;`;
+
 # Add employee personal information query. Upserts on the nic_or_passport UNIQUE key so
 # rehiring someone (same NIC/Passport) refreshes their existing personal_info row instead of
 # failing — `id = LAST_INSERT_ID(id)` makes the update branch still resolve to that row's own

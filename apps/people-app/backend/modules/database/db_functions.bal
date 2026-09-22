@@ -462,6 +462,15 @@ public isolated function getHouses() returns House[]|error {
         select house;
 }
 
+# Fetch the assignable leadership attributes.
+#
+# + return - Active leadership attributes, or an error
+public isolated function getLeadershipGroups() returns LeadershipGroup[]|error {
+    stream<LeadershipGroup, error?> result = databaseClient->query(getLeadershipGroupsQuery());
+    return from LeadershipGroup group in result
+        select group;
+}
+
 # Get managers.
 #
 # + return - Managers
