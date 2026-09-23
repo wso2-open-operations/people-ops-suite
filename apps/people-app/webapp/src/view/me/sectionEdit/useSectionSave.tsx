@@ -211,6 +211,10 @@ export const useSectionSave = (employeeId: string | undefined) => {
   const dispatch = useAppDispatch();
   const { showConfirmation } = useConfirmationModalContext();
   const org = useAppSelector((state) => state.organization);
+  // Read the same way org reference data is: the confirmation dialog resolves
+  // leadershipGroupIds to attribute names against this list rather than showing
+  // raw ids.
+  const leadershipGroups = useAppSelector((state) => state.leadership.groups);
   // Admins write resignation fields through job-info, atomically with any general
   // changes; a resignation-only caller cannot use that endpoint at all.
   const isAdmin = useAppSelector(selectRoles).includes(Role.ADMIN);
@@ -305,6 +309,7 @@ export const useSectionSave = (employeeId: string | undefined) => {
           },
           toJobUpdatePayload(initialValues),
           org,
+          leadershipGroups,
         );
 
         return await new Promise<boolean>((resolve) => {
@@ -423,6 +428,7 @@ export const useSectionSave = (employeeId: string | undefined) => {
         payload,
         toJobUpdatePayload(initialValues),
         org,
+        leadershipGroups,
       );
 
       const applyUpdate = async (): Promise<boolean> => {
@@ -536,7 +542,15 @@ export const useSectionSave = (employeeId: string | undefined) => {
         // false here before adding any such thing.
       });
     },
-    [dispatch, employeeId, isAdmin, org, pendingChanges, showConfirmation],
+    [
+      dispatch,
+      employeeId,
+      isAdmin,
+      leadershipGroups,
+      org,
+      pendingChanges,
+      showConfirmation,
+    ],
   );
 
   return { save, isSaving };

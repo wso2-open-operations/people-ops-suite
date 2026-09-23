@@ -16,6 +16,7 @@
 
 import { UpdateEmployeeJobInfoPayload } from "@slices/employeeSlice/employee";
 import { EmployeePersonalInfoUpdate } from "@slices/employeeSlice/employeePersonalInfo";
+import { LeadershipGroup } from "@slices/leadershipSlice/leadership";
 import { OrganizationState } from "@slices/organizationSlice/organization";
 
 /** A single field's before/after, ready to render in the confirmation dialog. */
@@ -106,8 +107,22 @@ const displayValue = (
     | "employmentTypes"
     | "houses"
   >,
+  leadershipGroups: LeadershipGroup[],
 ): string => {
   if (value === null || value === undefined || value === "") return EMPTY;
+
+  // Resolved before the generic array-join below: its elements are ids, not
+  // already-readable text like additionalManagerEmails' email strings, so a
+  // plain join would show "1, 3" instead of the attribute names.
+  if (field === "leadershipGroupIds" && Array.isArray(value)) {
+    if (value.length === 0) return EMPTY;
+    return value
+      .map((id) => {
+        const match = leadershipGroups.find((g) => g.id === id);
+        return match ? match.name : String(id);
+      })
+      .join(", ");
+  }
 
   if (Array.isArray(value)) {
     return value.length > 0 ? value.join(", ") : EMPTY;
@@ -165,12 +180,13 @@ export const buildChangeSummary = (
   payload: Partial<UpdateEmployeeJobInfoPayload>,
   before: UpdateEmployeeJobInfoPayload,
   org: Parameters<typeof displayValue>[2],
+  leadershipGroups: LeadershipGroup[],
 ): ChangeRow[] =>
   (Object.keys(payload) as (keyof UpdateEmployeeJobInfoPayload)[])
     .map((field) => ({
       label: FIELD_LABELS[field] ?? field,
-      from: displayValue(field, before[field], org),
-      to: displayValue(field, payload[field], org),
+      from: displayValue(field, before[field], org, leadershipGroups),
+      to: displayValue(field, payload[field], org, leadershipGroups),
     }))
     .filter((row) => row.from !== row.to);
 
