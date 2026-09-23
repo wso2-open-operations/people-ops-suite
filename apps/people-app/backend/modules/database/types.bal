@@ -1211,6 +1211,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     # optional: absence means the field is not part of this edit, not a blank reason.
     @constraint:String {maxLength: 300, pattern: re `^\s*\S.*$`}
     string? resignationReason = ();
+    # Leadership attribute IDs to assign. Omitted (nil) leaves assignments unchanged;
+    # an empty array clears every assignment. Unknown or inactive ids reject the whole update.
+    int[]? leadershipGroupIds = ();
 |};
 
 # [Database] Payload for updating an employee's resignation details.

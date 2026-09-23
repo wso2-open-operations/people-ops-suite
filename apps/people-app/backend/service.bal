@@ -269,6 +269,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:NotFound>{body: {message: customErr}};
         }
 
+        int[]|error heldGroups = database:getEmployeeLeadershipIds(employeeId);
+        if heldGroups is error {
+            log:printError("Error fetching leadership attributes", heldGroups);
+            return <http:InternalServerError>{body: {message: "Error fetching employee"}};
+        }
+        employeeInfo.leadershipGroupIds = heldGroups;
+
         return employeeInfo;
     }
 
@@ -993,6 +1000,22 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return employmentTypes;
+    }
+
+    # Fetch the assignable leadership attributes.
+    #
+    # + ctx - Request context
+    # + return - Active leadership attributes or an error
+    resource function get leadership\-groups(http:RequestContext ctx)
+            returns database:LeadershipGroup[]|http:InternalServerError {
+        database:LeadershipGroup[]|error groups = database:getLeadershipGroups();
+        if groups is error {
+            log:printError("Error fetching leadership groups", groups);
+            return <http:InternalServerError>{
+                body: {message: "Error fetching leadership attributes"}
+            };
+        }
+        return groups;
     }
 
     # Get houses.
@@ -1777,6 +1800,35 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
                 }
             };
+        }
+
+        int[]? requestedGroups = payload.leadershipGroupIds;
+        if requestedGroups is int[] {
+            database:LeadershipGroup[]|error active = database:getLeadershipGroups();
+            if active is error {
+                log:printError("Error validating leadership attributes", active);
+                return <http:InternalServerError>{body: {message: "Error updating employee"}};
+            }
+            int[] activeIds = from database:LeadershipGroup g in active select g.id;
+            // Duplicates are tolerated and de-duplicated; unknown or inactive ids reject the
+            // whole update rather than applying it partially.
+            int[] deduped = [];
+            foreach int id in requestedGroups {
+                if activeIds.indexOf(id) == () {
+                    return <http:BadRequest>{
+                        body: {message: string `Unknown or inactive leadership attribute: ${id}`}
+                    };
+                }
+                if deduped.indexOf(id) == () {
+                    deduped.push(id);
+                }
+            }
+            error? leadershipUpdateResult = database:syncEmployeeLeadership(
+                    employeeId, deduped, userInfo.email);
+            if leadershipUpdateResult is error {
+                log:printError("Error updating leadership attributes", leadershipUpdateResult);
+                return <http:InternalServerError>{body: {message: "Error updating employee"}};
+            }
         }
 
         return http:OK;
