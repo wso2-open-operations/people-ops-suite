@@ -80,6 +80,7 @@ export const AppConfig = {
     careerFunction: (id: number) => SERVICE_BASE_URL + `/career-functions/${id}`,
     designations: SERVICE_BASE_URL + "/designations",
     designation: (id: number) => SERVICE_BASE_URL + `/designations/${id}`,
+    leadershipGroups: SERVICE_BASE_URL + "/leadership-groups",
     companies: SERVICE_BASE_URL + "/companies",
     employmentTypes: SERVICE_BASE_URL + "/employment-types",
     teams: SERVICE_BASE_URL + "/teams",
