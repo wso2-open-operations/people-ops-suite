@@ -1791,6 +1791,32 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        // Validated up front, before the job-info write, so an unknown or inactive id
+        // rejects the whole request rather than persisting the job-info changes and then
+        // failing on leadership — the spec requires no partial application.
+        int[]? requestedGroups = payload.leadershipGroupIds;
+        int[] deduped = [];
+        if requestedGroups is int[] {
+            database:LeadershipGroup[]|error active = database:getLeadershipGroups();
+            if active is error {
+                log:printError("Error validating leadership attributes", active);
+                return <http:InternalServerError>{body: {message: "Error updating employee"}};
+            }
+            int[] activeIds = from database:LeadershipGroup g in active select g.id;
+            // Duplicates are tolerated and de-duplicated; unknown or inactive ids reject the
+            // whole update rather than applying it partially.
+            foreach int id in requestedGroups {
+                if activeIds.indexOf(id) == () {
+                    return <http:BadRequest>{
+                        body: {message: string `Unknown or inactive leadership attribute: ${id}`}
+                    };
+                }
+                if deduped.indexOf(id) == () {
+                    deduped.push(id);
+                }
+            }
+        }
+
         error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);
         if updateResult is error {
             string customErr = string `Error occurred while updating employee job information for ID: ${employeeId}`;
@@ -1802,27 +1828,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int[]? requestedGroups = payload.leadershipGroupIds;
         if requestedGroups is int[] {
-            database:LeadershipGroup[]|error active = database:getLeadershipGroups();
-            if active is error {
-                log:printError("Error validating leadership attributes", active);
-                return <http:InternalServerError>{body: {message: "Error updating employee"}};
-            }
-            int[] activeIds = from database:LeadershipGroup g in active select g.id;
-            // Duplicates are tolerated and de-duplicated; unknown or inactive ids reject the
-            // whole update rather than applying it partially.
-            int[] deduped = [];
-            foreach int id in requestedGroups {
-                if activeIds.indexOf(id) == () {
-                    return <http:BadRequest>{
-                        body: {message: string `Unknown or inactive leadership attribute: ${id}`}
-                    };
-                }
-                if deduped.indexOf(id) == () {
-                    deduped.push(id);
-                }
-            }
             error? leadershipUpdateResult = database:syncEmployeeLeadership(
                     employeeId, deduped, userInfo.email);
             if leadershipUpdateResult is error {
