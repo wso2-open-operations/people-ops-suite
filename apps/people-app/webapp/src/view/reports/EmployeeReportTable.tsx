@@ -221,6 +221,14 @@ function getColumnDefs(theme: Theme): Record<string, GridColDef<Employee>> {
     subTeam: textCol("subTeam", "Sub Team", 120),
     unit: textCol("unit", "Unit", 100),
     house: textCol("house", "House", 100),
+    leadershipGroups: {
+      field: "leadershipGroups",
+      headerName: "Leadership Attributes",
+      minWidth: 220,
+      renderCell: (params: GridRenderCellParams<Employee>) => (
+        <TextCell value={params.value ?? ""} />
+      ),
+    },
     startDate: dateCol("startDate", "Start Date", 110),
     continuousServiceDate: dateCol("continuousServiceDate", "Cont. Service Date", 160),
     lengthOfService: {
