@@ -36,6 +36,7 @@ import {
   fetchUnits,
 } from "@slices/organizationSlice/organization";
 import { fetchEmployeesBasicInfo } from "@slices/employeeSlice/employee";
+import { fetchLeadershipGroups } from "@slices/leadershipSlice/leadership";
 
 /**
  * Owns the dependent org-hierarchy dropdowns for the profile's inline section editors:
@@ -70,6 +71,7 @@ export const useOrgCascade = () => {
     dispatch(fetchEmployeesBasicInfo());
     dispatch(fetchEmploymentTypes());
     dispatch(fetchHouses());
+    dispatch(fetchLeadershipGroups());
   }, [dispatch]);
 
   // Back-fill the child lists for the employee's existing selections, so the dropdowns

@@ -1373,6 +1373,36 @@ export default function Me({
                         onViewAll={openFullHistory}
                       />
                     </Grid>
+                    <Grid item xs={12} sm={6} md={6}>
+                      <FieldLabel
+                        label="Leadership Attributes"
+                        historyField={
+                          canViewFieldHistory
+                            ? AUDIT_FIELDS.leadershipGroup
+                            : undefined
+                        }
+                        onViewAll={openFullHistory}
+                      />
+                      {employee.leadershipGroups &&
+                      employee.leadershipGroups.length > 0 ? (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 0.875,
+                            mt: 1,
+                          }}
+                        >
+                          {employee.leadershipGroups.map((name: string) => (
+                            <Chip key={name} label={name} size="small" />
+                          ))}
+                        </Box>
+                      ) : (
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          -
+                        </Typography>
+                      )}
+                    </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>

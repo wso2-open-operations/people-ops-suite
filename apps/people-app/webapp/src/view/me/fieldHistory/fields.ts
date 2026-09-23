@@ -49,6 +49,10 @@ export const AUDIT_FIELDS = {
   // these rows describe a relationship, so the backend reports existence (added or
   // removed) instead of diffing a value.
   additionalManager: "additional_manager",
+  // employee_leadership_audit. A synthetic field name rather than a column:
+  // these rows describe a relationship, so the backend reports existence
+  // (added or removed) instead of diffing a value.
+  leadershipGroup: "leadership_group",
   // personal_info_audit
   nicOrPassport: "nic_or_passport",
   firstName: "first_name",

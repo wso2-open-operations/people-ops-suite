@@ -49,6 +49,7 @@ export const FIELD_LABELS: Partial<
   businessUnitId: "Business Unit",
   unitId: "Unit",
   houseId: "House",
+  leadershipGroupIds: "Leadership Attributes",
   continuousServiceRecord: "Continuous Service Record",
   employeeStatus: "Employee Status",
   finalDayInOffice: "Last Day in Office",

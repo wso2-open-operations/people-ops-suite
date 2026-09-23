@@ -72,6 +72,8 @@ export interface Employee {
   unitId: number | null;
   house: string | null;
   houseId: number | null;
+  leadershipGroupIds: number[];
+  leadershipGroups: string[];
 }
 
 export interface EmployeeBasicInfo {
@@ -260,6 +262,7 @@ export type UpdateEmployeeJobInfoPayload = {
   finalDayInOffice?: string | null;
   finalDayOfEmployment?: string | null;
   resignationReason?: string | null;
+  leadershipGroupIds?: number[];
 };
 
 export interface ContinuousServiceRecordInfo {

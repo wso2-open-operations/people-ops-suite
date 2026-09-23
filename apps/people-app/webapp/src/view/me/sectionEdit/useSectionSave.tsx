@@ -83,6 +83,7 @@ const PAYLOAD_TO_COLUMN: Record<string, string> = {
   unitId: "unit_id",
   houseId: "house_id",
   additionalManagerEmails: "additional_manager_emails",
+  leadershipGroupIds: "leadership_group_ids",
 };
 
 /**
@@ -134,6 +135,7 @@ const SECTION_FIELDS: Record<string, (keyof UpdateEmployeeJobInfoPayload)[]> = {
     "businessUnitId",
     "unitId",
     "houseId",
+    "leadershipGroupIds",
     "continuousServiceRecord",
     "employeeStatus",
   ],

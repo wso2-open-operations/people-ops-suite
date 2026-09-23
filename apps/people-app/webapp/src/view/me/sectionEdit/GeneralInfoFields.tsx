@@ -122,6 +122,7 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
   const { employeesBasicInfo, continuousServiceRecord } = useAppSelector(
     (s) => s.employee,
   );
+  const { groups: leadershipGroups } = useAppSelector((s) => s.leadership);
   const dispatch = useAppDispatch();
 
   const {
@@ -522,6 +523,31 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
             { disabled: !values.subTeamId, includeNone: true },
           )}
         </Cell>
+        <Grid item xs={12} sm={6} md={6}>
+          <Autocomplete
+            multiple
+            options={leadershipGroups}
+            getOptionLabel={(o) => o.name}
+            isOptionEqualToValue={(a, b) => a.id === b.id}
+            value={leadershipGroups.filter((g) =>
+              (values.leadershipGroupIds ?? []).includes(g.id),
+            )}
+            disabled={isSaving}
+            onChange={(_, selected) =>
+              setFieldValue(
+                "leadershipGroupIds",
+                selected.map((s) => s.id),
+              )
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                size="small"
+                label="Leadership Attributes"
+              />
+            )}
+          />
+        </Grid>
       </Cluster>
 
       <Cluster title="Role">

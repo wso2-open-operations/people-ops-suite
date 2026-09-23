@@ -85,6 +85,7 @@ export interface CreateEmployeeFormValues {
   continuousServiceRecord?: string | null;
   managerEmail: string;
   additionalManagerEmail: string[];
+  leadershipGroupIds: number[];
   careerFunctionId: number;
   designationId: number;
   secondaryJobTitle: string;
@@ -136,6 +137,7 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   continuousServiceRecord: null,
   managerEmail: "",
   additionalManagerEmail: [],
+  leadershipGroupIds: [],
   careerFunctionId: 0,
   designationId: 0,
   secondaryJobTitle: "",

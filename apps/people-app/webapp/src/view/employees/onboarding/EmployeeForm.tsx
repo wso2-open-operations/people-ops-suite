@@ -117,6 +117,7 @@ export const toFormValues = (
     base.jobRole = employee.jobRole ?? "";
     base.externalDesignation = employee.externalDesignation ?? "";
     base.houseId = employee.houseId ?? 0;
+    base.leadershipGroupIds = employee.leadershipGroupIds ?? [];
     base.employeeId = employee.employeeId ?? "";
     base.employeeStatus = employee.employeeStatus ?? null;
     base.finalDayInOffice = employee.finalDayInOffice ?? null;
@@ -201,6 +202,7 @@ export const toJobUpdatePayload = (
         ? UNIT_CLEAR_SENTINEL
         : null,
   houseId: values.houseId > 0 ? values.houseId : null,
+  leadershipGroupIds: values.leadershipGroupIds ?? [],
   continuousServiceRecord: values.isRelocation
     ? (values.continuousServiceRecord ?? null)
     : null,
