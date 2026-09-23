@@ -73,7 +73,9 @@ export interface Employee {
   house: string | null;
   houseId: number | null;
   leadershipGroupIds: number[];
-  leadershipGroups: string[];
+  // Comma-joined by the backend's GROUP_CONCAT, matching the existing
+  // additionalManagerEmails precedent below — not a real array.
+  leadershipGroups: string | null;
 }
 
 export interface EmployeeBasicInfo {

@@ -1383,25 +1383,35 @@ export default function Me({
                         }
                         onViewAll={openFullHistory}
                       />
-                      {employee.leadershipGroups &&
-                      employee.leadershipGroups.length > 0 ? (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 0.875,
-                            mt: 1,
-                          }}
-                        >
-                          {employee.leadershipGroups.map((name: string) => (
-                            <Chip key={name} label={name} size="small" />
-                          ))}
-                        </Box>
-                      ) : (
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          -
-                        </Typography>
-                      )}
+                      {(() => {
+                        // Comma-joined by the backend's GROUP_CONCAT, not a real
+                        // array — split before rendering, matching how
+                        // additionalManagerEmails is handled elsewhere in this file.
+                        const leadershipGroupNames = (
+                          employee.leadershipGroups ?? ""
+                        )
+                          .split(",")
+                          .map((name) => name.trim())
+                          .filter((name) => name);
+                        return leadershipGroupNames.length > 0 ? (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 0.875,
+                              mt: 1,
+                            }}
+                          >
+                            {leadershipGroupNames.map((name) => (
+                              <Chip key={name} label={name} size="small" />
+                            ))}
+                          </Box>
+                        ) : (
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            -
+                          </Typography>
+                        );
+                      })()}
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
