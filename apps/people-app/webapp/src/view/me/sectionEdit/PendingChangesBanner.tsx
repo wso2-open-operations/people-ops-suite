@@ -48,7 +48,6 @@ const COLUMN_LABELS: Record<string, string> = {
   unit_id: "Unit",
   house_id: "House",
   additional_manager_emails: "Additional Leads",
-  leadership_group_ids: "Leadership Attributes",
 };
 
 // Effective dates are held and acted on as UTC calendar dates: the sweep compares

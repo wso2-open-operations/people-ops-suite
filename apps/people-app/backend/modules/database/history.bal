@@ -23,12 +23,19 @@ const SOURCE_TABLE_PERSONAL_INFO_AUDIT = "personal_info_audit";
 # Source table name for employee_additional_managers_audit snapshots.
 const SOURCE_TABLE_ADDITIONAL_MANAGERS_AUDIT = "employee_additional_managers_audit";
 
+# Source table name for employee_leadership_audit snapshots.
+const SOURCE_TABLE_LEADERSHIP_AUDIT = "employee_leadership_audit";
+
 # Source table name for resignation_audit snapshots.
 const SOURCE_TABLE_RESIGNATION_AUDIT = "resignation_audit";
 
 # Synthetic field name for additional-manager events, which describe a relationship
 # rather than a column on the employee row.
 const FIELD_ADDITIONAL_MANAGER = "additional_manager";
+
+# Synthetic field name for leadership-attribute events, which describe a relationship
+# (an employee holding a leadership_group) rather than a column on the employee row.
+const FIELD_LEADERSHIP_GROUP = "leadership_group";
 
 # Synthetic field name for the event recording that a resignation was entered.
 #
@@ -143,6 +150,17 @@ public isolated function buildHistoryEvents(AuditSnapshot[] snapshots) returns H
             HistoryEvent? managerEvent = buildAdditionalManagerEvent(snapshot);
             if managerEvent is HistoryEvent {
                 events.push(managerEvent);
+            }
+            continue;
+        }
+
+        // A leadership-attribute row describes a relationship, not a column on the
+        // employee: its existence is the event, mirroring the additional-manager
+        // handling above.
+        if snapshot.sourceTable == SOURCE_TABLE_LEADERSHIP_AUDIT {
+            HistoryEvent? leadershipEvent = buildLeadershipEvent(snapshot);
+            if leadershipEvent is HistoryEvent {
+                events.push(leadershipEvent);
             }
             continue;
         }
@@ -268,6 +286,46 @@ isolated function buildAdditionalManagerEvent(AuditSnapshot snapshot) returns Hi
         // "added" and "Removed" respectively.
         previousValue: isRemoval ? managerEmail : (),
         currentValue: isRemoval ? () : managerEmail,
+        occurredOn: snapshot.actionOn,
+        actionBy: snapshot.actionBy,
+        isSystem: isSystemActor(snapshot.actionBy)
+    };
+}
+
+# Build an event for a leadership-attribute row.
+#
+# Mirrors buildAdditionalManagerEvent: one row is one employee-to-leadership_group
+# relationship, so an INSERT is an addition and the trigger records a DELETE when
+# is_active flips to 0. An UPDATE that leaves the row active is a no-op re-save and
+# yields nothing. The raw leadership_group_id is carried as the value here; it is
+# resolved to the group's display name later by resolveHistoryEventNames, via the
+# `leadership_group` lookup entry.
+#
+# + snapshot - Audit snapshot from employee_leadership_audit
+# + return - The event, or () when the snapshot records no meaningful change
+isolated function buildLeadershipEvent(AuditSnapshot snapshot) returns HistoryEvent? {
+    string? leadershipGroupId = toDisplayValue(getField(snapshot.data, "leadership_group_id"));
+    if leadershipGroupId is () {
+        return ();
+    }
+
+    boolean isRemoval = snapshot.actionType == ACTION_TYPE_DELETE
+        || toDisplayValue(getField(snapshot.data, "is_active")) == "0";
+    boolean isAddition = snapshot.actionType == ACTION_TYPE_INSERT;
+
+    if !isRemoval && !isAddition {
+        return ();
+    }
+
+    return {
+        employeePkId: snapshot.employeePkId,
+        'field: FIELD_LEADERSHIP_GROUP,
+        sourceTable: snapshot.sourceTable,
+        // Rendered by the existing old -> new treatment: an addition has no previous
+        // value, and a removal has no current one, which the timeline already draws as
+        // "added" and "Removed" respectively.
+        previousValue: isRemoval ? leadershipGroupId : (),
+        currentValue: isRemoval ? () : leadershipGroupId,
         occurredOn: snapshot.actionOn,
         actionBy: snapshot.actionBy,
         isSystem: isSystemActor(snapshot.actionBy)

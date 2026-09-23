@@ -252,7 +252,7 @@ isolated function resolveAdditionalManagerNames(string? emails, map<string> name
     return string:'join(", ", ...names);
 }
 
-# Ordered canonical column keys for the active-employee CSV (27 columns).
+# Ordered canonical column keys for the active-employee CSV (41 columns).
 final string[] & readonly EMPLOYEE_CSV_COLUMNS = [
     "employeeId", "firstName", "lastName", "gender", "workEmail", "company",
     "location", "employmentType", "jobRole", "externalDesignation", "jobBand", "startDate",
@@ -264,7 +264,7 @@ final string[] & readonly EMPLOYEE_CSV_COLUMNS = [
     "postalCode", "country", "emergencyContacts"
 ];
 
-# Ordered canonical column keys for the resignation CSV (27 shared + 4 resignation-specific).
+# Ordered canonical column keys for the resignation CSV (41 shared + 4 resignation-specific).
 final string[] & readonly RESIGNATION_CSV_COLUMNS = [
     "employeeId", "firstName", "lastName", "gender", "workEmail", "company",
     "location", "employmentType", "jobRole", "externalDesignation", "jobBand", "startDate",
@@ -417,6 +417,9 @@ isolated function expandLeadershipColumns(string[] cols, LeadershipGroup[] group
 }
 
 # Header text for a column key, resolving synthetic leadership keys to the attribute name.
+#
+# + key - Canonical or synthetic (`__leadership__`-prefixed) column key
+# + return - Header text to print in the CSV
 isolated function leadershipAwareHeader(string key) returns string {
     if key.startsWith("__leadership__") {
         return key.substring("__leadership__".length());
@@ -425,6 +428,11 @@ isolated function leadershipAwareHeader(string key) returns string {
 }
 
 # Cell value for a column key, resolving synthetic leadership keys to Yes/No.
+#
+# + e - Employee row being rendered
+# + key - Canonical or synthetic (`__leadership__`-prefixed) column key
+# + nameMap - email->name resolution map, forwarded to resolveColumnValue for non-leadership keys
+# + return - Cell value to print in the CSV
 isolated function leadershipAwareValue(Employee e, string key, map<string> nameMap) returns string {
     if key.startsWith("__leadership__") {
         string name = key.substring("__leadership__".length());
@@ -471,7 +479,7 @@ isolated function buildCsvWithColumns(
     effectiveCols = expandLeadershipColumns(effectiveCols, leadershipGroups);
 
     string[] headers = from string key in effectiveCols
-        select leadershipAwareHeader(key);
+        select csvEscape(leadershipAwareHeader(key));
     string[] lines = [string:'join(",", ...headers)];
     foreach Employee e in employees {
         string[] row = from string key in effectiveCols
@@ -485,7 +493,7 @@ isolated function buildCsvWithColumns(
 #
 # + employees - List of employees
 # + nameMap - Map of work_email -> full name for resolving additional manager names
-# + columns - Optional column allowlist (canonical keys). nil or empty = all 26 columns.
+# + columns - Optional column allowlist (canonical keys). nil or empty = all 41 columns.
 # + leadershipGroups - Active leadership attributes used to expand the leadership sentinel column
 # + return - CSV string
 public isolated function buildEmployeeCsv(Employee[] employees, map<string> nameMap,
@@ -496,7 +504,7 @@ public isolated function buildEmployeeCsv(Employee[] employees, map<string> name
 #
 # + employees - List of resigned employees
 # + nameMap - Map of work_email -> full name for resolving additional manager names
-# + columns - Optional column allowlist (canonical keys). nil or empty = all 30 columns.
+# + columns - Optional column allowlist (canonical keys). nil or empty = all 45 columns.
 # + leadershipGroups - Active leadership attributes used to expand the leadership sentinel column
 # + return - CSV string
 public isolated function buildResignationCsv(Employee[] employees, map<string> nameMap,

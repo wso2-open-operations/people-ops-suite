@@ -17,6 +17,8 @@
 import ballerina/test;
 
 # The three seeded attributes, as the export handler would pass them.
+#
+# + return - The three seeded leadership attributes
 isolated function seededGroups() returns LeadershipGroup[] => [
     {id: 1, name: "Leadership Group", isActive: true},
     {id: 2, name: "Business Leadership", isActive: true},
@@ -24,6 +26,8 @@ isolated function seededGroups() returns LeadershipGroup[] => [
 ];
 
 # An employee holding two of the three attributes.
+#
+# + return - Employee holding Business Leadership and Senior Leadership
 isolated function twoAttributeEmployee() returns Employee {
     Employee e = personalFieldEmployee();
     e.leadershipGroups = "Business Leadership,Senior Leadership";
@@ -31,6 +35,8 @@ isolated function twoAttributeEmployee() returns Employee {
 }
 
 # An employee holding none.
+#
+# + return - Employee holding no leadership attributes
 isolated function noAttributeEmployee() returns Employee {
     Employee e = personalFieldEmployee();
     e.leadershipGroups = ();

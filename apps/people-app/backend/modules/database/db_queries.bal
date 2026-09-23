@@ -157,6 +157,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
             LIMIT 1
         ), '') AS managerName,
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
+        elg.leadershipGroups AS leadershipGroups,
         pi.gender AS gender,
         (
             SELECT COUNT(1)
@@ -223,6 +224,15 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
             WHERE is_active = 1
             GROUP BY employee_pk_id
         ) eam ON eam.employee_pk_id = e.id
+        LEFT JOIN (
+            SELECT
+                el.employee_pk_id,
+                GROUP_CONCAT(lg.name ORDER BY lg.name SEPARATOR ',') AS leadershipGroups
+            FROM employee_leadership el
+            JOIN leadership_group lg ON lg.id = el.leadership_group_id
+            WHERE el.is_active = 1
+            GROUP BY el.employee_pk_id
+        ) elg ON elg.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         LEFT JOIN office o ON e.office_id = o.id
@@ -3002,7 +3012,9 @@ isolated function getHistoryLookupNamesQuery() returns sql:ParameterizedQuery =>
      UNION ALL SELECT 'office_id' COLLATE utf8mb4_general_ci,
             id, name COLLATE utf8mb4_general_ci FROM office
      UNION ALL SELECT 'house_id' COLLATE utf8mb4_general_ci,
-            id, name COLLATE utf8mb4_general_ci FROM house`;
+            id, name COLLATE utf8mb4_general_ci FROM house
+     UNION ALL SELECT 'leadership_group' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM leadership_group`;
 
 # Whether an employee ID names the person's current (most recent) employment.
 #

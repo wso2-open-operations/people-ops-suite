@@ -17,6 +17,8 @@
 import ballerina/test;
 
 # An employee carrying every personal field, used to prove the report CSV reaches them.
+#
+# + return - Employee record with every personal field populated
 isolated function personalFieldEmployee() returns Employee => {
     employeeId: "LK999999",
     firstName: "Test",
@@ -79,6 +81,8 @@ isolated function personalFieldEmployee() returns Employee => {
 };
 
 # The personal column keys, paired with the value each should carry into the CSV.
+#
+# + return - Map of personal column key to the value it should carry in the CSV
 isolated function personalExpectations() returns map<string> => {
     "nicOrPassport": "NIC-TEST-0001",
     "dateOfBirth": "1900-01-01",
