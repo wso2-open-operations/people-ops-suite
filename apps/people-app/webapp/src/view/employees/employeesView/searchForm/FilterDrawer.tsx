@@ -39,6 +39,7 @@ import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldI
 import { toSentenceCase, sortAndFormatOptions } from "@utils/utils";
 import { EmployeeStatus } from "@/types/types";
 import { EmployeeSearchPayload, Filters } from "@slices/employeeSlice/employee";
+import { LeadershipGroup } from "@slices/leadershipSlice/leadership";
 import {
   BusinessUnit,
   CareerFunction,
@@ -93,6 +94,9 @@ type FilterDrawerProps = {
   multiSelectEmploymentType?: boolean;
   /** When true, the Employee Status filter is a multi-select bound to `employeeStatuses`. Default false. */
   multiSelectStatus?: boolean;
+  /** When true, the Leadership Attribute filter is shown. Default false. */
+  showLeadershipGroupFilter?: boolean;
+  leadershipGroups?: LeadershipGroup[];
 };
 
 export function FilterDrawer({
@@ -118,6 +122,8 @@ export function FilterDrawer({
   showIncludeMarkedLeaversFilter = false,
   multiSelectEmploymentType = false,
   multiSelectStatus = false,
+  showLeadershipGroupFilter = false,
+  leadershipGroups = [],
 }: FilterDrawerProps) {
   const theme = useTheme();
   const [draft, setDraft] = useState<EmployeeSearchPayload>(appliedFilter);
@@ -283,6 +289,35 @@ export function FilterDrawer({
                   ListboxProps={{ style: { maxHeight: 240, overflow: "auto" } }}
                   renderInput={(params) => (
                     <BaseTextField {...params} size="small" label="Employment Type" />
+                  )}
+                />
+              )}
+              {showLeadershipGroupFilter && (
+                <Autocomplete<LeadershipGroup, true, false, false>
+                  multiple
+                  options={sortAndFormatOptions(leadershipGroups, (g) => g.name)}
+                  getOptionLabel={(o) => o.name}
+                  value={leadershipGroups.filter((g) =>
+                    (draft.filters.leadershipGroupIds ?? []).includes(g.id),
+                  )}
+                  isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                  autoHighlight
+                  onChange={(_, selected) =>
+                    set({
+                      // Empty must be undefined, never [] — the report's active-filter
+                      // badge counts keys whose value !== undefined.
+                      leadershipGroupIds: selected.length
+                        ? selected.map((s) => s.id)
+                        : undefined,
+                    })
+                  }
+                  ListboxProps={{ style: { maxHeight: 240, overflow: "auto" } }}
+                  renderInput={(params) => (
+                    <BaseTextField
+                      {...params}
+                      size="small"
+                      label="Leadership Attribute (has all selected)"
+                    />
                   )}
                 />
               )}

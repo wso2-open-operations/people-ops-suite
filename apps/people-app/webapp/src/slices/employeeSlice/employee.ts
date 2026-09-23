@@ -181,6 +181,8 @@ export type Filters = {
   /** Matches employees whose start date is exactly this day (YYYY-MM-DD). */
   startDate?: string;
   includeMarkedLeavers?: boolean;
+  /** Leadership attribute IDs. Matches employees holding ALL selected attributes (AND). */
+  leadershipGroupIds?: number[];
 };
 
 export type Pagination = {

@@ -54,6 +54,7 @@ import {
   fetchTeams,
   fetchUnits,
 } from "@slices/organizationSlice/organization";
+import { fetchLeadershipGroups } from "@slices/leadershipSlice/leadership";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { unwrapResult } from "@reduxjs/toolkit";
 import { ReactNode, useEffect, useMemo, useState } from "react";
@@ -354,6 +355,7 @@ export default function EmployeeReportTable({
   } = useAppSelector((state) => state.organization);
   const managers = useAppSelector((state) => state.employee.managers);
   const managerEmails = useMemo(() => managers.map((m) => m.workEmail), [managers]);
+  const leadershipGroups = useAppSelector((state) => state.leadership.groups);
 
   useEffect(() => {
     if (!showFilterDrawer) return;
@@ -367,6 +369,7 @@ export default function EmployeeReportTable({
     dispatch(fetchCompanies());
     dispatch(fetchEmploymentTypes());
     dispatch(fetchOffices({}));
+    dispatch(fetchLeadershipGroups());
   }, [dispatch, showFilterDrawer]);
 
   const baselineFilters = useMemo<Filters>(() => {
@@ -851,6 +854,8 @@ export default function EmployeeReportTable({
               managerEmails={managerEmails}
               companies={companies}
               offices={offices}
+              showLeadershipGroupFilter={true}
+              leadershipGroups={leadershipGroups}
             />
           </>
         )}
