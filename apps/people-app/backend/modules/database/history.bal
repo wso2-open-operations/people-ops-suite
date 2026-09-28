@@ -294,10 +294,12 @@ isolated function buildAdditionalManagerEvent(AuditSnapshot snapshot) returns Hi
 
 # Build an event for a leadership-attribute row.
 #
-# Mirrors buildAdditionalManagerEvent: one row is one employee-to-leadership_group
-# relationship, so an INSERT is an addition and the trigger records a DELETE when
-# is_active flips to 0. An UPDATE that leaves the row active is a no-op re-save and
-# yields nothing. The raw leadership_group_id is carried as the value here; it is
+# One row is one employee-to-leadership_group relationship, so an INSERT is an addition
+# and the trigger records a DELETE when is_active flips to 0. Re-assigning a removed
+# attribute revives the same row (0 -> 1) and is logged as an UPDATE; the snapshot's
+# previous_is_active tells it apart from re-saving an attribute already held (1 -> 1),
+# which yields nothing. Snapshots written before previous_is_active existed carry no
+# value for it, so their UPDATEs stay no-ops as before. The raw leadership_group_id is carried as the value here; it is
 # resolved to the group's display name later by resolveHistoryEventNames, via the
 # `leadership_group` lookup entry.
 #
@@ -311,7 +313,9 @@ isolated function buildLeadershipEvent(AuditSnapshot snapshot) returns HistoryEv
 
     boolean isRemoval = snapshot.actionType == ACTION_TYPE_DELETE
         || toDisplayValue(getField(snapshot.data, "is_active")) == "0";
-    boolean isAddition = snapshot.actionType == ACTION_TYPE_INSERT;
+    boolean isReassignment = toDisplayValue(getField(snapshot.data, "is_active")) == "1"
+        && toDisplayValue(getField(snapshot.data, "previous_is_active")) == "0";
+    boolean isAddition = snapshot.actionType == ACTION_TYPE_INSERT || isReassignment;
 
     if !isRemoval && !isAddition {
         return ();

@@ -185,6 +185,7 @@ CREATE PROCEDURE `prc_employee_leadership_audit`(
   IN p_id                  BIGINT,
   IN p_leadership_group_id INT,
   IN p_is_active           TINYINT(1),
+  IN p_previous_is_active  TINYINT(1),
   IN p_created_by          VARCHAR(254),
   IN p_created_on          DATETIME(6),
   IN p_updated_by          VARCHAR(254),
@@ -204,6 +205,9 @@ BEGIN
       'employee_pk_id',      p_employee_pk_id,
       'leadership_group_id', p_leadership_group_id,
       'is_active',           p_is_active,
+      -- NULL on INSERT. On UPDATE it tells a re-assignment (0 -> 1) apart from a
+      -- re-save of an attribute already held (1 -> 1); both are logged as UPDATE.
+      'previous_is_active',  p_previous_is_active,
       'created_by',          p_created_by,
       'created_on',          p_created_on,
       'updated_by',          p_updated_by,
@@ -222,7 +226,7 @@ BEGIN
     NEW.employee_pk_id,
     'INSERT',
     COALESCE(NULLIF(TRIM(NEW.created_by), ''), 'SYSTEM'),
-    NEW.id,         NEW.leadership_group_id, NEW.is_active,
+    NEW.id,         NEW.leadership_group_id, NEW.is_active, NULL,
     NEW.created_by, NEW.created_on,
     NEW.updated_by, NEW.updated_on
   );
@@ -239,7 +243,7 @@ BEGIN
     NEW.employee_pk_id,
     CASE WHEN OLD.is_active = 1 AND NEW.is_active = 0 THEN 'DELETE' ELSE 'UPDATE' END,
     COALESCE(NULLIF(TRIM(NEW.updated_by), ''), 'SYSTEM'),
-    NEW.id,         NEW.leadership_group_id, NEW.is_active,
+    NEW.id,         NEW.leadership_group_id, NEW.is_active, OLD.is_active,
     NEW.created_by, NEW.created_on,
     NEW.updated_by, NEW.updated_on
   );
