@@ -638,6 +638,7 @@ CREATE TABLE `employment_type_idp_group` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Procedure: prc_personal_info_audit
+DROP PROCEDURE IF EXISTS prc_personal_info_audit;
 DELIMITER //
 CREATE PROCEDURE `prc_personal_info_audit`(
   IN p_id                BIGINT,
@@ -742,6 +743,7 @@ END//
 DELIMITER ;
 
 -- Procedure: prc_personal_info_emergency_contacts_audit
+DROP PROCEDURE IF EXISTS prc_personal_info_emergency_contacts_audit;
 DELIMITER //
 CREATE PROCEDURE `prc_personal_info_emergency_contacts_audit`(
   IN p_personal_info_id  BIGINT,
@@ -821,6 +823,7 @@ END//
 DELIMITER ;
 
 -- Procedure: prc_employee_audit
+DROP PROCEDURE IF EXISTS prc_employee_audit;
 DELIMITER //
 CREATE PROCEDURE `prc_employee_audit`(
   IN p_id                        BIGINT,
@@ -988,6 +991,7 @@ END//
 DELIMITER ;
 
 -- Procedure: prc_employee_additional_managers_audit
+DROP PROCEDURE IF EXISTS prc_employee_additional_managers_audit;
 DELIMITER //
 CREATE PROCEDURE `prc_employee_additional_managers_audit`(
   IN p_employee_pk_id           BIGINT,
@@ -1064,6 +1068,7 @@ DELIMITER ;
 -- means adding it at the same ordinal in this signature and in BOTH CALL
 -- argument lists, or every later argument shifts and the audit JSON is silently
 -- written with values in the wrong keys.
+DROP PROCEDURE IF EXISTS prc_resignation_audit;
 DELIMITER //
 CREATE PROCEDURE `prc_resignation_audit`(
   IN p_employee_pk_id           INT,
@@ -1193,6 +1198,7 @@ CREATE TABLE `designation_audit` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
 -- Procedure: prc_career_function_audit
+DROP PROCEDURE IF EXISTS prc_career_function_audit;
 DELIMITER //
 CREATE PROCEDURE `prc_career_function_audit`(
   IN p_id              INT,
@@ -1259,6 +1265,7 @@ END//
 DELIMITER ;
 
 -- Procedure: prc_designation_audit
+DROP PROCEDURE IF EXISTS prc_designation_audit;
 DELIMITER //
 CREATE PROCEDURE `prc_designation_audit`(
   IN p_id                 INT,
