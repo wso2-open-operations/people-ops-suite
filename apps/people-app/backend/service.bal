@@ -1836,9 +1836,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        // Validated up front, before the job-info write, so an unknown or inactive id
-        // rejects the whole request rather than persisting the job-info changes and then
-        // failing on leadership — the spec requires no partial application.
+        // Validated up front so an unknown or inactive id rejects the whole request before
+        // anything is written.
         int[]? requestedGroups = payload.leadershipGroupIds;
         int[] deduped = [];
         if requestedGroups is int[] {
@@ -1860,6 +1859,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                     deduped.push(id);
                 }
             }
+            // Written inside updateEmployeeJobInfo's transaction, so the attributes commit or
+            // roll back together with the rest of the update.
+            payload.leadershipGroupIds = deduped;
         }
 
         error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);
@@ -1871,15 +1873,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
                 }
             };
-        }
-
-        if requestedGroups is int[] {
-            error? leadershipUpdateResult = database:syncEmployeeLeadership(
-                    employeeId, deduped, userInfo.email);
-            if leadershipUpdateResult is error {
-                log:printError("Error updating leadership attributes", leadershipUpdateResult);
-                return <http:InternalServerError>{body: {message: "Error updating employee"}};
-            }
         }
 
         return http:OK;

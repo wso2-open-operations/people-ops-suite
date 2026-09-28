@@ -1135,23 +1135,20 @@ public isolated function getEmployeeLeadershipIds(string employeeId) returns int
 # so it is never in groupIds; deactivating it here would silently strip it from the
 # employee, and reactivating the attribute later would not bring it back for them.
 #
+# Runs inside the caller's transaction, like syncAdditionalManagers, so the employee's
+# attributes commit or roll back together with the rest of the job-info update.
+#
 # + employeeId - Employee business key
 # + groupIds - The complete desired set of attribute IDs
 # + actor - Email of the user making the change, recorded in the audit trail
 # + return - An error if any statement fails
-public isolated function syncEmployeeLeadership(string employeeId, int[] groupIds, string actor)
+isolated function syncEmployeeLeadership(string employeeId, int[] groupIds, string actor)
     returns error? {
 
     // Deactivate removals first so clearing an attribute is never skipped by an early return.
-    sql:ParameterizedQuery deactivate = deactivateEmployeeLeadershipQuery(employeeId, groupIds, actor);
-
-    transaction {
-        _ = check databaseClient->execute(deactivate);
-        foreach int groupId in groupIds {
-            _ = check databaseClient->execute(
-                assignEmployeeLeadershipQuery(employeeId, groupId, actor));
-        }
-        check commit;
+    _ = check databaseClient->execute(deactivateEmployeeLeadershipQuery(employeeId, groupIds, actor));
+    foreach int groupId in groupIds {
+        _ = check databaseClient->execute(assignEmployeeLeadershipQuery(employeeId, groupId, actor));
     }
 }
 
@@ -1179,6 +1176,10 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
         Email[]? additionalManagerEmails = payload.additionalManagerEmails;
         if additionalManagerEmails is Email[] {
             check syncAdditionalManagers(employeeId, additionalManagerEmails, updatedBy);
+        }
+        int[]? leadershipGroupIds = payload.leadershipGroupIds;
+        if leadershipGroupIds is int[] {
+            check syncEmployeeLeadership(employeeId, leadershipGroupIds, updatedBy);
         }
         check syncResignationRecord(employeeId, payload, updatedBy);
         check commit;
