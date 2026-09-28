@@ -51,6 +51,14 @@ public type DuplicateDesignationError distinct error;
 # applies to every row regardless of `is_active` — a career function name is never reusable.
 public type DuplicateCareerFunctionError distinct error;
 
+# Raised when a leadership attribute name collides with an existing one (the unique key on
+# leadership_group.name is case-insensitive), so the caller gets a 400 rather than a 500.
+public type DuplicateLeadershipGroupError distinct error;
+
+# Raised when retiring a leadership attribute that current employees still hold. Retiring
+# is refused rather than silently hiding the attribute from their records.
+public type LeadershipGroupInUseError distinct error;
+
 # Raised when a designation references a career function that does not exist (foreign key
 # violation), so the caller gets a 400 rather than an opaque 500.
 public type UnknownCareerFunctionError distinct error;
@@ -814,6 +822,30 @@ public type LeadershipGroup record {|
     string name;
     # Whether it can still be assigned
     boolean isActive;
+|};
+
+# A leadership attribute as the master data screen lists it.
+public type LeadershipGroupWithUsage record {|
+    *LeadershipGroup;
+    # Active and Marked-leaver employees holding it; these are what block retiring it
+    int holderCount;
+|};
+
+# Create a leadership attribute.
+public type CreateLeadershipGroupPayload record {|
+    # Attribute name, also its CSV column header. Whitespace-only is rejected: the name is
+    # trimmed only after validation passes.
+    @constraint:String {maxLength: 100, pattern: re `^\s*\S.*$`}
+    string name;
+|};
+
+# Rename, retire or reactivate a leadership attribute.
+public type UpdateLeadershipGroupPayload record {|
+    # New name; whitespace-only is rejected (see CreateLeadershipGroupPayload)
+    @constraint:String {maxLength: 100, pattern: re `^\s*\S.*$`}
+    string? name = ();
+    # false retires the attribute, true reactivates it
+    boolean? isActive = ();
 |};
 
 # Manager payload.

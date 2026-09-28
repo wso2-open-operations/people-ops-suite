@@ -471,6 +471,71 @@ public isolated function getLeadershipGroups() returns LeadershipGroup[]|error {
         select group;
 }
 
+# Fetch every leadership attribute, retired ones included, with its current holder count.
+#
+# + return - Leadership attributes with usage, active first, or an error
+public isolated function getLeadershipGroupsWithUsage() returns LeadershipGroupWithUsage[]|error {
+    stream<LeadershipGroupWithUsage, error?> result =
+        databaseClient->query(getLeadershipGroupsWithUsageQuery());
+    return from LeadershipGroupWithUsage group in result
+        select group;
+}
+
+# Create a leadership attribute.
+#
+# + payload - Creation payload
+# + createdBy - Email of the admin performing the action
+# + return - New attribute ID, DuplicateLeadershipGroupError, or error
+public isolated function createLeadershipGroup(CreateLeadershipGroupPayload payload, string createdBy)
+        returns int|error {
+
+    // Trimmed before storing so a padded name cannot sit beside its trimmed form.
+    sql:ExecutionResult|error result = databaseClient->execute(
+        createLeadershipGroupQuery(payload.name.trim(), createdBy));
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateLeadershipGroupError("A leadership attribute with this name already exists.");
+    }
+    if result is error {
+        return result;
+    }
+    return check result.lastInsertId.ensureType(int);
+}
+
+# Rename, retire or reactivate a leadership attribute.
+#
+# + id - Leadership attribute ID
+# + payload - Update payload (all fields optional)
+# + updatedBy - Email of the admin performing the action
+# + return - Nil, EntityNotFoundError, NoFieldsToUpdateError, DuplicateLeadershipGroupError,
+# LeadershipGroupInUseError, or error
+public isolated function updateLeadershipGroup(int id, UpdateLeadershipGroupPayload payload, string updatedBy)
+        returns error? {
+
+    string? trimmedName = payload.name is string ? (<string>payload.name).trim() : ();
+    sql:ParameterizedQuery query = check updateLeadershipGroupQuery(id, trimmedName, payload.isActive, updatedBy);
+
+    sql:ExecutionResult|error result = databaseClient->execute(query);
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateLeadershipGroupError("A leadership attribute with this name already exists.");
+    }
+    if result is error {
+        return result;
+    }
+    if result.affectedRowCount != 0 {
+        return;
+    }
+
+    // No row matched: either the ID is unknown, or the retire guard held it back.
+    int exists = check databaseClient->queryRow(leadershipGroupExistsQuery(id));
+    if exists == 0 {
+        return error EntityNotFoundError(string `Leadership attribute with ID ${id} not found`);
+    }
+    int holders = check databaseClient->queryRow(countLeadershipGroupHoldersQuery(id));
+    string holdersText = holders == 1 ? "1 current employee holds" : string `${holders} current employees hold`;
+    return error LeadershipGroupInUseError(
+        string `Cannot retire: ${holdersText} this attribute. Remove it from them first.`);
+}
+
 # Get managers.
 #
 # + return - Managers
@@ -1066,6 +1131,10 @@ public isolated function getEmployeeLeadershipIds(string employeeId) returns int
 # attributes in groupIds are assigned, reviving a previously removed row rather than
 # inserting a duplicate. An empty groupIds clears every attribute.
 #
+# Only active attributes are ever removed. A retired attribute is hidden from the edit form,
+# so it is never in groupIds; deactivating it here would silently strip it from the
+# employee, and reactivating the attribute later would not bring it back for them.
+#
 # + employeeId - Employee business key
 # + groupIds - The complete desired set of attribute IDs
 # + actor - Email of the user making the change, recorded in the audit trail
@@ -1074,19 +1143,7 @@ public isolated function syncEmployeeLeadership(string employeeId, int[] groupId
     returns error? {
 
     // Deactivate removals first so clearing an attribute is never skipped by an early return.
-    sql:ParameterizedQuery deactivate = groupIds.length() == 0
-        ? sql:queryConcat(
-            `UPDATE employee_leadership el
-             JOIN employee e ON e.id = el.employee_pk_id
-             SET el.is_active = 0, el.updated_by = ${actor}
-             WHERE e.employee_id = ${employeeId} AND el.is_active = 1`)
-        : sql:queryConcat(
-            `UPDATE employee_leadership el
-             JOIN employee e ON e.id = el.employee_pk_id
-             SET el.is_active = 0, el.updated_by = ${actor}
-             WHERE e.employee_id = ${employeeId} AND el.is_active = 1
-               AND el.leadership_group_id NOT IN (`,
-            buildIntInClause(groupIds), `)`);
+    sql:ParameterizedQuery deactivate = deactivateEmployeeLeadershipQuery(employeeId, groupIds, actor);
 
     transaction {
         _ = check databaseClient->execute(deactivate);

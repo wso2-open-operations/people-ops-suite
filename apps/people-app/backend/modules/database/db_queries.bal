@@ -230,7 +230,9 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
                 GROUP_CONCAT(lg.name ORDER BY lg.name SEPARATOR ',') AS leadershipGroups
             FROM employee_leadership el
             JOIN leadership_group lg ON lg.id = el.leadership_group_id
-            WHERE el.is_active = 1
+            -- A retired attribute is hidden from its holders' records; the assignment row
+            -- is kept, so reactivating the attribute brings it back.
+            WHERE el.is_active = 1 AND lg.is_active = 1
             GROUP BY el.employee_pk_id
         ) elg ON elg.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
@@ -374,7 +376,8 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
                     GROUP_CONCAT(lg.name ORDER BY lg.name SEPARATOR ',') AS leadershipGroups
                 FROM employee_leadership el
                 JOIN leadership_group lg ON lg.id = el.leadership_group_id
-                WHERE el.is_active = 1
+                -- Retired attributes are hidden; see the single-employee query.
+                WHERE el.is_active = 1 AND lg.is_active = 1
                 GROUP BY el.employee_pk_id
             ) elg ON elg.employee_pk_id = e.id
 
@@ -1563,6 +1566,99 @@ isolated function getLeadershipGroupsQuery() returns sql:ParameterizedQuery =>
      WHERE is_active = 1
      ORDER BY name;`;
 
+# The employee statuses whose holders block retiring a leadership attribute. A Left
+# employee's assignment does not: it stays in the DB and history, and is hidden once the
+# attribute is retired.
+#
+# + return - Parameterized list of the blocking statuses, for an IN (...) clause
+isolated function leadershipHolderStatuses() returns sql:ParameterizedQuery =>
+    `${EMPLOYEE_ACTIVE}, ${EMPLOYEE_MARKED_LEAVER}`;
+
+# Every leadership attribute, retired ones included, with how many current employees hold it.
+#
+# + return - Parameterized query returning LeadershipGroupWithUsage rows, active first
+isolated function getLeadershipGroupsWithUsageQuery() returns sql:ParameterizedQuery =>
+    sql:queryConcat(
+        `SELECT lg.id, lg.name, lg.is_active AS isActive, COUNT(e.id) AS holderCount
+         FROM leadership_group lg
+         LEFT JOIN employee_leadership el
+            ON el.leadership_group_id = lg.id AND el.is_active = 1
+         LEFT JOIN employee e
+            ON e.id = el.employee_pk_id AND e.employee_status IN (`, leadershipHolderStatuses(), `)
+         GROUP BY lg.id, lg.name, lg.is_active
+         ORDER BY lg.is_active DESC, lg.name;`);
+
+# Count the current employees holding a leadership attribute.
+#
+# + id - Leadership attribute ID
+# + return - Parameterized query returning the holder count
+isolated function countLeadershipGroupHoldersQuery(int id) returns sql:ParameterizedQuery =>
+    sql:queryConcat(
+        `SELECT COUNT(*)
+         FROM employee_leadership el
+         JOIN employee e ON e.id = el.employee_pk_id
+         WHERE el.leadership_group_id = ${id} AND el.is_active = 1
+           AND e.employee_status IN (`, leadershipHolderStatuses(), `);`);
+
+# Create a leadership attribute.
+#
+# + name - Attribute name, already trimmed
+# + createdBy - Email of the admin performing the action
+# + return - Insert query
+isolated function createLeadershipGroupQuery(string name, string createdBy) returns sql:ParameterizedQuery =>
+    `INSERT INTO leadership_group (name, created_by, updated_by)
+     VALUES (${name}, ${createdBy}, ${createdBy});`;
+
+# Rename, retire or reactivate a leadership attribute.
+#
+# Retiring carries its own guard, so an attribute cannot be retired while current employees
+# hold it even if one is assigned between a check and this write. A guarded retire that
+# matches no row is therefore either an unknown ID or an attribute still in use; the caller
+# tells the two apart.
+#
+# + id - Leadership attribute ID
+# + name - New name, already trimmed, or nil to leave unchanged
+# + isActive - New active flag, or nil to leave unchanged
+# + updatedBy - Email of the admin performing the action
+# + return - Update query, or NoFieldsToUpdateError when nothing was supplied
+isolated function updateLeadershipGroupQuery(int id, string? name, boolean? isActive, string updatedBy)
+        returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if name is string {
+        updates.push(`name = ${name}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError("No fields to update");
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = `UPDATE leadership_group SET `;
+    foreach int i in 0 ..< updates.length() {
+        query = sql:queryConcat(query, i == 0 ? `` : `, `, updates[i]);
+    }
+    query = sql:queryConcat(query, ` WHERE id = ${id}`);
+    if isActive == false {
+        query = sql:queryConcat(query,
+            ` AND NOT EXISTS (
+                SELECT 1 FROM employee_leadership el
+                JOIN employee e ON e.id = el.employee_pk_id
+                WHERE el.leadership_group_id = ${id} AND el.is_active = 1
+                  AND e.employee_status IN (`, leadershipHolderStatuses(), `))`);
+    }
+    return sql:queryConcat(query, `;`);
+}
+
+# Check whether a leadership attribute exists.
+#
+# + id - Leadership attribute ID
+# + return - Parameterized query returning 1 when it exists
+isolated function leadershipGroupExistsQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) FROM leadership_group WHERE id = ${id};`;
+
 # Add employee personal information query. Upserts on the nic_or_passport UNIQUE key so
 # rehiring someone (same NIC/Passport) refreshes their existing personal_info row instead of
 # failing — `id = LAST_INSERT_ID(id)` makes the update branch still resolve to that row's own
@@ -2269,13 +2365,40 @@ isolated function inactivateAdditionalManagerRelationshipsQuery(string managerEm
 
 # Fetch the leadership attribute IDs an employee currently holds.
 #
+# Retired attributes are left out: the edit form must not offer them back, and a save
+# validates every submitted ID against the active set.
+#
 # + employeeId - Employee business key
 # + return - Parameterized query returning active leadership_group_id values
 isolated function getEmployeeLeadershipIdsQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT el.leadership_group_id AS leadershipGroupId
      FROM employee_leadership el
      JOIN employee e ON e.id = el.employee_pk_id
-     WHERE e.employee_id = ${employeeId} AND el.is_active = 1;`;
+     JOIN leadership_group lg ON lg.id = el.leadership_group_id
+     WHERE e.employee_id = ${employeeId} AND el.is_active = 1 AND lg.is_active = 1;`;
+
+# Deactivate the attributes an employee holds that are not in the desired set.
+#
+# Only active attributes are touched; see syncEmployeeLeadership for why a retired one is
+# kept.
+#
+# + employeeId - Employee business key
+# + groupIds - The complete desired set of attribute IDs
+# + actor - Email recorded in updated_by, and thus in the audit trail
+# + return - Parameterized update
+isolated function deactivateEmployeeLeadershipQuery(string employeeId, int[] groupIds, string actor)
+        returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery query =
+        `UPDATE employee_leadership el
+         JOIN employee e ON e.id = el.employee_pk_id
+         JOIN leadership_group lg ON lg.id = el.leadership_group_id
+         SET el.is_active = 0, el.updated_by = ${actor}
+         WHERE e.employee_id = ${employeeId} AND el.is_active = 1 AND lg.is_active = 1`;
+    return groupIds.length() == 0
+        ? query
+        : sql:queryConcat(query, ` AND el.leadership_group_id NOT IN (`, buildIntInClause(groupIds), `)`);
+}
 
 # Assign an attribute, reviving a previously removed row rather than inserting a duplicate.
 #

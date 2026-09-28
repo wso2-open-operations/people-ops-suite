@@ -1004,10 +1004,36 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetch the assignable leadership attributes.
     #
+    # Every caller gets the active attributes. `includeInactive` is the master data view:
+    # retired attributes too, each with its current holder count, and admin only.
+    #
     # + ctx - Request context
-    # + return - Active leadership attributes or an error
-    resource function get leadership\-groups(http:RequestContext ctx)
-            returns database:LeadershipGroup[]|http:InternalServerError {
+    # + includeInactive - Include retired attributes and holder counts (admin only)
+    # + return - Leadership attributes or an error
+    resource function get leadership\-groups(http:RequestContext ctx, boolean includeInactive = false)
+            returns database:LeadershipGroup[]|database:LeadershipGroupWithUsage[]|http:Forbidden
+                |http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to list all leadership attributes",
+                        invokerEmail = userInfo.email);
+                return <http:Forbidden>{body: {message: "You are not authorized to manage leadership attributes"}};
+            }
+            database:LeadershipGroupWithUsage[]|error withUsage = database:getLeadershipGroupsWithUsage();
+            if withUsage is error {
+                log:printError("Error fetching leadership groups with usage", withUsage);
+                return <http:InternalServerError>{
+                    body: {message: "Error fetching leadership attributes"}
+                };
+            }
+            return withUsage;
+        }
+
         database:LeadershipGroup[]|error groups = database:getLeadershipGroups();
         if groups is error {
             log:printError("Error fetching leadership groups", groups);
@@ -2991,6 +3017,74 @@ service http:InterceptableService / on new http:Listener(9090) {
         if updateResult is error {
             log:printError("Error occurred while updating career function", updateResult, id = id);
             return <http:InternalServerError>{body: {message: "Error occurred while updating career function"}};
+        }
+        return http:OK;
+    }
+
+    # Create a leadership attribute.
+    #
+    # + ctx - Request context
+    # + payload - Leadership attribute creation payload
+    # + return - New attribute ID or HTTP errors
+    resource function post leadership\-groups(http:RequestContext ctx,
+            database:CreateLeadershipGroupPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create leadership attribute", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage leadership attributes"}};
+        }
+
+        int|error newId = database:createLeadershipGroup(payload, userInfo.email);
+        if newId is database:DuplicateLeadershipGroupError {
+            return <http:BadRequest>{body: {message: newId.message()}};
+        }
+        if newId is error {
+            string customErr = "Error occurred while creating leadership attribute";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Rename, retire or reactivate a leadership attribute.
+    #
+    # Retiring is refused while current employees hold the attribute.
+    #
+    # + ctx - Request context
+    # + id - Leadership attribute ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch leadership\-groups/[int id](http:RequestContext ctx,
+            database:UpdateLeadershipGroupPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update leadership attribute", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage leadership attributes"}};
+        }
+
+        error? updateResult = database:updateLeadershipGroup(id, payload, userInfo.email);
+        if updateResult is database:DuplicateLeadershipGroupError|database:LeadershipGroupInUseError
+                |database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating leadership attribute", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating leadership attribute"}};
         }
         return http:OK;
     }
