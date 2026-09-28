@@ -54,7 +54,10 @@ const validationSchema = Yup.object({
   name: Yup.string()
     .trim()
     .required("Name is required")
-    .max(100, "Name must be at most 100 characters"),
+    .max(100, "Name must be at most 100 characters")
+    // A holder's attributes travel comma-joined, so a comma would split the name in two
+    // on profiles, reports and the CSV. The backend rejects it too.
+    .matches(/^[^,]*$/, "Name cannot contain a comma"),
 });
 
 export default function LeadershipAttributeDialog({

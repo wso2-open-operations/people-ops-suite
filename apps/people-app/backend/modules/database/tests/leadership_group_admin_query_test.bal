@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import ballerina/constraint;
 import ballerina/sql;
 import ballerina/test;
 
@@ -89,4 +90,36 @@ isolated function testSavingAnEmployeeKeepsRetiredAssignments() {
 isolated function testEditFormIsNotOfferedRetiredAttributes() {
     test:assertTrue(sqlText(getEmployeeLeadershipIdsQuery("LK100001")).includes("lg.is_active = 1"),
             "the employee's assignable attribute IDs should leave out retired ones");
+}
+
+# Whether a create payload with this name passes its constraints.
+#
+# + name - Attribute name to check
+# + return - true when the name is accepted
+isolated function createNameAccepted(string name) returns boolean {
+    CreateLeadershipGroupPayload|error result = constraint:validate({name});
+    return result is CreateLeadershipGroupPayload;
+}
+
+# Whether an update payload with this name passes its constraints.
+#
+# + name - Attribute name to check
+# + return - true when the name is accepted
+isolated function renameAccepted(string name) returns boolean {
+    UpdateLeadershipGroupPayload|error result = constraint:validate({name});
+    return result is UpdateLeadershipGroupPayload;
+}
+
+@test:Config {}
+isolated function testLeadershipNameWithACommaIsRejected() {
+    // A holder's attributes travel comma-joined, so a comma would split the name in two.
+    test:assertFalse(createNameAccepted("Research, Development"), "a comma in a new name should be rejected");
+    test:assertFalse(renameAccepted("Research,Development"), "a comma in a rename should be rejected");
+}
+
+@test:Config {}
+isolated function testLeadershipNameRulesStillAllowOrdinaryNames() {
+    test:assertTrue(createNameAccepted("Research & Development"), "ordinary punctuation should still be allowed");
+    test:assertTrue(renameAccepted("  Senior Leadership  "), "surrounding spaces are trimmed later, not rejected");
+    test:assertFalse(createNameAccepted("   "), "a blank name should still be rejected");
 }

@@ -836,15 +836,17 @@ public type LeadershipGroupWithUsage record {|
 # Create a leadership attribute.
 public type CreateLeadershipGroupPayload record {|
     # Attribute name, also its CSV column header. Whitespace-only is rejected: the name is
-    # trimmed only after validation passes.
-    @constraint:String {maxLength: 100, pattern: re `^\s*\S.*$`}
+    # trimmed only after validation passes. Commas are rejected too: a holder's attributes
+    # travel comma-joined (GROUP_CONCAT), so a comma inside a name would split it in two on
+    # the profile, in the report column and in the CSV Yes/No columns.
+    @constraint:String {maxLength: 100, pattern: re `^[^,]*[^,\s][^,]*$`}
     string name;
 |};
 
 # Rename, retire or reactivate a leadership attribute.
 public type UpdateLeadershipGroupPayload record {|
-    # New name; whitespace-only is rejected (see CreateLeadershipGroupPayload)
-    @constraint:String {maxLength: 100, pattern: re `^\s*\S.*$`}
+    # New name; whitespace-only and commas are rejected (see CreateLeadershipGroupPayload)
+    @constraint:String {maxLength: 100, pattern: re `^[^,]*[^,\s][^,]*$`}
     string? name = ();
     # false retires the attribute, true reactivates it
     boolean? isActive = ();
