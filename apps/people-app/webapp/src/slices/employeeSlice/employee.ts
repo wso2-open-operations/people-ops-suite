@@ -229,7 +229,8 @@ export type CreateEmployeePayload = {
   businessUnitId: number;
   unitId?: number;
   houseId?: number;
-  continuousServiceRecord?: string | null;
+  // employee.id of the prior employment, as returned in ContinuousServiceRecordInfo.id
+  continuousServiceRecord?: number | null;
   personalInfo: CreatePersonalInfoPayload;
 };
 
@@ -261,7 +262,8 @@ export type UpdateEmployeeJobInfoPayload = {
   businessUnitId?: number | null;
   unitId?: number | null;
   houseId?: number | null;
-  continuousServiceRecord?: string | null;
+  // employee.id of the prior employment; -1 (the backend's clear sentinel) clears it
+  continuousServiceRecord?: number | null;
   employeeStatus?: EmployeeStatus | null;
   finalDayInOffice?: string | null;
   finalDayOfEmployment?: string | null;
@@ -270,6 +272,7 @@ export type UpdateEmployeeJobInfoPayload = {
 };
 
 export interface ContinuousServiceRecordInfo {
+  id: number;
   employeeId: string;
   firstName: string | null;
   lastName: string | null;

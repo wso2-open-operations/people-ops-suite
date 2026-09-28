@@ -960,7 +960,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         selectedRecordIndex !== null
           ? continuousServiceRecord?.[selectedRecordIndex]
           : continuousServiceRecord?.[0];
-      setFieldValue("continuousServiceRecord", record?.employeeId ?? null);
+      setFieldValue("continuousServiceRecord", record?.id ?? null);
     },
     [setFieldValue, selectedRecordIndex, continuousServiceRecord],
   );
@@ -1033,7 +1033,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                     setSelectedRecordIndex(index);
                     setFieldValue(
                       "continuousServiceRecord",
-                      continuousServiceRecord[index].employeeId,
+                      continuousServiceRecord[index].id,
                     );
                   }}
                   disabled={!!errorMessage}

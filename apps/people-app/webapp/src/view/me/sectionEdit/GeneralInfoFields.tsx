@@ -119,8 +119,16 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
     houses,
     state: organizationState,
   } = useAppSelector((state) => state.organization);
-  const { employeesBasicInfo, continuousServiceRecord } = useAppSelector(
-    (s) => s.employee,
+  const { employeesBasicInfo, continuousServiceRecord: serviceRecords } =
+    useAppSelector((s) => s.employee);
+  // The lookup is by work email, so it returns the record being edited too; an
+  // employment cannot continue from itself.
+  const continuousServiceRecord = useMemo(
+    () =>
+      serviceRecords.filter(
+        (record) => record.employeeId !== values.employeeId,
+      ),
+    [serviceRecords, values.employeeId],
   );
   const { groups: leadershipGroups } = useAppSelector((s) => s.leadership);
   const dispatch = useAppDispatch();
@@ -367,7 +375,7 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
                     setFieldValue(
                       "continuousServiceRecord",
                       checked
-                        ? (continuousServiceRecord[0]?.employeeId ?? null)
+                        ? (continuousServiceRecord[0]?.id ?? null)
                         : null,
                     );
                   }}

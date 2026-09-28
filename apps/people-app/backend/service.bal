@@ -1358,6 +1358,15 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        int? continuousServiceRecord = payload.continuousServiceRecord;
+        if continuousServiceRecord is int {
+            http:BadRequest|http:InternalServerError? invalidLink =
+                validateContinuousServiceRecord(continuousServiceRecord, payload.workEmail);
+            if invalidLink is http:BadRequest|http:InternalServerError {
+                return invalidLink;
+            }
+        }
+
         string|http:BadRequest|http:InternalServerError generatedEmployeeId = generateEmployeeId(payload);
         if generatedEmployeeId is http:BadRequest|http:InternalServerError {
             return generatedEmployeeId;
@@ -1726,6 +1735,16 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: "Office and unit IDs must be positive IDs or the clear sentinel"
                 }
             };
+        }
+
+        int? continuousServiceRecord = payload.continuousServiceRecord;
+        if continuousServiceRecord is int
+                && continuousServiceRecord != database:CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL {
+            http:BadRequest|http:InternalServerError? invalidLink = validateContinuousServiceRecord(
+                    continuousServiceRecord, payload.workEmail ?: employeeInfo.workEmail, employeeId);
+            if invalidLink is http:BadRequest|http:InternalServerError {
+                return invalidLink;
+            }
         }
 
         string? epfOpt = payload.epf;

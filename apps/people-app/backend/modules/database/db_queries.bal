@@ -615,6 +615,7 @@ isolated function isLeadQuery(string leadEmail) returns sql:ParameterizedQuery =
 # + return - Parameterized query for continuous service record
 isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:ParameterizedQuery =>
     `SELECT 
+        e.id AS id,
         e.employee_id AS employeeId,
         e.first_name AS firstName,
         e.last_name AS lastName,
@@ -2127,8 +2128,8 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         updates.push(`house_id = ${payload.houseId}`);
     }
 
-    if payload.continuousServiceRecord is string {
-        if payload.continuousServiceRecord == "" {
+    if payload.continuousServiceRecord is int {
+        if payload.continuousServiceRecord == CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL {
             updates.push(`continuous_service_record = NULL`);
         } else {
             updates.push(`continuous_service_record = ${payload.continuousServiceRecord}`);

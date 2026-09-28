@@ -14,7 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { UpdateEmployeeJobInfoPayload } from "@slices/employeeSlice/employee";
+import {
+  ContinuousServiceRecordInfo,
+  UpdateEmployeeJobInfoPayload,
+} from "@slices/employeeSlice/employee";
 import { EmployeePersonalInfoUpdate } from "@slices/employeeSlice/employeePersonalInfo";
 import { LeadershipGroup } from "@slices/leadershipSlice/leadership";
 import { OrganizationState } from "@slices/organizationSlice/organization";
@@ -108,6 +111,7 @@ const displayValue = (
     | "houses"
   >,
   leadershipGroups: LeadershipGroup[],
+  serviceRecords: ContinuousServiceRecordInfo[],
 ): string => {
   if (value === null || value === undefined || value === "") return EMPTY;
 
@@ -163,6 +167,11 @@ const displayValue = (
       return byId(org.employmentTypes, (e: { name: string }) => e.name);
     case "houseId":
       return byId(org.houses, (h: { name: string }) => h.name);
+    case "continuousServiceRecord":
+      // Carries the prior employment's employee.id; shown as its Employee ID.
+      return typeof value === "number" && value < 0
+        ? EMPTY
+        : byId(serviceRecords, (r: { employeeId: string }) => r.employeeId);
     default:
       return String(value);
   }
@@ -181,12 +190,25 @@ export const buildChangeSummary = (
   before: UpdateEmployeeJobInfoPayload,
   org: Parameters<typeof displayValue>[2],
   leadershipGroups: LeadershipGroup[],
+  serviceRecords: ContinuousServiceRecordInfo[] = [],
 ): ChangeRow[] =>
   (Object.keys(payload) as (keyof UpdateEmployeeJobInfoPayload)[])
     .map((field) => ({
       label: FIELD_LABELS[field] ?? field,
-      from: displayValue(field, before[field], org, leadershipGroups),
-      to: displayValue(field, payload[field], org, leadershipGroups),
+      from: displayValue(
+        field,
+        before[field],
+        org,
+        leadershipGroups,
+        serviceRecords,
+      ),
+      to: displayValue(
+        field,
+        payload[field],
+        org,
+        leadershipGroups,
+        serviceRecords,
+      ),
     }))
     .filter((row) => row.from !== row.to);
 

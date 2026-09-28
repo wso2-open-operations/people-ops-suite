@@ -242,8 +242,8 @@ public type Employee record {|
     string? emergencyContacts;
     # Employee status
     string employeeStatus;
-    # Continuous service record reference (Employee ID)
-    string? continuousServiceRecord;
+    # Primary key (`employee.id`) of the prior employment this record continues from
+    int? continuousServiceRecord;
     # Start date of the continuous service record (resolved via DB join)
     string? continuousServiceDate;
     # Probation end date
@@ -549,6 +549,8 @@ public type EmployeePersonalInfo record {|
 
 # Continuous service record information.
 public type ContinuousServiceRecordInfo record {|
+    # Employee table primary key, the value a continuous service record link stores
+    int id;
     # Employee ID of the user
     string employeeId;
     # First name
@@ -1065,9 +1067,8 @@ public type CreateEmployeePayload record {|
     int? unitId = ();
     # House ID
     int? houseId = ();
-    # Continuous service record
-    @constraint:String {maxLength: 99}
-    string? continuousServiceRecord = ();
+    # Primary key (`employee.id`) of the prior employment this record continues from
+    int? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus employeeStatus = EMPLOYEE_ACTIVE;
     # Employee ID (required for fixed-term employment type)
@@ -1196,9 +1197,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     # so there is no way to clear houseId through this payload and no clear
     # sentinel is required.
     int? houseId = ();
-    # Continuous service record
-    @constraint:String {maxLength: 99}
-    string? continuousServiceRecord = ();
+    # Primary key (`employee.id`) of the prior employment this record continues from.
+    # `CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL` clears the link.
+    int? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus? employeeStatus = ();
     # Final day in office

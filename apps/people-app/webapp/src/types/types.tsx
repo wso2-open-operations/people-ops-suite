@@ -82,7 +82,7 @@ export interface CreateEmployeeFormValues {
   probationEndDate: string | null;
   agreementEndDate: string | null;
   isRelocation: boolean;
-  continuousServiceRecord?: string | null;
+  continuousServiceRecord?: number | null;
   managerEmail: string;
   additionalManagerEmail: string[];
   leadershipGroupIds: number[];
