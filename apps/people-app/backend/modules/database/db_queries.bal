@@ -516,10 +516,13 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
         // AND semantics: the employee must hold EVERY selected attribute, unlike the OR
         // multi-selects above. A correlated IN (SELECT ... HAVING ...) is used rather than a
         // join plus an outer HAVING so this composes with all three call sites, including
-        // ones that do not GROUP BY.
+        // ones that do not GROUP BY. Retired attributes are left out, as they are from every
+        // record and report: a Left employee may still hold one, and matching on it would
+        // return them without the attribute showing in their row.
         filters.push(sql:queryConcat(
             `e.id IN (SELECT el_f.employee_pk_id FROM employee_leadership el_f
-              WHERE el_f.is_active = 1 AND el_f.leadership_group_id IN (`,
+              JOIN leadership_group lg_f ON lg_f.id = el_f.leadership_group_id
+              WHERE el_f.is_active = 1 AND lg_f.is_active = 1 AND el_f.leadership_group_id IN (`,
             buildIntInClause(leadershipGroupList),
             `) GROUP BY el_f.employee_pk_id
               HAVING COUNT(DISTINCT el_f.leadership_group_id) = ${leadershipGroupList.length()})`));

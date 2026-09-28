@@ -137,3 +137,12 @@ isolated function testLeadershipNameRulesStillAllowOrdinaryNames() {
     }
     test:assertFalse(createNameAccepted("   "), "a blank name should still be rejected");
 }
+
+@test:Config {}
+isolated function testLeadershipFilterIgnoresRetiredAttributes() {
+    // A Left employee may still hold a retired attribute; filtering on it must not return
+    // them, since the attribute is hidden from their row.
+    string text = sqlText(getEmployeesQuery({filters: {leadershipGroupIds: [3]}, pagination: {}, sort: {}}));
+    test:assertTrue(text.includes("lg_f.is_active = 1"), "the leadership filter should only match active attributes");
+    test:assertTrue(text.includes("el_f.is_active = 1"), "the leadership filter should still only match active assignments");
+}
