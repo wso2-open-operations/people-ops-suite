@@ -172,17 +172,19 @@ isolated function rollbackEmployeeCreation(string employeeId, string workEmail) 
 
 # Validate a continuous service record link before it is written.
 #
-# The link stores the prior employment's `employee.id`, and only a record the
-# continuous-service-records endpoint would offer for this work email is accepted, so an id
-# belonging to an unrelated person, or to this employment itself, is refused as a bad
-# request instead of reaching the database.
+# The link stores the prior employment's `employee.id`. Only a record the
+# continuous-service-records endpoint would offer for this work email is accepted, and only
+# one that has ended (Left) and started before this employment; anything else, including an
+# unrelated person's record, this employment itself, or a later record that would link
+# forwards or form a cycle, is refused as a bad request instead of reaching the database.
 #
 # + linkedId - `employee.id` of the prior employment being linked
 # + workEmail - Work email the employment will hold once the request is applied
+# + startDate - Start date (YYYY-MM-DD) the employment will hold once the request is applied
 # + employeeId - Employee ID of the employment being updated, or () when creating one
 # + return - A BadRequest or InternalServerError response when the link is refused, else ()
-isolated function validateContinuousServiceRecord(int linkedId, string workEmail, string? employeeId = ())
-        returns http:BadRequest|http:InternalServerError? {
+isolated function validateContinuousServiceRecord(int linkedId, string workEmail, string startDate,
+        string? employeeId = ()) returns http:BadRequest|http:InternalServerError? {
 
     database:ContinuousServiceRecordInfo[]|error priorRecords =
         database:getContinuousServiceRecordsByEmail(workEmail);
@@ -197,16 +199,17 @@ isolated function validateContinuousServiceRecord(int linkedId, string workEmail
     }
 
     foreach database:ContinuousServiceRecordInfo priorRecord in priorRecords {
-        if priorRecord.id == linkedId && priorRecord.employeeId != employeeId {
+        if priorRecord.id == linkedId && database:isEligiblePriorEmployment(priorRecord, startDate, employeeId) {
             return;
         }
     }
 
-    log:printWarn("Continuous service record is not a prior employment under this work email",
-            linkedId = linkedId, workEmail = workEmail, employeeId = employeeId);
+    log:printWarn("Continuous service record is not an eligible prior employment",
+            linkedId = linkedId, workEmail = workEmail, startDate = startDate, employeeId = employeeId);
     return <http:BadRequest>{
         body: {
-            message: "Continuous service record must be a prior employment under the same work email"
+            message: "Continuous service record must be an earlier employment under the same work email "
+                + "that has ended (status Left)"
         }
     };
 }

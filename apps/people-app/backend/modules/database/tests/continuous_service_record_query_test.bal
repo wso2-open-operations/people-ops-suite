@@ -70,3 +70,66 @@ isolated function testOmittedContinuousServiceRecordIsLeftUntouched() {
     test:assertFalse(sqlText(query).includes("continuous_service_record"),
             "an edit that does not set the link should not write the column");
 }
+
+# A prior record as the continuous-service-records lookup returns it.
+#
+# + employeeId - Employee ID of the candidate record
+# + startDate - Its start date
+# + employeeStatus - Its status
+# + return - The candidate record
+isolated function priorRecord(string employeeId, string startDate, string employeeStatus)
+        returns ContinuousServiceRecordInfo => {
+    id: 14501,
+    employeeId,
+    firstName: "Test",
+    lastName: "Person",
+    company: "Example Company",
+    workLocation: "Testland",
+    startDate,
+    employeeStatus,
+    managerEmail: "lead@example.invalid",
+    additionalManagerEmails: (),
+    designation: "Example Designation",
+    secondaryJobTitle: (),
+    office: (),
+    businessUnit: "Example Business Unit",
+    team: "Example Team",
+    subTeam: (),
+    unit: ()
+};
+
+@test:Config {}
+isolated function testEarlierLeftEmploymentIsEligible() {
+    test:assertTrue(isEligiblePriorEmployment(priorRecord("LK100254", "2012-09-01", EMPLOYEE_LEFT),
+            "2020-01-01", "LK101111"), "an earlier employment that has ended should be linkable");
+}
+
+@test:Config {}
+isolated function testLaterEmploymentIsNotEligible() {
+    // Editing the older record must not link it forwards to the newer one; this is also
+    // what rules out cycles.
+    test:assertFalse(isEligiblePriorEmployment(priorRecord("LK101111", "2020-01-01", EMPLOYEE_LEFT),
+            "2012-09-01", "LK100254"), "a later employment should not be linkable");
+    test:assertFalse(isEligiblePriorEmployment(priorRecord("LK101111", "2020-01-01", EMPLOYEE_LEFT),
+            "2020-01-01", "LK100254"), "an employment starting the same day should not be linkable");
+}
+
+@test:Config {}
+isolated function testEmploymentThatHasNotEndedIsNotEligible() {
+    test:assertFalse(isEligiblePriorEmployment(priorRecord("LK100254", "2012-09-01", EMPLOYEE_ACTIVE),
+            "2020-01-01", "LK101111"), "an Active employment should not be linkable");
+    test:assertFalse(isEligiblePriorEmployment(priorRecord("LK100254", "2012-09-01", EMPLOYEE_MARKED_LEAVER),
+            "2020-01-01", "LK101111"), "a Marked-leaver employment should not be linkable");
+}
+
+@test:Config {}
+isolated function testEmploymentCannotContinueFromItself() {
+    test:assertFalse(isEligiblePriorEmployment(priorRecord("LK101111", "2012-09-01", EMPLOYEE_LEFT),
+            "2020-01-01", "LK101111"), "a record should not be linkable to itself");
+}
+
+@test:Config {}
+isolated function testNewEmployeeCanLinkAnEarlierLeftEmployment() {
+    test:assertTrue(isEligiblePriorEmployment(priorRecord("LK100254", "2012-09-01", EMPLOYEE_LEFT),
+            "2026-10-01", ()), "on create there is no target employee ID to exclude");
+}

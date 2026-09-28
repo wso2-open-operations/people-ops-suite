@@ -44,6 +44,7 @@ describe("buildChangeSummary — continuous service record", () => {
     lastName: "Person",
     workLocation: "Testland",
     startDate: "2021-01-01",
+    employeeStatus: "Left",
     managerEmail: "lead@example.invalid",
     designation: "Example Designation",
     company: "Example Company",

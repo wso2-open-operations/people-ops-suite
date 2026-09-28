@@ -45,6 +45,7 @@ import { normalizeEmail, sortAndFormatOptions } from "@utils/utils";
 import ResignationReasonField from "@view/me/sectionEdit/ResignationReasonField";
 import { useEmploymentRules } from "@view/me/sectionEdit/useEmploymentRules";
 import { useOrgCascade } from "@view/me/sectionEdit/useOrgCascade";
+import { isEligiblePriorEmployment } from "@utils/continuousService";
 
 /** A labelled cell matching the read-only grid's proportions. */
 const Cell = ({ children }: { children: React.ReactNode }) => (
@@ -121,14 +122,15 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
   } = useAppSelector((state) => state.organization);
   const { employeesBasicInfo, continuousServiceRecord: serviceRecords } =
     useAppSelector((s) => s.employee);
-  // The lookup is by work email, so it returns the record being edited too; an
-  // employment cannot continue from itself.
+  // The lookup is by work email, so it returns every employment under the address,
+  // including the one being edited and any later one. Only an earlier employment that
+  // has ended can be carried over; the backend enforces the same rule.
   const continuousServiceRecord = useMemo(
     () =>
-      serviceRecords.filter(
-        (record) => record.employeeId !== values.employeeId,
+      serviceRecords.filter((record) =>
+        isEligiblePriorEmployment(record, values.startDate, values.employeeId),
       ),
-    [serviceRecords, values.employeeId],
+    [serviceRecords, values.startDate, values.employeeId],
   );
   const { groups: leadershipGroups } = useAppSelector((s) => s.leadership);
   const dispatch = useAppDispatch();

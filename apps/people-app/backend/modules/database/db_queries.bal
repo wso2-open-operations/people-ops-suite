@@ -624,6 +624,7 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         e.last_name AS lastName,
         e.work_location AS workLocation,
         e.start_date AS startDate,
+        e.employee_status AS employeeStatus,
         e.manager_email AS managerEmail,
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
         CONCAT(

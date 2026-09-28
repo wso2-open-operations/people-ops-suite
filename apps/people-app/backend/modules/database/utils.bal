@@ -510,3 +510,20 @@ public isolated function buildEmployeeCsv(Employee[] employees, map<string> name
 public isolated function buildResignationCsv(Employee[] employees, map<string> nameMap,
         string[]? columns, LeadershipGroup[] leadershipGroups) returns string =>
     buildCsvWithColumns(employees, nameMap, RESIGNATION_CSV_COLUMNS, columns, leadershipGroups);
+
+# Whether a prior record can be linked as the employment another one continues from.
+#
+# Continuous service carries over from a finished employment that came before, so the
+# linked record must have ended (status Left) and must have started before the target.
+# The start-date rule also rules out cycles: two records cannot each start before the
+# other. An employment can never continue from itself.
+#
+# + priorRecord - Candidate record from the continuous-service-records lookup
+# + targetStartDate - Start date (YYYY-MM-DD) of the employment being linked
+# + targetEmployeeId - Employee ID of the employment being linked, or () when creating one
+# + return - true when the candidate is an eligible prior employment
+public isolated function isEligiblePriorEmployment(ContinuousServiceRecordInfo priorRecord,
+        string targetStartDate, string? targetEmployeeId) returns boolean =>
+    priorRecord.employeeStatus == EMPLOYEE_LEFT
+        && priorRecord.employeeId != targetEmployeeId
+        && priorRecord.startDate < targetStartDate;

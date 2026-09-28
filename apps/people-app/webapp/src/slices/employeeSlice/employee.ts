@@ -278,6 +278,8 @@ export interface ContinuousServiceRecordInfo {
   lastName: string | null;
   workLocation: string;
   startDate: string;
+  /** Only a Left employment can be carried over as continuous service. */
+  employeeStatus: string;
   managerEmail: string;
   additionalManagerEmails?: string | null;
   designation: string;

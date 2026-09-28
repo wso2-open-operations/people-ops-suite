@@ -571,6 +571,8 @@ public type ContinuousServiceRecordInfo record {|
     string workLocation;
     # Start date
     string startDate;
+    # Employee status; only a Left employment can be carried over as continuous service
+    string employeeStatus;
     # Manager email
     string managerEmail;
     # Additional manager emails

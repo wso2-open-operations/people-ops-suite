@@ -1387,7 +1387,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         int? continuousServiceRecord = payload.continuousServiceRecord;
         if continuousServiceRecord is int {
             http:BadRequest|http:InternalServerError? invalidLink =
-                validateContinuousServiceRecord(continuousServiceRecord, payload.workEmail);
+                validateContinuousServiceRecord(continuousServiceRecord, payload.workEmail, payload.startDate);
             if invalidLink is http:BadRequest|http:InternalServerError {
                 return invalidLink;
             }
@@ -1767,7 +1767,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         if continuousServiceRecord is int
                 && continuousServiceRecord != database:CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL {
             http:BadRequest|http:InternalServerError? invalidLink = validateContinuousServiceRecord(
-                    continuousServiceRecord, payload.workEmail ?: employeeInfo.workEmail, employeeId);
+                    continuousServiceRecord, payload.workEmail ?: employeeInfo.workEmail,
+                    payload.startDate ?: employeeInfo.startDate, employeeId);
             if invalidLink is http:BadRequest|http:InternalServerError {
                 return invalidLink;
             }

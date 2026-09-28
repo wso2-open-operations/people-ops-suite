@@ -86,6 +86,7 @@ import {
   LogoutOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
+import { isEligiblePriorEmployment } from "@utils/continuousService";
 
 import {
   OFFICE_CLEAR_SENTINEL,
@@ -462,9 +463,18 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
   const {
     employeesBasicInfo,
     employeeBasicInfoState,
-    continuousServiceRecord,
+    continuousServiceRecord: serviceRecords,
     errorMessage,
   } = useAppSelector((s) => s.employee);
+  // Only an earlier employment under this address that has ended can be carried over;
+  // the backend enforces the same rule on create.
+  const continuousServiceRecord = useMemo(
+    () =>
+      serviceRecords.filter((record) =>
+        isEligiblePriorEmployment(record, values.startDate),
+      ),
+    [serviceRecords, values.startDate],
+  );
   const {
     state: organizationState,
     businessUnits,
