@@ -17,6 +17,7 @@
 import { LeadershipGroupWithUsage } from "@slices/leadershipSlice/leadership";
 
 import {
+  LEADERSHIP_ATTRIBUTE_NAME_PATTERN,
   isDuplicateLeadershipAttributeName,
   isRetireBlocked,
 } from "./leadershipAttribute.utils";
@@ -79,3 +80,29 @@ describe("isRetireBlocked", () => {
     expect(isRetireBlocked(null, true)).toBe(false);
   });
 });
+
+describe("LEADERSHIP_ATTRIBUTE_NAME_PATTERN", () => {
+  it.each([
+    "Research & Development",
+    "C-Suite",
+    "Tier 1",
+    "Owner's Circle",
+    "Sr. Leadership",
+    "Équipe Direction",
+  ])("accepts %s", (name) => {
+    expect(LEADERSHIP_ATTRIBUTE_NAME_PATTERN.test(name)).toBe(true);
+  });
+
+  it.each([
+    '=HYPERLINK("x")',
+    "+Leadership",
+    "-Leadership",
+    "@Leadership",
+    "1 Tier",
+    "Research, Development",
+    "Tier\t1",
+  ])("rejects %s", (name) => {
+    expect(LEADERSHIP_ATTRIBUTE_NAME_PATTERN.test(name)).toBe(false);
+  });
+});
+

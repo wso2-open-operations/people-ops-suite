@@ -118,8 +118,22 @@ isolated function testLeadershipNameWithACommaIsRejected() {
 }
 
 @test:Config {}
+isolated function testLeadershipNameThatCouldRunAsAFormulaIsRejected() {
+    // The name becomes a CSV column header; a spreadsheet runs a cell starting with these.
+    foreach string name in ["=HYPERLINK(\"x\")", "+Leadership", "-Leadership", "@Leadership"] {
+        test:assertFalse(createNameAccepted(name), string `${name} should be rejected on create`);
+        test:assertFalse(renameAccepted(name), string `${name} should be rejected on rename`);
+    }
+    test:assertFalse(createNameAccepted("1 Tier"), "a name must start with a letter");
+    test:assertFalse(createNameAccepted("Tier\t1"), "tabs and other control characters are not allowed");
+}
+
+@test:Config {}
 isolated function testLeadershipNameRulesStillAllowOrdinaryNames() {
-    test:assertTrue(createNameAccepted("Research & Development"), "ordinary punctuation should still be allowed");
-    test:assertTrue(renameAccepted("  Senior Leadership  "), "surrounding spaces are trimmed later, not rejected");
+    foreach string name in ["Research & Development", "C-Suite", "Tier 1", "Owner's Circle", "Sr. Leadership",
+            "Équipe Direction", "  Senior Leadership  "] {
+        test:assertTrue(createNameAccepted(name), string `${name} should be accepted`);
+        test:assertTrue(renameAccepted(name), string `${name} should be accepted on rename`);
+    }
     test:assertFalse(createNameAccepted("   "), "a blank name should still be rejected");
 }

@@ -46,3 +46,17 @@ export function isRetireBlocked(
 ): boolean {
   return attribute != null && isActiveNow && attribute.holderCount > 0;
 }
+
+/**
+ * Mirrors the backend's name constraint: start with a letter, then only letters, digits,
+ * spaces, &, -, ' and . — checked on the trimmed name.
+ *
+ * The name becomes a CSV column header, so starting with a letter means it can never begin
+ * with =, +, - or @ and be run as a spreadsheet formula. The comma is left out because a
+ * holder's attributes travel comma-joined and are split on commas.
+ */
+export const LEADERSHIP_ATTRIBUTE_NAME_PATTERN = /^\p{L}[\p{L}\p{M}\p{N} &'.-]*$/u;
+
+export const LEADERSHIP_ATTRIBUTE_NAME_RULE =
+  "Must start with a letter and use only letters, numbers, spaces, &, -, ' and .";
+

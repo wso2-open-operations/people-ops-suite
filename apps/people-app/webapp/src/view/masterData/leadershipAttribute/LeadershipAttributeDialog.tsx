@@ -36,6 +36,8 @@ import {
   UpdateLeadershipGroupPayload,
 } from "@slices/leadershipSlice/leadership";
 import {
+  LEADERSHIP_ATTRIBUTE_NAME_PATTERN,
+  LEADERSHIP_ATTRIBUTE_NAME_RULE,
   isDuplicateLeadershipAttributeName,
   isRetireBlocked,
 } from "./leadershipAttribute.utils";
@@ -55,9 +57,8 @@ const validationSchema = Yup.object({
     .trim()
     .required("Name is required")
     .max(100, "Name must be at most 100 characters")
-    // A holder's attributes travel comma-joined, so a comma would split the name in two
-    // on profiles, reports and the CSV. The backend rejects it too.
-    .matches(/^[^,]*$/, "Name cannot contain a comma"),
+    // The backend applies the same rule; see LEADERSHIP_ATTRIBUTE_NAME_PATTERN.
+    .matches(LEADERSHIP_ATTRIBUTE_NAME_PATTERN, LEADERSHIP_ATTRIBUTE_NAME_RULE),
 });
 
 export default function LeadershipAttributeDialog({
