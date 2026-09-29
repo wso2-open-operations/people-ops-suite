@@ -526,10 +526,16 @@ public isolated function updateLeadershipGroup(int id, UpdateLeadershipGroupPayl
         return;
     }
 
-    // No row matched: either the ID is unknown, or the retire guard held it back.
+    // No row matched: the ID is unknown, or the retire guard held it back. The guard only
+    // applies to a retire, so any other update that matched nothing on a known ID changed
+    // nothing (possible if the driver ever reports changed rather than matched rows) and
+    // is a success, not a refusal to retire.
     int exists = check databaseClient->queryRow(leadershipGroupExistsQuery(id));
     if exists == 0 {
         return error EntityNotFoundError(string `Leadership attribute with ID ${id} not found`);
+    }
+    if payload.isActive != false {
+        return;
     }
     int holders = check databaseClient->queryRow(countLeadershipGroupHoldersQuery(id));
     string holdersText = holders == 1 ? "1 current employee holds" : string `${holders} current employees hold`;

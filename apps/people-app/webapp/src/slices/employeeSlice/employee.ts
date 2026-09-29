@@ -74,7 +74,8 @@ export interface Employee {
   unitId: number | null;
   house: string | null;
   houseId: number | null;
-  leadershipGroupIds: number[];
+  // Filled in only by the single-employee GET; list and search responses leave it null.
+  leadershipGroupIds: number[] | null;
   // Comma-joined by the backend's GROUP_CONCAT, matching the existing
   // additionalManagerEmails precedent below — not a real array.
   leadershipGroups: string | null;

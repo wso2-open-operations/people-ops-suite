@@ -299,9 +299,10 @@ isolated function buildAdditionalManagerEvent(AuditSnapshot snapshot) returns Hi
 # attribute revives the same row (0 -> 1) and is logged as an UPDATE; the snapshot's
 # previous_is_active tells it apart from re-saving an attribute already held (1 -> 1),
 # which yields nothing. Snapshots written before previous_is_active existed carry no
-# value for it, so their UPDATEs stay no-ops as before. The raw leadership_group_id is carried as the value here; it is
-# resolved to the group's display name later by resolveHistoryEventNames, via the
-# `leadership_group` lookup entry.
+# value for it, so their UPDATEs stay no-ops as before.
+#
+# The raw leadership_group_id is carried as the value here; it is resolved to the group's
+# display name later by resolveHistoryEventNames, via the `leadership_group` lookup entry.
 #
 # + snapshot - Audit snapshot from employee_leadership_audit
 # + return - The event, or () when the snapshot records no meaningful change
