@@ -503,6 +503,19 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
     values.continuousServiceRecord,
     setFieldValue,
   ]);
+
+  // This step clears the prior records when it is left (see the unmount cleanup below)
+  // and otherwise loads them only when Work Email loses focus. Coming back to the step
+  // with an email already entered would then show "No Record" while the form still held
+  // a ticked relocation link, so the records are loaded again as the step opens.
+  useEffect(() => {
+    const email = normalizeEmail(values.workEmail ?? "");
+    if (email && Yup.string().email().isValidSync(email)) {
+      dispatch(fetchContinuousServiceRecord(email));
+    }
+    // Once, on open; later email edits re-fetch on blur as before.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const {
     state: organizationState,
     businessUnits,

@@ -97,6 +97,27 @@ describe("isEligiblePriorEmployment", () => {
     ).toBe(false);
   });
 
+  it.each(["0002-10-01", "0020-10-01", "0202-10-01", "Invalid Date", "2026-1"])(
+    "ignores the half-typed start date %s, keeping the record offered",
+    (partial) => {
+      expect(
+        isEligiblePriorEmployment(
+          record("LK100998", "2019-01-01", EmployeeStatus.Left),
+          partial,
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it("still rules a record out once a complete earlier start date is entered", () => {
+    expect(
+      isEligiblePriorEmployment(
+        record("LK100998", "2019-01-01", EmployeeStatus.Left),
+        "2010-01-01",
+      ),
+    ).toBe(false);
+  });
+
   it("leaves the date to the backend while no start date is entered", () => {
     expect(
       isEligiblePriorEmployment(

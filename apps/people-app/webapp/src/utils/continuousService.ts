@@ -38,8 +38,28 @@ export const isEligiblePriorEmployment = (
 ): boolean => {
   if (record.employeeStatus !== EmployeeStatus.Left) return false;
   if (employeeId && record.employeeId === employeeId) return false;
-  if (!startDate || !dayjs(startDate).isValid()) return true;
-  return dayjs(record.startDate).isBefore(dayjs(startDate), "day");
+  const start = completeStartDate(startDate);
+  if (!start) return true;
+  return dayjs(record.startDate).isBefore(start, "day");
+};
+
+/**
+ * The start date as a date, or null while it is not a finished, realistic date.
+ *
+ * Date pickers pass every keystroke through: typing 10/01/2026 goes by "0002-10-01",
+ * "0020-10-01" and "0202-10-01" on the way. Judging a record against those would rule
+ * it out for a moment and untick a relocation link the finished date keeps, so only a
+ * complete YYYY-MM-DD date from 1900 on counts.
+ */
+const completeStartDate = (
+  startDate: string | null | undefined,
+): dayjs.Dayjs | null => {
+  if (!startDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return null;
+  // The year is read from the text: dayjs maps years below 100 onto 1900-1999, so
+  // "0002" would otherwise pass as 1902.
+  if (Number(startDate.slice(0, 4)) < 1900) return null;
+  const start = dayjs(startDate);
+  return start.isValid() ? start : null;
 };
 
 /**
