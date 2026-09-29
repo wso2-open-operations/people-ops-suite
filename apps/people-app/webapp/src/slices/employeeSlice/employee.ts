@@ -43,6 +43,8 @@ export interface Employee {
   managerName: string | null;
   additionalManagerEmails: string | null;
   gender: string | null;
+  /** employee.id of the prior employment this record continues from, if linked. */
+  continuousServiceRecord: number | null;
   continuousServiceDate: string | null;
   jobBand: number | null;
   employeeStatus: EmployeeStatus;
@@ -306,6 +308,12 @@ interface EmployeesState {
   employeesBasicInfo: EmployeeDirectoryInfo[];
   filteredEmployeesResponse: FilteredEmployeesResponse;
   continuousServiceRecord: ContinuousServiceRecordInfo[];
+  /**
+   * Work email the continuousServiceRecord list was fetched for, once it has loaded.
+   * A form only reconciles its link against the list when this matches its own email,
+   * so a list left over from another page can never clear a link.
+   */
+  continuousServiceRecordEmail: string | null;
   updateJobInfoState: State;
   updateJobInfoMessage: string | null;
   totalActiveEmployeeCount: number | null;
@@ -343,6 +351,7 @@ const initialState: EmployeesState = {
     totalCount: 0,
   },
   continuousServiceRecord: [],
+  continuousServiceRecordEmail: null,
   updateJobInfoState: State.idle,
   updateJobInfoMessage: null,
   totalActiveEmployeeCount: null,
@@ -664,6 +673,9 @@ export const downloadEmployeeReportByStatus = createAsyncThunk(
   },
 );
 
+/** Sent as continuousServiceRecord on a job-info update to remove an existing link. */
+export const CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL = -1;
+
 export const fetchContinuousServiceRecord = createAsyncThunk(
   "employees/fetchContinuousServiceRecord",
   async (workEmail: string, { dispatch, rejectWithValue }) => {
@@ -782,6 +794,7 @@ const EmployeeSlice = createSlice({
     },
     resetContinuousService(state) {
       state.continuousServiceRecord = [];
+      state.continuousServiceRecordEmail = null;
       state.state = State.idle;
       state.stateMessage = null;
       state.errorMessage = null;
@@ -910,6 +923,7 @@ const EmployeeSlice = createSlice({
         state.errorMessage = action.payload as string;
       })
       .addCase(fetchContinuousServiceRecord.pending, (state) => {
+        state.continuousServiceRecordEmail = null;
         state.state = State.loading;
         state.stateMessage = "Fetching continuous service record...";
         state.errorMessage = null;
@@ -918,6 +932,7 @@ const EmployeeSlice = createSlice({
         state.state = State.success;
         state.stateMessage = "Successfully fetched continuous service record!";
         state.continuousServiceRecord = action.payload;
+        state.continuousServiceRecordEmail = action.meta.arg;
         state.errorMessage = null;
       })
       .addCase(fetchContinuousServiceRecord.rejected, (state, action) => {

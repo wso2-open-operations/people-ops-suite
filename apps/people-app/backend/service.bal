@@ -1763,13 +1763,29 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // A link sent in the request is checked against the email and start date the
+        // employment will hold afterwards. A stored link the request leaves alone is checked
+        // too when either of those changes, so an edit cannot turn it into a forward link.
         int? continuousServiceRecord = payload.continuousServiceRecord;
-        if continuousServiceRecord is int
-                && continuousServiceRecord != database:CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL {
+        boolean keepsStoredLink = continuousServiceRecord is ()
+            && (payload.workEmail is string || payload.startDate is string);
+        int? linkToCheck = keepsStoredLink ? employeeInfo.continuousServiceRecord : continuousServiceRecord;
+        if linkToCheck is int && linkToCheck != database:CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL {
             http:BadRequest|http:InternalServerError? invalidLink = validateContinuousServiceRecord(
-                    continuousServiceRecord, payload.workEmail ?: employeeInfo.workEmail,
+                    linkToCheck, payload.workEmail ?: employeeInfo.workEmail,
                     payload.startDate ?: employeeInfo.startDate, employeeId);
-            if invalidLink is http:BadRequest|http:InternalServerError {
+            if invalidLink is http:BadRequest {
+                return keepsStoredLink
+                    ? <http:BadRequest>{
+                        body: {
+                            message: "This change makes the existing continuous service record invalid: it must be an "
+                                + "earlier employment under the same work email that has ended (status Left). "
+                                + "Remove the link in the same update."
+                        }
+                    }
+                    : invalidLink;
+            }
+            if invalidLink is http:InternalServerError {
                 return invalidLink;
             }
         }

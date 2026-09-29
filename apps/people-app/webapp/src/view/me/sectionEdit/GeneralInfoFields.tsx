@@ -123,8 +123,11 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
     houses,
     state: organizationState,
   } = useAppSelector((state) => state.organization);
-  const { employeesBasicInfo, continuousServiceRecord: serviceRecords } =
-    useAppSelector((s) => s.employee);
+  const {
+    employeesBasicInfo,
+    continuousServiceRecord: serviceRecords,
+    continuousServiceRecordEmail: serviceRecordsEmail,
+  } = useAppSelector((s) => s.employee);
   // The lookup is by work email, so it returns every employment under the address,
   // including the one being edited and any later one. Only an earlier employment that
   // has ended can be carried over; the backend enforces the same rule.
@@ -136,9 +139,21 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
     [serviceRecords, values.startDate, values.employeeId],
   );
   // Clears a link whose record is no longer offered (e.g. the start date moved before
-  // it), so a stale id is never sent and a hidden checkbox never stays ticked.
+  // it), so a stale id is never sent and a hidden checkbox never stays ticked. It only
+  // acts on a list fetched for this form's work email, never on one still loading or
+  // left over from another page.
+  // The record the checkbox names: the one already linked, otherwise the newest eligible
+  // one, which is what ticking the box links.
+  const offeredRecord =
+    continuousServiceRecord.find(
+      (record) => record.id === values.continuousServiceRecord,
+    ) ?? continuousServiceRecord[0];
+  const recordsLoadedForThisEmail =
+    serviceRecordsEmail != null &&
+    serviceRecordsEmail === normalizeEmail(values.workEmail ?? "");
   useEffect(() => {
     if (
+      recordsLoadedForThisEmail &&
       isStaleContinuousServiceLink(
         continuousServiceRecord,
         values.continuousServiceRecord,
@@ -147,9 +162,26 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
       setFieldValue("continuousServiceRecord", null);
       setFieldValue("isRelocation", false);
     }
-  }, [continuousServiceRecord, values.continuousServiceRecord, setFieldValue]);
+  }, [
+    recordsLoadedForThisEmail,
+    continuousServiceRecord,
+    values.continuousServiceRecord,
+    setFieldValue,
+  ]);
+
   const { groups: leadershipGroups } = useAppSelector((s) => s.leadership);
   const dispatch = useAppDispatch();
+
+  // The prior records are otherwise loaded only when Work Email loses focus; load them as
+  // the form opens, so an existing link shows as a ticked relocation box.
+  useEffect(() => {
+    const email = normalizeEmail(values.workEmail ?? "");
+    if (email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      dispatch(fetchContinuousServiceRecord(email));
+    }
+    // Once, on open; later email edits re-fetch on blur as before.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const {
     handleBusinessUnitChange,
@@ -403,10 +435,10 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
                 <Typography sx={{ fontSize: 13.5 }}>
                   Relocation — carry continuous service from{" "}
                   <Box component="span" sx={{ fontWeight: 600 }}>
-                    {continuousServiceRecord[0]?.employeeId}
+                    {offeredRecord?.employeeId}
                   </Box>
-                  {continuousServiceRecord[0]?.startDate
-                    ? ` (started ${continuousServiceRecord[0].startDate})`
+                  {offeredRecord?.startDate
+                    ? ` (started ${offeredRecord.startDate})`
                     : ""}
                 </Typography>
               }

@@ -467,6 +467,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
     employeesBasicInfo,
     employeeBasicInfoState,
     continuousServiceRecord: serviceRecords,
+    continuousServiceRecordEmail: serviceRecordsEmail,
     errorMessage,
   } = useAppSelector((s) => s.employee);
   // Only an earlier employment under this address that has ended can be carried over;
@@ -479,9 +480,15 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
     [serviceRecords, values.startDate],
   );
   // Clears a link whose record is no longer offered (e.g. the start date moved before
-  // it), so a stale id is never sent and a hidden checkbox never stays ticked.
+  // it), so a stale id is never sent and a hidden checkbox never stays ticked. It only
+  // acts on a list fetched for this form's work email, never on one still loading or
+  // left over from another page.
+  const recordsLoadedForThisEmail =
+    serviceRecordsEmail != null &&
+    serviceRecordsEmail === normalizeEmail(values.workEmail ?? "");
   useEffect(() => {
     if (
+      recordsLoadedForThisEmail &&
       isStaleContinuousServiceLink(
         continuousServiceRecord,
         values.continuousServiceRecord,
@@ -490,7 +497,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
       setFieldValue("continuousServiceRecord", null);
       setFieldValue("isRelocation", false);
     }
-  }, [continuousServiceRecord, values.continuousServiceRecord, setFieldValue]);
+  }, [
+    recordsLoadedForThisEmail,
+    continuousServiceRecord,
+    values.continuousServiceRecord,
+    setFieldValue,
+  ]);
   const {
     state: organizationState,
     businessUnits,

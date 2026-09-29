@@ -60,6 +60,7 @@ import {
   resetUpdateEmployeeJobInfoState,
   type Employee,
   validateEpf,
+  CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL,
 } from "@slices/employeeSlice/employee";
 import { EmployeeFormSteps } from "@root/src/config/constant";
 import {
@@ -92,6 +93,9 @@ export const toFormValues = (
 
   if (employee) {
     base.workEmail = employee.workEmail ?? "";
+    // An existing link opens the relocation box ticked, so it can be seen and removed.
+    base.isRelocation = employee.continuousServiceRecord != null;
+    base.continuousServiceRecord = employee.continuousServiceRecord ?? null;
     base.epf = employee.epf ?? "";
     base.businessUnitId = employee.businessUnitId ?? 0;
     base.teamId = employee.teamId ?? 0;
@@ -203,9 +207,11 @@ export const toJobUpdatePayload = (
         : null,
   houseId: values.houseId > 0 ? values.houseId : null,
   leadershipGroupIds: values.leadershipGroupIds ?? [],
+  // Unticked sends the clear sentinel. It only reaches the request when the box was
+  // ticked before (the diff drops it otherwise), which is exactly when a link is removed.
   continuousServiceRecord: values.isRelocation
     ? (values.continuousServiceRecord ?? null)
-    : null,
+    : CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL,
   employeeStatus: values.employeeStatus ?? null,
   finalDayInOffice: values.finalDayInOffice ?? null,
   finalDayOfEmployment: values.finalDayOfEmployment ?? null,
