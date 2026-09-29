@@ -14,8 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { UpdateEmployeeJobInfoPayload } from "@slices/employeeSlice/employee";
+import {
+  ContinuousServiceRecordInfo,
+  UpdateEmployeeJobInfoPayload,
+} from "@slices/employeeSlice/employee";
 import { EmployeePersonalInfoUpdate } from "@slices/employeeSlice/employeePersonalInfo";
+import { LeadershipGroup } from "@slices/leadershipSlice/leadership";
 import { OrganizationState } from "@slices/organizationSlice/organization";
 
 /** A single field's before/after, ready to render in the confirmation dialog. */
@@ -49,6 +53,7 @@ export const FIELD_LABELS: Partial<
   businessUnitId: "Business Unit",
   unitId: "Unit",
   houseId: "House",
+  leadershipGroupIds: "Leadership Attributes",
   continuousServiceRecord: "Continuous Service Record",
   employeeStatus: "Employee Status",
   finalDayInOffice: "Last Day in Office",
@@ -105,8 +110,23 @@ const displayValue = (
     | "employmentTypes"
     | "houses"
   >,
+  leadershipGroups: LeadershipGroup[],
+  serviceRecords: ContinuousServiceRecordInfo[],
 ): string => {
   if (value === null || value === undefined || value === "") return EMPTY;
+
+  // Resolved before the generic array-join below: its elements are ids, not
+  // already-readable text like additionalManagerEmails' email strings, so a
+  // plain join would show "1, 3" instead of the attribute names.
+  if (field === "leadershipGroupIds" && Array.isArray(value)) {
+    if (value.length === 0) return EMPTY;
+    return value
+      .map((id) => {
+        const match = leadershipGroups.find((g) => g.id === id);
+        return match ? match.name : String(id);
+      })
+      .join(", ");
+  }
 
   if (Array.isArray(value)) {
     return value.length > 0 ? value.join(", ") : EMPTY;
@@ -147,6 +167,11 @@ const displayValue = (
       return byId(org.employmentTypes, (e: { name: string }) => e.name);
     case "houseId":
       return byId(org.houses, (h: { name: string }) => h.name);
+    case "continuousServiceRecord":
+      // Carries the prior employment's employee.id; shown as its Employee ID.
+      return typeof value === "number" && value < 0
+        ? EMPTY
+        : byId(serviceRecords, (r: { employeeId: string }) => r.employeeId);
     default:
       return String(value);
   }
@@ -164,12 +189,26 @@ export const buildChangeSummary = (
   payload: Partial<UpdateEmployeeJobInfoPayload>,
   before: UpdateEmployeeJobInfoPayload,
   org: Parameters<typeof displayValue>[2],
+  leadershipGroups: LeadershipGroup[],
+  serviceRecords: ContinuousServiceRecordInfo[] = [],
 ): ChangeRow[] =>
   (Object.keys(payload) as (keyof UpdateEmployeeJobInfoPayload)[])
     .map((field) => ({
       label: FIELD_LABELS[field] ?? field,
-      from: displayValue(field, before[field], org),
-      to: displayValue(field, payload[field], org),
+      from: displayValue(
+        field,
+        before[field],
+        org,
+        leadershipGroups,
+        serviceRecords,
+      ),
+      to: displayValue(
+        field,
+        payload[field],
+        org,
+        leadershipGroups,
+        serviceRecords,
+      ),
     }))
     .filter((row) => row.from !== row.to);
 

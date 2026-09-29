@@ -82,9 +82,10 @@ export interface CreateEmployeeFormValues {
   probationEndDate: string | null;
   agreementEndDate: string | null;
   isRelocation: boolean;
-  continuousServiceRecord?: string | null;
+  continuousServiceRecord?: number | null;
   managerEmail: string;
   additionalManagerEmail: string[];
+  leadershipGroupIds: number[];
   careerFunctionId: number;
   designationId: number;
   secondaryJobTitle: string;
@@ -136,6 +137,7 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   continuousServiceRecord: null,
   managerEmail: "",
   additionalManagerEmail: [],
+  leadershipGroupIds: [],
   careerFunctionId: 0,
   designationId: 0,
   secondaryJobTitle: "",

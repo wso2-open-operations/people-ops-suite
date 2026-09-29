@@ -170,6 +170,84 @@ isolated function rollbackEmployeeCreation(string employeeId, string workEmail) 
     }
 }
 
+# Validate a continuous service record link before it is written.
+#
+# The link stores the prior employment's `employee.id`. Only a record the
+# continuous-service-records endpoint would offer for this work email is accepted, and only
+# one that has ended (Left) and started before this employment; anything else, including an
+# unrelated person's record, this employment itself, or a later record that would link
+# forwards or form a cycle, is refused as a bad request instead of reaching the database.
+#
+# + linkedId - `employee.id` of the prior employment being linked
+# + workEmail - Work email the employment will hold once the request is applied
+# + startDate - Start date (YYYY-MM-DD) the employment will hold once the request is applied
+# + employeeId - Employee ID of the employment being updated, or () when creating one
+# + return - A BadRequest or InternalServerError response when the link is refused, else ()
+isolated function validateContinuousServiceRecord(int linkedId, string workEmail, string startDate,
+        string? employeeId = ()) returns http:BadRequest|http:InternalServerError? {
+
+    database:ContinuousServiceRecordInfo[]|error priorRecords =
+        database:getContinuousServiceRecordsByEmail(workEmail);
+    if priorRecords is error {
+        log:printError("Error occurred while validating the continuous service record", priorRecords,
+                linkedId = linkedId, workEmail = workEmail);
+        return <http:InternalServerError>{
+            body: {
+                message: "Error occurred while validating the continuous service record"
+            }
+        };
+    }
+
+    foreach database:ContinuousServiceRecordInfo priorRecord in priorRecords {
+        if priorRecord.id == linkedId && database:isEligiblePriorEmployment(priorRecord, startDate, employeeId) {
+            return;
+        }
+    }
+
+    log:printWarn("Continuous service record is not an eligible prior employment",
+            linkedId = linkedId, workEmail = workEmail, startDate = startDate, employeeId = employeeId);
+    return <http:BadRequest>{
+        body: {
+            message: "Continuous service record must be an earlier employment under the same work email "
+                + "that has ended (status Left)"
+        }
+    };
+}
+
+# Validate the leadership attributes submitted for an employee.
+#
+# Every id must be an active attribute; an unknown or inactive one rejects the whole update
+# rather than applying it partially. Duplicates are tolerated and removed.
+#
+# + requested - Attribute ids from the request
+# + employeeId - Employee ID the attributes are being set on, for the log
+# + return - The de-duplicated ids, or the BadRequest or InternalServerError response to send
+isolated function validateLeadershipGroupIds(int[] requested, string employeeId)
+        returns int[]|http:BadRequest|http:InternalServerError {
+
+    database:LeadershipGroup[]|error active = database:getLeadershipGroups();
+    if active is error {
+        log:printError("Error validating leadership attributes", active, employeeId = employeeId);
+        return <http:InternalServerError>{body: {message: "Error updating employee"}};
+    }
+    int[] activeIds = from database:LeadershipGroup g in active select g.id;
+
+    int[] deduped = [];
+    foreach int id in requested {
+        if activeIds.indexOf(id) == () {
+            log:printWarn("Unknown or inactive leadership attribute", employeeId = employeeId,
+                    leadershipGroupId = id);
+            return <http:BadRequest>{
+                body: {message: string `Unknown or inactive leadership attribute: ${id}`}
+            };
+        }
+        if deduped.indexOf(id) == () {
+            deduped.push(id);
+        }
+    }
+    return deduped;
+}
+
 # Validates that a date string is a valid calendar date in the format YYYY-MM-DD.
 #
 # + date - Date string to validate (expected format YYYY-MM-DD)

@@ -51,6 +51,14 @@ public type DuplicateDesignationError distinct error;
 # applies to every row regardless of `is_active` — a career function name is never reusable.
 public type DuplicateCareerFunctionError distinct error;
 
+# Raised when a leadership attribute name collides with an existing one (the unique key on
+# leadership_group.name is case-insensitive), so the caller gets a 400 rather than a 500.
+public type DuplicateLeadershipGroupError distinct error;
+
+# Raised when retiring a leadership attribute that current employees still hold. Retiring
+# is refused rather than silently hiding the attribute from their records.
+public type LeadershipGroupInUseError distinct error;
+
 # Raised when a designation references a career function that does not exist (foreign key
 # violation), so the caller gets a 400 rather than an opaque 500.
 public type UnknownCareerFunctionError distinct error;
@@ -208,6 +216,10 @@ public type Employee record {|
     string? managerName;
     # Additional manager email
     string? additionalManagerEmails;
+    # Leadership attribute IDs held by this employee — drives the edit form
+    int[]? leadershipGroupIds = ();
+    # Leadership attribute names, comma-joined and alphabetical — drives the report preview column
+    string? leadershipGroups = ();
     # Gender (from employee personal info)
     string? gender;
     # NIC or passport number (from employee personal info)
@@ -238,8 +250,8 @@ public type Employee record {|
     string? emergencyContacts;
     # Employee status
     string employeeStatus;
-    # Continuous service record reference (Employee ID)
-    string? continuousServiceRecord;
+    # Primary key (`employee.id`) of the prior employment this record continues from
+    int? continuousServiceRecord;
     # Start date of the continuous service record (resolved via DB join)
     string? continuousServiceDate;
     # Probation end date
@@ -346,6 +358,9 @@ public type EmployeeFilters record {|
     int? employmentTypeId = ();
     # Employment type IDs (multi-select). When non-empty, takes precedence over employmentTypeId.
     int[]? employmentTypeIds = ();
+    # Leadership attribute IDs (multi-select). Matches employees holding ALL of the
+    # given attributes — deliberately AND, unlike the OR multi-selects above.
+    int[]? leadershipGroupIds = ();
     # Employee Status
     string? employeeStatus = ();
     # Employee Statuses (multi-select). When non-empty, takes precedence over employeeStatus/includeMarkedLeavers.
@@ -542,6 +557,8 @@ public type EmployeePersonalInfo record {|
 
 # Continuous service record information.
 public type ContinuousServiceRecordInfo record {|
+    # Employee table primary key, the value a continuous service record link stores
+    int id;
     # Employee ID of the user
     string employeeId;
     # First name
@@ -554,6 +571,8 @@ public type ContinuousServiceRecordInfo record {|
     string workLocation;
     # Start date
     string startDate;
+    # Employee status; only a Left employment can be carried over as continuous service
+    string employeeStatus;
     # Manager email
     string managerEmail;
     # Additional manager emails
@@ -797,6 +816,43 @@ public type House record {|
     string name;
 |};
 
+# A leadership attribute an employee can hold.
+public type LeadershipGroup record {|
+    # Identifier
+    int id;
+    # Display name — also the CSV column header for this attribute
+    string name;
+    # Whether it can still be assigned
+    boolean isActive;
+|};
+
+# A leadership attribute as the master data screen lists it.
+public type LeadershipGroupWithUsage record {|
+    *LeadershipGroup;
+    # Active and Marked-leaver employees holding it; these are what block retiring it
+    int holderCount;
+|};
+
+# Create a leadership attribute.
+public type CreateLeadershipGroupPayload record {|
+    # Attribute name, also its CSV column header. It must start with a letter, then use only
+    # letters, digits, spaces, &, -, ' and . (surrounding spaces are trimmed after
+    # validation). Starting with a letter means the header can never begin with =, +, - or @
+    # and be run as a spreadsheet formula; leaving out the comma matters because a holder's
+    # attributes travel comma-joined (GROUP_CONCAT) and are split on commas.
+    @constraint:String {maxLength: 100, pattern: re `^ *\p{L}[\p{L}\p{M}\p{N} &'.-]*$`}
+    string name;
+|};
+
+# Rename, retire or reactivate a leadership attribute.
+public type UpdateLeadershipGroupPayload record {|
+    # New name, under the same rules as CreateLeadershipGroupPayload
+    @constraint:String {maxLength: 100, pattern: re `^ *\p{L}[\p{L}\p{M}\p{N} &'.-]*$`}
+    string? name = ();
+    # false retires the attribute, true reactivates it
+    boolean? isActive = ();
+|};
+
 # Manager payload.
 public type Manager record {|
     # Employee ID of the manager
@@ -866,6 +922,12 @@ public type AdditionalManagerEmailRow record {|
     # Additional manager email
     @sql:Column {name: "additional_manager_email"}
     string additionalManagerEmail;
+|};
+
+# A single leadership assignment row, as read back for diffing.
+type LeadershipGroupIdRow record {|
+    # Leadership attribute (leadership_group) ID
+    int leadershipGroupId;
 |};
 
 # Bulk onboarding validation error.
@@ -1042,9 +1104,8 @@ public type CreateEmployeePayload record {|
     int? unitId = ();
     # House ID
     int? houseId = ();
-    # Continuous service record
-    @constraint:String {maxLength: 99}
-    string? continuousServiceRecord = ();
+    # Primary key (`employee.id`) of the prior employment this record continues from
+    int? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus employeeStatus = EMPLOYEE_ACTIVE;
     # Employee ID (required for fixed-term employment type)
@@ -1173,9 +1234,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     # so there is no way to clear houseId through this payload and no clear
     # sentinel is required.
     int? houseId = ();
-    # Continuous service record
-    @constraint:String {maxLength: 99}
-    string? continuousServiceRecord = ();
+    # Primary key (`employee.id`) of the prior employment this record continues from.
+    # `CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL` clears the link.
+    int? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus? employeeStatus = ();
     # Final day in office
@@ -1188,6 +1249,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     # optional: absence means the field is not part of this edit, not a blank reason.
     @constraint:String {maxLength: 300, pattern: re `^\s*\S.*$`}
     string? resignationReason = ();
+    # Leadership attribute IDs to assign. Omitted (nil) leaves assignments unchanged;
+    # an empty array clears every assignment. Unknown or inactive ids reject the whole update.
+    int[]? leadershipGroupIds = ();
 |};
 
 # [Database] Payload for updating an employee's resignation details.

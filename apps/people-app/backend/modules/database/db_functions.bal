@@ -462,6 +462,87 @@ public isolated function getHouses() returns House[]|error {
         select house;
 }
 
+# Fetch the assignable leadership attributes.
+#
+# + return - Active leadership attributes, or an error
+public isolated function getLeadershipGroups() returns LeadershipGroup[]|error {
+    stream<LeadershipGroup, error?> result = databaseClient->query(getLeadershipGroupsQuery());
+    return from LeadershipGroup group in result
+        select group;
+}
+
+# Fetch every leadership attribute, retired ones included, with its current holder count.
+#
+# + return - Leadership attributes with usage, active first, or an error
+public isolated function getLeadershipGroupsWithUsage() returns LeadershipGroupWithUsage[]|error {
+    stream<LeadershipGroupWithUsage, error?> result =
+        databaseClient->query(getLeadershipGroupsWithUsageQuery());
+    return from LeadershipGroupWithUsage group in result
+        select group;
+}
+
+# Create a leadership attribute.
+#
+# + payload - Creation payload
+# + createdBy - Email of the admin performing the action
+# + return - New attribute ID, DuplicateLeadershipGroupError, or error
+public isolated function createLeadershipGroup(CreateLeadershipGroupPayload payload, string createdBy)
+        returns int|error {
+
+    // Trimmed before storing so a padded name cannot sit beside its trimmed form.
+    sql:ExecutionResult|error result = databaseClient->execute(
+        createLeadershipGroupQuery(payload.name.trim(), createdBy));
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateLeadershipGroupError("A leadership attribute with this name already exists.");
+    }
+    if result is error {
+        return result;
+    }
+    return check result.lastInsertId.ensureType(int);
+}
+
+# Rename, retire or reactivate a leadership attribute.
+#
+# + id - Leadership attribute ID
+# + payload - Update payload (all fields optional)
+# + updatedBy - Email of the admin performing the action
+# + return - Nil, EntityNotFoundError, NoFieldsToUpdateError, DuplicateLeadershipGroupError,
+# LeadershipGroupInUseError, or error
+public isolated function updateLeadershipGroup(int id, UpdateLeadershipGroupPayload payload, string updatedBy)
+        returns error? {
+
+    string? name = payload.name;
+    string? trimmedName = name is string ? name.trim() : ();
+    sql:ParameterizedQuery query = check updateLeadershipGroupQuery(id, trimmedName, payload.isActive, updatedBy);
+
+    sql:ExecutionResult|error result = databaseClient->execute(query);
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateLeadershipGroupError("A leadership attribute with this name already exists.");
+    }
+    if result is error {
+        return result;
+    }
+    if result.affectedRowCount != 0 {
+        return;
+    }
+
+    // No row matched: the ID is unknown, or the retire guard held it back. The guard only
+    // applies to a retire, so any other update that matched nothing on a known ID changed
+    // nothing (possible if the driver ever reports changed rather than matched rows) and
+    // is a success, not a refusal to retire.
+    int exists = check databaseClient->queryRow(leadershipGroupExistsQuery(id));
+    if exists == 0 {
+        return error EntityNotFoundError(string `Leadership attribute with ID ${id} not found`);
+    }
+    if payload.isActive != false {
+        return;
+    }
+    int holders = check databaseClient->queryRow(countLeadershipGroupHoldersQuery(id));
+    string holdersText = holders == 1 ? "1 current employee holds" : string `${holders} current employees hold`;
+    return error LeadershipGroupInUseError(
+        string `Cannot retire: ${holdersText} this attribute. Remove it from them first.`);
+}
+
 # Get managers.
 #
 # + return - Managers
@@ -534,6 +615,7 @@ public isolated function deleteEmployeeById(string employeeId) returns error? {
         int employeePkId = ids.id;
         int personalInfoId = ids.personalInfoId;
         _ = check databaseClient->execute(deleteEmployeeAdditionalManagersAuditQuery(employeePkId));
+        _ = check databaseClient->execute(deleteEmployeeLeadershipAuditQuery(employeePkId));
         _ = check databaseClient->execute(deleteEmployeeEmergencyContactsAuditQuery(personalInfoId));
         _ = check databaseClient->execute(deleteEmployeeAuditQuery(employeePkId));
         _ = check databaseClient->execute(deletePersonalInfoAuditQuery(personalInfoId));
@@ -1039,6 +1121,44 @@ isolated function syncAdditionalManagers(string employeeId, Email[] desiredEmail
     }
 }
 
+# Fetch the leadership attribute IDs an employee currently holds.
+#
+# + employeeId - Employee business key
+# + return - Active leadership attribute IDs, or an error
+public isolated function getEmployeeLeadershipIds(string employeeId) returns int[]|error {
+    stream<LeadershipGroupIdRow, error?> result =
+        databaseClient->query(getEmployeeLeadershipIdsQuery(employeeId));
+    return check from LeadershipGroupIdRow row in result
+        select row.leadershipGroupId;
+}
+
+# Replace an employee's leadership attributes with the given set.
+#
+# Attributes the employee holds but that are absent from groupIds are deactivated;
+# attributes in groupIds are assigned, reviving a previously removed row rather than
+# inserting a duplicate. An empty groupIds clears every attribute.
+#
+# Only active attributes are ever removed. A retired attribute is hidden from the edit form,
+# so it is never in groupIds; deactivating it here would silently strip it from the
+# employee, and reactivating the attribute later would not bring it back for them.
+#
+# Runs inside the caller's transaction, like syncAdditionalManagers, so the employee's
+# attributes commit or roll back together with the rest of the job-info update.
+#
+# + employeeId - Employee business key
+# + groupIds - The complete desired set of attribute IDs
+# + actor - Email of the user making the change, recorded in the audit trail
+# + return - An error if any statement fails
+isolated function syncEmployeeLeadership(string employeeId, int[] groupIds, string actor)
+    returns error? {
+
+    // Deactivate removals first so clearing an attribute is never skipped by an early return.
+    _ = check databaseClient->execute(deactivateEmployeeLeadershipQuery(employeeId, groupIds, actor));
+    foreach int groupId in groupIds {
+        _ = check databaseClient->execute(assignEmployeeLeadershipQuery(employeeId, groupId, actor));
+    }
+}
+
 # Update employee job information.
 #
 # + employeeId - Employee ID
@@ -1063,6 +1183,10 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
         Email[]? additionalManagerEmails = payload.additionalManagerEmails;
         if additionalManagerEmails is Email[] {
             check syncAdditionalManagers(employeeId, additionalManagerEmails, updatedBy);
+        }
+        int[]? leadershipGroupIds = payload.leadershipGroupIds;
+        if leadershipGroupIds is int[] {
+            check syncEmployeeLeadership(employeeId, leadershipGroupIds, updatedBy);
         }
         check syncResignationRecord(employeeId, payload, updatedBy);
         check commit;
@@ -1795,8 +1919,9 @@ public isolated function getEmploymentPeriods(string employeeId) returns Employm
 # globally-ordered timeline rather than three independently-ordered ones.
 #
 # + employeePkIds - Employee table primary keys belonging to the person
-# + return - Audit snapshots from employee_audit, personal_info_audit, and
-# employee_additional_managers_audit, ordered by action_on ascending across all three
+# + return - Audit snapshots from employee_audit, personal_info_audit,
+# employee_additional_managers_audit, employee_leadership_audit, and resignation_audit,
+# ordered by action_on ascending across all five
 public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSnapshot[]|error {
     stream<AuditSnapshot, error?> employeeAuditStream =
         databaseClient->query(getEmployeeAuditSnapshotsQuery(employeePkIds));
@@ -1814,6 +1939,12 @@ public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSna
         check from AuditSnapshot snapshot in additionalManagersAuditStream
         select snapshot;
 
+    stream<AuditSnapshot, error?> leadershipAuditStream =
+        databaseClient->query(getEmployeeLeadershipAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] leadershipAuditSnapshots =
+        check from AuditSnapshot snapshot in leadershipAuditStream
+        select snapshot;
+
     stream<AuditSnapshot, error?> resignationAuditStream =
         databaseClient->query(getResignationAuditSnapshotsQuery(employeePkIds));
     AuditSnapshot[] resignationAuditSnapshots = check from AuditSnapshot snapshot in resignationAuditStream
@@ -1823,6 +1954,7 @@ public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSna
         ...employeeAuditSnapshots,
         ...personalInfoAuditSnapshots,
         ...additionalManagersAuditSnapshots,
+        ...leadershipAuditSnapshots,
         ...resignationAuditSnapshots
     ];
     return from AuditSnapshot snapshot in allSnapshots

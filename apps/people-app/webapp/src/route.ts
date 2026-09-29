@@ -36,6 +36,7 @@ import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import MilitaryTechIcon from "@mui/icons-material/MilitaryTech";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
@@ -238,6 +239,13 @@ export const routes: RouteObjectWithRole[] = [
         text: "Career Functions",
         icon: React.createElement(WorkspacesIcon),
         element: React.createElement(View.careerFunctionView),
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/master-data/leadership-attributes",
+        text: "Leadership Attributes",
+        icon: React.createElement(MilitaryTechIcon),
+        element: React.createElement(View.leadershipAttributeView),
         allowRoles: [Role.ADMIN],
       },
     ],

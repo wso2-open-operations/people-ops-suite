@@ -56,6 +56,7 @@ export const EMPLOYEE_COLUMNS: ColumnDef[] = [
   { key: "subTeam",               label: "Sub Team",                group: "Organisation" },
   { key: "unit",                  label: "Unit",                    group: "Organisation" },
   { key: "house",                 label: "House",                   group: "Organisation" },
+  { key: "leadershipGroups",      label: "Leadership Attributes",   group: "Organisation" },
   // Dates & Service — mirrors date fields in Onboard JobInfo
   { key: "startDate",             label: "Start Date",              group: "Dates & Service" },
   { key: "continuousServiceDate", label: "Continuous Service Date", group: "Dates & Service" },

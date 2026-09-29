@@ -269,6 +269,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:NotFound>{body: {message: customErr}};
         }
 
+        int[]|error heldGroups = database:getEmployeeLeadershipIds(employeeId);
+        if heldGroups is error {
+            log:printError("Error fetching leadership attributes", heldGroups);
+            return <http:InternalServerError>{body: {message: "Error fetching employee"}};
+        }
+        employeeInfo.leadershipGroupIds = heldGroups;
+
         return employeeInfo;
     }
 
@@ -995,6 +1002,48 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employmentTypes;
     }
 
+    # Fetch the assignable leadership attributes.
+    #
+    # Every caller gets the active attributes. `includeInactive` is the master data view:
+    # retired attributes too, each with its current holder count, and admin only.
+    #
+    # + ctx - Request context
+    # + includeInactive - Include retired attributes and holder counts (admin only)
+    # + return - Leadership attributes or an error
+    resource function get leadership\-groups(http:RequestContext ctx, boolean includeInactive = false)
+            returns database:LeadershipGroup[]|database:LeadershipGroupWithUsage[]|http:Forbidden
+                |http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to list all leadership attributes",
+                        invokerEmail = userInfo.email);
+                return <http:Forbidden>{body: {message: "You are not authorized to manage leadership attributes"}};
+            }
+            database:LeadershipGroupWithUsage[]|error withUsage = database:getLeadershipGroupsWithUsage();
+            if withUsage is error {
+                log:printError("Error fetching leadership groups with usage", withUsage);
+                return <http:InternalServerError>{
+                    body: {message: "Error fetching leadership attributes"}
+                };
+            }
+            return withUsage;
+        }
+
+        database:LeadershipGroup[]|error groups = database:getLeadershipGroups();
+        if groups is error {
+            log:printError("Error fetching leadership groups", groups);
+            return <http:InternalServerError>{
+                body: {message: "Error fetching leadership attributes"}
+            };
+        }
+        return groups;
+    }
+
     # Get houses.
     #
     # + ctx - Request context
@@ -1332,6 +1381,15 @@ service http:InterceptableService / on new http:Listener(9090) {
                         message: customErr
                     }
                 };
+            }
+        }
+
+        int? continuousServiceRecord = payload.continuousServiceRecord;
+        if continuousServiceRecord is int {
+            http:BadRequest|http:InternalServerError? invalidLink =
+                validateContinuousServiceRecord(continuousServiceRecord, payload.workEmail, payload.startDate);
+            if invalidLink is http:BadRequest|http:InternalServerError {
+                return invalidLink;
             }
         }
 
@@ -1705,6 +1763,33 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // A link sent in the request is checked against the email and start date the
+        // employment will hold afterwards. A stored link the request leaves alone is checked
+        // too when either of those changes, so an edit cannot turn it into a forward link.
+        int? continuousServiceRecord = payload.continuousServiceRecord;
+        boolean keepsStoredLink = continuousServiceRecord is ()
+            && (payload.workEmail is string || payload.startDate is string);
+        int? linkToCheck = keepsStoredLink ? employeeInfo.continuousServiceRecord : continuousServiceRecord;
+        if linkToCheck is int && linkToCheck != database:CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL {
+            http:BadRequest|http:InternalServerError? invalidLink = validateContinuousServiceRecord(
+                    linkToCheck, payload.workEmail ?: employeeInfo.workEmail,
+                    payload.startDate ?: employeeInfo.startDate, employeeId);
+            if invalidLink is http:BadRequest {
+                return keepsStoredLink
+                    ? <http:BadRequest>{
+                        body: {
+                            message: "This change makes the existing continuous service record invalid: it must be an "
+                                + "earlier employment under the same work email that has ended (status Left). "
+                                + "Remove the link in the same update."
+                        }
+                    }
+                    : invalidLink;
+            }
+            if invalidLink is http:InternalServerError {
+                return invalidLink;
+            }
+        }
+
         string? epfOpt = payload.epf;
         if epfOpt is string && epfOpt.trim() != "" {
             string|error? existingEmp = database:getEmployeeIdByEpf(epfOpt);
@@ -1766,6 +1851,19 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
+        }
+
+        // Validated up front so an unknown or inactive id rejects the whole request before
+        // anything is written. The de-duplicated set is then written inside
+        // updateEmployeeJobInfo's transaction, together with the rest of the update.
+        int[]? requestedGroups = payload.leadershipGroupIds;
+        if requestedGroups is int[] {
+            int[]|http:BadRequest|http:InternalServerError validGroups =
+                validateLeadershipGroupIds(requestedGroups, employeeId);
+            if validGroups is http:BadRequest|http:InternalServerError {
+                return validGroups;
+            }
+            payload.leadershipGroupIds = validGroups;
         }
 
         error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);
@@ -2331,9 +2429,15 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        database:LeadershipGroup[]|error leadershipGroups = database:getLeadershipGroups();
+        if leadershipGroups is error {
+            log:printError("Error fetching leadership groups for report", leadershipGroups);
+            return <http:InternalServerError>{body: {message: "Error generating report"}};
+        }
+
         string csvContent = payload.filters.employeeStatus == database:EMPLOYEE_LEFT
-            ? database:buildResignationCsv(allEmployees, nameMap, payload.columns)
-            : database:buildEmployeeCsv(allEmployees, nameMap, payload.columns);
+            ? database:buildResignationCsv(allEmployees, nameMap, payload.columns, leadershipGroups)
+            : database:buildEmployeeCsv(allEmployees, nameMap, payload.columns, leadershipGroups);
         string? filterStatus = payload.filters.employeeStatus;
         string statusLabel = filterStatus is () ? "all" : re ` `.replaceAll(filterStatus.toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
@@ -2908,6 +3012,74 @@ service http:InterceptableService / on new http:Listener(9090) {
         if updateResult is error {
             log:printError("Error occurred while updating career function", updateResult, id = id);
             return <http:InternalServerError>{body: {message: "Error occurred while updating career function"}};
+        }
+        return http:OK;
+    }
+
+    # Create a leadership attribute.
+    #
+    # + ctx - Request context
+    # + payload - Leadership attribute creation payload
+    # + return - New attribute ID or HTTP errors
+    resource function post leadership\-groups(http:RequestContext ctx,
+            database:CreateLeadershipGroupPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create leadership attribute", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage leadership attributes"}};
+        }
+
+        int|error newId = database:createLeadershipGroup(payload, userInfo.email);
+        if newId is database:DuplicateLeadershipGroupError {
+            return <http:BadRequest>{body: {message: newId.message()}};
+        }
+        if newId is error {
+            string customErr = "Error occurred while creating leadership attribute";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Rename, retire or reactivate a leadership attribute.
+    #
+    # Retiring is refused while current employees hold the attribute.
+    #
+    # + ctx - Request context
+    # + id - Leadership attribute ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch leadership\-groups/[int id](http:RequestContext ctx,
+            database:UpdateLeadershipGroupPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update leadership attribute", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage leadership attributes"}};
+        }
+
+        error? updateResult = database:updateLeadershipGroup(id, payload, userInfo.email);
+        if updateResult is database:DuplicateLeadershipGroupError|database:LeadershipGroupInUseError
+                |database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating leadership attribute", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating leadership attribute"}};
         }
         return http:OK;
     }

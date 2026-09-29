@@ -157,6 +157,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
             LIMIT 1
         ), '') AS managerName,
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
+        elg.leadershipGroups AS leadershipGroups,
         pi.gender AS gender,
         (
             SELECT COUNT(1)
@@ -223,6 +224,17 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
             WHERE is_active = 1
             GROUP BY employee_pk_id
         ) eam ON eam.employee_pk_id = e.id
+        LEFT JOIN (
+            SELECT
+                el.employee_pk_id,
+                GROUP_CONCAT(lg.name ORDER BY lg.name SEPARATOR ',') AS leadershipGroups
+            FROM employee_leadership el
+            JOIN leadership_group lg ON lg.id = el.leadership_group_id
+            -- A retired attribute is hidden from its holders' records; the assignment row
+            -- is kept, so reactivating the attribute brings it back.
+            WHERE el.is_active = 1 AND lg.is_active = 1
+            GROUP BY el.employee_pk_id
+        ) elg ON elg.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         LEFT JOIN office o ON e.office_id = o.id
@@ -311,6 +323,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.company_id AS companyId,
             h.name AS house,
             e.house_id AS houseId,
+            elg.leadershipGroups AS leadershipGroups,
             -- Personal information is selected only where the caller is entitled to it. The
             -- columns are omitted from the SQL rather than blanked afterwards, so data nobody
             -- may see is never read out of the database at all.
@@ -356,6 +369,17 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
                 WHERE is_active = 1
                 GROUP BY employee_pk_id
             ) eam ON eam.employee_pk_id = e.id
+
+            LEFT JOIN (
+                SELECT
+                    el.employee_pk_id,
+                    GROUP_CONCAT(lg.name ORDER BY lg.name SEPARATOR ',') AS leadershipGroups
+                FROM employee_leadership el
+                JOIN leadership_group lg ON lg.id = el.leadership_group_id
+                -- Retired attributes are hidden; see the single-employee query.
+                WHERE el.is_active = 1 AND lg.is_active = 1
+                GROUP BY el.employee_pk_id
+            ) elg ON elg.employee_pk_id = e.id
 
             LEFT JOIN (
                 SELECT
@@ -487,6 +511,23 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
         appendIntFilter(filters, payload.filters.employmentTypeId, `e.employment_type_id = ${payload.filters.employmentTypeId}`);
     }
 
+    int[]? leadershipGroupList = payload.filters.leadershipGroupIds;
+    if leadershipGroupList is int[] && leadershipGroupList.length() > 0 {
+        // AND semantics: the employee must hold EVERY selected attribute, unlike the OR
+        // multi-selects above. A correlated IN (SELECT ... HAVING ...) is used rather than a
+        // join plus an outer HAVING so this composes with all three call sites, including
+        // ones that do not GROUP BY. Retired attributes are left out, as they are from every
+        // record and report: a Left employee may still hold one, and matching on it would
+        // return them without the attribute showing in their row.
+        filters.push(sql:queryConcat(
+            `e.id IN (SELECT el_f.employee_pk_id FROM employee_leadership el_f
+              JOIN leadership_group lg_f ON lg_f.id = el_f.leadership_group_id
+              WHERE el_f.is_active = 1 AND lg_f.is_active = 1 AND el_f.leadership_group_id IN (`,
+            buildIntInClause(leadershipGroupList),
+            `) GROUP BY el_f.employee_pk_id
+              HAVING COUNT(DISTINCT el_f.leadership_group_id) = ${leadershipGroupList.length()})`));
+    }
+
     if payload.filters.excludeFutureStartDate == true {
         filters.push(`e.start_date <= CURDATE()`);
     }
@@ -580,11 +621,13 @@ isolated function isLeadQuery(string leadEmail) returns sql:ParameterizedQuery =
 # + return - Parameterized query for continuous service record
 isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:ParameterizedQuery =>
     `SELECT 
+        e.id AS id,
         e.employee_id AS employeeId,
         e.first_name AS firstName,
         e.last_name AS lastName,
         e.work_location AS workLocation,
         e.start_date AS startDate,
+        e.employee_status AS employeeStatus,
         e.manager_email AS managerEmail,
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
         CONCAT(
@@ -1518,6 +1561,108 @@ isolated function getAsgardeoGroupsForTeamQuery(int teamId, int employmentTypeId
 isolated function getHousesQuery() returns sql:ParameterizedQuery =>
     `SELECT id, name FROM house WHERE is_active = 1 ORDER BY name`;
 
+# Fetch the assignable leadership attributes.
+#
+# + return - Parameterized query returning active leadership_group rows
+isolated function getLeadershipGroupsQuery() returns sql:ParameterizedQuery =>
+    `SELECT id, name, is_active AS isActive
+     FROM leadership_group
+     WHERE is_active = 1
+     ORDER BY name;`;
+
+# The employee statuses whose holders block retiring a leadership attribute. A Left
+# employee's assignment does not: it stays in the DB and history, and is hidden once the
+# attribute is retired.
+#
+# + return - Parameterized list of the blocking statuses, for an IN (...) clause
+isolated function leadershipHolderStatuses() returns sql:ParameterizedQuery =>
+    `${EMPLOYEE_ACTIVE}, ${EMPLOYEE_MARKED_LEAVER}`;
+
+# Every leadership attribute, retired ones included, with how many current employees hold it.
+#
+# + return - Parameterized query returning LeadershipGroupWithUsage rows, active first
+isolated function getLeadershipGroupsWithUsageQuery() returns sql:ParameterizedQuery =>
+    sql:queryConcat(
+        `SELECT lg.id, lg.name, lg.is_active AS isActive, COUNT(e.id) AS holderCount
+         FROM leadership_group lg
+         LEFT JOIN employee_leadership el
+            ON el.leadership_group_id = lg.id AND el.is_active = 1
+         LEFT JOIN employee e
+            ON e.id = el.employee_pk_id AND e.employee_status IN (`, leadershipHolderStatuses(), `)
+         GROUP BY lg.id, lg.name, lg.is_active
+         ORDER BY lg.is_active DESC, lg.name;`);
+
+# Count the current employees holding a leadership attribute.
+#
+# + id - Leadership attribute ID
+# + return - Parameterized query returning the holder count
+isolated function countLeadershipGroupHoldersQuery(int id) returns sql:ParameterizedQuery =>
+    sql:queryConcat(
+        `SELECT COUNT(*)
+         FROM employee_leadership el
+         JOIN employee e ON e.id = el.employee_pk_id
+         WHERE el.leadership_group_id = ${id} AND el.is_active = 1
+           AND e.employee_status IN (`, leadershipHolderStatuses(), `);`);
+
+# Create a leadership attribute.
+#
+# + name - Attribute name, already trimmed
+# + createdBy - Email of the admin performing the action
+# + return - Insert query
+isolated function createLeadershipGroupQuery(string name, string createdBy) returns sql:ParameterizedQuery =>
+    `INSERT INTO leadership_group (name, created_by, updated_by)
+     VALUES (${name}, ${createdBy}, ${createdBy});`;
+
+# Rename, retire or reactivate a leadership attribute.
+#
+# Retiring carries its own guard, so an attribute cannot be retired while current employees
+# hold it even if one is assigned between a check and this write. A guarded retire that
+# matches no row is therefore either an unknown ID or an attribute still in use; the caller
+# tells the two apart.
+#
+# + id - Leadership attribute ID
+# + name - New name, already trimmed, or nil to leave unchanged
+# + isActive - New active flag, or nil to leave unchanged
+# + updatedBy - Email of the admin performing the action
+# + return - Update query, or NoFieldsToUpdateError when nothing was supplied
+isolated function updateLeadershipGroupQuery(int id, string? name, boolean? isActive, string updatedBy)
+        returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if name is string {
+        updates.push(`name = ${name}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError("No fields to update");
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = `UPDATE leadership_group SET `;
+    foreach int i in 0 ..< updates.length() {
+        query = sql:queryConcat(query, i == 0 ? `` : `, `, updates[i]);
+    }
+    query = sql:queryConcat(query, ` WHERE id = ${id}`);
+    if isActive == false {
+        query = sql:queryConcat(query,
+            ` AND NOT EXISTS (
+                SELECT 1 FROM employee_leadership el
+                JOIN employee e ON e.id = el.employee_pk_id
+                WHERE el.leadership_group_id = ${id} AND el.is_active = 1
+                  AND e.employee_status IN (`, leadershipHolderStatuses(), `))`);
+    }
+    return sql:queryConcat(query, `;`);
+}
+
+# Check whether a leadership attribute exists.
+#
+# + id - Leadership attribute ID
+# + return - Parameterized query returning 1 when it exists
+isolated function leadershipGroupExistsQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) FROM leadership_group WHERE id = ${id};`;
+
 # Add employee personal information query. Upserts on the nic_or_passport UNIQUE key so
 # rehiring someone (same NIC/Passport) refreshes their existing personal_info row instead of
 # failing — `id = LAST_INSERT_ID(id)` makes the update branch still resolve to that row's own
@@ -2083,8 +2228,8 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         updates.push(`house_id = ${payload.houseId}`);
     }
 
-    if payload.continuousServiceRecord is string {
-        if payload.continuousServiceRecord == "" {
+    if payload.continuousServiceRecord is int {
+        if payload.continuousServiceRecord == CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL {
             updates.push(`continuous_service_record = NULL`);
         } else {
             updates.push(`continuous_service_record = ${payload.continuousServiceRecord}`);
@@ -2221,6 +2366,61 @@ isolated function inactivateAdditionalManagerRelationshipsQuery(string managerEm
          eam.updated_on = CURRENT_TIMESTAMP(6)
      WHERE LOWER(eam.additional_manager_email) = LOWER(${managerEmail})
        AND eam.is_active = 1;`;
+
+# Fetch the leadership attribute IDs an employee currently holds.
+#
+# Retired attributes are left out: the edit form must not offer them back, and a save
+# validates every submitted ID against the active set.
+#
+# + employeeId - Employee business key
+# + return - Parameterized query returning active leadership_group_id values
+isolated function getEmployeeLeadershipIdsQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT el.leadership_group_id AS leadershipGroupId
+     FROM employee_leadership el
+     JOIN employee e ON e.id = el.employee_pk_id
+     JOIN leadership_group lg ON lg.id = el.leadership_group_id
+     WHERE e.employee_id = ${employeeId} AND el.is_active = 1 AND lg.is_active = 1;`;
+
+# Deactivate the attributes an employee holds that are not in the desired set.
+#
+# Only active attributes are touched; see syncEmployeeLeadership for why a retired one is
+# kept.
+#
+# + employeeId - Employee business key
+# + groupIds - The complete desired set of attribute IDs
+# + actor - Email recorded in updated_by, and thus in the audit trail
+# + return - Parameterized update
+isolated function deactivateEmployeeLeadershipQuery(string employeeId, int[] groupIds, string actor)
+        returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery query =
+        `UPDATE employee_leadership el
+         JOIN employee e ON e.id = el.employee_pk_id
+         JOIN leadership_group lg ON lg.id = el.leadership_group_id
+         SET el.is_active = 0, el.updated_by = ${actor}
+         WHERE e.employee_id = ${employeeId} AND el.is_active = 1 AND lg.is_active = 1`;
+    return groupIds.length() == 0
+        ? query
+        : sql:queryConcat(query, ` AND el.leadership_group_id NOT IN (`, buildIntInClause(groupIds), `)`);
+}
+
+# Assign an attribute, reviving a previously removed row rather than inserting a duplicate.
+#
+# The unique key (employee_pk_id, leadership_group_id) makes a plain INSERT fail for an
+# attribute the employee held before, so this upserts. The SELECT supplies employee_pk_id
+# from the business key.
+#
+# + employeeId - Employee business key
+# + groupId - Leadership attribute to assign
+# + actor - Email recorded in created_by/updated_by, and thus in the audit trail
+# + return - Parameterized upsert
+isolated function assignEmployeeLeadershipQuery(string employeeId, int groupId, string actor)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO employee_leadership
+        (employee_pk_id, leadership_group_id, is_active, created_by, updated_by)
+     SELECT e.id, ${groupId}, 1, ${actor}, ${actor}
+     FROM employee e WHERE e.employee_id = ${employeeId}
+     ON DUPLICATE KEY UPDATE is_active = 1, updated_by = ${actor};`;
 
 # Build query to fetch vehicles.
 #
@@ -2702,6 +2902,13 @@ isolated function deleteEmployeeAuditQuery(int employeePkId) returns sql:Paramet
 isolated function deleteEmployeeAdditionalManagersAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
     `DELETE FROM employee_additional_managers_audit WHERE employee_pk_id = ${employeePkId};`;
 
+# Delete leadership attribute audit rows for an employee.
+#
+# + employeePkId - Primary key of the employee row
+# + return - Parameterized query to delete leadership attribute audit rows
+isolated function deleteEmployeeLeadershipAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_leadership_audit WHERE employee_pk_id = ${employeePkId};`;
+
 # Delete emergency contacts audit rows for a personal info record.
 #
 # + personalInfoId - Primary key of the personal_info row
@@ -2829,6 +3036,29 @@ isolated function getEmployeeAdditionalManagersAuditSnapshotsQuery(int[] employe
     );
 }
 
+# Fetch audit snapshots from the employee_leadership_audit table for a set of employee rows.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning employee_leadership_audit rows tagged with their source table
+isolated function getEmployeeLeadershipAuditSnapshotsQuery(int[] employeePkIds)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildIntInClause(employeePkIds);
+    return sql:queryConcat(
+            `SELECT
+                employee_pk_id AS employeePkId,
+                'employee_leadership_audit' AS sourceTable,
+                action_type AS actionType,
+                action_by AS actionBy,
+                action_on AS actionOn,
+                data AS data
+            FROM employee_leadership_audit
+            WHERE employee_pk_id IN (`,
+            inClause,
+            `)
+            ORDER BY action_on ASC`
+    );
+}
+
 # Fetch audit snapshots from the resignation_audit table for a set of employee rows.
 #
 # resignation keys on employee_id, so its audit keys on employee_pk_id exactly as employee_audit does
@@ -2910,7 +3140,9 @@ isolated function getHistoryLookupNamesQuery() returns sql:ParameterizedQuery =>
      UNION ALL SELECT 'office_id' COLLATE utf8mb4_general_ci,
             id, name COLLATE utf8mb4_general_ci FROM office
      UNION ALL SELECT 'house_id' COLLATE utf8mb4_general_ci,
-            id, name COLLATE utf8mb4_general_ci FROM house`;
+            id, name COLLATE utf8mb4_general_ci FROM house
+     UNION ALL SELECT 'leadership_group' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM leadership_group`;
 
 # Whether an employee ID names the person's current (most recent) employment.
 #

@@ -252,25 +252,25 @@ isolated function resolveAdditionalManagerNames(string? emails, map<string> name
     return string:'join(", ", ...names);
 }
 
-# Ordered canonical column keys for the active-employee CSV (27 columns).
+# Ordered canonical column keys for the active-employee CSV (41 columns).
 final string[] & readonly EMPLOYEE_CSV_COLUMNS = [
     "employeeId", "firstName", "lastName", "gender", "workEmail", "company",
     "location", "employmentType", "jobRole", "externalDesignation", "jobBand", "startDate",
     "continuousServiceDate", "lengthOfService", "reportsTo", "additionalManager",
     "employeeStatus", "team", "subTeam", "epfNumber", "leadEmail", "businessUnit",
-    "house", "unit", "office", "probationEndDate", "agreementEndDate",
+    "house", "leadershipGroups", "unit", "office", "probationEndDate", "agreementEndDate",
     "nicOrPassport", "dateOfBirth", "nationality", "personalEmail", "personalPhone",
     "residentNumber", "addressLine1", "addressLine2", "city", "stateOrProvince",
     "postalCode", "country", "emergencyContacts"
 ];
 
-# Ordered canonical column keys for the resignation CSV (27 shared + 4 resignation-specific).
+# Ordered canonical column keys for the resignation CSV (41 shared + 4 resignation-specific).
 final string[] & readonly RESIGNATION_CSV_COLUMNS = [
     "employeeId", "firstName", "lastName", "gender", "workEmail", "company",
     "location", "employmentType", "jobRole", "externalDesignation", "jobBand", "startDate",
     "continuousServiceDate", "lengthOfService", "reportsTo", "additionalManager",
     "employeeStatus", "team", "subTeam", "epfNumber", "leadEmail", "businessUnit",
-    "house", "unit", "office", "probationEndDate", "agreementEndDate",
+    "house", "leadershipGroups", "unit", "office", "probationEndDate", "agreementEndDate",
     "resignationDate", "finalDayInOffice", "finalDayOfEmployment", "resignationReason",
     "nicOrPassport", "dateOfBirth", "nationality", "personalEmail", "personalPhone",
     "residentNumber", "addressLine1", "addressLine2", "city", "stateOrProvince",
@@ -384,6 +384,70 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
     }
 }
 
+# Sentinel key that the CSV builder expands into one column per active leadership attribute.
+const LEADERSHIP_COLUMN_KEY = "leadershipGroups";
+
+# Prefix marking a synthetic per-attribute leadership column key.
+const LEADERSHIP_COLUMN_PREFIX = "__leadership__";
+
+# Expand the leadership sentinel key into one synthetic key per active attribute.
+#
+# Synthetic keys are prefixed so they cannot collide with a real column key. Ordering is
+# alphabetical by name so column order is stable between exports and independent of the
+# order rows were inserted into leadership_group.
+#
+# + cols - Effective column list, possibly containing the sentinel
+# + groups - Active leadership attributes
+# + return - Column list with the sentinel replaced in place
+isolated function expandLeadershipColumns(string[] cols, LeadershipGroup[] groups) returns string[] {
+    if cols.indexOf(LEADERSHIP_COLUMN_KEY) == () {
+        return cols;
+    }
+    LeadershipGroup[] sorted = from LeadershipGroup g in groups
+        order by g.name ascending
+        select g;
+    string[] expanded = [];
+    foreach string key in cols {
+        if key == LEADERSHIP_COLUMN_KEY {
+            foreach LeadershipGroup g in sorted {
+                expanded.push(string `${LEADERSHIP_COLUMN_PREFIX}${g.name}`);
+            }
+        } else {
+            expanded.push(key);
+        }
+    }
+    return expanded;
+}
+
+# Header text for a column key, resolving synthetic leadership keys to the attribute name.
+#
+# + key - Canonical or synthetic (`__leadership__`-prefixed) column key
+# + return - Header text to print in the CSV
+isolated function leadershipAwareHeader(string key) returns string {
+    if key.startsWith(LEADERSHIP_COLUMN_PREFIX) {
+        return key.substring(LEADERSHIP_COLUMN_PREFIX.length());
+    }
+    return COLUMN_HEADER_MAP[key] ?: key;
+}
+
+# Cell value for a column key, resolving synthetic leadership keys to Yes/No.
+#
+# + e - Employee row being rendered
+# + key - Canonical or synthetic (`__leadership__`-prefixed) column key
+# + nameMap - email->name resolution map, forwarded to resolveColumnValue for non-leadership keys
+# + return - Cell value to print in the CSV
+isolated function leadershipAwareValue(Employee e, string key, map<string> nameMap) returns string {
+    if key.startsWith(LEADERSHIP_COLUMN_PREFIX) {
+        string name = key.substring(LEADERSHIP_COLUMN_PREFIX.length());
+        string held = e.leadershipGroups ?: "";
+        // leadershipGroups arrives comma-joined from GROUP_CONCAT; compare whole entries so
+        // "Senior Leadership" never matches inside another attribute's name.
+        string[] parts = re `,`.split(held);
+        return parts.indexOf(name) == () ? "No" : "Yes";
+    }
+    return resolveColumnValue(e, key, nameMap);
+}
+
 # Shared CSV builder — used by both buildEmployeeCsv and buildResignationCsv.
 # Filters the effective column list to only keys present in defaultCols (ignores unknown keys).
 #
@@ -391,12 +455,14 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
 # + nameMap - email->name resolution map
 # + defaultCols - Full ordered column list for this report type
 # + requestedCols - Optional subset requested by the caller; nil or empty means use defaultCols
+# + leadershipGroups - Active leadership attributes used to expand the leadership sentinel column
 # + return - CSV string
 isolated function buildCsvWithColumns(
         Employee[] employees,
         map<string> nameMap,
         string[] defaultCols,
-        string[]? requestedCols) returns string {
+        string[]? requestedCols,
+        LeadershipGroup[] leadershipGroups) returns string {
     string[] effectiveCols;
     if requestedCols is () || requestedCols.length() == 0 {
         effectiveCols = defaultCols;
@@ -413,12 +479,14 @@ isolated function buildCsvWithColumns(
         // Fall back to the full default set if every requested key was unknown.
         effectiveCols = filtered.length() > 0 ? filtered : defaultCols;
     }
+    effectiveCols = expandLeadershipColumns(effectiveCols, leadershipGroups);
+
     string[] headers = from string key in effectiveCols
-        select COLUMN_HEADER_MAP[key] ?: key;
+        select csvEscape(leadershipAwareHeader(key));
     string[] lines = [string:'join(",", ...headers)];
     foreach Employee e in employees {
         string[] row = from string key in effectiveCols
-            select resolveColumnValue(e, key, nameMap);
+            select leadershipAwareValue(e, key, nameMap);
         lines.push(string:'join(",", ...row));
     }
     return string:'join("\n", ...lines);
@@ -428,24 +496,37 @@ isolated function buildCsvWithColumns(
 #
 # + employees - List of employees
 # + nameMap - Map of work_email -> full name for resolving additional manager names
-# + columns - Optional column allowlist (canonical keys). nil or empty = all 26 columns.
+# + columns - Optional column allowlist (canonical keys). nil or empty = all 41 columns.
+# + leadershipGroups - Active leadership attributes used to expand the leadership sentinel column
 # + return - CSV string
-public isolated function buildEmployeeCsv(
-        Employee[] employees,
-        map<string> nameMap,
-        string[]? columns = ()) returns string {
-    return buildCsvWithColumns(employees, nameMap, EMPLOYEE_CSV_COLUMNS, columns);
-}
+public isolated function buildEmployeeCsv(Employee[] employees, map<string> nameMap,
+        string[]? columns, LeadershipGroup[] leadershipGroups) returns string =>
+    buildCsvWithColumns(employees, nameMap, EMPLOYEE_CSV_COLUMNS, columns, leadershipGroups);
 
 # Build a CSV string from a list of resigned employees aligned with the People HR report format.
 #
 # + employees - List of resigned employees
 # + nameMap - Map of work_email -> full name for resolving additional manager names
-# + columns - Optional column allowlist (canonical keys). nil or empty = all 30 columns.
+# + columns - Optional column allowlist (canonical keys). nil or empty = all 45 columns.
+# + leadershipGroups - Active leadership attributes used to expand the leadership sentinel column
 # + return - CSV string
-public isolated function buildResignationCsv(
-        Employee[] employees,
-        map<string> nameMap,
-        string[]? columns = ()) returns string {
-    return buildCsvWithColumns(employees, nameMap, RESIGNATION_CSV_COLUMNS, columns);
-}
+public isolated function buildResignationCsv(Employee[] employees, map<string> nameMap,
+        string[]? columns, LeadershipGroup[] leadershipGroups) returns string =>
+    buildCsvWithColumns(employees, nameMap, RESIGNATION_CSV_COLUMNS, columns, leadershipGroups);
+
+# Whether a prior record can be linked as the employment another one continues from.
+#
+# Continuous service carries over from a finished employment that came before, so the
+# linked record must have ended (status Left) and must have started before the target.
+# The start-date rule also rules out cycles: two records cannot each start before the
+# other. An employment can never continue from itself.
+#
+# + priorRecord - Candidate record from the continuous-service-records lookup
+# + targetStartDate - Start date (YYYY-MM-DD) of the employment being linked
+# + targetEmployeeId - Employee ID of the employment being linked, or () when creating one
+# + return - true when the candidate is an eligible prior employment
+public isolated function isEligiblePriorEmployment(ContinuousServiceRecordInfo priorRecord,
+        string targetStartDate, string? targetEmployeeId) returns boolean =>
+    priorRecord.employeeStatus == EMPLOYEE_LEFT
+        && priorRecord.employeeId != targetEmployeeId
+        && priorRecord.startDate < targetStartDate;

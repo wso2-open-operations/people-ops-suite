@@ -86,6 +86,10 @@ import {
   LogoutOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
+import {
+  isEligiblePriorEmployment,
+  isStaleContinuousServiceLink,
+} from "@utils/continuousService";
 
 import {
   OFFICE_CLEAR_SENTINEL,
@@ -462,9 +466,56 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
   const {
     employeesBasicInfo,
     employeeBasicInfoState,
-    continuousServiceRecord,
+    continuousServiceRecord: serviceRecords,
+    continuousServiceRecordEmail: serviceRecordsEmail,
     errorMessage,
   } = useAppSelector((s) => s.employee);
+  // Only an earlier employment under this address that has ended can be carried over;
+  // the backend enforces the same rule on create.
+  const continuousServiceRecord = useMemo(
+    () =>
+      serviceRecords.filter((record) =>
+        isEligiblePriorEmployment(record, values.startDate),
+      ),
+    [serviceRecords, values.startDate],
+  );
+  // Clears a link whose record is no longer offered (e.g. the start date moved before
+  // it), so a stale id is never sent and a hidden checkbox never stays ticked. It only
+  // acts on a list fetched for this form's work email, never on one still loading or
+  // left over from another page.
+  const recordsLoadedForThisEmail =
+    serviceRecordsEmail != null &&
+    serviceRecordsEmail === normalizeEmail(values.workEmail ?? "");
+  useEffect(() => {
+    if (
+      recordsLoadedForThisEmail &&
+      isStaleContinuousServiceLink(
+        continuousServiceRecord,
+        values.continuousServiceRecord,
+      )
+    ) {
+      setFieldValue("continuousServiceRecord", null);
+      setFieldValue("isRelocation", false);
+    }
+  }, [
+    recordsLoadedForThisEmail,
+    continuousServiceRecord,
+    values.continuousServiceRecord,
+    setFieldValue,
+  ]);
+
+  // This step clears the prior records when it is left (see the unmount cleanup below)
+  // and otherwise loads them only when Work Email loses focus. Coming back to the step
+  // with an email already entered would then show "No Record" while the form still held
+  // a ticked relocation link, so the records are loaded again as the step opens.
+  useEffect(() => {
+    const email = normalizeEmail(values.workEmail ?? "");
+    if (email && Yup.string().email().isValidSync(email)) {
+      dispatch(fetchContinuousServiceRecord(email));
+    }
+    // Once, on open; later email edits re-fetch on blur as before.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const {
     state: organizationState,
     businessUnits,
@@ -960,7 +1011,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         selectedRecordIndex !== null
           ? continuousServiceRecord?.[selectedRecordIndex]
           : continuousServiceRecord?.[0];
-      setFieldValue("continuousServiceRecord", record?.employeeId ?? null);
+      setFieldValue("continuousServiceRecord", record?.id ?? null);
     },
     [setFieldValue, selectedRecordIndex, continuousServiceRecord],
   );
@@ -1033,7 +1084,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                     setSelectedRecordIndex(index);
                     setFieldValue(
                       "continuousServiceRecord",
-                      continuousServiceRecord[index].employeeId,
+                      continuousServiceRecord[index].id,
                     );
                   }}
                   disabled={!!errorMessage}

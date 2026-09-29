@@ -27,7 +27,7 @@ import {
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { getIn, useFormikContext } from "formik";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { CreateEmployeeFormValues, EmployeeStatus } from "@/types/types";
 import {
@@ -45,6 +45,10 @@ import { normalizeEmail, sortAndFormatOptions } from "@utils/utils";
 import ResignationReasonField from "@view/me/sectionEdit/ResignationReasonField";
 import { useEmploymentRules } from "@view/me/sectionEdit/useEmploymentRules";
 import { useOrgCascade } from "@view/me/sectionEdit/useOrgCascade";
+import {
+  isEligiblePriorEmployment,
+  isStaleContinuousServiceLink,
+} from "@utils/continuousService";
 
 /** A labelled cell matching the read-only grid's proportions. */
 const Cell = ({ children }: { children: React.ReactNode }) => (
@@ -119,10 +123,65 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
     houses,
     state: organizationState,
   } = useAppSelector((state) => state.organization);
-  const { employeesBasicInfo, continuousServiceRecord } = useAppSelector(
-    (s) => s.employee,
+  const {
+    employeesBasicInfo,
+    continuousServiceRecord: serviceRecords,
+    continuousServiceRecordEmail: serviceRecordsEmail,
+  } = useAppSelector((s) => s.employee);
+  // The lookup is by work email, so it returns every employment under the address,
+  // including the one being edited and any later one. Only an earlier employment that
+  // has ended can be carried over; the backend enforces the same rule.
+  const continuousServiceRecord = useMemo(
+    () =>
+      serviceRecords.filter((record) =>
+        isEligiblePriorEmployment(record, values.startDate, values.employeeId),
+      ),
+    [serviceRecords, values.startDate, values.employeeId],
   );
+  // Clears a link whose record is no longer offered (e.g. the start date moved before
+  // it), so a stale id is never sent and a hidden checkbox never stays ticked. It only
+  // acts on a list fetched for this form's work email, never on one still loading or
+  // left over from another page.
+  // The record the checkbox names: the one already linked, otherwise the newest eligible
+  // one, which is what ticking the box links.
+  const offeredRecord =
+    continuousServiceRecord.find(
+      (record) => record.id === values.continuousServiceRecord,
+    ) ?? continuousServiceRecord[0];
+  const recordsLoadedForThisEmail =
+    serviceRecordsEmail != null &&
+    serviceRecordsEmail === normalizeEmail(values.workEmail ?? "");
+  useEffect(() => {
+    if (
+      recordsLoadedForThisEmail &&
+      isStaleContinuousServiceLink(
+        continuousServiceRecord,
+        values.continuousServiceRecord,
+      )
+    ) {
+      setFieldValue("continuousServiceRecord", null);
+      setFieldValue("isRelocation", false);
+    }
+  }, [
+    recordsLoadedForThisEmail,
+    continuousServiceRecord,
+    values.continuousServiceRecord,
+    setFieldValue,
+  ]);
+
+  const { groups: leadershipGroups } = useAppSelector((s) => s.leadership);
   const dispatch = useAppDispatch();
+
+  // The prior records are otherwise loaded only when Work Email loses focus; load them as
+  // the form opens, so an existing link shows as a ticked relocation box.
+  useEffect(() => {
+    const email = normalizeEmail(values.workEmail ?? "");
+    if (email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      dispatch(fetchContinuousServiceRecord(email));
+    }
+    // Once, on open; later email edits re-fetch on blur as before.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const {
     handleBusinessUnitChange,
@@ -366,7 +425,7 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
                     setFieldValue(
                       "continuousServiceRecord",
                       checked
-                        ? (continuousServiceRecord[0]?.employeeId ?? null)
+                        ? (continuousServiceRecord[0]?.id ?? null)
                         : null,
                     );
                   }}
@@ -376,10 +435,10 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
                 <Typography sx={{ fontSize: 13.5 }}>
                   Relocation — carry continuous service from{" "}
                   <Box component="span" sx={{ fontWeight: 600 }}>
-                    {continuousServiceRecord[0]?.employeeId}
+                    {offeredRecord?.employeeId}
                   </Box>
-                  {continuousServiceRecord[0]?.startDate
-                    ? ` (started ${continuousServiceRecord[0].startDate})`
+                  {offeredRecord?.startDate
+                    ? ` (started ${offeredRecord.startDate})`
                     : ""}
                 </Typography>
               }
@@ -522,6 +581,31 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
             { disabled: !values.subTeamId, includeNone: true },
           )}
         </Cell>
+        <Grid item xs={12} sm={6} md={6}>
+          <Autocomplete
+            multiple
+            options={leadershipGroups}
+            getOptionLabel={(o) => o.name}
+            isOptionEqualToValue={(a, b) => a.id === b.id}
+            value={leadershipGroups.filter((g) =>
+              (values.leadershipGroupIds ?? []).includes(g.id),
+            )}
+            disabled={isSaving}
+            onChange={(_, selected) =>
+              setFieldValue(
+                "leadershipGroupIds",
+                selected.map((s) => s.id),
+              )
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                size="small"
+                label="Leadership Attributes"
+              />
+            )}
+          />
+        </Grid>
       </Cluster>
 
       <Cluster title="Role">
