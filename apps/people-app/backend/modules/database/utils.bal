@@ -385,7 +385,10 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
 }
 
 # Sentinel key that the CSV builder expands into one column per active leadership attribute.
-const string LEADERSHIP_COLUMN_KEY = "leadershipGroups";
+const LEADERSHIP_COLUMN_KEY = "leadershipGroups";
+
+# Prefix marking a synthetic per-attribute leadership column key.
+const LEADERSHIP_COLUMN_PREFIX = "__leadership__";
 
 # Expand the leadership sentinel key into one synthetic key per active attribute.
 #
@@ -407,7 +410,7 @@ isolated function expandLeadershipColumns(string[] cols, LeadershipGroup[] group
     foreach string key in cols {
         if key == LEADERSHIP_COLUMN_KEY {
             foreach LeadershipGroup g in sorted {
-                expanded.push(string `__leadership__${g.name}`);
+                expanded.push(string `${LEADERSHIP_COLUMN_PREFIX}${g.name}`);
             }
         } else {
             expanded.push(key);
@@ -421,8 +424,8 @@ isolated function expandLeadershipColumns(string[] cols, LeadershipGroup[] group
 # + key - Canonical or synthetic (`__leadership__`-prefixed) column key
 # + return - Header text to print in the CSV
 isolated function leadershipAwareHeader(string key) returns string {
-    if key.startsWith("__leadership__") {
-        return key.substring("__leadership__".length());
+    if key.startsWith(LEADERSHIP_COLUMN_PREFIX) {
+        return key.substring(LEADERSHIP_COLUMN_PREFIX.length());
     }
     return COLUMN_HEADER_MAP[key] ?: key;
 }
@@ -434,8 +437,8 @@ isolated function leadershipAwareHeader(string key) returns string {
 # + nameMap - email->name resolution map, forwarded to resolveColumnValue for non-leadership keys
 # + return - Cell value to print in the CSV
 isolated function leadershipAwareValue(Employee e, string key, map<string> nameMap) returns string {
-    if key.startsWith("__leadership__") {
-        string name = key.substring("__leadership__".length());
+    if key.startsWith(LEADERSHIP_COLUMN_PREFIX) {
+        string name = key.substring(LEADERSHIP_COLUMN_PREFIX.length());
         string held = e.leadershipGroups ?: "";
         // leadershipGroups arrives comma-joined from GROUP_CONCAT; compare whole entries so
         // "Senior Leadership" never matches inside another attribute's name.

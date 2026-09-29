@@ -1838,31 +1838,16 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Validated up front so an unknown or inactive id rejects the whole request before
-        // anything is written.
+        // anything is written. The de-duplicated set is then written inside
+        // updateEmployeeJobInfo's transaction, together with the rest of the update.
         int[]? requestedGroups = payload.leadershipGroupIds;
-        int[] deduped = [];
         if requestedGroups is int[] {
-            database:LeadershipGroup[]|error active = database:getLeadershipGroups();
-            if active is error {
-                log:printError("Error validating leadership attributes", active);
-                return <http:InternalServerError>{body: {message: "Error updating employee"}};
+            int[]|http:BadRequest|http:InternalServerError validGroups =
+                validateLeadershipGroupIds(requestedGroups, employeeId);
+            if validGroups is http:BadRequest|http:InternalServerError {
+                return validGroups;
             }
-            int[] activeIds = from database:LeadershipGroup g in active select g.id;
-            // Duplicates are tolerated and de-duplicated; unknown or inactive ids reject the
-            // whole update rather than applying it partially.
-            foreach int id in requestedGroups {
-                if activeIds.indexOf(id) == () {
-                    return <http:BadRequest>{
-                        body: {message: string `Unknown or inactive leadership attribute: ${id}`}
-                    };
-                }
-                if deduped.indexOf(id) == () {
-                    deduped.push(id);
-                }
-            }
-            // Written inside updateEmployeeJobInfo's transaction, so the attributes commit or
-            // roll back together with the rest of the update.
-            payload.leadershipGroupIds = deduped;
+            payload.leadershipGroupIds = validGroups;
         }
 
         error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);

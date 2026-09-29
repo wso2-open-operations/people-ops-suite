@@ -214,6 +214,40 @@ isolated function validateContinuousServiceRecord(int linkedId, string workEmail
     };
 }
 
+# Validate the leadership attributes submitted for an employee.
+#
+# Every id must be an active attribute; an unknown or inactive one rejects the whole update
+# rather than applying it partially. Duplicates are tolerated and removed.
+#
+# + requested - Attribute ids from the request
+# + employeeId - Employee ID the attributes are being set on, for the log
+# + return - The de-duplicated ids, or the BadRequest or InternalServerError response to send
+isolated function validateLeadershipGroupIds(int[] requested, string employeeId)
+        returns int[]|http:BadRequest|http:InternalServerError {
+
+    database:LeadershipGroup[]|error active = database:getLeadershipGroups();
+    if active is error {
+        log:printError("Error validating leadership attributes", active, employeeId = employeeId);
+        return <http:InternalServerError>{body: {message: "Error updating employee"}};
+    }
+    int[] activeIds = from database:LeadershipGroup g in active select g.id;
+
+    int[] deduped = [];
+    foreach int id in requested {
+        if activeIds.indexOf(id) == () {
+            log:printWarn("Unknown or inactive leadership attribute", employeeId = employeeId,
+                    leadershipGroupId = id);
+            return <http:BadRequest>{
+                body: {message: string `Unknown or inactive leadership attribute: ${id}`}
+            };
+        }
+        if deduped.indexOf(id) == () {
+            deduped.push(id);
+        }
+    }
+    return deduped;
+}
+
 # Validates that a date string is a valid calendar date in the format YYYY-MM-DD.
 #
 # + date - Date string to validate (expected format YYYY-MM-DD)

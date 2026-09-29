@@ -511,7 +511,8 @@ public isolated function createLeadershipGroup(CreateLeadershipGroupPayload payl
 public isolated function updateLeadershipGroup(int id, UpdateLeadershipGroupPayload payload, string updatedBy)
         returns error? {
 
-    string? trimmedName = payload.name is string ? (<string>payload.name).trim() : ();
+    string? name = payload.name;
+    string? trimmedName = name is string ? name.trim() : ();
     sql:ParameterizedQuery query = check updateLeadershipGroupQuery(id, trimmedName, payload.isActive, updatedBy);
 
     sql:ExecutionResult|error result = databaseClient->execute(query);
