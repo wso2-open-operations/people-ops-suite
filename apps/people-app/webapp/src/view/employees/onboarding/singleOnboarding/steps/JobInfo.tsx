@@ -86,7 +86,10 @@ import {
   LogoutOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
-import { isEligiblePriorEmployment } from "@utils/continuousService";
+import {
+  isEligiblePriorEmployment,
+  isStaleContinuousServiceLink,
+} from "@utils/continuousService";
 
 import {
   OFFICE_CLEAR_SENTINEL,
@@ -475,6 +478,19 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
       ),
     [serviceRecords, values.startDate],
   );
+  // Clears a link whose record is no longer offered (e.g. the start date moved before
+  // it), so a stale id is never sent and a hidden checkbox never stays ticked.
+  useEffect(() => {
+    if (
+      isStaleContinuousServiceLink(
+        continuousServiceRecord,
+        values.continuousServiceRecord,
+      )
+    ) {
+      setFieldValue("continuousServiceRecord", null);
+      setFieldValue("isRelocation", false);
+    }
+  }, [continuousServiceRecord, values.continuousServiceRecord, setFieldValue]);
   const {
     state: organizationState,
     businessUnits,

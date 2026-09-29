@@ -17,7 +17,10 @@
 import { EmployeeStatus } from "@/types/types";
 import { ContinuousServiceRecordInfo } from "@slices/employeeSlice/employee";
 
-import { isEligiblePriorEmployment } from "./continuousService";
+import {
+  isEligiblePriorEmployment,
+  isStaleContinuousServiceLink,
+} from "./continuousService";
 
 const record = (
   employeeId: string,
@@ -103,3 +106,25 @@ describe("isEligiblePriorEmployment", () => {
     ).toBe(true);
   });
 });
+
+describe("isStaleContinuousServiceLink", () => {
+  const earlier = {
+    ...record("LK100254", "2012-09-01", EmployeeStatus.Left),
+    id: 14501,
+  };
+
+  it("is stale once the selected record is no longer offered", () => {
+    // e.g. the start date moved to before the selected record's start
+    expect(isStaleContinuousServiceLink([], 14501)).toBe(true);
+  });
+
+  it("is not stale while the selected record is still offered", () => {
+    expect(isStaleContinuousServiceLink([earlier], 14501)).toBe(false);
+  });
+
+  it("is not stale when nothing is selected", () => {
+    expect(isStaleContinuousServiceLink([], null)).toBe(false);
+    expect(isStaleContinuousServiceLink([earlier], undefined)).toBe(false);
+  });
+});
+

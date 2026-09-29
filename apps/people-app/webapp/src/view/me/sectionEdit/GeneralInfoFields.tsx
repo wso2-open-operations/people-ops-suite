@@ -27,7 +27,7 @@ import {
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { getIn, useFormikContext } from "formik";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { CreateEmployeeFormValues, EmployeeStatus } from "@/types/types";
 import {
@@ -45,7 +45,10 @@ import { normalizeEmail, sortAndFormatOptions } from "@utils/utils";
 import ResignationReasonField from "@view/me/sectionEdit/ResignationReasonField";
 import { useEmploymentRules } from "@view/me/sectionEdit/useEmploymentRules";
 import { useOrgCascade } from "@view/me/sectionEdit/useOrgCascade";
-import { isEligiblePriorEmployment } from "@utils/continuousService";
+import {
+  isEligiblePriorEmployment,
+  isStaleContinuousServiceLink,
+} from "@utils/continuousService";
 
 /** A labelled cell matching the read-only grid's proportions. */
 const Cell = ({ children }: { children: React.ReactNode }) => (
@@ -132,6 +135,19 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
       ),
     [serviceRecords, values.startDate, values.employeeId],
   );
+  // Clears a link whose record is no longer offered (e.g. the start date moved before
+  // it), so a stale id is never sent and a hidden checkbox never stays ticked.
+  useEffect(() => {
+    if (
+      isStaleContinuousServiceLink(
+        continuousServiceRecord,
+        values.continuousServiceRecord,
+      )
+    ) {
+      setFieldValue("continuousServiceRecord", null);
+      setFieldValue("isRelocation", false);
+    }
+  }, [continuousServiceRecord, values.continuousServiceRecord, setFieldValue]);
   const { groups: leadershipGroups } = useAppSelector((s) => s.leadership);
   const dispatch = useAppDispatch();
 

@@ -41,3 +41,21 @@ export const isEligiblePriorEmployment = (
   if (!startDate || !dayjs(startDate).isValid()) return true;
   return dayjs(record.startDate).isBefore(dayjs(startDate), "day");
 };
+
+/**
+ * Whether a selected continuous service link has stopped being valid.
+ *
+ * The eligible list changes as the form's start date changes. When the selected record
+ * drops out of it, the form must clear the link: otherwise the stale id is sent on save
+ * and refused, and if no records remain the relocation checkbox is hidden, so the admin
+ * could not untick it.
+ *
+ * @param eligible Records currently offered, after isEligiblePriorEmployment
+ * @param selectedId The link held in the form, if any
+ */
+export const isStaleContinuousServiceLink = (
+  eligible: ContinuousServiceRecordInfo[],
+  selectedId: number | null | undefined,
+): boolean =>
+  selectedId != null && !eligible.some((record) => record.id === selectedId);
+
