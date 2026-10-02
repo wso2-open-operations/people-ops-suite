@@ -14,7 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { EmergencyContact, EmployeeStatus, State } from "@/types/types";
+import {
+  CURRENT_EMPLOYEE_STATUSES,
+  EmergencyContact,
+  EmployeeStatus,
+  isCurrentEmployeeStatusSet,
+  State,
+} from "@/types/types";
 import { AppConfig } from "@config/config";
 import {
   DEFAULT_LIMIT_VALUE,
@@ -214,7 +220,8 @@ export type CreateEmployeePayload = {
   jobRole?: string | null;
   externalDesignation?: string | null;
   workLocation: string;
-  workEmail: string;
+  /** Left out when the account is not created yet; the backend stores a placeholder. */
+  workEmail?: string;
   startDate: string;
   managerEmail: string;
   additionalManagerEmails?: string[];
@@ -329,7 +336,7 @@ const initialState: EmployeesState = {
   managersState: State.idle,
   employeeFilter: {
     filters: {
-      employeeStatuses: [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver],
+      employeeStatuses: [...CURRENT_EMPLOYEE_STATUSES],
       excludeFutureStartDate: true,
     },
     pagination: {
@@ -737,6 +744,55 @@ export const validateEpf = createAsyncThunk(
   },
 );
 
+/** An employment found when recognising who is being onboarded. */
+export interface EmploymentMatch {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  workEmail: string;
+  employeeStatus: string;
+}
+
+/** Who the onboarding form is dealing with, as far as the NIC/Passport tells. */
+export interface ReturningEmployeeLookup {
+  /** The person's latest employment; null for someone new. */
+  latestEmployment: EmploymentMatch | null;
+  /** Employed now or already onboarded (Active, Marked leaver or Upcoming). */
+  isCurrentEmployee: boolean;
+  /** Their latest real work email; null when their records hold only placeholders. */
+  formerWorkEmail: string | null;
+}
+
+export const lookupReturningEmployee = createAsyncThunk(
+  "employees/lookupReturningEmployee",
+  async (nicOrPassport: string, { dispatch, rejectWithValue }) => {
+    try {
+      // POST with a body rather than a query string, so the NIC stays out of URLs and logs.
+      const resp = await APIService.getInstance().post(
+        AppConfig.serviceUrls.returningEmployee,
+        { nicOrPassport },
+      );
+      return resp.data as ReturningEmployeeLookup;
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const status = error.response?.status;
+      const errorMessage =
+        status === HttpStatusCode.InternalServerError
+          ? "Error looking up returning employee"
+          : error.response?.data?.message || "Failed to look up returning employee";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 export const fetchEmployeeQrCode = createAsyncThunk(
   "employee/fetchEmployeeQrCode",
   async (employeeId: string, { dispatch, rejectWithValue }) => {
@@ -856,14 +912,12 @@ const EmployeeSlice = createSlice({
         state.stateMessage = "Filtered employees fetched successfully";
         state.errorMessage = null;
         const { searchString, filters } = action.meta.arg;
-        // Capture the baseline count on the default query (Active + Marked leaver, no other filters).
+        // Capture the baseline count on the default query (current employees, no other filters).
         const statuses = filters.employeeStatuses ?? [];
         const isBaselineQuery =
           !searchString &&
           filters.excludeFutureStartDate === true &&
-          statuses.length === 2 &&
-          statuses.includes(EmployeeStatus.Active) &&
-          statuses.includes(EmployeeStatus.MarkedLeaver) &&
+          isCurrentEmployeeStatusSet(statuses) &&
           Object.entries(filters).every(([key, value]) => {
             return key === "employeeStatuses" || key === "excludeFutureStartDate" || value === undefined;
           });

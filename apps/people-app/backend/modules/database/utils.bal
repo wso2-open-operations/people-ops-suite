@@ -530,3 +530,74 @@ public isolated function isEligiblePriorEmployment(ContinuousServiceRecordInfo p
     priorRecord.employeeStatus == EMPLOYEE_LEFT
         && priorRecord.employeeId != targetEmployeeId
         && priorRecord.startDate < targetStartDate;
+
+# Whether a work email is one of the shared placeholders rather than a person's own address.
+#
+# A placeholder is held by many unrelated employees, so it must never be used to recognise a
+# returning employee or to look up anyone's earlier employment.
+#
+# + email - Work email to check
+# + return - true for FUTURE_JOINER_EMAIL or EX_EMPLOYEE_EMAIL, ignoring case and surrounding space
+public isolated function isPlaceholderWorkEmail(string email) returns boolean {
+    string normalized = email.trim().toLowerAscii();
+    return normalized == FUTURE_JOINER_EMAIL || normalized == EX_EMPLOYEE_EMAIL;
+}
+
+# The status a newly onboarded employee starts in.
+#
+# A start date still to come starts them Upcoming, and the scheduler makes them Active on that
+# date. Today counts as started, so someone joining today is Active at once rather than waiting
+# for the next sweep. Dates compare as YYYY-MM-DD strings, against today in UTC like the
+# scheduler's own check.
+#
+# + startDate - Start date in YYYY-MM-DD form
+# + today - Today's date in YYYY-MM-DD form (UTC)
+# + return - EMPLOYEE_UPCOMING for a future start date, otherwise EMPLOYEE_ACTIVE
+public isolated function initialEmployeeStatus(string startDate, string today) returns EmployeeStatus =>
+    startDate > today ? EMPLOYEE_UPCOMING : EMPLOYEE_ACTIVE;
+
+# Whether a status means the person is employed now or about to be, so the same person cannot
+# be onboarded again and their work email still belongs to them.
+#
+# + status - Employee status
+# + return - true for Active, Marked leaver and Upcoming
+public isolated function isCurrentEmploymentStatus(string status) returns boolean =>
+    status == EMPLOYEE_ACTIVE || status == EMPLOYEE_MARKED_LEAVER || status == EMPLOYEE_UPCOMING;
+
+# Decide whether the person behind a NIC/Passport may be onboarded with the given work email.
+#
+# Someone still employed (or already onboarded and Upcoming) is refused outright. A former
+# employee is a rehire, and must come back under a work email they held before, so the NIC
+# and the email agree on who they are. Placeholder emails on their earlier records say nothing
+# about who they are, so a former employee whose records hold only placeholders is accepted on
+# the NIC alone.
+#
+# + employments - The person's employments, newest first (empty for someone new)
+# + requestedEmail - Work email from the submission, nil when left empty
+# + return - The refusal message, or nil when onboarding may go ahead
+public isolated function checkReturningEmployee(EmploymentMatch[] employments, string? requestedEmail)
+        returns string? {
+
+    foreach EmploymentMatch employment in employments {
+        if isCurrentEmploymentStatus(employment.employeeStatus) {
+            return string `Employee with the given NIC/Passport already exists `
+                + string `(${employment.employeeId}, ${employment.employeeStatus})`;
+        }
+    }
+
+    EmploymentMatch[] withRealEmail = employments.filter(e => !isPlaceholderWorkEmail(e.workEmail));
+    if withRealEmail.length() == 0 {
+        return;
+    }
+    if requestedEmail is string {
+        string normalized = requestedEmail.trim().toLowerAscii();
+        foreach EmploymentMatch employment in withRealEmail {
+            if employment.workEmail.trim().toLowerAscii() == normalized {
+                return;
+            }
+        }
+    }
+    EmploymentMatch latest = withRealEmail[0];
+    return string `This NIC/Passport belongs to former employee ${latest.firstName} ${latest.lastName} `
+        + string `(${latest.employeeId}). Use their work email ${latest.workEmail} to rehire them`;
+}

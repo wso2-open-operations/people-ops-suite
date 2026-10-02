@@ -37,6 +37,7 @@ import {
   InputAdornment,
   IconButton,
   Autocomplete,
+  Alert,
 } from "@mui/material";
 import { useFormikContext } from "formik";
 import * as Yup from "yup";
@@ -46,11 +47,14 @@ import {
   fetchContinuousServiceRecord,
   resetContinuousService,
   validateEpf,
+  lookupReturningEmployee,
   type ContinuousServiceRecordInfo,
+  type ReturningEmployeeLookup,
 } from "@slices/employeeSlice/employee";
-import { EmployeeStatus } from "@/types/types";
+import { CURRENT_EMPLOYEE_STATUSES, EmployeeStatus } from "@/types/types";
 import {
   RESIGNATION_DATE_ORDER_MESSAGE,
+  isPlaceholderWorkEmail,
   isResignationDateOrderValid,
   normalizeEmail,
   sortAndFormatOptions,
@@ -127,13 +131,28 @@ export const createJobInfoValidationSchema = (
   employmentTypes?: { id: number; name: string }[],
   // Onboarding has no House field to fill in, so the requirement below is only applied
   // where there is one to answer it — see the note on houseId.
-  { requireHouse = true }: { requireHouse?: boolean } = {},
+  {
+    requireHouse = true,
+    // Onboarding may leave the work email empty for a joiner whose account is not created
+    // yet, and must not be given a placeholder by hand. Existing records keep requiring one,
+    // and may already hold a placeholder, so that check is onboarding-only.
+    requireWorkEmail = true,
+  }: { requireHouse?: boolean; requireWorkEmail?: boolean } = {},
 ) =>
   Yup.object().shape({
-    workEmail: Yup.string()
-      .required("Work email is required")
-      .email("Invalid email format")
-      .max(254, "Email must be at most 254 characters"),
+    workEmail: requireWorkEmail
+      ? Yup.string()
+          .required("Work email is required")
+          .email("Invalid email format")
+          .max(254, "Email must be at most 254 characters")
+      : Yup.string()
+          .email("Invalid email format")
+          .max(254, "Email must be at most 254 characters")
+          .test(
+            "not-placeholder",
+            "Leave the work email empty when the account is not created yet",
+            (value) => !value || !isPlaceholderWorkEmail(value),
+          ),
     epf: Yup.string()
       .max(45, "EPF must be at most 45 characters")
       .transform((value) => (value === "" ? null : value))
@@ -516,6 +535,91 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
     // Once, on open; later email edits re-fetch on blur as before.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Who the NIC/Passport from the previous step belongs to, so a returning employee is
+  // recognised before submitting: the backend refuses someone still employed, and requires
+  // a rehire to keep a work email they held. Onboarding only — an existing record being
+  // edited is not someone returning.
+  const [returningEmployee, setReturningEmployee] =
+    useState<ReturningEmployeeLookup | null>(null);
+  const nicOrPassport = values.personalInfo?.nicOrPassport?.trim() ?? "";
+  useEffect(() => {
+    if (isEditMode || !nicOrPassport) {
+      setReturningEmployee(null);
+      return;
+    }
+    let cancelled = false;
+    dispatch(lookupReturningEmployee(nicOrPassport))
+      .unwrap()
+      .then((result) => {
+        if (cancelled) return;
+        setReturningEmployee(result);
+        // Fill in the email a rehire has to use, unless one has been typed already.
+        const formerEmail = result.formerWorkEmail;
+        if (formerEmail && !result.isCurrentEmployee && !(values.workEmail ?? "").trim()) {
+          setFieldValue("workEmail", formerEmail);
+          dispatch(fetchContinuousServiceRecord(formerEmail));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setReturningEmployee(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Looked up as the step opens; the NIC is entered on the previous step.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, nicOrPassport]);
+
+  const identityNotice = useMemo((): {
+    severity: "error" | "warning" | "info";
+    message: string;
+  } | null => {
+    const nameAndId = (m: {
+      firstName: string | null;
+      lastName: string | null;
+      employeeId: string;
+    }) =>
+      `${`${m.firstName ?? ""} ${m.lastName ?? ""}`.trim() || "N/A"} (${m.employeeId})`;
+    const isCurrent = (status: string) =>
+      CURRENT_EMPLOYEE_STATUSES.includes(status as EmployeeStatus);
+
+    const former = returningEmployee?.latestEmployment ?? null;
+    if (former && returningEmployee?.isCurrentEmployee) {
+      return {
+        severity: "error",
+        message: `This NIC/Passport belongs to ${nameAndId(former)}, who is ${former.employeeStatus}. They can't be onboarded again.`,
+      };
+    }
+    if (former && returningEmployee?.formerWorkEmail) {
+      return {
+        severity: "info",
+        message: `Returning employee: ${nameAndId(former)}. To rehire them, use a work email they held before — ${returningEmployee.formerWorkEmail}.`,
+      };
+    }
+    if (former) {
+      return {
+        severity: "info",
+        message: `Returning employee: ${nameAndId(former)}. Their previous work email isn't on record — enter their work email, or leave it empty if the account isn't created yet.`,
+      };
+    }
+
+    // The NIC matched nobody, but the email did: either it is taken, or a former employee is
+    // coming back under a different NIC, whose earlier employment can still be linked.
+    if (!recordsLoadedForThisEmail || serviceRecords.length === 0) return null;
+    const currentHolder = serviceRecords.find((r) => isCurrent(r.employeeStatus));
+    if (currentHolder) {
+      return {
+        severity: "warning",
+        message: `${values.workEmail} is already in use by ${nameAndId(currentHolder)}.`,
+      };
+    }
+    return {
+      severity: "info",
+      message: `This work email belonged to ${nameAndId(serviceRecords[0])}. If this is the same person, link their earlier employment with the Relocation option.`,
+    };
+  }, [returningEmployee, recordsLoadedForThisEmail, serviceRecords, values.workEmail]);
+
   const {
     state: organizationState,
     businessUnits,
@@ -1025,11 +1129,16 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
           headerBoxSx={SECTION_HEADER_BOX_SX}
           iconBoxSx={iconBoxSx}
         />
+        {identityNotice && (
+          <Alert severity={identityNotice.severity} sx={{ mb: 3 }}>
+            {identityNotice.message}
+          </Alert>
+        )}
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <TextField
               fullWidth
-              required
+              required={isEditMode}
               name="workEmail"
               label="Work Email"
               value={values.workEmail ?? ""}
@@ -1050,7 +1159,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                 }
               }}
               error={Boolean(touched.workEmail && errors.workEmail)}
-              helperText={touched.workEmail && errors.workEmail}
+              helperText={
+                (touched.workEmail && errors.workEmail) ||
+                (isEditMode
+                  ? undefined
+                  : "Leave empty if the account isn't created yet")
+              }
               sx={textFieldSx}
             />
           </Grid>

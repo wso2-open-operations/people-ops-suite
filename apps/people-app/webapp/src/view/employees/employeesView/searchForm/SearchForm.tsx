@@ -42,7 +42,7 @@ import {
 import { alpha } from "@mui/material/styles";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
 import type { EmployeeSearchPayload } from "@slices/employeeSlice/employee";
-import { EmployeeStatus } from "@/types/types";
+import { CURRENT_EMPLOYEE_STATUSES } from "@/types/types";
 import {
   fetchManagers,
   setEmployeeFilter,
@@ -173,7 +173,7 @@ export function SearchForm() {
       setEmployeeFilter({
         searchString: normalizedSearchString,
         filters: {
-          employeeStatuses: [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver],
+          employeeStatuses: [...CURRENT_EMPLOYEE_STATUSES],
           excludeFutureStartDate: true,
         },
         pagination: {

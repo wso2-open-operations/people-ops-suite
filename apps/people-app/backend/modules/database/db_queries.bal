@@ -98,32 +98,42 @@ isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
 isolated function getEmployeeIdByEpfQuery(string epf) returns sql:ParameterizedQuery =>
     `SELECT employee_id FROM employee WHERE epf = ${epf} LIMIT 1;`;
 
-# Fetch the personal_info ID for a given NIC/Passport.
+# Every employment of the person behind a NIC/Passport, newest first.
 #
-# + nicOrPassport - National Identity Card number or Passport
-# + return - Query returning the personal_info ID
-isolated function getPersonalInfoIdByNicQuery(string nicOrPassport) returns sql:ParameterizedQuery =>
-    `SELECT id FROM personal_info WHERE nic_or_passport = ${nicOrPassport} LIMIT 1;`;
+# Used to recognise a returning employee at onboarding: whether they are still employed, and
+# which work email they held. Ordered by start date, then id for two starting the same day,
+# so the first row is their latest employment.
+#
+# + nicOrPassport - NIC/Passport from the onboarding submission
+# + return - Query returning the person's employment rows
+isolated function getEmploymentsByNicQuery(string nicOrPassport) returns sql:ParameterizedQuery =>
+    `SELECT
+        e.employee_id AS employeeId,
+        e.first_name AS firstName,
+        e.last_name AS lastName,
+        e.work_email AS workEmail,
+        e.employee_status AS employeeStatus
+     FROM employee e
+        INNER JOIN personal_info p ON p.id = e.personal_info_id
+     WHERE p.nic_or_passport = ${nicOrPassport}
+     ORDER BY e.start_date DESC, e.id DESC;`;
 
-# Check whether a personal_info ID already has an employee record under the given work email —
-# used to confirm a duplicate NIC/Passport belongs to the same person coming back (rehire).
+# Find a currently employed (Active, Marked leaver or Upcoming) employee holding a work email.
 #
-# + personalInfoId - personal_info ID matched by NIC/Passport
-# + workEmail - Work email from the new onboarding submission
-# + return - Query returning the count of matching employee records
-isolated function countEmployeeByPersonalInfoIdAndWorkEmailQuery(int personalInfoId, string workEmail)
-    returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) FROM employee
-     WHERE personal_info_id = ${personalInfoId}
-       AND LOWER(work_email) = LOWER(${workEmail});`;
-
-# Count active employee records linked to a personal_info ID — used to block onboarding a
-# rehire for someone who is still currently employed.
-#
-# + personalInfoId - personal_info ID matched by NIC/Passport
-# + return - Query returning the count of active employee records
-isolated function countActiveEmployeeByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) FROM employee WHERE personal_info_id = ${personalInfoId} AND employee_status = ${EMPLOYEE_ACTIVE};`;
+# + workEmail - Work email to look for
+# + return - Query returning at most one matching employee
+isolated function getCurrentEmployeeByWorkEmailQuery(string workEmail) returns sql:ParameterizedQuery =>
+    `SELECT
+        e.employee_id AS employeeId,
+        e.first_name AS firstName,
+        e.last_name AS lastName,
+        e.work_email AS workEmail,
+        e.employee_status AS employeeStatus
+     FROM employee e
+     WHERE LOWER(e.work_email) = LOWER(${workEmail})
+       AND e.employee_status IN (${EMPLOYEE_ACTIVE}, ${EMPLOYEE_MARKED_LEAVER}, ${EMPLOYEE_UPCOMING})
+     ORDER BY e.start_date DESC, e.id DESC
+     LIMIT 1;`;
 
 # Fetch employee work email by employee ID.
 #
@@ -1464,22 +1474,22 @@ isolated function updateDesignationQuery(int id, string? designation, int? jobBa
     return sql:queryConcat(query, ` WHERE id = ${id};`);
 }
 
-# Count active employees holding a designation.
+# Count active and upcoming employees holding a designation.
 #
 # + id - Designation ID
-# + return - Query counting active employees
+# + return - Query counting active and upcoming employees
 isolated function countActiveEmployeesInDesignationQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE designation_id = ${id} AND employee_status = 'Active';`;
+    `SELECT COUNT(*) AS count FROM employee WHERE designation_id = ${id} AND employee_status IN ('Active', 'Upcoming');`;
 
-# Count active employees across a career function's designations.
+# Count active and upcoming employees across a career function's designations.
 #
 # + id - Career function ID
-# + return - Query counting active employees
+# + return - Query counting active and upcoming employees
 isolated function countActiveEmployeesInCareerFunctionQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count
      FROM employee e
      JOIN designation d ON d.id = e.designation_id
-     WHERE d.career_function_id = ${id} AND e.employee_status = 'Active';`;
+     WHERE d.career_function_id = ${id} AND e.employee_status IN ('Active', 'Upcoming');`;
 
 # Get companies query.
 #
@@ -1576,7 +1586,7 @@ isolated function getLeadershipGroupsQuery() returns sql:ParameterizedQuery =>
 #
 # + return - Parameterized list of the blocking statuses, for an IN (...) clause
 isolated function leadershipHolderStatuses() returns sql:ParameterizedQuery =>
-    `${EMPLOYEE_ACTIVE}, ${EMPLOYEE_MARKED_LEAVER}`;
+    `${EMPLOYEE_ACTIVE}, ${EMPLOYEE_MARKED_LEAVER}, ${EMPLOYEE_UPCOMING}`;
 
 # Every leadership attribute, retired ones included, with how many current employees hold it.
 #
@@ -1831,7 +1841,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.epf},
             ${payload.companyId},
             ${payload.workLocation},
-            ${payload.workEmail},
+            ${payload.workEmail ?: FUTURE_JOINER_EMAIL},
             ${payload.startDate},
             ${payload.secondaryJobTitle},
             ${payload.jobRole},
@@ -2814,65 +2824,65 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
 isolated function getEmployeeEmailToNameMapQuery() returns sql:ParameterizedQuery =>
     `SELECT work_email, CONCAT(first_name, ' ', last_name) AS full_name FROM employee;`;
 
-# Count active employees in a business unit.
+# Count active and upcoming employees in a business unit.
 #
 # + id - Business unit ID
-# + return - Query counting active employees with business_unit_id = id
+# + return - Query counting active and upcoming employees with business_unit_id = id
 isolated function countActiveEmployeesInBusinessUnitQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE business_unit_id = ${id} AND employee_status = 'Active'`;
+    `SELECT COUNT(*) AS count FROM employee WHERE business_unit_id = ${id} AND employee_status IN ('Active', 'Upcoming')`;
 
-# Count active employees in a business-unit–team mapping.
+# Count active and upcoming employees in a business-unit–team mapping.
 #
 # + id - business_unit_team mapping ID
-# + return - Query counting active employees matching that BU+Team combination
+# + return - Query counting active and upcoming employees matching that BU+Team combination
 isolated function countActiveEmployeesInBUTeamMappingQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count FROM employee e
      JOIN business_unit_team but ON but.id = ${id}
-     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id AND e.employee_status = 'Active'`;
+     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id AND e.employee_status IN ('Active', 'Upcoming')`;
 
-# Count active employees in a business-unit–team–sub-team mapping.
+# Count active and upcoming employees in a business-unit–team–sub-team mapping.
 #
 # + id - business_unit_team_sub_team mapping ID
-# + return - Query counting active employees matching that BU+Team+SubTeam combination
+# + return - Query counting active and upcoming employees matching that BU+Team+SubTeam combination
 isolated function countActiveEmployeesInBUTeamSubTeamMappingQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count FROM employee e
      JOIN business_unit_team_sub_team butst ON butst.id = ${id}
      JOIN business_unit_team but ON but.id = butst.business_unit_team_id
      WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id
-       AND e.sub_team_id = butst.sub_team_id AND e.employee_status = 'Active'`;
+       AND e.sub_team_id = butst.sub_team_id AND e.employee_status IN ('Active', 'Upcoming')`;
 
-# Count active employees in a business-unit–team–sub-team–unit mapping.
+# Count active and upcoming employees in a business-unit–team–sub-team–unit mapping.
 #
 # + id - business_unit_team_sub_team_unit mapping ID
-# + return - Query counting active employees matching that BU+Team+SubTeam+Unit combination
+# + return - Query counting active and upcoming employees matching that BU+Team+SubTeam+Unit combination
 isolated function countActiveEmployeesInBUTeamSubTeamUnitMappingQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count FROM employee e
      JOIN business_unit_team_sub_team_unit butstu ON butstu.id = ${id}
      JOIN business_unit_team_sub_team butst ON butst.id = butstu.business_unit_team_sub_team_id
      JOIN business_unit_team but ON but.id = butst.business_unit_team_id
      WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id
-       AND e.sub_team_id = butst.sub_team_id AND e.unit_id = butstu.unit_id AND e.employee_status = 'Active'`;
+       AND e.sub_team_id = butst.sub_team_id AND e.unit_id = butstu.unit_id AND e.employee_status IN ('Active', 'Upcoming')`;
 
-# Count active employees in a team.
+# Count active and upcoming employees in a team.
 #
 # + id - Team ID
-# + return - Query counting active employees with team_id = id
+# + return - Query counting active and upcoming employees with team_id = id
 isolated function countActiveEmployeesInTeamQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE team_id = ${id} AND employee_status = 'Active'`;
+    `SELECT COUNT(*) AS count FROM employee WHERE team_id = ${id} AND employee_status IN ('Active', 'Upcoming')`;
 
-# Count active employees in a sub-team.
+# Count active and upcoming employees in a sub-team.
 #
 # + id - Sub-team ID
-# + return - Query counting active employees with sub_team_id = id
+# + return - Query counting active and upcoming employees with sub_team_id = id
 isolated function countActiveEmployeesInSubTeamQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE sub_team_id = ${id} AND employee_status = 'Active'`;
+    `SELECT COUNT(*) AS count FROM employee WHERE sub_team_id = ${id} AND employee_status IN ('Active', 'Upcoming')`;
 
-# Count active employees in a unit.
+# Count active and upcoming employees in a unit.
 #
 # + id - Unit ID
-# + return - Query counting active employees with unit_id = id
+# + return - Query counting active and upcoming employees with unit_id = id
 isolated function countActiveEmployeesInUnitQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE unit_id = ${id} AND employee_status = 'Active'`;
+    `SELECT COUNT(*) AS count FROM employee WHERE unit_id = ${id} AND employee_status IN ('Active', 'Upcoming')`;
 
 # Delete an employee record.
 #
@@ -3290,5 +3300,21 @@ isolated function getPreviousHouseIdQuery(string workEmail) returns sql:Paramete
      FROM employee e
      LEFT JOIN house h ON h.id = e.house_id AND h.is_active = 1
      WHERE e.work_email = ${workEmail}
+     ORDER BY e.start_date DESC, e.id DESC
+     LIMIT 1`;
+
+# Fetch the house from the most recent employment of the person behind a NIC/Passport.
+#
+# The same rules as getPreviousHouseIdQuery, matched on the person rather than the work email,
+# so a returning employee is recognised even when their email has changed or is a placeholder.
+#
+# + nicOrPassport - NIC/Passport of the employee being onboarded
+# + return - Parameterized query returning the previous house id, if there is one
+isolated function getPreviousHouseIdByNicQuery(string nicOrPassport) returns sql:ParameterizedQuery =>
+    `SELECT h.id AS houseId
+     FROM employee e
+     INNER JOIN personal_info p ON p.id = e.personal_info_id
+     LEFT JOIN house h ON h.id = e.house_id AND h.is_active = 1
+     WHERE p.nic_or_passport = ${nicOrPassport}
      ORDER BY e.start_date DESC, e.id DESC
      LIMIT 1`;

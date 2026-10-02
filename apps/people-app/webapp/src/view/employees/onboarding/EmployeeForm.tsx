@@ -704,6 +704,9 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 // rendered in edit mode; the server assigns the house when onboarding.
                 createJobInfoValidationSchema(employmentTypes, {
                   requireHouse: isEditMode,
+                  // Onboarding may leave it empty for a joiner whose account is not
+                  // created yet; the backend stores a placeholder until it is.
+                  requireWorkEmail: isEditMode,
                 })
           }
           onSubmit={async (values, actions) => {
@@ -722,7 +725,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 jobRole: values.jobRole || "",
                 externalDesignation: values.externalDesignation || "",
                 workLocation: values.workLocation,
-                workEmail: values.workEmail,
+                workEmail: values.workEmail?.trim() || undefined,
                 startDate: values.startDate,
                 managerEmail: values.managerEmail,
                 additionalManagerEmails: values.additionalManagerEmail?.length

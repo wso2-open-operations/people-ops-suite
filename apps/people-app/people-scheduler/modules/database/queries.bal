@@ -66,6 +66,41 @@ isolated function transitionExpiredLeaversQuery(string actor, string[] employeeI
     );
 }
 
+# Fetch Upcoming employees whose start date has arrived (today or earlier).
+#
+# UTC_DATE, matching the leaver query above and the backend, which onboards someone as
+# Upcoming only when their start date is after today in UTC.
+#
+# + return - Query to select employees due to become Active
+isolated function getDueUpcomingJoinersQuery() returns sql:ParameterizedQuery =>
+    `SELECT
+        e.employee_id,
+        e.first_name,
+        e.last_name,
+        e.work_email,
+        e.start_date
+    FROM employee e
+    WHERE e.employee_status = 'Upcoming'
+        AND e.start_date <= UTC_DATE();`;
+
+# Make Upcoming employees whose start date has arrived Active.
+#
+# + actor - System actor performing the update
+# + employeeIds - External employee IDs to restrict the update to (from the SELECT that found them)
+# + return - Query to update matching employees' status to Active
+isolated function activateDueUpcomingJoinersQuery(string actor, string[] employeeIds) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildInClause(employeeIds);
+    return sql:queryConcat(
+        `UPDATE employee e
+        SET e.employee_status = 'Active', e.updated_by = ${actor}
+        WHERE e.employee_status = 'Upcoming'
+            AND e.start_date <= UTC_DATE()
+            AND e.employee_id IN (`,
+        inClause,
+        `);`
+    );
+}
+
 # Fetch every pending scheduled change whose effective date has arrived.
 #
 # Ordered by effective date then id, so two changes to the same employee land in the

@@ -172,6 +172,25 @@ public type EpfValidationResponse record {|
     boolean epfExists;
 |};
 
+# Payload for recognising a returning employee by NIC/Passport. Sent in a body rather than the
+# URL so the NIC stays out of access logs.
+public type ReturningEmployeeLookupPayload record {|
+    # NIC/Passport entered on the onboarding form
+    @constraint:String {maxLength: 20}
+    string nicOrPassport;
+|};
+
+# Who the onboarding form is dealing with, as far as the NIC/Passport tells.
+public type ReturningEmployeeLookupResponse record {|
+    # The person's latest employment, nil for someone new
+    EmploymentMatch? latestEmployment;
+    # Whether the person is employed now or already onboarded (Active, Marked leaver or Upcoming)
+    boolean isCurrentEmployee;
+    # The latest real work email they held, nil when their records hold only placeholders. A
+    # rehire must use one of their earlier real emails; this is the one the form fills in.
+    string? formerWorkEmail;
+|};
+
 # Context record returned by the employee ID generation query.
 public type EmployeeIdContext record {|
     # Company prefix
@@ -553,6 +572,21 @@ public type EmployeePersonalInfo record {|
     string nationality;
     # Emergency contacts
     EmergencyContact[] emergencyContacts = [];
+|};
+
+# An employment found when recognising a person at onboarding — by NIC/Passport for a returning
+# employee, or by work email for someone currently employed.
+public type EmploymentMatch record {|
+    # Employee ID
+    string employeeId;
+    # First name
+    string firstName;
+    # Last name
+    string lastName;
+    # Work email held on that employment
+    string workEmail;
+    # Employee status
+    string employeeStatus;
 |};
 
 # Continuous service record information.
@@ -1059,9 +1093,10 @@ public type CreateEmployeePayload record {|
     # Work location
     @constraint:String {maxLength: 100}
     string workLocation;
-    # Work email of the user
+    # Work email of the user. Left out for a joiner whose account does not exist yet, in which
+    # case FUTURE_JOINER_EMAIL is stored; onboarding fills it in before the record is written.
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
-    string workEmail;
+    string? workEmail = ();
     # Start date
     @constraint:String {pattern: re `${DATE_PATTERN}`}
     string startDate;

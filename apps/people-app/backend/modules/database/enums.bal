@@ -38,7 +38,9 @@ public enum ParkingReservationStatus {
 public enum EmployeeStatus {
     EMPLOYEE_ACTIVE = "Active",
     EMPLOYEE_LEFT = "Left",
-    EMPLOYEE_MARKED_LEAVER = "Marked leaver"
+    EMPLOYEE_MARKED_LEAVER = "Marked leaver",
+    # Onboarded with a start date still to come; the scheduler makes them Active on that date.
+    EMPLOYEE_UPCOMING = "Upcoming"
 }
 
 # [Database] Enum for employment types.

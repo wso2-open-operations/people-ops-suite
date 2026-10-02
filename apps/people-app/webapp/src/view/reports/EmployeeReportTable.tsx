@@ -392,6 +392,22 @@ export default function EmployeeReportTable({
     setAppliedFilters((prev) => ({ ...baselineFilters, ...prev, employeeStatus }));
   }, [baselineFilters, employeeStatus]);
 
+  // Future joiners are Upcoming until their start date, so the Active report only reaches
+  // them through the status as well as the start date: turning "Exclude future joiners" off
+  // widens the status to include Upcoming. A status chosen in the drawer is left as chosen.
+  const requestFilters = useMemo<Filters>(() => {
+    if (
+      employeeStatus !== EmployeeStatus.Active ||
+      appliedFilters.excludeFutureStartDate === true ||
+      (appliedFilters.employeeStatuses?.length ?? 0) > 0
+    ) {
+      return appliedFilters;
+    }
+    const statuses = [EmployeeStatus.Active, EmployeeStatus.Upcoming];
+    if (appliedFilters.includeMarkedLeavers === true) statuses.push(EmployeeStatus.MarkedLeaver);
+    return { ...appliedFilters, employeeStatuses: statuses };
+  }, [appliedFilters, employeeStatus]);
+
   // Count all active filters except permanently hidden ones (employeeStatus, directReports).
   // Baseline defaults like excludeFutureStartDate intentionally count — toggling them off
   // decrements the badge, reflecting that the user has deviated from the default state.
@@ -421,7 +437,7 @@ export default function EmployeeReportTable({
     setTotalCount(null);
     dispatch(
       fetchFilteredEmployees({
-        filters: appliedFilters,
+        filters: requestFilters,
         pagination: { limit: PREVIEW_LIMIT, offset: 0 },
         sort: { sortField: "employeeId", sortOrder: "ASC" },
         leadOnly: false,
@@ -437,7 +453,7 @@ export default function EmployeeReportTable({
     return () => {
       cancelled = true;
     };
-  }, [dispatch, appliedFilters]);
+  }, [dispatch, requestFilters]);
 
   const columnDefs = useMemo(() => getColumnDefs(theme), [theme]);
 
@@ -588,7 +604,7 @@ export default function EmployeeReportTable({
       const csvText = unwrapResult(
         await dispatch(
           downloadEmployeeReportByStatus({
-            filters: appliedFilters,
+            filters: requestFilters,
             columns: selectedColumns,
           }),
         ),

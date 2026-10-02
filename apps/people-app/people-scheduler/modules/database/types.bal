@@ -55,6 +55,25 @@ public type LeaverTransition record {|
     string finalDayOfEmployment;
 |};
 
+# Row mapping for an Upcoming employee whose start date has arrived and who should become Active.
+public type JoinerActivation record {|
+    # External employee ID
+    @sql:Column {name: "employee_id"}
+    string employeeId;
+    # First name
+    @sql:Column {name: "first_name"}
+    string firstName;
+    # Last name
+    @sql:Column {name: "last_name"}
+    string lastName;
+    # Work email; the future-joiner placeholder when the account is still to be created
+    @sql:Column {name: "work_email"}
+    string workEmail;
+    # Start date
+    @sql:Column {name: "start_date"}
+    string startDate;
+|};
+
 # A change to an employee's general information waiting for its effective date.
 public type ScheduledChange record {|
     # Scheduled change id

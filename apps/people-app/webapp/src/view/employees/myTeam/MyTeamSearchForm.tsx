@@ -44,7 +44,7 @@ import {
 import { alpha } from "@mui/material/styles";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
 import type { EmployeeSearchPayload } from "@slices/employeeSlice/employee";
-import { EmployeeStatus } from "@/types/types";
+import { CURRENT_EMPLOYEE_STATUSES, isCurrentEmployeeStatusSet } from "@/types/types";
 import { fetchManagers } from "@slices/employeeSlice/employee";
 import {
   BusinessUnit,
@@ -166,7 +166,7 @@ export function MyTeamSearchForm({
     onFilterChange({
       searchString: normalizeSearchString(searchText),
       filters: {
-        employeeStatuses: [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver],
+        employeeStatuses: [...CURRENT_EMPLOYEE_STATUSES],
         directReports: false,
         excludeFutureStartDate: true,
       },
@@ -183,11 +183,8 @@ export function MyTeamSearchForm({
 
   const activeFilterCount = useMemo(() => {
     const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatuses, directReports, excludeFutureStartDate } = filterPayload.filters;
-    // Baseline (Active + Marked leaver, exclude future joiners) is the default — don't count it as an active filter.
-    const baselineStatuses = [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver];
-    const isBaselineStatuses =
-      (employeeStatuses?.length ?? 0) === baselineStatuses.length &&
-      baselineStatuses.every((status) => employeeStatuses?.includes(status));
+    // Baseline (current employees, exclude future joiners) is the default — don't count it as an active filter.
+    const isBaselineStatuses = isCurrentEmployeeStatusSet(employeeStatuses ?? []);
     const statusCount = isBaselineStatuses ? 0 : (employeeStatuses?.length ?? 0);
     // directReports defaults to false (show all); turning it on (Direct Reports Only) is an active filter.
     const directReportsOn = directReports === true;

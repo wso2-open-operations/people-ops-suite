@@ -95,3 +95,35 @@ isolated function runScheduledChanges() returns error? {
 
     log:printInfo("Scheduled change sweep completed");
 }
+
+# Run the joiner activation job: find Upcoming employees whose start date has arrived, make
+# them Active, and email a summary that names any still on the placeholder work email.
+#
+# They are activated whether or not their real work email has been added: the start date is
+# when they join, and the summary is where HR learns which emails are still to be filled in.
+#
+# + return - Error if the activation step itself fails, or if the summary email could not be sent
+# after retries — the activation itself has already committed either way; this only reports
+# whether the notification step succeeded, so the scheduled run surfaces as failed and can be
+# noticed and manually checked.
+isolated function runJoinerActivation() returns error? {
+    log:printInfo("Joiner activation sweep started");
+
+    database:JoinerActivation[] activations = check database:activateDueUpcomingJoiners(SCHEDULER_ACTOR);
+
+    if activations.length() == 0 {
+        log:printInfo("Joiner activation sweep completed — no employees due for activation");
+        return;
+    }
+
+    log:printInfo("Joiner activation step completed", count = activations.length());
+
+    error? notifyResult = email:notifyJoinerActivation(activations);
+    if notifyResult is error {
+        log:printError("Failed to send joiner activation summary email", notifyResult);
+        log:printInfo("Joiner activation sweep completed");
+        return notifyResult;
+    }
+
+    log:printInfo("Joiner activation sweep completed");
+}

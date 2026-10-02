@@ -214,6 +214,48 @@ isolated function validateContinuousServiceRecord(int linkedId, string workEmail
     };
 }
 
+# Validate who is being onboarded, before anything is written.
+#
+# The NIC/Passport decides whether this is someone new, a rehire, or someone already
+# employed (see database:checkReturningEmployee). A work email that is given must not belong
+# to anyone currently employed: a former employee's email is fine, since that is how someone
+# returning under a different NIC still keeps their house and continuous service.
+#
+# + nicOrPassport - NIC/Passport from the submission
+# + workEmail - Work email from the submission, nil when left empty
+# + return - The BadRequest or InternalServerError to send, or nil when onboarding may go ahead
+isolated function validateOnboardingIdentity(string nicOrPassport, string? workEmail)
+        returns http:BadRequest|http:InternalServerError? {
+
+    database:EmploymentMatch[]|error employments = database:getEmploymentsByNic(nicOrPassport);
+    if employments is error {
+        log:printError("Error occurred while checking existing employee personal information", employments,
+                nicOrPassport = nicOrPassport);
+        return <http:InternalServerError>{body: {message: ERROR_EMPLOYEE_CREATION_FAILED}};
+    }
+    string? refusal = database:checkReturningEmployee(employments, workEmail);
+    if refusal is string {
+        log:printWarn(refusal, nicOrPassport = nicOrPassport, workEmail = workEmail);
+        return <http:BadRequest>{body: {message: refusal}};
+    }
+
+    if workEmail is () {
+        return;
+    }
+    database:EmploymentMatch|error? holder = database:getCurrentEmployeeByWorkEmail(workEmail);
+    if holder is error {
+        log:printError("Error occurred while checking whether the work email is in use", holder,
+                workEmail = workEmail);
+        return <http:InternalServerError>{body: {message: ERROR_EMPLOYEE_CREATION_FAILED}};
+    }
+    if holder is database:EmploymentMatch {
+        string customErr = string `Work email ${workEmail} is already in use by ${holder.firstName} `
+            + string `${holder.lastName} (${holder.employeeId})`;
+        log:printWarn(customErr, workEmail = workEmail, holderEmployeeId = holder.employeeId);
+        return <http:BadRequest>{body: {message: customErr}};
+    }
+}
+
 # Validate the leadership attributes submitted for an employee.
 #
 # Every id must be an active attribute; an unknown or inactive one rejects the whole update
@@ -333,10 +375,17 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
     if row.lastName.trim().length() == 0 {
         errors.push({row: rowNumber, 'field: CSV_FIELD_LAST_NAME, message: "Last name is required"});
     }
-    if row.workEmail.trim().length() == 0 {
-        errors.push({row: rowNumber, 'field: CSV_FIELD_WORK_EMAIL, message: "Work email is required"});
-    } else if !database:EMAIL_PATTERN.isFullMatch(row.workEmail.trim()) {
+    // An empty work email is a joiner whose account does not exist yet; FUTURE_JOINER_EMAIL is
+    // stored for them. A placeholder typed in is refused, as in single onboarding.
+    string workEmail = row.workEmail.trim();
+    if workEmail.length() > 0 && !database:EMAIL_PATTERN.isFullMatch(workEmail) {
         errors.push({row: rowNumber, 'field: CSV_FIELD_WORK_EMAIL, message: "Invalid work email format"});
+    } else if database:isPlaceholderWorkEmail(workEmail) {
+        errors.push({
+            row: rowNumber,
+            'field: CSV_FIELD_WORK_EMAIL,
+            message: "Leave the work email empty when the employee's account is not created yet"
+        });
     }
     if row.managerEmail.trim().length() == 0 {
         errors.push({row: rowNumber, 'field: CSV_FIELD_MANAGER_EMAIL, message: "Manager email is required"});
@@ -527,8 +576,9 @@ isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData r
         epf: row.epf.trim().length() > 0 ? row.epf.trim() : (),
         companyId: refData.companyIds[normalizeKey(row.company)] ?: 0,
         workLocation: row.workLocation.trim(),
-        workEmail: row.workEmail.trim(),
+        workEmail: row.workEmail.trim().length() > 0 ? row.workEmail.trim() : (),
         startDate: row.startDate.trim(),
+        employeeStatus: database:initialEmployeeStatus(row.startDate.trim(), todayUtc()),
         managerEmail: row.managerEmail.trim(),
         secondaryJobTitle: row.secondaryJobTitle.trim().length() > 0 ? row.secondaryJobTitle.trim() : (),
         employmentTypeId: refData.employmentTypeIds[normalizeKey(row.employmentType)] ?: 0,
@@ -1007,6 +1057,12 @@ isolated function isFutureDate(string date) returns boolean {
     string tomorrowDate = time:utcToString(tomorrow).substring(0, 10);
     return date >= tomorrowDate;
 }
+
+# Today's date in UTC, the same reckoning of today the scheduler uses.
+#
+# + return - Today's date in YYYY-MM-DD form
+isolated function todayUtc() returns string =>
+    time:utcToString(time:utcNow()).substring(0, 10);
 
 # Translate a job-info payload into the columns a scheduled change writes.
 #

@@ -59,6 +59,37 @@ public isolated function transitionExpiredLeavers(string actor) returns LeaverTr
     return transitions;
 }
 
+# Make Upcoming employees whose start date has arrived (today or earlier) Active.
+#
+# + actor - System actor performing the update (e.g. "system-scheduler")
+# + return - The employees that were activated (empty if none were due), or an error
+public isolated function activateDueUpcomingJoiners(string actor) returns JoinerActivation[]|error {
+    log:printInfo("Loading upcoming employees due for activation");
+
+    stream<JoinerActivation, error?> dueJoinersStream = databaseClient->query(getDueUpcomingJoinersQuery());
+    JoinerActivation[] activations = check from JoinerActivation activation in dueJoinersStream
+        select activation;
+
+    log:printInfo("Loaded upcoming employees due for activation", count = activations.length());
+
+    if activations.length() == 0 {
+        return activations;
+    }
+
+    string[] employeeIds = from JoinerActivation a in activations select a.employeeId;
+
+    transaction {
+        sql:ExecutionResult executionResult =
+            check databaseClient->execute(activateDueUpcomingJoinersQuery(actor, employeeIds));
+        check checkAffectedCount(executionResult.affectedRowCount);
+        check commit;
+    }
+
+    log:printInfo("Marked employees as Active", count = activations.length());
+
+    return activations;
+}
+
 # Separator between the scheduler and the person whose change it is applying.
 #
 # The scheduler performs the write, but the decision was someone's: recording only

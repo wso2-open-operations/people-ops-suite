@@ -17,6 +17,7 @@ emailServiceEndpoint = ""
 # neither inherits an audience that was chosen for the other.
 leaverTransitionRecipients = [""]
 scheduledChangeRecipients = [""]
+joinerActivationRecipients = [""]
 from = ""
 
 [people_scheduler.email.emailServiceConfig.oauthConfig]
