@@ -97,6 +97,12 @@ function makeTextCell(theme: Theme) {
   };
 }
 
+/**
+ * Column definitions for the employee report grid, keyed by report column key, so the
+ * table can render whichever columns the user has selected.
+ *
+ * @param theme Theme used to style the text cells
+ */
 function getColumnDefs(theme: Theme): Record<string, GridColDef<Employee>> {
   const TextCell = makeTextCell(theme);
 
