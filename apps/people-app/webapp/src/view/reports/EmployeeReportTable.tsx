@@ -239,7 +239,10 @@ function getColumnDefs(theme: Theme): Record<string, GridColDef<Employee>> {
       resizable: false,
       valueGetter: (_value: unknown, row: Employee) =>
         formatServiceLength(
-          calculateServiceLength(row.continuousServiceDate ?? row.startDate),
+          calculateServiceLength(
+            row.continuousServiceDate ?? row.startDate,
+            row.finalDayOfEmployment,
+          ),
         ),
       renderCell: (params: GridRenderCellParams<Employee>) => (
         <TextCell value={String(params.value ?? "—")} />

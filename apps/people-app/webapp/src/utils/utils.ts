@@ -20,6 +20,7 @@ import { differenceInCalendarDays } from "date-fns/differenceInCalendarDays";
 import { differenceInMonths } from "date-fns/differenceInMonths";
 import { differenceInYears } from "date-fns/differenceInYears";
 import { isAfter } from "date-fns/isAfter";
+import { isBefore } from "date-fns/isBefore";
 import { isMatch } from "date-fns/isMatch";
 import { isValid } from "date-fns/isValid";
 import { parse } from "date-fns/parse";
@@ -81,14 +82,23 @@ export const calculateAge = (
   return differenceInYears(now, d);
 };
 
+/**
+ * Length of service from startDate up to endDate or now, whichever is earlier,
+ * so a leaver's service stops at their final day of employment.
+ */
 export const calculateServiceLength = (
   startDate: string,
+  endDate?: string | null,
   now: Date = new Date(),
 ): ServiceLength | null => {
   const start = parseStrictYyyyMmDd(startDate);
   if (!start || isAfter(start, now)) return null;
 
-  const totalMonths = differenceInMonths(now, start);
+  const end = endDate ? parseStrictYyyyMmDd(endDate) : null;
+  const until = end && isBefore(end, now) ? end : now;
+  if (isAfter(start, until)) return null;
+
+  const totalMonths = differenceInMonths(until, start);
 
   return {
     years: Math.floor(totalMonths / 12),

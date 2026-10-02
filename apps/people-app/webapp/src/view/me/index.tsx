@@ -649,7 +649,10 @@ export default function Me({
     employee?.continuousServiceDate ?? employee?.startDate ?? null;
 
   const serviceLength = serviceStartDate
-    ? calculateServiceLength(serviceStartDate)
+    ? calculateServiceLength(
+        serviceStartDate,
+        employee?.finalDayOfEmployment ?? null,
+      )
     : null;
 
   const serviceText = formatServiceLength(serviceLength);
