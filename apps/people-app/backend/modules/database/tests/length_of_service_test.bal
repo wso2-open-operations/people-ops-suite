@@ -30,6 +30,23 @@ function lengthOfServiceStopsAtPastFinalDay() {
 }
 
 @test:Config {}
+function lengthOfServiceCountsFinalDayAsWorked() {
+    test:assertEquals(calculateLengthOfService("2020-04-01", "2023-03-31", TODAY), "3 Year(s) 0 Month(s)");
+    test:assertEquals(calculateLengthOfService("2020-12-01", "2020-12-31", TODAY), "0 Year(s) 1 Month(s)");
+}
+
+@test:Config {}
+function lengthOfServiceRollsFinalDayOverYearEndsAndLeapDays() {
+    test:assertEquals(calculateLengthOfService("2020-01-01", "2020-12-31", TODAY), "1 Year(s) 0 Month(s)");
+    test:assertEquals(calculateLengthOfService("2020-03-01", "2024-02-29", TODAY), "4 Year(s) 0 Month(s)");
+}
+
+@test:Config {}
+function lengthOfServiceCountsTodayWhenTodayIsFinalDay() {
+    test:assertEquals(calculateLengthOfService("2025-10-02", "2026-10-01", TODAY), "1 Year(s) 0 Month(s)");
+}
+
+@test:Config {}
 function lengthOfServiceCountsToTodayWhileFinalDayIsAhead() {
     test:assertEquals(calculateLengthOfService("2020-04-01", "2026-12-31", TODAY), "6 Year(s) 6 Month(s)");
 }

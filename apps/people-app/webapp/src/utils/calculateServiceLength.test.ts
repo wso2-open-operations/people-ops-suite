@@ -33,6 +33,35 @@ describe("calculateServiceLength", () => {
     });
   });
 
+  it("counts the final day of employment as a day worked", () => {
+    expect(calculateServiceLength("2020-04-01", "2023-03-31", NOW)).toEqual({
+      years: 3,
+      months: 0,
+    });
+    expect(calculateServiceLength("2020-12-01", "2020-12-31", NOW)).toEqual({
+      years: 0,
+      months: 1,
+    });
+  });
+
+  it("rolls the day after the final day over year ends and leap days", () => {
+    expect(calculateServiceLength("2020-01-01", "2020-12-31", NOW)).toEqual({
+      years: 1,
+      months: 0,
+    });
+    expect(calculateServiceLength("2020-03-01", "2024-02-29", NOW)).toEqual({
+      years: 4,
+      months: 0,
+    });
+  });
+
+  it("counts today when today is the final day of employment", () => {
+    expect(calculateServiceLength("2025-10-02", "2026-10-01", NOW)).toEqual({
+      years: 1,
+      months: 0,
+    });
+  });
+
   it("counts up to now while the final day of employment is still ahead", () => {
     expect(calculateServiceLength("2020-04-01", "2026-12-31", NOW)).toEqual({
       years: 6,

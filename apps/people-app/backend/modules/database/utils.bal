@@ -194,7 +194,8 @@ isolated function csvEscape(string? value) returns string {
 }
 
 # Calculate the length of service from a start date up to the end date or today, whichever
-# is earlier, so a leaver's service stops at their final day of employment.
+# is earlier, so a leaver's service stops at their final day of employment. The final day is
+# a day worked, so it counts towards the service.
 #
 # + startDateStr - Start date in YYYY-MM-DD format
 # + endDateStr - Final day of employment in YYYY-MM-DD format, if any
@@ -214,8 +215,11 @@ isolated function calculateLengthOfService(string startDateStr, string? endDateS
     }
 
     time:Date? end = endDateStr is string ? parseIsoDate(endDateStr) : ();
-    if end is time:Date && dateKey(end) < dateKey(until) {
-        until = end;
+    if end is time:Date && dateKey(end) <= dateKey(until) {
+        time:Date? dayAfterEnd = nextDay(end);
+        if dayAfterEnd is time:Date {
+            until = dayAfterEnd;
+        }
     }
     if dateKey('start) > dateKey(until) {
         return "";
@@ -250,6 +254,22 @@ isolated function parseIsoDate(string dateStr) returns time:Date? {
         return ();
     }
     return {year, month, day};
+}
+
+# The calendar day after a date, rolling over month and year ends.
+#
+# + date - Date to move forward
+# + return - The following day, or () if the date is not a real calendar date
+isolated function nextDay(time:Date date) returns time:Date? {
+    time:Utc|time:Error utc = time:utcFromCivil({
+        year: date.year, month: date.month, day: date.day,
+        hour: 0, minute: 0, second: 0, utcOffset: {hours: 0, minutes: 0}
+    });
+    if utc is time:Error {
+        return ();
+    }
+    time:Civil next = time:utcToCivil(time:utcAddSeconds(utc, 86400));
+    return {year: next.year, month: next.month, day: next.day};
 }
 
 # Collapse a date into a single sortable number (YYYYMMDD).
