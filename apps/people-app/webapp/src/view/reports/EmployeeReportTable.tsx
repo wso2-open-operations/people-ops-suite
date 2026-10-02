@@ -97,6 +97,12 @@ function makeTextCell(theme: Theme) {
   };
 }
 
+/**
+ * Column definitions for the employee report grid, keyed by report column key, so the
+ * table can render whichever columns the user has selected.
+ *
+ * @param theme Theme used to style the text cells
+ */
 function getColumnDefs(theme: Theme): Record<string, GridColDef<Employee>> {
   const TextCell = makeTextCell(theme);
 
@@ -239,7 +245,10 @@ function getColumnDefs(theme: Theme): Record<string, GridColDef<Employee>> {
       resizable: false,
       valueGetter: (_value: unknown, row: Employee) =>
         formatServiceLength(
-          calculateServiceLength(row.continuousServiceDate ?? row.startDate),
+          calculateServiceLength(
+            row.continuousServiceDate ?? row.startDate,
+            row.finalDayOfEmployment,
+          ),
         ),
       renderCell: (params: GridRenderCellParams<Employee>) => (
         <TextCell value={String(params.value ?? "—")} />

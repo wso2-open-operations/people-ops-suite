@@ -533,6 +533,14 @@ const emergencyContactItemSchema = object().shape({
     ),
 });
 
+/**
+ * Employee profile page: the signed-in user's own profile at `/`, or another employee's at
+ * `/employees/:employeeId`.
+ *
+ * @param employeeId Employee to show; defaults to the signed-in user
+ * @param readOnly Set when an admin views someone else's profile, which renders the
+ * personal-info form read-only and offers inline section editing instead
+ */
 export default function Me({
   employeeId,
   readOnly = false,
@@ -649,7 +657,10 @@ export default function Me({
     employee?.continuousServiceDate ?? employee?.startDate ?? null;
 
   const serviceLength = serviceStartDate
-    ? calculateServiceLength(serviceStartDate)
+    ? calculateServiceLength(
+        serviceStartDate,
+        employee?.finalDayOfEmployment ?? null,
+      )
     : null;
 
   const serviceText = formatServiceLength(serviceLength);
