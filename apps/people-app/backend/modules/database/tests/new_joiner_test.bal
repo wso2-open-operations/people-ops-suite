@@ -58,6 +58,21 @@ function currentEmploymentStatusesIncludeNewJoiner() {
     test:assertFalse(isCurrentEmploymentStatus(EMPLOYEE_LEFT));
 }
 
+@test:Config {}
+function resigningANewJoinerMarksThemALeaver() {
+    // A joiner who withdraws before starting must leave through the leaver sweep. Left as a
+    // New joiner, the activation sweep would make them Active on their start date.
+    test:assertEquals(statusAfterResignation(EMPLOYEE_NEW_JOINER), EMPLOYEE_MARKED_LEAVER);
+    test:assertEquals(statusAfterResignation(EMPLOYEE_ACTIVE), EMPLOYEE_MARKED_LEAVER);
+}
+
+@test:Config {}
+function resigningAgainKeepsTheCurrentStatus() {
+    // Correcting the details of someone already leaving or gone must not move them back.
+    test:assertEquals(statusAfterResignation(EMPLOYEE_MARKED_LEAVER), ());
+    test:assertEquals(statusAfterResignation(EMPLOYEE_LEFT), ());
+}
+
 isolated function employment(string employeeId, string workEmail, string status) returns EmploymentMatch =>
     {employeeId, firstName: "John", lastName: "Silva", workEmail, employeeStatus: status};
 

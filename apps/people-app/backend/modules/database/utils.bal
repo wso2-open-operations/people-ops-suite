@@ -607,6 +607,19 @@ public isolated function initialEmployeeStatus(string startDate, string today) r
 public isolated function isCurrentEmploymentStatus(string status) returns boolean =>
     status == EMPLOYEE_ACTIVE || status == EMPLOYEE_MARKED_LEAVER || status == EMPLOYEE_NEW_JOINER;
 
+# The status recording a resignation moves an employee to.
+#
+# Resigning someone is what makes them a Marked leaver, whether they have started (Active)
+# or not yet (New joiner): a joiner who withdraws then leaves through the leaver sweep on
+# their final day, instead of being made Active on their start date. Correcting the details
+# of someone already leaving or gone must not resurrect their departure, so a Marked leaver
+# or Left employee keeps their status.
+#
+# + currentStatus - The employee's status before the resignation is recorded
+# + return - EMPLOYEE_MARKED_LEAVER, or nil to leave the status as it is
+public isolated function statusAfterResignation(string currentStatus) returns EmployeeStatus? =>
+    currentStatus == EMPLOYEE_ACTIVE || currentStatus == EMPLOYEE_NEW_JOINER ? EMPLOYEE_MARKED_LEAVER : ();
+
 # Decide whether the person behind a NIC/Passport may be onboarded with the given work email.
 #
 # Someone still employed (or already onboarded as a New joiner) is refused outright. A former

@@ -1220,15 +1220,8 @@ public isolated function updateResignation(string employeeId, UpdateResignationP
         return error(string `Employee not found for ID: ${employeeId}`);
     }
 
-    // Resigning someone is what moves them to "Marked leaver", and only an active
-    // employee can be resigned. Correcting the details of someone who has already left
-    // must not resurrect their departure: setting the status unconditionally would move
-    // a "Left" employee back to "Marked leaver".
-    EmployeeStatus? newStatus =
-        employee.employeeStatus == EMPLOYEE_ACTIVE ? EMPLOYEE_MARKED_LEAVER : ();
-
     UpdateEmployeeJobInfoPayload jobInfoPayload = {
-        employeeStatus: newStatus,
+        employeeStatus: statusAfterResignation(employee.employeeStatus),
         finalDayInOffice: payload.finalDayInOffice,
         finalDayOfEmployment: payload.finalDayOfEmployment,
         resignationReason: payload.resignationReason
