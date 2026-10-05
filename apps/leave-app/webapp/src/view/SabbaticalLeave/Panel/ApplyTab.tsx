@@ -94,12 +94,14 @@ export default function ApplyTab({
   const [managerApprovalChecked, setManagerApprovalChecked] = useState(false);
   const [policyReadChecked, setPolicyReadChecked] = useState(false);
   const [resignationAcknowledgeChecked, setResignationAcknowledgeChecked] = useState(false);
+  const [handoverAcknowledgeChecked, setHandoverAcknowledgeChecked] = useState(false);
   const [startDateError, setStartDateError] = useState(false);
   const [endDateError, setEndDateError] = useState(false);
   const [durationExceedError, setDurationExceedError] = useState(false);
   const [managerApprovalError, setManagerApprovalError] = useState(false);
   const [policyReadError, setPolicyReadError] = useState(false);
   const [resignationAcknowledgeError, setResignationAcknowledgeError] = useState(false);
+  const [handoverAcknowledgeError, setHandoverAcknowledgeError] = useState(false);
   const [sabbaticalEligibilityWarning, setSabbaticalEligibilityWarning] = useState<string>("");
   const [hasFetched, setHasFetched] = useState(false);
   const [sabbaticalEligibilityDurationInYears] = useState(parseFloat((sabbaticalLeaveEligibilityDuration / 365).toFixed(1)));
@@ -212,6 +214,7 @@ export default function ApplyTab({
     setManagerApprovalError(false);
     setPolicyReadError(false);
     setResignationAcknowledgeError(false);
+    setHandoverAcknowledgeError(false);
 
     if (!leaveStartDate) {
       setStartDateError(true);
@@ -258,8 +261,16 @@ export default function ApplyTab({
     if (!resignationAcknowledgeChecked) {
       setResignationAcknowledgeError(true);
     }
+    if (!handoverAcknowledgeChecked) {
+      setHandoverAcknowledgeError(true);
+    }
 
-    if (!managerApprovalChecked || !policyReadChecked || !resignationAcknowledgeChecked) {
+    if (
+      !managerApprovalChecked ||
+      !policyReadChecked ||
+      !resignationAcknowledgeChecked ||
+      !handoverAcknowledgeChecked
+    ) {
       enqueueSnackbar("Please acknowledge all the required checkboxes", { variant: "error" });
       return;
     }
@@ -273,10 +284,6 @@ export default function ApplyTab({
       handleConfirmSubmit,
       "Yes",
       "No",
-      undefined,
-      "I acknowledge that sabbatical leave is subject to appropriate planning and handover between " +
-        "myself and my Lead. I am responsible for ensuring that my responsibilities, objectives and work " +
-        "commitments are appropriately managed during my absence.",
     );
   };
 
@@ -302,6 +309,7 @@ export default function ApplyTab({
       setManagerApprovalChecked(false);
       setPolicyReadChecked(false);
       setResignationAcknowledgeChecked(false);
+      setHandoverAcknowledgeChecked(false);
     }
   };
 
@@ -522,6 +530,30 @@ export default function ApplyTab({
                         : theme.palette.text.primary,
                       "& .MuiFormControlLabel-label": {
                         color: resignationAcknowledgeError
+                          ? theme.palette.error.main
+                          : theme.palette.text.primary,
+                        fontSize: theme.typography.body2.fontSize,
+                      },
+                    }}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        color={handoverAcknowledgeError ? "error" : "primary"}
+                        checked={handoverAcknowledgeChecked}
+                        onChange={(e) => {
+                          setHandoverAcknowledgeChecked(e.target.checked);
+                          setHandoverAcknowledgeError(false);
+                        }}
+                      />
+                    }
+                    label="I acknowledge that sabbatical leave is subject to appropriate planning and handover between myself and my Lead. I am responsible for ensuring that my responsibilities, objectives and work commitments are appropriately managed during my absence."
+                    sx={{
+                      color: handoverAcknowledgeError
+                        ? theme.palette.error.main
+                        : theme.palette.text.primary,
+                      "& .MuiFormControlLabel-label": {
+                        color: handoverAcknowledgeError
                           ? theme.palette.error.main
                           : theme.palette.text.primary,
                         fontSize: theme.typography.body2.fontSize,
