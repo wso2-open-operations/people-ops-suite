@@ -37,9 +37,9 @@ function realEmailsAreNotPlaceholders() {
 }
 
 @test:Config {}
-function futureStartDateStartsUpcoming() {
-    test:assertEquals(initialEmployeeStatus("2026-10-02", "2026-10-01"), EMPLOYEE_UPCOMING);
-    test:assertEquals(initialEmployeeStatus("2027-01-15", "2026-10-01"), EMPLOYEE_UPCOMING);
+function futureStartDateStartsAsNewJoiner() {
+    test:assertEquals(initialEmployeeStatus("2026-10-02", "2026-10-01"), EMPLOYEE_NEW_JOINER);
+    test:assertEquals(initialEmployeeStatus("2027-01-15", "2026-10-01"), EMPLOYEE_NEW_JOINER);
 }
 
 @test:Config {}
@@ -51,10 +51,10 @@ function todayOrPastStartDateStartsActive() {
 }
 
 @test:Config {}
-function currentEmploymentStatusesIncludeUpcoming() {
+function currentEmploymentStatusesIncludeNewJoiner() {
     test:assertTrue(isCurrentEmploymentStatus(EMPLOYEE_ACTIVE));
     test:assertTrue(isCurrentEmploymentStatus(EMPLOYEE_MARKED_LEAVER));
-    test:assertTrue(isCurrentEmploymentStatus(EMPLOYEE_UPCOMING));
+    test:assertTrue(isCurrentEmploymentStatus(EMPLOYEE_NEW_JOINER));
     test:assertFalse(isCurrentEmploymentStatus(EMPLOYEE_LEFT));
 }
 
@@ -69,7 +69,7 @@ function newPersonIsNotRefused() {
 
 @test:Config {}
 function currentlyEmployedPersonIsRefused() {
-    string[] currentStatuses = [EMPLOYEE_ACTIVE, EMPLOYEE_MARKED_LEAVER, EMPLOYEE_UPCOMING];
+    string[] currentStatuses = [EMPLOYEE_ACTIVE, EMPLOYEE_MARKED_LEAVER, EMPLOYEE_NEW_JOINER];
     foreach string status in currentStatuses {
         EmploymentMatch[] employments = [employment("LK100200", "john@wso2.com", status)];
         string? refusal = checkReturningEmployee(employments, "john@wso2.com");

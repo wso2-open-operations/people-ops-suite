@@ -489,7 +489,7 @@ export const getEmployeeStatusChipStyles =
         ? theme.palette.success.main
         : normalized === "marked leaver"
           ? theme.palette.warning.main
-          : normalized === "upcoming"
+          : normalized === "new joiner"
             ? theme.palette.info.main
             : theme.palette.error.main;
 

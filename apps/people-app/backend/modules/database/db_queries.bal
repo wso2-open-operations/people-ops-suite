@@ -118,7 +118,7 @@ isolated function getEmploymentsByNicQuery(string nicOrPassport) returns sql:Par
      WHERE p.nic_or_passport = ${nicOrPassport}
      ORDER BY e.start_date DESC, e.id DESC;`;
 
-# Find a currently employed (Active, Marked leaver or Upcoming) employee holding a work email.
+# Find a currently employed (Active, Marked leaver or New joiner) employee holding a work email.
 #
 # + workEmail - Work email to look for
 # + return - Query returning at most one matching employee
@@ -131,7 +131,7 @@ isolated function getCurrentEmployeeByWorkEmailQuery(string workEmail) returns s
         e.employee_status AS employeeStatus
      FROM employee e
      WHERE LOWER(e.work_email) = LOWER(${workEmail})
-       AND e.employee_status IN (${EMPLOYEE_ACTIVE}, ${EMPLOYEE_MARKED_LEAVER}, ${EMPLOYEE_UPCOMING})
+       AND e.employee_status IN (${EMPLOYEE_ACTIVE}, ${EMPLOYEE_MARKED_LEAVER}, ${EMPLOYEE_NEW_JOINER})
      ORDER BY e.start_date DESC, e.id DESC
      LIMIT 1;`;
 
@@ -1474,22 +1474,22 @@ isolated function updateDesignationQuery(int id, string? designation, int? jobBa
     return sql:queryConcat(query, ` WHERE id = ${id};`);
 }
 
-# Count active and upcoming employees holding a designation.
+# Count active employees and new joiners holding a designation.
 #
 # + id - Designation ID
-# + return - Query counting active and upcoming employees
+# + return - Query counting active employees and new joiners
 isolated function countActiveEmployeesInDesignationQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE designation_id = ${id} AND employee_status IN ('Active', 'Upcoming');`;
+    `SELECT COUNT(*) AS count FROM employee WHERE designation_id = ${id} AND employee_status IN ('Active', 'New joiner');`;
 
-# Count active and upcoming employees across a career function's designations.
+# Count active employees and new joiners across a career function's designations.
 #
 # + id - Career function ID
-# + return - Query counting active and upcoming employees
+# + return - Query counting active employees and new joiners
 isolated function countActiveEmployeesInCareerFunctionQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count
      FROM employee e
      JOIN designation d ON d.id = e.designation_id
-     WHERE d.career_function_id = ${id} AND e.employee_status IN ('Active', 'Upcoming');`;
+     WHERE d.career_function_id = ${id} AND e.employee_status IN ('Active', 'New joiner');`;
 
 # Get companies query.
 #
@@ -1586,7 +1586,7 @@ isolated function getLeadershipGroupsQuery() returns sql:ParameterizedQuery =>
 #
 # + return - Parameterized list of the blocking statuses, for an IN (...) clause
 isolated function leadershipHolderStatuses() returns sql:ParameterizedQuery =>
-    `${EMPLOYEE_ACTIVE}, ${EMPLOYEE_MARKED_LEAVER}, ${EMPLOYEE_UPCOMING}`;
+    `${EMPLOYEE_ACTIVE}, ${EMPLOYEE_MARKED_LEAVER}, ${EMPLOYEE_NEW_JOINER}`;
 
 # Every leadership attribute, retired ones included, with how many current employees hold it.
 #
@@ -2824,65 +2824,65 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
 isolated function getEmployeeEmailToNameMapQuery() returns sql:ParameterizedQuery =>
     `SELECT work_email, CONCAT(first_name, ' ', last_name) AS full_name FROM employee;`;
 
-# Count active and upcoming employees in a business unit.
+# Count active employees and new joiners in a business unit.
 #
 # + id - Business unit ID
-# + return - Query counting active and upcoming employees with business_unit_id = id
+# + return - Query counting active employees and new joiners with business_unit_id = id
 isolated function countActiveEmployeesInBusinessUnitQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE business_unit_id = ${id} AND employee_status IN ('Active', 'Upcoming')`;
+    `SELECT COUNT(*) AS count FROM employee WHERE business_unit_id = ${id} AND employee_status IN ('Active', 'New joiner')`;
 
-# Count active and upcoming employees in a business-unit–team mapping.
+# Count active employees and new joiners in a business-unit–team mapping.
 #
 # + id - business_unit_team mapping ID
-# + return - Query counting active and upcoming employees matching that BU+Team combination
+# + return - Query counting active employees and new joiners matching that BU+Team combination
 isolated function countActiveEmployeesInBUTeamMappingQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count FROM employee e
      JOIN business_unit_team but ON but.id = ${id}
-     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id AND e.employee_status IN ('Active', 'Upcoming')`;
+     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id AND e.employee_status IN ('Active', 'New joiner')`;
 
-# Count active and upcoming employees in a business-unit–team–sub-team mapping.
+# Count active employees and new joiners in a business-unit–team–sub-team mapping.
 #
 # + id - business_unit_team_sub_team mapping ID
-# + return - Query counting active and upcoming employees matching that BU+Team+SubTeam combination
+# + return - Query counting active employees and new joiners matching that BU+Team+SubTeam combination
 isolated function countActiveEmployeesInBUTeamSubTeamMappingQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count FROM employee e
      JOIN business_unit_team_sub_team butst ON butst.id = ${id}
      JOIN business_unit_team but ON but.id = butst.business_unit_team_id
      WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id
-       AND e.sub_team_id = butst.sub_team_id AND e.employee_status IN ('Active', 'Upcoming')`;
+       AND e.sub_team_id = butst.sub_team_id AND e.employee_status IN ('Active', 'New joiner')`;
 
-# Count active and upcoming employees in a business-unit–team–sub-team–unit mapping.
+# Count active employees and new joiners in a business-unit–team–sub-team–unit mapping.
 #
 # + id - business_unit_team_sub_team_unit mapping ID
-# + return - Query counting active and upcoming employees matching that BU+Team+SubTeam+Unit combination
+# + return - Query counting active employees and new joiners matching that BU+Team+SubTeam+Unit combination
 isolated function countActiveEmployeesInBUTeamSubTeamUnitMappingQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count FROM employee e
      JOIN business_unit_team_sub_team_unit butstu ON butstu.id = ${id}
      JOIN business_unit_team_sub_team butst ON butst.id = butstu.business_unit_team_sub_team_id
      JOIN business_unit_team but ON but.id = butst.business_unit_team_id
      WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id
-       AND e.sub_team_id = butst.sub_team_id AND e.unit_id = butstu.unit_id AND e.employee_status IN ('Active', 'Upcoming')`;
+       AND e.sub_team_id = butst.sub_team_id AND e.unit_id = butstu.unit_id AND e.employee_status IN ('Active', 'New joiner')`;
 
-# Count active and upcoming employees in a team.
+# Count active employees and new joiners in a team.
 #
 # + id - Team ID
-# + return - Query counting active and upcoming employees with team_id = id
+# + return - Query counting active employees and new joiners with team_id = id
 isolated function countActiveEmployeesInTeamQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE team_id = ${id} AND employee_status IN ('Active', 'Upcoming')`;
+    `SELECT COUNT(*) AS count FROM employee WHERE team_id = ${id} AND employee_status IN ('Active', 'New joiner')`;
 
-# Count active and upcoming employees in a sub-team.
+# Count active employees and new joiners in a sub-team.
 #
 # + id - Sub-team ID
-# + return - Query counting active and upcoming employees with sub_team_id = id
+# + return - Query counting active employees and new joiners with sub_team_id = id
 isolated function countActiveEmployeesInSubTeamQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE sub_team_id = ${id} AND employee_status IN ('Active', 'Upcoming')`;
+    `SELECT COUNT(*) AS count FROM employee WHERE sub_team_id = ${id} AND employee_status IN ('Active', 'New joiner')`;
 
-# Count active and upcoming employees in a unit.
+# Count active employees and new joiners in a unit.
 #
 # + id - Unit ID
-# + return - Query counting active and upcoming employees with unit_id = id
+# + return - Query counting active employees and new joiners with unit_id = id
 isolated function countActiveEmployeesInUnitQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE unit_id = ${id} AND employee_status IN ('Active', 'Upcoming')`;
+    `SELECT COUNT(*) AS count FROM employee WHERE unit_id = ${id} AND employee_status IN ('Active', 'New joiner')`;
 
 # Delete an employee record.
 #

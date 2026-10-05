@@ -283,7 +283,7 @@ public final string leaverAutoTransitionSummaryTemplate = string `
 `;
 
 
-# Email template for the Upcoming-joiner activation summary notification.
+# Email template for the New-joiner activation summary notification.
 # Placeholders: APP_NAME, RUN_DATE, COUNT, PENDING_EMAIL_NOTE, EMPLOYEE_LIST, YEAR
 public final string joinerActivationSummaryTemplate = string `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -389,7 +389,7 @@ public final string joinerActivationSummaryTemplate = string `
                               <strong>Automated Onboarding Update</strong> &mdash;
                               <!-- [COUNT] --> employee(s) had reached their start date by
                               <!-- [RUN_DATE] --> and were automatically transitioned from
-                              <em>Upcoming</em> to <em>Active</em>.
+                              <em>New joiner</em> to <em>Active</em>.
                             </p>
                           </td>
                         </tr>

@@ -35,7 +35,7 @@ describe("isCurrentEmployeeStatusSet", () => {
   it("matches the default scope in any order", () => {
     expect(
       isCurrentEmployeeStatusSet([
-        EmployeeStatus.Upcoming,
+        EmployeeStatus.NewJoiner,
         EmployeeStatus.Active,
         EmployeeStatus.MarkedLeaver,
       ]),
@@ -50,7 +50,7 @@ describe("isCurrentEmployeeStatusSet", () => {
       isCurrentEmployeeStatusSet([
         EmployeeStatus.Active,
         EmployeeStatus.MarkedLeaver,
-        EmployeeStatus.Upcoming,
+        EmployeeStatus.NewJoiner,
         EmployeeStatus.Left,
       ]),
     ).toBe(false);

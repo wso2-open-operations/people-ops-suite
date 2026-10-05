@@ -19,16 +19,16 @@ export enum EmployeeStatus {
   Left = "Left",
   MarkedLeaver = "Marked leaver",
   // Onboarded with a start date still to come; the scheduler makes them Active on that date.
-  Upcoming = "Upcoming",
+  NewJoiner = "New joiner",
 }
 
 // Statuses of people employed now or about to be — the default scope of the employee lists.
-// Upcoming is included so that turning off "Exclude future joiners" shows them; with that
+// New joiner is included so that turning off "Exclude future joiners" shows them; with that
 // filter on (the default) their future start date keeps them out.
 export const CURRENT_EMPLOYEE_STATUSES: readonly EmployeeStatus[] = [
   EmployeeStatus.Active,
   EmployeeStatus.MarkedLeaver,
-  EmployeeStatus.Upcoming,
+  EmployeeStatus.NewJoiner,
 ];
 
 // Whether a status filter is exactly the default current-employee scope, in any order.

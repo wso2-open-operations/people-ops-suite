@@ -96,7 +96,7 @@ isolated function runScheduledChanges() returns error? {
     log:printInfo("Scheduled change sweep completed");
 }
 
-# Run the joiner activation job: find Upcoming employees whose start date has arrived, make
+# Run the joiner activation job: find New joiners whose start date has arrived, make
 # them Active, and email a summary that names any still on the placeholder work email.
 #
 # They are activated whether or not their real work email has been added: the start date is
@@ -109,7 +109,7 @@ isolated function runScheduledChanges() returns error? {
 isolated function runJoinerActivation() returns error? {
     log:printInfo("Joiner activation sweep started");
 
-    database:JoinerActivation[] activations = check database:activateDueUpcomingJoiners(SCHEDULER_ACTOR);
+    database:JoinerActivation[] activations = check database:activateDueNewJoiners(SCHEDULER_ACTOR);
 
     if activations.length() == 0 {
         log:printInfo("Joiner activation sweep completed — no employees due for activation");

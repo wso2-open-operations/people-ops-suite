@@ -55,7 +55,7 @@ public type LeaverTransition record {|
     string finalDayOfEmployment;
 |};
 
-# Row mapping for an Upcoming employee whose start date has arrived and who should become Active.
+# Row mapping for a New joiner whose start date has arrived and who should become Active.
 public type JoinerActivation record {|
     # External employee ID
     @sql:Column {name: "employee_id"}

@@ -1431,7 +1431,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         string workEmail = requestedEmail ?: database:FUTURE_JOINER_EMAIL;
         payload.workEmail = workEmail;
         // Set here rather than taken from the request: whether someone has started is decided
-        // by their start date, and the scheduler moves an Upcoming employee to Active on it.
+        // by their start date, and the scheduler moves a New joiner to Active on it.
         payload.employeeStatus = database:initialEmployeeStatus(payload.startDate, todayUtc());
 
         string|http:BadRequest|http:InternalServerError generatedEmployeeId = generateEmployeeId(payload);
@@ -2686,7 +2686,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this business unit"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this business unit"}
                 };
             }
         }
@@ -2772,7 +2772,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this team"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this team"}
                 };
             }
         }
@@ -2858,7 +2858,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this sub-team"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this sub-team"}
                 };
             }
         }
@@ -2944,7 +2944,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this unit"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this unit"}
                 };
             }
         }
@@ -3036,7 +3036,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees in this career function"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners in this career function"}
                 };
             }
         }
@@ -3184,7 +3184,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees with this designation"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners with this designation"}
                 };
             }
         }
@@ -3272,7 +3272,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this mapping"}
                 };
             }
         }
@@ -3366,7 +3366,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this mapping"}
                 };
             }
         }
@@ -3461,7 +3461,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this mapping"}
                 };
             }
         }

@@ -40,7 +40,7 @@ public enum EmployeeStatus {
     EMPLOYEE_LEFT = "Left",
     EMPLOYEE_MARKED_LEAVER = "Marked leaver",
     # Onboarded with a start date still to come; the scheduler makes them Active on that date.
-    EMPLOYEE_UPCOMING = "Upcoming"
+    EMPLOYEE_NEW_JOINER = "New joiner"
 }
 
 # [Database] Enum for employment types.

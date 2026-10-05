@@ -178,7 +178,7 @@ export function getEmployeeStatusColor(
       return "success";
     case "marked leaver":
       return "warning";
-    case "upcoming":
+    case "new joiner":
       return "info";
     case "left":
       return "error";

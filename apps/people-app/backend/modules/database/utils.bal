@@ -545,28 +545,28 @@ public isolated function isPlaceholderWorkEmail(string email) returns boolean {
 
 # The status a newly onboarded employee starts in.
 #
-# A start date still to come starts them Upcoming, and the scheduler makes them Active on that
+# A start date still to come starts them as a New joiner, and the scheduler makes them Active on that
 # date. Today counts as started, so someone joining today is Active at once rather than waiting
 # for the next sweep. Dates compare as YYYY-MM-DD strings, against today in UTC like the
 # scheduler's own check.
 #
 # + startDate - Start date in YYYY-MM-DD form
 # + today - Today's date in YYYY-MM-DD form (UTC)
-# + return - EMPLOYEE_UPCOMING for a future start date, otherwise EMPLOYEE_ACTIVE
+# + return - EMPLOYEE_NEW_JOINER for a future start date, otherwise EMPLOYEE_ACTIVE
 public isolated function initialEmployeeStatus(string startDate, string today) returns EmployeeStatus =>
-    startDate > today ? EMPLOYEE_UPCOMING : EMPLOYEE_ACTIVE;
+    startDate > today ? EMPLOYEE_NEW_JOINER : EMPLOYEE_ACTIVE;
 
 # Whether a status means the person is employed now or about to be, so the same person cannot
 # be onboarded again and their work email still belongs to them.
 #
 # + status - Employee status
-# + return - true for Active, Marked leaver and Upcoming
+# + return - true for Active, Marked leaver and New joiner
 public isolated function isCurrentEmploymentStatus(string status) returns boolean =>
-    status == EMPLOYEE_ACTIVE || status == EMPLOYEE_MARKED_LEAVER || status == EMPLOYEE_UPCOMING;
+    status == EMPLOYEE_ACTIVE || status == EMPLOYEE_MARKED_LEAVER || status == EMPLOYEE_NEW_JOINER;
 
 # Decide whether the person behind a NIC/Passport may be onboarded with the given work email.
 #
-# Someone still employed (or already onboarded and Upcoming) is refused outright. A former
+# Someone still employed (or already onboarded as a New joiner) is refused outright. A former
 # employee is a rehire, and must come back under a work email they held before, so the NIC
 # and the email agree on who they are. Placeholder emails on their earlier records say nothing
 # about who they are, so a former employee whose records hold only placeholders is accepted on

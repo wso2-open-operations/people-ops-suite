@@ -392,9 +392,9 @@ export default function EmployeeReportTable({
     setAppliedFilters((prev) => ({ ...baselineFilters, ...prev, employeeStatus }));
   }, [baselineFilters, employeeStatus]);
 
-  // Future joiners are Upcoming until their start date, so the Active report only reaches
+  // Future joiners have the New joiner status until their start date, so the Active report only reaches
   // them through the status as well as the start date: turning "Exclude future joiners" off
-  // widens the status to include Upcoming. A status chosen in the drawer is left as chosen.
+  // widens the status to include New joiner. A status chosen in the drawer is left as chosen.
   const requestFilters = useMemo<Filters>(() => {
     if (
       employeeStatus !== EmployeeStatus.Active ||
@@ -403,7 +403,7 @@ export default function EmployeeReportTable({
     ) {
       return appliedFilters;
     }
-    const statuses = [EmployeeStatus.Active, EmployeeStatus.Upcoming];
+    const statuses = [EmployeeStatus.Active, EmployeeStatus.NewJoiner];
     if (appliedFilters.includeMarkedLeavers === true) statuses.push(EmployeeStatus.MarkedLeaver);
     return { ...appliedFilters, employeeStatuses: statuses };
   }, [appliedFilters, employeeStatus]);

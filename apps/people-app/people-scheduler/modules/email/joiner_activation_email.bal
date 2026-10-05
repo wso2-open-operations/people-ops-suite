@@ -24,7 +24,7 @@ import ballerina/time;
 # the backend's FUTURE_JOINER_EMAIL; this package cannot import it.
 const string FUTURE_JOINER_EMAIL = "future-joiner@wso2.com";
 
-# Send a summary email listing employees auto-transitioned from Upcoming to Active, calling out
+# Send a summary email listing employees auto-transitioned from New joiner to Active, calling out
 # the ones still on the placeholder work email so HR can add their real one.
 #
 # + activations - Employees that were activated during this sweep (must be non-empty)

@@ -30,62 +30,70 @@ isolated function checkAffectedCount(int? affectedRowCount) returns error? {
 
 # Auto-transition employees whose Marked-leaver final day of employment has arrived (today or earlier) to Left.
 #
+# The due employees are read and updated in one transaction, with their rows locked by the
+# read (see getExpiredLeaversQuery). An edit landing between the two, such as a final day
+# moved out, therefore waits for the sweep instead of being skipped by the update while still
+# appearing in the returned list and so in the summary email.
+#
 # + actor - System actor performing the update (e.g. "system-scheduler")
 # + return - The employees that were transitioned (empty if none were due), or an error
 public isolated function transitionExpiredLeavers(string actor) returns LeaverTransition[]|error {
     log:printInfo("Loading employees due for leaver transition");
 
-    stream<LeaverTransition, error?> expiredLeaversStream = databaseClient->query(getExpiredLeaversQuery());
-    LeaverTransition[] transitions = check from LeaverTransition transition in expiredLeaversStream
-        select transition;
-
-    log:printInfo("Loaded employees due for leaver transition", count = transitions.length());
-
-    if transitions.length() == 0 {
-        return transitions;
-    }
-
-    string[] employeeIds = from LeaverTransition t in transitions select t.employeeId;
-
+    LeaverTransition[] transitions = [];
     transaction {
-        sql:ExecutionResult executionResult =
-            check databaseClient->execute(transitionExpiredLeaversQuery(actor, employeeIds));
-        check checkAffectedCount(executionResult.affectedRowCount);
+        stream<LeaverTransition, error?> expiredLeaversStream = databaseClient->query(getExpiredLeaversQuery());
+        transitions = check from LeaverTransition transition in expiredLeaversStream
+            select transition;
+
+        log:printInfo("Loaded employees due for leaver transition", count = transitions.length());
+
+        if transitions.length() > 0 {
+            string[] employeeIds = from LeaverTransition t in transitions select t.employeeId;
+            sql:ExecutionResult executionResult =
+                check databaseClient->execute(transitionExpiredLeaversQuery(actor, employeeIds));
+            check checkAffectedCount(executionResult.affectedRowCount);
+        }
         check commit;
     }
 
-    log:printInfo("Marked employees as Left", count = transitions.length());
+    if transitions.length() > 0 {
+        log:printInfo("Marked employees as Left", count = transitions.length());
+    }
 
     return transitions;
 }
 
-# Make Upcoming employees whose start date has arrived (today or earlier) Active.
+# Make New joiners whose start date has arrived (today or earlier) Active.
+#
+# Read and updated in one transaction with the rows locked, for the same reason as
+# transitionExpiredLeavers: the list returned for the summary email is exactly what was updated.
 #
 # + actor - System actor performing the update (e.g. "system-scheduler")
 # + return - The employees that were activated (empty if none were due), or an error
-public isolated function activateDueUpcomingJoiners(string actor) returns JoinerActivation[]|error {
-    log:printInfo("Loading upcoming employees due for activation");
+public isolated function activateDueNewJoiners(string actor) returns JoinerActivation[]|error {
+    log:printInfo("Loading new joiners due for activation");
 
-    stream<JoinerActivation, error?> dueJoinersStream = databaseClient->query(getDueUpcomingJoinersQuery());
-    JoinerActivation[] activations = check from JoinerActivation activation in dueJoinersStream
-        select activation;
-
-    log:printInfo("Loaded upcoming employees due for activation", count = activations.length());
-
-    if activations.length() == 0 {
-        return activations;
-    }
-
-    string[] employeeIds = from JoinerActivation a in activations select a.employeeId;
-
+    JoinerActivation[] activations = [];
     transaction {
-        sql:ExecutionResult executionResult =
-            check databaseClient->execute(activateDueUpcomingJoinersQuery(actor, employeeIds));
-        check checkAffectedCount(executionResult.affectedRowCount);
+        stream<JoinerActivation, error?> dueJoinersStream = databaseClient->query(getDueNewJoinersQuery());
+        activations = check from JoinerActivation activation in dueJoinersStream
+            select activation;
+
+        log:printInfo("Loaded new joiners due for activation", count = activations.length());
+
+        if activations.length() > 0 {
+            string[] employeeIds = from JoinerActivation a in activations select a.employeeId;
+            sql:ExecutionResult executionResult =
+                check databaseClient->execute(activateDueNewJoinersQuery(actor, employeeIds));
+            check checkAffectedCount(executionResult.affectedRowCount);
+        }
         check commit;
     }
 
-    log:printInfo("Marked employees as Active", count = activations.length());
+    if activations.length() > 0 {
+        log:printInfo("Marked employees as Active", count = activations.length());
+    }
 
     return activations;
 }

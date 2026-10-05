@@ -184,7 +184,7 @@ public type ReturningEmployeeLookupPayload record {|
 public type ReturningEmployeeLookupResponse record {|
     # The person's latest employment, nil for someone new
     EmploymentMatch? latestEmployment;
-    # Whether the person is employed now or already onboarded (Active, Marked leaver or Upcoming)
+    # Whether the person is employed now or already onboarded (Active, Marked leaver or New joiner)
     boolean isCurrentEmployee;
     # The latest real work email they held, nil when their records hold only placeholders. A
     # rehire must use one of their earlier real emails; this is the one the form fills in.

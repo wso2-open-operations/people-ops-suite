@@ -54,7 +54,7 @@ public isolated function getEmploymentsByNic(string nicOrPassport) returns Emplo
         select employment;
 }
 
-# Find a currently employed (Active, Marked leaver or Upcoming) employee holding a work email.
+# Find a currently employed (Active, Marked leaver or New joiner) employee holding a work email.
 #
 # + workEmail - Work email to look for
 # + return - The employee, nil when no current employee holds it, or error

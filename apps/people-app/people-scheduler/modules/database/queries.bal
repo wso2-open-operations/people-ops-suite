@@ -18,6 +18,9 @@ import ballerina/sql;
 
 # Fetch employees whose Marked-leaver final day of employment has arrived (today or earlier).
 #
+# FOR UPDATE locks the rows it reads until the sweep's transaction ends, so they cannot change
+# between this read and the update that follows it. Run it inside that transaction.
+#
 # + return - Query to select employees pending auto-transition to Left
 isolated function getExpiredLeaversQuery() returns sql:ParameterizedQuery =>
     `SELECT
@@ -30,7 +33,8 @@ isolated function getExpiredLeaversQuery() returns sql:ParameterizedQuery =>
     JOIN resignation r ON r.employee_id = e.id
     WHERE e.employee_status = 'Marked leaver'
         AND r.final_day_of_employment IS NOT NULL
-        AND r.final_day_of_employment <= UTC_DATE();`;
+        AND r.final_day_of_employment <= UTC_DATE()
+    FOR UPDATE;`;
 
 # Build an SQL IN clause for a list of string values.
 #
@@ -66,13 +70,14 @@ isolated function transitionExpiredLeaversQuery(string actor, string[] employeeI
     );
 }
 
-# Fetch Upcoming employees whose start date has arrived (today or earlier).
+# Fetch New joiners whose start date has arrived (today or earlier).
 #
 # UTC_DATE, matching the leaver query above and the backend, which onboards someone as
-# Upcoming only when their start date is after today in UTC.
+# a New joiner only when their start date is after today in UTC. FOR UPDATE locks the rows for the
+# sweep's transaction, as in getExpiredLeaversQuery.
 #
 # + return - Query to select employees due to become Active
-isolated function getDueUpcomingJoinersQuery() returns sql:ParameterizedQuery =>
+isolated function getDueNewJoinersQuery() returns sql:ParameterizedQuery =>
     `SELECT
         e.employee_id,
         e.first_name,
@@ -80,20 +85,21 @@ isolated function getDueUpcomingJoinersQuery() returns sql:ParameterizedQuery =>
         e.work_email,
         e.start_date
     FROM employee e
-    WHERE e.employee_status = 'Upcoming'
-        AND e.start_date <= UTC_DATE();`;
+    WHERE e.employee_status = 'New joiner'
+        AND e.start_date <= UTC_DATE()
+    FOR UPDATE;`;
 
-# Make Upcoming employees whose start date has arrived Active.
+# Make New joiners whose start date has arrived Active.
 #
 # + actor - System actor performing the update
 # + employeeIds - External employee IDs to restrict the update to (from the SELECT that found them)
 # + return - Query to update matching employees' status to Active
-isolated function activateDueUpcomingJoinersQuery(string actor, string[] employeeIds) returns sql:ParameterizedQuery {
+isolated function activateDueNewJoinersQuery(string actor, string[] employeeIds) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery inClause = buildInClause(employeeIds);
     return sql:queryConcat(
         `UPDATE employee e
         SET e.employee_status = 'Active', e.updated_by = ${actor}
-        WHERE e.employee_status = 'Upcoming'
+        WHERE e.employee_status = 'New joiner'
             AND e.start_date <= UTC_DATE()
             AND e.employee_id IN (`,
         inClause,
