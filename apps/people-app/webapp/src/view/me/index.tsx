@@ -489,7 +489,9 @@ export const getEmployeeStatusChipStyles =
         ? theme.palette.success.main
         : normalized === "marked leaver"
           ? theme.palette.warning.main
-          : theme.palette.error.main;
+          : normalized === "new joiner"
+            ? theme.palette.info.main
+            : theme.palette.error.main;
 
     return {
       borderRadius: 999,

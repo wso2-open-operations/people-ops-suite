@@ -65,3 +65,12 @@ public const CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL = -1;
 # Message returned when a departure's final day of employment precedes its last day in office.
 public const RESIGNATION_DATE_ORDER_ERROR =
         "Final day of employment cannot be before the last day in office";
+
+# Work email stored for a new joiner whose account does not exist yet. Onboarding stores it
+# when the email is left empty; it is shared by every such joiner, so it never identifies a
+# person and is skipped by every lookup that recognises a returning employee by email.
+public const FUTURE_JOINER_EMAIL = "future-joiner@wso2.com";
+
+# Work email held by former employees whose real address is not on record. Like
+# FUTURE_JOINER_EMAIL it is shared and never identifies a person.
+public const EX_EMPLOYEE_EMAIL = "ex-employee@wso2.com";

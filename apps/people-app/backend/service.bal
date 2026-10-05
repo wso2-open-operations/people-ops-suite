@@ -221,6 +221,65 @@ service http:InterceptableService / on new http:Listener(9090) {
         return {epfExists: employeeId is string};
     }
 
+    # Recognise a returning employee from the NIC/Passport on the onboarding form, so the form
+    # can say who they are and fill in the work email a rehire has to use. Creating the employee
+    # applies the same rules again; this only lets the form show them before submitting.
+    #
+    # + payload - NIC/Passport to look up
+    # + return - The person's latest employment and former work email, or HTTP errors
+    resource function post employees/returning\-employee(http:RequestContext ctx,
+            database:ReturningEmployeeLookupPayload payload)
+        returns database:ReturningEmployeeLookupResponse|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to look up returning employees", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to look up returning employees"
+                }
+            };
+        }
+
+        string nicOrPassport = payload.nicOrPassport.trim();
+        if nicOrPassport == "" {
+            string customErr = "NIC/Passport cannot be empty";
+            log:printWarn(customErr);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        database:EmploymentMatch[]|error employments = database:getEmploymentsByNic(nicOrPassport);
+        if employments is error {
+            string customErr = "Error occurred while looking up the returning employee";
+            log:printError(customErr, employments);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        database:EmploymentMatch[] withRealEmail =
+            employments.filter(e => !database:isPlaceholderWorkEmail(e.workEmail));
+        return {
+            latestEmployment: employments.length() > 0 ? employments[0] : (),
+            isCurrentEmployee: employments.some(e => database:isCurrentEmploymentStatus(e.employeeStatus)),
+            formerWorkEmail: withRealEmail.length() > 0 ? withRealEmail[0].workEmail : ()
+        };
+    }
+
     # Fetch employee detailed information.
     #
     # + employeeId - Employee ID
@@ -1306,59 +1365,24 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int?|error existingPersonalInfoId = database:getPersonalInfoIdByNic(payload.personalInfo.nicOrPassport);
-        if existingPersonalInfoId is error {
-            string customErr = "Error occurred while checking existing employee personal information";
-            log:printError(customErr, existingPersonalInfoId, nicOrPassport = payload.personalInfo.nicOrPassport);
-            return <http:InternalServerError>{
+        // An empty work email means the joiner's account does not exist yet; FUTURE_JOINER_EMAIL
+        // is stored in its place below. Typing a placeholder in is refused rather than treated
+        // the same, so every placeholder joiner is one the backend knows has no email.
+        string? requestedEmail = payload.workEmail;
+        if requestedEmail is string && database:isPlaceholderWorkEmail(requestedEmail) {
+            string customErr = "Leave the work email empty when the employee's account is not created yet";
+            log:printWarn(customErr, workEmail = requestedEmail);
+            return <http:BadRequest>{
                 body: {
-                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                    message: customErr
                 }
             };
         }
-        if existingPersonalInfoId is int {
-            boolean|error hasActiveEmployment = database:hasActiveEmploymentByPersonalInfoId(existingPersonalInfoId);
-            if hasActiveEmployment is error {
-                string customErr = "Error occurred while checking existing employee status";
-                log:printError(customErr, hasActiveEmployment, nicOrPassport = payload.personalInfo.nicOrPassport);
-                return <http:InternalServerError>{
-                    body: {
-                        message: ERROR_EMPLOYEE_CREATION_FAILED
-                    }
-                };
-            }
-            if hasActiveEmployment {
-                string customErr = "Employee with the given NIC/Passport already exists";
-                log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
-                return <http:BadRequest>{
-                    body: {
-                        message: customErr
-                    }
-                };
-            }
 
-            boolean|error isSameEmployee = database:hasEmployeeWithWorkEmail(existingPersonalInfoId, payload.workEmail);
-            if isSameEmployee is error {
-                string customErr = "Error occurred while verifying rehire eligibility";
-                log:printError(customErr, isSameEmployee, nicOrPassport = payload.personalInfo.nicOrPassport);
-                return <http:InternalServerError>{
-                    body: {
-                        message: ERROR_EMPLOYEE_CREATION_FAILED
-                    }
-                };
-            }
-            if !isSameEmployee {
-                string customErr = "Employee with the given NIC/Passport already exists";
-                log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
-                return <http:BadRequest>{
-                    body: {
-                        message: customErr
-                    }
-                };
-            }
-            // NIC/Passport belongs to a former employee (no active employment) under the same
-            // work email — this is a rehire. Fall through and let addEmployee's upsert refresh
-            // their personal_info row and link the new employee record to that same personal_info ID.
+        http:BadRequest|http:InternalServerError? rejectedIdentity =
+            validateOnboardingIdentity(payload.personalInfo.nicOrPassport, requestedEmail);
+        if rejectedIdentity is http:BadRequest|http:InternalServerError {
+            return rejectedIdentity;
         }
 
         string? epfOpt = payload.epf;
@@ -1386,12 +1410,29 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         int? continuousServiceRecord = payload.continuousServiceRecord;
         if continuousServiceRecord is int {
+            // Earlier employments are found by work email, so without one there is nothing
+            // the link could be checked against.
+            if requestedEmail is () {
+                string customErr = "A continuous service record can only be linked when a work email is given";
+                log:printWarn(customErr, linkedId = continuousServiceRecord);
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
             http:BadRequest|http:InternalServerError? invalidLink =
-                validateContinuousServiceRecord(continuousServiceRecord, payload.workEmail, payload.startDate);
+                validateContinuousServiceRecord(continuousServiceRecord, requestedEmail, payload.startDate);
             if invalidLink is http:BadRequest|http:InternalServerError {
                 return invalidLink;
             }
         }
+
+        string workEmail = requestedEmail ?: database:FUTURE_JOINER_EMAIL;
+        payload.workEmail = workEmail;
+        // Set here rather than taken from the request: whether someone has started is decided
+        // by their start date, and the scheduler moves a New joiner to Active on it.
+        payload.employeeStatus = database:initialEmployeeStatus(payload.startDate, todayUtc());
 
         string|http:BadRequest|http:InternalServerError generatedEmployeeId = generateEmployeeId(payload);
         if generatedEmployeeId is http:BadRequest|http:InternalServerError {
@@ -1402,7 +1443,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         // House is assigned automatically — a returning employee keeps the one they had,
         // everyone else gets it from the employee ID's numeric part. Not a user-editable
         // choice, and not known until the ID above is resolved.
-        int|error autoHouseId = database:resolveHouseIdForNewEmployee(payload.workEmail, employeeId);
+        int|error autoHouseId = database:resolveHouseIdForNewEmployee(payload.personalInfo.nicOrPassport,
+                workEmail, employeeId);
         if autoHouseId is error {
             log:printError("Error occurred while computing automatic house assignment",
                     autoHouseId, employeeId = employeeId);
@@ -2644,7 +2686,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this business unit"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this business unit"}
                 };
             }
         }
@@ -2730,7 +2772,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this team"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this team"}
                 };
             }
         }
@@ -2816,7 +2858,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this sub-team"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this sub-team"}
                 };
             }
         }
@@ -2902,7 +2944,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this unit"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this unit"}
                 };
             }
         }
@@ -2994,7 +3036,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees in this career function"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners in this career function"}
                 };
             }
         }
@@ -3142,7 +3184,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees with this designation"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners with this designation"}
                 };
             }
         }
@@ -3230,7 +3272,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this mapping"}
                 };
             }
         }
@@ -3324,7 +3366,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this mapping"}
                 };
             }
         }
@@ -3419,7 +3461,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this mapping"}
                 };
             }
         }

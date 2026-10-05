@@ -32,11 +32,16 @@ public function main() returns error? {
     if scheduledChangeResult is error {
         log:printError("Scheduled change sweep failed", scheduledChangeResult);
     }
+
+    error? joinerActivationResult = runJoinerActivation();
+    if joinerActivationResult is error {
+        log:printError("Joiner activation sweep failed", joinerActivationResult);
+    }
     // Future jobs (e.g. probation-to-permanent conversion) are added here the same way: call the
     // job's `run<JobName>()` function (defined in functions.bal), log its error if any, and track
     // it below — every job still runs even if an earlier one failed.
 
-    if leaverResult is error || scheduledChangeResult is error {
+    if leaverResult is error || scheduledChangeResult is error || joinerActivationResult is error {
         return error("One or more scheduled jobs failed — see logs for details");
     }
 }

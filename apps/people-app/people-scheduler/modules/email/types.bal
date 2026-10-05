@@ -40,6 +40,9 @@ type EmailServiceConfig record {|
     string[] leaverTransitionRecipients;
     # Recipient email(s) for the scheduled-change summary.
     string[] scheduledChangeRecipients;
+    # Recipient email(s) for the New-joiner activation summary, which also lists the
+    # joiners still on the placeholder work email so HR can add their real one.
+    string[] joinerActivationRecipients;
     # Sender email
     string 'from;
 |};

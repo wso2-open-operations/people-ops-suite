@@ -15,7 +15,7 @@
 // under the License.
 
 import { ServiceLength } from "@src/types/types";
-import { DATE_FMT } from "@config/constant";
+import { DATE_FMT, EX_EMPLOYEE_EMAIL, FUTURE_JOINER_EMAIL } from "@config/constant";
 import { addDays } from "date-fns/addDays";
 import { differenceInCalendarDays } from "date-fns/differenceInCalendarDays";
 import { differenceInMonths } from "date-fns/differenceInMonths";
@@ -184,12 +184,14 @@ export const sortAndFormatOptions = <T>(
 
 export function getEmployeeStatusColor(
   status: string,
-): "default" | "success" | "warning" | "error" {
+): "default" | "success" | "warning" | "error" | "info" {
   switch (status?.toLowerCase()) {
     case "active":
       return "success";
     case "marked leaver":
       return "warning";
+    case "new joiner":
+      return "info";
     case "left":
       return "error";
     default:
@@ -276,6 +278,12 @@ export const stripBom = (text: string): string =>
  * in the field but survives into the record.
  */
 export const normalizeEmail = (value: string): string => value.trim().toLowerCase();
+
+/** Whether a work email is one of the shared placeholders rather than a person's own address. */
+export const isPlaceholderWorkEmail = (value: string): boolean => {
+  const email = normalizeEmail(value);
+  return email === FUTURE_JOINER_EMAIL || email === EX_EMPLOYEE_EMAIL;
+};
 
 /**
  * Whether a departure's two dates are in a possible order.

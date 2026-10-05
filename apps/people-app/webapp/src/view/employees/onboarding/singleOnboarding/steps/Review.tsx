@@ -389,7 +389,13 @@ export default function ReviewStep({ isEditMode }: ReviewStepProps) {
         <SectionHeader icon={REVIEW_ICONS.badge} title="Identity" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Work Email" value={values.workEmail} />
+            <ReviewField
+              label="Work Email"
+              value={
+                values.workEmail?.trim() ||
+                (isEditMode ? values.workEmail : "Not created yet — added later")
+              }
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="EPF" value={values.epf} />

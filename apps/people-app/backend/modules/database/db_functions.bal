@@ -44,32 +44,23 @@ public isolated function getEmployeeIdByEpf(string epf) returns string|error? {
     return result is sql:NoRowsError ? () : result;
 }
 
-# Get the personal_info ID for a given NIC/Passport.
+# Fetch every employment of the person behind a NIC/Passport, newest first.
 #
-# + nicOrPassport - National Identity Card number or Passport
-# + return - personal_info ID, nil if no matching record, or error
-public isolated function getPersonalInfoIdByNic(string nicOrPassport) returns int?|error {
-    int|error result = databaseClient->queryRow(getPersonalInfoIdByNicQuery(nicOrPassport));
+# + nicOrPassport - NIC/Passport from the onboarding submission
+# + return - The person's employments (empty for someone new), or error
+public isolated function getEmploymentsByNic(string nicOrPassport) returns EmploymentMatch[]|error {
+    stream<EmploymentMatch, sql:Error?> resultStream = databaseClient->query(getEmploymentsByNicQuery(nicOrPassport));
+    return from EmploymentMatch employment in resultStream
+        select employment;
+}
+
+# Find a currently employed (Active, Marked leaver or New joiner) employee holding a work email.
+#
+# + workEmail - Work email to look for
+# + return - The employee, nil when no current employee holds it, or error
+public isolated function getCurrentEmployeeByWorkEmail(string workEmail) returns EmploymentMatch|error? {
+    EmploymentMatch|error result = databaseClient->queryRow(getCurrentEmployeeByWorkEmailQuery(workEmail));
     return result is sql:NoRowsError ? () : result;
-}
-
-# Check whether a personal_info ID already has an employee record under the given work email.
-#
-# + personalInfoId - personal_info ID matched by NIC/Passport
-# + workEmail - Work email from the new onboarding submission
-# + return - true if a matching employee record exists, or error
-public isolated function hasEmployeeWithWorkEmail(int personalInfoId, string workEmail) returns boolean|error {
-    int count = check databaseClient->queryRow(countEmployeeByPersonalInfoIdAndWorkEmailQuery(personalInfoId, workEmail));
-    return count > 0;
-}
-
-# Check whether a personal_info ID has any currently active employment.
-#
-# + personalInfoId - personal_info ID matched by NIC/Passport
-# + return - true if an active employee record references this personal_info ID, or error
-public isolated function hasActiveEmploymentByPersonalInfoId(int personalInfoId) returns boolean|error {
-    int count = check databaseClient->queryRow(countActiveEmployeeByPersonalInfoIdQuery(personalInfoId));
-    return count > 0;
 }
 
 # Fetch employee detailed information.
@@ -110,6 +101,12 @@ public isolated function getEmployees(EmployeeSearchPayload payload, string? lea
 # + return - Continuous service record information or error
 public isolated function getContinuousServiceRecordsByEmail(string workEmail)
     returns ContinuousServiceRecordInfo[]|error {
+
+    // A placeholder is shared by unrelated people, so their employments are not one
+    // person's earlier service.
+    if isPlaceholderWorkEmail(workEmail) {
+        return [];
+    }
 
     stream<ContinuousServiceRecordInfo, sql:Error?> recordStream = databaseClient->query(
         getContinuousServiceRecordQuery(workEmail)
@@ -649,7 +646,8 @@ public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, stri
                 // House is assigned automatically — a returning employee keeps the one they
                 // had, everyone else gets it from the employee ID's numeric part. Not known
                 // until the ID above is resolved, so this can't happen in buildBulkPayloads.
-                payload.houseId = check resolveHouseIdForNewEmployee(payload.workEmail, employeeId);
+                payload.houseId = check resolveHouseIdForNewEmployee(payload.personalInfo.nicOrPassport,
+                        payload.workEmail ?: FUTURE_JOINER_EMAIL, employeeId);
                 int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
                 _ = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
                 check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
@@ -890,22 +888,29 @@ isolated function extractNumericSuffix(string employeeId) returns int|error {
 # affiliation rather than a property of the employee ID, and giving a returning colleague a
 # different one because their new ID divides differently would be arbitrary to them.
 #
-# Their previous employment is found by work email, taking the most recent one only. Where
-# there is no previous employment, or that employment carries no house, the house is derived
-# from the employee ID as it always has been — house assignment is recent, so most records
-# have none yet and fall through to that.
+# Their previous employment is found by NIC/Passport first, which recognises the person even
+# when their work email has changed or is a placeholder, and otherwise by work email, which
+# covers earlier employments migrated in under a different NIC. A placeholder email is never
+# matched: it is shared by unrelated employees. The most recent employment is taken only.
+# Where there is no previous employment, or that employment carries no house, the house is
+# derived from the employee ID as it always has been — house assignment is recent, so most
+# records have none yet and fall through to that.
 #
+# + nicOrPassport - NIC/Passport of the employee being onboarded
 # + workEmail - Work email of the employee being onboarded
 # + employeeId - The employee's newly assigned employee ID
 # + return - The house ID to assign, or an error if the employee ID has no numeric part
-public isolated function resolveHouseIdForNewEmployee(string workEmail, string employeeId)
+public isolated function resolveHouseIdForNewEmployee(string nicOrPassport, string workEmail, string employeeId)
     returns int|error {
 
     // Nullable, not int: the row exists whenever there is a previous employment, and
     // carries a null house when that employment predates house assignment or its house has
     // since been removed. Both take the same fallback as having no previous employment.
     record {|int? houseId;|}|error previous =
-        databaseClient->queryRow(getPreviousHouseIdQuery(workEmail));
+        databaseClient->queryRow(getPreviousHouseIdByNicQuery(nicOrPassport));
+    if previous is sql:NoRowsError && !isPlaceholderWorkEmail(workEmail) {
+        previous = databaseClient->queryRow(getPreviousHouseIdQuery(workEmail));
+    }
 
     if previous is record {|int? houseId;|} {
         int? previousHouseId = previous.houseId;
@@ -1215,15 +1220,8 @@ public isolated function updateResignation(string employeeId, UpdateResignationP
         return error(string `Employee not found for ID: ${employeeId}`);
     }
 
-    // Resigning someone is what moves them to "Marked leaver", and only an active
-    // employee can be resigned. Correcting the details of someone who has already left
-    // must not resurrect their departure: setting the status unconditionally would move
-    // a "Left" employee back to "Marked leaver".
-    EmployeeStatus? newStatus =
-        employee.employeeStatus == EMPLOYEE_ACTIVE ? EMPLOYEE_MARKED_LEAVER : ();
-
     UpdateEmployeeJobInfoPayload jobInfoPayload = {
-        employeeStatus: newStatus,
+        employeeStatus: statusAfterResignation(employee.employeeStatus),
         finalDayInOffice: payload.finalDayInOffice,
         finalDayOfEmployment: payload.finalDayOfEmployment,
         resignationReason: payload.resignationReason
