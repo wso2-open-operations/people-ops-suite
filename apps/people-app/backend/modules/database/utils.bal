@@ -193,39 +193,42 @@ isolated function csvEscape(string? value) returns string {
     return v;
 }
 
-# Calculate the length of service from a start date string to today.
+# Calculate the length of service from a start date up to the end date or today, whichever
+# is earlier, so a leaver's service stops at their final day of employment. The final day is
+# a day worked, so it counts towards the service.
 #
 # + startDateStr - Start date in YYYY-MM-DD format
+# + endDateStr - Final day of employment in YYYY-MM-DD format, if any
+# + today - Date to count up to when there is no earlier end date; defaults to today (UTC)
 # + return - Human-readable string like "2 Year(s) 3 Month(s)"
-isolated function calculateLengthOfService(string startDateStr) returns string {
-    time:Utc now = time:utcNow();
-    time:Civil civil = time:utcToCivil(now);
-    int todayYear = civil.year;
-    int todayMonth = civil.month;
-    int todayDay = civil.day;
+isolated function calculateLengthOfService(string startDateStr, string? endDateStr = (),
+        time:Date? today = ()) returns string {
+    time:Date until = today ?: time:utcToCivil(time:utcNow());
 
-    string[] parts = re`-`.split(startDateStr);
-    if parts.length() != 3 {
+    time:Date? 'start = parseIsoDate(startDateStr);
+    if 'start is () {
         return "";
     }
-    int|error startYear = int:fromString(parts[0]);
-    int|error startMonth = int:fromString(parts[1]);
-    int|error startDay = int:fromString(parts[2]);
-    if startYear is error || startMonth is error || startDay is error {
-        return "";
-    }
-
     // Return empty string if start date is in the future
-    if startYear > todayYear
-        || (startYear == todayYear && startMonth > todayMonth)
-        || (startYear == todayYear && startMonth == todayMonth && startDay > todayDay) {
+    if dateKey('start) > dateKey(until) {
         return "";
     }
 
-    int years = todayYear - startYear;
-    int months = todayMonth - startMonth;
+    time:Date? end = endDateStr is string ? parseIsoDate(endDateStr) : ();
+    if end is time:Date && dateKey(end) <= dateKey(until) {
+        time:Date? dayAfterEnd = nextDay(end);
+        if dayAfterEnd is time:Date {
+            until = dayAfterEnd;
+        }
+    }
+    if dateKey('start) > dateKey(until) {
+        return "";
+    }
+
+    int years = until.year - 'start.year;
+    int months = until.month - 'start.month;
     // If the anniversary day hasn't been reached yet this month, subtract one month
-    if todayDay < startDay {
+    if until.day < 'start.day {
         months -= 1;
     }
     if months < 0 {
@@ -234,6 +237,46 @@ isolated function calculateLengthOfService(string startDateStr) returns string {
     }
     return string `${years} Year(s) ${months} Month(s)`;
 }
+
+# Parse a YYYY-MM-DD string into its year, month and day.
+#
+# + dateStr - Date in YYYY-MM-DD format
+# + return - The parsed date, or () if the string is not in that shape
+isolated function parseIsoDate(string dateStr) returns time:Date? {
+    string[] parts = re`-`.split(dateStr);
+    if parts.length() != 3 {
+        return ();
+    }
+    int|error year = int:fromString(parts[0]);
+    int|error month = int:fromString(parts[1]);
+    int|error day = int:fromString(parts[2]);
+    if year is error || month is error || day is error {
+        return ();
+    }
+    return {year, month, day};
+}
+
+# The calendar day after a date, rolling over month and year ends.
+#
+# + date - Date to move forward
+# + return - The following day, or () if the date is not a real calendar date
+isolated function nextDay(time:Date date) returns time:Date? {
+    time:Utc|time:Error utc = time:utcFromCivil({
+        year: date.year, month: date.month, day: date.day,
+        hour: 0, minute: 0, second: 0, utcOffset: {hours: 0, minutes: 0}
+    });
+    if utc is time:Error {
+        return ();
+    }
+    time:Civil next = time:utcToCivil(time:utcAddSeconds(utc, 86400));
+    return {year: next.year, month: next.month, day: next.day};
+}
+
+# Collapse a date into a single sortable number (YYYYMMDD).
+#
+# + date - Date to collapse
+# + return - The date as YYYYMMDD
+isolated function dateKey(time:Date date) returns int => date.year * 10000 + date.month * 100 + date.day;
 
 # Resolve a comma-separated list of additional manager emails to full names using the name map.
 # Falls back to the original email if a name is not found.
@@ -361,7 +404,7 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
         "continuousServiceDate" => { return csvEscape(e.continuousServiceDate); }
         "lengthOfService"       => {
             string effectiveStartDate = e.continuousServiceDate ?: e.startDate;
-            return csvEscape(calculateLengthOfService(effectiveStartDate));
+            return csvEscape(calculateLengthOfService(effectiveStartDate, e.finalDayOfEmployment));
         }
         "reportsTo"             => { return csvEscape(e.managerName); }
         "additionalManager"     => { return csvEscape(resolveAdditionalManagerNames(e.additionalManagerEmails, nameMap)); }
