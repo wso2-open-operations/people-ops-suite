@@ -314,6 +314,7 @@ export interface AppConfigResponse {
   sabbaticalLeaveUserGuideUrl: string;
   sabbaticalLeaveEligibilityDuration: number;
   sabbaticalLeaveMaxApplicationDuration: number;
+  sabbaticalLeaveMinJobBand: number;
   cachedEmails: CachedMail;
   // Leave types People Ops may record on behalf of an employee. Server-driven,
   // so enabling another type needs no frontend change.

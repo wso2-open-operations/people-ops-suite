@@ -469,6 +469,7 @@ components:
       - onBehalfAllowedLeaveTypes
       - sabbaticalLeaveEligibilityDuration
       - sabbaticalLeaveMaxApplicationDuration
+      - sabbaticalLeaveMinJobBand
       - sabbaticalLeavePolicyUrl
       - sabbaticalLeaveUserGuideUrl
       type: object
@@ -489,6 +490,10 @@ components:
         sabbaticalLeaveMaxApplicationDuration:
           type: integer
           description: Sabbatical leave maximum application duration in days
+          format: int64
+        sabbaticalLeaveMinJobBand:
+          type: integer
+          description: Minimum job band eligible for sabbatical leave
           format: int64
         cachedEmails:
           $ref: '#/components/schemas/DefaultMailResponse'
@@ -1024,6 +1029,7 @@ components:
       - employmentStartDate
       - firstName
       - isLead
+      - jobBand
       - jobRole
       - lastName
       - leadEmail
@@ -1082,6 +1088,11 @@ components:
         location:
           type: string
           description: Employee location/country
+          nullable: true
+        jobBand:
+          type: integer
+          description: Job band
+          format: int64
           nullable: true
       additionalProperties: false
       description: User Info payload.

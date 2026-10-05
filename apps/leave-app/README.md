@@ -41,6 +41,10 @@ isSabbaticalLeaveEnabled = true
 sabbaticalLeaveApprovalUrl = "https://localhost:3000/approve/sabbatical"
 sabbaticalLeavePolicyUrl = "<policy-doc-url>"
 sabbaticalLeaveUserGuideUrl = "<user-guide-url>"
+# Optional (defaults shown)
+sabbaticalLeaveEligibilityDuration = 2555 # days (7 years)
+sabbaticalLeaveMaxApplicationDuration = 42 # days (6 weeks)
+sabbaticalLeaveMinJobBand = 5
 
 # --- Email Module ---
 [leave_service.email]
@@ -140,6 +144,25 @@ npm run dev
 
 Frontend runs on `http://localhost:3000`.
 
+### Sabbatical Reminder Job
+
+`sabbatical-reminder/` is a separate Ballerina program, deployed as a Choreo Scheduled Task that runs once a day.
+Each run emails the lead of every approved sabbatical leave starting within the next 28 days that has not had its
+reminder yet (To: the approving lead, CC: People Operations and the employee), then records the send in
+`leave_submissions.sabbatical_reminder_sent_on`. A leave approved less than 4 weeks before it starts gets its
+reminder on the next run; a failed send is retried on the next run.
+
+1. Apply `backend/resources/leave_app_update_v1.1.1.sql` to the leave database (adds the reminder column).
+2. Copy `sabbatical-reminder/Config.toml.local` to `sabbatical-reminder/Config.toml` and fill it in. Set
+   `debugRecipients` in non-production environments so reminders go only to those addresses.
+3. Build and run:
+
+```bash
+cd sabbatical-reminder
+bal build
+bal run
+```
+
 ## Leave Types by Location
 
 | Location | Leave Types |
@@ -157,6 +180,15 @@ Frontend runs on `http://localhost:3000`.
 | POST | `/leaves` | Submit a leave request |
 | GET | `/leaves` | Get leave history |
 | GET | `/app-configs` | App configuration |
+
+## Sabbatical Leave Rules
+
+- Eligible after 7 years of continuous service, or 7 years after the last sabbatical ended (`sabbaticalLeaveEligibilityDuration`).
+- Job band 5 and above (`sabbaticalLeaveMinJobBand`); employees with no job band on record cannot apply.
+- At most 6 weeks (`sabbaticalLeaveMaxApplicationDuration`).
+- The applicant must acknowledge the planning and handover responsibility when submitting, and the lead must confirm
+  that plans are in place when approving.
+- The approving lead is reminded 4 weeks before the leave starts (see [Sabbatical Reminder Job](#sabbatical-reminder-job)).
 
 ## Project Structure
 
@@ -187,4 +219,11 @@ webapp/src/
     LeaveHistory/          # Leave history table
     LeadReport/            # Manager report view
     SabbaticalLeave/       # Sabbatical leave flow
+
+sabbatical-reminder/       # Daily job: 4-week sabbatical reminder to the lead
+  main.bal                 # Entry point
+  modules/
+    database/              # Due-reminder query and sent marker
+    employee/              # HR Entity GraphQL client (employee name)
+    email/                 # Reminder template and sending
 ```

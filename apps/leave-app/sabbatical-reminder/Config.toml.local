@@ -1,0 +1,32 @@
+[sabbatical_reminder]
+reminderLeadTimeInDays = 28
+
+[sabbatical_reminder.database.dbConfig]
+host = ""
+user = ""
+password = ""
+database = ""
+port = 3306
+maxOpenConnections = 5
+maxConnectionLifeTime = 180.0
+minIdleConnections = 1
+
+[sabbatical_reminder.employee]
+hrEntityBaseUrl = ""
+
+[sabbatical_reminder.employee.oauthConfig]
+tokenUrl = ""
+clientId = ""
+clientSecret = ""
+
+[sabbatical_reminder.email.emailServiceConfig]
+emailServiceEndpoint = ""
+from = ""
+peopleOperationsRecipients = ["people-operations-group@wso2.com"]
+# Set in non-production environments to send every reminder only to these addresses.
+debugRecipients = []
+
+[sabbatical_reminder.email.emailServiceConfig.oauthConfig]
+tokenUrl = ""
+clientId = ""
+clientSecret = ""

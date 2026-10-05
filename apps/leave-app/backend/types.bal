@@ -249,6 +249,8 @@ public type UserInfo record {|
     int subordinateCount;
     # Employee location/country
     string? location;
+    # Job band
+    int? jobBand;
 |};
 
 # Sabbatical leave Process Payload.
@@ -285,6 +287,8 @@ public type AppConfig record {|
     int sabbaticalLeaveEligibilityDuration;
     # Sabbatical leave maximum application duration in days
     int sabbaticalLeaveMaxApplicationDuration;
+    # Minimum job band eligible for sabbatical leave
+    int sabbaticalLeaveMinJobBand;
     # Cached email notifications list
     employee:DefaultMailResponse cachedEmails;
     # Leave types People Ops may record on behalf of an employee. Drives the

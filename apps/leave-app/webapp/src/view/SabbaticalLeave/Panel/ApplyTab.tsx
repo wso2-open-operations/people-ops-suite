@@ -62,6 +62,7 @@ interface ApplyTabProps {
   sabbaticalUserGuideUrl: string;
   sabbaticalLeaveEligibilityDuration: number;
   sabbaticalLeaveMaxApplicationDuration: number;
+  sabbaticalLeaveMinJobBand: number;
 }
 
 dayjs.extend(utc);
@@ -71,6 +72,7 @@ export default function ApplyTab({
   sabbaticalUserGuideUrl,
   sabbaticalLeaveEligibilityDuration,
   sabbaticalLeaveMaxApplicationDuration,
+  sabbaticalLeaveMinJobBand,
 }: ApplyTabProps) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
@@ -108,6 +110,8 @@ export default function ApplyTab({
   const isLoading = leaveState === State.loading || !hasFetched;
   const isSubmitting = submitState === State.loading;
   const lastLeaveEndDate = leaves[0]?.endDate;
+  const jobBand = userInfo?.jobBand ?? null;
+  const isJobBandEligible = jobBand !== null && jobBand >= sabbaticalLeaveMinJobBand;
 
   // Always fetch leave history — eligibility is validated against leaveStartDate, not today
   useEffect(() => {
@@ -165,7 +169,7 @@ export default function ApplyTab({
       return;
     }
 
-    const diffDays = leaveStartDate.startOf("day").diff(validationAnchor.startOf("day"), "day") - 1;
+    const diffDays = leaveStartDate.startOf("day").diff(validationAnchor.startOf("day"), "day");
     if (diffDays < sabbaticalLeaveEligibilityDuration) {
       const anchorLabel = lastSabbaticalLeaveEndDate
         ? "last sabbatical leave end date"
@@ -269,6 +273,10 @@ export default function ApplyTab({
       handleConfirmSubmit,
       "Yes",
       "No",
+      undefined,
+      "I acknowledge that sabbatical leave is subject to appropriate planning and handover between " +
+        "myself and my Lead. I am responsible for ensuring that my responsibilities, objectives and work " +
+        "commitments are appropriately managed during my absence.",
     );
   };
 
@@ -331,6 +339,14 @@ export default function ApplyTab({
                 Sabbatical leave requires a reporting lead for the approval process. Your lead is
                 currently not set in the people management system. Please contact the People
                 Operations team to update your profile before applying.
+              </Alert>
+            ) : !isJobBandEligible ? (
+              <Alert variant="outlined" severity="warning">
+                <AlertTitle>Not eligible for sabbatical leave</AlertTitle>
+                {jobBand === null
+                  ? "Your job band is not recorded in the people management system. Please contact the " +
+                    "People Operations team to apply for sabbatical leave."
+                  : `Sabbatical leave is available for job band ${sabbaticalLeaveMinJobBand} and above.`}
               </Alert>
             ) : (
             <>

@@ -85,6 +85,12 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
       },
       isApproval ? "Yes, Approve" : "Yes, Reject",
       "Cancel",
+      undefined,
+      isApproval
+        ? "I confirm that I have reviewed and approved this sabbatical leave request and that appropriate " +
+            "plans are in place to manage the employee's responsibilities, objectives and work commitments " +
+            "during the leave period."
+        : undefined,
     );
   };
 

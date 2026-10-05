@@ -48,6 +48,7 @@ export default function SabbaticalLeave() {
       sabbaticalUserGuideUrl={appConfig?.sabbaticalLeaveUserGuideUrl ?? ""}
       sabbaticalLeaveEligibilityDuration={appConfig?.sabbaticalLeaveEligibilityDuration ?? 0}
       sabbaticalLeaveMaxApplicationDuration={appConfig?.sabbaticalLeaveMaxApplicationDuration ?? 0}
+      sabbaticalLeaveMinJobBand={appConfig?.sabbaticalLeaveMinJobBand ?? 0}
     />
   );
 }
