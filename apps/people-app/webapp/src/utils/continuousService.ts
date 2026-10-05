@@ -22,7 +22,9 @@ import { ContinuousServiceRecordInfo } from "@slices/employeeSlice/employee";
  * Whether a prior record can be offered as the employment another one continues from.
  *
  * Mirrors the backend's isEligiblePriorEmployment, which is the real guard: the record
- * must have ended (Left), must have started before the employment being linked, and must
+ * must have ended or be ending (Left or Marked leaver — a relocation is onboarded while
+ * the old employment is still Marked leaver), must have started before the employment
+ * being linked, and must
  * not be that employment itself. The start-date rule is what stops a record being linked
  * forwards, or two records being linked in a cycle.
  *
@@ -36,7 +38,11 @@ export const isEligiblePriorEmployment = (
   startDate: string | null | undefined,
   employeeId?: string | null,
 ): boolean => {
-  if (record.employeeStatus !== EmployeeStatus.Left) return false;
+  if (
+    record.employeeStatus !== EmployeeStatus.Left &&
+    record.employeeStatus !== EmployeeStatus.MarkedLeaver
+  )
+    return false;
   if (employeeId && record.employeeId === employeeId) return false;
   const start = completeStartDate(startDate);
   if (!start) return true;

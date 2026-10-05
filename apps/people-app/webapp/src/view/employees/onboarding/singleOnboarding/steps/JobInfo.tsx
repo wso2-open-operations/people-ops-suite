@@ -51,7 +51,7 @@ import {
   type ContinuousServiceRecordInfo,
   type ReturningEmployeeLookup,
 } from "@slices/employeeSlice/employee";
-import { CURRENT_EMPLOYEE_STATUSES, EmployeeStatus } from "@/types/types";
+import { EmployeeStatus } from "@/types/types";
 import {
   RESIGNATION_DATE_ORDER_MESSAGE,
   isPlaceholderWorkEmail,
@@ -489,8 +489,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
     continuousServiceRecordEmail: serviceRecordsEmail,
     errorMessage,
   } = useAppSelector((s) => s.employee);
-  // Only an earlier employment under this address that has ended can be carried over;
-  // the backend enforces the same rule on create.
+  // Only an earlier employment under this address that has ended or is ending (Left or
+  // Marked leaver, as in a relocation) can be carried over; the backend enforces the same
+  // rule on create.
   const continuousServiceRecord = useMemo(
     () =>
       serviceRecords.filter((record) =>
@@ -581,8 +582,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
       employeeId: string;
     }) =>
       `${`${m.firstName ?? ""} ${m.lastName ?? ""}`.trim() || "N/A"} (${m.employeeId})`;
+    // Matches the backend: only an Active or New joiner employee holds on to their email. A
+    // Marked leaver's email is free, so an employee who relocates can keep it.
     const isCurrent = (status: string) =>
-      CURRENT_EMPLOYEE_STATUSES.includes(status as EmployeeStatus);
+      status === EmployeeStatus.Active || status === EmployeeStatus.NewJoiner;
 
     const former = returningEmployee?.latestEmployment ?? null;
     if (former && returningEmployee?.isCurrentEmployee) {

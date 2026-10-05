@@ -81,10 +81,19 @@ describe("isEligiblePriorEmployment", () => {
     ).toBe(false);
     expect(
       isEligiblePriorEmployment(
-        record("LK100254", "2012-09-01", EmployeeStatus.MarkedLeaver),
+        record("LK100254", "2012-09-01", EmployeeStatus.NewJoiner),
         "2020-01-01",
       ),
     ).toBe(false);
+  });
+
+  it("offers a Marked leaver employment, so a relocation can be linked", () => {
+    expect(
+      isEligiblePriorEmployment(
+        record("LK100254", "2012-09-01", EmployeeStatus.MarkedLeaver),
+        "2020-01-01",
+      ),
+    ).toBe(true);
   });
 
   it("never offers the record being edited", () => {
