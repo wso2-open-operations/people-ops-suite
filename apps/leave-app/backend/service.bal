@@ -87,7 +87,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 isLead: empInfo.lead,
                 employmentStartDate: empInfo.continuousServiceDate ?: empInfo.startDate,
                 subordinateCount: subordinates.length(),
-                location: empInfo.location
+                location: empInfo.location,
+                jobBand: empInfo.jobBand
             };
 
             return userInfoResponse;
@@ -171,6 +172,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             sabbaticalLeaveUserGuideUrl,
             sabbaticalLeaveEligibilityDuration,
             sabbaticalLeaveMaxApplicationDuration,
+            sabbaticalLeaveMinJobBand,
             cachedEmails,
             onBehalfAllowedLeaveTypes
         };
@@ -405,6 +407,24 @@ service http:InterceptableService / on new http:Listener(9090) {
                     return <http:InternalServerError>{
                         body: {
                             message: errMsg
+                        }
+                    };
+                }
+                // Only employees in the minimum job band and above are eligible
+                int? jobBand = employeeDetails.jobBand;
+                if jobBand is () {
+                    return <http:Forbidden>{
+                        body: {
+                            message: "Your job band is not recorded. Please contact People Operations to apply " +
+                            "for sabbatical leave."
+                        }
+                    };
+                }
+                if jobBand < sabbaticalLeaveMinJobBand {
+                    return <http:Forbidden>{
+                        body: {
+                            message: string `Sabbatical leave is available for job band ${
+                                sabbaticalLeaveMinJobBand} and above.`
                         }
                     };
                 }

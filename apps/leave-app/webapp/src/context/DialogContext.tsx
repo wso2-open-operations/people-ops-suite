@@ -16,7 +16,7 @@
 
 import CloseIcon from "@mui/icons-material/Close";
 import LoadingButton from "@mui/lab/LoadingButton";
-import { IconButton, Stack, TextField } from "@mui/material";
+import { Box, Checkbox, FormControlLabel, IconButton, Stack, TextField } from "@mui/material";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -66,6 +66,7 @@ type ConfirmationDialogContextType = {
     okText?: string,
     cancelText?: string,
     inputObj?: InputObj,
+    acknowledgement?: string,
   ) => void;
 };
 
@@ -81,6 +82,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
   const { setShow, show, onHide } = useDialogShow();
 
   const [comment, setComment] = React.useState("");
+  const [acknowledged, setAcknowledged] = React.useState(false);
 
   const [content, setContent] = useState<{
     title: string;
@@ -90,6 +92,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
     okText?: string;
     cancelText?: string;
     inputObj?: InputObj;
+    acknowledgement?: string;
   }>({
     title: "",
     message: "",
@@ -105,6 +108,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
     okText?: string,
     cancelText?: string,
     inputObj?: InputObj,
+    acknowledgement?: string,
   ) => {
     setContent({
       title,
@@ -114,7 +118,9 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
       okText,
       cancelText,
       inputObj,
+      acknowledgement,
     });
+    setAcknowledged(false);
     setShow(true);
   };
 
@@ -143,6 +149,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
     });
 
     setComment("");
+    setAcknowledged(false);
   };
 
   const onChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -204,6 +211,23 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
                 onChange={onChange}
               />
             )}
+            {/* Set apart from the message in an outlined box, so it reads as its own step. */}
+            {content.acknowledgement && (
+              <Box sx={{ mx: 1, mt: 2, px: 1.5, py: 1, border: 1, borderColor: "divider", borderRadius: 1 }}>
+                <FormControlLabel
+                  sx={{ m: 0, alignItems: "flex-start" }}
+                  control={
+                    <Checkbox
+                      size="small"
+                      sx={{ pt: 0.25 }}
+                      checked={acknowledged}
+                      onChange={(e) => setAcknowledged(e.target.checked)}
+                    />
+                  }
+                  label={<DialogContentText variant="body2">{content.acknowledgement}</DialogContentText>}
+                />
+              </Box>
+            )}
 
             <DialogActions sx={{ pb: 2, pt: 0, mt: 0, px: 2 }}>
               <Stack flexDirection={"row"} sx={{ mt: 1 }} gap={1}>
@@ -230,7 +254,10 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
                   }}
                   variant="contained"
                   size="small"
-                  disabled={content?.inputObj?.mandatory && comment === ""}
+                  disabled={
+                    (content?.inputObj?.mandatory && comment === "") ||
+                    (!!content?.acknowledgement && !acknowledged)
+                  }
                   onClick={() => (content?.inputObj ? handleOk(comment) : handleOk())}
                 >
                   {content?.okText ? content.okText : "Yes"}

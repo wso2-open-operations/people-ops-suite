@@ -124,6 +124,8 @@ public type Employee record {|
     boolean? lead;
     # Subordinate count of the employee
     int subordinateCount;
+    # Job band of the employee
+    int? jobBand = ();
 |};
 
 # Minimal Employee information.

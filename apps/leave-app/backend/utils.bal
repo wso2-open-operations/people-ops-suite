@@ -37,8 +37,9 @@ configurable database:LeaveType[] onBehalfAllowedLeaveTypes = [
 configurable boolean isSabbaticalLeaveEnabled = ?;
 configurable string sabbaticalLeavePolicyUrl = ?;
 configurable string sabbaticalLeaveUserGuideUrl = ?;
-configurable int sabbaticalLeaveEligibilityDuration = 1095; // default 3 years
+configurable int sabbaticalLeaveEligibilityDuration = 2555; // default 7 years
 configurable int sabbaticalLeaveMaxApplicationDuration = 42; // default 6 weeks
+configurable int sabbaticalLeaveMinJobBand = 5;
 configurable string[] sabbaticalFunctionalLeadOptOutMails = ?;
 
 # Checks if a passed string is an empty.

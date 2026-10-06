@@ -5,12 +5,12 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.9.8"
+distribution-version = "2201.12.7"
 
 [[package]]
 org = "ballerina"
 name = "auth"
-version = "2.11.2"
+version = "2.14.0"
 dependencies = [
 	{org = "ballerina", name = "crypto"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -22,21 +22,18 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "cache"
-version = "3.8.0"
+version = "3.10.0"
 dependencies = [
 	{org = "ballerina", name = "constraint"},
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "task"},
 	{org = "ballerina", name = "time"}
 ]
-modules = [
-	{org = "ballerina", packageName = "cache", moduleName = "cache"}
-]
 
 [[package]]
 org = "ballerina"
 name = "constraint"
-version = "1.5.0"
+version = "1.7.1"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
 ]
@@ -44,7 +41,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "crypto"
-version = "2.7.2"
+version = "2.12.1"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "time"}
@@ -52,8 +49,17 @@ dependencies = [
 
 [[package]]
 org = "ballerina"
+name = "data.jsondata"
+version = "1.1.4"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "lang.object"}
+]
+
+[[package]]
+org = "ballerina"
 name = "file"
-version = "1.9.0"
+version = "1.13.1"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -64,7 +70,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "graphql"
-version = "1.13.5"
+version = "1.16.2"
 dependencies = [
 	{org = "ballerina", name = "auth"},
 	{org = "ballerina", name = "cache"},
@@ -96,12 +102,13 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "http"
-version = "2.11.12"
+version = "2.14.13"
 dependencies = [
 	{org = "ballerina", name = "auth"},
 	{org = "ballerina", name = "cache"},
 	{org = "ballerina", name = "constraint"},
 	{org = "ballerina", name = "crypto"},
+	{org = "ballerina", name = "data.jsondata"},
 	{org = "ballerina", name = "file"},
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -128,7 +135,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "io"
-version = "1.6.3"
+version = "1.8.2"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "lang.value"}
@@ -142,18 +149,16 @@ version = "0.0.0"
 [[package]]
 org = "ballerina"
 name = "jwt"
-version = "2.12.1"
+version = "2.15.1"
 dependencies = [
 	{org = "ballerina", name = "cache"},
 	{org = "ballerina", name = "crypto"},
+	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "lang.int"},
 	{org = "ballerina", name = "lang.string"},
 	{org = "ballerina", name = "log"},
 	{org = "ballerina", name = "time"}
-]
-modules = [
-	{org = "ballerina", packageName = "jwt", moduleName = "jwt"}
 ]
 
 [[package]]
@@ -227,27 +232,16 @@ dependencies = [
 
 [[package]]
 org = "ballerina"
-name = "lang.transaction"
-version = "0.0.0"
-dependencies = [
-	{org = "ballerina", name = "jballerina.java"}
-]
-
-[[package]]
-org = "ballerina"
 name = "lang.value"
 version = "0.0.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
 ]
-modules = [
-	{org = "ballerina", packageName = "lang.value", moduleName = "lang.value"}
-]
 
 [[package]]
 org = "ballerina"
 name = "log"
-version = "2.9.0"
+version = "2.14.0"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -261,11 +255,12 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "mime"
-version = "2.9.0"
+version = "2.12.3"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "lang.int"}
+	{org = "ballerina", name = "lang.int"},
+	{org = "ballerina", name = "log"}
 ]
 modules = [
 	{org = "ballerina", packageName = "mime", moduleName = "mime"}
@@ -274,7 +269,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "oauth2"
-version = "2.11.0"
+version = "2.14.1"
 dependencies = [
 	{org = "ballerina", name = "cache"},
 	{org = "ballerina", name = "crypto"},
@@ -287,7 +282,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "observe"
-version = "1.2.3"
+version = "1.6.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
 ]
@@ -295,7 +290,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "os"
-version = "1.8.0"
+version = "1.10.2"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"}
@@ -303,20 +298,17 @@ dependencies = [
 
 [[package]]
 org = "ballerina"
-name = "regex"
-version = "1.4.3"
+name = "random"
+version = "1.7.1"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "lang.string"}
-]
-modules = [
-	{org = "ballerina", packageName = "regex", moduleName = "regex"}
+	{org = "ballerina", name = "time"}
 ]
 
 [[package]]
 org = "ballerina"
 name = "sql"
-version = "1.13.4"
+version = "1.17.1"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -330,16 +322,17 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "task"
-version = "2.5.0"
+version = "2.11.3"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "time"}
+	{org = "ballerina", name = "time"},
+	{org = "ballerina", name = "uuid"}
 ]
 
 [[package]]
 org = "ballerina"
 name = "time"
-version = "2.5.0"
+version = "2.8.2"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
 ]
@@ -350,7 +343,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "url"
-version = "2.4.0"
+version = "2.6.2"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
 ]
@@ -358,21 +351,18 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "uuid"
-version = "1.8.0"
+version = "1.10.1"
 dependencies = [
 	{org = "ballerina", name = "crypto"},
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "lang.int"},
 	{org = "ballerina", name = "time"}
 ]
-modules = [
-	{org = "ballerina", packageName = "uuid", moduleName = "uuid"}
-]
 
 [[package]]
 org = "ballerina"
 name = "websocket"
-version = "2.11.2"
+version = "2.14.4"
 dependencies = [
 	{org = "ballerina", name = "auth"},
 	{org = "ballerina", name = "constraint"},
@@ -402,36 +392,30 @@ modules = [
 ]
 
 [[package]]
-org = "ballerinai"
-name = "transaction"
-version = "0.0.0"
+org = "ballerinax"
+name = "cdc"
+version = "1.4.0"
 dependencies = [
-	{org = "ballerina", name = "cache"},
-	{org = "ballerina", name = "http"},
+	{org = "ballerina", name = "crypto"},
+	{org = "ballerina", name = "data.jsondata"},
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "lang.runtime"},
-	{org = "ballerina", name = "lang.transaction"},
-	{org = "ballerina", name = "lang.value"},
 	{org = "ballerina", name = "log"},
-	{org = "ballerina", name = "task"},
-	{org = "ballerina", name = "time"},
-	{org = "ballerina", name = "uuid"}
-]
-modules = [
-	{org = "ballerinai", packageName = "transaction", moduleName = "transaction"}
+	{org = "ballerinai", name = "observe"}
 ]
 
 [[package]]
 org = "ballerinax"
 name = "mysql"
-version = "1.12.0"
+version = "1.17.0"
 dependencies = [
 	{org = "ballerina", name = "crypto"},
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "random"},
 	{org = "ballerina", name = "sql"},
-	{org = "ballerina", name = "time"}
+	{org = "ballerina", name = "time"},
+	{org = "ballerinax", name = "cdc"}
 ]
 modules = [
 	{org = "ballerinax", packageName = "mysql", moduleName = "mysql"}
@@ -440,39 +424,31 @@ modules = [
 [[package]]
 org = "ballerinax"
 name = "mysql.driver"
-version = "1.7.0"
+version = "1.8.1"
 modules = [
 	{org = "ballerinax", packageName = "mysql.driver", moduleName = "mysql.driver"}
 ]
 
 [[package]]
 org = "wso2"
-name = "leave_service"
+name = "sabbatical_reminder"
 version = "1.1.1"
 dependencies = [
-	{org = "ballerina", name = "cache"},
 	{org = "ballerina", name = "graphql"},
 	{org = "ballerina", name = "http"},
-	{org = "ballerina", name = "jwt"},
 	{org = "ballerina", name = "lang.regexp"},
-	{org = "ballerina", name = "lang.value"},
 	{org = "ballerina", name = "log"},
 	{org = "ballerina", name = "mime"},
-	{org = "ballerina", name = "regex"},
 	{org = "ballerina", name = "sql"},
 	{org = "ballerina", name = "time"},
-	{org = "ballerina", name = "uuid"},
 	{org = "ballerinai", name = "observe"},
-	{org = "ballerinai", name = "transaction"},
 	{org = "ballerinax", name = "mysql"},
 	{org = "ballerinax", name = "mysql.driver"}
 ]
 modules = [
-	{org = "wso2", packageName = "leave_service", moduleName = "leave_service"},
-	{org = "wso2", packageName = "leave_service", moduleName = "leave_service.authorization"},
-	{org = "wso2", packageName = "leave_service", moduleName = "leave_service.calendar_events"},
-	{org = "wso2", packageName = "leave_service", moduleName = "leave_service.database"},
-	{org = "wso2", packageName = "leave_service", moduleName = "leave_service.email"},
-	{org = "wso2", packageName = "leave_service", moduleName = "leave_service.employee"}
+	{org = "wso2", packageName = "sabbatical_reminder", moduleName = "sabbatical_reminder"},
+	{org = "wso2", packageName = "sabbatical_reminder", moduleName = "sabbatical_reminder.database"},
+	{org = "wso2", packageName = "sabbatical_reminder", moduleName = "sabbatical_reminder.email"},
+	{org = "wso2", packageName = "sabbatical_reminder", moduleName = "sabbatical_reminder.employee"}
 ]
 

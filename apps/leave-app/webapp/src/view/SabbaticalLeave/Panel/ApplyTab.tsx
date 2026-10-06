@@ -62,6 +62,7 @@ interface ApplyTabProps {
   sabbaticalUserGuideUrl: string;
   sabbaticalLeaveEligibilityDuration: number;
   sabbaticalLeaveMaxApplicationDuration: number;
+  sabbaticalLeaveMinJobBand: number;
 }
 
 dayjs.extend(utc);
@@ -71,6 +72,7 @@ export default function ApplyTab({
   sabbaticalUserGuideUrl,
   sabbaticalLeaveEligibilityDuration,
   sabbaticalLeaveMaxApplicationDuration,
+  sabbaticalLeaveMinJobBand,
 }: ApplyTabProps) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
@@ -92,12 +94,14 @@ export default function ApplyTab({
   const [managerApprovalChecked, setManagerApprovalChecked] = useState(false);
   const [policyReadChecked, setPolicyReadChecked] = useState(false);
   const [resignationAcknowledgeChecked, setResignationAcknowledgeChecked] = useState(false);
+  const [handoverAcknowledgeChecked, setHandoverAcknowledgeChecked] = useState(false);
   const [startDateError, setStartDateError] = useState(false);
   const [endDateError, setEndDateError] = useState(false);
   const [durationExceedError, setDurationExceedError] = useState(false);
   const [managerApprovalError, setManagerApprovalError] = useState(false);
   const [policyReadError, setPolicyReadError] = useState(false);
   const [resignationAcknowledgeError, setResignationAcknowledgeError] = useState(false);
+  const [handoverAcknowledgeError, setHandoverAcknowledgeError] = useState(false);
   const [sabbaticalEligibilityWarning, setSabbaticalEligibilityWarning] = useState<string>("");
   const [hasFetched, setHasFetched] = useState(false);
   const [sabbaticalEligibilityDurationInYears] = useState(parseFloat((sabbaticalLeaveEligibilityDuration / 365).toFixed(1)));
@@ -108,6 +112,8 @@ export default function ApplyTab({
   const isLoading = leaveState === State.loading || !hasFetched;
   const isSubmitting = submitState === State.loading;
   const lastLeaveEndDate = leaves[0]?.endDate;
+  const jobBand = userInfo?.jobBand ?? null;
+  const isJobBandEligible = jobBand !== null && jobBand >= sabbaticalLeaveMinJobBand;
 
   // Always fetch leave history — eligibility is validated against leaveStartDate, not today
   useEffect(() => {
@@ -165,7 +171,7 @@ export default function ApplyTab({
       return;
     }
 
-    const diffDays = leaveStartDate.startOf("day").diff(validationAnchor.startOf("day"), "day") - 1;
+    const diffDays = leaveStartDate.startOf("day").diff(validationAnchor.startOf("day"), "day");
     if (diffDays < sabbaticalLeaveEligibilityDuration) {
       const anchorLabel = lastSabbaticalLeaveEndDate
         ? "last sabbatical leave end date"
@@ -208,6 +214,7 @@ export default function ApplyTab({
     setManagerApprovalError(false);
     setPolicyReadError(false);
     setResignationAcknowledgeError(false);
+    setHandoverAcknowledgeError(false);
 
     if (!leaveStartDate) {
       setStartDateError(true);
@@ -254,8 +261,16 @@ export default function ApplyTab({
     if (!resignationAcknowledgeChecked) {
       setResignationAcknowledgeError(true);
     }
+    if (!handoverAcknowledgeChecked) {
+      setHandoverAcknowledgeError(true);
+    }
 
-    if (!managerApprovalChecked || !policyReadChecked || !resignationAcknowledgeChecked) {
+    if (
+      !managerApprovalChecked ||
+      !policyReadChecked ||
+      !resignationAcknowledgeChecked ||
+      !handoverAcknowledgeChecked
+    ) {
       enqueueSnackbar("Please acknowledge all the required checkboxes", { variant: "error" });
       return;
     }
@@ -294,6 +309,7 @@ export default function ApplyTab({
       setManagerApprovalChecked(false);
       setPolicyReadChecked(false);
       setResignationAcknowledgeChecked(false);
+      setHandoverAcknowledgeChecked(false);
     }
   };
 
@@ -331,6 +347,14 @@ export default function ApplyTab({
                 Sabbatical leave requires a reporting lead for the approval process. Your lead is
                 currently not set in the people management system. Please contact the People
                 Operations team to update your profile before applying.
+              </Alert>
+            ) : !isJobBandEligible ? (
+              <Alert variant="outlined" severity="warning">
+                <AlertTitle>Not eligible for sabbatical leave</AlertTitle>
+                {jobBand === null
+                  ? "Your job band is not recorded in the people management system. Please contact the " +
+                    "People Operations team to apply for sabbatical leave."
+                  : `Sabbatical leave is available for job band ${sabbaticalLeaveMinJobBand} and above.`}
               </Alert>
             ) : (
             <>
@@ -506,6 +530,30 @@ export default function ApplyTab({
                         : theme.palette.text.primary,
                       "& .MuiFormControlLabel-label": {
                         color: resignationAcknowledgeError
+                          ? theme.palette.error.main
+                          : theme.palette.text.primary,
+                        fontSize: theme.typography.body2.fontSize,
+                      },
+                    }}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        color={handoverAcknowledgeError ? "error" : "primary"}
+                        checked={handoverAcknowledgeChecked}
+                        onChange={(e) => {
+                          setHandoverAcknowledgeChecked(e.target.checked);
+                          setHandoverAcknowledgeError(false);
+                        }}
+                      />
+                    }
+                    label="I acknowledge that sabbatical leave is subject to appropriate planning and handover between myself and my Lead. I am responsible for ensuring that my responsibilities, objectives and work commitments are appropriately managed during my absence."
+                    sx={{
+                      color: handoverAcknowledgeError
+                        ? theme.palette.error.main
+                        : theme.palette.text.primary,
+                      "& .MuiFormControlLabel-label": {
+                        color: handoverAcknowledgeError
                           ? theme.palette.error.main
                           : theme.palette.text.primary,
                         fontSize: theme.typography.body2.fontSize,

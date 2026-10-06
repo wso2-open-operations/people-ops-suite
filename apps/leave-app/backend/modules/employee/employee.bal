@@ -50,6 +50,7 @@ public isolated function getEmployee(string? email)
                 employeeStatus
                 lead
                 subordinateCount
+                jobBand
             }
         }
     `;
