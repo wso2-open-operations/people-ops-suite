@@ -14,305 +14,104 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import DOMPurify from "dompurify";
+import { Box, Button, Typography } from "@mui/material";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Grid,
-  Stack,
-  Typography,
-} from "@mui/material";
-import { ArrowLeft, Bookmark, BookmarkCheck, Briefcase, MapPin, Send } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 
-import { useAuthContext } from "@asgardeo/auth-react";
-
-import ApplyModal from "@component/careers/ApplyModal";
-import { Job } from "@/types/types";
-import { toggleSaveJob } from "@slices/careersSlice/careers";
+import { PAGE_MAX_WIDTH } from "@config/brand";
+import { useAppAuthContext } from "@context/AuthContext";
+import { loadJobDetail, toggleSaveJob } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
-import { VacancyDetail, fetchVacancyDetail } from "@utils/vacancyService";
-
-const teamColors: Record<string, string> = {
-  ENGINEERING: "#3B82F6",
-  "CUSTOMER SUCCESS": "#8B5CF6",
-  MARKETING: "#10B981",
-  SALES: "#EF4444",
-  "SALES ENGINEERING": "#F59E0B",
-  "People Operations": "#EC4899",
-  FINANCE: "#06B6D4",
-  "CHANNEL SALES": "#6366F1",
-  "DIGITAL TRANSFORMATION": "#14B8A6",
-  "BUSINESS OPERATIONS": "#F97316",
-};
+import ApplySection from "@view/jobs/components/ApplySection";
+import JobDescription from "@view/jobs/components/JobDescription";
+import JobDetailSkeleton from "@view/jobs/components/JobDetailSkeleton";
+import JobHero from "@view/jobs/components/JobHero";
 
 const JobDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Browser-back keeps the list's search and filters; a directly opened job has no history to go back to.
+  const goBackToJobs = () => (location.key !== "default" ? navigate(-1) : navigate("/jobs"));
   const dispatch = useAppDispatch();
-  const { getAccessToken } = useAuthContext();
+  const { getToken: getAccessToken, isSignedIn } = useAppAuthContext();
 
   const savedJobIds = useAppSelector((state: RootState) => state.careers.savedJobIds);
-  const applications = useAppSelector((state: RootState) => state.careers.applications);
+  const detail = useAppSelector((state: RootState) => (id ? state.careers.jobDetails[id] : undefined)) ?? null;
 
-  const [detail, setDetail] = useState<VacancyDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!detail);
   const [error, setError] = useState(false);
-  const [applyJob, setApplyJob] = useState<Job | null>(null);
+
+  // A link ending in #Apply-Now opens straight at the form. The short delay lets the shell's
+  // scroll-to-top on navigation happen first.
+  useEffect(() => {
+    if (!detail || window.location.hash !== "#Apply-Now") return;
+    const timer = setTimeout(() => document.getElementById("Apply-Now")?.scrollIntoView(), 100);
+    return () => clearTimeout(timer);
+  }, [detail]);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || detail) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(false);
     getAccessToken()
-      .then((token) => fetchVacancyDetail(id, token))
-      .then(setDetail)
-      .catch(() => setError(true))
+      .then((token) => dispatch(loadJobDetail({ accessToken: token, jobId: id })).unwrap())
+      .catch(() => {
+        setError(true);
+      })
       .finally(() => setLoading(false));
-  }, [id, getAccessToken]);
+  }, [id, detail, dispatch, getAccessToken]);
 
-  if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-        <CircularProgress size={32} sx={{ color: "#FF7300" }} />
-      </Box>
-    );
-  }
+  if (loading) return <JobDetailSkeleton />;
 
   if (error || !detail) {
     return (
-      <Box sx={{ textAlign: "center", py: 8 }}>
-        <Typography variant="h5" mb={2} color="text.primary">
-          Failed to load job details.
-        </Typography>
-        <Button variant="contained" onClick={() => navigate("/jobs")}>
-          Back to Jobs
-        </Button>
+      <Box>
+        <Box sx={{ textAlign: "center", py: 10 }}>
+          <Typography variant="h5" mb={2} color="text.primary">
+            Failed to load job details.
+          </Typography>
+          <Button variant="contained" onClick={() => navigate("/jobs")}>
+            Back to Jobs
+          </Button>
+        </Box>
       </Box>
     );
   }
 
   const isSaved = savedJobIds.includes(detail.id);
-  const alreadyApplied = applications.some((a) => a.jobId === detail.id);
-  const color = teamColors[detail.team] ?? "#6B7280";
 
-  const jobForApply: Job = {
-    id: detail.id,
-    title: detail.title,
-    team: detail.team,
-    country: detail.country,
-    jobType: detail.jobType,
-    publishStatus: detail.publishStatus,
-    postedDate: detail.postedDate,
+  const scrollToApplyForm = () => {
+    // Updates the address bar without adding a history entry, so the back button still returns to the list.
+    window.history.replaceState(window.history.state, "", `${location.pathname}${location.search}#Apply-Now`);
+    document.getElementById("Apply-Now")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
     <Box>
-      <Button
-        startIcon={<ArrowLeft size={16} />}
-        variant="text"
-        size="small"
-        onClick={() => navigate("/jobs")}
-        sx={{ mb: 2, color: "text.secondary", "&:hover": { color: "text.primary" } }}
-      >
-        Back to Jobs
-      </Button>
+      <JobHero
+        detail={detail}
+        isSignedIn={isSignedIn}
+        isSaved={isSaved}
+        onBack={goBackToJobs}
+        onApplyNow={scrollToApplyForm}
+        onToggleSave={() => dispatch(toggleSaveJob(detail.id))}
+        onSeeAllRoles={() => navigate("/jobs")}
+      />
 
-      <Grid container spacing={3}>
-        {/* Main content */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          {/* Job Header */}
-          <Card
-            elevation={0}
-            sx={{ border: "1px solid", borderColor: "divider", borderRadius: "12px", mb: 2 }}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Chip
-                label={detail.team}
-                size="small"
-                sx={{
-                  mb: 1.5,
-                  backgroundColor: `${color}15`,
-                  color,
-                  fontWeight: 600,
-                  fontSize: "11px",
-                }}
-              />
-              <Typography variant="h5" fontWeight={700} mb={2} color="text.primary">
-                {detail.title}
-              </Typography>
-              <Stack direction="row" gap={3} flexWrap="wrap">
-                <Stack direction="row" alignItems="center" gap={0.75}>
-                  <MapPin size={14} color="#9CA3AF" />
-                  <Typography fontSize="13px" color="text.secondary">
-                    {detail.country.join(", ")}
-                    {detail.allowRemote && (
-                      <Box
-                        component="span"
-                        sx={{
-                          ml: 0.75,
-                          px: 0.75,
-                          py: 0.1,
-                          borderRadius: "4px",
-                          fontSize: "10px",
-                          backgroundColor: "#ECFDF5",
-                          color: "#10B981",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Remote
-                      </Box>
-                    )}
-                  </Typography>
-                </Stack>
-                <Stack direction="row" alignItems="center" gap={0.75}>
-                  <Briefcase size={14} color="#9CA3AF" />
-                  <Typography fontSize="13px" color="text.secondary">
-                    {detail.jobType}
-                  </Typography>
-                </Stack>
-              </Stack>
-            </CardContent>
-          </Card>
-
-          {/* Job Description */}
-          {detail.mainContent && (
-            <Card
-              elevation={0}
-              sx={{ border: "1px solid", borderColor: "divider", borderRadius: "12px", mb: 2 }}
-            >
-              <CardContent sx={{ p: 3 }}>
-                <Box
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(detail.mainContent ?? "") }}
-                  sx={{
-                    fontSize: "14px",
-                    lineHeight: 1.8,
-                    color: "text.secondary",
-                    "& h1, & h2, & h3": { color: "text.primary", fontWeight: 700, mt: 2, mb: 1 },
-                    "& ul, & ol": { pl: 2.5 },
-                    "& li": { mb: 0.5 },
-                    "& p": { mb: 1.5 },
-                    "& strong": { color: "text.primary" },
-                  }}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Task Information */}
-          {detail.taskInformation && (
-            <Card
-              elevation={0}
-              sx={{ border: "1px solid", borderColor: "divider", borderRadius: "12px", mb: 2 }}
-            >
-              <CardContent sx={{ p: 3 }}>
-                <Box
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(detail.taskInformation ?? "") }}
-                  sx={{
-                    fontSize: "14px",
-                    lineHeight: 1.8,
-                    color: "text.secondary",
-                    "& h1, & h2, & h3": { color: "text.primary", fontWeight: 700, mt: 2, mb: 1 },
-                    "& ul, & ol": { pl: 2.5 },
-                    "& li": { mb: 0.5 },
-                    "& p": { mb: 1.5 },
-                    "& strong": { color: "text.primary" },
-                  }}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Additional Content */}
-          {detail.additionalContent && (
-            <Card
-              elevation={0}
-              sx={{ border: "1px solid", borderColor: "divider", borderRadius: "12px", mb: 2 }}
-            >
-              <CardContent sx={{ p: 3 }}>
-                <Box
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(detail.additionalContent ?? "") }}
-                  sx={{
-                    fontSize: "14px",
-                    lineHeight: 1.8,
-                    color: "text.secondary",
-                    "& h1, & h2, & h3": { color: "text.primary", fontWeight: 700, mt: 2, mb: 1 },
-                    "& ul, & ol": { pl: 2.5 },
-                    "& li": { mb: 0.5 },
-                    "& p": { mb: 1.5 },
-                    "& strong": { color: "text.primary" },
-                  }}
-                />
-              </CardContent>
-            </Card>
-          )}
-        </Grid>
-
-        {/* Sidebar */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card
-            elevation={0}
-            sx={{
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: "12px",
-              position: "sticky",
-              top: 16,
-            }}
-          >
-            <CardContent sx={{ p: 2.5 }}>
-              <Stack gap={1.5}>
-                {alreadyApplied ? (
-                  <Box
-                    sx={{
-                      p: 1.5,
-                      borderRadius: "8px",
-                      backgroundColor: "#ECFDF5",
-                      textAlign: "center",
-                    }}
-                  >
-                    <Typography fontSize="13px" fontWeight={600} color="#10B981">
-                      ✓ Application Submitted
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    startIcon={<Send size={15} />}
-                    onClick={() => setApplyJob(jobForApply)}
-                    sx={{ borderRadius: "8px", fontWeight: 700, py: 1.25 }}
-                  >
-                    Apply with Candidate Passport
-                  </Button>
-                )}
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={isSaved ? <BookmarkCheck size={15} /> : <Bookmark size={15} />}
-                  onClick={() => dispatch(toggleSaveJob(detail.id))}
-                  sx={{
-                    borderRadius: "8px",
-                    fontWeight: 600,
-                    color: isSaved ? "#FF7300" : undefined,
-                    borderColor: isSaved ? "#FF7300" : undefined,
-                  }}
-                >
-                  {isSaved ? "Saved" : "Save Job"}
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      <ApplyModal job={applyJob} open={!!applyJob} onClose={() => setApplyJob(null)} />
+      <Box sx={{ maxWidth: PAGE_MAX_WIDTH, mx: "auto", px: { xs: 2, md: 3 }, py: { xs: 5, md: 7 } }}>
+        <JobDescription
+          mainContent={detail.mainContent}
+          taskInformation={detail.taskInformation}
+          additionalContent={detail.additionalContent}
+        />
+        <ApplySection detail={detail} />
+      </Box>
     </Box>
   );
 };

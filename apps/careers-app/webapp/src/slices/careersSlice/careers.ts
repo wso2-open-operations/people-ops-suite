@@ -16,29 +16,33 @@
 
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { Application, CandidateProfile, Job } from "@/types/types";
-import { State } from "@/types/types";
-import { mockApplications, mockCandidateProfile, mockSavedJobIds } from "@utils/mockData";
-import { OrgStructure, fetchOrgStructure, fetchVacancies } from "@utils/vacancyService";
+import { Job, State } from "@/types/types";
+import {
+  OrgStructure,
+  VacancyDetail,
+  fetchOrgStructure,
+  fetchVacancies,
+  fetchVacancyDetail,
+} from "@utils/vacancyService";
 
 interface CareersState {
-  profile: CandidateProfile;
   jobs: Job[];
   jobsState: State;
+  jobDetails: Record<string, VacancyDetail>;
   orgStructure: OrgStructure;
   orgStructureState: State;
-  applications: Application[];
   savedJobIds: string[];
 }
 
 const initialState: CareersState = {
-  profile: mockCandidateProfile,
   jobs: [],
   jobsState: State.idle,
+  jobDetails: {},
   orgStructure: { locations: [], teams: [] },
   orgStructureState: State.idle,
-  applications: mockApplications,
-  savedJobIds: mockSavedJobIds,
+  // Save state is local/in-memory only -- not yet persisted to the backend,
+  // so it resets on refresh.
+  savedJobIds: [],
 };
 
 export const loadJobs = createAsyncThunk("careers/loadJobs", async (accessToken: string) => {
@@ -49,19 +53,17 @@ export const loadOrgStructure = createAsyncThunk("careers/loadOrgStructure", asy
   return await fetchOrgStructure(accessToken);
 });
 
+export const loadJobDetail = createAsyncThunk(
+  "careers/loadJobDetail",
+  async ({ accessToken, jobId }: { accessToken: string; jobId: string }) => {
+    return await fetchVacancyDetail(jobId, accessToken);
+  },
+);
+
 export const CareersSlice = createSlice({
   name: "careers",
   initialState,
   reducers: {
-    updateProfile: (state, action: PayloadAction<Partial<CandidateProfile>>) => {
-      state.profile = { ...state.profile, ...action.payload };
-    },
-    addApplication: (state, action: PayloadAction<Application>) => {
-      const existing = state.applications.find((a) => a.jobId === action.payload.jobId);
-      if (!existing) {
-        state.applications.unshift(action.payload);
-      }
-    },
     toggleSaveJob: (state, action: PayloadAction<string>) => {
       const idx = state.savedJobIds.indexOf(action.payload);
       if (idx >= 0) {
@@ -69,15 +71,6 @@ export const CareersSlice = createSlice({
       } else {
         state.savedJobIds.push(action.payload);
       }
-    },
-    addSkill: (state, action: PayloadAction<string>) => {
-      if (!state.profile.skills.includes(action.payload)) {
-        state.profile.skills.push(action.payload);
-        state.profile.completionPercentage = Math.min(100, state.profile.completionPercentage + 5);
-      }
-    },
-    removeSkill: (state, action: PayloadAction<string>) => {
-      state.profile.skills = state.profile.skills.filter((s) => s !== action.payload);
     },
   },
   extraReducers: (builder) => {
@@ -102,10 +95,12 @@ export const CareersSlice = createSlice({
       .addCase(loadOrgStructure.rejected, (state) => {
         state.orgStructureState = State.failed;
         state.orgStructure = { locations: [], teams: [] };
+      })
+      .addCase(loadJobDetail.fulfilled, (state, action) => {
+        state.jobDetails[action.payload.id] = action.payload;
       });
   },
 });
 
-export const { updateProfile, addApplication, toggleSaveJob, addSkill, removeSkill } =
-  CareersSlice.actions;
+export const { toggleSaveJob } = CareersSlice.actions;
 export default CareersSlice.reducer;

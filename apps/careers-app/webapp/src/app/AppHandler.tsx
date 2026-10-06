@@ -18,29 +18,26 @@ import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom"
 
 import { useMemo } from "react";
 
-import Layout from "@layout/Layout";
-import NotFoundPage from "@layout/pages/404";
-import { RootState, useAppSelector } from "@slices/store";
-
-import { getActiveRoutesV2, routes } from "../route";
+import AppShell from "@component/common/AppShell";
+import NotFoundPage from "@component/common/NotFoundPage";
+import { View } from "@view/index";
 
 const AppHandler = () => {
-  const auth = useAppSelector((state: RootState) => state.auth);
-
   const router = useMemo(
     () =>
       createBrowserRouter([
         {
-          path: "/",
-          element: <Layout />,
+          element: <AppShell />,
           errorElement: <NotFoundPage />,
           children: [
-            { index: true, element: <Navigate to="/dashboard" replace /> },
-            ...getActiveRoutesV2(routes, auth.roles),
+            { path: "/", element: <Navigate to="/jobs" replace /> },
+            { path: "/jobs", element: <View.jobs /> },
+            { path: "/jobs/:id", element: <View.jobDetail /> },
           ],
         },
+        { path: "*", element: <NotFoundPage /> },
       ]),
-    [auth.roles],
+    [],
   );
 
   return <RouterProvider router={router} />;

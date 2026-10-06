@@ -16,78 +16,112 @@
 
 import {
   Box,
-  CircularProgress,
+  FormControlLabel,
   Grid,
   InputAdornment,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
-import { useAuthContext } from "@asgardeo/auth-react";
+import { useAppAuthContext } from "@context/AuthContext";
 
-import ApplyModal from "@component/careers/ApplyModal";
 import JobCard from "@component/careers/JobCard";
+import JobCardSkeleton from "@component/careers/JobCardSkeleton";
 import JobFilters, { JobFilterValues } from "@component/careers/JobFilters";
+import PageContainer from "@component/common/PageContainer";
+import PageHeading from "@component/common/PageHeading";
 import { State } from "@/types/types";
-import { Job } from "@/types/types";
 import { loadJobs, loadOrgStructure } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { matchesJobType, matchesLocation, matchesSearch, matchesTeam } from "@utils/jobFilterUtils";
 
 const Jobs = () => {
   const dispatch = useAppDispatch();
-  const { getAccessToken } = useAuthContext();
+  const { getToken: getAccessToken, isSignedIn } = useAppAuthContext();
   const jobs = useAppSelector((state: RootState) => state.careers.jobs);
   const jobsState = useAppSelector((state: RootState) => state.careers.jobsState);
+  const savedJobIds = useAppSelector((state: RootState) => state.careers.savedJobIds);
 
-  const [search, setSearch] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState<"available" | "saved">("available");
+  const [search, setSearch] = useState(searchParams.get("search") ?? "");
+  const [urlJobType] = useState(searchParams.get("jobType") ?? "");
   const [filters, setFilters] = useState<JobFilterValues>({
-    location: "",
-    team: "",
-    jobType: "",
+    team: searchParams.getAll("team"),
+    location: searchParams.getAll("location"),
   });
-  const [applyJob, setApplyJob] = useState<Job | null>(null);
 
   useEffect(() => {
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("search", search.trim());
+    filters.location.forEach((loc) => params.append("location", loc));
+    filters.team.forEach((team) => params.append("team", team));
+    if (urlJobType) params.set("jobType", urlJobType);
+    setSearchParams(params, { replace: true });
+  }, [search, filters, urlJobType, setSearchParams]);
+
+  const orgStructureState = useAppSelector((state: RootState) => state.careers.orgStructureState);
+
+  useEffect(() => {
+    if (jobsState !== State.idle && orgStructureState !== State.idle) return;
     getAccessToken()
       .then((token) => {
-        dispatch(loadJobs(token));
-        dispatch(loadOrgStructure(token));
+        if (jobsState === State.idle) dispatch(loadJobs(token));
+        if (orgStructureState === State.idle) dispatch(loadOrgStructure(token));
       })
       .catch(() => {
         dispatch({ type: "careers/loadJobs/rejected" });
       });
-  }, [dispatch, getAccessToken]);
+  }, [dispatch, getAccessToken, jobsState, orgStructureState]);
 
-  const filtered = useMemo(() => {
-    return jobs.filter((job) => {
-      const matchesSearch =
-        !search ||
-        job.title.toLowerCase().includes(search.toLowerCase()) ||
-        job.team.toLowerCase().includes(search.toLowerCase());
+  const sourceJobs = useMemo(
+    () => (tab === "saved" ? jobs.filter((job) => savedJobIds.includes(job.id)) : jobs),
+    [jobs, tab, savedJobIds],
+  );
 
-      const matchesLocation =
-        !filters.location ||
-        job.country.some((c) => c.toLowerCase() === filters.location.toLowerCase());
+  // Jobs that satisfy everything except the team/location dropdowns; the
+  // dropdowns derive their option counts from this list.
+  const baseJobs = useMemo(
+    () => sourceJobs.filter((job) => matchesSearch(job, search) && matchesJobType(job, urlJobType)),
+    [sourceJobs, search, urlJobType],
+  );
 
-      const matchesTeam = !filters.team || job.team === filters.team;
-
-      const matchesJobType = !filters.jobType || job.jobType === filters.jobType;
-
-      return matchesSearch && matchesLocation && matchesTeam && matchesJobType;
-    });
-  }, [jobs, search, filters]);
+  const filtered = useMemo(
+    () => baseJobs.filter((job) => matchesTeam(job, filters.team) && matchesLocation(job, filters.location)),
+    [baseJobs, filters],
+  );
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight={700} mb={0.5} color="text.primary">
-        Browse Jobs
-      </Typography>
-      <Typography color="text.secondary" fontSize="14px" mb={3}>
-        {jobs.length} open positions across all teams.
-      </Typography>
+    <PageContainer>
+      {/* Signed-in users get the saved-jobs switch right below, so the title sits closer to it. */}
+      <PageHeading accent="Available" mb={isSignedIn ? 1.5 : 3}>
+        Positions
+      </PageHeading>
+
+      {isSignedIn && (
+        <Stack direction="row" mb={2}>
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={tab === "saved"}
+                onChange={(e) => setTab(e.target.checked ? "saved" : "available")}
+                sx={{
+                  "& .MuiSwitch-switchBase.Mui-checked": { color: "primary.main" },
+                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "primary.main" },
+                }}
+              />
+            }
+            label="Show saved jobs"
+            sx={{ "& .MuiFormControlLabel-label": { fontSize: "0.95rem", fontWeight: 600 } }}
+          />
+        </Stack>
+      )}
 
       {/* Search & Filters */}
       <Stack gap={2} mb={3}>
@@ -103,17 +137,58 @@ const Jobs = () => {
                 <Search size={16} color="#9CA3AF" />
               </InputAdornment>
             ),
-            sx: { borderRadius: "10px" },
+            // A clear button appears once there is text to remove.
+            endAdornment: search ? (
+              <InputAdornment position="end">
+                <Box
+                  component="button"
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setSearch("")}
+                  sx={{
+                    display: "flex",
+                    border: "none",
+                    background: "none",
+                    cursor: "pointer",
+                    p: 0.5,
+                    borderRadius: "50%",
+                    color: "text.secondary",
+                    "&:hover": { backgroundColor: "action.hover", color: "primary.main" },
+                  }}
+                >
+                  <X size={16} />
+                </Box>
+              </InputAdornment>
+            ) : null,
+            sx: {
+              borderRadius: "10px",
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "primary.main",
+              },
+            },
           }}
         />
-        <JobFilters filters={filters} onChange={setFilters} />
+        <JobFilters
+          jobs={baseJobs}
+          filters={filters}
+          onChange={setFilters}
+          searchActive={search.trim() !== ""}
+          onClearAll={() => {
+            setSearch("");
+            setFilters({ team: [], location: [] });
+          }}
+        />
       </Stack>
 
       {/* Loading */}
       {jobsState === State.loading && (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-          <CircularProgress size={32} sx={{ color: "#FF7300" }} />
-        </Box>
+        <Grid container spacing={2}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+              <JobCardSkeleton />
+            </Grid>
+          ))}
+        </Grid>
       )}
 
       {/* Error */}
@@ -135,7 +210,7 @@ const Jobs = () => {
       {jobsState === State.success && (
         <>
           <Typography fontSize="13px" color="text.secondary" mb={2}>
-            Showing {filtered.length} of {jobs.length} jobs
+            Showing {filtered.length} of {sourceJobs.length} jobs
           </Typography>
 
           {filtered.length === 0 ? (
@@ -149,23 +224,23 @@ const Jobs = () => {
               }}
             >
               <Typography color="text.secondary">
-                No jobs match your search. Try adjusting the filters.
+                {tab === "saved" && sourceJobs.length === 0
+                  ? "You haven't saved any jobs yet. Click the bookmark icon on a job card to save it here."
+                  : "There are no available vacancies that match your search"}
               </Typography>
             </Box>
           ) : (
             <Grid container spacing={2}>
               {filtered.map((job) => (
                 <Grid key={job.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <JobCard job={job} onApply={setApplyJob} />
+                  <JobCard job={job} />
                 </Grid>
               ))}
             </Grid>
           )}
         </>
       )}
-
-      <ApplyModal job={applyJob} open={!!applyJob} onClose={() => setApplyJob(null)} />
-    </Box>
+    </PageContainer>
   );
 };
 

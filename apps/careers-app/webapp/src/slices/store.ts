@@ -21,14 +21,12 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import authReducer from "@slices/authSlice/auth";
 import careersReducer from "@slices/careersSlice/careers";
 import commonReducer from "@slices/commonSlice/common";
-import userReducer from "@slices/userSlice/user";
 
 enableMapSet();
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    user: userReducer,
     common: commonReducer,
     careers: careersReducer,
   },

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,11 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, LinearProgress, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
-import type { PreLoaderProps } from "@/types/types";
+const NotFoundPage = () => {
+  const navigate = useNavigate();
 
-const PreLoader = (props: PreLoaderProps) => {
   return (
     <Box
       sx={{
@@ -28,22 +29,21 @@ const PreLoader = (props: PreLoaderProps) => {
         justifyContent: "center",
         height: "100vh",
         gap: 2,
-        background: (theme) => theme.palette.background.default,
+        textAlign: "center",
       }}
     >
-      {props.isLoading && (
-        <LinearProgress sx={{ width: "200px", borderRadius: 1 }} color="primary" />
-      )}
-      {props.message && (
-        <Typography
-          variant="body2"
-          sx={{ color: "text.secondary", fontWeight: 500 }}
-        >
-          {props.message}
-        </Typography>
-      )}
+      <Typography variant="h1" fontWeight={800} sx={{ fontSize: "80px", color: "primary.main" }}>
+        404
+      </Typography>
+      <Typography variant="h5" fontWeight={600}>
+        Page Not Found
+      </Typography>
+      <Typography color="text.secondary">The page you are looking for doesn&apos;t exist.</Typography>
+      <Button variant="contained" onClick={() => navigate("/")} sx={{ mt: 1 }}>
+        Go to Home
+      </Button>
     </Box>
   );
 };
 
-export default PreLoader;
+export default NotFoundPage;

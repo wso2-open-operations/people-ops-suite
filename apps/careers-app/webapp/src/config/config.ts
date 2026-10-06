@@ -27,6 +27,7 @@ declare global {
       AUTH_SIGN_IN_REDIRECT_URL: string;
       AUTH_SIGN_OUT_REDIRECT_URL: string;
       CAREERS_BACKEND_BASE_URL: string;
+      USE_MOCK_PROFILE?: string;
     };
   }
 }
@@ -42,6 +43,8 @@ export const AsgardeoConfig: BaseURLAuthClientConfig = {
 export const APP_NAME = window.config?.APP_NAME ?? "WSO2 Careers";
 export const APP_DOMAIN = window.config?.APP_DOMAIN ?? "";
 export const ServiceBaseUrl = window.config?.CAREERS_BACKEND_BASE_URL ?? "";
+// When "true", candidate profile calls are served by an in-memory sample profile instead of the backend.
+export const UseMockProfile = window.config?.USE_MOCK_PROFILE === "true";
 
 export const AppConfig = {
   serviceUrls: {

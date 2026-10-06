@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,12 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { lazy } from "react";
+import { getCountries, getCountryCallingCode } from "libphonenumber-js";
 
-const jobs = lazy(() => import("@view/jobs/Jobs"));
-const jobDetail = lazy(() => import("@view/jobs/JobDetail"));
-
-export const View = {
-  jobs,
-  jobDetail,
-};
+// Every country with its dialing code, keyed by ISO region so countries sharing a code stay distinct.
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+export const COUNTRY_OPTIONS = getCountries()
+  .map((iso) => ({ iso, name: regionNames.of(iso) ?? iso, dialCode: `+${getCountryCallingCode(iso)}` }))
+  .sort((a, b) => a.name.localeCompare(b.name));

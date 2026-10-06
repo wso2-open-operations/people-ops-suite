@@ -20,39 +20,33 @@ export const SnackMessage = {
     profileUpdated: "Profile updated successfully!",
     jobSaved: "Job saved to your list.",
     resumeUploaded: "Resume uploaded successfully!",
+    offerAccepted: "You accepted the offer. Please upload the required documents.",
+    offerDeclined: "You declined the offer.",
+    documentUploaded: "Document uploaded.",
+    documentsSubmitted: "Documents submitted. HR will contact you with the next steps.",
   },
   error: {
     fetchJobs: "Unable to retrieve job listings.",
     fetchApplications: "Unable to retrieve your applications.",
     fetchProfile: "Unable to retrieve your profile.",
     submitApplication: "Failed to submit application. Please try again.",
+    saveProfile: "Unable to save your changes. Please try again.",
+    respondToOffer: "Unable to record your response to the offer. Please try again.",
+    offerAlreadyAccepted: "You have already accepted an offer, so you can't accept another one.",
+    uploadDocument: "Unable to upload the document. Please try again.",
+    submitDocuments: "Unable to submit your documents. Please try again.",
     insufficientPrivileges: "Insufficient Privileges",
     fetchPrivileges: "Failed to fetch Privileges",
   },
   warning: {},
 };
 
-export const APP_DESC =
-  "Build your Candidate Passport and apply to WSO2 jobs with a single profile.";
-
-export const redirectUrl = "careers-app-redirect-url";
-
 export enum ApplicationStatus {
   Applied = "Applied",
   Screening = "Screening",
   Interview = "Interview",
   Offer = "Offer",
+  OfferAccepted = "Offer Accepted",
+  OfferDeclined = "Offer Declined",
   Rejected = "Rejected",
 }
-
-export enum Department {
-  Engineering = "Engineering",
-  Cloud = "Cloud",
-  DevRel = "Developer Relations",
-  Product = "Product",
-  Sales = "Sales",
-  HR = "Human Resources",
-  Marketing = "Marketing",
-}
-
-export const JOB_TYPES = ["Full Time", "Internship", "Consultancy", "Permanent"] as const;

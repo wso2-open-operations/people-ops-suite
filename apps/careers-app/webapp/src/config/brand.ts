@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,12 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { lazy } from "react";
+export const BRAND_ORANGE = "#ff6700";
 
-const jobs = lazy(() => import("@view/jobs/Jobs"));
-const jobDetail = lazy(() => import("@view/jobs/JobDetail"));
-
-export const View = {
-  jobs,
-  jobDetail,
+export const BRAND_TINT = {
+  faint: "#ff670010",
+  soft: "#ff670018",
+  border: "#ff670040",
 };
+
+export const PAGE_MAX_WIDTH = 1080;
