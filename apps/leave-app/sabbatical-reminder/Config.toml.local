@@ -28,7 +28,7 @@ debugRecipients = [""]
 [sabbatical_reminder.email.emailServiceConfig]
 emailServiceEndpoint = ""
 from = ""
-peopleOperationsRecipients = ["sachinr@wso2.com"]
+peopleOperationsRecipients = [""]
 
 [sabbatical_reminder.email.emailServiceConfig.oauthConfig]
 tokenUrl = ""
