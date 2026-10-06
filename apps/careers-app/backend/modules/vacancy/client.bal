@@ -25,13 +25,16 @@ configurable VacancyConfig vacancyConfig = ?;
 const string USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-final http:Client vacancyHttpClient = check new (vacancyConfig.baseUrl);
+final http:Client vacancyHttpClient = check new (vacancyConfig.baseUrl, {
+    timeout: 15
+});
 
 final http:Client tokenHttpClient = check new (vacancyConfig.tokenUrl, {
     auth: {
         username: vacancyConfig.clientId,
         password: vacancyConfig.clientSecret
-    }
+    },
+    timeout: 15
 });
 
 isolated function currentEpoch() returns int {
