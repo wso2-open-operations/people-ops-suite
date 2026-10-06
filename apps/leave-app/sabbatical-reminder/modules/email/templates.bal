@@ -1281,39 +1281,6 @@ final string sabbaticalReminderTemplate = string `
                                       font-size: 13px;
                                       line-height: 18px;
                                       text-align: left;
-                                      padding: 0 0px 10px;
-                                      letter-spacing: 0.1px;
-                                    "
-                                    valign="top"
-                                  >
-                                    You are receiving this email because you
-                                    have shown interest in WSO2. You can
-                                    <a
-                                      href="https://wso2.com/selective-unsubscribe/"
-                                      style="
-                                        color: #465868;
-                                        text-decoration: underline;
-                                      "
-                                      >unsubscribe</a
-                                    >
-                                    from all communications at any time.
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td
-                                    align="left"
-                                    class="wso2_orange3 footerContent leftMarginMobile"
-                                    style="
-                                      -webkit-text-size-adjust: 100%;
-                                      -ms-text-size-adjust: 100%;
-                                      mso-table-lspace: 0pt;
-                                      mso-table-rspace: 0pt;
-                                      color: #465868;
-                                      font-family: 'Roboto', Helvetica,
-                                        sans-serif;
-                                      font-size: 13px;
-                                      line-height: 18px;
-                                      text-align: left;
                                       padding: 0 0px 20px;
                                       letter-spacing: 0.1px;
                                     "
