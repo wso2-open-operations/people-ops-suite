@@ -16,7 +16,7 @@
 
 import CloseIcon from "@mui/icons-material/Close";
 import LoadingButton from "@mui/lab/LoadingButton";
-import { Checkbox, FormControlLabel, IconButton, Stack, TextField } from "@mui/material";
+import { Box, Checkbox, FormControlLabel, IconButton, Stack, TextField } from "@mui/material";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -211,19 +211,22 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
                 onChange={onChange}
               />
             )}
+            {/* Set apart from the message in an outlined box, so it reads as its own step. */}
             {content.acknowledgement && (
-              <FormControlLabel
-                sx={{ mx: 1, mt: 2, alignItems: "flex-start" }}
-                control={
-                  <Checkbox
-                    size="small"
-                    sx={{ pt: 0.25 }}
-                    checked={acknowledged}
-                    onChange={(e) => setAcknowledged(e.target.checked)}
-                  />
-                }
-                label={<DialogContentText variant="body2">{content.acknowledgement}</DialogContentText>}
-              />
+              <Box sx={{ mx: 1, mt: 2, px: 1.5, py: 1, border: 1, borderColor: "divider", borderRadius: 1 }}>
+                <FormControlLabel
+                  sx={{ m: 0, alignItems: "flex-start" }}
+                  control={
+                    <Checkbox
+                      size="small"
+                      sx={{ pt: 0.25 }}
+                      checked={acknowledged}
+                      onChange={(e) => setAcknowledged(e.target.checked)}
+                    />
+                  }
+                  label={<DialogContentText variant="body2">{content.acknowledgement}</DialogContentText>}
+                />
+              </Box>
             )}
 
             <DialogActions sx={{ pb: 2, pt: 0, mt: 0, px: 2 }}>
