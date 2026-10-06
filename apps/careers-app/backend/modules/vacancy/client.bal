@@ -19,9 +19,6 @@ import ballerina/time;
 
 configurable VacancyConfig vacancyConfig = ?;
 
-# Spoofed browser User-Agent -- the upstream gateway appears to require this
-# on career-vacancy-service calls. Merged into every data call below, but
-# deliberately not the token endpoint call.
 const string USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
