@@ -153,8 +153,9 @@ reminder yet (To: the approving lead, CC: People Operations and the employee), t
 reminder on the next run; a failed send is retried on the next run.
 
 1. Apply `backend/resources/leave_app_update_v1.1.1.sql` to the leave database (adds the reminder column).
-2. Copy `sabbatical-reminder/Config.toml.local` to `sabbatical-reminder/Config.toml` and fill it in. Set
-   `debugRecipients` in non-production environments so reminders go only to those addresses.
+2. Copy `sabbatical-reminder/Config.toml.local` to `sabbatical-reminder/Config.toml` and fill it in. In non-production
+   environments keep `isDebug = true` with your address in `debugRecipients`: reminders then go only there, with no
+   CC, and are not marked as sent.
 3. Build and run:
 
 ```bash

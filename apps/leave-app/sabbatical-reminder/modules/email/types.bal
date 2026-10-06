@@ -34,8 +34,6 @@ type EmailServiceConfig record {|
     string 'from;
     # People Operations group, copied on every reminder
     string[] peopleOperationsRecipients;
-    # When set, every reminder goes only to these addresses (for non-production environments)
-    string[] debugRecipients = [];
 |};
 
 # Payload of the email alerting service.

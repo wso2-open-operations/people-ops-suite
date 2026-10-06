@@ -17,6 +17,20 @@
 import ballerina/http;
 import ballerina/time;
 
+# Whether reminders are redirected to the debug recipients (non-production runs).
+#
+# + return - True when `isDebug` is set
+public isolated function isDebugMode() returns boolean => isDebug;
+
+# Check that a debug run has somewhere to send to, so it never falls back to the real recipients.
+#
+# + return - Error if `isDebug` is set without any `debugRecipients`
+public isolated function validateDebugConfig() returns error? {
+    if isDebug && debugRecipients.length() == 0 {
+        return error("isDebug is true but debugRecipients is empty");
+    }
+}
+
 # Send the sabbatical reminder to the lead, copying People Operations and the employee.
 #
 # + details - Reminder details
@@ -32,8 +46,6 @@ public isolated function sendSabbaticalReminder(SabbaticalReminderDetails detail
         YEAR: time:utcToCivil(time:utcNow()).year.toString()
     });
 
-    string[] debugRecipients = emailServiceConfig.debugRecipients;
-    boolean isDebug = debugRecipients.length() > 0;
     EmailPayload payload = {
         to: isDebug ? debugRecipients : [details.leadEmail],
         cc: isDebug ? [] : [...emailServiceConfig.peopleOperationsRecipients, details.employeeEmail],

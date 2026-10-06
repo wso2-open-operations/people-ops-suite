@@ -19,12 +19,16 @@ tokenUrl = ""
 clientId = ""
 clientSecret = ""
 
+[sabbatical_reminder.email]
+# Non-production: true sends every reminder only to debugRecipients, with no CC, and does not mark
+# reminders as sent, so every run re-sends them.
+isDebug = true
+debugRecipients = [""]
+
 [sabbatical_reminder.email.emailServiceConfig]
 emailServiceEndpoint = ""
 from = ""
-peopleOperationsRecipients = ["people-operations-group@wso2.com"]
-# Set in non-production environments to send every reminder only to these addresses.
-debugRecipients = []
+peopleOperationsRecipients = ["sachinr@wso2.com"]
 
 [sabbatical_reminder.email.emailServiceConfig.oauthConfig]
 tokenUrl = ""

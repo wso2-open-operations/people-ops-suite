@@ -17,6 +17,10 @@
 import ballerina/http;
 
 configurable EmailServiceConfig emailServiceConfig = ?;
+# When true, every reminder goes only to `debugRecipients`, with no CC (for non-production environments).
+configurable boolean isDebug = false;
+# Recipients of every reminder while `isDebug` is true.
+configurable string[] debugRecipients = [];
 
 # Email HTTP client, shared across all scheduled jobs.
 @display {

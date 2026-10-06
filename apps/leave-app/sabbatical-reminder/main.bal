@@ -36,7 +36,9 @@ public function main() returns error? {
     string today = time:utcToString(now).substring(0, 10);
     string windowEnd = time:utcToString(time:utcAddSeconds(now, <decimal>reminderLeadTimeInDays * 86400d))
         .substring(0, 10);
-    log:printInfo("Sabbatical reminder run started", today = today, windowEnd = windowEnd);
+    check email:validateDebugConfig();
+    log:printInfo("Sabbatical reminder run started", today = today, windowEnd = windowEnd,
+            isDebug = email:isDebugMode());
 
     database:SabbaticalReminder[] reminders = check database:getDueSabbaticalReminders(today, windowEnd);
     log:printInfo("Sabbatical leaves due for a reminder", count = reminders.length());
@@ -75,6 +77,13 @@ function sendReminder(database:SabbaticalReminder reminder) returns error? {
         endDate: reminder.endDate,
         durationDays: reminder.durationDays
     });
+    // A debug run only reaches the debug recipients, so it must not use up the real reminder.
+    boolean isDebugMode = email:isDebugMode();
+    if isDebugMode {
+        log:printInfo("Debug mode: sabbatical reminder sent to debug recipients, not marked as sent",
+                leaveId = reminder.id);
+        return;
+    }
     check database:markSabbaticalReminderSent(reminder.id);
     log:printInfo("Sabbatical reminder sent", leaveId = reminder.id);
 }
