@@ -118,11 +118,16 @@ isolated function getEmploymentsByNicQuery(string nicOrPassport) returns sql:Par
      WHERE p.nic_or_passport = ${nicOrPassport}
      ORDER BY e.start_date DESC, e.id DESC;`;
 
-# Find a currently employed (Active, Marked leaver or New joiner) employee holding a work email.
+# Find an Active or New joiner employee holding a work email.
+#
+# A Marked leaver does not hold on to their email here: an employee who relocates keeps it,
+# and their new employment is onboarded while the old one is Marked leaver.
 #
 # + workEmail - Work email to look for
+# + excludeEmployeeId - Employee ID to leave out (the employee being edited), nil for none
 # + return - Query returning at most one matching employee
-isolated function getCurrentEmployeeByWorkEmailQuery(string workEmail) returns sql:ParameterizedQuery =>
+isolated function getCurrentEmployeeByWorkEmailQuery(string workEmail, string? excludeEmployeeId = ())
+        returns sql:ParameterizedQuery =>
     `SELECT
         e.employee_id AS employeeId,
         e.first_name AS firstName,
@@ -131,7 +136,8 @@ isolated function getCurrentEmployeeByWorkEmailQuery(string workEmail) returns s
         e.employee_status AS employeeStatus
      FROM employee e
      WHERE LOWER(e.work_email) = LOWER(${workEmail})
-       AND e.employee_status IN (${EMPLOYEE_ACTIVE}, ${EMPLOYEE_MARKED_LEAVER}, ${EMPLOYEE_NEW_JOINER})
+       AND e.employee_status IN (${EMPLOYEE_ACTIVE}, ${EMPLOYEE_NEW_JOINER})
+       AND (${excludeEmployeeId} IS NULL OR e.employee_id <> ${excludeEmployeeId})
      ORDER BY e.start_date DESC, e.id DESC
      LIMIT 1;`;
 

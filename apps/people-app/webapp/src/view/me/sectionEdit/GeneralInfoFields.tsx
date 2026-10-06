@@ -130,7 +130,8 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
   } = useAppSelector((s) => s.employee);
   // The lookup is by work email, so it returns every employment under the address,
   // including the one being edited and any later one. Only an earlier employment that
-  // has ended can be carried over; the backend enforces the same rule.
+  // has ended or is ending (Left or Marked leaver) can be carried over; the backend
+  // enforces the same rule.
   const continuousServiceRecord = useMemo(
     () =>
       serviceRecords.filter((record) =>

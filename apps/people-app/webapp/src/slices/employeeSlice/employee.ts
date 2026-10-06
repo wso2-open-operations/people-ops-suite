@@ -757,7 +757,7 @@ export interface EmploymentMatch {
 export interface ReturningEmployeeLookup {
   /** The person's latest employment; null for someone new. */
   latestEmployment: EmploymentMatch | null;
-  /** Employed now or already onboarded (Active, Marked leaver or New joiner). */
+  /** Employed now or already onboarded (Active or New joiner). */
   isCurrentEmployee: boolean;
   /** Their latest real work email; null when their records hold only placeholders. */
   formerWorkEmail: string | null;

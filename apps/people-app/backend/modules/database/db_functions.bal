@@ -54,12 +54,15 @@ public isolated function getEmploymentsByNic(string nicOrPassport) returns Emplo
         select employment;
 }
 
-# Find a currently employed (Active, Marked leaver or New joiner) employee holding a work email.
+# Find an Active or New joiner employee holding a work email (a Marked leaver frees it for relocation).
 #
 # + workEmail - Work email to look for
+# + excludeEmployeeId - Employee ID to leave out (the employee being edited), nil for none
 # + return - The employee, nil when no current employee holds it, or error
-public isolated function getCurrentEmployeeByWorkEmail(string workEmail) returns EmploymentMatch|error? {
-    EmploymentMatch|error result = databaseClient->queryRow(getCurrentEmployeeByWorkEmailQuery(workEmail));
+public isolated function getCurrentEmployeeByWorkEmail(string workEmail, string? excludeEmployeeId = ())
+        returns EmploymentMatch|error? {
+    EmploymentMatch|error result =
+        databaseClient->queryRow(getCurrentEmployeeByWorkEmailQuery(workEmail, excludeEmployeeId));
     return result is sql:NoRowsError ? () : result;
 }
 

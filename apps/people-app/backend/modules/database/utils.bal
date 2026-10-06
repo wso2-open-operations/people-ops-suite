@@ -559,10 +559,11 @@ public isolated function buildResignationCsv(Employee[] employees, map<string> n
 
 # Whether a prior record can be linked as the employment another one continues from.
 #
-# Continuous service carries over from a finished employment that came before, so the
-# linked record must have ended (status Left) and must have started before the target.
-# The start-date rule also rules out cycles: two records cannot each start before the
-# other. An employment can never continue from itself.
+# Continuous service carries over from an employment that came before, so the linked record
+# must have ended or be ending (status Left or Marked leaver) and must have started before
+# the target. Marked leaver covers a relocation: the new employment is onboarded while the
+# old one is still on its way out. The start-date rule also rules out cycles: two records
+# cannot each start before the other. An employment can never continue from itself.
 #
 # + priorRecord - Candidate record from the continuous-service-records lookup
 # + targetStartDate - Start date (YYYY-MM-DD) of the employment being linked
@@ -570,7 +571,7 @@ public isolated function buildResignationCsv(Employee[] employees, map<string> n
 # + return - true when the candidate is an eligible prior employment
 public isolated function isEligiblePriorEmployment(ContinuousServiceRecordInfo priorRecord,
         string targetStartDate, string? targetEmployeeId) returns boolean =>
-    priorRecord.employeeStatus == EMPLOYEE_LEFT
+    (priorRecord.employeeStatus == EMPLOYEE_LEFT || priorRecord.employeeStatus == EMPLOYEE_MARKED_LEAVER)
         && priorRecord.employeeId != targetEmployeeId
         && priorRecord.startDate < targetStartDate;
 
@@ -600,12 +601,15 @@ public isolated function initialEmployeeStatus(string startDate, string today) r
     startDate > today ? EMPLOYEE_NEW_JOINER : EMPLOYEE_ACTIVE;
 
 # Whether a status means the person is employed now or about to be, so the same person cannot
-# be onboarded again and their work email still belongs to them.
+# be onboarded again.
+#
+# A Marked leaver is on their way out, so they do not count: an employee who relocates gets a
+# new employment onboarded while the old one is Marked leaver.
 #
 # + status - Employee status
-# + return - true for Active, Marked leaver and New joiner
+# + return - true for Active and New joiner
 public isolated function isCurrentEmploymentStatus(string status) returns boolean =>
-    status == EMPLOYEE_ACTIVE || status == EMPLOYEE_MARKED_LEAVER || status == EMPLOYEE_NEW_JOINER;
+    status == EMPLOYEE_ACTIVE || status == EMPLOYEE_NEW_JOINER;
 
 # The status recording a resignation moves an employee to.
 #
@@ -623,10 +627,10 @@ public isolated function statusAfterResignation(string currentStatus) returns Em
 # Decide whether the person behind a NIC/Passport may be onboarded with the given work email.
 #
 # Someone still employed (or already onboarded as a New joiner) is refused outright. A former
-# employee is a rehire, and must come back under a work email they held before, so the NIC
-# and the email agree on who they are. Placeholder emails on their earlier records say nothing
-# about who they are, so a former employee whose records hold only placeholders is accepted on
-# the NIC alone.
+# employee, or a Marked leaver whose next employment this is (a relocation), must come back
+# under a work email they held before, so the NIC and the email agree on who they are.
+# Placeholder emails on their earlier records say nothing about who they are, so a former
+# employee whose records hold only placeholders is accepted on the NIC alone.
 #
 # + employments - The person's employments, newest first (empty for someone new)
 # + requestedEmail - Work email from the submission, nil when left empty
@@ -656,4 +660,45 @@ public isolated function checkReturningEmployee(EmploymentMatch[] employments, s
     EmploymentMatch latest = withRealEmail[0];
     return string `This NIC/Passport belongs to former employee ${latest.firstName} ${latest.lastName} `
         + string `(${latest.employeeId}). Use their work email ${latest.workEmail} to rehire them`;
+}
+
+# Which identity checks an edit of an employee needs, so it cannot leave the same person with
+# two current (Active or New joiner) employments.
+#
+# Only an edit that ends with the employee current needs them. The work email is checked when
+# the employee becomes current or their email changes; the NIC/Passport only when they become
+# current, such as a Marked leaver set back to Active after their relocation was onboarded.
+# Other edits, a team or a job role on its own, need neither.
+#
+# + currentStatus - The employee's status before the edit
+# + requestedStatus - Status the edit sets, nil when it leaves the status alone
+# + currentEmail - The employee's work email before the edit
+# + requestedEmail - Work email the edit sets, nil when it leaves the email alone
+# + return - Whether to check the work email and the NIC/Passport
+public isolated function identityChecksForEdit(string currentStatus, string? requestedStatus,
+        string currentEmail, string? requestedEmail) returns record {|boolean email; boolean nic;|} {
+
+    if !isCurrentEmploymentStatus(requestedStatus ?: currentStatus) {
+        return {email: false, nic: false};
+    }
+    boolean becomesCurrent = !isCurrentEmploymentStatus(currentStatus);
+    boolean emailChanges = requestedEmail is string
+        && requestedEmail.trim().toLowerAscii() != currentEmail.trim().toLowerAscii();
+    return {email: becomesCurrent || emailChanges, nic: becomesCurrent};
+}
+
+# Another current (Active or New joiner) employment among a person's employments.
+#
+# + employments - The person's employments, newest first
+# + employeeId - Employee ID of the employment being edited, which does not count
+# + return - The other current employment, or nil when there is none
+public isolated function otherCurrentEmployment(EmploymentMatch[] employments, string employeeId)
+        returns EmploymentMatch? {
+
+    foreach EmploymentMatch employment in employments {
+        if employment.employeeId != employeeId && isCurrentEmploymentStatus(employment.employeeStatus) {
+            return employment;
+        }
+    }
+    return;
 }

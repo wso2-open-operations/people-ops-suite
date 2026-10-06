@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import ballerina/sql;
 import ballerina/test;
 
 @test:Config {}
@@ -53,8 +54,9 @@ function todayOrPastStartDateStartsActive() {
 @test:Config {}
 function currentEmploymentStatusesIncludeNewJoiner() {
     test:assertTrue(isCurrentEmploymentStatus(EMPLOYEE_ACTIVE));
-    test:assertTrue(isCurrentEmploymentStatus(EMPLOYEE_MARKED_LEAVER));
     test:assertTrue(isCurrentEmploymentStatus(EMPLOYEE_NEW_JOINER));
+    // A Marked leaver is on their way out: their next employment (a relocation) can be onboarded.
+    test:assertFalse(isCurrentEmploymentStatus(EMPLOYEE_MARKED_LEAVER));
     test:assertFalse(isCurrentEmploymentStatus(EMPLOYEE_LEFT));
 }
 
@@ -73,6 +75,75 @@ function resigningAgainKeepsTheCurrentStatus() {
     test:assertEquals(statusAfterResignation(EMPLOYEE_LEFT), ());
 }
 
+@test:Config {}
+function aLeaversEmailIsFreeForTheirNextEmployment() {
+    // A relocating employee keeps their email: the old employment is Marked leaver while the
+    // new one is onboarded, so only Active and New joiner holders make an email unavailable.
+    string[] statuses = [];
+    foreach var value in getCurrentEmployeeByWorkEmailQuery("john@wso2.com").insertions {
+        if value is string && value != "john@wso2.com" {
+            statuses.push(value);
+        }
+    }
+    test:assertEquals(statuses, [EMPLOYEE_ACTIVE, EMPLOYEE_NEW_JOINER]);
+}
+
+@test:Config {}
+function theEditedEmployeeDoesNotHoldTheirOwnEmail() {
+    sql:ParameterizedQuery query = getCurrentEmployeeByWorkEmailQuery("john@wso2.com", "LK100200");
+    int excluded = 0;
+    foreach var value in query.insertions {
+        if value == "LK100200" {
+            excluded += 1;
+        }
+    }
+    test:assertEquals(excluded, 2, "the edited employee must be left out");
+    test:assertTrue(sqlText(query).includes("e.employee_id <>"));
+}
+
+@test:Config {}
+function settingAMarkedLeaverBackToActiveChecksEmailAndNic() {
+    // The relocation case: the old employment is set back to Active after the new one exists.
+    test:assertEquals(identityChecksForEdit(EMPLOYEE_MARKED_LEAVER, EMPLOYEE_ACTIVE, "john@wso2.com", ()),
+            {email: true, nic: true});
+    test:assertEquals(identityChecksForEdit(EMPLOYEE_LEFT, EMPLOYEE_NEW_JOINER, "john@wso2.com", ()),
+            {email: true, nic: true});
+}
+
+@test:Config {}
+function changingACurrentEmployeesEmailChecksTheEmailOnly() {
+    test:assertEquals(identityChecksForEdit(EMPLOYEE_ACTIVE, (), "john@wso2.com", "johnny@wso2.com"),
+            {email: true, nic: false});
+    // The same address in another case or with spaces is not a change.
+    test:assertEquals(identityChecksForEdit(EMPLOYEE_ACTIVE, (), "john@wso2.com", " John@WSO2.com "),
+            {email: false, nic: false});
+}
+
+@test:Config {}
+function ordinaryEditsAndLeaversNeedNoChecks() {
+    test:assertEquals(identityChecksForEdit(EMPLOYEE_ACTIVE, (), "john@wso2.com", ()), {email: false, nic: false});
+    test:assertEquals(identityChecksForEdit(EMPLOYEE_NEW_JOINER, EMPLOYEE_ACTIVE, "john@wso2.com", ()),
+            {email: false, nic: false});
+    // Ending up a leaver never clashes with a current employment.
+    test:assertEquals(identityChecksForEdit(EMPLOYEE_ACTIVE, EMPLOYEE_MARKED_LEAVER, "john@wso2.com",
+            "johnny@wso2.com"), {email: false, nic: false});
+    test:assertEquals(identityChecksForEdit(EMPLOYEE_LEFT, (), "john@wso2.com", "johnny@wso2.com"),
+            {email: false, nic: false});
+}
+
+@test:Config {}
+function anotherCurrentEmploymentIsFound() {
+    EmploymentMatch[] employments = [
+        employment("UK100058", "john@wso2.com", EMPLOYEE_NEW_JOINER),
+        employment("LK100200", "john@wso2.com", EMPLOYEE_MARKED_LEAVER)
+    ];
+    test:assertEquals(otherCurrentEmployment(employments, "LK100200")?.employeeId, "UK100058");
+    // The employment being edited does not count against itself.
+    test:assertEquals(otherCurrentEmployment(employments, "UK100058"), ());
+    test:assertEquals(otherCurrentEmployment([employment("LK100100", "john@wso2.com", EMPLOYEE_LEFT)],
+            "LK100200"), ());
+}
+
 isolated function employment(string employeeId, string workEmail, string status) returns EmploymentMatch =>
     {employeeId, firstName: "John", lastName: "Silva", workEmail, employeeStatus: status};
 
@@ -83,8 +154,16 @@ function newPersonIsNotRefused() {
 }
 
 @test:Config {}
+function aMarkedLeaverCanBeOnboardedAgainUnderTheirEmail() {
+    // Relocation within the same country: the same NIC, the old employment Marked leaver.
+    EmploymentMatch[] employments = [employment("LK100200", "john@wso2.com", EMPLOYEE_MARKED_LEAVER)];
+    test:assertEquals(checkReturningEmployee(employments, "john@wso2.com"), ());
+    test:assertTrue(checkReturningEmployee(employments, "other@wso2.com") is string);
+}
+
+@test:Config {}
 function currentlyEmployedPersonIsRefused() {
-    string[] currentStatuses = [EMPLOYEE_ACTIVE, EMPLOYEE_MARKED_LEAVER, EMPLOYEE_NEW_JOINER];
+    string[] currentStatuses = [EMPLOYEE_ACTIVE, EMPLOYEE_NEW_JOINER];
     foreach string status in currentStatuses {
         EmploymentMatch[] employments = [employment("LK100200", "john@wso2.com", status)];
         string? refusal = checkReturningEmployee(employments, "john@wso2.com");

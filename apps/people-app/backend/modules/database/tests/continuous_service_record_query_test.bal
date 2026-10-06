@@ -118,8 +118,15 @@ isolated function testLaterEmploymentIsNotEligible() {
 isolated function testEmploymentThatHasNotEndedIsNotEligible() {
     test:assertFalse(isEligiblePriorEmployment(priorRecord("LK100254", "2012-09-01", EMPLOYEE_ACTIVE),
             "2020-01-01", "LK101111"), "an Active employment should not be linkable");
-    test:assertFalse(isEligiblePriorEmployment(priorRecord("LK100254", "2012-09-01", EMPLOYEE_MARKED_LEAVER),
-            "2020-01-01", "LK101111"), "a Marked-leaver employment should not be linkable");
+    test:assertFalse(isEligiblePriorEmployment(priorRecord("LK100254", "2012-09-01", EMPLOYEE_NEW_JOINER),
+            "2020-01-01", "LK101111"), "a New joiner employment should not be linkable");
+}
+
+@test:Config {}
+isolated function testMarkedLeaverEmploymentIsEligibleForRelocation() {
+    // A relocation is onboarded while the old employment is still Marked leaver.
+    test:assertTrue(isEligiblePriorEmployment(priorRecord("LK100254", "2012-09-01", EMPLOYEE_MARKED_LEAVER),
+            "2020-01-01", ()), "a Marked-leaver employment should be linkable");
 }
 
 @test:Config {}

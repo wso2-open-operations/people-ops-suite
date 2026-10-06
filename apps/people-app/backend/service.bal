@@ -1805,6 +1805,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        http:BadRequest|http:InternalServerError? identityError =
+            validateEditIdentity(employeeInfo, payload.employeeStatus, payload.workEmail);
+        if identityError !is () {
+            return identityError;
+        }
+
         // A link sent in the request is checked against the email and start date the
         // employment will hold afterwards. A stored link the request leaves alone is checked
         // too when either of those changes, so an edit cannot turn it into a forward link.
@@ -1821,7 +1827,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     ? <http:BadRequest>{
                         body: {
                             message: "This change makes the existing continuous service record invalid: it must be an "
-                                + "earlier employment under the same work email that has ended (status Left). "
+                                + "earlier employment under the same work email that has ended or is ending "
+                                + "(status Left or Marked leaver). "
                                 + "Remove the link in the same update."
                         }
                     }

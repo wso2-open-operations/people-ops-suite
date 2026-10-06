@@ -174,8 +174,8 @@ isolated function rollbackEmployeeCreation(string employeeId, string workEmail) 
 #
 # The link stores the prior employment's `employee.id`. Only a record the
 # continuous-service-records endpoint would offer for this work email is accepted, and only
-# one that has ended (Left) and started before this employment; anything else, including an
-# unrelated person's record, this employment itself, or a later record that would link
+# one that has ended or is ending (Left or Marked leaver) and started before this employment;
+# anything else, including an unrelated person's record, this employment itself, or a later record that would link
 # forwards or form a cycle, is refused as a bad request instead of reaching the database.
 #
 # + linkedId - `employee.id` of the prior employment being linked
@@ -209,7 +209,7 @@ isolated function validateContinuousServiceRecord(int linkedId, string workEmail
     return <http:BadRequest>{
         body: {
             message: "Continuous service record must be an earlier employment under the same work email "
-                + "that has ended (status Left)"
+                + "that has ended or is ending (status Left or Marked leaver)"
         }
     };
 }
@@ -218,8 +218,9 @@ isolated function validateContinuousServiceRecord(int linkedId, string workEmail
 #
 # The NIC/Passport decides whether this is someone new, a rehire, or someone already
 # employed (see database:checkReturningEmployee). A work email that is given must not belong
-# to anyone currently employed: a former employee's email is fine, since that is how someone
-# returning under a different NIC still keeps their house and continuous service.
+# to an Active or New joiner employee. A former employee's or a Marked leaver's email is fine:
+# that is how someone returning, or relocating under a different NIC, keeps their email, house
+# and continuous service.
 #
 # + nicOrPassport - NIC/Passport from the submission
 # + workEmail - Work email from the submission, nil when left empty
@@ -253,6 +254,68 @@ isolated function validateOnboardingIdentity(string nicOrPassport, string? workE
             + string `${holder.lastName} (${holder.employeeId})`;
         log:printWarn(customErr, workEmail = workEmail, holderEmployeeId = holder.employeeId);
         return <http:BadRequest>{body: {message: customErr}};
+    }
+}
+
+# Validate that an edit does not leave the same person with two current employments.
+#
+# After a relocation the old employment is Marked leaver and the new one Active or New joiner.
+# Setting the old one back to Active, or giving an employee a work email another current
+# employee holds, would leave two current records for the same person or address. See
+# database:identityChecksForEdit for when each check applies.
+#
+# + employeeInfo - The employee as stored, before the edit
+# + requestedStatus - Status the edit sets, nil when it leaves the status alone
+# + requestedEmail - Work email the edit sets, nil when it leaves the email alone
+# + return - The BadRequest or InternalServerError to send, or nil when the edit may go ahead
+isolated function validateEditIdentity(database:Employee employeeInfo, string? requestedStatus,
+        string? requestedEmail) returns http:BadRequest|http:InternalServerError? {
+
+    string employeeId = employeeInfo.employeeId;
+    var checks = database:identityChecksForEdit(employeeInfo.employeeStatus, requestedStatus,
+            employeeInfo.workEmail, requestedEmail);
+
+    string workEmail = requestedEmail ?: employeeInfo.workEmail;
+    if checks.email && !database:isPlaceholderWorkEmail(workEmail) {
+        database:EmploymentMatch|error? holder = database:getCurrentEmployeeByWorkEmail(workEmail, employeeId);
+        if holder is error {
+            log:printError("Error occurred while checking whether the work email is in use", holder,
+                    employeeId = employeeId, workEmail = workEmail);
+            return <http:InternalServerError>{body: {message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED}};
+        }
+        if holder is database:EmploymentMatch {
+            string customErr = string `Work email ${workEmail} is already in use by ${holder.firstName} `
+                + string `${holder.lastName} (${holder.employeeId})`;
+            log:printWarn(customErr, employeeId = employeeId, holderEmployeeId = holder.employeeId);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+    }
+
+    if !checks.nic {
+        return;
+    }
+    // The single-employee lookup does not load the NIC/Passport, so it is read here.
+    database:EmployeePersonalInfo|error? personalInfo = database:getEmployeePersonalInfo(employeeId);
+    if personalInfo is error {
+        log:printError("Error occurred while fetching the employee's NIC/Passport", personalInfo,
+                employeeId = employeeId);
+        return <http:InternalServerError>{body: {message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED}};
+    }
+    string nicOrPassport = personalInfo is () ? "" : personalInfo.nicOrPassport.trim();
+    if nicOrPassport != "" {
+        database:EmploymentMatch[]|error employments = database:getEmploymentsByNic(nicOrPassport);
+        if employments is error {
+            log:printError("Error occurred while checking the employee's other employments", employments,
+                    employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED}};
+        }
+        database:EmploymentMatch? other = database:otherCurrentEmployment(employments, employeeId);
+        if other is database:EmploymentMatch {
+            string customErr = string `This NIC/Passport already has a current employment: ${other.firstName} `
+                + string `${other.lastName} (${other.employeeId}, ${other.employeeStatus})`;
+            log:printWarn(customErr, employeeId = employeeId, otherEmployeeId = other.employeeId);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
     }
 }
 
