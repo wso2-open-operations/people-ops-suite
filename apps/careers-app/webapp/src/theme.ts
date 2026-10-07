@@ -79,6 +79,11 @@ export const themeSettings = (mode: PaletteMode) => {
     spacing: 8,
 
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          ":focus-visible": { outline: `2px solid ${wso2.orange[500]}`, outlineOffset: "2px" },
+        },
+      },
       MuiButton: {
         styleOverrides: {
           root: {
