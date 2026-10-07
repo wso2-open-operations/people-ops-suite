@@ -67,6 +67,8 @@ const JobShareActions = ({ title, isSignedIn, isSaved, onToggleSave }: JobShareA
       {isSignedIn && (
         <Box
           component="button"
+          aria-label="Save job"
+          aria-pressed={isSaved}
           onClick={onToggleSave}
           sx={{
             ...circleSx,

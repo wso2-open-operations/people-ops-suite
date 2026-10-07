@@ -66,6 +66,8 @@ const JobCard = ({ job }: JobCardProps) => {
           <Tooltip title={isSaved ? "Unsave" : "Save job"} arrow>
             <Box
               component="button"
+              aria-label="Save job"
+              aria-pressed={isSaved}
               onClick={handleSave}
               sx={{
                 border: "none",
