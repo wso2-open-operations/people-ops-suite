@@ -32,6 +32,8 @@ public type AuthConfig record {|
     string introspectUrl;
     string clientId;
     string clientSecret;
+    string issuer;
+    string audience;
 |};
 
 public type AppUnauthorizedError record {|

@@ -16,6 +16,7 @@
 
 import ballerina/http;
 import ballerina/jwt;
+import ballerina/url;
 
 configurable AuthConfig authConfig = ?;
 
@@ -29,6 +30,7 @@ final http:Client introspectClient = check new (authConfig.introspectUrl, {
 type IntrospectResponse record {
     boolean active;
     string sub?;
+    string client_id?;
 };
 
 isolated function validateViaJwks(string token) returns AsgardeoJwt|error {
@@ -36,6 +38,8 @@ isolated function validateViaJwks(string token) returns AsgardeoJwt|error {
     [jwt:Header, jwt:Payload] _ = check jwt:decode(token);
 
     jwt:ValidatorConfig config = {
+        issuer: authConfig.issuer,
+        audience: authConfig.audience,
         signatureConfig: {
             jwksConfig: {
                 url: authConfig.jwksUrl
@@ -43,6 +47,9 @@ isolated function validateViaJwks(string token) returns AsgardeoJwt|error {
         }
     };
     jwt:Payload payload = check jwt:validate(token, config);
+    if payload?.exp is () {
+        return error("Invalid token: missing exp");
+    }
     string? sub = payload?.sub;
     if sub is () || sub == "" {
         return error("Invalid token: missing sub");
@@ -53,12 +60,16 @@ isolated function validateViaJwks(string token) returns AsgardeoJwt|error {
 # Fallback for opaque tokens that aren't a verifiable JWT.
 isolated function validateViaIntrospection(string token) returns AsgardeoJwt|error {
     http:Request req = new;
-    req.setTextPayload("token=" + token);
+    string encodedToken = check url:encode(token, "UTF-8");
+    req.setTextPayload("token=" + encodedToken);
     req.setHeader("Content-Type", "application/x-www-form-urlencoded");
 
     IntrospectResponse introspected = check introspectClient->post("", req);
     if !introspected.active {
         return error("Token inactive");
+    }
+    if introspected?.client_id != authConfig.audience {
+        return error("Token was not issued for this application");
     }
     string? sub = introspected?.sub;
     if sub is () || sub == "" {
