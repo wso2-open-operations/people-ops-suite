@@ -32,6 +32,9 @@ interface ApplySectionProps {
   detail: VacancyDetail;
 }
 
+// The same shape the backend accepts: something@domain.tld with no spaces, so a typo is caught before the CV upload.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+
 // The "Apply Now" card: the application form, its submit logic and the confirmation dialog.
 const ApplySection = ({ detail }: ApplySectionProps) => {
   const dispatch = useAppDispatch();
@@ -55,7 +58,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
   const applyFormValid =
     !!form.firstName.trim() &&
     !!form.lastName.trim() &&
-    !!form.email.trim() &&
+    EMAIL_PATTERN.test(form.email.trim()) &&
     !!form.countryIso &&
     !!form.phone.trim() &&
     !!form.address.trim() &&
