@@ -105,12 +105,16 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
           component="div"
           role="button"
           tabIndex={0}
+          aria-haspopup="true"
+          aria-expanded={isOpen}
           ref={anchors[key]}
           onClick={() => setOpenDropdown(isOpen ? null : key)}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               setOpenDropdown(isOpen ? null : key);
+            } else if (e.key === "Escape") {
+              setOpenDropdown(null);
             }
           }}
           sx={{
@@ -183,10 +187,23 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
           </Stack>
         </Box>
 
-        <Popper open={isOpen} anchorEl={anchors[key].current} placement="bottom-start" transition sx={{ zIndex: 60 }}>
+        <Popper
+          open={isOpen}
+          anchorEl={anchors[key].current}
+          placement="bottom-start"
+          transition
+          disablePortal
+          sx={{ zIndex: 60 }}
+        >
           {({ TransitionProps }) => (
             <Fade {...TransitionProps} timeout={150}>
               <Paper
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setOpenDropdown(null);
+                    anchors[key].current?.focus();
+                  }
+                }}
                 sx={{
                   mt: "6px",
                   minWidth: 240,
