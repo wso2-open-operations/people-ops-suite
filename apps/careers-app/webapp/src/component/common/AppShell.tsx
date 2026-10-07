@@ -112,13 +112,14 @@ const AppShell = () => {
           px: { xs: 2, md: 3 },
         }}
       >
-        <Box
-          component="img"
-          src={theme.palette.mode === "dark" ? wso2LogoWhite : wso2LogoBlack}
-          alt="Go to home page"
-          sx={{ height: 40, width: "auto", cursor: "pointer" }}
-          onClick={() => { window.location.href = "https://wso2.com"; }}
-        />
+        <Box component="a" href="https://wso2.com" aria-label="Go to the WSO2 home page" sx={{ display: "flex" }}>
+          <Box
+            component="img"
+            src={theme.palette.mode === "dark" ? wso2LogoWhite : wso2LogoBlack}
+            alt=""
+            sx={{ height: 40, width: "auto" }}
+          />
+        </Box>
 
         <Stack direction="row" alignItems="center" gap={0.5}>
           {/* Icon-only links; the name shows as a tooltip on hover or keyboard focus */}
