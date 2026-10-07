@@ -26,7 +26,7 @@ import {
 } from "@mui/material";
 import { Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigationType, useSearchParams } from "react-router-dom";
 
 import { useAppAuthContext } from "@context/AuthContext";
 
@@ -48,13 +48,22 @@ const Jobs = () => {
   const savedJobIds = useAppSelector((state: RootState) => state.careers.savedJobIds);
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigationType = useNavigationType();
   const [tab, setTab] = useState<"available" | "saved">("available");
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
-  const [urlJobType] = useState(searchParams.get("jobType") ?? "");
+  const urlJobType = searchParams.get("jobType") ?? "";
   const [filters, setFilters] = useState<JobFilterValues>({
     team: searchParams.getAll("team"),
     location: searchParams.getAll("location"),
   });
+
+  // The effect below writes the page's own changes to the URL with "replace". Any other navigation (the header's
+  // Jobs link, browser back or forward) is external, so the search and filters are re-read from the new URL.
+  useEffect(() => {
+    if (navigationType === "REPLACE") return;
+    setSearch(searchParams.get("search") ?? "");
+    setFilters({ team: searchParams.getAll("team"), location: searchParams.getAll("location") });
+  }, [searchParams, navigationType]);
 
   useEffect(() => {
     const params = new URLSearchParams();
