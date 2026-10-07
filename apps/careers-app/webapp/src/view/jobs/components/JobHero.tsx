@@ -43,7 +43,7 @@ const JobHero = ({
   onToggleSave,
   onSeeAllRoles,
 }: JobHeroProps) => {
-  const color = teamColors[detail.team] ?? "#6B7280";
+  const color = teamColors[detail.team.toUpperCase()] ?? "#6B7280";
   const officeLabel = detail.officeLocations.length > 0 ? detail.officeLocations.join(", ") : "Remote";
 
   return (

@@ -20,7 +20,7 @@ export const teamColors: Record<string, string> = {
   MARKETING: "#10B981",
   SALES: "#EF4444",
   "SALES ENGINEERING": "#F59E0B",
-  "People Operations": "#EC4899",
+  "PEOPLE OPERATIONS": "#EC4899",
   FINANCE: "#06B6D4",
   "CHANNEL SALES": "#6366F1",
   "DIGITAL TRANSFORMATION": "#14B8A6",
