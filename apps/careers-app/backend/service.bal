@@ -41,6 +41,10 @@ isolated function forwardOrError(http:Response|error resp, string failureMessage
         log:printError(failureMessage, resp);
         return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
     }
+    if resp.statusCode == 503 || resp.statusCode == 504 {
+        log:printError(string `${failureMessage}: status ${resp.statusCode}`);
+        return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
+    }
     if resp.statusCode != 200 {
         log:printError(string `${failureMessage}: status ${resp.statusCode}`);
         return <http:BadGateway>{body: {message: failureMessage}};
