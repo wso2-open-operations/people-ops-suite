@@ -30,7 +30,7 @@ final http:Client introspectClient = check new (authConfig.introspectUrl, {
 type IntrospectResponse record {
     boolean active;
     string sub?;
-    string client_id?;
+    string|string[] aud?;
 };
 
 isolated function validateViaJwks(string token) returns AsgardeoJwt|error {
@@ -58,6 +58,7 @@ isolated function validateViaJwks(string token) returns AsgardeoJwt|error {
 }
 
 # Fallback for opaque tokens that aren't a verifiable JWT.
+# Fallback for opaque tokens that aren't a verifiable JWT.
 isolated function validateViaIntrospection(string token) returns AsgardeoJwt|error {
     http:Request req = new;
     string encodedToken = check url:encode(token, "UTF-8");
@@ -68,9 +69,14 @@ isolated function validateViaIntrospection(string token) returns AsgardeoJwt|err
     if !introspected.active {
         return error("Token inactive");
     }
-    if introspected?.client_id != authConfig.audience {
+
+    string|string[]? aud = introspected?.aud;
+    boolean audienceMatches = aud is string ? aud == authConfig.audience
+        : aud is string[] ? aud.indexOf(authConfig.audience) != () : false;
+    if !audienceMatches {
         return error("Token was not issued for this application");
     }
+
     string? sub = introspected?.sub;
     if sub is () || sub == "" {
         return error("Invalid token: missing sub");
