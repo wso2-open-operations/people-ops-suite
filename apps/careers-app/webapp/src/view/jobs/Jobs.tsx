@@ -16,6 +16,7 @@
 
 import {
   Box,
+  Button,
   FormControlLabel,
   Grid,
   InputAdornment,
@@ -36,13 +37,13 @@ import JobFilters, { JobFilterValues } from "@component/careers/JobFilters";
 import PageContainer from "@component/common/PageContainer";
 import PageHeading from "@component/common/PageHeading";
 import { State } from "@/types/types";
-import { loadJobs, loadOrgStructure } from "@slices/careersSlice/careers";
+import { retryLoad } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { matchesJobType, matchesLocation, matchesSearch, matchesTeam } from "@utils/jobFilterUtils";
 
 const Jobs = () => {
   const dispatch = useAppDispatch();
-  const { getToken: getAccessToken, isSignedIn } = useAppAuthContext();
+  const { isSignedIn } = useAppAuthContext();
   const jobs = useAppSelector((state: RootState) => state.careers.jobs);
   const jobsState = useAppSelector((state: RootState) => state.careers.jobsState);
   const savedJobIds = useAppSelector((state: RootState) => state.careers.savedJobIds);
@@ -73,20 +74,6 @@ const Jobs = () => {
     if (urlJobType) params.set("jobType", urlJobType);
     setSearchParams(params, { replace: true });
   }, [search, filters, urlJobType, setSearchParams]);
-
-  const orgStructureState = useAppSelector((state: RootState) => state.careers.orgStructureState);
-
-  useEffect(() => {
-    if (jobsState !== State.idle && orgStructureState !== State.idle) return;
-    getAccessToken()
-      .then((token) => {
-        if (jobsState === State.idle) dispatch(loadJobs(token));
-        if (orgStructureState === State.idle) dispatch(loadOrgStructure(token));
-      })
-      .catch(() => {
-        dispatch({ type: "careers/loadJobs/rejected" });
-      });
-  }, [dispatch, getAccessToken, jobsState, orgStructureState]);
 
   const sourceJobs = useMemo(
     () => (tab === "saved" ? jobs.filter((job) => savedJobIds.includes(job.id)) : jobs),
@@ -190,7 +177,7 @@ const Jobs = () => {
       </Stack>
 
       {/* Loading */}
-      {jobsState === State.loading && (
+      {(jobsState === State.idle || jobsState === State.loading) && (
         <Grid container spacing={2}>
           {Array.from({ length: 6 }).map((_, i) => (
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
@@ -211,7 +198,12 @@ const Jobs = () => {
             borderRadius: "12px",
           }}
         >
-          <Typography color="error">Failed to load jobs. Please try again later.</Typography>
+          <Typography color="error" mb={2}>
+            Failed to load jobs.
+          </Typography>
+          <Button variant="outlined" onClick={() => dispatch(retryLoad())}>
+            Try again
+          </Button>
         </Box>
       )}
 

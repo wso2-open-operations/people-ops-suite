@@ -27,7 +27,7 @@ import { ColorModeContext } from "@context/ColorModeContext";
 import wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
 import wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
 import { State } from "@/types/types";
-import { loadJobDetail, loadJobs } from "@slices/careersSlice/careers";
+import { loadFailed, loadJobDetail, loadJobs, loadOrgStructure } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 
 const NAV_ITEMS = [{ path: "/jobs", label: "Jobs", icon: Briefcase }];
@@ -41,22 +41,26 @@ const AppShell = () => {
   const dispatch = useAppDispatch();
   const { getToken: getAccessToken, isSignedIn, appSignIn, appSignOut } = useAppAuthContext();
   const jobsState = useAppSelector((state: RootState) => state.careers.jobsState);
-  const jobs = useAppSelector((state: RootState) => state.careers.jobs);
+  const orgStructureState = useAppSelector((state: RootState) => state.careers.orgStructureState);
+  const jobs =useAppSelector((state: RootState) => state.careers.jobs);
   const jobDetails = useAppSelector((state: RootState) => state.careers.jobDetails);
 
   // Read inside the prefetch below without making each loaded detail restart it.
   const jobDetailsRef = useRef(jobDetails);
   jobDetailsRef.current = jobDetails;
 
-  // Prefetch the job listing as soon as the app opens, on whichever page
-  // loads first -- so /jobs never has to wait on a cold fetch once the user
-  // actually navigates there.
+  // The shell is the only place that loads the job list and the org structure (the team and location options).
+  // It starts as soon as the app opens, on whichever page loads first, so /jobs never waits on a cold fetch; the
+  // pages only read the state. A failed load goes back to idle through retryLoad and is tried again here.
   useEffect(() => {
-    if (jobsState !== State.idle) return;
+    if (jobsState !== State.idle && orgStructureState !== State.idle) return;
     getAccessToken()
-      .then((token) => dispatch(loadJobs(token)))
-      .catch(() => dispatch({ type: "careers/loadJobs/rejected" }));
-  }, [dispatch, getAccessToken, jobsState]);
+      .then((token) => {
+        if (jobsState === State.idle) dispatch(loadJobs(token));
+        if (orgStructureState === State.idle) dispatch(loadOrgStructure(token));
+      })
+      .catch(() => dispatch(loadFailed()));
+  }, [dispatch, getAccessToken, jobsState, orgStructureState]);
 
   // Once the job list is in, fetch every job's detail in the background, a few at a time, so opening a
   // job is instant. A failed fetch is ignored: the job page loads its own detail on demand.
@@ -69,12 +73,16 @@ const AppShell = () => {
     let cancelled = false;
     let failures = 0;
     const worker = async () => {
-      const token = await getAccessToken();
-      while (!cancelled && failures < 2) {
-        const jobId = queue.shift();
-        if (!jobId) return;
-        const result = await dispatch(loadJobDetail({ accessToken: token, jobId }));
-        if (loadJobDetail.rejected.match(result)) failures += 1;
+      try {
+        const token = await getAccessToken();
+        while (!cancelled && failures < 2) {
+          const jobId = queue.shift();
+          if (!jobId) return;
+          const result = await dispatch(loadJobDetail({ accessToken: token, jobId }));
+          if (loadJobDetail.rejected.match(result)) failures += 1;
+        }
+      } catch {
+        // No token: the job page loads its own detail on demand.
       }
     };
     Array.from({ length: 2 }, worker);

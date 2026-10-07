@@ -72,6 +72,16 @@ export const CareersSlice = createSlice({
         state.savedJobIds.push(action.payload);
       }
     },
+    // A token that could not be obtained means the loads never started, so whatever was waiting to load has failed.
+    loadFailed: (state) => {
+      if (state.jobsState === State.idle) state.jobsState = State.failed;
+      if (state.orgStructureState === State.idle) state.orgStructureState = State.failed;
+    },
+    // Puts failed loads back to idle so the shell, which owns loading, tries them again.
+    retryLoad: (state) => {
+      if (state.jobsState === State.failed) state.jobsState = State.idle;
+      if (state.orgStructureState === State.failed) state.orgStructureState = State.idle;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -102,5 +112,5 @@ export const CareersSlice = createSlice({
   },
 });
 
-export const { toggleSaveJob } = CareersSlice.actions;
+export const { toggleSaveJob, loadFailed, retryLoad } = CareersSlice.actions;
 export default CareersSlice.reducer;
