@@ -14,30 +14,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# career-vacancy-service connection details.
-public type VacancyConfig record {|
-    string baseUrl;
-    string tokenUrl;
-    string clientId;
-    string clientSecret;
-|};
+# The largest CV accepted, in bytes.
+public const int MAX_CV_BYTES = 5 * 1024 * 1024;
 
-# Candidate details posted to career-vacancy-service when someone applies for a vacancy.
-# `resume` carries the CV's raw bytes, which the service expects as a JSON array of byte values;
-# the optional fields are left out when not collected.
-public type CandidateApplication record {|
+# The largest request body accepted. The multipart body carries the CV plus the form fields, so this sits a little
+# above the CV limit.
+public const int MAX_REQUEST_BYTES = 6 * 1024 * 1024;
+
+# The fields the careers app submits when someone applies, with the CV's raw bytes.
+public type ApplicationForm record {|
+    # Applicant's first name
     string firstName;
+    # Applicant's last name
     string lastName;
-    string personalEmail;
-    string contactNo;
+    # Applicant's personal email address
+    string email;
+    # Phone number in international (E.164) format
+    string phone;
+    # Postal address
     string address;
-    byte[] resume;
-    string taskInfo?;
-    string university?;
-    string wso2Email?;
+    # The CV (a PDF file)
+    byte[] cv;
 |};
-
-type TokenResponse record {
-    string access_token;
-    int expires_in;
-};

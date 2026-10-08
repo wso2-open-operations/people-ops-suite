@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import wso2/careers_app.types;
+
 import ballerina/http;
 import ballerina/time;
 
@@ -24,6 +26,11 @@ const string USER_AGENT = "careers-app-backend/0.1.0";
 
 final http:Client vacancyHttpClient = check new (vacancyConfig.baseUrl, {
     timeout: 15
+});
+
+// Applying stores the candidate and uploads the CV to Google Drive upstream, which takes far longer than a read.
+final http:Client vacancyApplyHttpClient = check new (vacancyConfig.baseUrl, {
+    timeout: 90
 });
 
 final http:Client tokenHttpClient = check new (vacancyConfig.tokenUrl, {
@@ -88,23 +95,51 @@ isolated function getVacancyToken() returns string|error {
     return tokenResponse.access_token;
 }
 
+// The request id travels with every call, so the vacancy service's logs can be matched to this service's.
+isolated function authHeaders(string token, string requestId) returns map<string> => {
+    "Authorization": "Bearer " + token,
+    "User-Agent": USER_AGENT,
+    [types:REQUEST_ID_HEADER]: requestId
+};
+
 # GET from the vacancy service with automatic token refresh on 401.
-isolated function getWithToken(string path) returns http:Response|error {
+isolated function getWithToken(string path, string requestId) returns http:Response|error {
     string token = check getVacancyToken();
-    http:Response resp = check vacancyHttpClient->get(path, {"Authorization": "Bearer " + token, "User-Agent": USER_AGENT});
+    http:Response resp = check vacancyHttpClient->get(path, authHeaders(token, requestId));
     if resp.statusCode != http:STATUS_UNAUTHORIZED {
         return resp;
     }
     tokenCache.clear(token);
     string freshToken = check getVacancyToken();
-    return vacancyHttpClient->get(path, {"Authorization": "Bearer " + freshToken, "User-Agent": USER_AGENT});
+    return vacancyHttpClient->get(path, authHeaders(freshToken, requestId));
+}
+
+# POST to the vacancy service with automatic token refresh on 401. A request rejected with 401 was not processed,
+# so sending it again with a fresh token cannot create the candidate twice.
+isolated function postWithToken(string path, CandidateApplication payload, string requestId)
+        returns http:Response|error {
+    string token = check getVacancyToken();
+    http:Response resp = check vacancyApplyHttpClient->post(path, payload, authHeaders(token, requestId));
+    if resp.statusCode != http:STATUS_UNAUTHORIZED {
+        return resp;
+    }
+    tokenCache.clear(token);
+    string freshToken = check getVacancyToken();
+    return vacancyApplyHttpClient->post(path, payload, authHeaders(freshToken, requestId));
 }
 
 # Proxies GET /vacancies/basic-info.
-public isolated function listJobs() returns http:Response|error => getWithToken("/vacancies/basic-info");
+public isolated function listJobs(string requestId) returns http:Response|error =>
+    getWithToken("/vacancies/basic-info", requestId);
 
 # Proxies GET /org-structure.
-public isolated function getOrgStructure() returns http:Response|error => getWithToken("/org-structure");
+public isolated function getOrgStructure(string requestId) returns http:Response|error =>
+    getWithToken("/org-structure", requestId);
 
 # Proxies GET /vacancies/{jobId}.
-public isolated function getJob(string jobId) returns http:Response|error => getWithToken("/vacancies/" + jobId);
+public isolated function getJob(string jobId, string requestId) returns http:Response|error =>
+    getWithToken("/vacancies/" + jobId, requestId);
+
+# Proxies POST /vacancies/{jobId}/apply, creating the candidate in the ATS.
+public isolated function applyForJob(string jobId, CandidateApplication candidate, string requestId)
+        returns http:Response|error => postWithToken("/vacancies/" + jobId + "/apply", candidate, requestId);

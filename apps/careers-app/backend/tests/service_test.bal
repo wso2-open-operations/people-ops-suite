@@ -15,40 +15,61 @@
 // under the License.
 
 import ballerina/http;
+import ballerina/mime;
 import ballerina/test;
 
 final http:Client testClient = check new (string `http://localhost:${port}`);
 
+// Job reads and apply are public. Any other route needs a valid token; "/profile" stands in for a restricted route.
 @test:Config {}
-function validJobIdsAreAccepted() {
-    test:assertTrue(isValidJobId("258"));
-    test:assertTrue(isValidJobId("job-1_a"));
-}
-
-@test:Config {}
-function pathTraversalAndOddJobIdsAreRejected() {
-    string[] rejected = ["", "..", "../org-structure", "..%2Forg-structure", "1/2", "1 2", "1?x=y", "%2e%2e"];
-    foreach string jobId in rejected {
-        test:assertFalse(isValidJobId(jobId), string `Job id "${jobId}" should be rejected`);
-    }
-}
-
-@test:Config {}
-function requestWithoutTokenIsUnauthorized() returns error? {
-    http:Response resp = check testClient->get("/jobs");
+function restrictedRouteWithoutTokenIsUnauthorized() returns error? {
+    http:Response resp = check testClient->get("/profile");
     test:assertEquals(resp.statusCode, 401);
 }
 
 @test:Config {}
-function requestWithGarbageTokenIsUnauthorized() returns error? {
-    http:Response resp = check testClient->get("/jobs", {"Authorization": "Bearer not-a-jwt"});
+function restrictedRouteWithGarbageTokenIsUnauthorized() returns error? {
+    http:Response resp = check testClient->get("/profile", {"Authorization": "Bearer not-a-jwt"});
     test:assertEquals(resp.statusCode, 401);
 }
 
 @test:Config {}
-function traversalJobIdWithoutTokenIsUnauthorized() returns error? {
-    http:Response resp = check testClient->get("/jobs/..%2Forg-structure");
-    test:assertEquals(resp.statusCode, 401);
+function routesNotListedAsPublicNeedAToken() returns error? {
+    // A future route such as GET /jobs/saved must not become public just because it sits under /jobs.
+    http:Response saved = check testClient->get("/jobs/saved");
+    test:assertEquals(saved.statusCode, 401);
+    http:Response traversal = check testClient->get("/jobs/..%2Forg-structure");
+    test:assertEquals(traversal.statusCode, 401);
+    http:Response applyToTraversal = check testClient->post("/jobs/..%2Forg-structure/apply", {});
+    test:assertEquals(applyToTraversal.statusCode, 401);
+}
+
+@test:Config {}
+function publicJobReadsReachTheServiceWithoutAToken() returns error? {
+    // The vacancy service does not exist in the tests, so a request that gets past the interceptor ends in a 504.
+    http:Response list = check testClient->get("/jobs");
+    test:assertEquals(list.statusCode, 504);
+    http:Response detail = check testClient->get("/jobs/258");
+    test:assertEquals(detail.statusCode, 504);
+}
+
+@test:Config {}
+function applyWithoutMultipartFormIsBadRequest() returns error? {
+    http:Response resp = check testClient->post("/jobs/258/apply", {"firstName": "A"});
+    test:assertEquals(resp.statusCode, 400);
+}
+
+@test:Config {}
+function applyWithAnInvalidFormShowsTheReason() returns error? {
+    mime:Entity firstName = new;
+    firstName.setContentDisposition(mime:getContentDispositionObject("form-data; name=\"firstName\""));
+    firstName.setText("Ada");
+    http:Request req = new;
+    req.setBodyParts([firstName], "multipart/form-data");
+    http:Response resp = check testClient->post("/jobs/258/apply", req);
+    test:assertEquals(resp.statusCode, 400);
+    json body = check resp.getJsonPayload();
+    test:assertEquals(check body.message, "First name, last name, phone and address are required.");
 }
 
 function responseWithStatus(int statusCode) returns http:Response {
@@ -61,29 +82,29 @@ function responseWithStatus(int statusCode) returns http:Response {
 function upstreamJsonIsPassedThrough() {
     http:Response resp = responseWithStatus(200);
     resp.setJsonPayload({"id": 258});
-    test:assertEquals(forwardOrError(resp, "failed"), {"id": 258});
+    test:assertEquals(forwardOrError(resp, "failed", "test-request"), {"id": 258});
 }
 
 @test:Config {}
 function unreachableUpstreamBecomesGatewayTimeout() {
-    test:assertTrue(forwardOrError(error("connection refused"), "failed") is http:GatewayTimeout);
+    test:assertTrue(forwardOrError(error("connection refused"), "failed", "test-request") is http:GatewayTimeout);
 }
 
 @test:Config {}
 function upstreamUnavailableOrTimedOutBecomesGatewayTimeout() {
-    test:assertTrue(forwardOrError(responseWithStatus(503), "failed") is http:GatewayTimeout);
-    test:assertTrue(forwardOrError(responseWithStatus(504), "failed") is http:GatewayTimeout);
+    test:assertTrue(forwardOrError(responseWithStatus(503), "failed", "test-request") is http:GatewayTimeout);
+    test:assertTrue(forwardOrError(responseWithStatus(504), "failed", "test-request") is http:GatewayTimeout);
 }
 
 @test:Config {}
 function otherUpstreamFailuresBecomeBadGateway() {
-    test:assertTrue(forwardOrError(responseWithStatus(500), "failed") is http:BadGateway);
-    test:assertTrue(forwardOrError(responseWithStatus(401), "failed") is http:BadGateway);
+    test:assertTrue(forwardOrError(responseWithStatus(500), "failed", "test-request") is http:BadGateway);
+    test:assertTrue(forwardOrError(responseWithStatus(401), "failed", "test-request") is http:BadGateway);
 }
 
 @test:Config {}
 function nonJsonUpstreamBodyBecomesBadGateway() {
     http:Response resp = responseWithStatus(200);
     resp.setTextPayload("not json", "text/plain");
-    test:assertTrue(forwardOrError(resp, "failed") is http:BadGateway);
+    test:assertTrue(forwardOrError(resp, "failed", "test-request") is http:BadGateway);
 }
