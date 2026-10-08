@@ -23,6 +23,8 @@ import ballerina/log;
 configurable string[] allowedOrigins = ?;
 configurable int port = ?;
 
+isolated function isValidJobId(string jobId) returns boolean => re `^[A-Za-z0-9_-]+$`.isFullMatch(jobId);
+
 
 # Resolves the authenticated caller
 isolated function requireUser(http:RequestContext ctx) returns jwt:AsgardeoJwt|http:Unauthorized {
@@ -96,12 +98,15 @@ service http:InterceptableService / on new http:Listener(port) {
         return forwardOrError(resp, "Failed to fetch org structure from upstream service");
     }
 
-    # Proxies a single job's detail from career-vacancy-service, 404 if it doesn't exist.
+    # Proxies a single job's detail from career-vacancy-service, 400 for an invalid id, 404 if it doesn't exist.
     resource function get jobs/[string jobId](http:RequestContext ctx)
-            returns json|http:Unauthorized|http:NotFound|http:BadGateway|http:GatewayTimeout {
+            returns json|http:Unauthorized|http:BadRequest|http:NotFound|http:BadGateway|http:GatewayTimeout {
         jwt:AsgardeoJwt|http:Unauthorized userResult = requireUser(ctx);
         if userResult is http:Unauthorized {
             return userResult;
+        }
+        if !isValidJobId(jobId) {
+            return <http:BadRequest>{body: {message: "Invalid job id"}};
         }
         http:Response|error resp = vacancy:getJob(jobId);
         if resp is error {
