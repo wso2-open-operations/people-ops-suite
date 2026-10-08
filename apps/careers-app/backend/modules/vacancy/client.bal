@@ -59,6 +59,16 @@ isolated class TokenCache {
             self.expiryEpoch = currentEpoch() + (expiresInSeconds - 60);
         }
     }
+
+    # Forgets the rejected token
+    isolated function clear(string rejectedToken) {
+        lock {
+            if self.cachedToken == rejectedToken {
+                self.cachedToken = "";
+                self.expiryEpoch = 0;
+            }
+        }
+    }
 }
 
 final TokenCache tokenCache = new;
@@ -78,20 +88,23 @@ isolated function getVacancyToken() returns string|error {
     return tokenResponse.access_token;
 }
 
-# Proxies GET /vacancies/basic-info.
-public isolated function listJobs() returns http:Response|error {
+# GET from the vacancy service with automatic token refresh on 401.
+isolated function getWithToken(string path) returns http:Response|error {
     string token = check getVacancyToken();
-    return vacancyHttpClient->get("/vacancies/basic-info", {"Authorization": "Bearer " + token, "User-Agent": USER_AGENT});
+    http:Response resp = check vacancyHttpClient->get(path, {"Authorization": "Bearer " + token, "User-Agent": USER_AGENT});
+    if resp.statusCode != http:STATUS_UNAUTHORIZED {
+        return resp;
+    }
+    tokenCache.clear(token);
+    string freshToken = check getVacancyToken();
+    return vacancyHttpClient->get(path, {"Authorization": "Bearer " + freshToken, "User-Agent": USER_AGENT});
 }
+
+# Proxies GET /vacancies/basic-info.
+public isolated function listJobs() returns http:Response|error => getWithToken("/vacancies/basic-info");
 
 # Proxies GET /org-structure.
-public isolated function getOrgStructure() returns http:Response|error {
-    string token = check getVacancyToken();
-    return vacancyHttpClient->get("/org-structure", {"Authorization": "Bearer " + token, "User-Agent": USER_AGENT});
-}
+public isolated function getOrgStructure() returns http:Response|error => getWithToken("/org-structure");
 
 # Proxies GET /vacancies/{jobId}.
-public isolated function getJob(string jobId) returns http:Response|error {
-    string token = check getVacancyToken();
-    return vacancyHttpClient->get("/vacancies/" + jobId, {"Authorization": "Bearer " + token, "User-Agent": USER_AGENT});
-}
+public isolated function getJob(string jobId) returns http:Response|error => getWithToken("/vacancies/" + jobId);
