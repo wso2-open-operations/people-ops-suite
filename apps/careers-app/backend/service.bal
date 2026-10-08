@@ -25,17 +25,6 @@ configurable int port = ?;
 
 isolated function isValidJobId(string jobId) returns boolean => re `^[A-Za-z0-9_-]+$`.isFullMatch(jobId);
 
-
-# Resolves the authenticated caller
-isolated function requireUser(http:RequestContext ctx) returns jwt:AsgardeoJwt|http:Unauthorized {
-    jwt:AsgardeoJwt|error user = jwt:getUser(ctx);
-    if user is error {
-        return <http:Unauthorized>{body: {message: "Unauthorized"}};
-    }
-    return user;
-}
-
-
 # Passes an upstream JSON response.
 isolated function forwardOrError(http:Response|error resp, string failureMessage)
         returns json|http:BadGateway|http:GatewayTimeout {
@@ -77,34 +66,20 @@ service http:InterceptableService / on new http:Listener(port) {
     public function createInterceptors() returns http:Interceptor[] => [new jwt:JwtInterceptor()];
 
     # Proxies the job listing from career-vacancy-service.
-    resource function get jobs(http:RequestContext ctx)
-            returns json|http:Unauthorized|http:BadGateway|http:GatewayTimeout {
-        jwt:AsgardeoJwt|http:Unauthorized userResult = requireUser(ctx);
-        if userResult is http:Unauthorized {
-            return userResult;
-        }
+    resource function get jobs() returns json|http:BadGateway|http:GatewayTimeout {
         http:Response|error resp = vacancy:listJobs();
         return forwardOrError(resp, "Failed to fetch jobs from upstream service");
     }
 
     # Proxies the team/location org structure from career-vacancy-service.
-    resource function get jobs/org\-structure(http:RequestContext ctx)
-            returns json|http:Unauthorized|http:BadGateway|http:GatewayTimeout {
-        jwt:AsgardeoJwt|http:Unauthorized userResult = requireUser(ctx);
-        if userResult is http:Unauthorized {
-            return userResult;
-        }
+    resource function get jobs/org\-structure() returns json|http:BadGateway|http:GatewayTimeout {
         http:Response|error resp = vacancy:getOrgStructure();
         return forwardOrError(resp, "Failed to fetch org structure from upstream service");
     }
 
     # Proxies a single job's detail from career-vacancy-service, 400 for an invalid id, 404 if it doesn't exist.
-    resource function get jobs/[string jobId](http:RequestContext ctx)
-            returns json|http:Unauthorized|http:BadRequest|http:NotFound|http:BadGateway|http:GatewayTimeout {
-        jwt:AsgardeoJwt|http:Unauthorized userResult = requireUser(ctx);
-        if userResult is http:Unauthorized {
-            return userResult;
-        }
+    resource function get jobs/[string jobId]()
+            returns json|http:BadRequest|http:NotFound|http:BadGateway|http:GatewayTimeout {
         if !isValidJobId(jobId) {
             return <http:BadRequest>{body: {message: "Invalid job id"}};
         }
