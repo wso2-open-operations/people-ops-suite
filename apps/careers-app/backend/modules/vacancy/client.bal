@@ -95,7 +95,6 @@ isolated function getVacancyToken() returns string|error {
     return tokenResponse.access_token;
 }
 
-// The request id travels with every call, so the vacancy service's logs can be matched to this service's.
 isolated function authHeaders(string token, string requestId) returns map<string> => {
     "Authorization": "Bearer " + token,
     "User-Agent": USER_AGENT,
@@ -115,7 +114,7 @@ isolated function getWithToken(string path, string requestId) returns http:Respo
 }
 
 # POST to the vacancy service with automatic token refresh on 401. A request rejected with 401 was not processed,
-# so sending it again with a fresh token cannot create the candidate twice.
+# so the retry cannot create the candidate twice.
 isolated function postWithToken(string path, CandidateApplication payload, string requestId)
         returns http:Response|error {
     string token = check getVacancyToken();

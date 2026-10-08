@@ -18,8 +18,8 @@ import ballerina/http;
 
 const string CTX_REMOTE_HOST = "careers-app-remote-host";
 
-# Records the address of the connection in the request context. A resource that takes `http:Caller` cannot return
-# typed responses, so the apply resource reads the address from the context instead.
+# Records the connection's address in the request context; a resource that takes `http:Caller` cannot return
+# typed responses, so the apply resource reads it from here.
 public isolated service class RemoteAddressInterceptor {
     *http:RequestInterceptor;
 
@@ -30,10 +30,7 @@ public isolated service class RemoteAddressInterceptor {
     }
 }
 
-# The address of the connection recorded by `RemoteAddressInterceptor`.
-#
-# + ctx - The request context
-# + return - The connection's host, or "unknown" when it was not recorded
+# The connection's address recorded by `RemoteAddressInterceptor`, or "unknown".
 public isolated function remoteHost(http:RequestContext ctx) returns string {
     string|error host = ctx.getWithType(CTX_REMOTE_HOST);
     return host is string ? host : "unknown";

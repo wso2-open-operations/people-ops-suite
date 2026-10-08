@@ -22,9 +22,8 @@ public type VacancyConfig record {|
     string clientSecret;
 |};
 
-# Candidate details posted to career-vacancy-service when someone applies for a vacancy.
-# `resume` carries the CV's raw bytes, which the service expects as a JSON array of byte values;
-# the optional fields are left out when not collected.
+# Candidate details posted to career-vacancy-service when someone applies. `resume` holds the CV's bytes,
+# which the service expects as a JSON array of byte values.
 public type CandidateApplication record {|
     string firstName;
     string lastName;

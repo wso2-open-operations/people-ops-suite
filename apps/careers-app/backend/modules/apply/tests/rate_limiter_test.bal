@@ -35,7 +35,6 @@ function eachAddressAndEachEmailHasItsOwnAllowance() {
         _ = limiter.tryAcquire(firstAddress);
     }
     test:assertFalse(limiter.tryAcquire(firstAddress));
-    // Another address, and the same text used as an email, are counted separately.
     test:assertTrue(limiter.tryAcquire(limiterKey("ip", "2.2.2.2")));
     test:assertTrue(limiter.tryAcquire(limiterKey("email", "1.1.1.1")));
 }
@@ -68,7 +67,6 @@ function clientAddressIsTheLastForwardedHop() {
 
 @test:Config {}
 function clientAddressFallsBackToTheConnectionAddress() {
-    // Without the header each caller is still counted by its own address, not in one shared bucket.
     test:assertEquals(clientAddress(new, "192.168.1.5"), "192.168.1.5");
     test:assertEquals(clientAddress(new, "192.168.1.6"), "192.168.1.6");
 }

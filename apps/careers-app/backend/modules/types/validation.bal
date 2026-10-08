@@ -14,6 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# Whether the value is a vacancy id: digits only. A path segment such as "..%2Forg-structure" decodes to
-# "../org-structure", so anything else must never be appended to the upstream URL or treated as a public route.
+# Whether the value is a vacancy id (digits only). A path segment like "..%2Forg-structure" decodes to
+# "../org-structure", so nothing else may reach the upstream URL or count as a public route.
 public isolated function isValidJobId(string jobId) returns boolean => re `[0-9]+`.isFullMatch(jobId);

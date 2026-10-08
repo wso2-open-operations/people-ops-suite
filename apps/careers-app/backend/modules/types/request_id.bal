@@ -22,13 +22,10 @@ public const string REQUEST_ID_HEADER = "X-Request-ID";
 
 const string CTX_REQUEST_ID = "careers-app-request-id";
 
-// Letters, digits and "-" only, so an id taken from a caller cannot forge or split log lines.
+// Letters, digits and "-" only, so a caller's id cannot forge or split log lines.
 final string:RegExp REQUEST_ID_PATTERN = re `[A-Za-z0-9-]{8,64}`;
 
-# The id to use for a request: the caller's own when it is well formed, otherwise a new one.
-#
-# + incoming - The X-Request-ID the caller sent, if any
-# + return - An id made of letters, digits and "-"
+# The caller's request id when it is well formed, otherwise a new one.
 public isolated function requestIdFrom(string? incoming) returns string {
     if incoming is string && REQUEST_ID_PATTERN.isFullMatch(incoming) {
         return incoming;
@@ -36,7 +33,7 @@ public isolated function requestIdFrom(string? incoming) returns string {
     return uuid:createType4AsString();
 }
 
-# Gives every request an id, so one request can be followed through this service's logs and the services it calls.
+# Gives every request an id, so it can be followed through the logs of this service and the ones it calls.
 public isolated service class RequestIdInterceptor {
     *http:RequestInterceptor;
 
@@ -48,10 +45,7 @@ public isolated service class RequestIdInterceptor {
     }
 }
 
-# The id given to the request by `RequestIdInterceptor`.
-#
-# + ctx - The request context
-# + return - The request id, or "unknown" when it was not recorded
+# The id given to the request by `RequestIdInterceptor`, or "unknown".
 public isolated function requestIdOf(http:RequestContext ctx) returns string {
     string|error id = ctx.getWithType(CTX_REQUEST_ID);
     return id is string ? id : "unknown";

@@ -19,12 +19,8 @@ import wso2/careers_app.types;
 import ballerina/http;
 import ballerina/log;
 
-# The routes open to guests, listed exactly. Nothing in their responses depends on who is asking. A route added later,
-# such as GET /jobs/saved, is not public unless it is added here.
-#
-# + method - The request method
-# + path - The request path segments
-# + return - True for the job list, the org structure, one job's detail and applying for a job
+# The routes open to guests, listed exactly: the job list, org structure, one job's detail and applying.
+# A route added later, such as GET /jobs/saved, is not public unless it is added here.
 isolated function isPublicRoute(string method, string[] path) returns boolean {
     if method == http:GET {
         return (path.length() == 1 && path[0] == "jobs")
@@ -48,7 +44,6 @@ public isolated service class JwtInterceptor {
             return ctx.next();
         }
 
-        // A token sent with a public route is not looked at. Every other route needs a valid token.
         if isPublicRoute(req.method, path) {
             return ctx.next();
         }

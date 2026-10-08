@@ -27,11 +27,6 @@ configurable int applyWindowSeconds = 3600;
 
 const int MAX_TRACKED_KEYS = 10000;
 
-# The attempts that still fall inside the window.
-#
-# + attempts - Times of earlier attempts, in seconds
-# + windowStart - The start of the window, in seconds
-# + return - The attempts made after the window start
 isolated function recentAttempts(int[] attempts, int windowStart) returns int[] {
     int[] recent = [];
     foreach int attempt in attempts {
@@ -42,24 +37,14 @@ isolated function recentAttempts(int[] attempts, int windowStart) returns int[] 
     return recent;
 }
 
-# The key under which a caller's attempts are counted. The value is hashed, so the limiter never holds an email
-# address or an IP address in memory.
-#
-# + kind - What the value is, such as "ip" or "email"
-# + value - The address or email to count attempts for
-# + return - A key for the limiter
+# The key an address or email is counted under. It is hashed, so no personal data is held in memory.
 public isolated function limiterKey(string kind, string value) returns string {
     byte[] digest = crypto:hashSha256(value.toBytes());
     return kind + ":" + array:toBase16(digest);
 }
 
-# The caller's address: the last X-Forwarded-For hop is the one the proxy itself appended, so unlike the earlier
-# hops it cannot be set by the caller. Without the header the connection's own address is used, so callers never
-# share one bucket.
-#
-# + req - The incoming request
-# + remoteHost - The address of the connection
-# + return - The address to count attempts for
+# The caller's address: the last X-Forwarded-For hop, which the proxy appended and the caller cannot set,
+# or the connection's own address when the header is missing.
 public isolated function clientAddress(http:Request req, string remoteHost) returns string {
     string|http:HeaderNotFoundError forwarded = req.getHeader("X-Forwarded-For");
     if forwarded is string {
@@ -72,14 +57,11 @@ public isolated function clientAddress(http:Request req, string remoteHost) retu
     return remoteHost;
 }
 
-# Sliding-window limiter: remembers when each key last applied so one caller cannot flood the ATS with candidates.
+# Sliding-window limiter, so one caller cannot flood the ATS with candidates.
 public isolated class ApplyRateLimiter {
     private map<int[]> attempts = {};
 
-    # Records an attempt for the key. Returns false when the key has used its allowance within the window.
-    #
-    # + key - The key from `limiterKey`
-    # + return - True when the attempt is allowed
+    # Records an attempt for the key; false when the key has used its allowance within the window.
     public isolated function tryAcquire(string key) returns boolean {
         int now = time:utcNow()[0];
         int windowStart = now - applyWindowSeconds;
@@ -98,7 +80,7 @@ public isolated class ApplyRateLimiter {
         }
     }
 
-    # Drops keys whose attempts have all aged out so the map cannot grow without bound.
+    // Drops keys whose attempts have all aged out, so the map cannot grow without bound.
     private isolated function sweep(int windowStart) {
         lock {
             foreach string key in self.attempts.keys() {

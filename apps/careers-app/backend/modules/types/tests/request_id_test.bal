@@ -31,7 +31,6 @@ function aMissingIdGetsANewOne() {
 
 @test:Config {}
 function anUnsafeIncomingIdIsReplaced() {
-    // Odd characters, line breaks, or a very short or long value must not reach the logs or the upstream header.
     string[] unsafe = ["short", "has space in it 12345", "line\nbreak-12345678", "semi;colon-12345678",
         string:'join("", ...from int _ in 1 ... 65 select "a")];
     foreach string incoming in unsafe {

@@ -17,22 +17,15 @@
 # The largest CV accepted, in bytes.
 public const int MAX_CV_BYTES = 5 * 1024 * 1024;
 
-# The largest request body accepted. The multipart body carries the CV plus the form fields, so this sits a little
-# above the CV limit.
+# The largest request body accepted: the CV plus the other form fields.
 public const int MAX_REQUEST_BYTES = 6 * 1024 * 1024;
 
-# The fields the careers app submits when someone applies, with the CV's raw bytes.
+# The details an applicant submits, with the CV's raw bytes.
 public type ApplicationForm record {|
-    # Applicant's first name
     string firstName;
-    # Applicant's last name
     string lastName;
-    # Applicant's personal email address
     string email;
-    # Phone number in international (E.164) format
     string phone;
-    # Postal address
     string address;
-    # The CV (a PDF file)
     byte[] cv;
 |};

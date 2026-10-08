@@ -25,17 +25,12 @@ import ballerina/log;
 configurable string[] allowedOrigins = ?;
 configurable int port = ?;
 
-# How much of the vacancy service's reply is written to the log when it rejects an application.
+# Longest piece of an upstream reply written to the log.
 const int MAX_LOGGED_REPLY_LENGTH = 200;
 
 final apply:ApplyRateLimiter applyRateLimiter = new;
 
-# Passes an upstream JSON response.
-#
-# + resp - The upstream response, or the error from reaching it
-# + failureMessage - What to tell the caller when the upstream fails
-# + requestId - The id of the request, written with every log line
-# + return - The upstream JSON, or a gateway error
+# Passes an upstream JSON response, or maps its failure to a gateway error.
 isolated function forwardOrError(http:Response|error resp, string failureMessage, string requestId)
         returns json|http:BadGateway|http:GatewayTimeout {
     if resp is error {
@@ -91,8 +86,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         return forwardOrError(resp, "Failed to fetch org structure from upstream service", requestId);
     }
 
-    # Proxies a single job's detail from career-vacancy-service, 400 for an invalid id, 404 if it doesn't exist.
-    # Public: no sign-in needed.
+    # Proxies a single job's detail from career-vacancy-service, 404 if it doesn't exist. Public: no sign-in needed.
     resource function get jobs/[string jobId](http:RequestContext ctx)
             returns json|http:BadRequest|http:NotFound|http:BadGateway|http:GatewayTimeout {
         if !types:isValidJobId(jobId) {
@@ -110,8 +104,8 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         return forwardOrError(resp, "Failed to fetch job from upstream service", requestId);
     }
 
-    # Applies for a vacancy: validates the submitted form and CV, then creates the candidate in career-vacancy-service.
-    # Public: guests apply without an account, so each address and each email is limited instead.
+    # Validates the application form and CV, then creates the candidate in career-vacancy-service.
+    # Public: guests have no account, so each address and each email is rate limited instead.
     resource function post jobs/[string jobId]/apply(http:Request req, http:RequestContext ctx)
             returns http:Created|http:BadRequest|http:NotFound|http:TooManyRequests|http:BadGateway|http:GatewayTimeout {
         if !types:isValidJobId(jobId) {
@@ -148,7 +142,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
         }
         if resp.statusCode < 200 || resp.statusCode >= 300 {
-            // Only the status and a short piece of the service's own reply are logged, never the applicant's details.
+            // Log the upstream status and a short piece of its reply, never the applicant's details.
             string|error reply = resp.getTextPayload();
             string replySnippet = reply is string ? (reply.length() > MAX_LOGGED_REPLY_LENGTH
                 ? reply.substring(0, MAX_LOGGED_REPLY_LENGTH) : reply) : "";

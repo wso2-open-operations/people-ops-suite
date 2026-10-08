@@ -16,11 +16,7 @@
 
 import ballerina/http;
 
-# What to tell the applicant when career-vacancy-service does not accept an application. The service's own reply is
-# never passed on, so nothing internal reaches the applicant.
-#
-# + upstreamStatus - The non-success status the vacancy service answered with
-# + return - The response for the applicant
+# The response for an application the vacancy service did not accept. Its own reply is never passed on.
 public isolated function applyFailure(int upstreamStatus)
         returns http:NotFound|http:BadRequest|http:GatewayTimeout|http:BadGateway {
     match upstreamStatus {
@@ -28,13 +24,11 @@ public isolated function applyFailure(int upstreamStatus)
             return <http:NotFound>{body: {message: "This vacancy was not found or is no longer open."}};
         }
         400|409|422 => {
-            return <http:BadRequest>{body: {message: "The application was not accepted. Please check your details, " +
-                "or the vacancy may no longer be open."}};
+            return <http:BadRequest>{body: {message: "The application was not accepted. Please check your details."}};
         }
         503|504 => {
             return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
         }
     }
-    // 401 and 403 mean this service's own credentials were refused, and anything else is an unexpected failure.
     return <http:BadGateway>{body: {message: "The application could not be submitted. Please try again."}};
 }

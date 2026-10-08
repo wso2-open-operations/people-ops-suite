@@ -19,37 +19,26 @@ import ballerina/mime;
 
 const int MAX_EMAIL_LENGTH = 254;
 
+// Same shape the webapp checks before submitting.
 final string:RegExp EMAIL_PATTERN = re `[^\s@]+@[^\s@.]+(\.[^\s@.]+)+`;
 
-# International format: "+", then 2 to 15 digits, not starting with 0 (what career-vacancy-service accepts).
+// E.164: "+", then 2 to 15 digits, not starting with 0.
 final string:RegExp PHONE_PATTERN = re `\+[1-9][0-9]{1,14}`;
 
 # Whether the value looks like an email address.
-#
-# + email - The address to check
-# + return - True when the address has a valid shape and a reasonable length
 public isolated function isValidEmail(string email) returns boolean =>
     email.length() <= MAX_EMAIL_LENGTH && EMAIL_PATTERN.isFullMatch(email);
 
 # Whether the value is a phone number in E.164 format.
-#
-# + phone - The number to check
-# + return - True when the number is "+" followed by 2 to 15 digits
 public isolated function isValidPhone(string phone) returns boolean => PHONE_PATTERN.isFullMatch(phone);
 
-# A PDF starts with the bytes "%PDF"; checking them means the CV is not trusted on its declared type alone.
-#
-# + content - The uploaded file's bytes
-# + return - True when the content starts with the PDF signature
+# A PDF starts with "%PDF", so the CV is not trusted on its declared type alone.
 public isolated function isPdf(byte[] content) returns boolean {
     return content.length() >= 4 && content[0] == 0x25 && content[1] == 0x50 && content[2] == 0x44
         && content[3] == 0x46;
 }
 
-# Reads the multipart application form. Returns a message for the applicant when something is missing or invalid.
-#
-# + req - The incoming multipart request
-# + return - The validated form, or a message to show the applicant
+# Reads the multipart form, returning a message for the applicant when something is missing or invalid.
 public isolated function parseApplicationForm(http:Request req) returns ApplicationForm|string {
     mime:Entity[]|http:ClientError parts = req.getBodyParts();
     if parts is http:ClientError {

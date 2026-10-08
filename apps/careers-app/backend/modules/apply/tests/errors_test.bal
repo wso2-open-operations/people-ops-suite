@@ -45,8 +45,6 @@ function refusedCredentialsAndUnexpectedFailuresBecomeBadGateway() {
 
 @test:Config {}
 function theUpstreamReplyIsNeverPassedOn() {
-    // The messages are fixed text, so an upstream reply cannot reach the applicant.
     http:BadRequest rejected = <http:BadRequest>applyFailure(400);
-    test:assertEquals(rejected?.body, {message: "The application was not accepted. Please check your details, " +
-        "or the vacancy may no longer be open."});
+    test:assertEquals(rejected?.body, {message: "The application was not accepted. Please check your details."});
 }

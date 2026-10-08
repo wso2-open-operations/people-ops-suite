@@ -20,7 +20,7 @@ import ballerina/test;
 
 final http:Client testClient = check new (string `http://localhost:${port}`);
 
-// Job reads and apply are public. Any other route needs a valid token; "/profile" stands in for a restricted route.
+// "/profile" stands in for any restricted route.
 @test:Config {}
 function restrictedRouteWithoutTokenIsUnauthorized() returns error? {
     http:Response resp = check testClient->get("/profile");
@@ -35,7 +35,6 @@ function restrictedRouteWithGarbageTokenIsUnauthorized() returns error? {
 
 @test:Config {}
 function routesNotListedAsPublicNeedAToken() returns error? {
-    // A future route such as GET /jobs/saved must not become public just because it sits under /jobs.
     http:Response saved = check testClient->get("/jobs/saved");
     test:assertEquals(saved.statusCode, 401);
     http:Response traversal = check testClient->get("/jobs/..%2Forg-structure");
@@ -46,7 +45,7 @@ function routesNotListedAsPublicNeedAToken() returns error? {
 
 @test:Config {}
 function publicJobReadsReachTheServiceWithoutAToken() returns error? {
-    // The vacancy service does not exist in the tests, so a request that gets past the interceptor ends in a 504.
+    // No vacancy service runs in the tests, so a request that passes the interceptor ends in a 504.
     http:Response list = check testClient->get("/jobs");
     test:assertEquals(list.statusCode, 504);
     http:Response detail = check testClient->get("/jobs/258");
