@@ -16,24 +16,11 @@
 
 import ballerina/http;
 import ballerina/jwt;
-import ballerina/url;
 
 configurable AuthConfig authConfig = ?;
 
-final http:Client introspectClient = check new (authConfig.introspectUrl, {
-    auth: {
-        username: authConfig.clientId,
-        password: authConfig.clientSecret
-    }
-});
-
-type IntrospectResponse record {
-    boolean active;
-    string sub?;
-    string|string[] aud?;
-};
-
-isolated function validateViaJwks(string token) returns AsgardeoJwt|error {
+# Validates the token's signature (against Asgardeo's JWKS), issuer, audience and expiry, and returns the caller's subject.
+public isolated function validateToken(string token) returns AsgardeoJwt|error {
     // Reject a malformed token before attempting signature validation.
     [jwt:Header, jwt:Payload] _ = check jwt:decode(token);
 
@@ -55,42 +42,6 @@ isolated function validateViaJwks(string token) returns AsgardeoJwt|error {
         return error("Invalid token: missing sub");
     }
     return {sub};
-}
-
-# Fallback for opaque tokens that aren't a verifiable JWT.
-# Fallback for opaque tokens that aren't a verifiable JWT.
-isolated function validateViaIntrospection(string token) returns AsgardeoJwt|error {
-    http:Request req = new;
-    string encodedToken = check url:encode(token, "UTF-8");
-    req.setTextPayload("token=" + encodedToken);
-    req.setHeader("Content-Type", "application/x-www-form-urlencoded");
-
-    IntrospectResponse introspected = check introspectClient->post("", req);
-    if !introspected.active {
-        return error("Token inactive");
-    }
-
-    string|string[]? aud = introspected?.aud;
-    boolean audienceMatches = aud is string ? aud == authConfig.audience
-        : aud is string[] ? aud.indexOf(authConfig.audience) != () : false;
-    if !audienceMatches {
-        return error("Token was not issued for this application");
-    }
-
-    string? sub = introspected?.sub;
-    if sub is () || sub == "" {
-        return error("Invalid token: missing sub");
-    }
-    return {sub};
-}
-
-# JWKS validation first, introspection as a fallback for tokens that fail it.
-public isolated function validateToken(string token) returns AsgardeoJwt|error {
-    AsgardeoJwt|error result = validateViaJwks(token);
-    if result is AsgardeoJwt {
-        return result;
-    }
-    return validateViaIntrospection(token);
 }
 
 # Read the validated caller back out of the request context, for resource functions that need the caller's identity.

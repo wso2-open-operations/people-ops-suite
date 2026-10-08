@@ -10,8 +10,5 @@ clientSecret = ""
 
 [careers_app.jwt.authConfig]
 jwksUrl = ""
-introspectUrl = ""
-clientId = ""
-clientSecret = ""
 issuer = ""
 audience = ""

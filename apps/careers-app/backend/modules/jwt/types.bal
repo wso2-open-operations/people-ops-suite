@@ -29,9 +29,6 @@ public type AsgardeoJwt record {|
 # Asgardeo connection details for token validation
 public type AuthConfig record {|
     string jwksUrl;
-    string introspectUrl;
-    string clientId;
-    string clientSecret;
     string issuer;
     string audience;
 |};
