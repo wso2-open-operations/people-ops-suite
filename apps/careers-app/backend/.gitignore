@@ -1,5 +1,5 @@
-.env
-.venv/
-__pycache__/
-*.pyc
-*.pyo
+target/
+Config.toml
+# Test configs only, not the actual config used in production.
+!tests/Config.toml
+!modules/*/tests/Config.toml

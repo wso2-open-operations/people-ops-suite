@@ -1,0 +1,14 @@
+[careers_app]
+allowedOrigins = [""]
+port = 8080
+
+[careers_app.vacancy.vacancyConfig]
+baseUrl = ""
+tokenUrl = ""
+clientId = ""
+clientSecret = ""
+
+[careers_app.jwt.authConfig]
+jwksUrl = ""
+issuer = ""
+audience = ""
