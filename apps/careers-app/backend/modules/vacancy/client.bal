@@ -19,8 +19,8 @@ import ballerina/time;
 
 configurable VacancyConfig vacancyConfig = ?;
 
-const string USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-    + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+// Identifies this service in the upstream's logs.
+const string USER_AGENT = "careers-app-backend/0.1.0";
 
 final http:Client vacancyHttpClient = check new (vacancyConfig.baseUrl, {
     timeout: 15
