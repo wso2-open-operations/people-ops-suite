@@ -62,7 +62,7 @@ isolated function forwardOrError(http:Response|error resp, string failureMessage
 @http:ServiceConfig {
     cors: {
         allowOrigins: allowedOrigins,
-        allowMethods: [http:GET, http:POST, http:PATCH, http:DELETE, http:OPTIONS],
+        allowMethods: [http:GET, http:OPTIONS],
         allowHeaders: [http:CONTENT_TYPE, http:AUTH_HEADER],
         allowCredentials: true,
         maxAge: 84900

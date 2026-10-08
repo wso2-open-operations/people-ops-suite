@@ -1,6 +1,6 @@
 [careers_app]
 allowedOrigins = [""]
-port = 
+port = 8080
 
 [careers_app.vacancy.vacancyConfig]
 baseUrl = ""
