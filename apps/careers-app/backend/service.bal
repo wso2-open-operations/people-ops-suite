@@ -107,7 +107,8 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     # Validates the application form and CV, then creates the candidate in career-vacancy-service.
     # Public: guests have no account, so each address and each email is rate limited instead.
     resource function post jobs/[string jobId]/apply(http:Request req, http:RequestContext ctx)
-            returns http:Created|http:BadRequest|http:NotFound|http:TooManyRequests|http:BadGateway|http:GatewayTimeout {
+            returns http:Created|http:BadRequest|http:NotFound|http:Conflict|http:TooManyRequests|http:BadGateway
+                |http:GatewayTimeout {
         if !types:isValidJobId(jobId) {
             return <http:BadRequest>{body: {message: "Invalid job id"}};
         }

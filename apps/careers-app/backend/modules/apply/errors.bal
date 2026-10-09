@@ -18,12 +18,15 @@ import ballerina/http;
 
 # The response for an application the vacancy service did not accept. Its own reply is never passed on.
 public isolated function applyFailure(int upstreamStatus)
-        returns http:NotFound|http:BadRequest|http:GatewayTimeout|http:BadGateway {
+        returns http:NotFound|http:Conflict|http:BadRequest|http:GatewayTimeout|http:BadGateway {
     match upstreamStatus {
         404 => {
             return <http:NotFound>{body: {message: "This vacancy was not found or is no longer open."}};
         }
-        400|409|422 => {
+        409 => {
+            return <http:Conflict>{body: {message: "You have already applied for this role."}};
+        }
+        400|422 => {
             return <http:BadRequest>{body: {message: "The application was not accepted. Please check your details."}};
         }
         503|504 => {

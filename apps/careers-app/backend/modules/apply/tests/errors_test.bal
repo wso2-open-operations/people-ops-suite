@@ -19,15 +19,21 @@ import ballerina/test;
 
 @test:Config {}
 function aMissingVacancyBecomesNotFound() {
-    http:NotFound|http:BadRequest|http:GatewayTimeout|http:BadGateway result = applyFailure(404);
+    http:NotFound|http:Conflict|http:BadRequest|http:GatewayTimeout|http:BadGateway result = applyFailure(404);
     test:assertTrue(result is http:NotFound);
 }
 
 @test:Config {}
 function aRejectedApplicationBecomesBadRequest() {
-    foreach int status in [400, 409, 422] {
+    foreach int status in [400, 422] {
         test:assertTrue(applyFailure(status) is http:BadRequest, string `Status ${status}`);
     }
+}
+
+@test:Config {}
+function anExistingApplicationBecomesConflict() {
+    http:Conflict existing = <http:Conflict>applyFailure(409);
+    test:assertEquals(existing?.body, {message: "You have already applied for this role."});
 }
 
 @test:Config {}
