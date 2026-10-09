@@ -18,7 +18,6 @@ import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 import { State } from "@/types/types";
-import { RootState } from "@slices/store";
 
 export enum Role {
   CANDIDATE = "CANDIDATE",
@@ -80,5 +79,4 @@ export const authSlice = createSlice({
 });
 
 export const { setUserAuthData, setAuthError, setAuthSuccess } = authSlice.actions;
-export const selectRoles = (state: RootState) => state.auth.roles;
 export default authSlice.reducer;

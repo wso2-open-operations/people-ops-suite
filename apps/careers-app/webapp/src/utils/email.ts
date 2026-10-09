@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,12 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { lazy } from "react";
+// The same shape the backend accepts, so a typo is caught before the CV is uploaded.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
-const jobs = lazy(() => import("@view/jobs/Jobs"));
-const jobDetail = lazy(() => import("@view/jobs/JobDetail"));
-
-export const View = {
-  jobs,
-  jobDetail,
-};
+export const isValidEmail = (email: string): boolean => email.length <= 254 && EMAIL_PATTERN.test(email.trim());

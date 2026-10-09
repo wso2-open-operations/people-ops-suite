@@ -16,24 +16,21 @@
 
 import AppHandler from "@app/AppHandler";
 import { AuthProvider } from "@asgardeo/auth-react";
+import CssBaseline from "@mui/material/CssBaseline";
 import { StyledEngineProvider, ThemeProvider, createTheme } from "@mui/material/styles";
 import { SnackbarProvider } from "notistack";
 import { Provider } from "react-redux";
 
-import { createContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { APP_NAME, AsgardeoConfig } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
+import { ColorModeContext } from "@context/ColorModeContext";
 import { store } from "@slices/store";
 import { themeSettings } from "@src/theme";
-import { ThemeMode } from "@utils/types";
+import { ThemeMode } from "@/types/types";
 
 import "./index.css";
-
-export const ColorModeContext = createContext({
-  mode: ThemeMode.Light,
-  toggleColorMode: () => {},
-});
 
 function App() {
   document.title = APP_NAME || "WSO2 Careers";
@@ -48,7 +45,7 @@ function App() {
       const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
       localStorage.setItem("careers-app-theme", systemTheme);
       return systemTheme;
-    } catch (err) {
+    } catch {
       return ThemeMode.Light;
     }
   };
@@ -79,6 +76,7 @@ function App() {
       <StyledEngineProvider injectFirst>
         <SnackbarProvider maxSnack={3} preventDuplicate>
           <ThemeProvider theme={theme}>
+            <CssBaseline />
             <Provider store={store}>
               <AuthProvider config={AsgardeoConfig}>
                 <AppAuthProvider>

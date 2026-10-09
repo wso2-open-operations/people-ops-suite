@@ -21,14 +21,16 @@ import React, { useCallback, useContext, useEffect, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
-import LoginScreen from "@component/ui/LoginScreen";
 import { setUserAuthData } from "@slices/authSlice/auth";
 import { useAppDispatch } from "@slices/store";
-import { setUserInfo } from "@slices/userSlice/user";
 
 type AuthContextType = {
   appSignIn: () => void;
   appSignOut: () => void;
+  // False for visitors browsing without an account.
+  isSignedIn: boolean;
+  // The access token for a signed-in user, or an empty string for a guest.
+  getToken: () => Promise<string>;
 };
 
 const AuthContext = React.createContext<AuthContextType>({} as AuthContextType);
@@ -37,7 +39,7 @@ const timeout = 15 * 60 * 1000;
 const promptBeforeIdle = 4_000;
 
 const AppAuthProvider = (props: { children: React.ReactNode }) => {
-  const { signIn, signOut, state, getBasicUserInfo, getDecodedIDToken } = useAuthContext();
+  const { signIn, signOut, state, getBasicUserInfo, getDecodedIDToken, getAccessToken } = useAuthContext();
   const isAuthenticated = state.isAuthenticated;
   const isLoading = state.isLoading;
 
@@ -47,7 +49,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const dispatch = useAppDispatch();
 
   const onPrompt = () => {
-    isAuthenticated && setSessionWarningOpen(true);
+    if (isAuthenticated) setSessionWarningOpen(true);
   };
 
   const { activate } = useIdleTimer({
@@ -63,30 +65,22 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    if (!isAuthenticated || userLoaded) return;
+    if (userLoaded) return;
+    if (!isAuthenticated) return;
 
     const loadUser = async () => {
       try {
         const [userInfo, idToken] = await Promise.all([getBasicUserInfo(), getDecodedIDToken()]);
         dispatch(setUserAuthData({ userInfo, decodedIdToken: idToken }));
-        dispatch(
-          setUserInfo({
-            personId: idToken.sub ?? "",
-            firstName: (userInfo.givenName as string) ?? "",
-            lastName: (userInfo.familyName as string) ?? "",
-            workEmail: (userInfo.email as string) ?? "",
-            employeeThumbnail: (userInfo.profile as string) ?? null,
-            jobRole: null,
-          }),
-        );
         setUserLoaded(true);
-      } catch {
+      } catch (err) {
+        console.error("Auth loadUser() failed — signing out:", err);
         signOut();
       }
     };
 
     loadUser();
-  }, [isAuthenticated, userLoaded, getBasicUserInfo, getDecodedIDToken, dispatch]);
+  }, [isAuthenticated, userLoaded, getBasicUserInfo, getDecodedIDToken, dispatch, signOut]);
 
   const appSignIn = useCallback(() => {
     signIn();
@@ -97,7 +91,17 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     signOut();
   }, [signOut]);
 
-  const authContext: AuthContextType = { appSignIn, appSignOut };
+  // Guests browse and apply without a token; calls made on their behalf send no credentials.
+  const getToken = useCallback(async () => {
+    if (!isAuthenticated) return "";
+    try {
+      return await getAccessToken();
+    } catch {
+      return "";
+    }
+  }, [isAuthenticated, getAccessToken]);
+
+  const authContext: AuthContextType = { appSignIn, appSignOut, isSignedIn: isAuthenticated, getToken };
 
   if (isLoading) {
     return <PreLoader isLoading message="Setting up your Candidate Passport ..." />;
@@ -110,7 +114,11 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         handleContinue={handleContinue}
         appSignOut={appSignOut}
       />
-      {isAuthenticated && userLoaded ? props.children : <LoginScreen />}
+      {isAuthenticated && !userLoaded ? (
+        <PreLoader isLoading message="Setting up your Candidate Passport ..." />
+      ) : (
+        props.children
+      )}
     </AuthContext.Provider>
   );
 };

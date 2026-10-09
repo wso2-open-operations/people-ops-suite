@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,12 +14,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { lazy } from "react";
+import { Box, CircularProgress } from "@mui/material";
 
-const jobs = lazy(() => import("@view/jobs/Jobs"));
-const jobDetail = lazy(() => import("@view/jobs/JobDetail"));
+interface CenteredSpinnerProps {
+  size?: number;
+  py?: number;
+}
 
-export const View = {
-  jobs,
-  jobDetail,
-};
+const CenteredSpinner = ({ size = 32, py = 8 }: CenteredSpinnerProps) => (
+  <Box sx={{ display: "flex", justifyContent: "center", py }}>
+    <CircularProgress size={size} sx={{ color: "primary.main" }} />
+  </Box>
+);
+
+export default CenteredSpinner;

@@ -16,8 +16,8 @@
 
 import axios from "axios";
 
-import { AppConfig } from "@config/config";
-import { Job } from "@/types/types";
+import { AppConfig, UseMockProfile } from "@config/config";
+import { GuestApplicationDetails, Job } from "@/types/types";
 
 interface VacancyBasicInfo {
   id: number;
@@ -37,8 +37,10 @@ export interface OrgStructure {
 export interface VacancyDetail {
   id: string;
   title: string;
+  designation: string;
   team: string;
   country: string[];
+  officeLocations: string[];
   jobType: string;
   publishStatus: string;
   postedDate: string;
@@ -48,8 +50,9 @@ export interface VacancyDetail {
   additionalContent: string | null;
 }
 
+// Guests have no token, so they send no credentials at all.
 function authHeader(accessToken: string) {
-  return { Authorization: `Bearer ${accessToken}` };
+  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 }
 
 export async function fetchVacancies(accessToken: string): Promise<Job[]> {
@@ -72,8 +75,10 @@ export async function fetchVacancyDetail(id: string, accessToken: string): Promi
   const response = await axios.get<{
     id: number;
     title: string;
+    designation: string;
     team: string;
     country: string[];
+    office_locations: Record<string, string>;
     job_type: string;
     publish_status: string;
     published_on: string;
@@ -89,8 +94,10 @@ export async function fetchVacancyDetail(id: string, accessToken: string): Promi
   return {
     id: String(v.id),
     title: v.title,
+    designation: v.designation,
     team: v.team,
     country: v.country,
+    officeLocations: Object.values(v.office_locations ?? {}),
     jobType: v.job_type,
     publishStatus: v.publish_status,
     postedDate: v.published_on,
@@ -111,4 +118,24 @@ export async function fetchOrgStructure(accessToken: string): Promise<OrgStructu
     locations: Object.values(response.data.location_list),
     teams: Object.values(response.data.team_list),
   };
+}
+
+// Sends an application and its CV in one multipart request. With mock data on, nothing is sent.
+export async function submitApplicationForm(
+  accessToken: string,
+  jobId: string,
+  details: GuestApplicationDetails,
+  cv: File,
+): Promise<void> {
+  if (UseMockProfile) {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return;
+  }
+  const form = new FormData();
+  Object.entries(details).forEach(([key, value]) => form.append(key, String(value)));
+  form.append("cv", cv);
+  // No Content-Type here: the browser adds it with the multipart boundary.
+  await axios.post(`${AppConfig.serviceUrls.jobs}/${jobId}/apply`, form, {
+    headers: authHeader(accessToken),
+  });
 }
