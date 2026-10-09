@@ -39,12 +39,18 @@ const circleSx = {
 const JobShareActions = ({ title, isSignedIn, isSaved, onToggleSave }: JobShareActionsProps) => {
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const links = [
-    { href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, icon: <Facebook size={15} /> },
     {
+      label: "Share on Facebook",
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      icon: <Facebook size={15} />,
+    },
+    {
+      label: "Share on X (Twitter)",
       href: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`,
       icon: <Twitter size={15} />,
     },
     {
+      label: "Share on LinkedIn",
       href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
       icon: <Linkedin size={15} />,
     },
@@ -57,6 +63,7 @@ const JobShareActions = ({ title, isSignedIn, isSaved, onToggleSave }: JobShareA
           key={link.href}
           component="a"
           href={link.href}
+          aria-label={`${link.label} (opens in a new tab)`}
           target="_blank"
           rel="noopener noreferrer"
           sx={circleSx}
