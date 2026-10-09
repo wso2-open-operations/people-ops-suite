@@ -32,43 +32,117 @@ const JobCard = ({ job }: JobCardProps) => {
   const { isSignedIn } = useAppAuthContext();
   const savedJobIds = useAppSelector((state: RootState) => state.careers.savedJobIds);
   const isSaved = savedJobIds.includes(job.id);
-
-  const handleSave = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dispatch(toggleSaveJob(job.id));
-  };
+  const saveLabel = isSaved ? "Unsave job" : "Save job";
 
   return (
-    <Box component={Link} to={`/jobs/${job.id}`} sx={{ textDecoration: "none", display: "block", height: "100%" }}>
-      <Box
-        sx={{
-          position: "relative",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          padding: "30px 28px 28px",
-          border: "1px solid",
-          borderColor: "divider",
-          borderRadius: "14px",
-          boxShadow: "0 18px 40px -16px rgb(7 20 46 / 18%)",
-          backgroundColor: "background.paper",
-          transition: "transform 0.15s, box-shadow 0.15s, border-color 0.15s",
-          "&:hover": {
-            transform: "translateY(-2px)",
+    // The save button is a sibling of the link, not inside it: a button must not be nested in an anchor.
+    <Box sx={{ position: "relative", height: "100%" }}>
+      <Box component={Link} to={`/jobs/${job.id}`} sx={{ textDecoration: "none", display: "block", height: "100%" }}>
+        <Box
+          sx={{
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            padding: "30px 28px 28px",
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: "14px",
             boxShadow: "0 18px 40px -16px rgb(7 20 46 / 18%)",
-            borderColor: "rgba(255,103,0,0.45)",
-          },
-        }}
-      >
-        {isSignedIn && (
+            backgroundColor: "background.paper",
+            transition: "transform 0.15s, box-shadow 0.15s, border-color 0.15s",
+            "&:hover": {
+              transform: "translateY(-2px)",
+              boxShadow: "0 18px 40px -16px rgb(7 20 46 / 18%)",
+              borderColor: "rgba(255,103,0,0.45)",
+            },
+          }}
+        >
+          <Box
+            sx={{
+              alignSelf: "flex-start",
+              marginBottom: "16px",
+              padding: "6px 10px",
+              borderRadius: "999px",
+              backgroundColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255,103,0,0.18)" : "#ffe0cc"),
+              color: "#e55a00",
+              fontSize: "11px",
+              fontWeight: 700,
+              lineHeight: 1.5,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}
+          >
+            {job.team}
+          </Box>
+
+          <Typography
+            sx={{
+              margin: "0 0 16px",
+              paddingBottom: "16px",
+              borderBottom: "1px solid",
+              borderBottomColor: "divider",
+              fontSize: "1.2rem",
+              lineHeight: "1.8rem",
+              fontWeight: 700,
+              color: "text.primary",
+            }}
+          >
+            {job.title}
+          </Typography>
+
+          <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ marginBottom: "18px" }}>
+            <Box
+              sx={{
+                padding: "4px 9px",
+                backgroundColor: "action.hover",
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: "999px",
+                fontSize: "11.5px",
+                fontWeight: 500,
+                color: "text.primary",
+              }}
+            >
+              {job.jobType}
+            </Box>
+            {job.country.map((c) => (
+              <Box
+                key={c}
+                sx={{
+                  padding: "4px 9px",
+                  backgroundColor: (theme) => (theme.palette.mode === "dark" ? "rgba(59,130,246,0.22)" : "#dceffd"),
+                  border: "1px solid transparent",
+                  borderRadius: "999px",
+                  fontSize: "11.5px",
+                  fontWeight: 500,
+                  color: "text.primary",
+                }}
+              >
+                {c}
+              </Box>
+            ))}
+          </Stack>
+
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="flex-end"
+            gap={0.5}
+            sx={{ marginTop: "auto", paddingTop: "30px" }}
+          >
+            <Typography sx={{ fontSize: "0.9rem", fontWeight: 600, color: "text.primary" }}>Apply Now</Typography>
+            <ArrowRight size={14} color="#ff6700" />
+          </Stack>
+        </Box>
+      </Box>
+
+      {isSignedIn && (
         <Stack direction="row" gap={0.5} sx={{ position: "absolute", top: 14, right: 14 }}>
-          <Tooltip title={isSaved ? "Unsave" : "Save job"} arrow>
+          <Tooltip title={saveLabel} arrow>
             <Box
               component="button"
-              aria-label="Save job"
-              aria-pressed={isSaved}
-              onClick={handleSave}
+              aria-label={saveLabel}
+              onClick={() => dispatch(toggleSaveJob(job.id))}
               sx={{
                 border: "none",
                 background: "none",
@@ -83,85 +157,7 @@ const JobCard = ({ job }: JobCardProps) => {
             </Box>
           </Tooltip>
         </Stack>
-        )}
-
-        <Box
-          sx={{
-            alignSelf: "flex-start",
-            marginBottom: "16px",
-            padding: "6px 10px",
-            borderRadius: "999px",
-            backgroundColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255,103,0,0.18)" : "#ffe0cc"),
-            color: "#e55a00",
-            fontSize: "11px",
-            fontWeight: 700,
-            lineHeight: 1.5,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-          }}
-        >
-          {job.team}
-        </Box>
-
-        <Typography
-          sx={{
-            margin: "0 0 16px",
-            paddingBottom: "16px",
-            borderBottom: "1px solid",
-            borderBottomColor: "divider",
-            fontSize: "1.2rem",
-            lineHeight: "1.8rem",
-            fontWeight: 700,
-            color: "text.primary",
-          }}
-        >
-          {job.title}
-        </Typography>
-
-        <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ marginBottom: "18px" }}>
-          <Box
-            sx={{
-              padding: "4px 9px",
-              backgroundColor: "action.hover",
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: "999px",
-              fontSize: "11.5px",
-              fontWeight: 500,
-              color: "text.primary",
-            }}
-          >
-            {job.jobType}
-          </Box>
-          {job.country.map((c) => (
-            <Box
-              key={c}
-              sx={{
-                padding: "4px 9px",
-                backgroundColor: (theme) => (theme.palette.mode === "dark" ? "rgba(59,130,246,0.22)" : "#dceffd"),
-                border: "1px solid transparent",
-                borderRadius: "999px",
-                fontSize: "11.5px",
-                fontWeight: 500,
-                color: "text.primary",
-              }}
-            >
-              {c}
-            </Box>
-          ))}
-        </Stack>
-
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="flex-end"
-          gap={0.5}
-          sx={{ marginTop: "auto", paddingTop: "30px" }}
-        >
-          <Typography sx={{ fontSize: "0.9rem", fontWeight: 600, color: "text.primary" }}>Apply Now</Typography>
-          <ArrowRight size={14} color="#ff6700" />
-        </Stack>
-      </Box>
+      )}
     </Box>
   );
 };
