@@ -14,7 +14,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import wso2/careers_app.apply;
 import wso2/careers_app.jwt;
+import wso2/careers_app.types;
 import wso2/careers_app.vacancy;
 
 import ballerina/http;
@@ -23,26 +25,29 @@ import ballerina/log;
 configurable string[] allowedOrigins = ?;
 configurable int port = ?;
 
-isolated function isValidJobId(string jobId) returns boolean => re `^[A-Za-z0-9_-]+$`.isFullMatch(jobId);
+# Longest piece of an upstream reply written to the log.
+const int MAX_LOGGED_REPLY_LENGTH = 200;
 
-# Passes an upstream JSON response.
-isolated function forwardOrError(http:Response|error resp, string failureMessage)
+final apply:ApplyRateLimiter applyRateLimiter = new;
+
+# Passes an upstream JSON response, or maps its failure to a gateway error.
+isolated function forwardOrError(http:Response|error resp, string failureMessage, string requestId)
         returns json|http:BadGateway|http:GatewayTimeout {
     if resp is error {
-        log:printError(failureMessage, resp);
+        log:printError(failureMessage, resp, requestId = requestId);
         return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
     }
     if resp.statusCode == 503 || resp.statusCode == 504 {
-        log:printError(string `${failureMessage}: status ${resp.statusCode}`);
+        log:printError(string `${failureMessage}: status ${resp.statusCode}`, requestId = requestId);
         return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
     }
     if resp.statusCode != 200 {
-        log:printError(string `${failureMessage}: status ${resp.statusCode}`);
+        log:printError(string `${failureMessage}: status ${resp.statusCode}`, requestId = requestId);
         return <http:BadGateway>{body: {message: failureMessage}};
     }
     json|error respBody = resp.getJsonPayload();
     if respBody is error {
-        log:printError(failureMessage + " (non-JSON body)", respBody);
+        log:printError(failureMessage + " (non-JSON body)", respBody, requestId = requestId);
         return <http:BadGateway>{body: {message: failureMessage}};
     }
     return respBody;
@@ -51,46 +56,102 @@ isolated function forwardOrError(http:Response|error resp, string failureMessage
 @http:ServiceConfig {
     cors: {
         allowOrigins: allowedOrigins,
-        allowMethods: [http:GET, http:OPTIONS],
-        allowHeaders: [http:CONTENT_TYPE, http:AUTH_HEADER],
+        allowMethods: [http:GET, http:POST, http:OPTIONS],
+        allowHeaders: [http:CONTENT_TYPE, http:AUTH_HEADER, types:REQUEST_ID_HEADER],
         allowCredentials: true,
         maxAge: 84900
     }
 }
-service http:InterceptableService / on new http:Listener(port) {
+service http:InterceptableService / on new http:Listener(port, requestLimits = {maxEntityBodySize: apply:MAX_REQUEST_BYTES}) {
 
     function init() {
         log:printInfo("Careers App backend started...");
     }
 
-    public function createInterceptors() returns http:Interceptor[] => [new jwt:JwtInterceptor()];
+    public function createInterceptors() returns http:Interceptor[] =>
+        [new types:RequestIdInterceptor(), new apply:RemoteAddressInterceptor(), new jwt:JwtInterceptor()];
 
-    # Proxies the job listing from career-vacancy-service.
-    resource function get jobs() returns json|http:BadGateway|http:GatewayTimeout {
-        http:Response|error resp = vacancy:listJobs();
-        return forwardOrError(resp, "Failed to fetch jobs from upstream service");
+    # Proxies the job listing from career-vacancy-service. Public: no sign-in needed.
+    resource function get jobs(http:RequestContext ctx) returns json|http:BadGateway|http:GatewayTimeout {
+        string requestId = types:requestIdOf(ctx);
+        http:Response|error resp = vacancy:listJobs(requestId);
+        return forwardOrError(resp, "Failed to fetch jobs from upstream service", requestId);
     }
 
-    # Proxies the team/location org structure from career-vacancy-service.
-    resource function get jobs/org\-structure() returns json|http:BadGateway|http:GatewayTimeout {
-        http:Response|error resp = vacancy:getOrgStructure();
-        return forwardOrError(resp, "Failed to fetch org structure from upstream service");
+    # Proxies the team/location org structure from career-vacancy-service. Public: no sign-in needed.
+    resource function get jobs/org\-structure(http:RequestContext ctx)
+            returns json|http:BadGateway|http:GatewayTimeout {
+        string requestId = types:requestIdOf(ctx);
+        http:Response|error resp = vacancy:getOrgStructure(requestId);
+        return forwardOrError(resp, "Failed to fetch org structure from upstream service", requestId);
     }
 
-    # Proxies a single job's detail from career-vacancy-service, 400 for an invalid id, 404 if it doesn't exist.
-    resource function get jobs/[string jobId]()
+    # Proxies a single job's detail from career-vacancy-service, 404 if it doesn't exist. Public: no sign-in needed.
+    resource function get jobs/[string jobId](http:RequestContext ctx)
             returns json|http:BadRequest|http:NotFound|http:BadGateway|http:GatewayTimeout {
-        if !isValidJobId(jobId) {
+        if !types:isValidJobId(jobId) {
             return <http:BadRequest>{body: {message: "Invalid job id"}};
         }
-        http:Response|error resp = vacancy:getJob(jobId);
+        string requestId = types:requestIdOf(ctx);
+        http:Response|error resp = vacancy:getJob(jobId, requestId);
         if resp is error {
-            log:printError("Failed to fetch job from upstream service", resp);
+            log:printError("Failed to fetch job from upstream service", resp, requestId = requestId);
             return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
         }
         if resp.statusCode == 404 {
             return <http:NotFound>{body: {message: "Job not found"}};
         }
-        return forwardOrError(resp, "Failed to fetch job from upstream service");
+        return forwardOrError(resp, "Failed to fetch job from upstream service", requestId);
+    }
+
+    # Validates the application form and CV, then creates the candidate in career-vacancy-service.
+    # Public: guests have no account, so each address and each email is rate limited instead.
+    resource function post jobs/[string jobId]/apply(http:Request req, http:RequestContext ctx)
+            returns http:Created|http:BadRequest|http:NotFound|http:Conflict|http:TooManyRequests|http:BadGateway
+                |http:GatewayTimeout {
+        if !types:isValidJobId(jobId) {
+            return <http:BadRequest>{body: {message: "Invalid job id"}};
+        }
+        string requestId = types:requestIdOf(ctx);
+        string address = apply:clientAddress(req, apply:remoteHost(ctx));
+        if !applyRateLimiter.tryAcquire(apply:limiterKey("ip", address)) {
+            log:printWarn("Application rate limit reached for a client address", requestId = requestId);
+            return <http:TooManyRequests>{body: {message: "Too many applications. Please try again later."}};
+        }
+
+        apply:ApplicationForm|string form = apply:parseApplicationForm(req);
+        if form is string {
+            return <http:BadRequest>{body: {message: form}};
+        }
+
+        if !applyRateLimiter.tryAcquire(apply:limiterKey("email", form.email.toLowerAscii())) {
+            log:printWarn("Application rate limit reached for an email address", requestId = requestId);
+            return <http:TooManyRequests>{body: {message: "Too many applications. Please try again later."}};
+        }
+
+        vacancy:CandidateApplication candidate = {
+            firstName: form.firstName,
+            lastName: form.lastName,
+            personalEmail: form.email,
+            contactNo: form.phone,
+            address: form.address,
+            resume: form.cv
+        };
+        http:Response|error resp = vacancy:applyForJob(jobId, candidate, requestId);
+        if resp is error {
+            log:printError("Failed to reach the vacancy service for an application", resp, requestId = requestId);
+            return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
+        }
+        if resp.statusCode < 200 || resp.statusCode >= 300 {
+            // Log the upstream status and a short piece of its reply, never the applicant's details.
+            string|error reply = resp.getTextPayload();
+            string replySnippet = reply is string ? (reply.length() > MAX_LOGGED_REPLY_LENGTH
+                ? reply.substring(0, MAX_LOGGED_REPLY_LENGTH) : reply) : "";
+            log:printError(string `Vacancy service did not accept an application for vacancy ${jobId}: status ${resp.statusCode}`,
+                reply = replySnippet, requestId = requestId);
+            return apply:applyFailure(resp.statusCode);
+        }
+        log:printInfo(string `Application submitted for vacancy ${jobId}`, requestId = requestId);
+        return <http:Created>{body: {message: "Application submitted"}};
     }
 }
