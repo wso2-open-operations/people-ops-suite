@@ -21,3 +21,7 @@ const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 export const COUNTRY_OPTIONS = getCountries()
   .map((iso) => ({ iso, name: regionNames.of(iso) ?? iso, dialCode: `+${getCountryCallingCode(iso)}` }))
   .sort((a, b) => a.name.localeCompare(b.name));
+
+// The format the backend accepts: the dialing code, then only the digits typed, without a leading trunk "0".
+export const toE164 = (dialCode: string, input: string): string =>
+  `${dialCode}${input.replace(/\D/g, "").replace(/^0+/, "")}`;
