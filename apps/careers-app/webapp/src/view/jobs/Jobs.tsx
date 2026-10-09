@@ -46,6 +46,7 @@ const Jobs = () => {
   const { isSignedIn } = useAppAuthContext();
   const jobs = useAppSelector((state: RootState) => state.careers.jobs);
   const jobsState = useAppSelector((state: RootState) => state.careers.jobsState);
+  const orgStructureState = useAppSelector((state: RootState) => state.careers.orgStructureState);
   const savedJobIds = useAppSelector((state: RootState) => state.careers.savedJobIds);
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -174,6 +175,17 @@ const Jobs = () => {
             setFilters({ team: [], location: [] });
           }}
         />
+        {/* When the jobs failed too, the retry button below reloads both. */}
+        {orgStructureState === State.failed && jobsState !== State.failed && (
+          <Stack direction="row" alignItems="center" gap={1}>
+            <Typography fontSize="13px" color="error">
+              The team and location filters could not be loaded.
+            </Typography>
+            <Button size="small" onClick={() => dispatch(retryLoad())}>
+              Try again
+            </Button>
+          </Stack>
+        )}
       </Stack>
 
       {/* Loading */}
