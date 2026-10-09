@@ -38,14 +38,10 @@ const AuthContext = React.createContext<AuthContextType>({} as AuthContextType);
 const timeout = 15 * 60 * 1000;
 const promptBeforeIdle = 4_000;
 
-// TEMPORARY (local dev only): skip the Asgardeo login flow entirely and enter the
-// app as a stub candidate. Set back to false to restore real login.
-const BYPASS_AUTH_FOR_DEV = false;
-
 const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const { signIn, signOut, state, getBasicUserInfo, getDecodedIDToken, getAccessToken } = useAuthContext();
-  const isAuthenticated = BYPASS_AUTH_FOR_DEV || state.isAuthenticated;
-  const isLoading = !BYPASS_AUTH_FOR_DEV && state.isLoading;
+  const isAuthenticated = state.isAuthenticated;
+  const isLoading = state.isLoading;
 
   const [sessionWarningOpen, setSessionWarningOpen] = useState<boolean>(false);
   const [userLoaded, setUserLoaded] = useState<boolean>(false);
@@ -70,23 +66,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (userLoaded) return;
-
-    if (BYPASS_AUTH_FOR_DEV) {
-      dispatch(
-        setUserAuthData({
-          userInfo: {
-            username: "dev-candidate",
-            givenName: "Dev",
-            familyName: "Candidate",
-            email: "dev-candidate@example.com",
-          } as never,
-          decodedIdToken: { sub: "dev-candidate" } as never,
-        }),
-      );
-      setUserLoaded(true);
-      return;
-    }
-
     if (!isAuthenticated) return;
 
     const loadUser = async () => {
