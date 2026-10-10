@@ -48,6 +48,8 @@ export const UseMockProfile = window.config?.USE_MOCK_PROFILE === "true";
 
 export const AppConfig = {
   serviceUrls: {
+    candidates: ServiceBaseUrl + "/candidates",
     jobs: ServiceBaseUrl + "/jobs",
+    applications: ServiceBaseUrl + "/applications",
   },
 };

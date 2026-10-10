@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { ApplicationStatus } from "@config/constant";
+
 // ── State & UI ─────────────────────────────────────────────────────────────────
 
 export enum State {
@@ -32,6 +34,25 @@ export interface PreLoaderProps {
   message?: string;
   isLoading?: boolean;
 }
+
+// ── Candidate / Profile ────────────────────────────────────────────────────────
+
+// A candidate's profile.
+export interface CandidateProfile {
+  firstName: string;
+  lastName: string;
+  gender: string;
+  personalEmail: string;
+  contactNo: string;
+  address: string | null;
+  university: string | null;
+}
+
+// The details a candidate can change themselves.
+export type EditableProfileFields = Pick<
+  CandidateProfile,
+  "firstName" | "lastName" | "gender" | "contactNo" | "address" | "university"
+>;
 
 // ── Jobs ───────────────────────────────────────────────────────────────────────
 
@@ -55,4 +76,49 @@ export interface GuestApplicationDetails {
   phone: string;
   address: string;
   authorizedToWork: boolean;
+}
+
+export interface ApplicationTimelineEvent {
+  stage: ApplicationStatus;
+  date: string;
+}
+
+export interface ApplicationInterview {
+  id: string;
+  round: string;
+  // ISO date-time of the interview.
+  dateTime: string;
+  mode: "Video" | "Phone" | "Onsite";
+  // A meeting link for video interviews, a number for phone, an address for onsite.
+  location: string;
+  status: "Upcoming" | "Completed" | "Cancelled";
+}
+
+// A candidate's application and its progress.
+export interface Application {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  department: string;
+  appliedDate: string;
+  status: ApplicationStatus;
+  // The last day the candidate can answer an offer.
+  offerExpiresOn?: string;
+  // True once the candidate has sent feedback about this application.
+  feedbackSubmitted?: boolean;
+  timeline?: ApplicationTimelineEvent[];
+  interviews?: ApplicationInterview[];
+}
+
+// A candidate's answer to an offer; a declined offer carries the reason.
+export interface OfferAnswer {
+  response: "accepted" | "declined";
+  reason?: string;
+  comment?: string;
+}
+
+// What a candidate tells us about their application experience.
+export interface ApplicationFeedback {
+  rating: number | null;
+  comment: string;
 }
