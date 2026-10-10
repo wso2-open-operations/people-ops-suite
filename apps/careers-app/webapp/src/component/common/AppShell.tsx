@@ -15,7 +15,7 @@
 // under the License.
 
 import { Box, Button, Stack, Tooltip, useTheme } from "@mui/material";
-import { Briefcase, LogOut, Moon, Sun } from "lucide-react";
+import { Briefcase, ClipboardList, LogOut, Moon, Sun, User } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { useContext, useEffect, useRef } from "react";
@@ -27,10 +27,14 @@ import { ColorModeContext } from "@context/ColorModeContext";
 import wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
 import wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
 import { State } from "@/types/types";
-import { loadFailed, loadJobDetail, loadJobs, loadOrgStructure } from "@slices/careersSlice/careers";
+import { clearUserData, loadFailed, loadJobDetail, loadJobs, loadOrgStructure } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 
-const NAV_ITEMS = [{ path: "/jobs", label: "Jobs", icon: Briefcase }];
+const NAV_ITEMS = [
+  { path: "/jobs", label: "Jobs", icon: Briefcase },
+  { path: "/applications", label: "Applications", icon: ClipboardList },
+  { path: "/profile", label: "Profile", icon: User },
+];
 
 const AppShell = () => {
   const theme = useTheme();
@@ -42,7 +46,8 @@ const AppShell = () => {
   const { getToken: getAccessToken, isSignedIn, appSignIn, appSignOut } = useAppAuthContext();
   const jobsState = useAppSelector((state: RootState) => state.careers.jobsState);
   const orgStructureState = useAppSelector((state: RootState) => state.careers.orgStructureState);
-  const jobs =useAppSelector((state: RootState) => state.careers.jobs);
+  const sessionExpired = useAppSelector((state: RootState) => state.careers.sessionExpired);
+  const jobs = useAppSelector((state: RootState) => state.careers.jobs);
   const jobDetails = useAppSelector((state: RootState) => state.careers.jobDetails);
 
   // Read inside the prefetch below without making each loaded detail restart it.
@@ -92,6 +97,21 @@ const AppShell = () => {
     };
   }, [jobsState, jobs, dispatch, getAccessToken]);
 
+  // Clears the candidate's data when nobody is signed in.
+  useEffect(() => {
+    if (!isSignedIn) dispatch(clearUserData());
+  }, [isSignedIn, dispatch]);
+
+  // Sends the candidate to sign in again when the backend refused their access token.
+  useEffect(() => {
+    if (!sessionExpired) return;
+    dispatch(clearUserData());
+    appSignIn();
+  }, [sessionExpired, dispatch, appSignIn]);
+
+  // Guests only see the Jobs link.
+  const navItems = isSignedIn ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.path === "/jobs");
+
   const isActive = (path: string) => location.pathname.startsWith(path);
 
   // Pages scroll inside this container rather than the window, so a route change has to reset it explicitly.
@@ -132,7 +152,7 @@ const AppShell = () => {
         <Stack direction="row" alignItems="center" gap={0.5}>
           {/* Icon-only links; the name shows as a tooltip on hover or keyboard focus */}
           <Stack component="nav" direction="row" alignItems="center" gap={0.5}>
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const active = isActive(item.path);
               return (
                 <Tooltip key={item.path} title={item.label} arrow>
