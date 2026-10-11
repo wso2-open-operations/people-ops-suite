@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,16 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { lazy } from "react";
+import { Typography } from "@mui/material";
 
-const profile = lazy(() => import("@view/profile/Profile"));
-const jobs = lazy(() => import("@view/jobs/Jobs"));
-const jobDetail = lazy(() => import("@view/jobs/JobDetail"));
-const applications = lazy(() => import("@view/applications/Applications"));
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <Typography fontSize="0.8rem" fontWeight={700} letterSpacing="0.08em" color="text.secondary" mb={1.25}>
+    {children}
+  </Typography>
+);
 
-export const View = {
-  profile,
-  jobs,
-  jobDetail,
-  applications,
-};
+export default SectionTitle;

@@ -25,3 +25,6 @@ export const COUNTRY_OPTIONS = getCountries()
 // The format the backend accepts: the dialing code, then only the digits typed, without a leading trunk "0".
 export const toE164 = (dialCode: string, input: string): string =>
   `${dialCode}${input.replace(/\D/g, "").replace(/^0+/, "")}`;
+
+// Whether a value is in that format: "+", then 2 to 15 digits, not starting with 0.
+export const isValidE164 = (value: string): boolean => /^\+[1-9]\d{1,14}$/.test(value);

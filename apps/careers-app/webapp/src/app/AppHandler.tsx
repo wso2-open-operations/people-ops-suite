@@ -14,13 +14,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
+import { Navigate, Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import AppShell from "@component/common/AppShell";
 import NotFoundPage from "@component/common/NotFoundPage";
+import PreLoader from "@component/common/PreLoader";
+import { useAppAuthContext } from "@context/AuthContext";
 import { View } from "@view/index";
+
+// Shows the pages inside it to signed-in candidates, and sends a guest to sign in.
+const RequireSignIn = () => {
+  const { isSignedIn, appSignIn } = useAppAuthContext();
+
+  useEffect(() => {
+    if (!isSignedIn) appSignIn();
+  }, [isSignedIn, appSignIn]);
+
+  return isSignedIn ? <Outlet /> : <PreLoader isLoading message="Taking you to sign in ..." />;
+};
 
 const AppHandler = () => {
   const router = useMemo(
@@ -33,6 +46,14 @@ const AppHandler = () => {
             { path: "/", element: <Navigate to="/jobs" replace /> },
             { path: "/jobs", element: <View.jobs /> },
             { path: "/jobs/:id", element: <View.jobDetail /> },
+            {
+              element: <RequireSignIn />,
+              children: [
+                { path: "/profile", element: <View.profile /> },
+                { path: "/applications", element: <View.applications /> },
+                { path: "/applications/:id", element: <View.applications /> },
+              ],
+            },
           ],
         },
         { path: "*", element: <NotFoundPage /> },
