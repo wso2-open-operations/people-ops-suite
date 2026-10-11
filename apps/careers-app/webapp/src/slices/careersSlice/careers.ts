@@ -55,10 +55,16 @@ interface CareersState {
   dismissedFeedbackIds: string[];
   // True when the backend refused the access token, so the candidate has to sign in again.
   sessionExpired: boolean;
+  // Goes up each time the candidate's data is cleared, so requests started before it can be told apart.
+  sessionGeneration: number;
   savedJobIds: string[];
 }
 
+// The name of the error a request ends with when the candidate's data was cleared while it was running.
+const STALE_SESSION_ERROR = "StaleSessionError";
+
 const isSessionExpired = (error: { name?: string }) => error.name === SESSION_EXPIRED_ERROR;
+const isStale = (error: { name?: string }) => error.name === STALE_SESSION_ERROR;
 
 const emptyProfile: CandidateProfile = {
   firstName: "",
@@ -82,6 +88,7 @@ const initialState: CareersState = {
   applicationsState: State.idle,
   dismissedFeedbackIds: [],
   sessionExpired: false,
+  sessionGeneration: 0,
   // Save state is local/in-memory only -- not yet persisted to the backend,
   // so it resets on refresh.
   savedJobIds: [],
@@ -102,24 +109,38 @@ export const loadJobDetail = createAsyncThunk(
   },
 );
 
-export const loadProfile = createAsyncThunk("careers/loadProfile", async (accessToken: string) => {
-  return await fetchProfileApi(accessToken);
-});
+// Builds a thunk for a signed-in candidate's request. If the candidate's data is cleared while the request is running,
+// the request ends as a stale error, so a late response never writes the previous candidate's data into the store.
+function userRequest<Arg, Result>(type: string, call: (arg: Arg) => Promise<Result>) {
+  return createAsyncThunk<Result, Arg>(type, async (arg, { getState }) => {
+    const generation = () => (getState() as { careers: CareersState }).careers.sessionGeneration;
+    const started = generation();
+    const stale = () => Object.assign(new Error("The candidate signed out."), { name: STALE_SESSION_ERROR });
+    try {
+      const result = await call(arg);
+      if (generation() !== started) throw stale();
+      return result;
+    } catch (error) {
+      throw generation() !== started ? stale() : error;
+    }
+  });
+}
 
-export const updateProfile = createAsyncThunk(
+export const loadProfile = userRequest("careers/loadProfile", (accessToken: string) => fetchProfileApi(accessToken));
+
+export const updateProfile = userRequest(
   "careers/updateProfile",
-  async ({ accessToken, changes }: { accessToken: string; changes: Partial<EditableProfileFields> }) => {
-    return await saveProfileApi(accessToken, changes);
-  },
+  ({ accessToken, changes }: { accessToken: string; changes: Partial<EditableProfileFields> }) =>
+    saveProfileApi(accessToken, changes),
 );
 
-export const loadApplications = createAsyncThunk("careers/loadApplications", async (accessToken: string) => {
-  return await fetchApplicationsApi(accessToken);
-});
+export const loadApplications = userRequest("careers/loadApplications", (accessToken: string) =>
+  fetchApplicationsApi(accessToken),
+);
 
-export const sendFeedback = createAsyncThunk(
+export const sendFeedback = userRequest(
   "careers/sendFeedback",
-  async ({
+  ({
     accessToken,
     applicationId,
     feedback,
@@ -127,24 +148,13 @@ export const sendFeedback = createAsyncThunk(
     accessToken: string;
     applicationId: string;
     feedback: ApplicationFeedback;
-  }) => {
-    await submitFeedbackApi(accessToken, applicationId, feedback);
-  },
+  }) => submitFeedbackApi(accessToken, applicationId, feedback),
 );
 
-export const respondToOffer = createAsyncThunk(
+export const respondToOffer = userRequest(
   "careers/respondToOffer",
-  async ({
-    accessToken,
-    applicationId,
-    answer,
-  }: {
-    accessToken: string;
-    applicationId: string;
-    answer: OfferAnswer;
-  }) => {
-    return await respondToOfferApi(accessToken, applicationId, answer);
-  },
+  ({ accessToken, applicationId, answer }: { accessToken: string; applicationId: string; answer: OfferAnswer }) =>
+    respondToOfferApi(accessToken, applicationId, answer),
 );
 
 export const CareersSlice = createSlice({
@@ -197,6 +207,7 @@ export const CareersSlice = createSlice({
       state.applicationsState = State.idle;
       state.dismissedFeedbackIds = [];
       state.sessionExpired = false;
+      state.sessionGeneration += 1;
       state.savedJobIds = [];
     },
   },
@@ -233,8 +244,8 @@ export const CareersSlice = createSlice({
         state.profile = action.payload;
         state.profileState = State.success;
       })
-      .addCase(loadProfile.rejected, (state) => {
-        state.profileState = State.failed;
+      .addCase(loadProfile.rejected, (state, action) => {
+        if (!isStale(action.error)) state.profileState = State.failed;
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.profile = action.payload;
@@ -246,8 +257,8 @@ export const CareersSlice = createSlice({
         state.applications = action.payload;
         state.applicationsState = State.success;
       })
-      .addCase(loadApplications.rejected, (state) => {
-        state.applicationsState = State.failed;
+      .addCase(loadApplications.rejected, (state, action) => {
+        if (!isStale(action.error)) state.applicationsState = State.failed;
       })
       .addCase(sendFeedback.fulfilled, (state, action) => {
         const application = state.applications.find((a) => a.id === action.meta.arg.applicationId);
