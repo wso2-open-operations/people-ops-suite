@@ -21,6 +21,7 @@ import type { Application } from "@/types/types";
 import ApplicationStatusBadge from "@component/careers/ApplicationStatusBadge";
 import Callout from "@component/common/Callout";
 import { ApplicationStatus } from "@config/constant";
+import { cardSx } from "@utils/styles";
 import {
   STAGES,
   daysLeftText,
@@ -58,7 +59,7 @@ const ApplicationDetails = ({
   const { activeStep, errorStep } = trackerOf(application);
 
   return (
-    <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: "8px" }}>
+    <Card elevation={0} sx={cardSx}>
       <Box sx={{ p: 3 }}>
         <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" gap={1.5}>
           <Box sx={{ minWidth: 0 }}>

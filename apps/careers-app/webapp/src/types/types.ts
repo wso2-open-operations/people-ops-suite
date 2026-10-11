@@ -16,8 +16,6 @@
 
 import { ApplicationStatus } from "@config/constant";
 
-// ── State & UI ─────────────────────────────────────────────────────────────────
-
 export enum State {
   failed = "failed",
   success = "success",
@@ -34,8 +32,6 @@ export interface PreLoaderProps {
   message?: string;
   isLoading?: boolean;
 }
-
-// ── Candidate / Profile ────────────────────────────────────────────────────────
 
 // A candidate's profile.
 export interface CandidateProfile {
@@ -54,8 +50,6 @@ export type EditableProfileFields = Pick<
   "firstName" | "lastName" | "gender" | "contactNo" | "address" | "university"
 >;
 
-// ── Jobs ───────────────────────────────────────────────────────────────────────
-
 export interface Job {
   id: string;
   title: string;
@@ -65,8 +59,6 @@ export interface Job {
   publishStatus: string;
   postedDate: string;
 }
-
-// ── Applications ───────────────────────────────────────────────────────────────
 
 // What an applicant submits alongside their CV.
 export interface GuestApplicationDetails {

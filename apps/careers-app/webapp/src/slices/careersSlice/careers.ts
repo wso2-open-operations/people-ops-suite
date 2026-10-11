@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createAsyncThunk, createSlice, isRejected } from "@reduxjs/toolkit";
 
 import {
   Application,
@@ -233,15 +233,11 @@ export const CareersSlice = createSlice({
         state.profile = action.payload;
         state.profileState = State.success;
       })
-      .addCase(loadProfile.rejected, (state, action) => {
+      .addCase(loadProfile.rejected, (state) => {
         state.profileState = State.failed;
-        if (isSessionExpired(action.error)) state.sessionExpired = true;
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.profile = action.payload;
-      })
-      .addCase(updateProfile.rejected, (state, action) => {
-        if (isSessionExpired(action.error)) state.sessionExpired = true;
       })
       .addCase(loadApplications.pending, (state) => {
         state.applicationsState = State.loading;
@@ -250,24 +246,24 @@ export const CareersSlice = createSlice({
         state.applications = action.payload;
         state.applicationsState = State.success;
       })
-      .addCase(loadApplications.rejected, (state, action) => {
+      .addCase(loadApplications.rejected, (state) => {
         state.applicationsState = State.failed;
-        if (isSessionExpired(action.error)) state.sessionExpired = true;
       })
       .addCase(sendFeedback.fulfilled, (state, action) => {
         const application = state.applications.find((a) => a.id === action.meta.arg.applicationId);
         if (application) application.feedbackSubmitted = true;
       })
-      .addCase(sendFeedback.rejected, (state, action) => {
-        if (isSessionExpired(action.error)) state.sessionExpired = true;
-      })
       .addCase(respondToOffer.fulfilled, (state, action) => {
         const index = state.applications.findIndex((a) => a.id === action.payload.id);
         if (index >= 0) state.applications[index] = action.payload;
       })
-      .addCase(respondToOffer.rejected, (state, action) => {
-        if (isSessionExpired(action.error)) state.sessionExpired = true;
-      });
+      // Any signed-in request the backend refuses with a 401 asks the user to sign in again.
+      .addMatcher(
+        isRejected(loadProfile, updateProfile, loadApplications, sendFeedback, respondToOffer),
+        (state, action) => {
+          if (isSessionExpired(action.error)) state.sessionExpired = true;
+        },
+      );
   },
 });
 

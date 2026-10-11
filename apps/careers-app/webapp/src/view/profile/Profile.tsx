@@ -40,7 +40,7 @@ import { loadProfile, profileFailed, updateProfile } from "@slices/careersSlice/
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { isValidE164 } from "@utils/phone";
-import { pillButtonSx } from "@utils/styles";
+import { cardSx, pillButtonSx } from "@utils/styles";
 
 const GENDERS = ["Male", "Female", "Other", "Prefer not to say"];
 
@@ -74,8 +74,6 @@ const changesOf = (form: ProfileForm, profile: CandidateProfile): Partial<Editab
   if (form.university.trim() !== saved.university) changes.university = form.university.trim() || null;
   return changes;
 };
-
-const cardSx = { border: "1px solid", borderColor: "divider", borderRadius: "8px" };
 
 // An icon, a label and a value; a missing value shows as "Not added".
 const DetailItem = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | null }) => (

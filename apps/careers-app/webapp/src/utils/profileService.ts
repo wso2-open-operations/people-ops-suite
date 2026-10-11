@@ -32,9 +32,11 @@ const REQUEST_TIMEOUT_MS = 15_000;
 // The name of the error thrown when the backend refuses the access token.
 export const SESSION_EXPIRED_ERROR = "SessionExpiredError";
 
-function authHeader(accessToken: string) {
-  return { Authorization: `Bearer ${accessToken}` };
-}
+// The bearer token and timeout every signed-in request carries.
+const requestOptions = (accessToken: string) => ({
+  headers: { Authorization: `Bearer ${accessToken}` },
+  timeout: REQUEST_TIMEOUT_MS,
+});
 
 // Waits for a request and returns its data; a 401 becomes a session expired error so the app can ask for sign-in.
 async function send<T>(request: Promise<AxiosResponse<T>>): Promise<T> {
@@ -53,12 +55,7 @@ async function send<T>(request: Promise<AxiosResponse<T>>): Promise<T> {
 // The signed-in candidate's own profile.
 export async function fetchProfile(accessToken: string): Promise<CandidateProfile> {
   if (UseMockProfile) return mockProfile.fetchProfile();
-  return send(
-    axios.get<CandidateProfile>(`${AppConfig.serviceUrls.candidates}/me`, {
-      headers: authHeader(accessToken),
-      timeout: REQUEST_TIMEOUT_MS,
-    }),
-  );
+  return send(axios.get<CandidateProfile>(`${AppConfig.serviceUrls.candidates}/me`, requestOptions(accessToken)));
 }
 
 // Saves the changes to the candidate's editable details.
@@ -68,10 +65,7 @@ export async function saveProfile(
 ): Promise<CandidateProfile> {
   if (UseMockProfile) return mockProfile.saveProfile(changes);
   return send(
-    axios.patch<CandidateProfile>(`${AppConfig.serviceUrls.candidates}/me`, changes, {
-      headers: authHeader(accessToken),
-      timeout: REQUEST_TIMEOUT_MS,
-    }),
+    axios.patch<CandidateProfile>(`${AppConfig.serviceUrls.candidates}/me`, changes, requestOptions(accessToken)),
   );
 }
 
@@ -83,10 +77,11 @@ export async function submitFeedback(
 ): Promise<void> {
   if (UseMockProfile) return mockProfile.submitFeedback();
   await send(
-    axios.post(`${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/feedback`, feedback, {
-      headers: authHeader(accessToken),
-      timeout: REQUEST_TIMEOUT_MS,
-    }),
+    axios.post(
+      `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/feedback`,
+      feedback,
+      requestOptions(accessToken),
+    ),
   );
 }
 
@@ -105,7 +100,7 @@ export async function respondToOffer(
       axios.post<Application>(
         `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/offer-response`,
         answer,
-        { headers: authHeader(accessToken), timeout: REQUEST_TIMEOUT_MS },
+        requestOptions(accessToken),
       ),
     );
   } catch (error) {
@@ -119,10 +114,5 @@ export async function respondToOffer(
 // The signed-in candidate's own applications.
 export async function fetchApplications(accessToken: string): Promise<Application[]> {
   if (UseMockProfile) return mockProfile.fetchApplications();
-  return send(
-    axios.get<Application[]>(AppConfig.serviceUrls.applications, {
-      headers: authHeader(accessToken),
-      timeout: REQUEST_TIMEOUT_MS,
-    }),
-  );
+  return send(axios.get<Application[]>(AppConfig.serviceUrls.applications, requestOptions(accessToken)));
 }

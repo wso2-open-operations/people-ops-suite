@@ -23,6 +23,7 @@ import { type Application, State } from "@/types/types";
 import CenteredSpinner from "@component/common/CenteredSpinner";
 import PageHeading from "@component/common/PageHeading";
 import { SnackMessage } from "@config/constant";
+import { cardSx } from "@utils/styles";
 import { type ApplicationFilter, tabOf } from "@view/applications/applicationHelpers";
 import ApplicationListCard from "@view/applications/components/ApplicationListCard";
 
@@ -65,7 +66,7 @@ const ApplicationList = ({ applications, applicationsState, onView, onBrowseJobs
       )}
 
       {applicationsState === State.success && applications.length === 0 ? (
-        <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: "8px" }}>
+        <Card elevation={0} sx={cardSx}>
           <CardContent sx={{ py: 8, textAlign: "center" }}>
             <AssignmentOutlined sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
             <Typography variant="h6" fontWeight={600} mb={1} color="text.primary">
