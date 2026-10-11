@@ -75,7 +75,7 @@ export async function submitFeedback(
   applicationId: string,
   feedback: ApplicationFeedback,
 ): Promise<void> {
-  if (UseMockProfile) return mockProfile.submitFeedback();
+  if (UseMockProfile) return mockProfile.submitFeedback(applicationId);
   await send(
     axios.post(
       `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/feedback`,

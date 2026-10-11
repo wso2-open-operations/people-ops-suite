@@ -149,8 +149,10 @@ const applications: Application[] = [
   },
 ];
 
-export async function submitFeedback(): Promise<void> {
+export async function submitFeedback(applicationId: string): Promise<void> {
   await delay();
+  const application = applications.find((a) => a.id === applicationId);
+  if (application) application.feedbackSubmitted = true;
 }
 
 export async function respondToOffer(applicationId: string, answer: OfferAnswer): Promise<Application> {
