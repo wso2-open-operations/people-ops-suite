@@ -290,6 +290,7 @@ const Profile = () => {
                   label="First name"
                   value={form.firstName}
                   onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                  disabled={saving}
                   error={firstNameInvalid}
                   helperText={firstNameInvalid ? "Enter your first name." : undefined}
                   size="small"
@@ -299,6 +300,7 @@ const Profile = () => {
                   label="Last name"
                   value={form.lastName}
                   onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                  disabled={saving}
                   error={lastNameInvalid}
                   helperText={lastNameInvalid ? "Enter your last name." : undefined}
                   size="small"
@@ -310,6 +312,7 @@ const Profile = () => {
                 label="Gender"
                 value={form.gender}
                 onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                disabled={saving}
                 size="small"
                 fullWidth
               >
@@ -345,6 +348,7 @@ const Profile = () => {
                 label="Contact number"
                 value={form.contactNo}
                 onChange={(e) => setForm({ ...form, contactNo: e.target.value })}
+                disabled={saving}
                 error={phoneInvalid}
                 helperText={
                   phoneInvalid
@@ -359,6 +363,7 @@ const Profile = () => {
                 label="Address"
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
+                disabled={saving}
                 slotProps={fieldIcon(<MapPin size={16} />)}
                 size="small"
                 fullWidth
@@ -367,6 +372,7 @@ const Profile = () => {
                 label="University"
                 value={form.university}
                 onChange={(e) => setForm({ ...form, university: e.target.value })}
+                disabled={saving}
                 slotProps={fieldIcon(<GraduationCap size={16} />)}
                 size="small"
                 fullWidth
