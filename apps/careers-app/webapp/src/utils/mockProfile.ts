@@ -181,6 +181,20 @@ export async function respondToOffer(applicationId: string, answer: OfferAnswer)
   return structuredClone(application);
 }
 
+// Adds an application the candidate just made, so the Applications page shows it.
+export function addApplication(jobId: string, jobTitle: string, department: string): void {
+  const date = new Date().toLocaleDateString("en-CA");
+  applications.unshift({
+    id: `new-${Date.now()}`,
+    jobId,
+    jobTitle,
+    department,
+    appliedDate: date,
+    status: ApplicationStatus.Applied,
+    timeline: [{ stage: ApplicationStatus.Applied, date }],
+  });
+}
+
 export async function fetchApplications(): Promise<Application[]> {
   await delay();
   return structuredClone(applications);

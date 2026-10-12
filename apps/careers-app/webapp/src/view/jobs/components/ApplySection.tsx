@@ -21,10 +21,11 @@ import { useEffect, useRef, useState } from "react";
 import { State } from "@/types/types";
 import { SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
-import { loadProfile, profileFailed } from "@slices/careersSlice/careers";
+import { loadProfile, profileFailed, refreshApplications } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { COUNTRY_OPTIONS, splitE164 } from "@utils/phone";
+import { trackSubmittedApplication } from "@utils/profileService";
 import { type VacancyDetail, submitApplicationForm } from "@utils/vacancyService";
 import ApplicationSubmittedDialog from "@view/jobs/components/ApplicationSubmittedDialog";
 import ApplyForm, { type ApplyFormValues } from "@view/jobs/components/ApplyForm";
@@ -116,6 +117,10 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
         cvFile,
       );
       setSubmittedOpen(true);
+      if (isSignedIn) {
+        trackSubmittedApplication(detail.id, detail.title, detail.team);
+        dispatch(refreshApplications());
+      }
       // The CV and the ticked answers belong to this application, so the form starts clean for the next one.
       setCvFile(null);
       setAuthorized("");

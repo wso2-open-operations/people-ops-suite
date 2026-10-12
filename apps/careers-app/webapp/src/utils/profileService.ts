@@ -111,6 +111,11 @@ export async function respondToOffer(
   }
 }
 
+// With mock data on, lists an application the candidate just made; the real backend lists it on its own.
+export function trackSubmittedApplication(jobId: string, jobTitle: string, department: string): void {
+  if (UseMockProfile) mockProfile.addApplication(jobId, jobTitle, department);
+}
+
 // The signed-in candidate's own applications.
 export async function fetchApplications(accessToken: string): Promise<Application[]> {
   if (UseMockProfile) return mockProfile.fetchApplications();
