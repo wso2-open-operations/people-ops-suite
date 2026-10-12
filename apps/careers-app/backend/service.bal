@@ -66,6 +66,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
 
     function init() {
         log:printInfo("Careers App backend started...");
+        _ = start vacancy:warmUp();
     }
 
     public function createInterceptors() returns http:Interceptor[] =>
@@ -74,16 +75,22 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     # Proxies the job listing from career-vacancy-service. Public: no sign-in needed.
     resource function get jobs(http:RequestContext ctx) returns json|http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        http:Response|error resp = vacancy:listJobs(requestId);
-        return forwardOrError(resp, "Failed to fetch jobs from upstream service", requestId);
+        json|http:Response|error result = vacancy:cachedJobs(requestId);
+        if result is json {
+            return result;
+        }
+        return forwardOrError(result, "Failed to fetch jobs from upstream service", requestId);
     }
 
     # Proxies the team/location org structure from career-vacancy-service. Public: no sign-in needed.
     resource function get jobs/org\-structure(http:RequestContext ctx)
             returns json|http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        http:Response|error resp = vacancy:getOrgStructure(requestId);
-        return forwardOrError(resp, "Failed to fetch org structure from upstream service", requestId);
+        json|http:Response|error result = vacancy:cachedOrgStructure(requestId);
+        if result is json {
+            return result;
+        }
+        return forwardOrError(result, "Failed to fetch org structure from upstream service", requestId);
     }
 
     # Proxies a single job's detail from career-vacancy-service, 404 if it doesn't exist. Public: no sign-in needed.
@@ -93,15 +100,18 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             return <http:BadRequest>{body: {message: "Invalid job id"}};
         }
         string requestId = types:requestIdOf(ctx);
-        http:Response|error resp = vacancy:getJob(jobId, requestId);
-        if resp is error {
-            log:printError("Failed to fetch job from upstream service", resp, requestId = requestId);
+        json|http:Response|error result = vacancy:cachedJob(jobId, requestId);
+        if result is json {
+            return result;
+        }
+        if result is error {
+            log:printError("Failed to fetch job from upstream service", result, requestId = requestId);
             return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
         }
-        if resp.statusCode == 404 {
+        if result.statusCode == 404 {
             return <http:NotFound>{body: {message: "Job not found"}};
         }
-        return forwardOrError(resp, "Failed to fetch job from upstream service", requestId);
+        return forwardOrError(result, "Failed to fetch job from upstream service", requestId);
     }
 
     # Validates the application form and CV, then creates the candidate in career-vacancy-service.
