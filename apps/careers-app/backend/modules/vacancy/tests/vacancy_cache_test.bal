@@ -18,16 +18,17 @@ import ballerina/http;
 import ballerina/lang.runtime;
 import ballerina/test;
 
-// Stands in for the vacancy service: counts its calls, answers with the given status, and can start failing after
-// a number of good calls.
+// A fake vacancy service that counts its calls.
 isolated class FakeUpstream {
     private int calls = 0;
     private final int status;
     private final int goodCalls;
+    private final decimal delay;
 
-    isolated function init(int status = 200, int goodCalls = 1000) {
+    isolated function init(int status = 200, int goodCalls = 1000, decimal delay = 0) {
         self.status = status;
         self.goodCalls = goodCalls;
+        self.delay = delay;
     }
 
     isolated function call() returns http:Response|error {
@@ -35,6 +36,9 @@ isolated class FakeUpstream {
         lock {
             self.calls += 1;
             number = self.calls;
+        }
+        if self.delay > 0d {
+            runtime:sleep(self.delay);
         }
         if number > self.goodCalls {
             return error("upstream is down");
@@ -60,9 +64,17 @@ function assertIsJob(json|http:Response|error result) {
     }
 }
 
+function assertIsReplyWithStatus(json|http:Response|error result, int status) {
+    if result is http:Response {
+        test:assertEquals(result.statusCode, status);
+    } else {
+        test:assertFail("expected the upstream's reply");
+    }
+}
+
 @test:Config {}
 function secondRequestIsServedFromTheCache() {
-    VacancyCache cache = new (600, 21600);
+    VacancyCache cache = new (600, 21600, 5);
     final FakeUpstream upstream = new;
 
     assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
@@ -72,7 +84,7 @@ function secondRequestIsServedFromTheCache() {
 
 @test:Config {}
 function eachKeyIsCachedOnItsOwn() {
-    VacancyCache cache = new (600, 21600);
+    VacancyCache cache = new (600, 21600, 5);
     final FakeUpstream upstream = new;
 
     assertIsJob(cache.get("job:1", isolated function() returns http:Response|error => upstream.call()));
@@ -81,20 +93,20 @@ function eachKeyIsCachedOnItsOwn() {
 }
 
 @test:Config {}
-function failedRepliesAreNotCached() {
-    VacancyCache cache = new (600, 21600);
+function failedRepliesAreNotCachedAsData() {
+    VacancyCache cache = new (600, 21600, 0);
     final FakeUpstream upstream = new (500);
 
     json|http:Response|error first = cache.get("jobs", isolated function() returns http:Response|error => upstream.call());
     json|http:Response|error second = cache.get("jobs", isolated function() returns http:Response|error => upstream.call());
-    test:assertTrue(first is http:Response);
-    test:assertTrue(second is http:Response);
+    assertIsReplyWithStatus(first, 500);
+    assertIsReplyWithStatus(second, 500);
     test:assertEquals(upstream.count(), 2);
 }
 
 @test:Config {}
 function unreachableUpstreamIsPassedBackAndNotCached() {
-    VacancyCache cache = new (600, 21600);
+    VacancyCache cache = new (600, 21600, 0);
     final FakeUpstream upstream = new (200, 0);
 
     json|http:Response|error result = cache.get("jobs", isolated function() returns http:Response|error => upstream.call());
@@ -102,9 +114,79 @@ function unreachableUpstreamIsPassedBackAndNotCached() {
 }
 
 @test:Config {}
+function simultaneousRequestsForAnEmptyKeyCallTheUpstreamOnce() {
+    final VacancyCache cache = new (600, 21600, 5);
+    final FakeUpstream upstream = new (200, 1000, 0.3);
+
+    future<json|http:Response|error>[] requests = [];
+    foreach int _ in 0 ..< 5 {
+        future<json|http:Response|error> request =
+            start cache.get("jobs", isolated function() returns http:Response|error => upstream.call());
+        requests.push(request);
+    }
+    foreach future<json|http:Response|error> request in requests {
+        json|http:Response|error result = wait request;
+        assertIsJob(result);
+    }
+    test:assertEquals(upstream.count(), 1);
+}
+
+@test:Config {}
+function aFailureIsRememberedBrieflyWithoutCallingTheUpstreamAgain() {
+    VacancyCache cache = new (600, 21600, 5);
+    final FakeUpstream upstream = new (503);
+
+    assertIsReplyWithStatus(
+        cache.get("jobs", isolated function() returns http:Response|error => upstream.call()), 503);
+    assertIsReplyWithStatus(
+        cache.get("jobs", isolated function() returns http:Response|error => upstream.call()), 503);
+    test:assertEquals(upstream.count(), 1);
+}
+
+@test:Config {}
+function aNotFoundIsRememberedAsANotFound() {
+    VacancyCache cache = new (600, 21600, 5);
+    final FakeUpstream upstream = new (404);
+
+    assertIsReplyWithStatus(
+        cache.get("job:999", isolated function() returns http:Response|error => upstream.call()), 404);
+    assertIsReplyWithStatus(
+        cache.get("job:999", isolated function() returns http:Response|error => upstream.call()), 404);
+    test:assertEquals(upstream.count(), 1);
+}
+
+@test:Config {}
+function repeatedFailuresAreRememberedForLonger() {
+    VacancyCache cache = new (600, 21600, 1);
+    final FakeUpstream upstream = new (500);
+
+    // Failures are remembered for 1 second, then 2 seconds.
+    json|http:Response|error first = cache.get("job:1", isolated function() returns http:Response|error => upstream.call());
+    runtime:sleep(1.2);
+    json|http:Response|error second = cache.get("job:1", isolated function() returns http:Response|error => upstream.call());
+    json|http:Response|error third = cache.get("job:1", isolated function() returns http:Response|error => upstream.call());
+    assertIsReplyWithStatus(first, 500);
+    assertIsReplyWithStatus(second, 500);
+    assertIsReplyWithStatus(third, 500);
+    test:assertEquals(upstream.count(), 2, "the third request should not reach the upstream");
+}
+
+@test:Config {}
+function anUnreachableUpstreamIsRememberedBrieflyToo() {
+    VacancyCache cache = new (600, 21600, 5);
+    final FakeUpstream upstream = new (200, 0);
+
+    json|http:Response|error first = cache.get("jobs", isolated function() returns http:Response|error => upstream.call());
+    json|http:Response|error second = cache.get("jobs", isolated function() returns http:Response|error => upstream.call());
+    test:assertTrue(first is error);
+    test:assertTrue(second is error);
+    test:assertEquals(upstream.count(), 1);
+}
+
+@test:Config {}
 function oldCopyIsServedAtOnceWhileItRefreshesInTheBackground() {
-    // A refresh time of 0 makes every cached copy count as old.
-    VacancyCache cache = new (0, 21600);
+    // A refresh time of 0 treats every copy as old.
+    VacancyCache cache = new (0, 21600, 5);
     final FakeUpstream upstream = new;
 
     assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
@@ -115,8 +197,8 @@ function oldCopyIsServedAtOnceWhileItRefreshesInTheBackground() {
 
 @test:Config {}
 function failedRefreshKeepsTheCachedCopy() {
-    VacancyCache cache = new (0, 21600);
-    // The first call works, every later one fails.
+    VacancyCache cache = new (0, 21600, 5);
+    // Only the first call succeeds.
     final FakeUpstream upstream = new (200, 1);
 
     assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));

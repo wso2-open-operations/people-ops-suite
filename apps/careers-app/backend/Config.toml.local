@@ -22,3 +22,4 @@ audience = ""
 # [careers_app.vacancy]
 # refreshAfterSeconds = 600
 # maxStaleSeconds = 21600
+# failFastSeconds = 5

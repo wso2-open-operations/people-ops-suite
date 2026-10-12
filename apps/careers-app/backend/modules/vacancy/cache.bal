@@ -16,26 +16,41 @@
 
 import ballerina/cache;
 import ballerina/http;
+import ballerina/lang.runtime;
 import ballerina/log;
 
-# How long a cached copy is served before the next request starts a background refresh.
+# Seconds before a cached copy is refreshed in the background.
 configurable int refreshAfterSeconds = 600;
 
-# The longest a cached copy is served at all, even while refreshes keep failing.
+# Seconds a cached copy may be served at most.
 configurable int maxStaleSeconds = 21600;
 
-# The most entries held at once; a job's detail is cached only for jobs that exist, so this is never reached in practice.
-const int MAX_CACHED_ENTRIES = 500;
+# Seconds a failed load is remembered; doubles with each failure in a row, up to 64 times.
+configurable int failFastSeconds = 5;
 
+const int MAX_CACHED_ENTRIES = 500;
+const int MAX_REMEMBERED_FAILURES = 1000;
+const int MAX_BACKOFF_DOUBLINGS = 6;
+const decimal WAIT_STEP_SECONDS = 0.05;
+const int MAX_WAIT_STEPS = 400;
 const string WARM_UP_REQUEST_ID = "startup-warm-up";
 
-# An upstream JSON body and when it was fetched, in epoch seconds.
 type CachedBody record {|
     json value;
     int fetchedAt;
 |};
 
-# The JSON body of a successful upstream reply, or an error when the reply is not a 200 with a JSON body.
+// Status 0 means the upstream was not reached; count is the failures in a row.
+type FailedLoad record {|
+    int status;
+    int failedAt;
+    int count;
+|};
+
+// Seconds a failure is remembered.
+isolated function backoffOf(FailedLoad failed, int failFast) returns int =>
+    failFast << int:min(failed.count - 1, MAX_BACKOFF_DOUBLINGS);
+
 isolated function jsonBodyOf(http:Response resp) returns json|error {
     if resp.statusCode != 200 {
         return error(string `The upstream replied with status ${resp.statusCode}`);
@@ -43,15 +58,26 @@ isolated function jsonBodyOf(http:Response resp) returns json|error {
     return resp.getJsonPayload();
 }
 
-# Keeps upstream JSON replies and serves them without waiting. A copy older than the refresh time is still served at
-# once, and one request per key refreshes it in the background; a failed refresh keeps the old copy.
+isolated function replyFor(FailedLoad failed) returns http:Response|error {
+    if failed.status == 0 {
+        return error("The vacancy service could not be reached");
+    }
+    http:Response resp = new;
+    resp.statusCode = failed.status;
+    return resp;
+}
+
+# Serves upstream JSON replies from memory and refreshes them in the background.
 public isolated class VacancyCache {
     private final cache:Cache entries;
     private final int refreshAfter;
-    private map<boolean> refreshing = {};
+    private final int failFast;
+    private map<boolean> inFlight = {};
+    private map<FailedLoad> failures = {};
 
-    public isolated function init(int refreshAfter, int maxStale) {
+    public isolated function init(int refreshAfter, int maxStale, int failFast) {
         self.refreshAfter = refreshAfter;
+        self.failFast = failFast;
         self.entries = new ({
             capacity: MAX_CACHED_ENTRIES,
             evictionFactor: 0.2,
@@ -60,31 +86,61 @@ public isolated class VacancyCache {
         });
     }
 
-    # The cached JSON for the key. When there is none, the upstream is called and a 200 JSON reply is kept; any other
-    # reply or error is passed back to the caller to turn into a response, and is not kept.
+    # The cached JSON for the key, loaded from the upstream when missing.
     #
-    # + key - What is cached, such as "jobs"
-    # + call - Fetches the data from the upstream
-    # + return - The JSON, or the upstream's own reply or error
+    # + key - Cache key
+    # + call - Fetches from the upstream
+    # + return - The JSON, or the upstream's reply or error
     public isolated function get(string key, isolated function () returns http:Response|error call)
             returns json|http:Response|error {
         CachedBody? cached = self.lookup(key);
         if cached is CachedBody {
-            if currentEpoch() - cached.fetchedAt >= self.refreshAfter && self.tryStartRefresh(key) {
+            if currentEpoch() - cached.fetchedAt >= self.refreshAfter && self.tryStart(key) {
                 _ = start self.refresh(key, call);
             }
             return cached.value;
         }
+        return self.loadMissing(key, call);
+    }
 
+    isolated function loadMissing(string key, isolated function () returns http:Response|error call)
+            returns json|http:Response|error {
+        foreach int _ in 0 ..< MAX_WAIT_STEPS {
+            CachedBody? cached = self.lookup(key);
+            if cached is CachedBody {
+                return cached.value;
+            }
+            FailedLoad? failed = self.recentFailure(key);
+            if failed is FailedLoad {
+                return replyFor(failed);
+            }
+            if self.tryStart(key) {
+                return self.load(key, call);
+            }
+            runtime:sleep(WAIT_STEP_SECONDS);
+        }
+        return error("Timed out waiting for the vacancy service");
+    }
+
+    isolated function load(string key, isolated function () returns http:Response|error call)
+            returns json|http:Response|error {
         http:Response|error resp = call();
+        json|http:Response|error result = resp;
         if resp is http:Response {
             json|error body = jsonBodyOf(resp);
             if body is json {
                 self.store(key, body);
-                return body;
+                result = body;
+            } else {
+                self.recordFailure(key, resp.statusCode);
             }
+        } else {
+            self.recordFailure(key, 0);
         }
-        return resp;
+        lock {
+            _ = self.inFlight.removeIfHasKey(key);
+        }
+        return result;
     }
 
     isolated function lookup(string key) returns (CachedBody & readonly)? {
@@ -101,48 +157,73 @@ public isolated class VacancyCache {
         if stored is cache:Error {
             log:printWarn("Could not keep the vacancy reply in the cache", stored, key = key);
         }
+        lock {
+            _ = self.failures.removeIfHasKey(key);
+        }
     }
 
-    # Whether this call is the one to refresh the key; false when a refresh for it is already running.
-    isolated function tryStartRefresh(string key) returns boolean {
+    // Lets one request at a time call the upstream for a key.
+    isolated function tryStart(string key) returns boolean {
         lock {
-            if self.refreshing.hasKey(key) {
+            if self.inFlight.hasKey(key) {
                 return false;
             }
-            self.refreshing[key] = true;
+            self.inFlight[key] = true;
             return true;
         }
     }
 
-    isolated function refresh(string key, isolated function () returns http:Response|error call) {
-        do {
-            http:Response resp = check call();
-            json body = check jsonBodyOf(resp);
-            self.store(key, body);
-        } on fail error err {
-            log:printWarn("Background refresh failed; keeping the cached copy", err, key = key);
-        }
+    // Remembers a failed load of the key.
+    isolated function recordFailure(string key, int status) {
         lock {
-            _ = self.refreshing.removeIfHasKey(key);
+            FailedLoad? previous = self.failures[key];
+            int now = currentEpoch();
+            if self.failures.length() >= MAX_REMEMBERED_FAILURES {
+                foreach string failedKey in self.failures.keys() {
+                    if now - self.failures.get(failedKey).failedAt >= backoffOf(self.failures.get(failedKey), self.failFast) {
+                        _ = self.failures.remove(failedKey);
+                    }
+                }
+            }
+            if previous is FailedLoad || self.failures.length() < MAX_REMEMBERED_FAILURES {
+                self.failures[key] = {status, failedAt: now, count: previous is FailedLoad ? previous.count + 1 : 1};
+            }
+        }
+    }
+
+    isolated function recentFailure(string key) returns (FailedLoad & readonly)? {
+        lock {
+            FailedLoad? failed = self.failures[key];
+            if failed is FailedLoad && currentEpoch() - failed.failedAt < backoffOf(failed, self.failFast) {
+                return failed.cloneReadOnly();
+            }
+        }
+        return ();
+    }
+
+    isolated function refresh(string key, isolated function () returns http:Response|error call) {
+        json|http:Response|error result = self.load(key, call);
+        if !(result is json) {
+            log:printWarn("Background refresh failed; keeping the cached copy", key = key);
         }
     }
 }
 
-final VacancyCache vacancyCache = new (refreshAfterSeconds, maxStaleSeconds);
+final VacancyCache vacancyCache = new (refreshAfterSeconds, maxStaleSeconds, failFastSeconds);
 
-# The job listing, from the cache when it holds a copy.
+# The cached job list.
 public isolated function cachedJobs(string requestId) returns json|http:Response|error =>
     vacancyCache.get("jobs", isolated function() returns http:Response|error => listJobs(requestId));
 
-# The team and location options, from the cache when it holds a copy.
+# The cached org structure.
 public isolated function cachedOrgStructure(string requestId) returns json|http:Response|error =>
     vacancyCache.get("org-structure", isolated function() returns http:Response|error => getOrgStructure(requestId));
 
-# One job's detail, from the cache when it holds a copy. The job id must already be checked.
+# One job's cached detail.
 public isolated function cachedJob(string jobId, string requestId) returns json|http:Response|error =>
     vacancyCache.get(string `job:${jobId}`, isolated function() returns http:Response|error => getJob(jobId, requestId));
 
-# Fills the cache with the job listing and the org structure when the service starts, so the first visitors do not wait.
+# Fills the cache at start-up.
 public isolated function warmUp() {
     json|http:Response|error jobs = cachedJobs(WARM_UP_REQUEST_ID);
     json|http:Response|error orgStructure = cachedOrgStructure(WARM_UP_REQUEST_ID);
