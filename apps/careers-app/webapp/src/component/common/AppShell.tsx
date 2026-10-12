@@ -155,7 +155,7 @@ const AppShell = () => {
             {navItems.map((item) => {
               const active = isActive(item.path);
               return (
-                <Tooltip key={item.path} title={item.label} arrow>
+                <Tooltip key={item.path} title={item.label} arrow disableInteractive>
                   <Box
                     component="button"
                     onClick={() => navigate(item.path)}
@@ -187,7 +187,7 @@ const AppShell = () => {
 
           <Box sx={{ width: "1px", height: 24, backgroundColor: "divider", mx: 1 }} />
 
-          <Tooltip title={isDark ? "Switch to light mode" : "Switch to dark mode"} arrow>
+          <Tooltip title={isDark ? "Switch to light mode" : "Switch to dark mode"} arrow disableInteractive>
             <Box
               component="button"
               onClick={colorMode.toggleColorMode}
@@ -213,7 +213,7 @@ const AppShell = () => {
           </Tooltip>
 
           {isSignedIn ? (
-            <Tooltip title="Sign out" arrow>
+            <Tooltip title="Sign out" arrow disableInteractive>
               <Box
                 component="button"
                 onClick={appSignOut}
