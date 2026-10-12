@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { getCountries, getCountryCallingCode } from "libphonenumber-js";
+import { getCountries, getCountryCallingCode, parsePhoneNumberFromString } from "libphonenumber-js";
 
 // Every country with its dialing code, keyed by ISO region so countries sharing a code stay distinct.
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -25,6 +25,15 @@ export const COUNTRY_OPTIONS = getCountries()
 // The format the backend accepts: the dialing code, then only the digits typed, without a leading trunk "0".
 export const toE164 = (dialCode: string, input: string): string =>
   `${dialCode}${input.replace(/\D/g, "").replace(/^0+/, "")}`;
+
+// Splits a number in that format into its country and the digits after the dialing code, or null when it cannot be read.
+export const splitE164 = (value: string): { countryIso: string; national: string } | null => {
+  const parsed = parsePhoneNumberFromString(value);
+  if (!parsed) return null;
+  const countryIso =
+    parsed.country ?? getCountries().find((iso) => getCountryCallingCode(iso) === parsed.countryCallingCode);
+  return countryIso ? { countryIso, national: parsed.nationalNumber } : null;
+};
 
 // Whether a value is in that format: "+", then 2 to 15 digits, not starting with 0.
 export const isValidE164 = (value: string): boolean => /^\+[1-9]\d{1,14}$/.test(value);

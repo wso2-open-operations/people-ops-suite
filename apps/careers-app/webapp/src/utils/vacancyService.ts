@@ -16,7 +16,7 @@
 
 import axios from "axios";
 
-import { AppConfig, UseMockProfile } from "@config/config";
+import { AppConfig } from "@config/config";
 import { GuestApplicationDetails, Job } from "@/types/types";
 
 interface VacancyBasicInfo {
@@ -120,17 +120,13 @@ export async function fetchOrgStructure(accessToken: string): Promise<OrgStructu
   };
 }
 
-// Sends an application and its CV in one multipart request. With mock data on, nothing is sent.
+// Sends an application and its CV in one multipart request.
 export async function submitApplicationForm(
   accessToken: string,
   jobId: string,
   details: GuestApplicationDetails,
   cv: File,
 ): Promise<void> {
-  if (UseMockProfile) {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    return;
-  }
   const form = new FormData();
   Object.entries(details).forEach(([key, value]) => form.append(key, String(value)));
   form.append("cv", cv);

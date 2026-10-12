@@ -16,13 +16,15 @@
 
 import { Box, Typography } from "@mui/material";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { State } from "@/types/types";
 import { SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
+import { loadProfile, profileFailed } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { useAppDispatch } from "@slices/store";
-import { COUNTRY_OPTIONS } from "@utils/phone";
+import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { COUNTRY_OPTIONS, splitE164 } from "@utils/phone";
 import { type VacancyDetail, submitApplicationForm } from "@utils/vacancyService";
 import ApplicationSubmittedDialog from "@view/jobs/components/ApplicationSubmittedDialog";
 import ApplyForm, { type ApplyFormValues } from "@view/jobs/components/ApplyForm";
@@ -48,6 +50,33 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
     phone: "",
     address: "",
   });
+  const profile = useAppSelector((state: RootState) => state.careers.profile);
+  const profileState = useAppSelector((state: RootState) => state.careers.profileState);
+
+  // A signed-in candidate's saved profile is loaded here if it isn't already.
+  useEffect(() => {
+    if (!isSignedIn || profileState !== State.idle) return;
+    getAccessToken()
+      .then((token) => dispatch(loadProfile(token)))
+      .catch(() => dispatch(profileFailed()));
+  }, [isSignedIn, profileState, dispatch, getAccessToken]);
+
+  // Fills the empty fields from the profile once it has loaded; anything already typed is kept.
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (!isSignedIn || profileState !== State.success || prefilled.current) return;
+    prefilled.current = true;
+    const phone = splitE164(profile.contactNo);
+    setForm((current) => ({
+      firstName: current.firstName || profile.firstName,
+      lastName: current.lastName || profile.lastName,
+      email: current.email || profile.personalEmail,
+      countryIso: current.countryIso || phone?.countryIso || "",
+      phone: current.phone || phone?.national || "",
+      address: current.address || (profile.address ?? ""),
+    }));
+  }, [isSignedIn, profileState, profile]);
+
   const [authorized, setAuthorized] = useState<"yes" | "no" | "">("");
   const [consentData, setConsentData] = useState(false);
   const [consentChecks, setConsentChecks] = useState(false);
@@ -87,6 +116,11 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
         cvFile,
       );
       setSubmittedOpen(true);
+      // The CV and the ticked answers belong to this application, so the form starts clean for the next one.
+      setCvFile(null);
+      setAuthorized("");
+      setConsentData(false);
+      setConsentChecks(false);
     } catch (err) {
       // The backend explains rejections (a missing field, a bad CV) in `message`.
       const data = (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
