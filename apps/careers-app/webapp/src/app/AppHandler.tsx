@@ -45,7 +45,7 @@ const AppHandler = () => {
           children: [
             { path: "/", element: <Navigate to="/jobs" replace /> },
             { path: "/jobs", element: <View.jobs /> },
-            { path: "/jobs/:id", element: <View.jobDetail /> },
+            { path: "/jobs/:id/:slug?", element: <View.jobDetail /> },
             {
               element: <RequireSignIn />,
               children: [

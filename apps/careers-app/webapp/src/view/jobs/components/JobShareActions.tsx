@@ -14,44 +14,50 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Stack } from "@mui/material";
+import { Box, Stack, Tooltip, useTheme } from "@mui/material";
 import { Bookmark, BookmarkCheck, Facebook, Linkedin, Twitter } from "lucide-react";
 
+import { jobPath } from "@utils/jobFilterUtils";
+import type { VacancyDetail } from "@utils/vacancyService";
+
 interface JobShareActionsProps {
-  title: string;
+  job: Pick<VacancyDetail, "id" | "title" | "country">;
   isSignedIn: boolean;
   isSaved: boolean;
   onToggleSave: () => void;
 }
 
-const circleSx = {
-  width: 34,
-  height: 34,
-  borderRadius: "50%",
-  border: "1px solid rgba(255,255,255,0.25)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "rgba(255,255,255,0.7)",
-} as const;
+const circleSx = (isDark: boolean) =>
+  ({
+    width: 34,
+    height: 34,
+    borderRadius: "50%",
+    border: `1px solid ${isDark ? "rgba(255,255,255,0.25)" : "rgba(23,34,58,0.25)"}`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: isDark ? "rgba(255,255,255,0.7)" : "text.secondary",
+  }) as const;
 
 // Share links for the job page, plus a save button that only a signed-in candidate sees.
-const JobShareActions = ({ title, isSignedIn, isSaved, onToggleSave }: JobShareActionsProps) => {
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+const JobShareActions = ({ job, isSignedIn, isSaved, onToggleSave }: JobShareActionsProps) => {
+  const isDark = useTheme().palette.mode === "dark";
+  // The job's readable address, which the share links point to.
+  const encodedUrl = encodeURIComponent(`${window.location.origin}${jobPath(job)}`);
   const links = [
     {
-      label: "Share on Facebook",
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      label: "Share with your friends on Facebook",
+      href: `https://www.facebook.com/share.php?u=${encodedUrl}`,
       icon: <Facebook size={15} />,
     },
     {
-      label: "Share on X (Twitter)",
-      href: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`,
+      label: "Share with your friends on X",
+      href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodeURIComponent(job.title)}`,
       icon: <Twitter size={15} />,
     },
     {
-      label: "Share on LinkedIn",
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+      label: "Share with your friends on LinkedIn",
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
       icon: <Linkedin size={15} />,
     },
   ];
@@ -59,17 +65,18 @@ const JobShareActions = ({ title, isSignedIn, isSaved, onToggleSave }: JobShareA
   return (
     <Stack direction="row" gap={1.5} mt={3}>
       {links.map((link) => (
-        <Box
-          key={link.href}
-          component="a"
-          href={link.href}
-          aria-label={`${link.label} (opens in a new tab)`}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={circleSx}
-        >
-          {link.icon}
-        </Box>
+        <Tooltip key={link.href} title={link.label}>
+          <Box
+            component="a"
+            href={link.href}
+            aria-label={`${link.label} (opens in a new tab)`}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={circleSx(isDark)}
+          >
+            {link.icon}
+          </Box>
+        </Tooltip>
       ))}
       {isSignedIn && (
         <Box
@@ -78,8 +85,8 @@ const JobShareActions = ({ title, isSignedIn, isSaved, onToggleSave }: JobShareA
           aria-pressed={isSaved}
           onClick={onToggleSave}
           sx={{
-            ...circleSx,
-            color: isSaved ? "primary.main" : "rgba(255,255,255,0.7)",
+            ...circleSx(isDark),
+            color: isSaved ? "primary.main" : circleSx(isDark).color,
             background: "none",
             cursor: "pointer",
           }}

@@ -29,8 +29,13 @@ const JobAtAGlance = ({ team, officeLabel, jobType, onSeeAllRoles }: JobAtAGlanc
     sx={{
       borderRadius: "16px",
       p: 3,
-      backgroundColor: "rgba(255,255,255,0.04)",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: "#0F1B33",
+      backgroundImage: [
+        "radial-gradient(circle at 100% 100%, rgba(255,115,0,0.2), transparent 55%)",
+        "linear-gradient(135deg, #0B1B3A 0%, #16295A 60%, #1B2547 100%)",
+      ].join(", "),
+      border: "1px solid rgba(255,255,255,0.12)",
+      boxShadow: "0 18px 40px -16px rgba(11,18,32,0.5)",
     }}
   >
     <Typography sx={{ color: "rgba(255,255,255,0.55)", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", mb: 2 }}>

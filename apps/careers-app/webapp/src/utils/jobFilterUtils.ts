@@ -16,6 +16,27 @@
 
 import { Job } from "@/types/types";
 
+type JobAddress = Pick<Job, "id" | "title" | "country">;
+
+// Turns text into lower-case words joined by dashes.
+const slugOf = (text: string) =>
+  text
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+// The readable part of a job's address: its title and countries.
+export const jobSlug = (job: JobAddress): string =>
+  [slugOf(job.title), ...job.country.map(slugOf)].filter(Boolean).join("-");
+
+// The page address of a job.
+export const jobPath = (job: JobAddress): string => {
+  const slug = jobSlug(job);
+  return slug ? `/jobs/${job.id}/${slug}` : `/jobs/${job.id}`;
+};
+
 // Selections within one filter combine with OR; an empty selection matches every job.
 // The results list and the per-option counts share these predicates so the
 // numbers shown next to an option always equal the results it produces.

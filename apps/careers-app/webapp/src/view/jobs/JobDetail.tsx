@@ -17,12 +17,13 @@
 import { Box, Button, Typography } from "@mui/material";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { PAGE_MAX_WIDTH } from "@config/brand";
 import { useAppAuthContext } from "@context/AuthContext";
 import { loadJobDetail, toggleSaveJob } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { jobPath } from "@utils/jobFilterUtils";
 import ApplySection from "@view/jobs/components/ApplySection";
 import JobDescription from "@view/jobs/components/JobDescription";
 import JobDetailSkeleton from "@view/jobs/components/JobDetailSkeleton";
@@ -33,8 +34,9 @@ const JobDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Browser-back keeps the list's search and filters; a directly opened job has no history to go back to.
-  const goBackToJobs = () => (location.key !== "default" ? navigate(-1) : navigate("/jobs"));
+  // Goes back in history, or to the job list when the page was opened directly.
+  const openedDirectly = useRef(location.key === "default");
+  const goBackToJobs = () => (openedDirectly.current ? navigate("/jobs") : navigate(-1));
   const dispatch = useAppDispatch();
   const { getToken: getAccessToken, isSignedIn } = useAppAuthContext();
 
@@ -43,6 +45,13 @@ const JobDetail = () => {
 
   const [loading, setLoading] = useState(!detail);
   const [error, setError] = useState(false);
+
+  // Replaces the address with the job's readable one.
+  useEffect(() => {
+    if (!detail) return;
+    const path = jobPath(detail);
+    if (location.pathname !== path) navigate(`${path}${location.search}${location.hash}`, { replace: true });
+  }, [detail, location.pathname, location.search, location.hash, navigate]);
 
   // A link ending in #Apply-Now opens straight at the form. The short delay lets the shell's
   // scroll-to-top on navigation happen first.

@@ -17,7 +17,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Job } from "@/types/types";
-import { matchesJobType, matchesLocation, matchesSearch, matchesTeam } from "@utils/jobFilterUtils";
+import { jobPath, jobSlug, matchesJobType, matchesLocation, matchesSearch, matchesTeam } from "@utils/jobFilterUtils";
 
 const job = (overrides: Partial<Job> = {}): Job => ({
   id: "1",
@@ -102,5 +102,27 @@ describe("filters together", () => {
     const engineeringInSriLanka = inSriLanka.filter((j) => matchesTeam(j, ["Engineering"]));
     expect(inSriLanka.map((j) => j.id)).toEqual(["1", "3"]);
     expect(engineeringInSriLanka.map((j) => j.id)).toEqual(["1"]);
+  });
+});
+
+describe("jobSlug and jobPath", () => {
+  const accountManager = job({ id: "283", title: "Account Manager", country: ["Sri Lanka"] });
+
+  it("is the title and the country", () => {
+    expect(jobSlug(accountManager)).toBe("account-manager-sri-lanka");
+    expect(jobPath(accountManager)).toBe("/jobs/283/account-manager-sri-lanka");
+  });
+
+  it("turns punctuation and accents into single dashes", () => {
+    const intern = job({ id: "5", title: "Intern - Customer Success (Colombo)", country: ["Côte d'Ivoire"] });
+    expect(jobSlug(intern)).toBe("intern-customer-success-colombo-cote-d-ivoire");
+  });
+
+  it("names every country of the job", () => {
+    expect(jobSlug(job({ title: "Engineer", country: ["Sri Lanka", "Brazil"] }))).toBe("engineer-sri-lanka-brazil");
+  });
+
+  it("falls back to the plain address when there is nothing to name", () => {
+    expect(jobPath(job({ id: "9", title: "", country: [] }))).toBe("/jobs/9");
   });
 });
