@@ -100,6 +100,10 @@ export const themeSettings = (mode: PaletteMode) => {
           },
         },
       },
+      // A tooltip closes the moment the pointer leaves, with no fade-out and no hovering on the tooltip itself.
+      MuiTooltip: {
+        defaultProps: { disableInteractive: true, slotProps: { transition: { timeout: 0 } } },
+      },
       MuiCard: {
         styleOverrides: {
           root: {
