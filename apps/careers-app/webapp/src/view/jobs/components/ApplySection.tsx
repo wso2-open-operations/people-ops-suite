@@ -130,6 +130,9 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
       if (isSignedIn) {
         trackSubmittedApplication(detail.id, detail.title, detail.team);
         dispatch(refreshApplications());
+      } else {
+        // A guest's details are not kept on screen once the application has been sent.
+        setForm(EMPTY_FORM);
       }
       // The CV and the ticked answers belong to this application, so the form starts clean for the next one.
       setCvFile(null);
@@ -162,10 +165,10 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
           backgroundColor: "background.paper",
         }}
       >
-        <Typography variant="h4" fontWeight={800} sx={{ color: "text.primary" }} mb={0.5}>
+        <Typography variant="h4" fontWeight={800} sx={{ color: "text.primary" }} mb={3}>
           Apply Now
         </Typography>
-        {!isSignedIn ? <GuestSignInPrompt onSignIn={appSignIn} /> : <Box sx={{ mb: 2 }} />}
+        {!isSignedIn && <GuestSignInPrompt onSignIn={appSignIn} />}
 
         <ApplyForm
           form={form}

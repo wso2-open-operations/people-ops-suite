@@ -18,8 +18,10 @@ import {
   Box,
   Button,
   Checkbox,
+  CircularProgress,
   FormControlLabel,
   Grid,
+  LinearProgress,
   MenuItem,
   Radio,
   RadioGroup,
@@ -84,6 +86,7 @@ const ApplyForm = ({
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             label="First Name"
+            disabled={submitting}
             required
             fullWidth
             size="small"
@@ -94,6 +97,7 @@ const ApplyForm = ({
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             label="Last Name"
+            disabled={submitting}
             required
             fullWidth
             size="small"
@@ -104,6 +108,7 @@ const ApplyForm = ({
         <Grid size={{ xs: 12 }}>
           <TextField
             label="Email"
+            disabled={submitting}
             required
             fullWidth
             size="small"
@@ -115,6 +120,7 @@ const ApplyForm = ({
           <TextField
             select
             label="Country Code"
+            disabled={submitting}
             required
             fullWidth
             size="small"
@@ -137,6 +143,7 @@ const ApplyForm = ({
         <Grid size={{ xs: 12, sm: 8 }}>
           <TextField
             label="Phone"
+            disabled={submitting}
             required
             fullWidth
             size="small"
@@ -148,6 +155,7 @@ const ApplyForm = ({
         <Grid size={{ xs: 12 }}>
           <TextField
             label="Address"
+            disabled={submitting}
             required
             fullWidth
             size="small"
@@ -181,7 +189,13 @@ const ApplyForm = ({
                 onCvChosen(file);
               }}
             />
-            <Button variant="outlined" size="small" onClick={() => cvInputRef.current?.click()} sx={{ borderRadius: "8px" }}>
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={submitting}
+              onClick={() => cvInputRef.current?.click()}
+              sx={{ borderRadius: "8px" }}
+            >
               Choose file
             </Button>
             <Typography fontSize="0.9rem" color="text.secondary" noWrap>
@@ -202,14 +216,19 @@ const ApplyForm = ({
         </Typography>
 
         <RadioGroup row value={authorized} onChange={(e) => onAuthorizedChange(e.target.value as "yes" | "no")}>
-          <FormControlLabel value="yes" control={<Radio size="small" />} label="Yes" />
-          <FormControlLabel value="no" control={<Radio size="small" />} label="No" />
+          <FormControlLabel value="yes" control={<Radio size="small" disabled={submitting} />} label="Yes" />
+          <FormControlLabel value="no" control={<Radio size="small" disabled={submitting} />} label="No" />
         </RadioGroup>
       </Box>
 
       <Stack gap={1}>
         <FormControlLabel
-          control={<Checkbox size="small" checked={consentData} onChange={(e) => onConsentDataChange(e.target.checked)} />}
+          control={<Checkbox
+              size="small"
+              disabled={submitting}
+              checked={consentData}
+              onChange={(e) => onConsentDataChange(e.target.checked)}
+            />}
           label={
             <Typography fontSize="0.9rem">
               Yes, I give WSO2 permission to use my personal data for recruitment purposes only. *
@@ -218,7 +237,12 @@ const ApplyForm = ({
         />
         <FormControlLabel
           control={
-            <Checkbox size="small" checked={consentChecks} onChange={(e) => onConsentChecksChange(e.target.checked)} />
+            <Checkbox
+              size="small"
+              disabled={submitting}
+              checked={consentChecks}
+              onChange={(e) => onConsentChecksChange(e.target.checked)}
+            />
           }
           label={
             <Typography fontSize="0.9rem">
@@ -234,10 +258,20 @@ const ApplyForm = ({
         size="large"
         disabled={!canSubmit || submitting}
         onClick={onSubmit}
+        startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : undefined}
         sx={{ ...pillButtonSx, alignSelf: "flex-start", px: 5 }}
       >
         {submitting ? "Submitting..." : "Submit"}
       </Button>
+
+      {submitting && (
+        <Box role="status" aria-live="polite">
+          <LinearProgress sx={{ borderRadius: "999px", mb: 1 }} />
+          <Typography fontSize="0.9rem" color="text.secondary">
+            Sending your application and CV. This can take a few seconds, so please keep this page open.
+          </Typography>
+        </Box>
+      )}
     </Stack>
   );
 };
