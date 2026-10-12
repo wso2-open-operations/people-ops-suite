@@ -34,7 +34,7 @@ let profile: CandidateProfile = {
   firstName: "Alice",
   lastName: "Bob",
   gender: "Female",
-  personalEmail: "bob@gmail.com",
+  personalEmail: "subavarshana@wso2.com",
   contactNo: "+94771234567",
   address: "45 Galle Road, Colombo 03, Sri Lanka",
   university: "University of Moratuwa",
