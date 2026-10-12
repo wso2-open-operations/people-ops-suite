@@ -38,21 +38,17 @@ interface ApplySectionProps {
 // The same shape the backend accepts: something@domain.tld with no spaces, so a typo is caught before the CV upload.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
+const EMPTY_FORM: ApplyFormValues = { firstName: "", lastName: "", email: "", countryIso: "", phone: "", address: "" };
+
 // The "Apply Now" card: the application form, its submit logic and the confirmation dialog.
 const ApplySection = ({ detail }: ApplySectionProps) => {
   const dispatch = useAppDispatch();
   const { getToken: getAccessToken, isSignedIn, appSignIn } = useAppAuthContext();
 
-  const [form, setForm] = useState<ApplyFormValues>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    countryIso: "",
-    phone: "",
-    address: "",
-  });
+  const [form, setForm] = useState<ApplyFormValues>(EMPTY_FORM);
   const profile = useAppSelector((state: RootState) => state.careers.profile);
   const profileState = useAppSelector((state: RootState) => state.careers.profileState);
+  const sessionGeneration = useAppSelector((state: RootState) => state.careers.sessionGeneration);
 
   // A signed-in candidate's saved profile is loaded here if it isn't already.
   useEffect(() => {
@@ -84,6 +80,20 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
   const [submitting, setSubmitting] = useState(false);
   const [submittedOpen, setSubmittedOpen] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
+
+  // When the candidate's data is cleared (sign-out or an ended session), nothing of theirs stays in the form, and the
+  // next candidate's profile can fill it.
+  const seenGeneration = useRef(sessionGeneration);
+  useEffect(() => {
+    if (seenGeneration.current === sessionGeneration) return;
+    seenGeneration.current = sessionGeneration;
+    prefilled.current = false;
+    setForm(EMPTY_FORM);
+    setCvFile(null);
+    setAuthorized("");
+    setConsentData(false);
+    setConsentChecks(false);
+  }, [sessionGeneration]);
 
   const applyFormValid =
     !!form.firstName.trim() &&
