@@ -60,6 +60,7 @@ describe("offerDeadlineOf and daysLeftText", () => {
   it("has no deadline when the application has none or it cannot be read", () => {
     expect(offerDeadlineOf(application())).toBeNull();
     expect(offerDeadlineOf(application({ offerExpiresOn: "not a date" }))).toBeNull();
+    expect(offerDeadlineOf(application({ offerExpiresOn: "2026-02-30" }))).toBeNull();
   });
 
   // Run the tests with TZ=America/Los_Angeles (and America/New_York) to cover a negative-offset time zone: a

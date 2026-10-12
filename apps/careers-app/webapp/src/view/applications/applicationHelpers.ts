@@ -34,7 +34,14 @@ const STAGE_INDEX: Partial<Record<ApplicationStatus, number>> = {
 // Reads a date, or null when it cannot be read. A date without a time is read as a local day, not midnight UTC.
 const parseDate = (value: string): Date | null => {
   const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  const date = dateOnly ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3])) : new Date(value);
+  if (dateOnly) {
+    const [year, month, day] = dateOnly.slice(1).map(Number);
+    const date = new Date(year, month - 1, day);
+    // A day that does not exist (2026-02-30) would roll over into the next month, so it is rejected.
+    const exists = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+    return exists ? date : null;
+  }
+  const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
