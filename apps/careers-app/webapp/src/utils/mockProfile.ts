@@ -59,7 +59,12 @@ export async function saveProfile(changes: Partial<EditableProfileFields>): Prom
   return structuredClone(profile);
 }
 
-const daysFromNow = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+// A date-only value (YYYY-MM-DD) in the local calendar.
+const daysFromNow = (days: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toLocaleDateString("en-CA");
+};
 
 const applications: Application[] = [
   {

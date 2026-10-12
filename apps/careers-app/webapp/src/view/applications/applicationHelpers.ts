@@ -31,9 +31,10 @@ const STAGE_INDEX: Partial<Record<ApplicationStatus, number>> = {
   [ApplicationStatus.OfferDeclined]: 3,
 };
 
-// Reads a date, or null when it cannot be read.
+// Reads a date, or null when it cannot be read. A date without a time is read as a local day, not midnight UTC.
 const parseDate = (value: string): Date | null => {
-  const date = new Date(value);
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const date = dateOnly ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3])) : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
