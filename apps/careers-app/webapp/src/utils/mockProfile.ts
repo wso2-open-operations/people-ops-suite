@@ -59,11 +59,14 @@ export async function saveProfile(changes: Partial<EditableProfileFields>): Prom
   return structuredClone(profile);
 }
 
-// A date-only value (YYYY-MM-DD) in the local calendar.
+// A date as YYYY-MM-DD in the local calendar.
+const dateOnly = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
 const daysFromNow = (days: number) => {
   const date = new Date();
   date.setDate(date.getDate() + days);
-  return date.toLocaleDateString("en-CA");
+  return dateOnly(date);
 };
 
 const applications: Application[] = [
@@ -176,14 +179,14 @@ export async function respondToOffer(applicationId: string, answer: OfferAnswer)
   application.status = answer.response === "accepted" ? ApplicationStatus.OfferAccepted : ApplicationStatus.OfferDeclined;
   application.timeline = [
     ...(application.timeline ?? []),
-    { stage: application.status, date: new Date().toISOString().slice(0, 10) },
+    { stage: application.status, date: dateOnly(new Date()) },
   ];
   return structuredClone(application);
 }
 
 // Adds an application the candidate just made, so the Applications page shows it.
 export function addApplication(jobId: string, jobTitle: string, department: string): void {
-  const date = new Date().toLocaleDateString("en-CA");
+  const date = dateOnly(new Date());
   applications.unshift({
     id: `new-${Date.now()}`,
     jobId,
