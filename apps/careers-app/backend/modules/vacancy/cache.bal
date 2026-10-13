@@ -102,7 +102,9 @@ public isolated class VacancyCache {
             returns json|http:Response|error {
         CachedBody? cached = self.lookup(key);
         if cached is CachedBody {
-            if currentEpoch() - cached.fetchedAt >= self.refreshAfter && self.tryStart(key) {
+            // A failed refresh is remembered, so a stale copy is not refreshed again until that has expired.
+            boolean stale = currentEpoch() - cached.fetchedAt >= self.refreshAfter;
+            if stale && self.recentFailure(key) is () && self.tryStart(key) {
                 _ = start self.refresh(key, call);
             }
             return cached.value;

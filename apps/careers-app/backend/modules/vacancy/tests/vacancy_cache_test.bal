@@ -254,6 +254,24 @@ function jobStatusAfterARefreshThatFails(string key, int statusAfter) returns js
 }
 
 @test:Config {}
+function aFailedRefreshIsNotRepeatedOnEveryRequestWhileItIsRemembered() {
+    VacancyCache cache = new (0, 21600, 5);
+    // The first call fills the cache; every later call to the upstream fails.
+    final FakeUpstream upstream = new (200, 1);
+
+    assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
+    assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
+    runtime:sleep(1);
+    test:assertEquals(upstream.count(), 2, "the first stale request should start one refresh, which fails");
+
+    foreach int _ in 0 ..< 5 {
+        assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
+    }
+    runtime:sleep(1);
+    test:assertEquals(upstream.count(), 2, "no new refresh while the failure is remembered");
+}
+
+@test:Config {}
 function aJobThatARefreshFindsMissingIsNoLongerServed() {
     json|http:Response|error result = jobStatusAfterARefreshThatFails("job:7", 404);
     test:assertTrue(result is http:Response && result.statusCode == 404, "the closed job must not be served");
