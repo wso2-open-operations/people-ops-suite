@@ -17,7 +17,7 @@
 import { Box, Button, Grid, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
-import { PAGE_MAX_WIDTH } from "@config/brand";
+import { ON_ORANGE, PAGE_MAX_WIDTH, heroColorsOf } from "@config/brand";
 import { pillButtonSx } from "@utils/styles";
 import type { VacancyDetail } from "@utils/vacancyService";
 import JobAtAGlance from "@view/jobs/components/JobAtAGlance";
@@ -46,21 +46,19 @@ const JobHero = ({
   const color = teamColors[detail.team.toUpperCase()] ?? "#6B7280";
   const officeLabel = detail.officeLocations.length > 0 ? detail.officeLocations.join(", ") : "Remote";
 
-  // A light page with soft glows in light mode, and the dark page in dark mode.
-  const isDark = useTheme().palette.mode === "dark";
-  const gridLine = isDark ? "rgba(255,255,255,0.05)" : "rgba(23,34,58,0.06)";
-  const outline = isDark ? "rgba(255,255,255,0.2)" : "rgba(23,34,58,0.2)";
+  const hero = heroColorsOf(useTheme().palette.mode);
 
   return (
     <Box
       sx={{
         position: "relative",
         overflow: "hidden",
-        backgroundColor: isDark ? "#0B1220" : "#F6F7FA",
+        backgroundColor: hero.background,
         backgroundImage: [
-          `radial-gradient(circle at 78% 65%, rgba(255,115,0,${isDark ? 0.38 : 0.2}), transparent 60%)`,
-          `radial-gradient(circle at 30% 20%, rgba(60,90,160,${isDark ? 0.35 : 0.16}), transparent 55%)`,
-          `linear-gradient(${gridLine} 1px, transparent 1px), linear-gradient(90deg, ${gridLine} 1px, transparent 1px)`,
+          `radial-gradient(circle at 78% 65%, ${hero.orangeGlow}, transparent 60%)`,
+          `radial-gradient(circle at 30% 20%, ${hero.blueGlow}, transparent 55%)`,
+          `linear-gradient(${hero.gridLine} 1px, transparent 1px)`,
+          `linear-gradient(90deg, ${hero.gridLine} 1px, transparent 1px)`,
         ].join(", "),
         backgroundSize: "auto, auto, 42px 42px, 42px 42px",
       }}
@@ -77,8 +75,8 @@ const JobHero = ({
               mb: 3,
               ml: `calc((min(${PAGE_MAX_WIDTH}px, 100vw) - 100vw) / 2)`,
               borderRadius: "50%",
-              border: `1.5px solid ${isDark ? "rgba(255,255,255,0.8)" : "rgba(23,34,58,0.6)"}`,
-              backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.8)",
+              border: `1.5px solid ${hero.backButtonBorder}`,
+              backgroundColor: hero.backButtonFill,
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -100,7 +98,7 @@ const JobHero = ({
                   px: 1.5,
                   py: 0.5,
                   borderRadius: "999px",
-                  border: `1px solid ${outline}`,
+                  border: `1px solid ${hero.outline}`,
                   color: color,
                   fontSize: "11px",
                   fontWeight: 700,
@@ -116,7 +114,7 @@ const JobHero = ({
                     px: 1.5,
                     py: 0.5,
                     borderRadius: "999px",
-                    border: `1px solid ${outline}`,
+                    border: `1px solid ${hero.outline}`,
                     color: "primary.main",
                     fontSize: "11px",
                     fontWeight: 700,
@@ -152,7 +150,7 @@ const JobHero = ({
                 px: 3.5,
                 py: 1.2,
                 backgroundColor: "primary.main",
-                color: "#0B1220",
+                color: ON_ORANGE,
                 "&:hover": { backgroundColor: "primary.main", filter: "brightness(0.95)" },
               }}
             >

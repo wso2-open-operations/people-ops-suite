@@ -37,6 +37,28 @@ export const jobPath = (job: JobAddress): string => {
   return slug ? `/jobs/${job.id}/${slug}` : `/jobs/${job.id}`;
 };
 
+// The links that share a job on each network, pointing at its readable address on the given site.
+export const jobShareLinks = (job: JobAddress, origin: string) => {
+  const url = encodeURIComponent(`${origin}${jobPath(job)}`);
+  return [
+    {
+      network: "facebook",
+      label: "Share with your friends on Facebook",
+      href: `https://www.facebook.com/share.php?u=${url}`,
+    },
+    {
+      network: "x",
+      label: "Share with your friends on X",
+      href: `https://twitter.com/intent/tweet?url=${url}&text=${encodeURIComponent(job.title)}`,
+    },
+    {
+      network: "linkedin",
+      label: "Share with your friends on LinkedIn",
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+    },
+  ] as const;
+};
+
 // Selections within one filter combine with OR; an empty selection matches every job.
 // The results list and the per-option counts share these predicates so the
 // numbers shown next to an option always equal the results it produces.

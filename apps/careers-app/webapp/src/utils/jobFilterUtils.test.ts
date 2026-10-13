@@ -17,7 +17,15 @@
 import { describe, expect, it } from "vitest";
 
 import { Job } from "@/types/types";
-import { jobPath, jobSlug, matchesJobType, matchesLocation, matchesSearch, matchesTeam } from "@utils/jobFilterUtils";
+import {
+  jobPath,
+  jobShareLinks,
+  jobSlug,
+  matchesJobType,
+  matchesLocation,
+  matchesSearch,
+  matchesTeam,
+} from "@utils/jobFilterUtils";
 
 const job = (overrides: Partial<Job> = {}): Job => ({
   id: "1",
@@ -124,5 +132,30 @@ describe("jobSlug and jobPath", () => {
 
   it("falls back to the plain address when there is nothing to name", () => {
     expect(jobPath(job({ id: "9", title: "", country: [] }))).toBe("/jobs/9");
+  });
+});
+
+describe("jobShareLinks", () => {
+  const accountManager = job({ id: "283", title: "Account Manager", country: ["Sri Lanka"] });
+  const address = encodeURIComponent("https://careers.example.com/jobs/283/account-manager-sri-lanka");
+  const links = jobShareLinks(accountManager, "https://careers.example.com");
+  const hrefOf = (network: string) => links.find((l) => l.network === network)?.href;
+
+  it("points every link at the readable address of the job on the given site", () => {
+    expect(hrefOf("facebook")).toBe(`https://www.facebook.com/share.php?u=${address}`);
+    expect(hrefOf("linkedin")).toBe(`https://www.linkedin.com/sharing/share-offsite/?url=${address}`);
+    expect(hrefOf("x")).toContain(`url=${address}`);
+  });
+
+  it("adds the job title to the post on X", () => {
+    expect(hrefOf("x")).toContain(`text=${encodeURIComponent("Account Manager")}`);
+  });
+
+  it("labels each link for the network it shares to", () => {
+    expect(links.map((l) => l.label)).toEqual([
+      "Share with your friends on Facebook",
+      "Share with your friends on X",
+      "Share with your friends on LinkedIn",
+    ]);
   });
 });

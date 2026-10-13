@@ -17,7 +17,8 @@
 import { Box, Stack, Tooltip, useTheme } from "@mui/material";
 import { Bookmark, BookmarkCheck, Facebook, Linkedin, Twitter } from "lucide-react";
 
-import { jobPath } from "@utils/jobFilterUtils";
+import { heroColorsOf } from "@config/brand";
+import { jobShareLinks } from "@utils/jobFilterUtils";
 import type { VacancyDetail } from "@utils/vacancyService";
 
 interface JobShareActionsProps {
@@ -27,40 +28,28 @@ interface JobShareActionsProps {
   onToggleSave: () => void;
 }
 
-const circleSx = (isDark: boolean) =>
+const NETWORK_ICONS = {
+  facebook: <Facebook size={15} />,
+  x: <Twitter size={15} />,
+  linkedin: <Linkedin size={15} />,
+};
+
+const circleSx = (hero: ReturnType<typeof heroColorsOf>) =>
   ({
     width: 34,
     height: 34,
     borderRadius: "50%",
-    border: `1px solid ${isDark ? "rgba(255,255,255,0.25)" : "rgba(23,34,58,0.25)"}`,
+    border: `1px solid ${hero.circleBorder}`,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: isDark ? "rgba(255,255,255,0.7)" : "text.secondary",
+    color: hero.circleIcon,
   }) as const;
 
 // Share links for the job page, plus a save button that only a signed-in candidate sees.
 const JobShareActions = ({ job, isSignedIn, isSaved, onToggleSave }: JobShareActionsProps) => {
-  const isDark = useTheme().palette.mode === "dark";
-  // The job's readable address, which the share links point to.
-  const encodedUrl = encodeURIComponent(`${window.location.origin}${jobPath(job)}`);
-  const links = [
-    {
-      label: "Share with your friends on Facebook",
-      href: `https://www.facebook.com/share.php?u=${encodedUrl}`,
-      icon: <Facebook size={15} />,
-    },
-    {
-      label: "Share with your friends on X",
-      href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodeURIComponent(job.title)}`,
-      icon: <Twitter size={15} />,
-    },
-    {
-      label: "Share with your friends on LinkedIn",
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-      icon: <Linkedin size={15} />,
-    },
-  ];
+  const hero = heroColorsOf(useTheme().palette.mode);
+  const links = jobShareLinks(job, window.location.origin);
 
   return (
     <Stack direction="row" gap={1.5} mt={3}>
@@ -72,9 +61,9 @@ const JobShareActions = ({ job, isSignedIn, isSaved, onToggleSave }: JobShareAct
             aria-label={`${link.label} (opens in a new tab)`}
             target="_blank"
             rel="noopener noreferrer"
-            sx={circleSx(isDark)}
+            sx={circleSx(hero)}
           >
-            {link.icon}
+            {NETWORK_ICONS[link.network]}
           </Box>
         </Tooltip>
       ))}
@@ -85,8 +74,8 @@ const JobShareActions = ({ job, isSignedIn, isSaved, onToggleSave }: JobShareAct
           aria-pressed={isSaved}
           onClick={onToggleSave}
           sx={{
-            ...circleSx(isDark),
-            color: isSaved ? "primary.main" : circleSx(isDark).color,
+            ...circleSx(hero),
+            color: isSaved ? "primary.main" : hero.circleIcon,
             background: "none",
             cursor: "pointer",
           }}
