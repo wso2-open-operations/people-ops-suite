@@ -13,7 +13,13 @@ jwksUrl = ""
 issuer = ""
 audience = ""
 
-# Optional: limit on guest applications. Defaults are shown.
+# Optional: limit on guest applications.
 # [careers_app.apply]
 # applyMaxPerWindow = 5
 # applyWindowSeconds = 3600
+
+# Optional: job reads cached duration. 
+# [careers_app.vacancy]
+# refreshAfterSeconds = 120
+# maxStaleSeconds = 21600
+# failFastSeconds = 5

@@ -24,8 +24,11 @@ configurable VacancyConfig vacancyConfig = ?;
 // Identifies this service in the upstream's logs.
 const string USER_AGENT = "careers-app-backend/0.1.0";
 
+// The longest a read, or a token request, waits for the upstream to reply.
+const decimal UPSTREAM_TIMEOUT_SECONDS = 15;
+
 final http:Client vacancyHttpClient = check new (vacancyConfig.baseUrl, {
-    timeout: 15
+    timeout: UPSTREAM_TIMEOUT_SECONDS
 });
 
 // Applying stores the candidate and uploads the CV to Google Drive upstream, which takes far longer than a read.
@@ -38,7 +41,7 @@ final http:Client tokenHttpClient = check new (vacancyConfig.tokenUrl, {
         username: vacancyConfig.clientId,
         password: vacancyConfig.clientSecret
     },
-    timeout: 15
+    timeout: UPSTREAM_TIMEOUT_SECONDS
 });
 
 isolated function currentEpoch() returns int {
