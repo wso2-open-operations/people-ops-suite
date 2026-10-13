@@ -17,12 +17,15 @@
 import { Box, Button, Typography } from "@mui/material";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { State } from "@/types/types";
 import { PAGE_MAX_WIDTH } from "@config/brand";
+import { JOB_NOT_FOUND_ERROR } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
 import { loadJobDetail, toggleSaveJob } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { jobPath, opensDirectly, withoutArrivalMark } from "@utils/jobFilterUtils";
 import ApplySection from "@view/jobs/components/ApplySection";
 import JobDescription from "@view/jobs/components/JobDescription";
 import JobDetailSkeleton from "@view/jobs/components/JobDetailSkeleton";
@@ -33,16 +36,30 @@ const JobDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Browser-back keeps the list's search and filters; a directly opened job has no history to go back to.
-  const goBackToJobs = () => (location.key !== "default" ? navigate(-1) : navigate("/jobs"));
+  // Goes back in history, or to the job list when the job page was the first page opened (a new tab or a share).
+  const openedDirectly = useRef(location.key === "default");
+  const goBackToJobs = () => (openedDirectly.current ? navigate("/jobs") : navigate(-1));
   const dispatch = useAppDispatch();
   const { getToken: getAccessToken, isSignedIn } = useAppAuthContext();
 
   const savedJobIds = useAppSelector((state: RootState) => state.careers.savedJobIds);
   const detail = useAppSelector((state: RootState) => (id ? state.careers.jobDetails[id] : undefined)) ?? null;
 
+  const jobs = useAppSelector((state: RootState) => state.careers.jobs);
+  const jobsState = useAppSelector((state: RootState) => state.careers.jobsState);
+
   const [loading, setLoading] = useState(!detail);
   const [error, setError] = useState(false);
+  const [missing, setMissing] = useState(false);
+
+  // Replaces the address with the job's readable one, without the mark that let a new tab or a share open it.
+  useEffect(() => {
+    if (!detail) return;
+    const path = jobPath(detail);
+    if (location.pathname !== path || opensDirectly(location.search)) {
+      navigate(`${path}${withoutArrivalMark(location.search)}${location.hash}`, { replace: true });
+    }
+  }, [detail, location.pathname, location.search, location.hash, navigate]);
 
   // A link ending in #Apply-Now opens straight at the form. The short delay lets the shell's
   // scroll-to-top on navigation happen first.
@@ -59,23 +76,33 @@ const JobDetail = () => {
     }
     setLoading(true);
     setError(false);
+    setMissing(false);
     getAccessToken()
       .then((token) => dispatch(loadJobDetail({ accessToken: token, jobId: id })).unwrap())
-      .catch(() => {
+      .catch((err: { name?: string }) => {
         setError(true);
+        setMissing(err?.name === JOB_NOT_FOUND_ERROR);
       })
       .finally(() => setLoading(false));
   }, [id, detail, dispatch, getAccessToken]);
 
   if (loading) return <JobDetailSkeleton />;
 
+  // The job does not exist: the backend said so, or the load failed and the job is not in the loaded job list.
+  const notAvailable = missing || (error && jobsState === State.success && !jobs.some((job) => job.id === id));
+
   if (error || !detail) {
     return (
       <Box>
         <Box sx={{ textAlign: "center", py: 10 }}>
-          <Typography variant="h5" mb={2} color="text.primary">
-            Failed to load job details.
+          <Typography variant="h5" mb={notAvailable ? 1 : 2} color="text.primary">
+            {notAvailable ? "This job is not available." : "Failed to load job details."}
           </Typography>
+          {notAvailable && (
+            <Typography color="text.secondary" mb={2}>
+              It may have been closed, or the link may be wrong.
+            </Typography>
+          )}
           <Button variant="contained" onClick={() => navigate("/jobs")}>
             Back to Jobs
           </Button>

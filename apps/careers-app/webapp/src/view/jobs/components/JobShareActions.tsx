@@ -14,62 +14,58 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Stack } from "@mui/material";
+import { Box, Stack, Tooltip, useTheme } from "@mui/material";
 import { Bookmark, BookmarkCheck, Facebook, Linkedin, Twitter } from "lucide-react";
 
+import { heroColorsOf } from "@config/brand";
+import { jobShareLinks } from "@utils/jobFilterUtils";
+import type { VacancyDetail } from "@utils/vacancyService";
+
 interface JobShareActionsProps {
-  title: string;
+  job: Pick<VacancyDetail, "id" | "title" | "country">;
   isSignedIn: boolean;
   isSaved: boolean;
   onToggleSave: () => void;
 }
 
-const circleSx = {
-  width: 34,
-  height: 34,
-  borderRadius: "50%",
-  border: "1px solid rgba(255,255,255,0.25)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "rgba(255,255,255,0.7)",
-} as const;
+const NETWORK_ICONS = {
+  facebook: <Facebook size={15} />,
+  x: <Twitter size={15} />,
+  linkedin: <Linkedin size={15} />,
+};
+
+const circleSx = (hero: ReturnType<typeof heroColorsOf>) =>
+  ({
+    width: 34,
+    height: 34,
+    borderRadius: "50%",
+    border: `1px solid ${hero.circleBorder}`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: hero.circleIcon,
+  }) as const;
 
 // Share links for the job page, plus a save button that only a signed-in candidate sees.
-const JobShareActions = ({ title, isSignedIn, isSaved, onToggleSave }: JobShareActionsProps) => {
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-  const links = [
-    {
-      label: "Share on Facebook",
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-      icon: <Facebook size={15} />,
-    },
-    {
-      label: "Share on X (Twitter)",
-      href: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`,
-      icon: <Twitter size={15} />,
-    },
-    {
-      label: "Share on LinkedIn",
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
-      icon: <Linkedin size={15} />,
-    },
-  ];
+const JobShareActions = ({ job, isSignedIn, isSaved, onToggleSave }: JobShareActionsProps) => {
+  const hero = heroColorsOf(useTheme().palette.mode);
+  const links = jobShareLinks(job, window.location.origin);
 
   return (
     <Stack direction="row" gap={1.5} mt={3}>
       {links.map((link) => (
-        <Box
-          key={link.href}
-          component="a"
-          href={link.href}
-          aria-label={`${link.label} (opens in a new tab)`}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={circleSx}
-        >
-          {link.icon}
-        </Box>
+        <Tooltip key={link.href} title={link.label}>
+          <Box
+            component="a"
+            href={link.href}
+            aria-label={`${link.label} (opens in a new tab)`}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={circleSx(hero)}
+          >
+            {NETWORK_ICONS[link.network]}
+          </Box>
+        </Tooltip>
       ))}
       {isSignedIn && (
         <Box
@@ -78,8 +74,8 @@ const JobShareActions = ({ title, isSignedIn, isSaved, onToggleSave }: JobShareA
           aria-pressed={isSaved}
           onClick={onToggleSave}
           sx={{
-            ...circleSx,
-            color: isSaved ? "primary.main" : "rgba(255,255,255,0.7)",
+            ...circleSx(hero),
+            color: isSaved ? "primary.main" : hero.circleIcon,
             background: "none",
             cursor: "pointer",
           }}

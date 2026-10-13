@@ -22,6 +22,7 @@ import { Job } from "@/types/types";
 import { useAppAuthContext } from "@context/AuthContext";
 import { toggleSaveJob } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { jobPath } from "@utils/jobFilterUtils";
 
 interface JobCardProps {
   job: Job;
@@ -37,7 +38,7 @@ const JobCard = ({ job }: JobCardProps) => {
   return (
     // The save button is a sibling of the link, not inside it: a button must not be nested in an anchor.
     <Box sx={{ position: "relative", height: "100%" }}>
-      <Box component={Link} to={`/jobs/${job.id}`} sx={{ textDecoration: "none", display: "block", height: "100%" }}>
+      <Box component={Link} to={jobPath(job, "list")} sx={{ textDecoration: "none", display: "block", height: "100%" }}>
         <Box
           sx={{
             height: "100%",

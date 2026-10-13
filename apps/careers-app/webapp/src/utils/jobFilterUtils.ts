@@ -16,6 +16,64 @@
 
 import { Job } from "@/types/types";
 
+type JobAddress = Pick<Job, "id" | "title" | "country">;
+
+// Turns text into lower-case words joined by dashes.
+const slugOf = (text: string) =>
+  text
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+// The readable part of a job's address: its title and countries.
+export const jobSlug = (job: JobAddress): string =>
+  [slugOf(job.title), ...job.country.map(slugOf)].filter(Boolean).join("-");
+
+// The address part that marks a link made to open a job in a new tab or from a share.
+const ARRIVAL_PARAM = "from";
+
+// The page address of a job. `from` marks a link that is allowed to open the job page directly.
+export const jobPath = (job: JobAddress, from?: "list" | "share"): string => {
+  const slug = jobSlug(job);
+  const path = slug ? `/jobs/${job.id}/${slug}` : `/jobs/${job.id}`;
+  return from ? `${path}?${ARRIVAL_PARAM}=${from}` : path;
+};
+
+// Whether an address carries the mark that lets a job page open directly.
+export const opensDirectly = (search: string): boolean => new URLSearchParams(search).has(ARRIVAL_PARAM);
+
+// The query of an address without the arrival mark; every other parameter is kept.
+export const withoutArrivalMark = (search: string): string => {
+  const params = new URLSearchParams(search);
+  params.delete(ARRIVAL_PARAM);
+  const rest = params.toString();
+  return rest ? `?${rest}` : "";
+};
+
+// The links that share a job on each network, pointing at its readable address on the given site.
+export const jobShareLinks = (job: JobAddress, origin: string) => {
+  const url = encodeURIComponent(`${origin}${jobPath(job, "share")}`);
+  return [
+    {
+      network: "facebook",
+      label: "Share with your friends on Facebook",
+      href: `https://www.facebook.com/share.php?u=${url}`,
+    },
+    {
+      network: "x",
+      label: "Share with your friends on X",
+      href: `https://twitter.com/intent/tweet?url=${url}`,
+    },
+    {
+      network: "linkedin",
+      label: "Share with your friends on LinkedIn",
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+    },
+  ] as const;
+};
+
 // Selections within one filter combine with OR; an empty selection matches every job.
 // The results list and the per-option counts share these predicates so the
 // numbers shown next to an option always equal the results it produces.

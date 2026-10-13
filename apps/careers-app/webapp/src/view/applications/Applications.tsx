@@ -35,6 +35,7 @@ import {
 } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { jobPath } from "@utils/jobFilterUtils";
 import AcceptOfferDialog from "@view/applications/components/AcceptOfferDialog";
 import ApplicationDetails from "@view/applications/components/ApplicationDetails";
 import ApplicationList from "@view/applications/components/ApplicationList";
@@ -159,7 +160,10 @@ const Applications = () => {
             <ApplicationDetails
               application={selectedApplication}
               jobOpen={jobsState !== State.success || jobs.some((job) => job.id === selectedApplication.jobId)}
-              onOpenJob={(jobId) => navigate(`/jobs/${jobId}`)}
+              onOpenJob={(jobId) => {
+                const job = jobs.find((j) => j.id === jobId);
+                navigate(job ? jobPath(job) : `/jobs/${jobId}`);
+              }}
               canAcceptOffer={!applications.some((a) => a.status === ApplicationStatus.OfferAccepted)}
               onAcceptOffer={() => setOfferDialog("accept")}
               onDeclineOffer={() => setOfferDialog("decline")}

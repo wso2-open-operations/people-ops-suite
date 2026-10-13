@@ -35,16 +35,10 @@ import "./index.css";
 function App() {
   document.title = APP_NAME || "WSO2 Careers";
 
+  // The candidate's saved choice, or light mode when they have not chosen one.
   const processLocalThemeMode = (): ThemeMode => {
     try {
-      const savedTheme = localStorage.getItem("careers-app-theme");
-      if (savedTheme === ThemeMode.Light || savedTheme === ThemeMode.Dark) {
-        return savedTheme;
-      }
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
-      localStorage.setItem("careers-app-theme", systemTheme);
-      return systemTheme;
+      return localStorage.getItem("careers-app-theme") === ThemeMode.Dark ? ThemeMode.Dark : ThemeMode.Light;
     } catch {
       return ThemeMode.Light;
     }

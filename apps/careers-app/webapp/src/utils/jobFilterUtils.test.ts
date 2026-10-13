@@ -17,7 +17,17 @@
 import { describe, expect, it } from "vitest";
 
 import { Job } from "@/types/types";
-import { matchesJobType, matchesLocation, matchesSearch, matchesTeam } from "@utils/jobFilterUtils";
+import {
+  jobPath,
+  jobShareLinks,
+  jobSlug,
+  matchesJobType,
+  matchesLocation,
+  matchesSearch,
+  matchesTeam,
+  opensDirectly,
+  withoutArrivalMark,
+} from "@utils/jobFilterUtils";
 
 const job = (overrides: Partial<Job> = {}): Job => ({
   id: "1",
@@ -102,5 +112,78 @@ describe("filters together", () => {
     const engineeringInSriLanka = inSriLanka.filter((j) => matchesTeam(j, ["Engineering"]));
     expect(inSriLanka.map((j) => j.id)).toEqual(["1", "3"]);
     expect(engineeringInSriLanka.map((j) => j.id)).toEqual(["1"]);
+  });
+});
+
+describe("jobSlug and jobPath", () => {
+  const accountManager = job({ id: "283", title: "Account Manager", country: ["Sri Lanka"] });
+
+  it("is the title and the country", () => {
+    expect(jobSlug(accountManager)).toBe("account-manager-sri-lanka");
+    expect(jobPath(accountManager)).toBe("/jobs/283/account-manager-sri-lanka");
+  });
+
+  it("turns punctuation and accents into single dashes", () => {
+    const intern = job({ id: "5", title: "Intern - Customer Success (Colombo)", country: ["Côte d'Ivoire"] });
+    expect(jobSlug(intern)).toBe("intern-customer-success-colombo-cote-d-ivoire");
+  });
+
+  it("names every country of the job", () => {
+    expect(jobSlug(job({ title: "Engineer", country: ["Sri Lanka", "Brazil"] }))).toBe("engineer-sri-lanka-brazil");
+  });
+
+  it("falls back to the plain address when there is nothing to name", () => {
+    expect(jobPath(job({ id: "9", title: "", country: [] }))).toBe("/jobs/9");
+  });
+
+  it("adds the mark that lets a new tab or a share open the job directly", () => {
+    expect(jobPath(accountManager, "list")).toBe("/jobs/283/account-manager-sri-lanka?from=list");
+    expect(jobPath(accountManager, "share")).toBe("/jobs/283/account-manager-sri-lanka?from=share");
+  });
+});
+
+describe("opensDirectly", () => {
+  it("is true for an address made for a new tab or a share", () => {
+    expect(opensDirectly("?from=list")).toBe(true);
+    expect(opensDirectly("?from=share")).toBe(true);
+  });
+
+  it("is false for an address typed into the browser", () => {
+    expect(opensDirectly("")).toBe(false);
+    expect(opensDirectly("?page=2")).toBe(false);
+  });
+});
+
+describe("withoutArrivalMark", () => {
+  it("removes the mark and keeps every other parameter", () => {
+    expect(withoutArrivalMark("?from=share&utm_source=linkedin&utm_campaign=jobs")).toBe(
+      "?utm_source=linkedin&utm_campaign=jobs",
+    );
+  });
+
+  it("leaves nothing when the mark is the only parameter", () => {
+    expect(withoutArrivalMark("?from=list")).toBe("");
+    expect(withoutArrivalMark("")).toBe("");
+  });
+});
+
+describe("jobShareLinks", () => {
+  const accountManager = job({ id: "283", title: "Account Manager", country: ["Sri Lanka"] });
+  const address = encodeURIComponent("https://careers.example.com/jobs/283/account-manager-sri-lanka?from=share");
+  const links = jobShareLinks(accountManager, "https://careers.example.com");
+  const hrefOf = (network: string) => links.find((l) => l.network === network)?.href;
+
+  it("points every link at the readable address of the job on the given site", () => {
+    expect(hrefOf("facebook")).toBe(`https://www.facebook.com/share.php?u=${address}`);
+    expect(hrefOf("linkedin")).toBe(`https://www.linkedin.com/sharing/share-offsite/?url=${address}`);
+    expect(hrefOf("x")).toBe(`https://twitter.com/intent/tweet?url=${address}`);
+  });
+
+  it("labels each link for the network it shares to", () => {
+    expect(links.map((l) => l.label)).toEqual([
+      "Share with your friends on Facebook",
+      "Share with your friends on X",
+      "Share with your friends on LinkedIn",
+    ]);
   });
 });
