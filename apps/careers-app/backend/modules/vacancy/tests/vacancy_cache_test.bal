@@ -80,6 +80,20 @@ function assertIsReplyWithStatus(json|http:Response|error result, int status) {
     }
 }
 
+// Checks the condition every 50 ms until it holds or `timeout` seconds pass, and says whether it held. This replaces
+// fixed pauses, which race the background refresh on a slow machine.
+function waitFor(function () returns boolean condition, decimal timeout = 5) returns boolean {
+    decimal waited = 0;
+    while waited < timeout {
+        if condition() {
+            return true;
+        }
+        runtime:sleep(0.05d);
+        waited += 0.05d;
+    }
+    return condition();
+}
+
 @test:Config {}
 function secondRequestIsServedFromTheCache() {
     VacancyCache cache = new (600, 21600, 5);
@@ -170,8 +184,12 @@ function repeatedFailuresAreRememberedForLonger() {
 
     // Failures are remembered for 1 second, then 2 seconds.
     json|http:Response|error first = cache.get("job:1", isolated function() returns http:Response|error => upstream.call());
-    runtime:sleep(1.2);
-    json|http:Response|error second = cache.get("job:1", isolated function() returns http:Response|error => upstream.call());
+    // Once the first failure is forgotten, the next request reaches the upstream again.
+    json|http:Response|error second = first;
+    test:assertTrue(waitFor(function() returns boolean {
+        second = cache.get("job:1", isolated function() returns http:Response|error => upstream.call());
+        return upstream.count() == 2;
+    }), "the first failure should be forgotten after about a second");
     json|http:Response|error third = cache.get("job:1", isolated function() returns http:Response|error => upstream.call());
     assertIsReplyWithStatus(first, 500);
     assertIsReplyWithStatus(second, 500);
@@ -199,8 +217,8 @@ function oldCopyIsServedAtOnceWhileItRefreshesInTheBackground() {
 
     assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
     assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
-    runtime:sleep(1);
-    test:assertEquals(upstream.count(), 2, "the second request should have started one refresh");
+    test:assertTrue(waitFor(function() returns boolean => upstream.count() == 2),
+        "the second request should have started one refresh");
 }
 
 @test:Config {}
@@ -211,7 +229,8 @@ function failedRefreshKeepsTheCachedCopy() {
 
     assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
     assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
-    runtime:sleep(1);
+    test:assertTrue(waitFor(function() returns boolean => cache.recentFailure("jobs") is FailedLoad),
+        "the refresh should have failed and been remembered");
     assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
 }
 
@@ -249,7 +268,9 @@ function jobStatusAfterARefreshThatFails(string key, int statusAfter) returns js
 
     assertIsJob(cache.get(key, isolated function() returns http:Response|error => upstream.call()));
     assertIsJob(cache.get(key, isolated function() returns http:Response|error => upstream.call()));
-    runtime:sleep(1);
+    // A failed refresh records its failure last, after dropping a job that is gone, so this means it has finished.
+    test:assertTrue(waitFor(function() returns boolean => cache.recentFailure(key) is FailedLoad),
+        "the refresh should have failed and been remembered");
     return cache.get(key, isolated function() returns http:Response|error => upstream.call());
 }
 
@@ -265,8 +286,12 @@ function aLoadThatPanicsDoesNotLeaveTheKeyStuck() {
     test:assertTrue(panicked is error, "a panic should come back as an error");
 
     // After the remembered failure expires, the key can be loaded again, so it was released.
-    runtime:sleep(2);
-    assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
+    json|http:Response|error loaded = panicked;
+    test:assertTrue(waitFor(function() returns boolean {
+        loaded = cache.get("jobs", isolated function() returns http:Response|error => upstream.call());
+        return loaded is json;
+    }), "the key should load again once the remembered failure expires");
+    assertIsJob(loaded);
     test:assertEquals(upstream.count(), 1);
 }
 
@@ -300,13 +325,15 @@ function aFailedRefreshIsNotRepeatedOnEveryRequestWhileItIsRemembered() {
 
     assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
     assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
-    runtime:sleep(1);
-    test:assertEquals(upstream.count(), 2, "the first stale request should start one refresh, which fails");
+    test:assertTrue(waitFor(function() returns boolean => cache.recentFailure("jobs") is FailedLoad),
+        "the first stale request should start one refresh, which fails and is remembered");
+    test:assertEquals(upstream.count(), 2);
 
     foreach int _ in 0 ..< 5 {
         assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
     }
-    runtime:sleep(1);
+    // There is nothing to wait for here, so give a refresh that wrongly started a moment to reach the upstream.
+    runtime:sleep(0.3);
     test:assertEquals(upstream.count(), 2, "no new refresh while the failure is remembered");
 }
 
