@@ -19,14 +19,13 @@ import ballerina/http;
 import ballerina/lang.runtime;
 import ballerina/log;
 
-# Seconds before a cached copy is refreshed in the background. At least 1, and less than maxStaleSeconds.
+# Seconds before a cached copy is refreshed in the background. At least 1, and below maxStaleSeconds.
 configurable int refreshAfterSeconds = 120;
 
-# Seconds a cached copy may be served at most, even while refreshes fail. More than refreshAfterSeconds.
+# Seconds a cached copy may be served at most. Above refreshAfterSeconds.
 configurable int maxStaleSeconds = 21600;
 
-# Seconds a failed load is remembered; doubles with each failure in a row, up to 64 times. Between 1 and 60, so the
-# longest a failure is remembered is about an hour.
+# Seconds a failed load is remembered, doubling with each failure in a row. From 1 to 60.
 configurable int failFastSeconds = 5;
 
 const int MAX_FAIL_FAST_SECONDS = 60;
@@ -34,7 +33,8 @@ const int MAX_CACHED_ENTRIES = 500;
 const int MAX_REMEMBERED_FAILURES = 1000;
 const int MAX_BACKOFF_DOUBLINGS = 6;
 const decimal WAIT_STEP_SECONDS = 0.05;
-const int MAX_WAIT_STEPS = 400;
+// The most seconds one load can take: two token requests and two reads, plus a margin.
+const decimal LONGEST_LOAD_SECONDS = 4 * UPSTREAM_TIMEOUT_SECONDS + 5;
 const string WARM_UP_REQUEST_ID = "startup-warm-up";
 
 type CachedBody record {|
@@ -49,12 +49,22 @@ type FailedLoad record {|
     int count;
 |};
 
+// Failures further apart than this many back-offs count as separate.
+const int RESET_AFTER_BACKOFFS = 2;
+
+// The number of failures in a row that this failure makes.
+isolated function failureCount(FailedLoad? previous, int now, int failFast) returns int {
+    if previous is FailedLoad && now - previous.failedAt < RESET_AFTER_BACKOFFS * backoffOf(previous, failFast) {
+        return previous.count + 1;
+    }
+    return 1;
+}
+
 // Seconds a failure is remembered.
 isolated function backoffOf(FailedLoad failed, int failFast) returns int =>
     failFast << int:min(failed.count - 1, MAX_BACKOFF_DOUBLINGS);
 
-// Whether the upstream says a job no longer exists: 404, or 400, which is how the vacancy service answers for a
-// vacancy that is not published. Only a job's detail is dropped this way; any other failure keeps the cached copy.
+// Whether the upstream says a job no longer exists: 404, or 400 for a vacancy that is not published.
 isolated function isGone(string key, int status) returns boolean =>
     key.startsWith("job:") && (status == 404 || status == 400);
 
@@ -114,7 +124,8 @@ public isolated class VacancyCache {
 
     isolated function loadMissing(string key, isolated function () returns http:Response|error call)
             returns json|http:Response|error {
-        foreach int _ in 0 ..< MAX_WAIT_STEPS {
+        int waitSteps = <int>(LONGEST_LOAD_SECONDS / WAIT_STEP_SECONDS);
+        foreach int _ in 0 ..< waitSteps {
             CachedBody? cached = self.lookup(key);
             if cached is CachedBody {
                 return cached.value;
@@ -133,7 +144,18 @@ public isolated class VacancyCache {
 
     isolated function load(string key, isolated function () returns http:Response|error call)
             returns json|http:Response|error {
-        http:Response|error resp = call();
+        // trap turns any panic into an error, so the key is always released below.
+        json|http:Response|error result = trap self.fetchAndStore(key, call);
+        lock {
+            _ = self.inFlight.removeIfHasKey(key);
+        }
+        return result;
+    }
+
+    isolated function fetchAndStore(string key, isolated function () returns http:Response|error call)
+            returns json|http:Response|error {
+        // A panic in the call becomes an error here, so it is remembered as a failed load like any other.
+        http:Response|error resp = trap call();
         json|http:Response|error result = resp;
         if resp is http:Response {
             json|error body = jsonBodyOf(resp);
@@ -149,21 +171,13 @@ public isolated class VacancyCache {
         } else {
             self.recordFailure(key, 0);
         }
-        lock {
-            _ = self.inFlight.removeIfHasKey(key);
-        }
         return result;
     }
 
-    // Forgets the cached copy of a key, so it is no longer served.
+    // Removes the cached copy of a key.
     isolated function drop(string key) {
-        if self.entries.hasKey(key) {
-            cache:Error? dropped = self.entries.invalidate(key);
-            if dropped is cache:Error {
-                log:printWarn("Could not drop the cached copy of a vacancy that is gone", dropped, key = key);
-            } else {
-                log:printInfo("Dropped the cached copy of a vacancy that is no longer available", key = key);
-            }
+        if self.entries.invalidate(key) is () {
+            log:printInfo("Dropped the cached copy of a job that is no longer available", key = key);
         }
     }
 
@@ -204,13 +218,14 @@ public isolated class VacancyCache {
             int now = currentEpoch();
             if self.failures.length() >= MAX_REMEMBERED_FAILURES {
                 foreach string failedKey in self.failures.keys() {
-                    if now - self.failures.get(failedKey).failedAt >= backoffOf(self.failures.get(failedKey), self.failFast) {
+                    FailedLoad failed = self.failures.get(failedKey);
+                    if now - failed.failedAt >= backoffOf(failed, self.failFast) {
                         _ = self.failures.remove(failedKey);
                     }
                 }
             }
             if previous is FailedLoad || self.failures.length() < MAX_REMEMBERED_FAILURES {
-                self.failures[key] = {status, failedAt: now, count: previous is FailedLoad ? previous.count + 1 : 1};
+                self.failures[key] = {status, failedAt: now, count: failureCount(previous, now, self.failFast)};
             }
         }
     }
@@ -238,12 +253,12 @@ public isolated class VacancyCache {
     }
 }
 
-# What is wrong with the cache settings, or nothing when they are fine.
+# Describes the invalid cache setting, or nothing when all are valid.
 #
 # + refreshAfter - Seconds before a cached copy is refreshed
 # + maxStale - Seconds a cached copy may be served at most
 # + failFast - Seconds a failed load is remembered
-# + return - A message naming the setting, or nothing
+# + return - A message naming the invalid setting
 isolated function settingsProblem(int refreshAfter, int maxStale, int failFast) returns string? {
     if refreshAfter < 1 {
         return string `refreshAfterSeconds must be at least 1, but it is ${refreshAfter}`;
@@ -257,7 +272,7 @@ isolated function settingsProblem(int refreshAfter, int maxStale, int failFast) 
     return ();
 }
 
-// Stops the service from starting, with a clear message, when a cache setting makes no sense.
+// Creates the cache from the settings, failing start-up when one is invalid.
 isolated function createCache() returns VacancyCache|error {
     string? problem = settingsProblem(refreshAfterSeconds, maxStaleSeconds, failFastSeconds);
     if problem is string {

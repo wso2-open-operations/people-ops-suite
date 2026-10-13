@@ -254,6 +254,45 @@ function jobStatusAfterARefreshThatFails(string key, int statusAfter) returns js
 }
 
 @test:Config {}
+function aLoadThatPanicsDoesNotLeaveTheKeyStuck() {
+    // A failure is remembered for 1 second here.
+    VacancyCache cache = new (600, 21600, 1);
+    final FakeUpstream upstream = new;
+
+    json|http:Response|error panicked = cache.get("jobs", isolated function() returns http:Response|error {
+        panic error("the call panicked");
+    });
+    test:assertTrue(panicked is error, "a panic should come back as an error");
+
+    // After the remembered failure expires, the key can be loaded again, so it was released.
+    runtime:sleep(2);
+    assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
+    test:assertEquals(upstream.count(), 1);
+}
+
+@test:Config {}
+function theFirstFailureOfAKeyCountsAsOne() {
+    test:assertEquals(failureCount((), 1000, 5), 1);
+}
+
+@test:Config {}
+function aFailureRightAfterTheBackoffEndsCountsAsAnotherInARow() {
+    FailedLoad previous = {status: 404, failedAt: 1000, count: 1};
+    test:assertEquals(failureCount(previous, 1006, 5), 2);
+    FailedLoad third = {status: 404, failedAt: 1000, count: 3};
+    test:assertEquals(failureCount(third, 1021, 5), 4);
+}
+
+@test:Config {}
+function aFailureLongAfterThePreviousStartsAgainAtOne() {
+    FailedLoad previous = {status: 404, failedAt: 1000, count: 1};
+    test:assertEquals(failureCount(previous, 1010, 5), 1);
+    FailedLoad many = {status: 404, failedAt: 1000, count: 7};
+    test:assertEquals(failureCount(many, 1000 + 3 * 24 * 3600, 5), 1);
+    test:assertEquals(failureCount(many, 1000 + 330, 5), 8);
+}
+
+@test:Config {}
 function aFailedRefreshIsNotRepeatedOnEveryRequestWhileItIsRemembered() {
     VacancyCache cache = new (0, 21600, 5);
     // The first call fills the cache; every later call to the upstream fails.
