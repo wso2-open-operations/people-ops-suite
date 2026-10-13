@@ -17,6 +17,7 @@
 import axios from "axios";
 
 import { AppConfig } from "@config/config";
+import { JOB_NOT_FOUND_ERROR } from "@config/constant";
 import { GuestApplicationDetails, Job } from "@/types/types";
 
 interface VacancyBasicInfo {
@@ -71,6 +72,19 @@ export async function fetchVacancies(accessToken: string): Promise<Job[]> {
   }));
 }
 
+// The message the careers backend sends with a 404 for a job that does not exist.
+const JOB_NOT_FOUND_MESSAGE = "Job not found";
+
+// A job that does not exist is not the same as a failed load. A 404 without the backend's message, such as one from a
+// wrong service address, stays a failed load.
+function jobMissingOr(error: unknown): never {
+  const notFound = axios.isAxiosError(error) && error.response?.status === 404;
+  if (notFound && error.response?.data?.message === JOB_NOT_FOUND_MESSAGE) {
+    throw Object.assign(new Error("The job does not exist."), { name: JOB_NOT_FOUND_ERROR });
+  }
+  throw error;
+}
+
 export async function fetchVacancyDetail(id: string, accessToken: string): Promise<VacancyDetail> {
   const response = await axios.get<{
     id: number;
@@ -88,7 +102,7 @@ export async function fetchVacancyDetail(id: string, accessToken: string): Promi
     additionalContent: string | null;
   }>(`${AppConfig.serviceUrls.jobs}/${id}`, {
     headers: authHeader(accessToken),
-  });
+  }).catch(jobMissingOr);
 
   const v = response.data;
   return {
