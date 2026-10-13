@@ -20,7 +20,7 @@ import ballerina/lang.runtime;
 import ballerina/log;
 
 # Seconds before a cached copy is refreshed in the background. At least 1, and less than maxStaleSeconds.
-configurable int refreshAfterSeconds = 600;
+configurable int refreshAfterSeconds = 120;
 
 # Seconds a cached copy may be served at most, even while refreshes fail. More than refreshAfterSeconds.
 configurable int maxStaleSeconds = 21600;
