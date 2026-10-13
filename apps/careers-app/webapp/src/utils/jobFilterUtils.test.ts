@@ -25,6 +25,7 @@ import {
   matchesLocation,
   matchesSearch,
   matchesTeam,
+  opensDirectly,
 } from "@utils/jobFilterUtils";
 
 const job = (overrides: Partial<Job> = {}): Job => ({
@@ -133,22 +134,35 @@ describe("jobSlug and jobPath", () => {
   it("falls back to the plain address when there is nothing to name", () => {
     expect(jobPath(job({ id: "9", title: "", country: [] }))).toBe("/jobs/9");
   });
+
+  it("adds the mark that lets a new tab or a share open the job directly", () => {
+    expect(jobPath(accountManager, "list")).toBe("/jobs/283/account-manager-sri-lanka?from=list");
+    expect(jobPath(accountManager, "share")).toBe("/jobs/283/account-manager-sri-lanka?from=share");
+  });
+});
+
+describe("opensDirectly", () => {
+  it("is true for an address made for a new tab or a share", () => {
+    expect(opensDirectly("?from=list")).toBe(true);
+    expect(opensDirectly("?from=share")).toBe(true);
+  });
+
+  it("is false for an address typed into the browser", () => {
+    expect(opensDirectly("")).toBe(false);
+    expect(opensDirectly("?page=2")).toBe(false);
+  });
 });
 
 describe("jobShareLinks", () => {
   const accountManager = job({ id: "283", title: "Account Manager", country: ["Sri Lanka"] });
-  const address = encodeURIComponent("https://careers.example.com/jobs/283/account-manager-sri-lanka");
+  const address = encodeURIComponent("https://careers.example.com/jobs/283/account-manager-sri-lanka?from=share");
   const links = jobShareLinks(accountManager, "https://careers.example.com");
   const hrefOf = (network: string) => links.find((l) => l.network === network)?.href;
 
   it("points every link at the readable address of the job on the given site", () => {
     expect(hrefOf("facebook")).toBe(`https://www.facebook.com/share.php?u=${address}`);
     expect(hrefOf("linkedin")).toBe(`https://www.linkedin.com/sharing/share-offsite/?url=${address}`);
-    expect(hrefOf("x")).toContain(`url=${address}`);
-  });
-
-  it("adds the job title to the post on X", () => {
-    expect(hrefOf("x")).toContain(`text=${encodeURIComponent("Account Manager")}`);
+    expect(hrefOf("x")).toBe(`https://twitter.com/intent/tweet?url=${address}`);
   });
 
   it("labels each link for the network it shares to", () => {

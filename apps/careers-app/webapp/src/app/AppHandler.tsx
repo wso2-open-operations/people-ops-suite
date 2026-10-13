@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Navigate, Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
+import { Navigate, Outlet, RouterProvider, createBrowserRouter, useLocation } from "react-router-dom";
 
 import { useEffect, useMemo } from "react";
 
@@ -22,6 +22,7 @@ import AppShell from "@component/common/AppShell";
 import NotFoundPage from "@component/common/NotFoundPage";
 import PreLoader from "@component/common/PreLoader";
 import { useAppAuthContext } from "@context/AuthContext";
+import { opensDirectly } from "@utils/jobFilterUtils";
 import { View } from "@view/index";
 
 // Shows the pages inside it to signed-in candidates, and sends a guest to sign in.
@@ -35,6 +36,14 @@ const RequireSignIn = () => {
   return isSignedIn ? <Outlet /> : <PreLoader isLoading message="Taking you to sign in ..." />;
 };
 
+// Shows a job when it was opened from inside the app, or from a link made for it (a new tab, a share). An address
+// typed into the browser goes to the list.
+const JobPage = () => {
+  const { key, search } = useLocation();
+  const allowed = key !== "default" || opensDirectly(search);
+  return allowed ? <View.jobDetail /> : <Navigate to="/jobs" replace />;
+};
+
 const AppHandler = () => {
   const router = useMemo(
     () =>
@@ -45,7 +54,7 @@ const AppHandler = () => {
           children: [
             { path: "/", element: <Navigate to="/jobs" replace /> },
             { path: "/jobs", element: <View.jobs /> },
-            { path: "/jobs/:id/:slug?", element: <View.jobDetail /> },
+            { path: "/jobs/:id/:slug?", element: <JobPage /> },
             {
               element: <RequireSignIn />,
               children: [

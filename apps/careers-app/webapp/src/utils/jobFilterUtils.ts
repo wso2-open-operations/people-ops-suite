@@ -31,15 +31,22 @@ const slugOf = (text: string) =>
 export const jobSlug = (job: JobAddress): string =>
   [slugOf(job.title), ...job.country.map(slugOf)].filter(Boolean).join("-");
 
-// The page address of a job.
-export const jobPath = (job: JobAddress): string => {
+// The address part that marks a link made to open a job in a new tab or from a share.
+const ARRIVAL_PARAM = "from";
+
+// The page address of a job. `from` marks a link that is allowed to open the job page directly.
+export const jobPath = (job: JobAddress, from?: "list" | "share"): string => {
   const slug = jobSlug(job);
-  return slug ? `/jobs/${job.id}/${slug}` : `/jobs/${job.id}`;
+  const path = slug ? `/jobs/${job.id}/${slug}` : `/jobs/${job.id}`;
+  return from ? `${path}?${ARRIVAL_PARAM}=${from}` : path;
 };
+
+// Whether an address carries the mark that lets a job page open directly.
+export const opensDirectly = (search: string): boolean => new URLSearchParams(search).has(ARRIVAL_PARAM);
 
 // The links that share a job on each network, pointing at its readable address on the given site.
 export const jobShareLinks = (job: JobAddress, origin: string) => {
-  const url = encodeURIComponent(`${origin}${jobPath(job)}`);
+  const url = encodeURIComponent(`${origin}${jobPath(job, "share")}`);
   return [
     {
       network: "facebook",
@@ -49,7 +56,7 @@ export const jobShareLinks = (job: JobAddress, origin: string) => {
     {
       network: "x",
       label: "Share with your friends on X",
-      href: `https://twitter.com/intent/tweet?url=${url}&text=${encodeURIComponent(job.title)}`,
+      href: `https://twitter.com/intent/tweet?url=${url}`,
     },
     {
       network: "linkedin",

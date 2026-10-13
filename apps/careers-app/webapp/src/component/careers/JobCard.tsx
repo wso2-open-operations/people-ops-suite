@@ -38,7 +38,7 @@ const JobCard = ({ job }: JobCardProps) => {
   return (
     // The save button is a sibling of the link, not inside it: a button must not be nested in an anchor.
     <Box sx={{ position: "relative", height: "100%" }}>
-      <Box component={Link} to={jobPath(job)} sx={{ textDecoration: "none", display: "block", height: "100%" }}>
+      <Box component={Link} to={jobPath(job, "list")} sx={{ textDecoration: "none", display: "block", height: "100%" }}>
         <Box
           sx={{
             height: "100%",
