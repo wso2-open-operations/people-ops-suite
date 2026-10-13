@@ -24,11 +24,14 @@ isolated class FakeUpstream {
     private final int status;
     private final int goodCalls;
     private final decimal delay;
+    private final int statusAfter;
 
-    isolated function init(int status = 200, int goodCalls = 1000, decimal delay = 0) {
+    // After `goodCalls` calls it fails: with a reply of `statusAfter` when that is set, otherwise with an error.
+    isolated function init(int status = 200, int goodCalls = 1000, decimal delay = 0, int statusAfter = 0) {
         self.status = status;
         self.goodCalls = goodCalls;
         self.delay = delay;
+        self.statusAfter = statusAfter;
     }
 
     isolated function call() returns http:Response|error {
@@ -41,7 +44,12 @@ isolated class FakeUpstream {
             runtime:sleep(self.delay);
         }
         if number > self.goodCalls {
-            return error("upstream is down");
+            if self.statusAfter == 0 {
+                return error("upstream is down");
+            }
+            http:Response failed = new;
+            failed.statusCode = self.statusAfter;
+            return failed;
         }
         http:Response resp = new;
         resp.statusCode = self.status;
@@ -232,4 +240,37 @@ function aFailFastTimeOutsideOneToSixtyIsRejected() {
     test:assertTrue(problem is string && problem.includes("failFastSeconds"));
     test:assertTrue(settingsProblem(600, 21600, 61) is string);
     test:assertEquals(settingsProblem(600, 21600, 60), ());
+}
+
+// The cache is refreshed at once on each hit (refresh time 0); the first call fills it and the later ones fail.
+function jobStatusAfterARefreshThatFails(string key, int statusAfter) returns json|http:Response|error {
+    VacancyCache cache = new (0, 21600, 5);
+    final FakeUpstream upstream = new (200, 1, 0d, statusAfter);
+
+    assertIsJob(cache.get(key, isolated function() returns http:Response|error => upstream.call()));
+    assertIsJob(cache.get(key, isolated function() returns http:Response|error => upstream.call()));
+    runtime:sleep(1);
+    return cache.get(key, isolated function() returns http:Response|error => upstream.call());
+}
+
+@test:Config {}
+function aJobThatARefreshFindsMissingIsNoLongerServed() {
+    json|http:Response|error result = jobStatusAfterARefreshThatFails("job:7", 404);
+    test:assertTrue(result is http:Response && result.statusCode == 404, "the closed job must not be served");
+}
+
+@test:Config {}
+function aJobThatARefreshFindsUnpublishedIsNoLongerServed() {
+    json|http:Response|error result = jobStatusAfterARefreshThatFails("job:7", 400);
+    test:assertTrue(result is http:Response && result.statusCode == 400, "the unpublished job must not be served");
+}
+
+@test:Config {}
+function aServerErrorOnARefreshStillKeepsTheJobCopy() {
+    assertIsJob(jobStatusAfterARefreshThatFails("job:7", 500));
+}
+
+@test:Config {}
+function aMissingReplyOnARefreshOfTheJobListKeepsTheListCopy() {
+    assertIsJob(jobStatusAfterARefreshThatFails("jobs", 404));
 }

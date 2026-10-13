@@ -53,6 +53,11 @@ type FailedLoad record {|
 isolated function backoffOf(FailedLoad failed, int failFast) returns int =>
     failFast << int:min(failed.count - 1, MAX_BACKOFF_DOUBLINGS);
 
+// Whether the upstream says a job no longer exists: 404, or 400, which is how the vacancy service answers for a
+// vacancy that is not published. Only a job's detail is dropped this way; any other failure keeps the cached copy.
+isolated function isGone(string key, int status) returns boolean =>
+    key.startsWith("job:") && (status == 404 || status == 400);
+
 isolated function jsonBodyOf(http:Response resp) returns json|error {
     if resp.statusCode != 200 {
         return error(string `The upstream replied with status ${resp.statusCode}`);
@@ -134,6 +139,9 @@ public isolated class VacancyCache {
                 self.store(key, body);
                 result = body;
             } else {
+                if isGone(key, resp.statusCode) {
+                    self.drop(key);
+                }
                 self.recordFailure(key, resp.statusCode);
             }
         } else {
@@ -143,6 +151,18 @@ public isolated class VacancyCache {
             _ = self.inFlight.removeIfHasKey(key);
         }
         return result;
+    }
+
+    // Forgets the cached copy of a key, so it is no longer served.
+    isolated function drop(string key) {
+        if self.entries.hasKey(key) {
+            cache:Error? dropped = self.entries.invalidate(key);
+            if dropped is cache:Error {
+                log:printWarn("Could not drop the cached copy of a vacancy that is gone", dropped, key = key);
+            } else {
+                log:printInfo("Dropped the cached copy of a vacancy that is no longer available", key = key);
+            }
+        }
     }
 
     isolated function lookup(string key) returns (CachedBody & readonly)? {

@@ -108,7 +108,8 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             log:printError("Failed to fetch job from upstream service", result, requestId = requestId);
             return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
         }
-        if result.statusCode == 404 {
+        // The vacancy service answers 400 for a vacancy that is not published, and that is also "not found" here.
+        if result.statusCode == 404 || result.statusCode == 400 {
             return <http:NotFound>{body: {message: "Job not found"}};
         }
         return forwardOrError(result, "Failed to fetch job from upstream service", requestId);
