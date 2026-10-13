@@ -206,3 +206,30 @@ function failedRefreshKeepsTheCachedCopy() {
     runtime:sleep(1);
     assertIsJob(cache.get("jobs", isolated function() returns http:Response|error => upstream.call()));
 }
+
+@test:Config {}
+function theDefaultSettingsAreAccepted() {
+    test:assertEquals(settingsProblem(600, 21600, 5), ());
+}
+
+@test:Config {}
+function aRefreshTimeBelowOneSecondIsRejected() {
+    string? problem = settingsProblem(0, 21600, 5);
+    test:assertTrue(problem is string && problem.includes("refreshAfterSeconds"));
+    test:assertTrue(settingsProblem(-5, 21600, 5) is string);
+}
+
+@test:Config {}
+function aMaxStaleTimeNotAboveTheRefreshTimeIsRejected() {
+    string? problem = settingsProblem(600, 600, 5);
+    test:assertTrue(problem is string && problem.includes("maxStaleSeconds"));
+    test:assertTrue(settingsProblem(600, 100, 5) is string);
+}
+
+@test:Config {}
+function aFailFastTimeOutsideOneToSixtyIsRejected() {
+    string? problem = settingsProblem(600, 21600, 0);
+    test:assertTrue(problem is string && problem.includes("failFastSeconds"));
+    test:assertTrue(settingsProblem(600, 21600, 61) is string);
+    test:assertEquals(settingsProblem(600, 21600, 60), ());
+}

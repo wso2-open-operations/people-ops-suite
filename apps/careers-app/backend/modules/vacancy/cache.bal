@@ -19,15 +19,17 @@ import ballerina/http;
 import ballerina/lang.runtime;
 import ballerina/log;
 
-# Seconds before a cached copy is refreshed in the background.
+# Seconds before a cached copy is refreshed in the background. At least 1, and less than maxStaleSeconds.
 configurable int refreshAfterSeconds = 600;
 
-# Seconds a cached copy may be served at most.
+# Seconds a cached copy may be served at most, even while refreshes fail. More than refreshAfterSeconds.
 configurable int maxStaleSeconds = 21600;
 
-# Seconds a failed load is remembered; doubles with each failure in a row, up to 64 times.
+# Seconds a failed load is remembered; doubles with each failure in a row, up to 64 times. Between 1 and 60, so the
+# longest a failure is remembered is about an hour.
 configurable int failFastSeconds = 5;
 
+const int MAX_FAIL_FAST_SECONDS = 60;
 const int MAX_CACHED_ENTRIES = 500;
 const int MAX_REMEMBERED_FAILURES = 1000;
 const int MAX_BACKOFF_DOUBLINGS = 6;
@@ -203,13 +205,46 @@ public isolated class VacancyCache {
 
     isolated function refresh(string key, isolated function () returns http:Response|error call) {
         json|http:Response|error result = self.load(key, call);
-        if !(result is json) {
-            log:printWarn("Background refresh failed; keeping the cached copy", key = key);
+        if result is json {
+            return;
+        }
+        if result is error {
+            log:printWarn("Background refresh failed; keeping the cached copy", result, key = key);
+        } else {
+            log:printWarn("Background refresh failed; keeping the cached copy", key = key, status = result.statusCode);
         }
     }
 }
 
-final VacancyCache vacancyCache = new (refreshAfterSeconds, maxStaleSeconds, failFastSeconds);
+# What is wrong with the cache settings, or nothing when they are fine.
+#
+# + refreshAfter - Seconds before a cached copy is refreshed
+# + maxStale - Seconds a cached copy may be served at most
+# + failFast - Seconds a failed load is remembered
+# + return - A message naming the setting, or nothing
+isolated function settingsProblem(int refreshAfter, int maxStale, int failFast) returns string? {
+    if refreshAfter < 1 {
+        return string `refreshAfterSeconds must be at least 1, but it is ${refreshAfter}`;
+    }
+    if maxStale <= refreshAfter {
+        return string `maxStaleSeconds (${maxStale}) must be more than refreshAfterSeconds (${refreshAfter})`;
+    }
+    if failFast < 1 || failFast > MAX_FAIL_FAST_SECONDS {
+        return string `failFastSeconds must be between 1 and ${MAX_FAIL_FAST_SECONDS}, but it is ${failFast}`;
+    }
+    return ();
+}
+
+// Stops the service from starting, with a clear message, when a cache setting makes no sense.
+isolated function createCache() returns VacancyCache|error {
+    string? problem = settingsProblem(refreshAfterSeconds, maxStaleSeconds, failFastSeconds);
+    if problem is string {
+        return error("Invalid vacancy cache setting: " + problem);
+    }
+    return new (refreshAfterSeconds, maxStaleSeconds, failFastSeconds);
+}
+
+final VacancyCache vacancyCache = check createCache();
 
 # The cached job list.
 public isolated function cachedJobs(string requestId) returns json|http:Response|error =>
