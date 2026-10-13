@@ -26,6 +26,7 @@ import {
   matchesSearch,
   matchesTeam,
   opensDirectly,
+  withoutArrivalMark,
 } from "@utils/jobFilterUtils";
 
 const job = (overrides: Partial<Job> = {}): Job => ({
@@ -150,6 +151,19 @@ describe("opensDirectly", () => {
   it("is false for an address typed into the browser", () => {
     expect(opensDirectly("")).toBe(false);
     expect(opensDirectly("?page=2")).toBe(false);
+  });
+});
+
+describe("withoutArrivalMark", () => {
+  it("removes the mark and keeps every other parameter", () => {
+    expect(withoutArrivalMark("?from=share&utm_source=linkedin&utm_campaign=jobs")).toBe(
+      "?utm_source=linkedin&utm_campaign=jobs",
+    );
+  });
+
+  it("leaves nothing when the mark is the only parameter", () => {
+    expect(withoutArrivalMark("?from=list")).toBe("");
+    expect(withoutArrivalMark("")).toBe("");
   });
 });
 

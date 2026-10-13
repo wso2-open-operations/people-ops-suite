@@ -17,7 +17,7 @@
 import { Box, Button, Typography } from "@mui/material";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { State } from "@/types/types";
 import { PAGE_MAX_WIDTH } from "@config/brand";
@@ -25,7 +25,7 @@ import { JOB_NOT_FOUND_ERROR } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
 import { loadJobDetail, toggleSaveJob } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
-import { jobPath, opensDirectly } from "@utils/jobFilterUtils";
+import { jobPath, opensDirectly, withoutArrivalMark } from "@utils/jobFilterUtils";
 import ApplySection from "@view/jobs/components/ApplySection";
 import JobDescription from "@view/jobs/components/JobDescription";
 import JobDetailSkeleton from "@view/jobs/components/JobDetailSkeleton";
@@ -36,8 +36,9 @@ const JobDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // A job page is only opened from inside the app, so going back returns to where it was opened from.
-  const goBackToJobs = () => navigate(-1);
+  // Goes back in history, or to the job list when the job page was the first page opened (a new tab or a share).
+  const openedDirectly = useRef(location.key === "default");
+  const goBackToJobs = () => (openedDirectly.current ? navigate("/jobs") : navigate(-1));
   const dispatch = useAppDispatch();
   const { getToken: getAccessToken, isSignedIn } = useAppAuthContext();
 
@@ -56,7 +57,7 @@ const JobDetail = () => {
     if (!detail) return;
     const path = jobPath(detail);
     if (location.pathname !== path || opensDirectly(location.search)) {
-      navigate(`${path}${location.hash}`, { replace: true });
+      navigate(`${path}${withoutArrivalMark(location.search)}${location.hash}`, { replace: true });
     }
   }, [detail, location.pathname, location.search, location.hash, navigate]);
 

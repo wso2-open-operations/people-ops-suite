@@ -44,6 +44,14 @@ export const jobPath = (job: JobAddress, from?: "list" | "share"): string => {
 // Whether an address carries the mark that lets a job page open directly.
 export const opensDirectly = (search: string): boolean => new URLSearchParams(search).has(ARRIVAL_PARAM);
 
+// The query of an address without the arrival mark; every other parameter is kept.
+export const withoutArrivalMark = (search: string): string => {
+  const params = new URLSearchParams(search);
+  params.delete(ARRIVAL_PARAM);
+  const rest = params.toString();
+  return rest ? `?${rest}` : "";
+};
+
 // The links that share a job on each network, pointing at its readable address on the given site.
 export const jobShareLinks = (job: JobAddress, origin: string) => {
   const url = encodeURIComponent(`${origin}${jobPath(job, "share")}`);
