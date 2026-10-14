@@ -105,6 +105,9 @@ minIdleConnections = 3
 employeeRoles = ["employee-role"]
 internRoles = ["intern-role"]
 peopleOpsTeamRoles = ["hr-team-role"]
+# Optional. Each grants one org-wide report on its own; an empty or missing list grants nobody.
+generalReportRoles = ["general-leave-report-role"]
+sabbaticalReportRoles = ["sabbatical-report-role"]
 ```
 
 2. Build and run:

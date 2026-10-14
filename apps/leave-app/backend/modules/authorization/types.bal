@@ -22,6 +22,10 @@ public type AppRoles record {|
     string[] peopleOpsTeamRoles;
     # Role for interns
     string[] internRoles;
+    # Role for viewing the general leave report across all employees (excludes sabbatical leaves)
+    string[] generalReportRoles = [];
+    # Role for viewing the sabbatical leave report across all employees
+    string[] sabbaticalReportRoles = [];
 |};
 
 # User info custom type for Asgardeo token.

@@ -29,6 +29,8 @@ public const EMPLOYEE_PRIVILEGE = 987;
 public const INTERN_PRIVILEGE = 678;
 public const LEAD_PRIVILEGE = 879;
 public const PEOPLE_OPS_TEAM_PRIVILEGE = 789;
+public const GENERAL_REPORT_PRIVILEGE = 456;
+public const SABBATICAL_REPORT_PRIVILEGE = 654;
 
 // Authorization related constants
 public final map<string[]> & readonly adminPathToAllowedMethods = {
