@@ -930,11 +930,11 @@ export default function EmployeeHubDashboard() {
     ? { fontSize: "10px", px: 1.5, py: 0.4, backgroundColor: `${C.orange} !important`, color: "#FFFFFF !important", borderColor: `${C.orange} !important` }
     : { fontSize: "10px", px: 1.5, py: 0.4, borderColor: C.border, color: C.muted, "&:hover": { borderColor: C.dim, color: C.text } };
 
-  // Driven by which sidebar sub-item (/intern-hub/employees vs
-  // /intern-hub/intern-overview) is active rather than local state, so the
+  // Driven by which sidebar sub-item (/employee-hub/employees vs
+  // /employee-hub/interns) is active rather than local state, so the
   // two views are real, separately-navigable routes - matching how
   // Employees' All/My Team sub-items work - instead of an in-page toggle.
-  const view: ViewKind = location.pathname === "/intern-hub/intern-overview" ? "interns" : "employees";
+  const view: ViewKind = location.pathname === "/employee-hub/interns" ? "interns" : "employees";
   const [subTab, setSubTab] = useState<"overview" | "scorecard" | "roles" | "demographics" | "trends" | "explore">("overview");
   // Interns only have Overview + Explore; Permanent has no Explore tab.
   useEffect(() => {

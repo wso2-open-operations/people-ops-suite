@@ -96,8 +96,8 @@ const OnboardingRoot = () => {
 
 const EmployeeHubRoot = () => {
   const { pathname } = useLocation();
-  if (pathname === "/intern-hub") {
-    return React.createElement(Navigate, { to: "/intern-hub/employees", replace: true });
+  if (pathname === "/employee-hub") {
+    return React.createElement(Navigate, { to: "/employee-hub/employees", replace: true });
   }
   return React.createElement(Outlet);
 };
@@ -111,22 +111,22 @@ export const routes: RouteObjectWithRole[] = [
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {
-    // Intern Hub: Permanent employees and Interns dashboards (admin-only).
-    path: "/intern-hub",
-    text: "Intern Hub",
+    // Employee Hub: Permanent employees and Interns dashboards (admin-only).
+    path: "/employee-hub",
+    text: "Employee Hub",
     icon: React.createElement(SchoolIcon),
     element: React.createElement(EmployeeHubRoot),
     allowRoles: [Role.ADMIN],
     children: [
       {
-        path: "/intern-hub/employees",
+        path: "/employee-hub/employees",
         text: "Permanent",
         icon: React.createElement(BadgeSharp),
         element: React.createElement(View.employeeHubDashboard),
         allowRoles: [Role.ADMIN],
       },
       {
-        path: "/intern-hub/intern-overview",
+        path: "/employee-hub/interns",
         text: "Interns",
         icon: React.createElement(GroupsIcon),
         element: React.createElement(View.employeeHubDashboard),
