@@ -54,8 +54,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             if authorization:checkPermissions(authorization:authorizedRoles.internRoles, userInfo.groups) {
                 privileges.push(authorization:INTERN_PRIVILEGE);
             }
-            if authorization:checkPermissions(authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups) {
+            boolean isPeopleOpsTeamMember = authorization:checkPermissions(
+                    authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups);
+            if isPeopleOpsTeamMember {
                 privileges.push(authorization:PEOPLE_OPS_TEAM_PRIVILEGE);
+            }
+            // People Ops keep both org-wide reports; the report roles grant them independently.
+            if isPeopleOpsTeamMember ||
+                authorization:hasAnyRole(authorization:authorizedRoles.generalReportRoles, userInfo.groups) {
+                privileges.push(authorization:GENERAL_REPORT_PRIVILEGE);
+            }
+            if isPeopleOpsTeamMember ||
+                authorization:hasAnyRole(authorization:authorizedRoles.sabbaticalReportRoles, userInfo.groups) {
+                privileges.push(authorization:SABBATICAL_REPORT_PRIVILEGE);
             }
             employee:Employee[]|error subordinates = employee:getEmployees(
                     {
@@ -187,11 +198,13 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + approverEmail - Approver email to filter the leaves
     # + statuses - Statuses to filter the leaves
     # + subordinatesLeaves - Whether to fetch the leaves of subordinates of the user.
+    # + excludedLeaveCategory - Leave types to leave out
     # + return - List of leaves
     resource function get leaves(http:RequestContext ctx, string? email = (), string? startDate = (),
             string? endDate = (), string? approverEmail = (), database:LeaveType[]? leaveCategory = (),
             Status[] statuses = [], int? 'limit = (), int? offset = 0, database:OrderBy? orderBy = database:ASC,
-            EmployeeStatus[]? employeeStatuses = (), boolean subordinatesLeaves = false
+            EmployeeStatus[]? employeeStatuses = (), boolean subordinatesLeaves = false,
+            database:LeaveType[]? excludedLeaveCategory = ()
     ) returns FetchedLeavesRecord|http:Forbidden|http:InternalServerError|http:BadRequest {
 
         if email is string && !email.matches(WSO2_EMAIL_PATTERN) {
@@ -228,16 +241,32 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         boolean isPeopleOpsTeamMember = authorization:checkPermissions(
                 authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups);
-        // Restrict access to fetch leaves of all employees if the user is not a people ops team member
-        if !isPeopleOpsTeamMember && !subordinatesLeaves && (
+        boolean isCrossEmployeeRead = !subordinatesLeaves && (
             (email is string && email != userInfo.email) || (email is () && approverEmail is ()) ||
             (approverEmail is string && approverEmail != userInfo.email)
-        ) {
-            return <http:Forbidden>{
-                body: {
-                    message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
-                }
-            };
+        );
+        string[] excludedLeaveTypes = excludedLeaveCategory ?: [];
+        // Outside People Ops, leaves of all employees are only readable through the report roles: the sabbatical
+        // report role for sabbatical-only queries, and the general report role for everything else.
+        if isCrossEmployeeRead && !isPeopleOpsTeamMember {
+            boolean canReadSabbaticals = authorization:hasAnyRole(
+                    authorization:authorizedRoles.sabbaticalReportRoles, userInfo.groups);
+            boolean isSabbaticalOnlyQuery = leaveCategory is database:LeaveType[] && leaveCategory.length() > 0 &&
+                leaveCategory.every(category => category == database:SABBATICAL_LEAVE);
+            boolean isAllowed = isSabbaticalOnlyQuery
+                ? canReadSabbaticals
+                : authorization:hasAnyRole(authorization:authorizedRoles.generalReportRoles, userInfo.groups);
+            if !isAllowed {
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
+                    }
+                };
+            }
+            // The general report role does not reach sabbatical leaves.
+            if !isSabbaticalOnlyQuery && !canReadSabbaticals {
+                excludedLeaveTypes.push(database:SABBATICAL_LEAVE);
+            }
         }
 
         string[]? emails;
@@ -300,6 +329,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                                endDate,
                                                                approverEmail: effectiveApproverEmail,
                                                                leaveTypes: leaveCategory,
+                                                               excludedLeaveTypes,
                                                                orderBy: orderBy
                                                            }, 'limit);
         if leaves is error {
@@ -1216,7 +1246,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         do {
             authorization:CustomJwtPayload {email, groups} = check ctx.getWithType(authorization:HEADER_USER_INFO);
-            boolean isAdmin = authorization:checkPermissions(authorization:authorizedRoles.peopleOpsTeamRoles, groups);
+            boolean isPeopleOpsTeamMember = authorization:checkPermissions(
+                    authorization:authorizedRoles.peopleOpsTeamRoles, groups);
+            boolean isAdmin = isPeopleOpsTeamMember ||
+                authorization:hasAnyRole(authorization:authorizedRoles.generalReportRoles, groups);
             Employee[] employees;
             employees = check employee:getEmployees(
                     {
@@ -1249,7 +1282,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                         emails,
                         startDate: payload.startDate,
                         endDate: payload.endDate,
-                        statuses: [database:APPROVED]
+                        statuses: [database:APPROVED],
+                        // The general leave report never includes sabbaticals; they have a report of their own.
+                        excludedLeaveTypes: [database:SABBATICAL_LEAVE]
                     }
                     );
             if leaves is error {

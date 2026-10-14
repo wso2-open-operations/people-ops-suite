@@ -74,6 +74,14 @@ paths:
           nullable: true
           items:
             $ref: '#/components/schemas/LeaveType'
+      - name: excludedLeaveCategory
+        in: query
+        description: Leave types to leave out
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/LeaveType'
       - name: statuses
         in: query
         description: Statuses to filter the leaves

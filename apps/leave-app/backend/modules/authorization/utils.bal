@@ -14,6 +14,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
+# Check if the user holds at least one of the given roles. Unlike `checkPermissions` and
+# `validateForSingleRole`, an empty role list grants nothing, so an unconfigured role fails closed.
+#
+# + roles - Roles that grant access
+# + userRoles - Roles list, the user has
+# + return - Allow or not
+public isolated function hasAnyRole(string[] roles, string[] userRoles) returns boolean {
+    final string[] & readonly userRolesReadOnly = userRoles.cloneReadOnly();
+    return roles.some(role => userRolesReadOnly.indexOf(role) !is ());
+}
+
 # Check permissions.
 #
 # + requiredRoles - Required Role list
