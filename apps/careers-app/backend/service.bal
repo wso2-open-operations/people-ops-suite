@@ -58,7 +58,7 @@ isolated function forwardOrError(http:Response|error resp, string failureMessage
         allowOrigins: allowedOrigins,
         allowMethods: [http:GET, http:POST, http:OPTIONS],
         allowHeaders: [http:CONTENT_TYPE, http:AUTH_HEADER, types:REQUEST_ID_HEADER],
-        allowCredentials: true,
+        allowCredentials: false,
         maxAge: 84900
     }
 }
