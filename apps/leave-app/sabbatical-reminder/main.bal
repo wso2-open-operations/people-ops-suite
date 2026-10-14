@@ -74,7 +74,10 @@ function sendReminder(database:SabbaticalReminder reminder) returns error? {
     // The reminder goes to the employee's current lead in HR; the lead who approved the leave is the
     // fallback when HR has no lead on record.
     string? hrLeadEmail = employeeInfo is employee:Employee ? employee:leadEmail(employeeInfo) : ();
-    string? leadEmail = hrLeadEmail ?: reminder.approverEmail;
+    // A blank approver counts as none, like a blank HR lead.
+    string? approverEmail = reminder.approverEmail;
+    string? approvingLeadEmail = approverEmail is string && approverEmail.trim() != "" ? approverEmail.trim() : ();
+    string? leadEmail = hrLeadEmail ?: approvingLeadEmail;
     if leadEmail is () {
         return error("No lead in HR and no approving lead recorded for the leave");
     }
