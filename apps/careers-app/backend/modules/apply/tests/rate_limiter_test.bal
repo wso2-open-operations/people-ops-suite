@@ -66,6 +66,21 @@ function clientAddressIsTheLastForwardedHop() {
 }
 
 @test:Config {}
+function forwardedHopIsCountedFromTheRight() {
+    string chain = "9.9.9.9, 10.0.0.1, 10.0.0.2";
+    test:assertEquals(forwardedHop(chain, 1, "192.168.1.5"), "10.0.0.2");
+    test:assertEquals(forwardedHop(chain, 2, "192.168.1.5"), "10.0.0.1");
+    test:assertEquals(forwardedHop(chain, 3, "192.168.1.5"), "9.9.9.9");
+}
+
+@test:Config {}
+function forwardedHopFallsBackToTheConnectionAddress() {
+    test:assertEquals(forwardedHop("10.0.0.1", 0, "192.168.1.5"), "192.168.1.5");
+    test:assertEquals(forwardedHop("10.0.0.1", 2, "192.168.1.5"), "192.168.1.5");
+    test:assertEquals(forwardedHop("10.0.0.1,", 1, "192.168.1.5"), "192.168.1.5");
+}
+
+@test:Config {}
 function clientAddressFallsBackToTheConnectionAddress() {
     test:assertEquals(clientAddress(new, "192.168.1.5"), "192.168.1.5");
     test:assertEquals(clientAddress(new, "192.168.1.6"), "192.168.1.6");

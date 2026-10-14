@@ -20,10 +20,13 @@ import ballerina/lang.array;
 import ballerina/time;
 
 # How many applications one address, and one email, may make within the window.
-configurable int applyMaxPerWindow = 5;
+configurable int applyMaxPerWindow = 300;
 
 # The length of the window, in seconds.
 configurable int applyWindowSeconds = 3600;
+
+# How many proxies in front of the service append to X-Forwarded-For. 0 ignores the header.
+configurable int trustedProxyHops = 1;
 
 const int MAX_TRACKED_KEYS = 10000;
 
@@ -43,18 +46,24 @@ public isolated function limiterKey(string kind, string value) returns string {
     return kind + ":" + array:toBase16(digest);
 }
 
-# The caller's address: the last X-Forwarded-For hop, which the proxy appended and the caller cannot set,
-# or the connection's own address when the header is missing.
+# The caller's address: the X-Forwarded-For entry that the outermost trusted proxy appended, counted from the
+# right by `trustedProxyHops`. The connection's own address is used when the setting is 0, the header is
+# missing, the chain is shorter than the setting, or the selected entry is empty.
 public isolated function clientAddress(http:Request req, string remoteHost) returns string {
     string|http:HeaderNotFoundError forwarded = req.getHeader("X-Forwarded-For");
-    if forwarded is string {
-        int? comma = forwarded.lastIndexOf(",");
-        string hop = (comma is int ? forwarded.substring(comma + 1) : forwarded).trim();
-        if hop != "" {
-            return hop;
-        }
+    return forwarded is string ? forwardedHop(forwarded, trustedProxyHops, remoteHost) : remoteHost;
+}
+
+isolated function forwardedHop(string forwarded, int proxyHops, string remoteHost) returns string {
+    if proxyHops < 1 {
+        return remoteHost;
     }
-    return remoteHost;
+    string[] hops = re `,`.split(forwarded);
+    if hops.length() < proxyHops {
+        return remoteHost;
+    }
+    string hop = hops[hops.length() - proxyHops].trim();
+    return hop == "" ? remoteHost : hop;
 }
 
 # Sliding-window limiter, so one caller cannot flood the ATS with candidates.
