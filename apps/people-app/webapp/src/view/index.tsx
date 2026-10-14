@@ -22,12 +22,15 @@ const bulkOnboarding = lazy(() => import("@view/employees/onboarding/bulkOnboard
 const employeesList = lazy(() => import("@view/employees/employeesView/EmployeesView"));
 const help = lazy(() => import("@view/help/help"));
 const employeeDetails = lazy(() => import("@view/employees/employeeDetail/employeeDetail"));
-const employeeEdit = lazy(() => import("@view/employees/employeeEdit/employeeEdit"));
 const myTeamView = lazy(() => import("@view/employees/myTeam/MyTeamView"));
 const activeEmployeesReport = lazy(() => import("@view/reports/ActiveEmployeesReportView"));
 const resignationReport = lazy(() => import("@view/reports/ResignationReportView"));
 const qrCodesReport = lazy(() => import("@view/reports/QrCodesReport"));
 const masterDataView = lazy(() => import("@view/masterData/MasterDataView"));
+const careerFunctionView = lazy(() => import("@view/masterData/careerFunction/CareerFunctionView"));
+const leadershipAttributeView = lazy(
+  () => import("@view/masterData/leadershipAttribute/LeadershipAttributeView"),
+);
 const employeeHubDashboard = lazy(() => import("@view/employeeHub/EmployeeHubDashboard"));
 
 export const View = {
@@ -37,11 +40,12 @@ export const View = {
   employeesList,
   myTeamView,
   employeeDetails,
-  employeeEdit,
   activeEmployeesReport,
   resignationReport,
   qrCodesReport,
   masterDataView,
+  careerFunctionView,
+  leadershipAttributeView,
   help,
   employeeHubDashboard,
 };

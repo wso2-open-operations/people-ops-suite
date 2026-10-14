@@ -55,14 +55,21 @@ export const AppConfig = {
     managers: SERVICE_BASE_URL + "/employees/managers",
     continuousServiceRecord: SERVICE_BASE_URL + "/continuous-service-records",
     validateEpf: SERVICE_BASE_URL + "/employees/validate-epf",
+    returningEmployee: SERVICE_BASE_URL + "/employees/returning-employee",
     employee: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}`,
     employeePersonalInfo: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/personal-info`,
     jobInfo: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/job-info`,
+    resignation: (employeeId: string) =>
+      SERVICE_BASE_URL + `/employees/${employeeId}/resignation`,
     employeeHistory: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/history`,
+    scheduledChanges: (employeeId: string) =>
+      SERVICE_BASE_URL + `/employees/${employeeId}/scheduled-changes`,
+    scheduledChange: (employeeId: string, changeId: number) =>
+      SERVICE_BASE_URL + `/employees/${employeeId}/scheduled-changes/${changeId}`,
     employeeQrCode: (employeeId: string) => `${SERVICE_BASE_URL}/employees/${employeeId}/qr-code`,
     qrCodesSearch: SERVICE_BASE_URL + "/reports/qr-codes/search",
 
@@ -73,7 +80,12 @@ export const AppConfig = {
     businessUnits: SERVICE_BASE_URL + "/business-units",
     businessUnit: (id: number) => SERVICE_BASE_URL + `/business-units/${id}`,
     careerFunctions: SERVICE_BASE_URL + "/career-functions",
+    careerFunction: (id: number) => SERVICE_BASE_URL + `/career-functions/${id}`,
     designations: SERVICE_BASE_URL + "/designations",
+    designation: (id: number) => SERVICE_BASE_URL + `/designations/${id}`,
+    leadershipGroups: SERVICE_BASE_URL + "/leadership-groups",
+    leadershipGroup: (id: number) =>
+      SERVICE_BASE_URL + `/leadership-groups/${id}`,
     companies: SERVICE_BASE_URL + "/companies",
     employmentTypes: SERVICE_BASE_URL + "/employment-types",
     teams: SERVICE_BASE_URL + "/teams",

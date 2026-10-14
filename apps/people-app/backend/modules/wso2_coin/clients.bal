@@ -20,13 +20,24 @@ configurable ClientAuthConfig clientAuthConfig = ?;
 configurable string transactionEndpoint = ?;
 configurable ParkingSheetConfig parkingSheetConfig = ?;
 
-final http:Client transactionClient = check new (transactionEndpoint, {
+final http:Client transactionClient = check new (check requireSecureEndpoint(transactionEndpoint), {
     auth: {
         ...clientAuthConfig
     },
     httpVersion: http:HTTP_1_1,
     http1Settings: {keepAlive: http:KEEPALIVE_NEVER}
 });
+
+# Ensure the transaction endpoint is HTTPS so the forwarded user assertion is never sent in cleartext.
+#
+# + endpoint - Configured transaction service endpoint
+# + return - The endpoint when it uses HTTPS, otherwise an error that fails startup
+isolated function requireSecureEndpoint(string endpoint) returns string|error {
+    if !endpoint.startsWith(HTTPS_SCHEME) {
+        return error("transactionEndpoint must use HTTPS");
+    }
+    return endpoint;
+}
 
 final sheets:ConnectionConfig parkingSheetsConfig = {
     auth: {

@@ -44,6 +44,7 @@ export const serviceUrls = {
   deleteVehicle: (email: string, id: string) =>
     `${baseUrl}/employees/${email}/vehicles/${id}`,
   fetchCarParkConfigs: () => `${baseUrl}/parkings/configs`,
+  fetchParkingWallets: () => `${baseUrl}/parkings/wallets`,
   fetchParkingFloors: () => `${baseUrl}/parkings/floors`,
   fetchParkingSlots: (floorId: number, dateYYYYMMDD: string) =>
     `${baseUrl}/parkings/floors/${floorId}/slots?date=${dateYYYYMMDD}`,

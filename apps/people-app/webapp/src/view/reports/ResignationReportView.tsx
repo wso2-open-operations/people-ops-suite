@@ -30,6 +30,7 @@ export default function ResignationReportView() {
           employeeStatus={EmployeeStatus.Left}
           showFilterDrawer
           showExcludeFutureFilter={false}
+          showIncludeMarkedLeaversFilter
           previewAlertText={
             <>
               Showing a preview of the first 10 resigned employees. <br />

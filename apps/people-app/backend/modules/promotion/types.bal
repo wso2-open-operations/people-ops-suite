@@ -14,10 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ballerina/sql;
-import ballerinax/mysql;
-
 # HRIS promotion database configuration.
+# Deliberately flat — see the note on `DatabaseConfig` in the database module's
+# types.bal for why (keeps mysql:Options/sql:ConnectionPool's full field surface out
+# of Choreo's auto-generated config UI).
 public type PromotionDatabaseConfig record {|
     # Database user
     string user;
@@ -29,12 +29,16 @@ public type PromotionDatabaseConfig record {|
     string host;
     # Port number of the MySQL server
     int port;
-    # The `mysql:Options` configurations. Present so a cross-machine connection to the
-    # HRIS host can be given a TLS mode and a connect timeout, as the primary database
-    # config already can.
-    mysql:Options options?;
-    # Connection pool configuration
-    sql:ConnectionPool connectionPool?;
+    # Max open connections in the pool
+    int maxOpenConnections = 10;
+    # Max connection lifetime (seconds)
+    decimal maxConnectionLifeTime = 240;
+    # Min idle connections in the pool
+    int minIdleConnections = 0;
+    # Connection timeout (seconds)
+    decimal connectTimeout = 30;
+    # SSL mode for DB connection ("DISABLED", "PREFERRED", "REQUIRED", "VERIFY_CA", "VERIFY_IDENTITY")
+    string sslMode = "PREFERRED";
 |};
 
 # Approved promotion record for an employee.
@@ -50,18 +54,19 @@ public type PromotionRecord record {|
     string currentJobBand;
     # Job band granted by the promotion
     string nextJobBand;
-    # Job role at the time of promotion
-    string jobRole;
+    # Job role at the time of promotion. Nullable in HRIS.
+    string? jobRole;
     # Type of promotion
     string promotionType;
     # Name of the promotion cycle
     string cycleName;
     # Business unit at the time of promotion
     string businessUnit;
-    # Department at the time of promotion
-    string department;
-    # Team at the time of promotion
-    string team;
-    # Sub-team at the time of promotion
-    string subTeam;
+    # Department at the time of promotion. Nullable in HRIS.
+    string? department;
+    # Team at the time of promotion. Nullable in HRIS.
+    string? team;
+    # Sub-team at the time of promotion. Nullable in HRIS: this is the field a
+    # production row first tripped over, aborting the whole result stream.
+    string? subTeam;
 |};

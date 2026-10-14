@@ -23,11 +23,14 @@ import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import employeeReducer from "@slices/employeeSlice/employee";
 import employeeHistoryReducer from "@slices/employeeSlice/employeeHistory";
+import scheduledChangesReducer from "@slices/employeeSlice/scheduledChanges";
 import employeePersonalInfoReducer from "@slices/employeeSlice/employeePersonalInfo";
 import userReducer from "@slices/userSlice/user";
 import organizationReducer from "@slices/organizationSlice/organization";
 import masterDataReducer from "@slices/masterDataSlice/masterData";
 import bulkOnboardingReducer from "@slices/bulkOnboardingSlice/bulkOnboarding";
+import careerFunctionReducer from "@slices/careerFunctionSlice/careerFunction";
+import leadershipReducer from "@slices/leadershipSlice/leadership";
 import employeeHubReducer from "@slices/employeeHubSlice/employeeHub";
 
 enableMapSet();
@@ -39,11 +42,14 @@ export const store = configureStore({
     common: commonReducer,
     employee: employeeReducer,
     employeeHistory: employeeHistoryReducer,
+    scheduledChanges: scheduledChangesReducer,
     employeePersonalInfo: employeePersonalInfoReducer,
     appConfig: appConfigReducer,
     organization: organizationReducer,
     masterData: masterDataReducer,
     bulkOnboarding: bulkOnboardingReducer,
+    careerFunction: careerFunctionReducer,
+    leadership: leadershipReducer,
     employeeHub: employeeHubReducer,
   },
   middleware: (getDefaultMiddleware) =>

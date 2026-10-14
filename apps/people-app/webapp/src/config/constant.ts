@@ -36,6 +36,12 @@ export const SnackMessage = {
 export const ADMIN_PRIVILEGE = 999;
 export const LEAD_PRIVILEGE = 993;
 export const SERVICE_DESK_PRIVILEGE = 991;
+/** Read-only access to employee profiles and employee reports. */
+export const EMPLOYEE_VIEW_PRIVILEGE = 989;
+/** Employee-view access plus the ability to record a resignation. */
+export const RESIGNATION_PRIVILEGE = 985;
+/** Access to the QR code report only. */
+export const QR_EXPORT_PRIVILEGE = 983;
 export const DEFAULT_LIMIT_VALUE = 10;
 export const DEFAULT_OFFSET_VALUE = 0;
 export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
@@ -303,6 +309,13 @@ export const Countries = [
 
 export const DATE_FMT = "yyyy-MM-dd";
 
+// Work email the backend stores for a joiner whose account is not created yet. Shared by every
+// such joiner, so it never identifies a person.
+export const FUTURE_JOINER_EMAIL = "future-joiner@wso2.com";
+
+// Work email held by former employees whose real address is not on record.
+export const EX_EMPLOYEE_EMAIL = "ex-employee@wso2.com";
+
 export const BULK_TEMPLATE_FILENAME = "bulk_onboarding_template.csv";
 
 export const BULK_UPLOAD_MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -347,10 +360,11 @@ export const BULK_TEMPLATE_HEADERS = [
   "emergencyContactTelephone",
 ] as const;
 
+// workEmail is optional: left empty, the joiner is stored on FUTURE_JOINER_EMAIL until their
+// account is created.
 export const BULK_REQUIRED_FIELDS = [
   "firstName",
   "lastName",
-  "workEmail",
   "managerEmail",
   "designation",
   "businessUnit",

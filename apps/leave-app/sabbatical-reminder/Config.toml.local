@@ -1,0 +1,36 @@
+[sabbatical_reminder]
+reminderLeadTimeInDays = 28
+
+[sabbatical_reminder.database.dbConfig]
+host = ""
+user = ""
+password = ""
+database = ""
+port = 3306
+maxOpenConnections = 5
+maxConnectionLifeTime = 180.0
+minIdleConnections = 1
+
+[sabbatical_reminder.employee]
+hrEntityBaseUrl = ""
+
+[sabbatical_reminder.employee.oauthConfig]
+tokenUrl = ""
+clientId = ""
+clientSecret = ""
+
+[sabbatical_reminder.email]
+# Non-production: true sends every reminder only to debugRecipients, with no CC, and does not mark
+# reminders as sent, so every run re-sends them.
+isDebug = true
+debugRecipients = [""]
+
+[sabbatical_reminder.email.emailServiceConfig]
+emailServiceEndpoint = ""
+from = ""
+peopleOperationsRecipients = [""]
+
+[sabbatical_reminder.email.emailServiceConfig.oauthConfig]
+tokenUrl = ""
+clientId = ""
+clientSecret = ""

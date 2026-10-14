@@ -26,11 +26,20 @@ import ballerina/time;
 
 configurable string[] defaultRecipients = [];
 configurable string emailGroupToNotify = ?;
+# Leave types People Ops may record on behalf of an employee - either because
+# the employee cannot request it themselves, or because it needs to be entered
+# for them. Widening this list is a configuration change, not a code change.
+configurable database:LeaveType[] onBehalfAllowedLeaveTypes = [
+    database:NO_PAY_LEAVE,
+    database:MATERNITY_LEAVE,
+    database:PATERNITY_LEAVE
+];
 configurable boolean isSabbaticalLeaveEnabled = ?;
 configurable string sabbaticalLeavePolicyUrl = ?;
 configurable string sabbaticalLeaveUserGuideUrl = ?;
-configurable int sabbaticalLeaveEligibilityDuration = 1095; // default 3 years
+configurable int sabbaticalLeaveEligibilityDuration = 2555; // default 7 years
 configurable int sabbaticalLeaveMaxApplicationDuration = 42; // default 6 weeks
+configurable int sabbaticalLeaveMinJobBand = 5;
 configurable string[] sabbaticalFunctionalLeadOptOutMails = ?;
 
 # Checks if a passed string is an empty.

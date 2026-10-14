@@ -17,6 +17,9 @@ import ballerina/sql;
 
 # Approved promotions for an employee, from cycles that have formally ended.
 #
+# Rows with no created date are excluded: that column is nullable in HRIS and is
+# what attributes a promotion to an employment period.
+#
 # + workEmail - Work email of the employee
 # + return - Parameterized query returning approved promotions, newest first
 isolated function getApprovedPromotionsQuery(string workEmail) returns sql:ParameterizedQuery =>
@@ -37,4 +40,9 @@ isolated function getApprovedPromotionsQuery(string workEmail) returns sql:Param
     WHERE pr.promotion_request_employee_email = ${workEmail}
         AND pr.promotion_request_status = 'APPROVED'
         AND pc.promotion_cycle_status = 'END'
+        -- The created date is nullable in HRIS, and it is the sole key used to
+        -- attribute a promotion to an employment period. A row without one
+        -- cannot be placed on the timeline at all, so it is excluded here
+        -- rather than fetched and then dropped downstream.
+        AND pr.promotion_request_created_on IS NOT NULL
     ORDER BY pr.promotion_request_created_on DESC`;

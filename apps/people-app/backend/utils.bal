@@ -170,6 +170,189 @@ isolated function rollbackEmployeeCreation(string employeeId, string workEmail) 
     }
 }
 
+# Validate a continuous service record link before it is written.
+#
+# The link stores the prior employment's `employee.id`. Only a record the
+# continuous-service-records endpoint would offer for this work email is accepted, and only
+# one that has ended or is ending (Left or Marked leaver) and started before this employment;
+# anything else, including an unrelated person's record, this employment itself, or a later record that would link
+# forwards or form a cycle, is refused as a bad request instead of reaching the database.
+#
+# + linkedId - `employee.id` of the prior employment being linked
+# + workEmail - Work email the employment will hold once the request is applied
+# + startDate - Start date (YYYY-MM-DD) the employment will hold once the request is applied
+# + employeeId - Employee ID of the employment being updated, or () when creating one
+# + return - A BadRequest or InternalServerError response when the link is refused, else ()
+isolated function validateContinuousServiceRecord(int linkedId, string workEmail, string startDate,
+        string? employeeId = ()) returns http:BadRequest|http:InternalServerError? {
+
+    database:ContinuousServiceRecordInfo[]|error priorRecords =
+        database:getContinuousServiceRecordsByEmail(workEmail);
+    if priorRecords is error {
+        log:printError("Error occurred while validating the continuous service record", priorRecords,
+                linkedId = linkedId, workEmail = workEmail);
+        return <http:InternalServerError>{
+            body: {
+                message: "Error occurred while validating the continuous service record"
+            }
+        };
+    }
+
+    foreach database:ContinuousServiceRecordInfo priorRecord in priorRecords {
+        if priorRecord.id == linkedId && database:isEligiblePriorEmployment(priorRecord, startDate, employeeId) {
+            return;
+        }
+    }
+
+    log:printWarn("Continuous service record is not an eligible prior employment",
+            linkedId = linkedId, workEmail = workEmail, startDate = startDate, employeeId = employeeId);
+    return <http:BadRequest>{
+        body: {
+            message: "Continuous service record must be an earlier employment under the same work email "
+                + "that has ended or is ending (status Left or Marked leaver)"
+        }
+    };
+}
+
+# Validate who is being onboarded, before anything is written.
+#
+# The NIC/Passport decides whether this is someone new, a rehire, or someone already
+# employed (see database:checkReturningEmployee). A work email that is given must not belong
+# to an Active or New joiner employee. A former employee's or a Marked leaver's email is fine:
+# that is how someone returning, or relocating under a different NIC, keeps their email, house
+# and continuous service.
+#
+# + nicOrPassport - NIC/Passport from the submission
+# + workEmail - Work email from the submission, nil when left empty
+# + return - The BadRequest or InternalServerError to send, or nil when onboarding may go ahead
+isolated function validateOnboardingIdentity(string nicOrPassport, string? workEmail)
+        returns http:BadRequest|http:InternalServerError? {
+
+    database:EmploymentMatch[]|error employments = database:getEmploymentsByNic(nicOrPassport);
+    if employments is error {
+        log:printError("Error occurred while checking existing employee personal information", employments,
+                nicOrPassport = nicOrPassport);
+        return <http:InternalServerError>{body: {message: ERROR_EMPLOYEE_CREATION_FAILED}};
+    }
+    string? refusal = database:checkReturningEmployee(employments, workEmail);
+    if refusal is string {
+        log:printWarn(refusal, nicOrPassport = nicOrPassport, workEmail = workEmail);
+        return <http:BadRequest>{body: {message: refusal}};
+    }
+
+    if workEmail is () {
+        return;
+    }
+    database:EmploymentMatch|error? holder = database:getCurrentEmployeeByWorkEmail(workEmail);
+    if holder is error {
+        log:printError("Error occurred while checking whether the work email is in use", holder,
+                workEmail = workEmail);
+        return <http:InternalServerError>{body: {message: ERROR_EMPLOYEE_CREATION_FAILED}};
+    }
+    if holder is database:EmploymentMatch {
+        string customErr = string `Work email ${workEmail} is already in use by ${holder.firstName} `
+            + string `${holder.lastName} (${holder.employeeId})`;
+        log:printWarn(customErr, workEmail = workEmail, holderEmployeeId = holder.employeeId);
+        return <http:BadRequest>{body: {message: customErr}};
+    }
+}
+
+# Validate that an edit does not leave the same person with two current employments.
+#
+# After a relocation the old employment is Marked leaver and the new one Active or New joiner.
+# Setting the old one back to Active, or giving an employee a work email another current
+# employee holds, would leave two current records for the same person or address. See
+# database:identityChecksForEdit for when each check applies.
+#
+# + employeeInfo - The employee as stored, before the edit
+# + requestedStatus - Status the edit sets, nil when it leaves the status alone
+# + requestedEmail - Work email the edit sets, nil when it leaves the email alone
+# + return - The BadRequest or InternalServerError to send, or nil when the edit may go ahead
+isolated function validateEditIdentity(database:Employee employeeInfo, string? requestedStatus,
+        string? requestedEmail) returns http:BadRequest|http:InternalServerError? {
+
+    string employeeId = employeeInfo.employeeId;
+    var checks = database:identityChecksForEdit(employeeInfo.employeeStatus, requestedStatus,
+            employeeInfo.workEmail, requestedEmail);
+
+    string workEmail = requestedEmail ?: employeeInfo.workEmail;
+    if checks.email && !database:isPlaceholderWorkEmail(workEmail) {
+        database:EmploymentMatch|error? holder = database:getCurrentEmployeeByWorkEmail(workEmail, employeeId);
+        if holder is error {
+            log:printError("Error occurred while checking whether the work email is in use", holder,
+                    employeeId = employeeId, workEmail = workEmail);
+            return <http:InternalServerError>{body: {message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED}};
+        }
+        if holder is database:EmploymentMatch {
+            string customErr = string `Work email ${workEmail} is already in use by ${holder.firstName} `
+                + string `${holder.lastName} (${holder.employeeId})`;
+            log:printWarn(customErr, employeeId = employeeId, holderEmployeeId = holder.employeeId);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+    }
+
+    if !checks.nic {
+        return;
+    }
+    // The single-employee lookup does not load the NIC/Passport, so it is read here.
+    database:EmployeePersonalInfo|error? personalInfo = database:getEmployeePersonalInfo(employeeId);
+    if personalInfo is error {
+        log:printError("Error occurred while fetching the employee's NIC/Passport", personalInfo,
+                employeeId = employeeId);
+        return <http:InternalServerError>{body: {message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED}};
+    }
+    string nicOrPassport = personalInfo is () ? "" : personalInfo.nicOrPassport.trim();
+    if nicOrPassport != "" {
+        database:EmploymentMatch[]|error employments = database:getEmploymentsByNic(nicOrPassport);
+        if employments is error {
+            log:printError("Error occurred while checking the employee's other employments", employments,
+                    employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED}};
+        }
+        database:EmploymentMatch? other = database:otherCurrentEmployment(employments, employeeId);
+        if other is database:EmploymentMatch {
+            string customErr = string `This NIC/Passport already has a current employment: ${other.firstName} `
+                + string `${other.lastName} (${other.employeeId}, ${other.employeeStatus})`;
+            log:printWarn(customErr, employeeId = employeeId, otherEmployeeId = other.employeeId);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+    }
+}
+
+# Validate the leadership attributes submitted for an employee.
+#
+# Every id must be an active attribute; an unknown or inactive one rejects the whole update
+# rather than applying it partially. Duplicates are tolerated and removed.
+#
+# + requested - Attribute ids from the request
+# + employeeId - Employee ID the attributes are being set on, for the log
+# + return - The de-duplicated ids, or the BadRequest or InternalServerError response to send
+isolated function validateLeadershipGroupIds(int[] requested, string employeeId)
+        returns int[]|http:BadRequest|http:InternalServerError {
+
+    database:LeadershipGroup[]|error active = database:getLeadershipGroups();
+    if active is error {
+        log:printError("Error validating leadership attributes", active, employeeId = employeeId);
+        return <http:InternalServerError>{body: {message: "Error updating employee"}};
+    }
+    int[] activeIds = from database:LeadershipGroup g in active select g.id;
+
+    int[] deduped = [];
+    foreach int id in requested {
+        if activeIds.indexOf(id) == () {
+            log:printWarn("Unknown or inactive leadership attribute", employeeId = employeeId,
+                    leadershipGroupId = id);
+            return <http:BadRequest>{
+                body: {message: string `Unknown or inactive leadership attribute: ${id}`}
+            };
+        }
+        if deduped.indexOf(id) == () {
+            deduped.push(id);
+        }
+    }
+    return deduped;
+}
+
 # Validates that a date string is a valid calendar date in the format YYYY-MM-DD.
 #
 # + date - Date string to validate (expected format YYYY-MM-DD)
@@ -255,10 +438,17 @@ isolated function validateBulkRow(int rowNumber, BulkEmployeeCsvRow row, BulkRef
     if row.lastName.trim().length() == 0 {
         errors.push({row: rowNumber, 'field: CSV_FIELD_LAST_NAME, message: "Last name is required"});
     }
-    if row.workEmail.trim().length() == 0 {
-        errors.push({row: rowNumber, 'field: CSV_FIELD_WORK_EMAIL, message: "Work email is required"});
-    } else if !database:EMAIL_PATTERN.isFullMatch(row.workEmail.trim()) {
+    // An empty work email is a joiner whose account does not exist yet; FUTURE_JOINER_EMAIL is
+    // stored for them. A placeholder typed in is refused, as in single onboarding.
+    string workEmail = row.workEmail.trim();
+    if workEmail.length() > 0 && !database:EMAIL_PATTERN.isFullMatch(workEmail) {
         errors.push({row: rowNumber, 'field: CSV_FIELD_WORK_EMAIL, message: "Invalid work email format"});
+    } else if database:isPlaceholderWorkEmail(workEmail) {
+        errors.push({
+            row: rowNumber,
+            'field: CSV_FIELD_WORK_EMAIL,
+            message: "Leave the work email empty when the employee's account is not created yet"
+        });
     }
     if row.managerEmail.trim().length() == 0 {
         errors.push({row: rowNumber, 'field: CSV_FIELD_MANAGER_EMAIL, message: "Manager email is required"});
@@ -449,8 +639,9 @@ isolated function buildBulkEmployeePayload(BulkEmployeeCsvRow row, BulkRefData r
         epf: row.epf.trim().length() > 0 ? row.epf.trim() : (),
         companyId: refData.companyIds[normalizeKey(row.company)] ?: 0,
         workLocation: row.workLocation.trim(),
-        workEmail: row.workEmail.trim(),
+        workEmail: row.workEmail.trim().length() > 0 ? row.workEmail.trim() : (),
         startDate: row.startDate.trim(),
+        employeeStatus: database:initialEmployeeStatus(row.startDate.trim(), todayUtc()),
         managerEmail: row.managerEmail.trim(),
         secondaryJobTitle: row.secondaryJobTitle.trim().length() > 0 ? row.secondaryJobTitle.trim() : (),
         employmentTypeId: refData.employmentTypeIds[normalizeKey(row.employmentType)] ?: 0,
@@ -857,4 +1048,196 @@ public isolated function assignPromotionsToPeriods(database:EmploymentPeriod[] p
             continuousServiceRecord: periods[index].continuousServiceRecord,
             promotions: bucketed[index]
         };
+}
+
+# Payload field name to the employee column it writes, for scheduled changes.
+#
+# The map is the allowlist: a field absent from it cannot be scheduled, and the scheduler
+# refuses anything outside the same set when it applies the change. Resignation fields
+# and employment status are deliberately absent — recording a departure is its own
+# action with its own endpoint, not a field edit deferred.
+final readonly & map<string> SCHEDULABLE_FIELD_COLUMNS = {
+    "epf": "epf",
+    "companyId": "company_id",
+    "workLocation": "work_location",
+    "workEmail": "work_email",
+    "startDate": "start_date",
+    "secondaryJobTitle": "secondary_job_title",
+    "jobRole": "job_role",
+    "externalDesignation": "external_designation",
+    "managerEmail": "manager_email",
+    "probationEndDate": "probation_end_date",
+    "agreementEndDate": "agreement_end_date",
+    "employmentTypeId": "employment_type_id",
+    "designationId": "designation_id",
+    "officeId": "office_id",
+    "teamId": "team_id",
+    "subTeamId": "sub_team_id",
+    "businessUnitId": "business_unit_id",
+    "unitId": "unit_id",
+    "houseId": "house_id",
+    "additionalManagerEmails": "additional_manager_emails"
+};
+
+# Employee record field holding the current value of each schedulable column.
+#
+# The employee record exposes resolved names for some fields and raw ids for others; this
+# names the one the column is compared against, so the supersede check reads the same
+# value the scheduler will.
+final readonly & map<string> SCHEDULABLE_COLUMN_SOURCES = {
+    "epf": "epf",
+    "company_id": "companyId",
+    "work_location": "workLocation",
+    "work_email": "workEmail",
+    "start_date": "startDate",
+    "secondary_job_title": "secondaryJobTitle",
+    "job_role": "jobRole",
+    "external_designation": "externalDesignation",
+    "manager_email": "managerEmail",
+    "probation_end_date": "probationEndDate",
+    "agreement_end_date": "agreementEndDate",
+    "employment_type_id": "employmentTypeId",
+    "designation_id": "designationId",
+    "office_id": "officeId",
+    "team_id": "teamId",
+    "sub_team_id": "subTeamId",
+    "business_unit_id": "businessUnitId",
+    "unit_id": "unitId",
+    "house_id": "houseId"
+};
+
+# True when a date string is later than today, in the server's own reckoning of today.
+#
+# Today is excluded rather than allowed: the sweep runs once a day, so a change dated
+# today is applied immediately if the sweep has yet to run and a day late if it has
+# already run. Which of those happens would depend on the time of day it was scheduled,
+# so it is refused and the caller is told to apply now or pick a later date.
+#
+# + date - Date in YYYY-MM-DD form
+# + return - True when the date is tomorrow or later
+isolated function isFutureDate(string date) returns boolean {
+    time:Utc tomorrow = time:utcAddSeconds(time:utcNow(), 86400);
+    string tomorrowDate = time:utcToString(tomorrow).substring(0, 10);
+    return date >= tomorrowDate;
+}
+
+# Today's date in UTC, the same reckoning of today the scheduler uses.
+#
+# + return - Today's date in YYYY-MM-DD form
+isolated function todayUtc() returns string =>
+    time:utcToString(time:utcNow()).substring(0, 10);
+
+# Translate a job-info payload into the columns a scheduled change writes.
+#
+# Only the fields actually set are carried, so a scheduled change records the edit that
+# was made rather than every field the payload could hold. A field outside the allowlist
+# is an error rather than a silent omission: the caller asked for something that cannot
+# be scheduled and should be told so.
+#
+# + payload - The fields to change
+# + return - Column name to value, or an error naming the field that cannot be scheduled
+isolated function toSchedulableColumns(database:UpdateEmployeeJobInfoPayload payload)
+    returns map<json>|error {
+
+    map<json> asMap = check payload.toJson().cloneWithType();
+    map<json> columns = {};
+
+    foreach string 'field in asMap.keys() {
+        json value = asMap.get('field);
+        // An unset optional field is absent from the change, not a request to null the
+        // column: the payload cannot tell the two apart, and clearing a field nobody
+        // touched would be the more damaging reading.
+        if value is () {
+            continue;
+        }
+        if !SCHEDULABLE_FIELD_COLUMNS.hasKey('field) {
+            return error(string `${'field} cannot be scheduled for a future date`);
+        }
+        columns[SCHEDULABLE_FIELD_COLUMNS.get('field)] = value;
+    }
+
+    if columns.length() == 0 {
+        return error("No schedulable fields were provided");
+    }
+    return columns;
+}
+
+# Capture what the targeted columns hold now, for the supersede check on the day.
+#
+# + employee - The employee's current record
+# + changes - The change, as column name to value
+# + return - Column name to current value, or an error when they could not be read
+isolated function expectedValuesFor(database:Employee employee, map<json> changes)
+    returns map<json>|error {
+
+    // An error rather than an empty map: an empty expectation reads to the sweep as
+    // "nothing to compare", which is how a failure here would silently disable the
+    // supersede check months later, when the change applies.
+    map<json>|error current = employee.toJson().cloneWithType();
+    if current is error {
+        return error(string `Could not read the employee's current values: ${current.message()}`);
+    }
+
+    map<json> expected = {};
+    foreach string column in changes.keys() {
+        // Additional managers live in their own table rather than in an employee column,
+        // so they are snapshotted as the normalised set the sweep will compare against
+        // rather than read from SCHEDULABLE_COLUMN_SOURCES.
+        if column == SCHEDULED_ADDITIONAL_MANAGERS_COLUMN {
+            expected[column] = normalizedEmailSet(employee.additionalManagerEmails);
+            continue;
+        }
+        if !SCHEDULABLE_COLUMN_SOURCES.hasKey(column) {
+            continue;
+        }
+        string sourceField = SCHEDULABLE_COLUMN_SOURCES.get(column);
+        expected[column] = current.hasKey(sourceField) ? current.get(sourceField) : ();
+    }
+
+    // The promise this function's own contract makes, and the one the endpoint relies on
+    // to refuse a change while somebody is present to be told. An empty map reaches the
+    // sweep as "nothing to compare" months later, where it is refused far from anyone who
+    // could act on it.
+    if expected.length() == 0 {
+        return error("The current values for this change could not be recorded");
+    }
+    return expected;
+}
+
+# Column name the additional managers set is carried under in a scheduled change.
+#
+# Matches ADDITIONAL_MANAGERS_KEY in the scheduler, which reads these same rows.
+const string SCHEDULED_ADDITIONAL_MANAGERS_COLUMN = "additional_manager_emails";
+
+# Normalise a set of emails so that only membership matters to a comparison.
+#
+# Lowercased because the sweep writes and matches these case-insensitively, trimmed
+# because the payload carries whatever was typed, and sorted because neither the stored
+# order nor the order somebody entered them says anything about the set itself. Without
+# this, reordering two leads would read as a change somebody else had made and supersede
+# the scheduled one.
+#
+# + emails - Comma-separated emails, an email array, or ()
+# + return - The distinct emails, lowercased and sorted
+isolated function normalizedEmailSet(json emails) returns string[] {
+    string[] parts = [];
+    if emails is string {
+        parts = re `,`.split(emails);
+    } else if emails is json[] {
+        foreach json entry in emails {
+            if entry is string {
+                parts.push(entry);
+            }
+        }
+    }
+
+    map<()> seen = {};
+    foreach string part in parts {
+        string trimmed = part.trim().toLowerAscii();
+        if trimmed.length() > 0 {
+            seen[trimmed] = ();
+        }
+    }
+    string[] unique = seen.keys();
+    return unique.sort();
 }

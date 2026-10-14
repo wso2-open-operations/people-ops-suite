@@ -33,3 +33,6 @@ Config.toml
 .env
 node_modules
 .superpowers
+
+# Local design specs and planning docs — not part of the shipped repo
+docs/

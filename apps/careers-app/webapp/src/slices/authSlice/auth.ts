@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -18,7 +18,6 @@ import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 import { State } from "@/types/types";
-import { RootState } from "@slices/store";
 
 export enum Role {
   CANDIDATE = "CANDIDATE",
@@ -80,5 +79,4 @@ export const authSlice = createSlice({
 });
 
 export const { setUserAuthData, setAuthError, setAuthSuccess } = authSlice.actions;
-export const selectRoles = (state: RootState) => state.auth.roles;
 export default authSlice.reducer;

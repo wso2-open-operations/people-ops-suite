@@ -25,13 +25,14 @@ public isolated function getEmployeeBasicInfo(string email) returns EmployeeBasi
     return employeeBasicInfo is sql:NoRowsError ? () : employeeBasicInfo;
 }
 
-# Fetch all employees' basic information.
+# Fetch directory information for all currently employed staff (Active and Marked leaver).
 #
-# + return - All employees' basic information
-public isolated function getAllEmployeesBasicInfo() returns EmployeeBasicInfo[]|error {
-    stream<EmployeeBasicInfo, error?> employeeBasicInfoStream = databaseClient->query(getAllEmployeesBasicInfoQuery());
-    return from EmployeeBasicInfo employeesBasicInfo in employeeBasicInfoStream
-        select employeesBasicInfo;
+# + return - Directory information for Active and Marked leaver employees
+public isolated function getAllEmployeesBasicInfo() returns EmployeeDirectoryInfo[]|error {
+    stream<EmployeeDirectoryInfo, error?> employeeDirectoryInfoStream =
+        databaseClient->query(getAllEmployeesBasicInfoQuery());
+    return from EmployeeDirectoryInfo employeeDirectoryInfo in employeeDirectoryInfoStream
+        select employeeDirectoryInfo;
 }
 
 # Get employee ID by EPF.
@@ -43,32 +44,26 @@ public isolated function getEmployeeIdByEpf(string epf) returns string|error? {
     return result is sql:NoRowsError ? () : result;
 }
 
-# Get the personal_info ID for a given NIC/Passport.
+# Fetch every employment of the person behind a NIC/Passport, newest first.
 #
-# + nicOrPassport - National Identity Card number or Passport
-# + return - personal_info ID, nil if no matching record, or error
-public isolated function getPersonalInfoIdByNic(string nicOrPassport) returns int?|error {
-    int|error result = databaseClient->queryRow(getPersonalInfoIdByNicQuery(nicOrPassport));
+# + nicOrPassport - NIC/Passport from the onboarding submission
+# + return - The person's employments (empty for someone new), or error
+public isolated function getEmploymentsByNic(string nicOrPassport) returns EmploymentMatch[]|error {
+    stream<EmploymentMatch, sql:Error?> resultStream = databaseClient->query(getEmploymentsByNicQuery(nicOrPassport));
+    return from EmploymentMatch employment in resultStream
+        select employment;
+}
+
+# Find an Active or New joiner employee holding a work email (a Marked leaver frees it for relocation).
+#
+# + workEmail - Work email to look for
+# + excludeEmployeeId - Employee ID to leave out (the employee being edited), nil for none
+# + return - The employee, nil when no current employee holds it, or error
+public isolated function getCurrentEmployeeByWorkEmail(string workEmail, string? excludeEmployeeId = ())
+        returns EmploymentMatch|error? {
+    EmploymentMatch|error result =
+        databaseClient->queryRow(getCurrentEmployeeByWorkEmailQuery(workEmail, excludeEmployeeId));
     return result is sql:NoRowsError ? () : result;
-}
-
-# Check whether a personal_info ID already has an employee record under the given work email.
-#
-# + personalInfoId - personal_info ID matched by NIC/Passport
-# + workEmail - Work email from the new onboarding submission
-# + return - true if a matching employee record exists, or error
-public isolated function hasEmployeeWithWorkEmail(int personalInfoId, string workEmail) returns boolean|error {
-    int count = check databaseClient->queryRow(countEmployeeByPersonalInfoIdAndWorkEmailQuery(personalInfoId, workEmail));
-    return count > 0;
-}
-
-# Check whether a personal_info ID has any currently active employment.
-#
-# + personalInfoId - personal_info ID matched by NIC/Passport
-# + return - true if an active employee record references this personal_info ID, or error
-public isolated function hasActiveEmploymentByPersonalInfoId(int personalInfoId) returns boolean|error {
-    int count = check databaseClient->queryRow(countActiveEmployeeByPersonalInfoIdQuery(personalInfoId));
-    return count > 0;
 }
 
 # Fetch employee detailed information.
@@ -85,8 +80,10 @@ public isolated function getEmployeeInfo(string employeeId) returns Employee|err
 # + payload - Get employees filter payload
 # + leadEmail - If provided, restricts results to subordinates of this lead
 # + return - List of employees or error
-public isolated function getEmployees(EmployeeSearchPayload payload, string? leadEmail = ()) returns EmployeesResponse|error {
-    stream<EmployeeRecord, error?> resultStream = databaseClient->query(getEmployeesQuery(payload, leadEmail));
+public isolated function getEmployees(EmployeeSearchPayload payload, string? leadEmail = (),
+        boolean includePersonalInfo = false) returns EmployeesResponse|error {
+    stream<EmployeeRecord, error?> resultStream =
+        databaseClient->query(getEmployeesQuery(payload, leadEmail, includePersonalInfo));
 
     int totalCount = 0;
     Employee[] employees = [];
@@ -107,6 +104,12 @@ public isolated function getEmployees(EmployeeSearchPayload payload, string? lea
 # + return - Continuous service record information or error
 public isolated function getContinuousServiceRecordsByEmail(string workEmail)
     returns ContinuousServiceRecordInfo[]|error {
+
+    // A placeholder is shared by unrelated people, so their employments are not one
+    // person's earlier service.
+    if isPlaceholderWorkEmail(workEmail) {
+        return [];
+    }
 
     stream<ContinuousServiceRecordInfo, sql:Error?> recordStream = databaseClient->query(
         getContinuousServiceRecordQuery(workEmail)
@@ -237,9 +240,11 @@ public isolated function getFullOrganizationStructure() returns OrgStructureBusi
 
 # Get career functions.
 #
+# + includeInactive - If true, return all rows including inactive; otherwise active-only
 # + return - Career functions
-public isolated function getCareerFunctions() returns CareerFunction[]|error {
-    stream<CareerFunction, error?> careerFunctionStream = databaseClient->query(getCareerFunctionsQuery());
+public isolated function getCareerFunctions(boolean includeInactive = false) returns CareerFunction[]|error {
+    stream<CareerFunction, error?> careerFunctionStream =
+        databaseClient->query(getCareerFunctionsQuery(includeInactive));
     return from CareerFunction careerFunction in careerFunctionStream
         select careerFunction;
 }
@@ -247,11 +252,132 @@ public isolated function getCareerFunctions() returns CareerFunction[]|error {
 # Get designations.
 #
 # + careerFunctionId - Career function ID (optional)
+# + includeInactive - If true, return all rows including inactive; otherwise active-only
 # + return - Designations
-public isolated function getDesignations(int? careerFunctionId = ()) returns Designation[]|error {
-    stream<Designation, error?> designationStream = databaseClient->query(getDesignationsQuery(careerFunctionId));
+public isolated function getDesignations(int? careerFunctionId = (), boolean includeInactive = false)
+        returns Designation[]|error {
+
+    stream<Designation, error?> designationStream =
+        databaseClient->query(getDesignationsQuery(careerFunctionId, includeInactive));
     return from Designation designation in designationStream
         select designation;
+}
+
+# Create a career function.
+#
+# + payload - Career function creation payload
+# + createdBy - Email of the admin performing the action
+# + return - ID of the newly created career function, or error
+public isolated function createCareerFunction(CreateCareerFunctionPayload payload, string createdBy)
+        returns int|error {
+
+    // Trim before storing: both unique indexes compare LOWER(TRIM(...)), so an untrimmed
+    // value would occupy the slot for its trimmed form and render padded in every list.
+    sql:ExecutionResult|error result = databaseClient->execute(
+        createCareerFunctionQuery(payload.careerFunction.trim(), createdBy));
+
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateCareerFunctionError("A career function with this name already exists.");
+    }
+    if result is error {
+        return result;
+    }
+    return check result.lastInsertId.ensureType(int);
+}
+
+# Update a career function.
+#
+# + id - Career function ID
+# + payload - Update payload (all fields optional)
+# + updatedBy - Email of the admin performing the action
+# + return - Nil, EntityNotFoundError, NoFieldsToUpdateError, or error
+public isolated function updateCareerFunction(int id, UpdateCareerFunctionPayload payload, string updatedBy)
+        returns error? {
+
+    string? trimmedName = payload.careerFunction is string ? (<string>payload.careerFunction).trim() : ();
+    sql:ParameterizedQuery query =
+        check updateCareerFunctionQuery(id, trimmedName, payload.isActive, updatedBy);
+
+    sql:ExecutionResult|error result = databaseClient->execute(query);
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateCareerFunctionError("A career function with this name already exists.");
+    }
+    if result is error {
+        return result;
+    }
+    if result.affectedRowCount == 0 {
+        return error EntityNotFoundError(string `Career function with ID ${id} not found`);
+    }
+}
+
+# Create a designation.
+#
+# + payload - Designation creation payload
+# + createdBy - Email of the admin performing the action
+# + return - ID of the new designation, DuplicateDesignationError on a unique-index
+# violation, or error
+public isolated function createDesignation(CreateDesignationPayload payload, string createdBy) returns int|error {
+    // Trim before storing — see the note in createCareerFunction.
+    sql:ExecutionResult|error result = databaseClient->execute(
+        createDesignationQuery(payload.designation.trim(), payload.jobBand, payload.careerFunctionId,
+            createdBy));
+
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateDesignationError(
+            "An active designation with this name already exists in this career function.");
+    }
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_FK_CONSTRAINT_ERROR_CODE {
+        return error UnknownCareerFunctionError("The specified career function does not exist.");
+    }
+    if result is error {
+        return result;
+    }
+    return check result.lastInsertId.ensureType(int);
+}
+
+# Update a designation.
+#
+# + id - Designation ID
+# + payload - Update payload (all fields optional)
+# + updatedBy - Email of the admin performing the action
+# + return - Nil, EntityNotFoundError, NoFieldsToUpdateError, DuplicateDesignationError,
+# or error
+public isolated function updateDesignation(int id, UpdateDesignationPayload payload, string updatedBy)
+        returns error? {
+
+    string? trimmedName = payload.designation is string ? (<string>payload.designation).trim() : ();
+    sql:ParameterizedQuery query = check updateDesignationQuery(id, trimmedName, payload.jobBand,
+            payload.careerFunctionId, payload.isActive, updatedBy);
+
+    sql:ExecutionResult|error result = databaseClient->execute(query);
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateDesignationError(
+            "An active designation with this name already exists in this career function.");
+    }
+    if result is error {
+        return result;
+    }
+    if result.affectedRowCount == 0 {
+        return error EntityNotFoundError(string `Designation with ID ${id} not found`);
+    }
+}
+
+# Check whether any active employees hold a designation.
+#
+# + id - Designation ID
+# + return - True if active employees exist, false otherwise, or error
+public isolated function hasActiveEmployeesInDesignation(int id) returns boolean|error {
+    record {int count;} result = check databaseClient->queryRow(countActiveEmployeesInDesignationQuery(id));
+    return result.count > 0;
+}
+
+# Check whether any active employees sit in a career function's designations.
+#
+# + id - Career function ID
+# + return - True if active employees exist, false otherwise, or error
+public isolated function hasActiveEmployeesInCareerFunction(int id) returns boolean|error {
+    record {int count;} result = check databaseClient->queryRow(countActiveEmployeesInCareerFunctionQuery(id));
+    return result.count > 0;
 }
 
 # Get companies.
@@ -336,6 +462,87 @@ public isolated function getHouses() returns House[]|error {
         select house;
 }
 
+# Fetch the assignable leadership attributes.
+#
+# + return - Active leadership attributes, or an error
+public isolated function getLeadershipGroups() returns LeadershipGroup[]|error {
+    stream<LeadershipGroup, error?> result = databaseClient->query(getLeadershipGroupsQuery());
+    return from LeadershipGroup group in result
+        select group;
+}
+
+# Fetch every leadership attribute, retired ones included, with its current holder count.
+#
+# + return - Leadership attributes with usage, active first, or an error
+public isolated function getLeadershipGroupsWithUsage() returns LeadershipGroupWithUsage[]|error {
+    stream<LeadershipGroupWithUsage, error?> result =
+        databaseClient->query(getLeadershipGroupsWithUsageQuery());
+    return from LeadershipGroupWithUsage group in result
+        select group;
+}
+
+# Create a leadership attribute.
+#
+# + payload - Creation payload
+# + createdBy - Email of the admin performing the action
+# + return - New attribute ID, DuplicateLeadershipGroupError, or error
+public isolated function createLeadershipGroup(CreateLeadershipGroupPayload payload, string createdBy)
+        returns int|error {
+
+    // Trimmed before storing so a padded name cannot sit beside its trimmed form.
+    sql:ExecutionResult|error result = databaseClient->execute(
+        createLeadershipGroupQuery(payload.name.trim(), createdBy));
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateLeadershipGroupError("A leadership attribute with this name already exists.");
+    }
+    if result is error {
+        return result;
+    }
+    return check result.lastInsertId.ensureType(int);
+}
+
+# Rename, retire or reactivate a leadership attribute.
+#
+# + id - Leadership attribute ID
+# + payload - Update payload (all fields optional)
+# + updatedBy - Email of the admin performing the action
+# + return - Nil, EntityNotFoundError, NoFieldsToUpdateError, DuplicateLeadershipGroupError,
+# LeadershipGroupInUseError, or error
+public isolated function updateLeadershipGroup(int id, UpdateLeadershipGroupPayload payload, string updatedBy)
+        returns error? {
+
+    string? name = payload.name;
+    string? trimmedName = name is string ? name.trim() : ();
+    sql:ParameterizedQuery query = check updateLeadershipGroupQuery(id, trimmedName, payload.isActive, updatedBy);
+
+    sql:ExecutionResult|error result = databaseClient->execute(query);
+    if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
+        return error DuplicateLeadershipGroupError("A leadership attribute with this name already exists.");
+    }
+    if result is error {
+        return result;
+    }
+    if result.affectedRowCount != 0 {
+        return;
+    }
+
+    // No row matched: the ID is unknown, or the retire guard held it back. The guard only
+    // applies to a retire, so any other update that matched nothing on a known ID changed
+    // nothing (possible if the driver ever reports changed rather than matched rows) and
+    // is a success, not a refusal to retire.
+    int exists = check databaseClient->queryRow(leadershipGroupExistsQuery(id));
+    if exists == 0 {
+        return error EntityNotFoundError(string `Leadership attribute with ID ${id} not found`);
+    }
+    if payload.isActive != false {
+        return;
+    }
+    int holders = check databaseClient->queryRow(countLeadershipGroupHoldersQuery(id));
+    string holdersText = holders == 1 ? "1 current employee holds" : string `${holders} current employees hold`;
+    return error LeadershipGroupInUseError(
+        string `Cannot retire: ${holdersText} this attribute. Remove it from them first.`);
+}
+
 # Get managers.
 #
 # + return - Managers
@@ -408,6 +615,7 @@ public isolated function deleteEmployeeById(string employeeId) returns error? {
         int employeePkId = ids.id;
         int personalInfoId = ids.personalInfoId;
         _ = check databaseClient->execute(deleteEmployeeAdditionalManagersAuditQuery(employeePkId));
+        _ = check databaseClient->execute(deleteEmployeeLeadershipAuditQuery(employeePkId));
         _ = check databaseClient->execute(deleteEmployeeEmergencyContactsAuditQuery(personalInfoId));
         _ = check databaseClient->execute(deleteEmployeeAuditQuery(employeePkId));
         _ = check databaseClient->execute(deletePersonalInfoAuditQuery(personalInfoId));
@@ -438,9 +646,11 @@ public isolated function addEmployeesBulk(CreateEmployeePayload[] payloads, stri
         transaction {
             foreach CreateEmployeePayload payload in payloads {
                 string employeeId = check generateBulkEmployeeId(payload, contextCache, sequenceCache);
-                // House is assigned automatically from the employee ID's numeric part — not
-                // known until the ID above is resolved, so this can't happen in buildBulkPayloads.
-                payload.houseId = check houseIdForEmployeeId(employeeId);
+                // House is assigned automatically — a returning employee keeps the one they
+                // had, everyone else gets it from the employee ID's numeric part. Not known
+                // until the ID above is resolved, so this can't happen in buildBulkPayloads.
+                payload.houseId = check resolveHouseIdForNewEmployee(payload.personalInfo.nicOrPassport,
+                        payload.workEmail ?: FUTURE_JOINER_EMAIL, employeeId);
                 int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
                 _ = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
                 check syncEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
@@ -551,7 +761,6 @@ public isolated function getEmployeeIdContext(int companyId, int employmentTypeI
     return databaseClient->queryRow(getEmployeeIdContextQuery(companyId, employmentTypeId));
 }
 
-
 # Fetch the current numeric maximum for a digit-family sequence.
 #
 # + prefix - The ID prefix (company prefix or CONSULTANCY_ID_PREFIX)
@@ -609,7 +818,7 @@ isolated function padZero(int n, int width) returns string {
 # + maxNum - Current max numeric value in the family (0 if none exist yet)
 # + digit - The required leading digit for this family (0, 1, or 5)
 # + minWidth - Minimum digit width for the family (e.g. 6 means the family starts at 100000 for
-#   digit 1, and no generated value is ever narrower than this)
+# digit 1, and no generated value is ever narrower than this)
 # + return - The next numeric value in this family
 isolated function nextNumberInFamily(int maxNum, int digit, int minWidth) returns int {
     int floor = digit * pow10(minWidth - 1);
@@ -634,8 +843,8 @@ isolated function nextNumberInFamily(int maxNum, int digit, int minWidth) return
 # + digit - The required leading digit for this family (0, 1, or 5)
 # + minWidth - Minimum digit width (default 6)
 # + zeroPadded - True for the digit-0 (Consultancy) family, which must be zero-padded to
-#   `minWidth` since a plain integer can never have a leading zero. Once that padded space is
-#   exhausted there is no valid next value, so this returns an error rather than overflowing.
+# `minWidth` since a plain integer can never have a leading zero. Once that padded space is
+# exhausted there is no valid next value, so this returns an error rather than overflowing.
 # + return - The next employee ID string, or an error on DB failure or exhausted zero-padded capacity
 public isolated function getNextIdInFamily(string prefix, int digit, int minWidth = 6, boolean zeroPadded = false)
         returns string|error {
@@ -674,6 +883,51 @@ isolated function extractNumericSuffix(string employeeId) returns int|error {
         return error(string `Employee ID '${employeeId}' has no numeric part`);
     }
     return check int:fromString(employeeId.substring(i));
+}
+
+# Resolve the house for an employee being onboarded.
+#
+# Someone returning to WSO2 keeps the house they had before: the house is a long-standing
+# affiliation rather than a property of the employee ID, and giving a returning colleague a
+# different one because their new ID divides differently would be arbitrary to them.
+#
+# Their previous employment is found by NIC/Passport first, which recognises the person even
+# when their work email has changed or is a placeholder, and otherwise by work email, which
+# covers earlier employments migrated in under a different NIC. A placeholder email is never
+# matched: it is shared by unrelated employees. The most recent employment is taken only.
+# Where there is no previous employment, or that employment carries no house, the house is
+# derived from the employee ID as it always has been — house assignment is recent, so most
+# records have none yet and fall through to that.
+#
+# + nicOrPassport - NIC/Passport of the employee being onboarded
+# + workEmail - Work email of the employee being onboarded
+# + employeeId - The employee's newly assigned employee ID
+# + return - The house ID to assign, or an error if the employee ID has no numeric part
+public isolated function resolveHouseIdForNewEmployee(string nicOrPassport, string workEmail, string employeeId)
+    returns int|error {
+
+    // Nullable, not int: the row exists whenever there is a previous employment, and
+    // carries a null house when that employment predates house assignment or its house has
+    // since been removed. Both take the same fallback as having no previous employment.
+    record {|int? houseId;|}|error previous =
+        databaseClient->queryRow(getPreviousHouseIdByNicQuery(nicOrPassport));
+    if previous is sql:NoRowsError && !isPlaceholderWorkEmail(workEmail) {
+        previous = databaseClient->queryRow(getPreviousHouseIdQuery(workEmail));
+    }
+
+    if previous is record {|int? houseId;|} {
+        int? previousHouseId = previous.houseId;
+        if previousHouseId is int {
+            return previousHouseId;
+        }
+        return houseIdForEmployeeId(employeeId);
+    }
+    // sql:NoRowsError is the ordinary case — a first-time joiner. Anything else is a real
+    // fault and is left to surface rather than silently falling back.
+    if previous !is sql:NoRowsError {
+        return previous;
+    }
+    return houseIdForEmployeeId(employeeId);
 }
 
 # Compute the automatically-assigned house for a newly created employee, deterministically
@@ -810,8 +1064,16 @@ public isolated function updateEmployeePersonalInfo(string employeeId, UpdateEmp
         EmergencyContact[]? contactsOpt = payload.emergencyContacts;
         if contactsOpt is EmergencyContact[] {
             check syncEmergencyContacts(employeeId, contactsOpt, updatedBy);
-        } else {
-            check checkAffectedCount(executionResult.affectedRowCount);
+        }
+        check checkAffectedCount(executionResult.affectedRowCount);
+
+        // employee.first_name/last_name are denormalized copies of personal_info's, read by
+        // the directory, search, and employee-detail views. Keep them in sync whenever a name
+        // field is part of this edit, or those views keep showing the pre-edit name.
+        if payload.firstName != () || payload.lastName != () {
+            sql:ExecutionResult nameUpdateResult = check databaseClient->execute(
+                updateEmployeeNameQuery(employeeId, payload, updatedBy));
+            check checkAffectedCount(nameUpdateResult.affectedRowCount);
         }
 
         check commit;
@@ -867,6 +1129,44 @@ isolated function syncAdditionalManagers(string employeeId, Email[] desiredEmail
     }
 }
 
+# Fetch the leadership attribute IDs an employee currently holds.
+#
+# + employeeId - Employee business key
+# + return - Active leadership attribute IDs, or an error
+public isolated function getEmployeeLeadershipIds(string employeeId) returns int[]|error {
+    stream<LeadershipGroupIdRow, error?> result =
+        databaseClient->query(getEmployeeLeadershipIdsQuery(employeeId));
+    return check from LeadershipGroupIdRow row in result
+        select row.leadershipGroupId;
+}
+
+# Replace an employee's leadership attributes with the given set.
+#
+# Attributes the employee holds but that are absent from groupIds are deactivated;
+# attributes in groupIds are assigned, reviving a previously removed row rather than
+# inserting a duplicate. An empty groupIds clears every attribute.
+#
+# Only active attributes are ever removed. A retired attribute is hidden from the edit form,
+# so it is never in groupIds; deactivating it here would silently strip it from the
+# employee, and reactivating the attribute later would not bring it back for them.
+#
+# Runs inside the caller's transaction, like syncAdditionalManagers, so the employee's
+# attributes commit or roll back together with the rest of the job-info update.
+#
+# + employeeId - Employee business key
+# + groupIds - The complete desired set of attribute IDs
+# + actor - Email of the user making the change, recorded in the audit trail
+# + return - An error if any statement fails
+isolated function syncEmployeeLeadership(string employeeId, int[] groupIds, string actor)
+    returns error? {
+
+    // Deactivate removals first so clearing an attribute is never skipped by an early return.
+    _ = check databaseClient->execute(deactivateEmployeeLeadershipQuery(employeeId, groupIds, actor));
+    foreach int groupId in groupIds {
+        _ = check databaseClient->execute(assignEmployeeLeadershipQuery(employeeId, groupId, actor));
+    }
+}
+
 # Update employee job information.
 #
 # + employeeId - Employee ID
@@ -875,6 +1175,8 @@ isolated function syncAdditionalManagers(string employeeId, Email[] desiredEmail
 # + return - Nil if the update was successful or error
 public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
     returns error? {
+
+    check validateResignationDateOrder(employeeId, payload);
 
     transaction {
         sql:ExecutionResult executionResult =
@@ -890,8 +1192,86 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
         if additionalManagerEmails is Email[] {
             check syncAdditionalManagers(employeeId, additionalManagerEmails, updatedBy);
         }
+        int[]? leadershipGroupIds = payload.leadershipGroupIds;
+        if leadershipGroupIds is int[] {
+            check syncEmployeeLeadership(employeeId, leadershipGroupIds, updatedBy);
+        }
         check syncResignationRecord(employeeId, payload, updatedBy);
         check commit;
+    }
+}
+
+# Record an employee's resignation details and mark them a leaver.
+#
+# Status is derived rather than accepted: recording a departure is what makes someone a
+# leaver, so this reuses the job-info update with the status set here. That keeps the
+# resignation table sync and the transaction identical to the admin path, rather than a
+# second way to write the same rows.
+#
+# + employeeId - Employee ID
+# + payload - Resignation details
+# + updatedBy - User performing the update
+# + return - Nil or error
+public isolated function updateResignation(string employeeId, UpdateResignationPayload payload, string updatedBy)
+    returns error? {
+
+    Employee|error? employee = getEmployeeInfo(employeeId);
+    if employee is error {
+        return employee;
+    }
+    if employee is () {
+        return error(string `Employee not found for ID: ${employeeId}`);
+    }
+
+    UpdateEmployeeJobInfoPayload jobInfoPayload = {
+        employeeStatus: statusAfterResignation(employee.employeeStatus),
+        finalDayInOffice: payload.finalDayInOffice,
+        finalDayOfEmployment: payload.finalDayOfEmployment,
+        resignationReason: payload.resignationReason
+    };
+
+    return updateEmployeeJobInfo(employeeId, jobInfoPayload, updatedBy);
+}
+
+# Reject a departure whose employment ends before the employee stops coming in.
+#
+# Either date may be absent from the payload while the other is being changed, so the
+# effective pair is the incoming value falling back to what is already stored — checking
+# only the payload would let a one-sided edit produce an impossible pair.
+#
+# Dates are ISO "YYYY-MM-DD", which compares correctly as a string.
+#
+# + employeeId - Employee ID
+# + payload - Job information update payload
+# + return - Nil when the order is possible, otherwise an error
+isolated function validateResignationDateOrder(string employeeId, UpdateEmployeeJobInfoPayload payload)
+    returns error? {
+
+    string? incomingInOffice = payload.finalDayInOffice;
+    string? incomingOfEmployment = payload.finalDayOfEmployment;
+
+    if incomingInOffice is () && incomingOfEmployment is () {
+        return;
+    }
+
+    string? storedInOffice = ();
+    string? storedOfEmployment = ();
+    if incomingInOffice is () || incomingOfEmployment is () {
+        Employee|error? employee = getEmployeeInfo(employeeId);
+        if employee is error {
+            return employee;
+        }
+        if employee is Employee {
+            storedInOffice = employee.finalDayInOffice;
+            storedOfEmployment = employee.finalDayOfEmployment;
+        }
+    }
+
+    string? inOffice = incomingInOffice ?: storedInOffice;
+    string? ofEmployment = incomingOfEmployment ?: storedOfEmployment;
+
+    if inOffice is string && ofEmployment is string && ofEmployment < inOffice {
+        return error InvalidResignationDatesError(RESIGNATION_DATE_ORDER_ERROR);
     }
 }
 
@@ -1179,7 +1559,7 @@ public isolated function updateParkingReservationVehicle(int reservationId, int 
 #
 # + payload - Reservation payload
 # + return - New reservation id, `DuplicateActiveReservationError` if an active reservation already
-#            exists for the slot/date or employee/date (unique index violation), or error
+# exists for the slot/date or employee/date (unique index violation), or error
 public isolated function addParkingReservation(AddParkingReservationPayload payload) returns int|error {
     sql:ExecutionResult|error result = databaseClient->execute(addParkingReservationQuery(payload));
     if result is sql:DatabaseError && result.detail().errorCode == MYSQL_DUPLICATE_ENTRY_ERROR_CODE {
@@ -1201,29 +1581,16 @@ public isolated function getParkingReservationById(int reservationId) returns Pa
     return row is sql:NoRowsError ? () : row;
 }
 
-# Get parking reservation id by transaction hash.
+# Atomically confirm a pending parking reservation (PENDING -> CONFIRMED).
 #
-# + transactionHash - Blockchain transaction hash
-# + return - Reservation id or nil
-public isolated function getParkingReservationByTransactionHash(string transactionHash)
-        returns ReservationIdRow|error? {
-
-    ReservationIdRow|error row = databaseClient->queryRow(
-        getParkingReservationByTransactionHashQuery(transactionHash));
-    if row is sql:NoRowsError {
-        return ();
-    }
-    return row;
-}
-
-# Update reservation status and optional transaction_hash.
-#
-# + payload - Update payload
-# + return - True if updated
-public isolated function updateParkingReservationStatus(UpdateParkingReservationStatusPayload payload)
+# + reservationId - Reservation id
+# + paymentReference - Payment reference to persist
+# + updatedBy - User performing the confirmation
+# + return - True if a pending reservation was transitioned, false if none matched (already transitioned), or error
+public isolated function confirmParkingReservation(int reservationId, string paymentReference, string updatedBy)
     returns boolean|error {
     sql:ExecutionResult result = check databaseClient->execute(
-        updateParkingReservationStatusQuery(payload));
+        confirmParkingReservationQuery(reservationId, paymentReference, updatedBy));
     return result.affectedRowCount > 0;
 }
 
@@ -1582,8 +1949,9 @@ public isolated function getEmploymentPeriods(string employeeId) returns Employm
 # globally-ordered timeline rather than three independently-ordered ones.
 #
 # + employeePkIds - Employee table primary keys belonging to the person
-# + return - Audit snapshots from employee_audit, personal_info_audit, and
-# employee_additional_managers_audit, ordered by action_on ascending across all three
+# + return - Audit snapshots from employee_audit, personal_info_audit,
+# employee_additional_managers_audit, employee_leadership_audit, and resignation_audit,
+# ordered by action_on ascending across all five
 public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSnapshot[]|error {
     stream<AuditSnapshot, error?> employeeAuditStream =
         databaseClient->query(getEmployeeAuditSnapshotsQuery(employeePkIds));
@@ -1601,8 +1969,24 @@ public isolated function getAuditSnapshots(int[] employeePkIds) returns AuditSna
         check from AuditSnapshot snapshot in additionalManagersAuditStream
         select snapshot;
 
-    AuditSnapshot[] allSnapshots =
-        [...employeeAuditSnapshots, ...personalInfoAuditSnapshots, ...additionalManagersAuditSnapshots];
+    stream<AuditSnapshot, error?> leadershipAuditStream =
+        databaseClient->query(getEmployeeLeadershipAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] leadershipAuditSnapshots =
+        check from AuditSnapshot snapshot in leadershipAuditStream
+        select snapshot;
+
+    stream<AuditSnapshot, error?> resignationAuditStream =
+        databaseClient->query(getResignationAuditSnapshotsQuery(employeePkIds));
+    AuditSnapshot[] resignationAuditSnapshots = check from AuditSnapshot snapshot in resignationAuditStream
+        select snapshot;
+
+    AuditSnapshot[] allSnapshots = [
+        ...employeeAuditSnapshots,
+        ...personalInfoAuditSnapshots,
+        ...additionalManagersAuditSnapshots,
+        ...leadershipAuditSnapshots,
+        ...resignationAuditSnapshots
+    ];
     return from AuditSnapshot snapshot in allSnapshots
         order by snapshot.actionOn ascending
         select snapshot;
@@ -1642,4 +2026,86 @@ public isolated function isCurrentEmployment(string employeeId) returns boolean|
         return result;
     }
     return true;
+}
+
+# Schedule a change to an employee's general information.
+#
+# The caller supplies what the fields hold now, so the sweep can tell on the day whether
+# the change still makes sense or whether somebody has since edited the same field.
+#
+# + employeeId - Employee ID
+# + payload - Effective date and the fields to change
+# + expected - What those fields hold at the time of scheduling
+# + createdBy - Email of the person scheduling the change
+# + return - The new scheduled change id, or an error
+public isolated function scheduleEmployeeChange(string employeeId, string effectiveDate,
+        string columnChanges, string expected, string createdBy) returns int|error {
+
+    Employee|error? employee = getEmployeeInfo(employeeId);
+    if employee is error {
+        return employee;
+    }
+    if employee is () {
+        return error(string `No employee found for the ID: ${employeeId}`);
+    }
+
+    int employeePkId = check databaseClient->queryRow(
+        `SELECT id FROM employee WHERE employee_id = ${employeeId}`);
+
+    sql:ExecutionResult result = check databaseClient->execute(
+        insertScheduledChangeQuery(employeePkId, effectiveDate, columnChanges, expected, createdBy));
+
+    int|string? lastInsertId = result.lastInsertId;
+    if lastInsertId !is int {
+        return error("Unable to obtain the scheduled change ID");
+    }
+    return lastInsertId;
+}
+
+# Fetch the scheduled changes for an employee.
+#
+# + employeeId - Employee ID
+# + pendingOnly - Limit to changes still waiting for their date
+# + return - Scheduled changes, soonest first, or an error
+public isolated function getScheduledChanges(string employeeId, boolean pendingOnly)
+    returns ScheduledChange[]|error {
+
+    Employee|error? employee = getEmployeeInfo(employeeId);
+    if employee is error {
+        return employee;
+    }
+    if employee is () {
+        return error(string `No employee found for the ID: ${employeeId}`);
+    }
+
+    int employeePkId = check databaseClient->queryRow(
+        `SELECT id FROM employee WHERE employee_id = ${employeeId}`);
+
+    stream<ScheduledChange, error?> resultStream =
+        databaseClient->query(getScheduledChangesQuery(employeePkId, pendingOnly));
+    return from ScheduledChange change in resultStream
+        select change;
+}
+
+# Fetch one scheduled change by id.
+#
+# + id - Scheduled change id
+# + return - The change, () when no such row exists, or an error
+public isolated function getScheduledChangeById(int id) returns ScheduledChange|error? {
+    ScheduledChange|error change = databaseClient->queryRow(getScheduledChangeByIdQuery(id));
+    return change is sql:NoRowsError ? () : change;
+}
+
+# Withdraw a scheduled change before its date arrives.
+#
+# The update is conditional on the row still being PENDING, so cancelling a change the
+# sweep has already applied reports as not found rather than rewriting a closed row.
+#
+# + id - Scheduled change id
+# + cancelledBy - Email of the person cancelling
+# + return - True when a pending row was cancelled, false when there was none, or an error
+public isolated function cancelScheduledChange(int id, string cancelledBy) returns boolean|error {
+    sql:ExecutionResult result = check databaseClient->execute(
+        updateScheduledChangeStatusQuery(id, SCHEDULED_CHANGE_CANCELLED, (), cancelledBy));
+    return result.affectedRowCount > 0;
 }

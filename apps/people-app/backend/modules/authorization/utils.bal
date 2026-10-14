@@ -24,6 +24,13 @@ public isolated function checkPermissions(string[] requiredRoles, string[] userR
         return false;
     }
 
+    // An unconfigured role is not a role anyone holds. Without this, a blank entry in
+    // Config.toml would be matched by any user whose group list happened to contain an
+    // empty string, granting the privilege by accident.
+    if requiredRoles.some(role => role.trim() == "") {
+        return false;
+    }
+
     final string[] & readonly userRolesReadOnly = userRoles.cloneReadOnly();
     return requiredRoles.every(role => userRolesReadOnly.indexOf(role) !is ());
 }

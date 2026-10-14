@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -20,554 +20,368 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
-  CircularProgress,
-  Grid,
-  IconButton,
+  InputAdornment,
+  MenuItem,
   Stack,
   TextField,
-  Tooltip,
   Typography,
 } from "@mui/material";
-import {
-  Briefcase,
-  FileText,
-  Github,
-  Globe,
-  Link as LinkIcon,
-  Linkedin,
-  Mail,
-  MapPin,
-  Phone,
-  Plus,
-  Shield,
-  Star,
-  Trash2,
-} from "lucide-react";
-import { useState } from "react";
+import { GraduationCap, Mail, MapPin, Pencil, Phone, User } from "lucide-react";
+import { useEffect, useState } from "react";
 
-import ProfileSection from "@component/careers/ProfileSection";
-import { addSkill, removeSkill, updateProfile } from "@slices/careersSlice/careers";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { type CandidateProfile, type EditableProfileFields, State } from "@/types/types";
+import CenteredSpinner from "@component/common/CenteredSpinner";
+import PageContainer from "@component/common/PageContainer";
+import PageHeading from "@component/common/PageHeading";
+import { BRAND_ORANGE, BRAND_TINT } from "@config/brand";
 import { SnackMessage } from "@config/constant";
+import { useAppAuthContext } from "@context/AuthContext";
+import { loadProfile, profileFailed, updateProfile } from "@slices/careersSlice/careers";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { isValidE164 } from "@utils/phone";
+import { cardSx, pillButtonSx } from "@utils/styles";
 
+const GENDERS = ["Male", "Female", "Other", "Prefer not to say"];
+
+interface ProfileForm {
+  firstName: string;
+  lastName: string;
+  gender: string;
+  contactNo: string;
+  address: string;
+  university: string;
+}
+
+const formOf = (profile: CandidateProfile): ProfileForm => ({
+  firstName: profile.firstName,
+  lastName: profile.lastName,
+  gender: profile.gender,
+  contactNo: profile.contactNo,
+  address: profile.address ?? "",
+  university: profile.university ?? "",
+});
+
+// The fields the candidate changed; a cleared address or university is sent as null.
+const changesOf = (form: ProfileForm, profile: CandidateProfile): Partial<EditableProfileFields> => {
+  const saved = formOf(profile);
+  const changes: Partial<EditableProfileFields> = {};
+  if (form.firstName.trim() !== saved.firstName) changes.firstName = form.firstName.trim();
+  if (form.lastName.trim() !== saved.lastName) changes.lastName = form.lastName.trim();
+  if (form.gender !== saved.gender) changes.gender = form.gender;
+  if (form.contactNo.trim() !== saved.contactNo) changes.contactNo = form.contactNo.trim();
+  if (form.address.trim() !== saved.address) changes.address = form.address.trim() || null;
+  if (form.university.trim() !== saved.university) changes.university = form.university.trim() || null;
+  return changes;
+};
+
+// An icon, a label and a value; a missing value shows as "Not added".
+const DetailItem = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | null }) => (
+  <Stack direction="row" gap={1.5} alignItems="flex-start" sx={{ minWidth: 0 }}>
+    <Box
+      sx={{
+        width: 36,
+        height: 36,
+        flexShrink: 0,
+        borderRadius: "50%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: BRAND_TINT.soft,
+        color: BRAND_ORANGE,
+      }}
+    >
+      {icon}
+    </Box>
+    <Box sx={{ minWidth: 0 }}>
+      <Typography fontSize="0.8rem" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography fontSize="0.95rem" color={value ? "text.primary" : "text.disabled"} sx={{ overflowWrap: "anywhere" }}>
+        {value || "Not added"}
+      </Typography>
+    </Box>
+  </Stack>
+);
+
+const fieldIcon = (icon: React.ReactNode) => ({
+  input: { startAdornment: <InputAdornment position="start">{icon}</InputAdornment> },
+});
+
+interface SectionProps {
+  title: string;
+  editing: boolean;
+  saving: boolean;
+  canSave: boolean;
+  // True while another section is being edited, so its unsaved changes are not lost.
+  editDisabled: boolean;
+  onEdit: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  view: React.ReactNode;
+  fields: React.ReactNode;
+}
+
+// A card that shows details and turns them into fields in place when the candidate chooses Edit.
+const Section = ({
+  title,
+  editing,
+  saving,
+  canSave,
+  editDisabled,
+  onEdit,
+  onSave,
+  onCancel,
+  view,
+  fields,
+}: SectionProps) => (
+  <Card elevation={0} sx={cardSx}>
+    <CardContent sx={{ p: 3 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2.5}>
+        <Typography component="h3" sx={{ fontSize: "1.1rem", fontWeight: 600, color: "text.primary" }}>
+          {title}
+        </Typography>
+        {!editing && (
+          <Button startIcon={<Pencil size={16} />} onClick={onEdit} disabled={editDisabled} sx={{ fontWeight: 700 }}>
+            Edit
+          </Button>
+        )}
+      </Stack>
+
+      {editing ? (
+        <Stack gap={2.5}>
+          {fields}
+          <Stack direction="row" gap={1.5} justifyContent="flex-end">
+            <Button onClick={onCancel} disabled={saving} sx={{ fontWeight: 600 }}>
+              Cancel
+            </Button>
+            <Button variant="contained" disabled={!canSave || saving} onClick={onSave} sx={{ ...pillButtonSx, px: 3 }}>
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </Stack>
+        </Stack>
+      ) : (
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>{view}</Box>
+      )}
+    </CardContent>
+  </Card>
+);
+
+// The candidate's profile: who they are, and their contact details, each of which they can edit in place.
 const Profile = () => {
   const dispatch = useAppDispatch();
+  const { getToken } = useAppAuthContext();
   const profile = useAppSelector((state: RootState) => state.careers.profile);
+  const profileState = useAppSelector((state: RootState) => state.careers.profileState);
 
-  const [newSkill, setNewSkill] = useState("");
-  const [basicForm, setBasicForm] = useState({
-    firstName: profile.firstName,
-    lastName: profile.lastName,
-    email: profile.email,
-    phone: profile.phone,
-    country: profile.country,
-    linkedIn: profile.linkedIn,
-    github: profile.github,
-  });
-  const [profForm, setProfForm] = useState({
-    currentRole: profile.currentRole,
-    yearsOfExperience: profile.yearsOfExperience,
-    summary: profile.summary,
-  });
+  const [editing, setEditing] = useState<"personal" | "contact" | null>(null);
+  const [form, setForm] = useState<ProfileForm>(formOf(profile));
+  const [saving, setSaving] = useState(false);
 
-  const handleSaveBasic = () => {
-    dispatch(updateProfile(basicForm));
-    dispatch(enqueueSnackbarMessage({ message: SnackMessage.success.profileUpdated, type: "success" }));
+  const load = () =>
+    getToken()
+      .then((token) => dispatch(loadProfile(token)))
+      .catch(() => dispatch(profileFailed()));
+
+  useEffect(() => {
+    if (profileState === State.idle) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileState]);
+
+  const startEditing = (section: "personal" | "contact") => {
+    setForm(formOf(profile));
+    setEditing(section);
   };
 
-  const handleSaveProf = () => {
-    dispatch(updateProfile(profForm));
-    dispatch(enqueueSnackbarMessage({ message: SnackMessage.success.profileUpdated, type: "success" }));
-  };
+  const changes = changesOf(form, profile);
+  const changed = Object.keys(changes).length > 0;
+  const firstNameInvalid = changes.firstName === "";
+  const lastNameInvalid = changes.lastName === "";
+  const phoneInvalid = changes.contactNo !== undefined && !isValidE164(changes.contactNo);
+  const canSave = changed && !firstNameInvalid && !lastNameInvalid && !phoneInvalid;
 
-  const handleAddSkill = () => {
-    const trimmed = newSkill.trim();
-    if (trimmed) {
-      dispatch(addSkill(trimmed));
-      setNewSkill("");
+  const genderOptions = form.gender === "" || GENDERS.includes(form.gender) ? GENDERS : [form.gender, ...GENDERS];
+
+  const notify = (message: string, type: "success" | "error") => dispatch(enqueueSnackbarMessage({ message, type }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const token = await getToken();
+      await dispatch(updateProfile({ accessToken: token, changes })).unwrap();
+      notify(SnackMessage.success.profileUpdated, "success");
+      setEditing(null);
+    } catch {
+      notify(SnackMessage.error.saveProfile, "error");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const getCompletionColor = () => {
-    if (profile.completionPercentage >= 80) return "#10B981";
-    if (profile.completionPercentage >= 50) return "#F59E0B";
-    return "#EF4444";
-  };
+  if (profileState === State.idle || profileState === State.loading) return <CenteredSpinner />;
+
+  if (profileState === State.failed) {
+    return (
+      <PageContainer>
+        <Box sx={{ py: 8, textAlign: "center", border: "1px dashed", borderColor: "error.light", borderRadius: "12px" }}>
+          <Typography color="error" mb={2}>
+            {SnackMessage.error.fetchProfile}
+          </Typography>
+          <Button variant="outlined" onClick={load}>
+            Try again
+          </Button>
+        </Box>
+      </PageContainer>
+    );
+  }
+
+  const initials = `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase();
 
   return (
-    <Box>
-      {/* Header */}
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" mb={3}>
-        <Box>
-          <Typography variant="h5" fontWeight={700} mb={0.5} color="text.primary">
-            Candidate Passport
-          </Typography>
-          <Typography color="text.secondary" fontSize="14px">
-            Your persistent professional identity — applies to every WSO2 job automatically.
-          </Typography>
-        </Box>
-        <Chip
-          icon={<Shield size={13} />}
-          label={`${profile.personId}`}
-          size="small"
-          sx={{ backgroundColor: "#FF730015", color: "#FF7300", fontWeight: 600 }}
+    <PageContainer>
+      <PageHeading accent="My" mb={3}>
+        Profile
+      </PageHeading>
+
+      <Stack gap={3}>
+        <Card elevation={0} sx={cardSx}>
+          <CardContent sx={{ p: 3 }}>
+            <Stack direction="row" alignItems="center" gap={2}>
+              <Avatar
+                sx={{ width: 64, height: 64, fontSize: "1.4rem", fontWeight: 600, bgcolor: BRAND_TINT.soft, color: BRAND_ORANGE }}
+              >
+                {initials}
+              </Avatar>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  component="h2"
+                  sx={{ fontSize: { xs: "1.5rem", md: "1.9rem" }, lineHeight: 1.3, fontWeight: 400, color: "text.primary" }}
+                >
+                  {profile.firstName} {profile.lastName}
+                </Typography>
+                <Typography fontSize="0.9rem" color="text.secondary" mt={0.5} sx={{ overflowWrap: "anywhere" }}>
+                  {profile.personalEmail}
+                </Typography>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
+
+        <Section
+          title="Personal details"
+          editing={editing === "personal"}
+          saving={saving}
+          canSave={canSave}
+          editDisabled={editing !== null}
+          onEdit={() => startEditing("personal")}
+          onSave={handleSave}
+          onCancel={() => setEditing(null)}
+          view={
+            <>
+              <DetailItem icon={<User size={18} />} label="Name" value={`${profile.firstName} ${profile.lastName}`} />
+              <DetailItem icon={<User size={18} />} label="Gender" value={profile.gender} />
+              <DetailItem icon={<Mail size={18} />} label="Personal email" value={profile.personalEmail} />
+            </>
+          }
+          fields={
+            <>
+              <Stack direction={{ xs: "column", sm: "row" }} gap={2.5}>
+                <TextField
+                  label="First name"
+                  value={form.firstName}
+                  onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                  disabled={saving}
+                  error={firstNameInvalid}
+                  helperText={firstNameInvalid ? "Enter your first name." : undefined}
+                  size="small"
+                  fullWidth
+                />
+                <TextField
+                  label="Last name"
+                  value={form.lastName}
+                  onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                  disabled={saving}
+                  error={lastNameInvalid}
+                  helperText={lastNameInvalid ? "Enter your last name." : undefined}
+                  size="small"
+                  fullWidth
+                />
+              </Stack>
+              <TextField
+                select
+                label="Gender"
+                value={form.gender}
+                onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                disabled={saving}
+                size="small"
+                fullWidth
+              >
+                {genderOptions.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </>
+          }
+        />
+
+        <Section
+          title="Contact details"
+          editing={editing === "contact"}
+          saving={saving}
+          canSave={canSave}
+          editDisabled={editing !== null}
+          onEdit={() => startEditing("contact")}
+          onSave={handleSave}
+          onCancel={() => setEditing(null)}
+          view={
+            <>
+              <DetailItem icon={<Phone size={18} />} label="Contact number" value={profile.contactNo} />
+              <DetailItem icon={<MapPin size={18} />} label="Address" value={profile.address} />
+              <DetailItem icon={<GraduationCap size={18} />} label="University" value={profile.university} />
+            </>
+          }
+          fields={
+            <>
+              <TextField
+                label="Contact number"
+                value={form.contactNo}
+                onChange={(e) => setForm({ ...form, contactNo: e.target.value })}
+                disabled={saving}
+                error={phoneInvalid}
+                helperText={
+                  phoneInvalid
+                    ? "Enter the number as + and your country code, then the number, with no spaces or dashes."
+                    : "Start with + and your country code, then the number, with no spaces."
+                }
+                slotProps={fieldIcon(<Phone size={16} />)}
+                size="small"
+                fullWidth
+              />
+              <TextField
+                label="Address"
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                disabled={saving}
+                slotProps={fieldIcon(<MapPin size={16} />)}
+                size="small"
+                fullWidth
+              />
+              <TextField
+                label="University"
+                value={form.university}
+                onChange={(e) => setForm({ ...form, university: e.target.value })}
+                disabled={saving}
+                slotProps={fieldIcon(<GraduationCap size={16} />)}
+                size="small"
+                fullWidth
+              />
+            </>
+          }
         />
       </Stack>
-
-      <Grid container spacing={3}>
-        {/* Left — Profile Summary Card */}
-        <Grid size={{ xs: 12, md: 3 }}>
-          <Card
-            elevation={0}
-            sx={{
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: "12px",
-              textAlign: "center",
-              position: "sticky",
-              top: 16,
-            }}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ position: "relative", display: "inline-flex", mb: 2 }}>
-                <CircularProgress
-                  variant="determinate"
-                  value={profile.completionPercentage}
-                  size={100}
-                  thickness={3}
-                  sx={{ color: getCompletionColor() }}
-                />
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    bottom: 0,
-                    right: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Avatar sx={{ width: 76, height: 76, fontSize: "24px", fontWeight: 800, backgroundColor: "#FF7300" }}>
-                    {profile.firstName.charAt(0)}
-                  </Avatar>
-                </Box>
-              </Box>
-
-              <Typography fontWeight={700} fontSize="16px">
-                {profile.firstName} {profile.lastName}
-              </Typography>
-              <Typography fontSize="13px" color="text.secondary" mb={0.5}>
-                {profile.currentRole}
-              </Typography>
-              <Typography fontSize="12px" color={getCompletionColor()} fontWeight={600} mb={2}>
-                {profile.completionPercentage}% complete
-              </Typography>
-
-              <Stack gap={1}>
-                <Stack direction="row" alignItems="center" gap={1}>
-                  <Mail size={13} color="#9CA3AF" />
-                  <Typography fontSize="12px" color="text.secondary" noWrap>
-                    {profile.email}
-                  </Typography>
-                </Stack>
-                <Stack direction="row" alignItems="center" gap={1}>
-                  <MapPin size={13} color="#9CA3AF" />
-                  <Typography fontSize="12px" color="text.secondary">
-                    {profile.country}
-                  </Typography>
-                </Stack>
-                <Stack direction="row" alignItems="center" gap={1}>
-                  <Briefcase size={13} color="#9CA3AF" />
-                  <Typography fontSize="12px" color="text.secondary">
-                    {profile.yearsOfExperience} years exp.
-                  </Typography>
-                </Stack>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Right — Sections */}
-        <Grid size={{ xs: 12, md: 9 }}>
-          {/* Basic Info */}
-          <ProfileSection
-            title="Basic Information"
-            icon={<Shield size={16} />}
-            editContent={
-              <Stack gap={2}>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="First Name"
-                      value={basicForm.firstName}
-                      onChange={(e) => setBasicForm({ ...basicForm, firstName: e.target.value })}
-                      fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="Last Name"
-                      value={basicForm.lastName}
-                      onChange={(e) => setBasicForm({ ...basicForm, lastName: e.target.value })}
-                      fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="Email"
-                      value={basicForm.email}
-                      onChange={(e) => setBasicForm({ ...basicForm, email: e.target.value })}
-                      fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="Phone"
-                      value={basicForm.phone}
-                      onChange={(e) => setBasicForm({ ...basicForm, phone: e.target.value })}
-                      fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="Country"
-                      value={basicForm.country}
-                      onChange={(e) => setBasicForm({ ...basicForm, country: e.target.value })}
-                      fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="LinkedIn URL"
-                      value={basicForm.linkedIn}
-                      onChange={(e) => setBasicForm({ ...basicForm, linkedIn: e.target.value })}
-                      fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="GitHub URL"
-                      value={basicForm.github}
-                      onChange={(e) => setBasicForm({ ...basicForm, github: e.target.value })}
-                      fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                </Grid>
-                <Button variant="contained" size="small" onClick={handleSaveBasic} sx={{ alignSelf: "flex-start" }}>
-                  Save Changes
-                </Button>
-              </Stack>
-            }
-          >
-            <Grid container spacing={2}>
-              {[
-                { icon: <Mail size={14} />, label: "Email", value: profile.email },
-                { icon: <Phone size={14} />, label: "Phone", value: profile.phone },
-                { icon: <MapPin size={14} />, label: "Country", value: profile.country },
-                {
-                  icon: <Linkedin size={14} />,
-                  label: "LinkedIn",
-                  value: profile.linkedIn ? (
-                    <Typography
-                      component="a"
-                      href={profile.linkedIn}
-                      target="_blank"
-                      fontSize="13px"
-                      sx={{ color: "#3B82F6", textDecoration: "none" }}
-                    >
-                      View Profile
-                    </Typography>
-                  ) : (
-                    "Not added"
-                  ),
-                },
-                {
-                  icon: <Github size={14} />,
-                  label: "GitHub",
-                  value: profile.github ? (
-                    <Typography
-                      component="a"
-                      href={profile.github}
-                      target="_blank"
-                      fontSize="13px"
-                      sx={{ color: "#3B82F6", textDecoration: "none" }}
-                    >
-                      View Profile
-                    </Typography>
-                  ) : (
-                    "Not added"
-                  ),
-                },
-              ].map((item, i) => (
-                <Grid key={i} size={{ xs: 12, sm: 6 }}>
-                  <Stack direction="row" gap={1} alignItems="flex-start">
-                    <Box sx={{ color: "#9CA3AF", mt: 0.15 }}>{item.icon}</Box>
-                    <Box>
-                      <Typography fontSize="11px" color="text.secondary" fontWeight={600} textTransform="uppercase">
-                        {item.label}
-                      </Typography>
-                      {typeof item.value === "string" ? (
-                        <Typography fontSize="13px">{item.value}</Typography>
-                      ) : (
-                        item.value
-                      )}
-                    </Box>
-                  </Stack>
-                </Grid>
-              ))}
-            </Grid>
-          </ProfileSection>
-
-          {/* Professional Details */}
-          <ProfileSection
-            title="Professional Details"
-            icon={<Briefcase size={16} />}
-            editContent={
-              <Stack gap={2}>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="Current Role"
-                      value={profForm.currentRole}
-                      onChange={(e) => setProfForm({ ...profForm, currentRole: e.target.value })}
-                      fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="Years of Experience"
-                      type="number"
-                      value={profForm.yearsOfExperience}
-                      onChange={(e) =>
-                        setProfForm({ ...profForm, yearsOfExperience: parseInt(e.target.value) || 0 })
-                      }
-                      fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12 }}>
-                    <TextField
-                      label="Professional Summary"
-                      value={profForm.summary}
-                      onChange={(e) => setProfForm({ ...profForm, summary: e.target.value })}
-                      fullWidth
-                      size="small"
-                      multiline
-                      rows={3}
-                    />
-                  </Grid>
-                </Grid>
-                <Button variant="contained" size="small" onClick={handleSaveProf} sx={{ alignSelf: "flex-start" }}>
-                  Save Changes
-                </Button>
-              </Stack>
-            }
-          >
-            <Stack gap={2}>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography fontSize="11px" color="text.secondary" fontWeight={600} textTransform="uppercase" mb={0.5}>
-                    Current Role
-                  </Typography>
-                  <Typography fontSize="14px">{profile.currentRole}</Typography>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography fontSize="11px" color="text.secondary" fontWeight={600} textTransform="uppercase" mb={0.5}>
-                    Experience
-                  </Typography>
-                  <Typography fontSize="14px">{profile.yearsOfExperience} years</Typography>
-                </Grid>
-              </Grid>
-              {profile.summary && (
-                <Box>
-                  <Typography fontSize="11px" color="text.secondary" fontWeight={600} textTransform="uppercase" mb={0.5}>
-                    Summary
-                  </Typography>
-                  <Typography fontSize="14px" color="text.secondary" lineHeight={1.7}>
-                    {profile.summary}
-                  </Typography>
-                </Box>
-              )}
-            </Stack>
-          </ProfileSection>
-
-          {/* Skills */}
-          <ProfileSection
-            title="Skills"
-            icon={<Star size={16} />}
-            editContent={
-              <Stack gap={2}>
-                <Stack direction="row" gap={1} flexWrap="wrap">
-                  {profile.skills.map((skill) => (
-                    <Chip
-                      key={skill}
-                      label={skill}
-                      size="small"
-                      onDelete={() => dispatch(removeSkill(skill))}
-                      deleteIcon={<Trash2 size={12} />}
-                      sx={{ fontWeight: 500 }}
-                    />
-                  ))}
-                </Stack>
-                <Stack direction="row" gap={1} alignItems="center">
-                  <TextField
-                    size="small"
-                    placeholder="Add a skill (e.g., Golang)"
-                    value={newSkill}
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
-                    sx={{ maxWidth: 260 }}
-                  />
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<Plus size={14} />}
-                    onClick={handleAddSkill}
-                  >
-                    Add
-                  </Button>
-                </Stack>
-              </Stack>
-            }
-          >
-            <Stack direction="row" gap={1} flexWrap="wrap">
-              {profile.skills.map((skill) => (
-                <Chip key={skill} label={skill} size="small" sx={{ fontWeight: 500 }} />
-              ))}
-              {profile.skills.length === 0 && (
-                <Typography fontSize="13px" color="text.secondary">
-                  No skills added yet.
-                </Typography>
-              )}
-            </Stack>
-          </ProfileSection>
-
-          {/* Resume Management */}
-          <ProfileSection title="Resume" icon={<FileText size={16} />}>
-            <Stack gap={1.5}>
-              {profile.resumes.map((resume) => (
-                <Box
-                  key={resume.id}
-                  sx={{
-                    p: 2,
-                    borderRadius: "8px",
-                    border: "1px solid",
-                    borderColor: resume.isActive ? "#FF7300" : "divider",
-                    backgroundColor: resume.isActive ? "#FF730008" : "transparent",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Stack direction="row" alignItems="center" gap={1.5}>
-                    <FileText size={18} color={resume.isActive ? "#FF7300" : "#9CA3AF"} />
-                    <Box>
-                      <Typography fontSize="13px" fontWeight={600}>
-                        {resume.name}
-                      </Typography>
-                      <Typography fontSize="11px" color="text.secondary">
-                        Uploaded {resume.uploadedAt}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    {resume.isActive && (
-                      <Chip
-                        label="Active"
-                        size="small"
-                        sx={{ fontSize: "10px", height: 20, backgroundColor: "#ECFDF5", color: "#10B981", fontWeight: 600 }}
-                      />
-                    )}
-                    <Tooltip title="Download">
-                      <IconButton size="small">
-                        <FileText size={14} />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                </Box>
-              ))}
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Plus size={14} />}
-                sx={{ alignSelf: "flex-start", borderRadius: "8px" }}
-              >
-                Upload New Resume
-              </Button>
-            </Stack>
-          </ProfileSection>
-
-          {/* Portfolio */}
-          <ProfileSection title="Portfolio" icon={<Globe size={16} />}>
-            <Stack gap={1.5}>
-              {profile.portfolio.map((item) => (
-                <Box
-                  key={item.id}
-                  sx={{
-                    p: 2,
-                    borderRadius: "8px",
-                    border: "1px solid",
-                    borderColor: "divider",
-                  }}
-                >
-                  <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
-                    <Stack direction="row" gap={1.5} alignItems="flex-start">
-                      {item.type === "github" ? (
-                        <Github size={16} color="#9CA3AF" />
-                      ) : (
-                        <LinkIcon size={16} color="#9CA3AF" />
-                      )}
-                      <Box>
-                        <Typography fontSize="13px" fontWeight={600}>
-                          {item.title}
-                        </Typography>
-                        <Typography fontSize="12px" color="text.secondary" lineHeight={1.6}>
-                          {item.description}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <Typography
-                      component="a"
-                      href={item.url}
-                      target="_blank"
-                      fontSize="12px"
-                      sx={{ color: "#3B82F6", textDecoration: "none", fontWeight: 600, whiteSpace: "nowrap" }}
-                    >
-                      View →
-                    </Typography>
-                  </Stack>
-                </Box>
-              ))}
-              {profile.portfolio.length === 0 && (
-                <Typography fontSize="13px" color="text.secondary">
-                  No portfolio items added.
-                </Typography>
-              )}
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Plus size={14} />}
-                sx={{ alignSelf: "flex-start", borderRadius: "8px" }}
-              >
-                Add Portfolio Item
-              </Button>
-            </Stack>
-          </ProfileSection>
-        </Grid>
-      </Grid>
-    </Box>
+    </PageContainer>
   );
 };
 

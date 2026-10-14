@@ -1,0 +1,15 @@
+# Dummy values for the tests only: nothing here is a real endpoint or credential.
+[careers_app]
+allowedOrigins = ["http://localhost:5173"]
+port = 9099
+
+[careers_app.vacancy.vacancyConfig]
+baseUrl = "http://localhost:9098"
+tokenUrl = "http://localhost:9098/token"
+clientId = "test-client"
+clientSecret = "test-secret"
+
+[careers_app.jwt.authConfig]
+jwksUrl = "http://localhost:9098/jwks"
+issuer = "https://issuer.example.test"
+audience = "test-audience"

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,33 +14,60 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
+import { Navigate, Outlet, RouterProvider, createBrowserRouter, useLocation } from "react-router-dom";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
-import Layout from "@layout/Layout";
-import NotFoundPage from "@layout/pages/404";
-import { RootState, useAppSelector } from "@slices/store";
+import AppShell from "@component/common/AppShell";
+import NotFoundPage from "@component/common/NotFoundPage";
+import PreLoader from "@component/common/PreLoader";
+import { useAppAuthContext } from "@context/AuthContext";
+import { opensDirectly } from "@utils/jobFilterUtils";
+import { View } from "@view/index";
 
-import { getActiveRoutesV2, routes } from "../route";
+// Shows the pages inside it to signed-in candidates, and sends a guest to sign in.
+const RequireSignIn = () => {
+  const { isSignedIn, appSignIn } = useAppAuthContext();
+
+  useEffect(() => {
+    if (!isSignedIn) appSignIn();
+  }, [isSignedIn, appSignIn]);
+
+  return isSignedIn ? <Outlet /> : <PreLoader isLoading message="Taking you to sign in ..." />;
+};
+
+// Shows a job when it was opened from inside the app, or from a link made for it (a new tab, a share). An address
+// typed into the browser goes to the list.
+const JobPage = () => {
+  const { key, search } = useLocation();
+  const allowed = key !== "default" || opensDirectly(search);
+  return allowed ? <View.jobDetail /> : <Navigate to="/jobs" replace />;
+};
 
 const AppHandler = () => {
-  const auth = useAppSelector((state: RootState) => state.auth);
-
   const router = useMemo(
     () =>
       createBrowserRouter([
         {
-          path: "/",
-          element: <Layout />,
+          element: <AppShell />,
           errorElement: <NotFoundPage />,
           children: [
-            { index: true, element: <Navigate to="/dashboard" replace /> },
-            ...getActiveRoutesV2(routes, auth.roles),
+            { path: "/", element: <Navigate to="/jobs" replace /> },
+            { path: "/jobs", element: <View.jobs /> },
+            { path: "/jobs/:id/:slug?", element: <JobPage /> },
+            {
+              element: <RequireSignIn />,
+              children: [
+                { path: "/profile", element: <View.profile /> },
+                { path: "/applications", element: <View.applications /> },
+                { path: "/applications/:id", element: <View.applications /> },
+              ],
+            },
           ],
         },
+        { path: "*", element: <NotFoundPage /> },
       ]),
-    [auth.roles],
+    [],
   );
 
   return <RouterProvider router={router} />;

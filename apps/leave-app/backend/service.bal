@@ -21,6 +21,7 @@ import leave_service.employee;
 
 import ballerina/http;
 import ballerina/log;
+import ballerina/lang.value;
 import ballerina/time;
 
 @display {
@@ -53,8 +54,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             if authorization:checkPermissions(authorization:authorizedRoles.internRoles, userInfo.groups) {
                 privileges.push(authorization:INTERN_PRIVILEGE);
             }
-            if authorization:checkPermissions(authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups) {
+            boolean isPeopleOpsTeamMember = authorization:checkPermissions(
+                    authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups);
+            if isPeopleOpsTeamMember {
                 privileges.push(authorization:PEOPLE_OPS_TEAM_PRIVILEGE);
+            }
+            // People Ops keep both org-wide reports; the report roles grant them independently.
+            if isPeopleOpsTeamMember ||
+                authorization:hasAnyRole(authorization:authorizedRoles.generalReportRoles, userInfo.groups) {
+                privileges.push(authorization:GENERAL_REPORT_PRIVILEGE);
+            }
+            if isPeopleOpsTeamMember ||
+                authorization:hasAnyRole(authorization:authorizedRoles.sabbaticalReportRoles, userInfo.groups) {
+                privileges.push(authorization:SABBATICAL_REPORT_PRIVILEGE);
             }
             employee:Employee[]|error subordinates = employee:getEmployees(
                     {
@@ -86,7 +98,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 isLead: empInfo.lead,
                 employmentStartDate: empInfo.continuousServiceDate ?: empInfo.startDate,
                 subordinateCount: subordinates.length(),
-                location: empInfo.location
+                location: empInfo.location,
+                jobBand: empInfo.jobBand
             };
 
             return userInfoResponse;
@@ -170,7 +183,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             sabbaticalLeaveUserGuideUrl,
             sabbaticalLeaveEligibilityDuration,
             sabbaticalLeaveMaxApplicationDuration,
-            cachedEmails
+            sabbaticalLeaveMinJobBand,
+            cachedEmails,
+            onBehalfAllowedLeaveTypes
         };
     }
 
@@ -183,11 +198,13 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + approverEmail - Approver email to filter the leaves
     # + statuses - Statuses to filter the leaves
     # + subordinatesLeaves - Whether to fetch the leaves of subordinates of the user.
+    # + excludedLeaveCategory - Leave types to leave out
     # + return - List of leaves
     resource function get leaves(http:RequestContext ctx, string? email = (), string? startDate = (),
             string? endDate = (), string? approverEmail = (), database:LeaveType[]? leaveCategory = (),
             Status[] statuses = [], int? 'limit = (), int? offset = 0, database:OrderBy? orderBy = database:ASC,
-            EmployeeStatus[]? employeeStatuses = (), boolean subordinatesLeaves = false
+            EmployeeStatus[]? employeeStatuses = (), boolean subordinatesLeaves = false,
+            database:LeaveType[]? excludedLeaveCategory = ()
     ) returns FetchedLeavesRecord|http:Forbidden|http:InternalServerError|http:BadRequest {
 
         if email is string && !email.matches(WSO2_EMAIL_PATTERN) {
@@ -224,16 +241,32 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         boolean isPeopleOpsTeamMember = authorization:checkPermissions(
                 authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups);
-        // Restrict access to fetch leaves of all employees if the user is not a people ops team member
-        if !isPeopleOpsTeamMember && !subordinatesLeaves && (
+        boolean isCrossEmployeeRead = !subordinatesLeaves && (
             (email is string && email != userInfo.email) || (email is () && approverEmail is ()) ||
             (approverEmail is string && approverEmail != userInfo.email)
-        ) {
-            return <http:Forbidden>{
-                body: {
-                    message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
-                }
-            };
+        );
+        string[] excludedLeaveTypes = excludedLeaveCategory ?: [];
+        // Outside People Ops, leaves of all employees are only readable through the report roles: the sabbatical
+        // report role for sabbatical-only queries, and the general report role for everything else.
+        if isCrossEmployeeRead && !isPeopleOpsTeamMember {
+            boolean canReadSabbaticals = authorization:hasAnyRole(
+                    authorization:authorizedRoles.sabbaticalReportRoles, userInfo.groups);
+            boolean isSabbaticalOnlyQuery = leaveCategory is database:LeaveType[] && leaveCategory.length() > 0 &&
+                leaveCategory.every(category => category == database:SABBATICAL_LEAVE);
+            boolean isAllowed = isSabbaticalOnlyQuery
+                ? canReadSabbaticals
+                : authorization:hasAnyRole(authorization:authorizedRoles.generalReportRoles, userInfo.groups);
+            if !isAllowed {
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
+                    }
+                };
+            }
+            // The general report role does not reach sabbatical leaves.
+            if !isSabbaticalOnlyQuery && !canReadSabbaticals {
+                excludedLeaveTypes.push(database:SABBATICAL_LEAVE);
+            }
         }
 
         string[]? emails;
@@ -296,6 +329,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                                endDate,
                                                                approverEmail: effectiveApproverEmail,
                                                                leaveTypes: leaveCategory,
+                                                               excludedLeaveTypes,
                                                                orderBy: orderBy
                                                            }, 'limit);
         if leaves is error {
@@ -406,6 +440,24 @@ service http:InterceptableService / on new http:Listener(9090) {
                         }
                     };
                 }
+                // Only employees in the minimum job band and above are eligible
+                int? jobBand = employeeDetails.jobBand;
+                if jobBand is () {
+                    return <http:Forbidden>{
+                        body: {
+                            message: "Your job band is not recorded. Please contact People Operations to apply " +
+                            "for sabbatical leave."
+                        }
+                    };
+                }
+                if jobBand < sabbaticalLeaveMinJobBand {
+                    return <http:Forbidden>{
+                        body: {
+                            message: string `Sabbatical leave is available for job band ${
+                                sabbaticalLeaveMinJobBand} and above.`
+                        }
+                    };
+                }
                 string?|error lastSabbaticalLeaveEndDate = database:getLastSabbaticalLeaveEndDate(email);
                 if lastSabbaticalLeaveEndDate is error {
                     string errMsg = "Error occurred while fetching last sabbatical leave end date";
@@ -429,7 +481,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
                 // User can apply only if he is within the eligibility period
                 boolean|error isEligible = checkEligibilityForSabbaticalApplication(employmentStartDate,
-                        lastSabbaticalLeaveEndDate);
+                        lastSabbaticalLeaveEndDate, payload.startDate);
                 if isEligible is error {
                     string errMsg = "Error occurred while checking eligibility for sabbatical leave application";
                     log:printError(errMsg, isEligible);
@@ -624,6 +676,259 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         } on fail error internalErr {
             string errMsg = "Error occurred while submitting a leave";
+            log:printError(errMsg, internalErr);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+    }
+
+    # Record leave on behalf of an employee.
+    #
+    # For leave an employee cannot request themselves (no-pay today; the
+    # allowlist is configurable). Everything downstream of the applicant email -
+    # day calculation, overlap check, recipients, notification, calendar event -
+    # is the same code path a self-service submission takes, so the employee and
+    # the leave group see an identical notification.
+    #
+    # + ctx - Request context
+    # + payload - Request payload
+    # + isValidationOnlyMode - Whether to validate the leave or record it
+    # + return - Success response if recorded, otherwise an error response
+    resource function post leaves/on\-behalf(http:RequestContext ctx, OnBehalfLeavePayload payload,
+            boolean isValidationOnlyMode = false)
+        returns CalculatedLeave|http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        do {
+            readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
+            string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
+            if !authorization:checkPermissions(authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups) {
+                return <http:Forbidden>{
+                    body: {
+                        message: "Only the People Operations team can record leave on behalf of an employee."
+                    }
+                };
+            }
+
+            final string recordedBy = userInfo.email;
+            final string employeeEmail = payload.employeeEmail;
+            if !employeeEmail.matches(WSO2_EMAIL_PATTERN) {
+                return <http:BadRequest>{
+                    body: {
+                        message: string `${ERR_MSG_INVALID_WSO2_EMAIL} ${employeeEmail}`
+                    }
+                };
+            }
+
+            if onBehalfAllowedLeaveTypes.indexOf(payload.leaveType) is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: string `'${payload.leaveType}' cannot be recorded on behalf of an employee. ` +
+                            string `Allowed: ${string:'join(", ", ...onBehalfAllowedLeaveTypes)}.`
+                    }
+                };
+            }
+
+            // Half days are not recordable on this path. getEffectiveLeaveDaysFromLeave
+            // stamps the period type onto EVERY working day in the range
+            // (utils.bal:207-215), so a half day spanning more than one date would
+            // store 0.5 against each of them. None of the allowed leave types is
+            // taken as a half day, so this is rejected rather than guarded.
+            if payload.periodType is database:HALF_DAY_LEAVE {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Half day leave cannot be recorded on behalf of an employee."
+                    }
+                };
+            }
+
+            [time:Utc, time:Utc]|error validatedDateRange = validateDateRange(payload.startDate, payload.endDate);
+            if validatedDateRange is error {
+                log:printError(ERR_MSG_INVALID_DATE_FORMAT, validatedDateRange);
+                return <http:BadRequest>{
+                    body: {
+                        message: ERR_MSG_INVALID_DATE_FORMAT
+                    }
+                };
+            }
+
+            // The app derives period type from the INCLUSIVE CALENDAR SPAN, not
+            // the working-day count (GeneralLeave.tsx:196 via
+            // LeaveDateSelection.tsx:62). Derived here so any client gets it
+            // right. Compared on the NORMALISED dates: validateDateRange accepts
+            // both `2026-01-05` and `2026-01-05T00:00:00Z`, so the same day sent
+            // in two accepted formats is not equal as raw strings.
+            database:LeavePeriodType derivedPeriodType = validatedDateRange[0] == validatedDateRange[1]
+                ? database:ONE_DAY_LEAVE
+                : database:MULTIPLE_DAYS_LEAVE;
+
+            // Backdating is expected: this records leave that has already been taken.
+            database:LeaveInput input = {
+                email: employeeEmail,
+                startDate: payload.startDate,
+                endDate: payload.endDate,
+                leaveType: payload.leaveType,
+                periodType: derivedPeriodType,
+                // Only meaningful for a half day, which is rejected above.
+                isMorningLeave: (),
+                emailRecipients: payload.emailRecipients,
+                calendarEventId: payload.calendarEventId,
+                comment: payload.comment,
+                isPublicComment: payload.isPublicComment,
+                emailSubject: payload.emailSubject,
+                approverEmail: recordedBy,
+                status: APPROVED
+            };
+
+            // calculateLeaveDetails signals a multi-day overlap by RETURNING AN
+            // ERROR carrying `workingDays` (leave_calculation.bal:86-90), and
+            // only returns LeaveDetails[] for the half-day partial-overlap case.
+            // Both are validation outcomes to report, not server faults, so the
+            // check is done here rather than relying on insertLeaveToDatabase.
+            LeaveDetails[]|error? overlapCheck = calculateLeaveDetails(input, jwt);
+            boolean hasOverlap = false;
+            boolean isRecordable = true;
+            float calculatedDays = 0.0;
+            string validationMessage = "Valid leave request";
+
+            if overlapCheck is error {
+                string overlapMessage = overlapCheck.message();
+                value:Cloneable & readonly reportedDays = overlapCheck.detail()["workingDays"];
+                if overlapMessage == ERR_MSG_LEAVE_OVERLAPS_WITH_EXISTING_LEAVE {
+                    hasOverlap = true;
+                    isRecordable = false;
+                    calculatedDays = reportedDays is float ? reportedDays : 0.0;
+                    validationMessage = overlapMessage;
+                } else if overlapMessage == ERR_MSG_LEAVE_SHOULD_BE_AT_LEAST_ONE_WORKING_DAY
+                        || overlapMessage == ERR_MSG_LEAVE_SHOULD_BE_AT_LEAST_ONE_WEEKDAY {
+                    // A range that is all weekend, or entirely public holidays.
+                    isRecordable = false;
+                    validationMessage = overlapMessage;
+                } else {
+                    fail error(overlapMessage, overlapCheck);
+                }
+            } else if overlapCheck is LeaveDetails[] {
+                hasOverlap = true;
+                isRecordable = false;
+                validationMessage = ERR_MSG_LEAVE_OVERLAPS_WITH_EXISTING_LEAVE;
+            }
+
+            if isRecordable {
+                LeaveDay[]|error effectiveDays = getEffectiveLeaveDaysFromLeave(input, jwt);
+                if effectiveDays is error {
+                    fail error(effectiveDays.message(), effectiveDays);
+                }
+                calculatedDays = getNumberOfDaysFromLeaveDays(effectiveDays);
+            }
+
+            if isValidationOnlyMode {
+                return {
+                    workingDays: calculatedDays,
+                    hasOverlap: hasOverlap,
+                    message: validationMessage
+                };
+            }
+
+            if !isRecordable {
+                return <http:BadRequest>{
+                    body: {
+                        message: validationMessage
+                    }
+                };
+            }
+
+            // The email module takes a self-service leave payload; drop the
+            // employeeEmail field so the notification is generated by exactly
+            // the same code path a self-submitted leave uses.
+            LeavePayload leavePayload = {
+                startDate: payload.startDate,
+                endDate: payload.endDate,
+                isMorningLeave: (),
+                periodType: derivedPeriodType,
+                leaveType: payload.leaveType,
+                emailRecipients: payload.emailRecipients,
+                calendarEventId: payload.calendarEventId,
+                comment: payload.comment,
+                isPublicComment: payload.isPublicComment,
+                emailSubject: payload.emailSubject
+            };
+
+            final readonly & email:EmailNotificationDetails emailContentForLeave = check email:generateContentForLeave(
+                        jwt, employeeEmail, leavePayload
+                );
+            final readonly & string calendarEventId = createUuidForCalendarEvent();
+            final readonly & string[]|error allRecipientsForUser = getAllEmailRecipientsForUser(
+                        employeeEmail,
+                    payload.emailRecipients,
+                    jwt
+                );
+            if allRecipientsForUser is error {
+                fail error(allRecipientsForUser.message(), allRecipientsForUser);
+            }
+            final readonly & string? comment = payload.comment;
+
+            leavePayload.emailSubject = emailContentForLeave.subject;
+            leavePayload.calendarEventId = calendarEventId;
+            input.emailSubject = emailContentForLeave.subject;
+            input.calendarEventId = calendarEventId;
+            input.emailRecipients = allRecipientsForUser;
+
+            LeaveDetails|error leave = insertLeaveToDatabase(input, isValidationOnlyMode, jwt);
+            if leave is error {
+                fail error(leave.message(), leave);
+            }
+            final readonly & LeaveResponse leaveResponse = {
+                id: leave.id,
+                startDate: leave.startDate,
+                calendarEventId: leave.calendarEventId,
+                periodType: leave.periodType,
+                createdDate: leave.createdDate,
+                leaveType: leave.leaveType,
+                endDate: leave.endDate,
+                location: leave.location,
+                numberOfDays: leave.numberOfDays ?: 0.0,
+                status: <Status>leave.status,
+                email: leave.email,
+                isMorningLeave: leave.isMorningLeave
+            };
+
+            log:printInfo(string `Leave ${leave.id} of type '${payload.leaveType}' recorded for ` +
+                    string `${employeeEmail} by ${recordedBy}.`);
+
+            future<error?> notificationFuture = start email:sendLeaveNotification(
+                        emailContentForLeave,
+                    allRecipientsForUser
+                );
+            _ = start createLeaveEventInCalendar(employeeEmail, leaveResponse, calendarEventId);
+            if comment is string && !checkIfEmptyString(comment) {
+                string[] commentRecipients = allRecipientsForUser;
+                if !payload.isPublicComment {
+                    commentRecipients = check getPrivateRecipientsForUser(
+                                employeeEmail,
+                            payload.emailRecipients,
+                            jwt
+                        );
+                }
+
+                error? notificationResult = wait notificationFuture;
+                if notificationResult is () {
+                    // Does not send the additional comment notification if the main notification has failed
+                    final email:EmailNotificationDetails contentForAdditionalComment =
+                        email:generateContentForAdditionalComment(emailContentForLeave.subject, comment);
+                    _ = start email:sendAdditionalComment(contentForAdditionalComment.cloneReadOnly(),
+                            commentRecipients.cloneReadOnly());
+                }
+            }
+            return <http:Ok>{
+                body: {
+                    message: string `Leave recorded for ${employeeEmail}.`
+                }
+            };
+
+        } on fail error internalErr {
+            string errMsg = "Error occurred while recording leave on behalf of an employee";
             log:printError(errMsg, internalErr);
             return <http:InternalServerError>{
                 body: {
@@ -941,7 +1246,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         do {
             authorization:CustomJwtPayload {email, groups} = check ctx.getWithType(authorization:HEADER_USER_INFO);
-            boolean isAdmin = authorization:checkPermissions(authorization:authorizedRoles.peopleOpsTeamRoles, groups);
+            boolean isPeopleOpsTeamMember = authorization:checkPermissions(
+                    authorization:authorizedRoles.peopleOpsTeamRoles, groups);
+            boolean isAdmin = isPeopleOpsTeamMember ||
+                authorization:hasAnyRole(authorization:authorizedRoles.generalReportRoles, groups);
             Employee[] employees;
             employees = check employee:getEmployees(
                     {
@@ -974,7 +1282,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                         emails,
                         startDate: payload.startDate,
                         endDate: payload.endDate,
-                        statuses: [database:APPROVED]
+                        statuses: [database:APPROVED],
+                        // The general leave report never includes sabbaticals; they have a report of their own.
+                        excludedLeaveTypes: [database:SABBATICAL_LEAVE]
                     }
                     );
             if leaves is error {

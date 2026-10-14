@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -16,39 +16,30 @@
 
 import AppHandler from "@app/AppHandler";
 import { AuthProvider } from "@asgardeo/auth-react";
+import CssBaseline from "@mui/material/CssBaseline";
 import { StyledEngineProvider, ThemeProvider, createTheme } from "@mui/material/styles";
 import { SnackbarProvider } from "notistack";
 import { Provider } from "react-redux";
 
-import { createContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { APP_NAME, AsgardeoConfig } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
+import { ColorModeContext } from "@context/ColorModeContext";
 import { store } from "@slices/store";
 import { themeSettings } from "@src/theme";
-import { ThemeMode } from "@utils/types";
+import { ThemeMode } from "@/types/types";
 
 import "./index.css";
-
-export const ColorModeContext = createContext({
-  mode: ThemeMode.Light,
-  toggleColorMode: () => {},
-});
 
 function App() {
   document.title = APP_NAME || "WSO2 Careers";
 
+  // The candidate's saved choice, or light mode when they have not chosen one.
   const processLocalThemeMode = (): ThemeMode => {
     try {
-      const savedTheme = localStorage.getItem("careers-app-theme");
-      if (savedTheme === ThemeMode.Light || savedTheme === ThemeMode.Dark) {
-        return savedTheme;
-      }
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
-      localStorage.setItem("careers-app-theme", systemTheme);
-      return systemTheme;
-    } catch (err) {
+      return localStorage.getItem("careers-app-theme") === ThemeMode.Dark ? ThemeMode.Dark : ThemeMode.Light;
+    } catch {
       return ThemeMode.Light;
     }
   };
@@ -79,6 +70,7 @@ function App() {
       <StyledEngineProvider injectFirst>
         <SnackbarProvider maxSnack={3} preventDuplicate>
           <ThemeProvider theme={theme}>
+            <CssBaseline />
             <Provider store={store}>
               <AuthProvider config={AsgardeoConfig}>
                 <AppAuthProvider>

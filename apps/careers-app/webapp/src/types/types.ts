@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,40 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import type { NonIndexRouteObject } from "react-router-dom";
-
 import { ApplicationStatus } from "@config/constant";
-
-// ── Navigation / Route ────────────────────────────────────────────────────────
-
-export type NavState = {
-  hovered: number | null;
-  active: number | null;
-  expanded: number | null;
-};
-
-export interface RouteDetail {
-  path: string;
-  allowRoles: string[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: React.ReactElement<any, any> | undefined;
-  text: string;
-  children?: RouteObjectWithRole[];
-  bottomNav?: boolean;
-  element?: React.ReactNode;
-}
-
-export interface RouteObjectWithRole extends NonIndexRouteObject {
-  allowRoles: string[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: React.ReactElement<any, any> | undefined;
-  text: string;
-  children?: RouteObjectWithRole[];
-  bottomNav?: boolean;
-  element?: React.ReactNode;
-}
-
-// ── State & UI ─────────────────────────────────────────────────────────────────
 
 export enum State {
   failed = "failed",
@@ -56,52 +23,32 @@ export enum State {
   idle = "idle",
 }
 
-export enum ConfirmationType {
-  update = "update",
-  send = "send",
-  upload = "upload",
-  accept = "accept",
+export enum ThemeMode {
+  Light = "light",
+  Dark = "dark",
 }
 
-// ── Candidate / Profile ────────────────────────────────────────────────────────
-
-export interface ResumeVersion {
-  id: string;
-  name: string;
-  uploadedAt: string;
-  isActive: boolean;
-  url: string;
+export interface PreLoaderProps {
+  message?: string;
+  isLoading?: boolean;
 }
 
+// A candidate's profile.
 export interface CandidateProfile {
-  personId: string;
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string;
-  country: string;
-  linkedIn: string;
-  github: string;
-  currentRole: string;
-  yearsOfExperience: number;
-  skills: string[];
-  preferredRoles: string[];
-  preferredLocations: string[];
-  summary: string;
-  resumes: ResumeVersion[];
-  portfolio: PortfolioItem[];
-  completionPercentage: number;
+  gender: string;
+  personalEmail: string;
+  contactNo: string;
+  address: string | null;
+  university: string | null;
 }
 
-export interface PortfolioItem {
-  id: string;
-  title: string;
-  description: string;
-  url: string;
-  type: "github" | "project" | "link";
-}
-
-// ── Jobs ───────────────────────────────────────────────────────────────────────
+// The details a candidate can change themselves.
+export type EditableProfileFields = Pick<
+  CandidateProfile,
+  "firstName" | "lastName" | "gender" | "contactNo" | "address" | "university"
+>;
 
 export interface Job {
   id: string;
@@ -113,8 +60,33 @@ export interface Job {
   postedDate: string;
 }
 
-// ── Applications ───────────────────────────────────────────────────────────────
+// What an applicant submits alongside their CV.
+export interface GuestApplicationDetails {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  authorizedToWork: boolean;
+}
 
+export interface ApplicationTimelineEvent {
+  stage: ApplicationStatus;
+  date: string;
+}
+
+export interface ApplicationInterview {
+  id: string;
+  round: string;
+  // ISO date-time of the interview.
+  dateTime: string;
+  mode: "Video" | "Phone" | "Onsite";
+  // A meeting link for video interviews, a number for phone, an address for onsite.
+  location: string;
+  status: "Upcoming" | "Completed" | "Cancelled";
+}
+
+// A candidate's application and its progress.
 export interface Application {
   id: string;
   jobId: string;
@@ -122,6 +94,23 @@ export interface Application {
   department: string;
   appliedDate: string;
   status: ApplicationStatus;
-  resumeVersionId: string;
-  notes: string;
+  // The last day the candidate can answer an offer.
+  offerExpiresOn?: string;
+  // True once the candidate has sent feedback about this application.
+  feedbackSubmitted?: boolean;
+  timeline?: ApplicationTimelineEvent[];
+  interviews?: ApplicationInterview[];
+}
+
+// A candidate's answer to an offer; a declined offer carries the reason.
+export interface OfferAnswer {
+  response: "accepted" | "declined";
+  reason?: string;
+  comment?: string;
+}
+
+// What a candidate tells us about their application experience.
+export interface ApplicationFeedback {
+  rating: number | null;
+  comment: string;
 }

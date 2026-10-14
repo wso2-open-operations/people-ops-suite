@@ -42,3 +42,35 @@ public const BULK_INSERT_FAILED = 1002;
 
 # MySQL error code for a duplicate entry on a unique index/key.
 const MYSQL_DUPLICATE_ENTRY_ERROR_CODE = 1062;
+
+# MySQL error code for a failed foreign key constraint on insert/update.
+const MYSQL_FK_CONSTRAINT_ERROR_CODE = 1452;
+
+# Sentinel value for updateDesignationQuery's jobBand parameter that clears job_band to NULL.
+public const JOB_BAND_CLEAR_SENTINEL = -1;
+
+# Sentinel value for updateDesignationQuery's careerFunctionId parameter that clears career_function_id to NULL.
+public const CAREER_FUNCTION_CLEAR_SENTINEL = -1;
+
+# Sentinel value for updateEmployeeJobInfoQuery's officeId parameter that clears office_id to NULL.
+public const OFFICE_CLEAR_SENTINEL = -1;
+
+# Sentinel value for updateEmployeeJobInfoQuery's unitId parameter that clears unit_id to NULL.
+public const UNIT_CLEAR_SENTINEL = -1;
+
+# Sentinel value for updateEmployeeJobInfoQuery's continuousServiceRecord parameter that clears
+# continuous_service_record to NULL.
+public const CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL = -1;
+
+# Message returned when a departure's final day of employment precedes its last day in office.
+public const RESIGNATION_DATE_ORDER_ERROR =
+        "Final day of employment cannot be before the last day in office";
+
+# Work email stored for a new joiner whose account does not exist yet. Onboarding stores it
+# when the email is left empty; it is shared by every such joiner, so it never identifies a
+# person and is skipped by every lookup that recognises a returning employee by email.
+public const FUTURE_JOINER_EMAIL = "future-joiner@wso2.com";
+
+# Work email held by former employees whose real address is not on record. Like
+# FUTURE_JOINER_EMAIL it is shared and never identifies a person.
+public const EX_EMPLOYEE_EMAIL = "ex-employee@wso2.com";

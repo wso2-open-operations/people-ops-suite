@@ -221,16 +221,15 @@ function getRecipientsForSabbaticalNotifications(string applicantEmail, string l
 #
 # + employmentStartDate - Employment start date
 # + lastSabbaticalLeaveEndDate - Last sabbatical leave end date
+# + leaveStartDate - Leave start date
 # + return - Error if not eligible
 isolated function checkEligibilityForSabbaticalApplication(string employmentStartDate,
-        string? lastSabbaticalLeaveEndDate) returns boolean|error {
+        string? lastSabbaticalLeaveEndDate, string leaveStartDate) returns boolean|error {
 
-    time:Utc nowUTC = time:utcNow();
-    string nowStr = time:utcToString(nowUTC).substring(0, 10);
-    int|error daysSinceEmployment = check getDateDiffInDays(nowStr, employmentStartDate);
+    int|error daysSinceEmployment = check getDateDiffInDays(leaveStartDate, employmentStartDate);
     int|error daysSinceLastSabbaticalLeave = 0;
     if lastSabbaticalLeaveEndDate is string {
-        daysSinceLastSabbaticalLeave = getDateDiffInDays(nowStr, lastSabbaticalLeaveEndDate);
+        daysSinceLastSabbaticalLeave = getDateDiffInDays(leaveStartDate, lastSabbaticalLeaveEndDate);
     }
     if daysSinceEmployment is int {
         if lastSabbaticalLeaveEndDate == () && daysSinceEmployment > sabbaticalLeaveEligibilityDuration {
@@ -238,7 +237,8 @@ isolated function checkEligibilityForSabbaticalApplication(string employmentStar
         }
 
     }
-    // Eligibility: Employed for more than 3 years and last sabbatical leave taken more than 3 years ago
+    // Eligibility: employed for longer than the eligibility duration, and the last sabbatical leave ended longer
+    // than the eligibility duration ago
     if daysSinceEmployment is int && daysSinceLastSabbaticalLeave is int {
         if (daysSinceEmployment > sabbaticalLeaveEligibilityDuration &&
         daysSinceLastSabbaticalLeave > sabbaticalLeaveEligibilityDuration) {

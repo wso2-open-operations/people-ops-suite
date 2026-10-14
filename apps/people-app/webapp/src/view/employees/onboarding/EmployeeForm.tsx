@@ -60,6 +60,7 @@ import {
   resetUpdateEmployeeJobInfoState,
   type Employee,
   validateEpf,
+  CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL,
 } from "@slices/employeeSlice/employee";
 import { EmployeeFormSteps } from "@root/src/config/constant";
 import {
@@ -71,13 +72,18 @@ import {
 import { resetEmployee } from "@slices/employeeSlice/employee";
 import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 
+import {
+  OFFICE_CLEAR_SENTINEL,
+  UNIT_CLEAR_SENTINEL,
+} from "@slices/careerFunctionSlice/careerFunction";
+
 const deriveFullName = (
   full: string | null | undefined,
   first?: string,
   last?: string,
 ): string => (full ?? `${first ?? ""} ${last ?? ""}`).trim();
 
-const toFormValues = (
+export const toFormValues = (
   employee: Employee | null,
   personal: EmployeePersonalInfo | null,
 ): CreateEmployeeFormValues => {
@@ -87,13 +93,16 @@ const toFormValues = (
 
   if (employee) {
     base.workEmail = employee.workEmail ?? "";
+    // An existing link opens the relocation box ticked, so it can be seen and removed.
+    base.isRelocation = employee.continuousServiceRecord != null;
+    base.continuousServiceRecord = employee.continuousServiceRecord ?? null;
     base.epf = employee.epf ?? "";
     base.businessUnitId = employee.businessUnitId ?? 0;
     base.teamId = employee.teamId ?? 0;
     base.subTeamId = employee.subTeamId ?? 0;
-    base.unitId = employee.unitId ?? 0;
+    base.unitId = employee.unitId ?? UNIT_CLEAR_SENTINEL;
     base.companyId = employee.companyId ?? 0;
-    base.officeId = employee.officeId ?? 0;
+    base.officeId = employee.officeId ?? OFFICE_CLEAR_SENTINEL;
     base.workLocation = employee.workLocation ?? "";
     base.employmentTypeId = employee.employmentTypeId ?? 0;
     base.startDate = employee.startDate ?? "";
@@ -102,9 +111,9 @@ const toFormValues = (
     base.managerEmail = employee.managerEmail ?? "";
     base.additionalManagerEmail = employee.additionalManagerEmails
       ? employee.additionalManagerEmails
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
       : [];
     base.careerFunctionId = employee.careerFunctionId ?? 0;
     base.designationId = employee.designationId ?? 0;
@@ -112,6 +121,7 @@ const toFormValues = (
     base.jobRole = employee.jobRole ?? "";
     base.externalDesignation = employee.externalDesignation ?? "";
     base.houseId = employee.houseId ?? 0;
+    base.leadershipGroupIds = employee.leadershipGroupIds ?? [];
     base.employeeId = employee.employeeId ?? "";
     base.employeeStatus = employee.employeeStatus ?? null;
     base.finalDayInOffice = employee.finalDayInOffice ?? null;
@@ -157,7 +167,7 @@ const toFormValues = (
   return base;
 };
 
-const toJobUpdatePayload = (
+export const toJobUpdatePayload = (
   values: CreateEmployeeFormValues,
 ): UpdateEmployeeJobInfoPayload => ({
   epf: values.epf === "" ? null : values.epf,
@@ -175,28 +185,50 @@ const toJobUpdatePayload = (
     values.employmentTypeId > 0 ? values.employmentTypeId : null,
   designationId: values.designationId > 0 ? values.designationId : null,
   companyId: values.companyId > 0 ? values.companyId : null,
-  officeId: values.officeId > 0 ? values.officeId : null,
+  // Belt-and-suspenders: by submit time officeId/unitId should never legitimately be a
+  // non-positive value other than the sentinel (0 is blocked by Yup's notOneOf([0]) on
+  // officeId, and cascade resets always write the sentinel directly for unitId — see
+  // handleBusinessUnitChange/handleTeamChange/handleSubTeamChange). This guard just makes
+  // sure nothing malformed reaches the wire regardless.
+  officeId:
+    values.officeId > 0
+      ? values.officeId
+      : values.officeId === OFFICE_CLEAR_SENTINEL
+        ? OFFICE_CLEAR_SENTINEL
+        : null,
   teamId: values.teamId > 0 ? values.teamId : null,
   subTeamId: values.subTeamId > 0 ? values.subTeamId : null,
   businessUnitId: values.businessUnitId > 0 ? values.businessUnitId : null,
-  unitId: values.unitId > 0 ? values.unitId : null,
+  unitId:
+    values.unitId > 0
+      ? values.unitId
+      : values.unitId === UNIT_CLEAR_SENTINEL
+        ? UNIT_CLEAR_SENTINEL
+        : null,
   houseId: values.houseId > 0 ? values.houseId : null,
+  leadershipGroupIds: values.leadershipGroupIds ?? [],
+  // Unticked sends the clear sentinel. It only reaches the request when the box was
+  // ticked before (the diff drops it otherwise), which is exactly when a link is removed.
   continuousServiceRecord: values.isRelocation
     ? (values.continuousServiceRecord ?? null)
-    : null,
+    : CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL,
   employeeStatus: values.employeeStatus ?? null,
   finalDayInOffice: values.finalDayInOffice ?? null,
   finalDayOfEmployment: values.finalDayOfEmployment ?? null,
   resignationReason: values.resignationReason ?? null,
 });
 
-const toPersonalUpdatePayload = (
+export const toPersonalUpdatePayload = (
   values: CreateEmployeeFormValues,
 ): EmployeePersonalInfoUpdate => ({
   nicOrPassport: values.personalInfo.nicOrPassport ?? null,
   firstName: values.personalInfo.firstName ?? null,
   lastName: values.personalInfo.lastName ?? null,
-  fullName: values.personalInfo.fullName?.trim() || null,
+  fullName: deriveFullName(
+    values.personalInfo.fullName,
+    values.personalInfo.firstName,
+    values.personalInfo.lastName,
+  ) || null,
   title: values.personalInfo.title ?? null,
   dob: values.personalInfo.dob ?? null,
   gender: values.personalInfo.gender ?? null,
@@ -234,7 +266,7 @@ const toPersonalUpdatePayload = (
   nationality: values.personalInfo.nationality ?? null,
   emergencyContacts:
     values.personalInfo.emergencyContacts &&
-    values.personalInfo.emergencyContacts.length > 0
+      values.personalInfo.emergencyContacts.length > 0
       ? values.personalInfo.emergencyContacts
       : null,
 });
@@ -243,16 +275,14 @@ const OrangeConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.alternativeLabel}`]: { top: 18 },
   [`&.${stepConnectorClasses.active}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: `linear-gradient(90deg, ${
-        theme.palette.secondary.contrastText
-      }, ${alpha(theme.palette.secondary.contrastText, 0.5)})`,
+      backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText
+        }, ${alpha(theme.palette.secondary.contrastText, 0.5)})`,
     },
   },
   [`&.${stepConnectorClasses.completed}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText}, ${
-        theme.palette.secondary.contrastText
-      })`,
+      backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText}, ${theme.palette.secondary.contrastText
+        })`,
     },
   },
   [`& .${stepConnectorClasses.line}`]: {
@@ -281,9 +311,8 @@ const StepIconRoot = styled("div")<{
   fontWeight: 600,
 
   ...(ownerState.active && {
-    backgroundImage: `linear-gradient(135deg, ${
-      theme.palette.secondary.contrastText
-    }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
+    backgroundImage: `linear-gradient(135deg, ${theme.palette.secondary.contrastText
+      }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
     boxShadow: `0 4px 10px 0 ${alpha(
       theme.palette.secondary.contrastText,
       0.3,
@@ -291,9 +320,8 @@ const StepIconRoot = styled("div")<{
   }),
 
   ...(ownerState.completed && {
-    backgroundImage: `linear-gradient(135deg, ${
-      theme.palette.secondary.contrastText
-    }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
+    backgroundImage: `linear-gradient(135deg, ${theme.palette.secondary.contrastText
+      }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
   }),
 }));
 
@@ -307,7 +335,7 @@ function CustomStepIcon(props: StepIconProps) {
   );
 }
 
-const diffObject = <T extends Record<string, any>>(
+export const diffObject = <T extends Record<string, any>>(
   prev: T,
   next: T,
 ): Partial<T> => {
@@ -455,7 +483,7 @@ function FormActionsBar({
         }}
       >
         {employeeSlice.state === State.loading ||
-        employeeSlice.updateJobInfoState === State.loading
+          employeeSlice.updateJobInfoState === State.loading
           ? "Saving..."
           : activeStep === EmployeeFormSteps.length - 1
             ? isEditMode
@@ -478,6 +506,16 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
   const dispatch = useAppDispatch();
   const { showConfirmation } = useConfirmationModalContext();
 
+  // Currently always false: employeeEdit.tsx was removed and employeeOnboarding.tsx's
+  // mode="create" is the only call site left, so every isEditMode branch here and in
+  // JobInfo/Review is unreachable. Editing an existing employee now happens in the
+  // profile's inline section editors (view/me/sectionEdit).
+  //
+  // Left in place rather than deleted: the branches span three large files with no tests
+  // over the wizard, and the create path shares that code, so removing them belongs in
+  // its own change where breaking onboarding would be obvious. Treat what they contain as
+  // stale, not as reference — the leaver-fields rule in the edit submit path below is the
+  // pre-fix version of the one corrected in useSectionSave.
   const isEditMode = mode === "edit" && !!employeeId;
 
   const employeeSlice = useAppSelector((s) => s.employee);
@@ -662,7 +700,14 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
           validationSchema={
             activeStep === 0
               ? personalInfoValidationSchema
-              : createJobInfoValidationSchema(employmentTypes)
+              : // requireHouse tracks isEditMode because the House field itself is only
+                // rendered in edit mode; the server assigns the house when onboarding.
+                createJobInfoValidationSchema(employmentTypes, {
+                  requireHouse: isEditMode,
+                  // Onboarding may leave it empty for a joiner whose account is not
+                  // created yet; the backend stores a placeholder until it is.
+                  requireWorkEmail: isEditMode,
+                })
           }
           onSubmit={async (values, actions) => {
             if (activeStep !== EmployeeFormSteps.length - 1) {
@@ -680,7 +725,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 jobRole: values.jobRole || "",
                 externalDesignation: values.externalDesignation || "",
                 workLocation: values.workLocation,
-                workEmail: values.workEmail,
+                workEmail: values.workEmail?.trim() || undefined,
                 startDate: values.startDate,
                 managerEmail: values.managerEmail,
                 additionalManagerEmails: values.additionalManagerEmail?.length
@@ -694,6 +739,9 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                     : undefined,
                 designationId: values.designationId,
                 companyId: values.companyId,
+                // Create is a single POST, not a PATCH diff — there's no "leave unchanged"
+                // concept here, so no sentinel is needed; -1 (if it ever appeared) would
+                // still correctly fall through to undefined via the >0 check.
                 officeId:
                   values.officeId && values.officeId > 0
                     ? values.officeId
@@ -834,7 +882,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                         "Update Failed",
                         <Typography variant="body1">{errorMessage}</Typography>,
                         ConfirmationType.accept,
-                        () => {},
+                        () => { },
                         "OK",
                       );
                     } else {
@@ -848,7 +896,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                         An unexpected error occurred during the update.
                       </Typography>,
                       ConfirmationType.accept,
-                      () => {},
+                      () => { },
                       "OK",
                     );
                   } finally {

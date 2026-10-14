@@ -17,6 +17,11 @@ import ballerina/sql;
 
 # Fetch employee basic information.
 #
+# A person may hold several employee rows under one work email (a rehire issues a new employee
+# ID while reusing the same work email), so this orders by start date to return their latest
+# employment rather than an arbitrary row. `id` is only a deterministic tiebreaker: it does not
+# track chronology, because historical stints were migrated in after the current records.
+#
 # + email - Employee's work email address
 # + return - Query to get employee basic information
 isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
@@ -26,6 +31,7 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
         e.last_name,
         e.work_email,
         e.employee_thumbnail,
+        e.work_location,
         CONCAT(
             d.designation,
             CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
@@ -36,21 +42,47 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
         e.external_designation AS externalDesignation
     FROM employee e
         INNER JOIN designation d ON e.designation_id = d.id
-    WHERE e.work_email = ${email};`;
+    WHERE e.work_email = ${email}
+    ORDER BY e.start_date DESC, e.id DESC
+    LIMIT 1;`;
 
 # Fetch all employees' basic information.
 #
 # + return - Query to get all employees basic information
 isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
     `SELECT
-        employee_id,
-        first_name,
-        last_name,
-        work_email,
-        employee_thumbnail,
-        external_designation AS externalDesignation
-    FROM employee
-    WHERE employee_status = 'Active';`;
+        e.employee_id AS employeeId,
+        e.first_name AS firstName,
+        e.last_name AS lastName,
+        e.work_email AS workEmail,
+        e.employee_thumbnail AS employeeThumbnail,
+        CONCAT(
+            d.designation,
+            CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
+                THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END,
+            CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
+                THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END
+        ) AS designation,
+        d.job_band AS jobBand,
+        e.start_date AS startDate,
+        e.manager_email AS managerEmail,
+        bu.name AS businessUnit,
+        t.name AS team,
+        st.name AS subTeam,
+        u.name AS unit,
+        et.name AS employmentType,
+        c.name AS company,
+        e.work_location AS workLocation,
+        e.employee_status AS employeeStatus
+    FROM employee e
+        INNER JOIN designation d ON e.designation_id = d.id
+        INNER JOIN business_unit bu ON e.business_unit_id = bu.id
+        INNER JOIN team t ON e.team_id = t.id
+        INNER JOIN employment_type et ON e.employment_type_id = et.id
+        INNER JOIN company c ON c.id = e.company_id
+        LEFT JOIN sub_team st ON e.sub_team_id = st.id
+        LEFT JOIN unit u ON e.unit_id = u.id
+    WHERE e.employee_status IN ('Active', 'Marked leaver');`;
 
 # Fetch employee ID by primary key ID.
 #
@@ -66,32 +98,48 @@ isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
 isolated function getEmployeeIdByEpfQuery(string epf) returns sql:ParameterizedQuery =>
     `SELECT employee_id FROM employee WHERE epf = ${epf} LIMIT 1;`;
 
-# Fetch the personal_info ID for a given NIC/Passport.
+# Every employment of the person behind a NIC/Passport, newest first.
 #
-# + nicOrPassport - National Identity Card number or Passport
-# + return - Query returning the personal_info ID
-isolated function getPersonalInfoIdByNicQuery(string nicOrPassport) returns sql:ParameterizedQuery =>
-    `SELECT id FROM personal_info WHERE nic_or_passport = ${nicOrPassport} LIMIT 1;`;
+# Used to recognise a returning employee at onboarding: whether they are still employed, and
+# which work email they held. Ordered by start date, then id for two starting the same day,
+# so the first row is their latest employment.
+#
+# + nicOrPassport - NIC/Passport from the onboarding submission
+# + return - Query returning the person's employment rows
+isolated function getEmploymentsByNicQuery(string nicOrPassport) returns sql:ParameterizedQuery =>
+    `SELECT
+        e.employee_id AS employeeId,
+        e.first_name AS firstName,
+        e.last_name AS lastName,
+        e.work_email AS workEmail,
+        e.employee_status AS employeeStatus
+     FROM employee e
+        INNER JOIN personal_info p ON p.id = e.personal_info_id
+     WHERE p.nic_or_passport = ${nicOrPassport}
+     ORDER BY e.start_date DESC, e.id DESC;`;
 
-# Check whether a personal_info ID already has an employee record under the given work email —
-# used to confirm a duplicate NIC/Passport belongs to the same person coming back (rehire).
+# Find an Active or New joiner employee holding a work email.
 #
-# + personalInfoId - personal_info ID matched by NIC/Passport
-# + workEmail - Work email from the new onboarding submission
-# + return - Query returning the count of matching employee records
-isolated function countEmployeeByPersonalInfoIdAndWorkEmailQuery(int personalInfoId, string workEmail)
-    returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) FROM employee
-     WHERE personal_info_id = ${personalInfoId}
-       AND LOWER(work_email) = LOWER(${workEmail});`;
-
-# Count active employee records linked to a personal_info ID — used to block onboarding a
-# rehire for someone who is still currently employed.
+# A Marked leaver does not hold on to their email here: an employee who relocates keeps it,
+# and their new employment is onboarded while the old one is Marked leaver.
 #
-# + personalInfoId - personal_info ID matched by NIC/Passport
-# + return - Query returning the count of active employee records
-isolated function countActiveEmployeeByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) FROM employee WHERE personal_info_id = ${personalInfoId} AND employee_status = ${EMPLOYEE_ACTIVE};`;
+# + workEmail - Work email to look for
+# + excludeEmployeeId - Employee ID to leave out (the employee being edited), nil for none
+# + return - Query returning at most one matching employee
+isolated function getCurrentEmployeeByWorkEmailQuery(string workEmail, string? excludeEmployeeId = ())
+        returns sql:ParameterizedQuery =>
+    `SELECT
+        e.employee_id AS employeeId,
+        e.first_name AS firstName,
+        e.last_name AS lastName,
+        e.work_email AS workEmail,
+        e.employee_status AS employeeStatus
+     FROM employee e
+     WHERE LOWER(e.work_email) = LOWER(${workEmail})
+       AND e.employee_status IN (${EMPLOYEE_ACTIVE}, ${EMPLOYEE_NEW_JOINER})
+       AND (${excludeEmployeeId} IS NULL OR e.employee_id <> ${excludeEmployeeId})
+     ORDER BY e.start_date DESC, e.id DESC
+     LIMIT 1;`;
 
 # Fetch employee work email by employee ID.
 #
@@ -125,6 +173,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
             LIMIT 1
         ), '') AS managerName,
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
+        elg.leadershipGroups AS leadershipGroups,
         pi.gender AS gender,
         (
             SELECT COUNT(1)
@@ -192,6 +241,17 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
             WHERE is_active = 1
             GROUP BY employee_pk_id
         ) eam ON eam.employee_pk_id = e.id
+        LEFT JOIN (
+            SELECT
+                el.employee_pk_id,
+                GROUP_CONCAT(lg.name ORDER BY lg.name SEPARATOR ',') AS leadershipGroups
+            FROM employee_leadership el
+            JOIN leadership_group lg ON lg.id = el.leadership_group_id
+            -- A retired attribute is hidden from its holders' records; the assignment row
+            -- is kept, so reactivating the attribute brings it back.
+            WHERE el.is_active = 1 AND lg.is_active = 1
+            GROUP BY el.employee_pk_id
+        ) elg ON elg.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         LEFT JOIN office o ON e.office_id = o.id
@@ -212,12 +272,13 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
 # + payload - Get employees filter payload
 # + leadEmail - If provided, restricts results to subordinates of this lead
 # + return - Parameterized query for fetching employees
-isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadEmail = ()) returns sql:ParameterizedQuery {
+isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadEmail = (),
+        boolean includePersonalInfo = false) returns sql:ParameterizedQuery {
 
     int 'limit = payload.pagination.'limit;
     int offset = payload.pagination.offset;
 
-    sql:ParameterizedQuery baseQuery = `
+    sql:ParameterizedQuery selectPrefix = `
         SELECT
             e.employee_id AS employeeId,
             e.first_name AS firstName,
@@ -281,7 +342,40 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.company_id AS companyId,
             h.name AS house,
             e.house_id AS houseId,
+            elg.leadershipGroups AS leadershipGroups,
+            -- Personal information is selected only where the caller is entitled to it. The
+            -- columns are omitted from the SQL rather than blanked afterwards, so data nobody
+            -- may see is never read out of the database at all.
+        `;
+
+    sql:ParameterizedQuery personalInfoColumns = `
             pi.gender AS gender,
+            pi.nic_or_passport AS nicOrPassport,
+            pi.dob AS dateOfBirth,
+            pi.nationality AS nationality,
+            pi.personal_email AS personalEmail,
+            pi.personal_phone AS personalPhone,
+            pi.resident_number AS residentNumber,
+            pi.address_line_1 AS addressLine1,
+            pi.address_line_2 AS addressLine2,
+            pi.city AS city,
+            pi.state_or_province AS stateOrProvince,
+            pi.postal_code AS postalCode,
+            pi.country AS country,
+            -- Emergency contacts are one-to-many, so they are flattened into a single
+            -- cell here rather than widening the row: an employee may have any number
+            -- of them, and fixed "Contact 1/2/3" columns would truncate or pad.
+            (
+                SELECT GROUP_CONCAT(
+                    CONCAT_WS(' - ', piec.name, piec.relationship, piec.mobile)
+                    ORDER BY piec.id SEPARATOR '; '
+                )
+                FROM personal_info_emergency_contacts piec
+                WHERE piec.personal_info_id = pi.id AND piec.is_active = 1
+            ) AS emergencyContacts,
+        `;
+
+    sql:ParameterizedQuery remainingQuery = `
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
@@ -294,6 +388,17 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
                 WHERE is_active = 1
                 GROUP BY employee_pk_id
             ) eam ON eam.employee_pk_id = e.id
+
+            LEFT JOIN (
+                SELECT
+                    el.employee_pk_id,
+                    GROUP_CONCAT(lg.name ORDER BY lg.name SEPARATOR ',') AS leadershipGroups
+                FROM employee_leadership el
+                JOIN leadership_group lg ON lg.id = el.leadership_group_id
+                -- Retired attributes are hidden; see the single-employee query.
+                WHERE el.is_active = 1 AND lg.is_active = 1
+                GROUP BY el.employee_pk_id
+            ) elg ON elg.employee_pk_id = e.id
 
             LEFT JOIN (
                 SELECT
@@ -326,6 +431,12 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             LEFT JOIN resignation r ON r.employee_id = e.id
             LEFT JOIN internship i ON i.employee_id = e.id
         `;
+
+    // Defaults to excluding personal information, so a caller that has not been considered
+    // gets a field it did not expect rather than data it may not see.
+    sql:ParameterizedQuery baseQuery = includePersonalInfo
+        ? sql:queryConcat(selectPrefix, personalInfoColumns, remainingQuery)
+        : sql:queryConcat(selectPrefix, remainingQuery);
 
     sql:ParameterizedQuery[] filters = [];
 
@@ -374,6 +485,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     appendStringFilter(filters, payload.filters.firstName, `LOWER(pi.first_name) = LOWER(${payload.filters.firstName})`);
     appendStringFilter(filters, payload.filters.lastName, `LOWER(pi.last_name) = LOWER(${payload.filters.lastName})`);
     appendStringFilter(filters, payload.filters.dateOfBirth, `pi.dob = ${payload.filters.dateOfBirth}`);
+    appendStringFilter(filters, payload.filters.startDate, `e.start_date = ${payload.filters.startDate}`);
     appendStringFilter(filters, payload.filters.gender, `pi.gender = ${payload.filters.gender}`);
     appendStringFilter(filters, payload.filters.personalEmail, `LOWER(pi.personal_email) = LOWER(${payload.filters.personalEmail})`);
     appendStringFilter(filters, payload.filters.personalPhone, `pi.personal_phone = ${payload.filters.personalPhone}`);
@@ -417,6 +529,23 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
         filters.push(sql:queryConcat(`e.employment_type_id IN (`, buildIntInClause(employmentTypeList), `)`));
     } else {
         appendIntFilter(filters, payload.filters.employmentTypeId, `e.employment_type_id = ${payload.filters.employmentTypeId}`);
+    }
+
+    int[]? leadershipGroupList = payload.filters.leadershipGroupIds;
+    if leadershipGroupList is int[] && leadershipGroupList.length() > 0 {
+        // AND semantics: the employee must hold EVERY selected attribute, unlike the OR
+        // multi-selects above. A correlated IN (SELECT ... HAVING ...) is used rather than a
+        // join plus an outer HAVING so this composes with all three call sites, including
+        // ones that do not GROUP BY. Retired attributes are left out, as they are from every
+        // record and report: a Left employee may still hold one, and matching on it would
+        // return them without the attribute showing in their row.
+        filters.push(sql:queryConcat(
+            `e.id IN (SELECT el_f.employee_pk_id FROM employee_leadership el_f
+              JOIN leadership_group lg_f ON lg_f.id = el_f.leadership_group_id
+              WHERE el_f.is_active = 1 AND lg_f.is_active = 1 AND el_f.leadership_group_id IN (`,
+            buildIntInClause(leadershipGroupList),
+            `) GROUP BY el_f.employee_pk_id
+              HAVING COUNT(DISTINCT el_f.leadership_group_id) = ${leadershipGroupList.length()})`));
     }
 
     if payload.filters.excludeFutureStartDate == true {
@@ -503,15 +632,22 @@ isolated function isLeadQuery(string leadEmail) returns sql:ParameterizedQuery =
 
 # Fetch continuous service record by work email.
 #
+# A person may hold several employee rows under one work email (a rehire issues a new employee
+# ID while reusing the same work email), and every stint is returned here by design. Ordering is
+# newest-first by start date so the caller gets a stable, chronological service history; `id` is
+# only a tiebreaker, as it does not track chronology.
+#
 # + workEmail - Work email of the employee
 # + return - Parameterized query for continuous service record
 isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:ParameterizedQuery =>
     `SELECT 
+        e.id AS id,
         e.employee_id AS employeeId,
         e.first_name AS firstName,
         e.last_name AS lastName,
         e.work_location AS workLocation,
         e.start_date AS startDate,
+        e.employee_status AS employeeStatus,
         e.manager_email AS managerEmail,
         COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
         CONCAT(
@@ -549,7 +685,8 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
     WHERE
         e.work_email = ${workEmail}
         AND et.is_active = 1
-        AND et.name IN ('Permanent');`;
+        AND et.name IN ('Permanent')
+    ORDER BY e.start_date DESC, e.id DESC;`;
 
 # Fetch employee personal information.
 #
@@ -660,7 +797,7 @@ isolated function getSubTeamsQuery(int? teamId = (), boolean includeInactive = f
                 but.team_id = ${teamId}`);
         if !includeInactive {
             query = sql:queryConcat(query,
-                ` AND st.is_active = 1 AND butst.is_active = 1 AND but.is_active = 1`);
+                    ` AND st.is_active = 1 AND butst.is_active = 1 AND but.is_active = 1`);
         }
     } else if !includeInactive {
         query = sql:queryConcat(query, ` WHERE st.is_active = 1`);
@@ -709,7 +846,7 @@ isolated function getExistingEpfsQuery(string[] epfs) returns sql:ParameterizedQ
 }
 
 # Build an SQL IN clause for a list of string values.
-# 
+#
 # + values - List of string values to include in the IN clause
 # + return - Parameterized query representing the IN clause
 isolated function buildInClause(string[] values) returns sql:ParameterizedQuery {
@@ -759,7 +896,7 @@ isolated function getUnitsQuery(int? subTeamId = (), boolean includeInactive = f
                 butst.sub_team_id = ${subTeamId}`);
         if !includeInactive {
             query = sql:queryConcat(query,
-                ` AND u.is_active = 1 AND butstu.is_active = 1 AND butst.is_active = 1`);
+                    ` AND u.is_active = 1 AND butstu.is_active = 1 AND butst.is_active = 1`);
         }
     } else if !includeInactive {
         query = sql:queryConcat(query, ` WHERE u.is_active = 1`);
@@ -1006,7 +1143,7 @@ isolated function updateBusinessUnitTeamSubTeamQuery(int id, string? headEmail, 
     }
     updates.push(`updated_by = ${updatedBy}`);
     return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team_sub_team SET `, updates),
-        ` WHERE id = ${id};`);
+            ` WHERE id = ${id};`);
 }
 
 # Create business-unit-team-sub-team → unit mapping query.
@@ -1050,7 +1187,7 @@ isolated function updateBusinessUnitTeamSubTeamUnitQuery(int id, string? headEma
     }
     updates.push(`updated_by = ${updatedBy}`);
     return sql:queryConcat(buildSqlUpdateQuery(`UPDATE business_unit_team_sub_team_unit SET `, updates),
-        ` WHERE id = ${id};`);
+            ` WHERE id = ${id};`);
 }
 
 # Get the company org chart structure query (includes all mapping metadata).
@@ -1199,29 +1336,170 @@ isolated function getFullOrganizationStructureQuery() returns sql:ParameterizedQ
 
 # Get career functions query.
 #
+# + includeInactive - If true, return all rows including inactive; otherwise active-only
 # + return - Career functions query
-isolated function getCareerFunctionsQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
-        id,
-        career_function
-    FROM career_function;`;
+isolated function getCareerFunctionsQuery(boolean includeInactive = false) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `SELECT
+            cf.id,
+            cf.career_function,
+            cf.is_active,
+            (SELECT COUNT(*)
+                FROM employee e
+                JOIN designation d ON d.id = e.designation_id
+                WHERE d.career_function_id = cf.id AND e.employee_status = 'Active'
+            ) AS active_employee_count
+        FROM career_function cf`;
+    if !includeInactive {
+        query = sql:queryConcat(query, ` WHERE cf.is_active = 1`);
+    }
+    return sql:queryConcat(query, ` ORDER BY cf.career_function;`);
+}
 
 # Get designations query.
 #
 # + careerFunctionId - Career function ID (optional)
+# + includeInactive - If true, return all rows including inactive; otherwise active-only
 # + return - Designations query
-isolated function getDesignationsQuery(int? careerFunctionId = ()) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-        SELECT 
-            id,
-            designation,
-            job_band
-        FROM designation`;
+isolated function getDesignationsQuery(int? careerFunctionId = (), boolean includeInactive = false)
+        returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery query = `SELECT
+            d.id,
+            d.designation,
+            d.job_band,
+            d.career_function_id,
+            d.is_active,
+            (SELECT COUNT(*)
+                FROM employee e
+                WHERE e.designation_id = d.id AND e.employee_status = 'Active'
+            ) AS active_employee_count
+        FROM designation d`;
+
+    sql:ParameterizedQuery[] filters = [];
     if careerFunctionId is int {
-        query = sql:queryConcat(query, ` WHERE career_function_id = ${careerFunctionId}`);
+        filters.push(`d.career_function_id = ${careerFunctionId}`);
     }
-    return sql:queryConcat(query, `;`);
+    if !includeInactive {
+        filters.push(`d.is_active = 1`);
+    }
+    foreach int i in 0 ..< filters.length() {
+        query = sql:queryConcat(query, i == 0 ? ` WHERE ` : ` AND `, filters[i]);
+    }
+    return sql:queryConcat(query, ` ORDER BY d.designation;`);
 }
+
+# Create a career function.
+#
+# + careerFunction - Career function name
+# + createdBy - Email of the admin performing the action
+# + return - Insert query
+isolated function createCareerFunctionQuery(string careerFunction, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO career_function (career_function, created_by, updated_by)
+     VALUES (${careerFunction}, ${createdBy}, ${createdBy});`;
+
+# Update a career function.
+#
+# + id - Career function ID
+# + careerFunction - New name, or nil to leave unchanged
+# + isActive - New active flag, or nil to leave unchanged
+# + updatedBy - Email of the admin performing the action
+# + return - Update query, or NoFieldsToUpdateError when nothing was supplied
+isolated function updateCareerFunctionQuery(int id, string? careerFunction, boolean? isActive, string updatedBy)
+        returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if careerFunction is string {
+        updates.push(`career_function = ${careerFunction}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError("No fields to update");
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = `UPDATE career_function SET `;
+    foreach int i in 0 ..< updates.length() {
+        query = sql:queryConcat(query, i == 0 ? `` : `, `, updates[i]);
+    }
+    return sql:queryConcat(query, ` WHERE id = ${id};`);
+}
+
+# Create a designation.
+#
+# + designation - Designation name
+# + jobBand - Job band, or nil
+# + careerFunctionId - Parent career function ID, or nil for unassigned
+# + createdBy - Email of the admin performing the action
+# + return - Insert query
+isolated function createDesignationQuery(string designation, int? jobBand, int? careerFunctionId, string createdBy)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO designation (designation, job_band, career_function_id, created_by, updated_by)
+     VALUES (${designation}, ${jobBand}, ${careerFunctionId}, ${createdBy}, ${createdBy});`;
+
+# Update a designation.
+#
+# + id - Designation ID
+# + designation - New name, or nil to leave unchanged
+# + jobBand - New job band; -1 (JOB_BAND_CLEAR_SENTINEL) clears it to NULL; nil leaves it unchanged
+# + careerFunctionId - New parent career function ID; -1 (CAREER_FUNCTION_CLEAR_SENTINEL) clears it to NULL; nil leaves it unchanged
+# + isActive - New active flag, or nil to leave unchanged
+# + updatedBy - Email of the admin performing the action
+# + return - Update query, or NoFieldsToUpdateError when nothing was supplied
+isolated function updateDesignationQuery(int id, string? designation, int? jobBand, int? careerFunctionId,
+        boolean? isActive, string updatedBy) returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if designation is string {
+        updates.push(`designation = ${designation}`);
+    }
+    if jobBand is int {
+        if jobBand == JOB_BAND_CLEAR_SENTINEL {
+            updates.push(`job_band = NULL`);
+        } else {
+            updates.push(`job_band = ${jobBand}`);
+        }
+    }
+    if careerFunctionId is int {
+        if careerFunctionId == CAREER_FUNCTION_CLEAR_SENTINEL {
+            updates.push(`career_function_id = NULL`);
+        } else {
+            updates.push(`career_function_id = ${careerFunctionId}`);
+        }
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError("No fields to update");
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = `UPDATE designation SET `;
+    foreach int i in 0 ..< updates.length() {
+        query = sql:queryConcat(query, i == 0 ? `` : `, `, updates[i]);
+    }
+    return sql:queryConcat(query, ` WHERE id = ${id};`);
+}
+
+# Count active employees and new joiners holding a designation.
+#
+# + id - Designation ID
+# + return - Query counting active employees and new joiners
+isolated function countActiveEmployeesInDesignationQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count FROM employee WHERE designation_id = ${id} AND employee_status IN ('Active', 'New joiner');`;
+
+# Count active employees and new joiners across a career function's designations.
+#
+# + id - Career function ID
+# + return - Query counting active employees and new joiners
+isolated function countActiveEmployeesInCareerFunctionQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) AS count
+     FROM employee e
+     JOIN designation d ON d.id = e.designation_id
+     WHERE d.career_function_id = ${id} AND e.employee_status IN ('Active', 'New joiner');`;
 
 # Get companies query.
 #
@@ -1302,6 +1580,108 @@ isolated function getAsgardeoGroupsForTeamQuery(int teamId, int employmentTypeId
 # + return - Houses query
 isolated function getHousesQuery() returns sql:ParameterizedQuery =>
     `SELECT id, name FROM house WHERE is_active = 1 ORDER BY name`;
+
+# Fetch the assignable leadership attributes.
+#
+# + return - Parameterized query returning active leadership_group rows
+isolated function getLeadershipGroupsQuery() returns sql:ParameterizedQuery =>
+    `SELECT id, name, is_active AS isActive
+     FROM leadership_group
+     WHERE is_active = 1
+     ORDER BY name;`;
+
+# The employee statuses whose holders block retiring a leadership attribute. A Left
+# employee's assignment does not: it stays in the DB and history, and is hidden once the
+# attribute is retired.
+#
+# + return - Parameterized list of the blocking statuses, for an IN (...) clause
+isolated function leadershipHolderStatuses() returns sql:ParameterizedQuery =>
+    `${EMPLOYEE_ACTIVE}, ${EMPLOYEE_MARKED_LEAVER}, ${EMPLOYEE_NEW_JOINER}`;
+
+# Every leadership attribute, retired ones included, with how many current employees hold it.
+#
+# + return - Parameterized query returning LeadershipGroupWithUsage rows, active first
+isolated function getLeadershipGroupsWithUsageQuery() returns sql:ParameterizedQuery =>
+    sql:queryConcat(
+        `SELECT lg.id, lg.name, lg.is_active AS isActive, COUNT(e.id) AS holderCount
+         FROM leadership_group lg
+         LEFT JOIN employee_leadership el
+            ON el.leadership_group_id = lg.id AND el.is_active = 1
+         LEFT JOIN employee e
+            ON e.id = el.employee_pk_id AND e.employee_status IN (`, leadershipHolderStatuses(), `)
+         GROUP BY lg.id, lg.name, lg.is_active
+         ORDER BY lg.is_active DESC, lg.name;`);
+
+# Count the current employees holding a leadership attribute.
+#
+# + id - Leadership attribute ID
+# + return - Parameterized query returning the holder count
+isolated function countLeadershipGroupHoldersQuery(int id) returns sql:ParameterizedQuery =>
+    sql:queryConcat(
+        `SELECT COUNT(*)
+         FROM employee_leadership el
+         JOIN employee e ON e.id = el.employee_pk_id
+         WHERE el.leadership_group_id = ${id} AND el.is_active = 1
+           AND e.employee_status IN (`, leadershipHolderStatuses(), `);`);
+
+# Create a leadership attribute.
+#
+# + name - Attribute name, already trimmed
+# + createdBy - Email of the admin performing the action
+# + return - Insert query
+isolated function createLeadershipGroupQuery(string name, string createdBy) returns sql:ParameterizedQuery =>
+    `INSERT INTO leadership_group (name, created_by, updated_by)
+     VALUES (${name}, ${createdBy}, ${createdBy});`;
+
+# Rename, retire or reactivate a leadership attribute.
+#
+# Retiring carries its own guard, so an attribute cannot be retired while current employees
+# hold it even if one is assigned between a check and this write. A guarded retire that
+# matches no row is therefore either an unknown ID or an attribute still in use; the caller
+# tells the two apart.
+#
+# + id - Leadership attribute ID
+# + name - New name, already trimmed, or nil to leave unchanged
+# + isActive - New active flag, or nil to leave unchanged
+# + updatedBy - Email of the admin performing the action
+# + return - Update query, or NoFieldsToUpdateError when nothing was supplied
+isolated function updateLeadershipGroupQuery(int id, string? name, boolean? isActive, string updatedBy)
+        returns sql:ParameterizedQuery|error {
+
+    sql:ParameterizedQuery[] updates = [];
+    if name is string {
+        updates.push(`name = ${name}`);
+    }
+    if isActive is boolean {
+        updates.push(`is_active = ${isActive}`);
+    }
+    if updates.length() == 0 {
+        return error NoFieldsToUpdateError("No fields to update");
+    }
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = `UPDATE leadership_group SET `;
+    foreach int i in 0 ..< updates.length() {
+        query = sql:queryConcat(query, i == 0 ? `` : `, `, updates[i]);
+    }
+    query = sql:queryConcat(query, ` WHERE id = ${id}`);
+    if isActive == false {
+        query = sql:queryConcat(query,
+            ` AND NOT EXISTS (
+                SELECT 1 FROM employee_leadership el
+                JOIN employee e ON e.id = el.employee_pk_id
+                WHERE el.leadership_group_id = ${id} AND el.is_active = 1
+                  AND e.employee_status IN (`, leadershipHolderStatuses(), `))`);
+    }
+    return sql:queryConcat(query, `;`);
+}
+
+# Check whether a leadership attribute exists.
+#
+# + id - Leadership attribute ID
+# + return - Parameterized query returning 1 when it exists
+isolated function leadershipGroupExistsQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT COUNT(*) FROM leadership_group WHERE id = ${id};`;
 
 # Add employee personal information query. Upserts on the nic_or_passport UNIQUE key so
 # rehiring someone (same NIC/Passport) refreshes their existing personal_info row instead of
@@ -1392,7 +1772,6 @@ isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
     JOIN company c ON c.id = ${companyId}
     WHERE et.id = ${employmentTypeId}`;
 
-
 # Fetch and lock the current numeric maximum within a digit-family sequence, scoped purely by the
 # ID string pattern (prefix + leading digit) rather than by employment type. This means an
 # employee tagged with any type — including inactive/legacy ones the caller never listed — can
@@ -1472,7 +1851,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.epf},
             ${payload.companyId},
             ${payload.workLocation},
-            ${payload.workEmail},
+            ${payload.workEmail ?: FUTURE_JOINER_EMAIL},
             ${payload.startDate},
             ${payload.secondaryJobTitle},
             ${payload.jobRole},
@@ -1621,6 +2000,41 @@ isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmplo
     `);
 
     return finalQuery;
+}
+
+# Update the denormalized first/last name copies held on the employee row itself.
+#
+# `employee.first_name`/`employee.last_name` are separate columns from
+# `personal_info.first_name`/`personal_info.last_name` (both are populated at creation time
+# from the two halves of CreateEmployeePayload) and are what the employee directory, search,
+# and detail views actually read. They must be kept in sync whenever a personal-info edit
+# changes the name, or those views silently keep showing the old name.
+#
+# + employeeId - Employee ID
+# + payload - Personal info update payload
+# + updatedBy - Updater of the employee record
+# + return - sql:ParameterizedQuery - Update query for the employee row's name columns
+isolated function updateEmployeeNameQuery(string employeeId, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `UPDATE employee SET `;
+    sql:ParameterizedQuery[] updates = [];
+
+    if payload.firstName != () {
+        updates.push(`first_name = ${payload.firstName}`);
+    }
+
+    if payload.lastName != () {
+        updates.push(`last_name = ${payload.lastName}`);
+    }
+
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
+
+    return sql:queryConcat(query, `
+        WHERE employee_id = ${employeeId}
+    `);
 }
 
 # Add emergency contact query.
@@ -1790,10 +2204,20 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         updates.push(`designation_id = ${payload.designationId}`);
     }
 
+    // The frontend only ever includes officeId/unitId/houseId in the PATCH body when their
+    // value actually changed (it diffs against the pre-edit form state and omits unchanged
+    // keys) — so `payload.X is ()` means "this field wasn't part of this edit," NOT "clear
+    // it." officeId/unitId ARE legitimately user-clearable (the edit form has a "None"
+    // option), so an explicit clear is sent as the OFFICE_CLEAR_SENTINEL / UNIT_CLEAR_SENTINEL
+    // value (-1), matching the same pattern already used for jobBand/careerFunctionId in
+    // updateDesignationQuery. Absence (`is ()`) is intentionally not handled here — the column
+    // is simply left untouched.
     if payload.officeId is int {
-        updates.push(`office_id = ${payload.officeId}`);
-    } else if payload.officeId is () {
-        updates.push(`office_id = NULL`);
+        if payload.officeId == OFFICE_CLEAR_SENTINEL {
+            updates.push(`office_id = NULL`);
+        } else {
+            updates.push(`office_id = ${payload.officeId}`);
+        }
     }
 
     if payload.teamId != () {
@@ -1809,19 +2233,23 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
     }
 
     if payload.unitId is int {
-        updates.push(`unit_id = ${payload.unitId}`);
-    } else if payload.unitId is () {
-        updates.push(`unit_id = NULL`);
+        if payload.unitId == UNIT_CLEAR_SENTINEL {
+            updates.push(`unit_id = NULL`);
+        } else {
+            updates.push(`unit_id = ${payload.unitId}`);
+        }
     }
 
+    // houseId is system-computed at employee creation (from the numeric part of the employee
+    // ID) and is never included by the job-info edit form's diff — unlike officeId/unitId,
+    // there is no "clear the house" user action, so absence here always means "not part of
+    // this edit." Set only when explicitly provided; never null it on omission.
     if payload.houseId is int {
         updates.push(`house_id = ${payload.houseId}`);
-    } else if payload.houseId is () {
-        updates.push(`house_id = NULL`);
     }
 
-    if payload.continuousServiceRecord is string {
-        if payload.continuousServiceRecord == "" {
+    if payload.continuousServiceRecord is int {
+        if payload.continuousServiceRecord == CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL {
             updates.push(`continuous_service_record = NULL`);
         } else {
             updates.push(`continuous_service_record = ${payload.continuousServiceRecord}`);
@@ -2069,6 +2497,61 @@ isolated function inactivateAdditionalManagerRelationshipsQuery(string managerEm
          eam.updated_on = CURRENT_TIMESTAMP(6)
      WHERE LOWER(eam.additional_manager_email) = LOWER(${managerEmail})
        AND eam.is_active = 1;`;
+
+# Fetch the leadership attribute IDs an employee currently holds.
+#
+# Retired attributes are left out: the edit form must not offer them back, and a save
+# validates every submitted ID against the active set.
+#
+# + employeeId - Employee business key
+# + return - Parameterized query returning active leadership_group_id values
+isolated function getEmployeeLeadershipIdsQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT el.leadership_group_id AS leadershipGroupId
+     FROM employee_leadership el
+     JOIN employee e ON e.id = el.employee_pk_id
+     JOIN leadership_group lg ON lg.id = el.leadership_group_id
+     WHERE e.employee_id = ${employeeId} AND el.is_active = 1 AND lg.is_active = 1;`;
+
+# Deactivate the attributes an employee holds that are not in the desired set.
+#
+# Only active attributes are touched; see syncEmployeeLeadership for why a retired one is
+# kept.
+#
+# + employeeId - Employee business key
+# + groupIds - The complete desired set of attribute IDs
+# + actor - Email recorded in updated_by, and thus in the audit trail
+# + return - Parameterized update
+isolated function deactivateEmployeeLeadershipQuery(string employeeId, int[] groupIds, string actor)
+        returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery query =
+        `UPDATE employee_leadership el
+         JOIN employee e ON e.id = el.employee_pk_id
+         JOIN leadership_group lg ON lg.id = el.leadership_group_id
+         SET el.is_active = 0, el.updated_by = ${actor}
+         WHERE e.employee_id = ${employeeId} AND el.is_active = 1 AND lg.is_active = 1`;
+    return groupIds.length() == 0
+        ? query
+        : sql:queryConcat(query, ` AND el.leadership_group_id NOT IN (`, buildIntInClause(groupIds), `)`);
+}
+
+# Assign an attribute, reviving a previously removed row rather than inserting a duplicate.
+#
+# The unique key (employee_pk_id, leadership_group_id) makes a plain INSERT fail for an
+# attribute the employee held before, so this upserts. The SELECT supplies employee_pk_id
+# from the business key.
+#
+# + employeeId - Employee business key
+# + groupId - Leadership attribute to assign
+# + actor - Email recorded in created_by/updated_by, and thus in the audit trail
+# + return - Parameterized upsert
+isolated function assignEmployeeLeadershipQuery(string employeeId, int groupId, string actor)
+        returns sql:ParameterizedQuery =>
+    `INSERT INTO employee_leadership
+        (employee_pk_id, leadership_group_id, is_active, created_by, updated_by)
+     SELECT e.id, ${groupId}, 1, ${actor}, ${actor}
+     FROM employee e WHERE e.employee_id = ${employeeId}
+     ON DUPLICATE KEY UPDATE is_active = 1, updated_by = ${actor};`;
 
 # Build query to fetch vehicles.
 #
@@ -2351,21 +2834,23 @@ isolated function addParkingReservationQuery(AddParkingReservationPayload payloa
         slot_id, 
         booking_date, 
         employee_email, 
-        vehicle_id, 
-        status, 
-        coins_amount, 
-        created_by, 
+        vehicle_id,
+        status,
+        coins_amount,
+        transaction_hash,
+        created_by,
         updated_by
     )
     VALUES
     (
         ${payload.slotId},
-        ${payload.bookingDate}, 
-        ${payload.employeeEmail}, 
+        ${payload.bookingDate},
+        ${payload.employeeEmail},
         ${payload.vehicleId},
-        ${PENDING}, 
-        ${payload.coinsAmount}, 
-        ${payload.createdBy}, 
+        ${PENDING},
+        ${payload.coinsAmount},
+        ${payload.transactionHash},
+        ${payload.createdBy},
         ${payload.createdBy}
     );
 `;
@@ -2384,7 +2869,7 @@ isolated function getParkingReservationByIdQuery(int reservationId) returns sql:
         v.vehicle_registration_number as 'vehicleRegistrationNumber',
         v.vehicle_type as 'vehicleType',
         pr.status,
-        pr.transaction_hash as 'transactionHash',
+        pr.transaction_hash as 'paymentReference',
         pr.coins_amount as 'coinsAmount',
         pf.name as 'floorName',
         DATE_FORMAT(pr.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
@@ -2397,37 +2882,17 @@ isolated function getParkingReservationByIdQuery(int reservationId) returns sql:
     INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id
     WHERE pr.id = ${reservationId}`;
 
-# Get parking reservation id by transaction hash.
+# Atomically confirm a pending parking reservation (PENDING -> CONFIRMED).
 #
-# + transactionHash - Blockchain transaction hash
-# + return - Query to get reservation id if hash is already used
-isolated function getParkingReservationByTransactionHashQuery(string transactionHash)
+# + reservationId - Reservation id
+# + paymentReference - Payment reference to persist
+# + updatedBy - User performing the confirmation
+# + return - Query that transitions the reservation only while it is still PENDING
+isolated function confirmParkingReservationQuery(int reservationId, string paymentReference, string updatedBy)
     returns sql:ParameterizedQuery =>
-    `SELECT
-        id
-    FROM parking_reservation
-    WHERE transaction_hash = ${transactionHash}
-    LIMIT 1`;
-
-# Update parking reservation status and optional transaction_hash.
-#
-# + payload - Update payload
-# + return - Query to update reservation
-isolated function updateParkingReservationStatusQuery(UpdateParkingReservationStatusPayload payload)
-    returns sql:ParameterizedQuery {
-
-    sql:ParameterizedQuery mainQuery = `UPDATE parking_reservation SET`;
-
-    sql:ParameterizedQuery[] setClauses = [` status = ${payload.status}`, ` updated_by = ${payload.updatedBy}`];
-
-    if payload.transactionHash is string {
-        setClauses.push(` transaction_hash = ${payload.transactionHash}`);
-    }
-
-    mainQuery = buildSqlUpdateQuery(mainQuery, setClauses);
-
-    return sql:queryConcat(mainQuery, ` WHERE id = ${payload.reservationId}`);
-}
+    `UPDATE parking_reservation
+        SET status = ${CONFIRMED}, transaction_hash = ${paymentReference}, updated_by = ${updatedBy}
+        WHERE id = ${reservationId} AND status = ${PENDING}`;
 
 # Get parking reservations by employee.
 #
@@ -2448,7 +2913,7 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
         v.vehicle_registration_number as 'vehicleRegistrationNumber',
         v.vehicle_type as 'vehicleType',
         pr.status,
-        pr.transaction_hash as 'transactionHash',
+        pr.transaction_hash as 'paymentReference',
         pr.coins_amount as 'coinsAmount',
         pf.name as 'floorName',
         DATE_FORMAT(pr.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
@@ -2480,65 +2945,65 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
 isolated function getEmployeeEmailToNameMapQuery() returns sql:ParameterizedQuery =>
     `SELECT work_email, CONCAT(first_name, ' ', last_name) AS full_name FROM employee;`;
 
-# Count active employees in a business unit.
+# Count active employees and new joiners in a business unit.
 #
 # + id - Business unit ID
-# + return - Query counting active employees with business_unit_id = id
+# + return - Query counting active employees and new joiners with business_unit_id = id
 isolated function countActiveEmployeesInBusinessUnitQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE business_unit_id = ${id} AND employee_status = 'Active'`;
+    `SELECT COUNT(*) AS count FROM employee WHERE business_unit_id = ${id} AND employee_status IN ('Active', 'New joiner')`;
 
-# Count active employees in a business-unit–team mapping.
+# Count active employees and new joiners in a business-unit–team mapping.
 #
 # + id - business_unit_team mapping ID
-# + return - Query counting active employees matching that BU+Team combination
+# + return - Query counting active employees and new joiners matching that BU+Team combination
 isolated function countActiveEmployeesInBUTeamMappingQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count FROM employee e
      JOIN business_unit_team but ON but.id = ${id}
-     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id AND e.employee_status = 'Active'`;
+     WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id AND e.employee_status IN ('Active', 'New joiner')`;
 
-# Count active employees in a business-unit–team–sub-team mapping.
+# Count active employees and new joiners in a business-unit–team–sub-team mapping.
 #
 # + id - business_unit_team_sub_team mapping ID
-# + return - Query counting active employees matching that BU+Team+SubTeam combination
+# + return - Query counting active employees and new joiners matching that BU+Team+SubTeam combination
 isolated function countActiveEmployeesInBUTeamSubTeamMappingQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count FROM employee e
      JOIN business_unit_team_sub_team butst ON butst.id = ${id}
      JOIN business_unit_team but ON but.id = butst.business_unit_team_id
      WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id
-       AND e.sub_team_id = butst.sub_team_id AND e.employee_status = 'Active'`;
+       AND e.sub_team_id = butst.sub_team_id AND e.employee_status IN ('Active', 'New joiner')`;
 
-# Count active employees in a business-unit–team–sub-team–unit mapping.
+# Count active employees and new joiners in a business-unit–team–sub-team–unit mapping.
 #
 # + id - business_unit_team_sub_team_unit mapping ID
-# + return - Query counting active employees matching that BU+Team+SubTeam+Unit combination
+# + return - Query counting active employees and new joiners matching that BU+Team+SubTeam+Unit combination
 isolated function countActiveEmployeesInBUTeamSubTeamUnitMappingQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT COUNT(*) AS count FROM employee e
      JOIN business_unit_team_sub_team_unit butstu ON butstu.id = ${id}
      JOIN business_unit_team_sub_team butst ON butst.id = butstu.business_unit_team_sub_team_id
      JOIN business_unit_team but ON but.id = butst.business_unit_team_id
      WHERE e.business_unit_id = but.business_unit_id AND e.team_id = but.team_id
-       AND e.sub_team_id = butst.sub_team_id AND e.unit_id = butstu.unit_id AND e.employee_status = 'Active'`;
+       AND e.sub_team_id = butst.sub_team_id AND e.unit_id = butstu.unit_id AND e.employee_status IN ('Active', 'New joiner')`;
 
-# Count active employees in a team.
+# Count active employees and new joiners in a team.
 #
 # + id - Team ID
-# + return - Query counting active employees with team_id = id
+# + return - Query counting active employees and new joiners with team_id = id
 isolated function countActiveEmployeesInTeamQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE team_id = ${id} AND employee_status = 'Active'`;
+    `SELECT COUNT(*) AS count FROM employee WHERE team_id = ${id} AND employee_status IN ('Active', 'New joiner')`;
 
-# Count active employees in a sub-team.
+# Count active employees and new joiners in a sub-team.
 #
 # + id - Sub-team ID
-# + return - Query counting active employees with sub_team_id = id
+# + return - Query counting active employees and new joiners with sub_team_id = id
 isolated function countActiveEmployeesInSubTeamQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE sub_team_id = ${id} AND employee_status = 'Active'`;
+    `SELECT COUNT(*) AS count FROM employee WHERE sub_team_id = ${id} AND employee_status IN ('Active', 'New joiner')`;
 
-# Count active employees in a unit.
+# Count active employees and new joiners in a unit.
 #
 # + id - Unit ID
-# + return - Query counting active employees with unit_id = id
+# + return - Query counting active employees and new joiners with unit_id = id
 isolated function countActiveEmployeesInUnitQuery(int id) returns sql:ParameterizedQuery =>
-    `SELECT COUNT(*) AS count FROM employee WHERE unit_id = ${id} AND employee_status = 'Active'`;
+    `SELECT COUNT(*) AS count FROM employee WHERE unit_id = ${id} AND employee_status IN ('Active', 'New joiner')`;
 
 # Delete an employee record.
 #
@@ -2568,6 +3033,13 @@ isolated function deleteEmployeeAuditQuery(int employeePkId) returns sql:Paramet
 isolated function deleteEmployeeAdditionalManagersAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
     `DELETE FROM employee_additional_managers_audit WHERE employee_pk_id = ${employeePkId};`;
 
+# Delete leadership attribute audit rows for an employee.
+#
+# + employeePkId - Primary key of the employee row
+# + return - Parameterized query to delete leadership attribute audit rows
+isolated function deleteEmployeeLeadershipAuditQuery(int employeePkId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_leadership_audit WHERE employee_pk_id = ${employeePkId};`;
+
 # Delete emergency contacts audit rows for a personal info record.
 #
 # + personalInfoId - Primary key of the personal_info row
@@ -2585,14 +3057,19 @@ isolated function deletePersonalInfoAuditQuery(int personalInfoId) returns sql:P
 # Resolve the person behind a work email.
 #
 # A person may hold several employee rows over time (a rehire issues a new employee ID while
-# reusing the same personal_info row), so this deliberately returns the personal_info_id rather
-# than an employee ID. LIMIT 1 is safe because every employee row for one person points at the
-# same personal_info_id, and a work email belongs to exactly one employee row.
+# reusing the same work email), so this deliberately returns the personal_info_id rather than an
+# employee ID.
+#
+# Those rows do NOT always share one personal_info_id — historical stints were migrated in with
+# their own personal_info rows — so LIMIT 1 must pick deliberately rather than arbitrarily. It
+# resolves to the latest employment (newest start date), matching the record the caller is
+# identified by elsewhere; `id` is only a tiebreaker, as it does not track chronology.
 #
 # + workEmail - Work email of the person
 # + return - Parameterized query returning the person's personal_info_id
 isolated function getPersonalInfoIdByWorkEmailQuery(string workEmail) returns sql:ParameterizedQuery =>
-    `SELECT personal_info_id FROM employee WHERE work_email = ${workEmail} LIMIT 1;`;
+    `SELECT personal_info_id FROM employee WHERE work_email = ${workEmail}
+     ORDER BY start_date DESC, id DESC LIMIT 1;`;
 
 # Resolve the person behind an employee ID.
 #
@@ -2690,6 +3167,54 @@ isolated function getEmployeeAdditionalManagersAuditSnapshotsQuery(int[] employe
     );
 }
 
+# Fetch audit snapshots from the employee_leadership_audit table for a set of employee rows.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning employee_leadership_audit rows tagged with their source table
+isolated function getEmployeeLeadershipAuditSnapshotsQuery(int[] employeePkIds)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildIntInClause(employeePkIds);
+    return sql:queryConcat(
+            `SELECT
+                employee_pk_id AS employeePkId,
+                'employee_leadership_audit' AS sourceTable,
+                action_type AS actionType,
+                action_by AS actionBy,
+                action_on AS actionOn,
+                data AS data
+            FROM employee_leadership_audit
+            WHERE employee_pk_id IN (`,
+            inClause,
+            `)
+            ORDER BY action_on ASC`
+    );
+}
+
+# Fetch audit snapshots from the resignation_audit table for a set of employee rows.
+#
+# resignation keys on employee_id, so its audit keys on employee_pk_id exactly as employee_audit does
+# and needs none of the anchor-row indirection personal_info_audit requires.
+#
+# + employeePkIds - Employee table primary keys belonging to the person
+# + return - Parameterized query returning resignation_audit rows tagged with their source table
+isolated function getResignationAuditSnapshotsQuery(int[] employeePkIds) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery inClause = buildIntInClause(employeePkIds);
+    return sql:queryConcat(
+            `SELECT
+                employee_pk_id AS employeePkId,
+                'resignation_audit' AS sourceTable,
+                action_type AS actionType,
+                action_by AS actionBy,
+                action_on AS actionOn,
+                data AS data
+            FROM resignation_audit
+            WHERE employee_pk_id IN (`,
+            inClause,
+            `)
+            ORDER BY action_on ASC`
+    );
+}
+
 # Fetch audit snapshots from the personal_info_audit table for the person behind a set of employee rows.
 #
 # personal_info_audit keys on personal_info_pk_id, not employee_pk_id. All employee rows belonging to one
@@ -2746,7 +3271,9 @@ isolated function getHistoryLookupNamesQuery() returns sql:ParameterizedQuery =>
      UNION ALL SELECT 'office_id' COLLATE utf8mb4_general_ci,
             id, name COLLATE utf8mb4_general_ci FROM office
      UNION ALL SELECT 'house_id' COLLATE utf8mb4_general_ci,
-            id, name COLLATE utf8mb4_general_ci FROM house`;
+            id, name COLLATE utf8mb4_general_ci FROM house
+     UNION ALL SELECT 'leadership_group' COLLATE utf8mb4_general_ci,
+            id, name COLLATE utf8mb4_general_ci FROM leadership_group`;
 
 # Whether an employee ID names the person's current (most recent) employment.
 #
@@ -2791,3 +3318,124 @@ isolated function isCurrentEmploymentQuery(string employeeId) returns sql:Parame
             LIMIT 1
         )
      LIMIT 1;`;
+
+# Insert a scheduled change.
+#
+# + employeeId - Employee table primary key
+# + payload - Effective date and the fields to change
+# + expected - What those fields hold now, for the supersede check on the day
+# + createdBy - Email of the person scheduling the change
+# + return - Parameterized insert query
+isolated function insertScheduledChangeQuery(int employeeId, string effectiveDate,
+        string columnChanges, string expected, string createdBy) returns sql:ParameterizedQuery =>
+    `INSERT INTO scheduled_employee_change
+            (employee_id, effective_date, changes, expected, created_by, updated_by)
+        VALUES (${employeeId}, ${effectiveDate}, ${columnChanges}, ${expected},
+            ${createdBy}, ${createdBy})`;
+
+# Fetch the scheduled changes for one employee, newest first.
+#
+# + employeeId - Employee table primary key
+# + pendingOnly - Limit to changes still waiting for their date
+# + return - Parameterized query returning the rows, with the employee's identifier
+isolated function getScheduledChangesQuery(int employeeId, boolean pendingOnly)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery base = `SELECT
+            sc.id,
+            sc.employee_id AS employeeId,
+            e.employee_id AS employeeIdentifier,
+            DATE_FORMAT(sc.effective_date, '%Y-%m-%d') AS effectiveDate,
+            sc.changes,
+            sc.expected,
+            sc.status,
+            DATE_FORMAT(sc.applied_on, '%Y-%m-%d %H:%i:%s') AS appliedOn,
+            sc.failure_reason AS failureReason,
+            sc.created_by AS createdBy,
+            DATE_FORMAT(sc.created_on, '%Y-%m-%d %H:%i:%s') AS createdOn
+        FROM scheduled_employee_change sc
+        JOIN employee e ON e.id = sc.employee_id
+        WHERE sc.employee_id = ${employeeId}`;
+    sql:ParameterizedQuery pending = ` AND sc.status = 'PENDING'`;
+    sql:ParameterizedQuery ordering = ` ORDER BY sc.effective_date ASC, sc.id ASC`;
+    return pendingOnly
+        ? sql:queryConcat(base, pending, ordering)
+        : sql:queryConcat(base, ordering);
+}
+
+# Fetch one scheduled change by id.
+#
+# + id - Scheduled change id
+# + return - Parameterized query returning the row, with the employee's identifier
+isolated function getScheduledChangeByIdQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT
+        sc.id,
+        sc.employee_id AS employeeId,
+        e.employee_id AS employeeIdentifier,
+        DATE_FORMAT(sc.effective_date, '%Y-%m-%d') AS effectiveDate,
+        sc.changes,
+        sc.expected,
+        sc.status,
+        DATE_FORMAT(sc.applied_on, '%Y-%m-%d %H:%i:%s') AS appliedOn,
+        sc.failure_reason AS failureReason,
+        sc.created_by AS createdBy,
+        DATE_FORMAT(sc.created_on, '%Y-%m-%d %H:%i:%s') AS createdOn
+    FROM scheduled_employee_change sc
+    JOIN employee e ON e.id = sc.employee_id
+    WHERE sc.id = ${id}`;
+
+
+# Move a scheduled change out of PENDING.
+#
+# + id - Scheduled change id
+# + status - Status to record
+# + failureReason - Why it was not applied, where that applies
+# + updatedBy - Who or what closed the row out
+# + return - Parameterized update query
+isolated function updateScheduledChangeStatusQuery(int id, string status, string? failureReason,
+        string updatedBy) returns sql:ParameterizedQuery =>
+    `UPDATE scheduled_employee_change
+     SET status = ${status},
+         applied_on = CASE WHEN ${status} = 'APPLIED' THEN CURRENT_TIMESTAMP(6) ELSE applied_on END,
+         failure_reason = ${failureReason},
+         updated_by = ${updatedBy}
+     WHERE id = ${id} AND status = 'PENDING'`;
+
+# Fetch the house from a returning employee's most recent previous employment.
+#
+# The most recent employment only, ordered by start date and then by id for two starting
+# the same day. It is not searched backwards for one that happens to carry a house: the
+# house someone should return to is the one from where they last were, and reaching past
+# that into an older employment would hand them an affiliation they may have left behind
+# several roles ago. Where the latest employment has no house, the caller falls back to
+# deriving one from the employee ID.
+#
+# The house is joined rather than read directly, and the join carries `is_active = 1`, so a
+# house that has since been retired reads as absent and takes the same fallback. Houses are
+# soft-deleted, so matching on id alone would keep resolving one and hand the returning
+# employee a house the House dropdown no longer offers.
+#
+# + workEmail - Work email of the employee being onboarded
+# + return - Parameterized query returning the previous house id, if there is one
+isolated function getPreviousHouseIdQuery(string workEmail) returns sql:ParameterizedQuery =>
+    `SELECT h.id AS houseId
+     FROM employee e
+     LEFT JOIN house h ON h.id = e.house_id AND h.is_active = 1
+     WHERE e.work_email = ${workEmail}
+     ORDER BY e.start_date DESC, e.id DESC
+     LIMIT 1`;
+
+# Fetch the house from the most recent employment of the person behind a NIC/Passport.
+#
+# The same rules as getPreviousHouseIdQuery, matched on the person rather than the work email,
+# so a returning employee is recognised even when their email has changed or is a placeholder.
+#
+# + nicOrPassport - NIC/Passport of the employee being onboarded
+# + return - Parameterized query returning the previous house id, if there is one
+isolated function getPreviousHouseIdByNicQuery(string nicOrPassport) returns sql:ParameterizedQuery =>
+    `SELECT h.id AS houseId
+     FROM employee e
+     INNER JOIN personal_info p ON p.id = e.personal_info_id
+     LEFT JOIN house h ON h.id = e.house_id AND h.is_active = 1
+     WHERE p.nic_or_passport = ${nicOrPassport}
+     ORDER BY e.start_date DESC, e.id DESC
+     LIMIT 1`;

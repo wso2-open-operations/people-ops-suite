@@ -54,6 +54,7 @@ import {
   fetchTeams,
   fetchUnits,
 } from "@slices/organizationSlice/organization";
+import { fetchLeadershipGroups } from "@slices/leadershipSlice/leadership";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { unwrapResult } from "@reduxjs/toolkit";
 import { ReactNode, useEffect, useMemo, useState } from "react";
@@ -96,6 +97,12 @@ function makeTextCell(theme: Theme) {
   };
 }
 
+/**
+ * Column definitions for the employee report grid, keyed by report column key, so the
+ * table can render whichever columns the user has selected.
+ *
+ * @param theme Theme used to style the text cells
+ */
 function getColumnDefs(theme: Theme): Record<string, GridColDef<Employee>> {
   const TextCell = makeTextCell(theme);
 
@@ -220,6 +227,14 @@ function getColumnDefs(theme: Theme): Record<string, GridColDef<Employee>> {
     subTeam: textCol("subTeam", "Sub Team", 120),
     unit: textCol("unit", "Unit", 100),
     house: textCol("house", "House", 100),
+    leadershipGroups: {
+      field: "leadershipGroups",
+      headerName: "Leadership Attributes",
+      minWidth: 220,
+      renderCell: (params: GridRenderCellParams<Employee>) => (
+        <TextCell value={params.value ?? ""} />
+      ),
+    },
     startDate: dateCol("startDate", "Start Date", 110),
     continuousServiceDate: dateCol("continuousServiceDate", "Cont. Service Date", 160),
     lengthOfService: {
@@ -230,7 +245,10 @@ function getColumnDefs(theme: Theme): Record<string, GridColDef<Employee>> {
       resizable: false,
       valueGetter: (_value: unknown, row: Employee) =>
         formatServiceLength(
-          calculateServiceLength(row.continuousServiceDate ?? row.startDate),
+          calculateServiceLength(
+            row.continuousServiceDate ?? row.startDate,
+            row.finalDayOfEmployment,
+          ),
         ),
       renderCell: (params: GridRenderCellParams<Employee>) => (
         <TextCell value={String(params.value ?? "—")} />
@@ -354,6 +372,7 @@ export default function EmployeeReportTable({
   } = useAppSelector((state) => state.organization);
   const managers = useAppSelector((state) => state.employee.managers);
   const managerEmails = useMemo(() => managers.map((m) => m.workEmail), [managers]);
+  const leadershipGroups = useAppSelector((state) => state.leadership.groups);
 
   useEffect(() => {
     if (!showFilterDrawer) return;
@@ -367,6 +386,7 @@ export default function EmployeeReportTable({
     dispatch(fetchCompanies());
     dispatch(fetchEmploymentTypes());
     dispatch(fetchOffices({}));
+    dispatch(fetchLeadershipGroups());
   }, [dispatch, showFilterDrawer]);
 
   const baselineFilters = useMemo<Filters>(() => {
@@ -380,6 +400,22 @@ export default function EmployeeReportTable({
   useEffect(() => {
     setAppliedFilters((prev) => ({ ...baselineFilters, ...prev, employeeStatus }));
   }, [baselineFilters, employeeStatus]);
+
+  // Future joiners have the New joiner status until their start date, so the Active report only reaches
+  // them through the status as well as the start date: turning "Exclude future joiners" off
+  // widens the status to include New joiner. A status chosen in the drawer is left as chosen.
+  const requestFilters = useMemo<Filters>(() => {
+    if (
+      employeeStatus !== EmployeeStatus.Active ||
+      appliedFilters.excludeFutureStartDate === true ||
+      (appliedFilters.employeeStatuses?.length ?? 0) > 0
+    ) {
+      return appliedFilters;
+    }
+    const statuses = [EmployeeStatus.Active, EmployeeStatus.NewJoiner];
+    if (appliedFilters.includeMarkedLeavers === true) statuses.push(EmployeeStatus.MarkedLeaver);
+    return { ...appliedFilters, employeeStatuses: statuses };
+  }, [appliedFilters, employeeStatus]);
 
   // Count all active filters except permanently hidden ones (employeeStatus, directReports).
   // Baseline defaults like excludeFutureStartDate intentionally count — toggling them off
@@ -410,7 +446,7 @@ export default function EmployeeReportTable({
     setTotalCount(null);
     dispatch(
       fetchFilteredEmployees({
-        filters: appliedFilters,
+        filters: requestFilters,
         pagination: { limit: PREVIEW_LIMIT, offset: 0 },
         sort: { sortField: "employeeId", sortOrder: "ASC" },
         leadOnly: false,
@@ -426,7 +462,7 @@ export default function EmployeeReportTable({
     return () => {
       cancelled = true;
     };
-  }, [dispatch, appliedFilters]);
+  }, [dispatch, requestFilters]);
 
   const columnDefs = useMemo(() => getColumnDefs(theme), [theme]);
 
@@ -577,7 +613,7 @@ export default function EmployeeReportTable({
       const csvText = unwrapResult(
         await dispatch(
           downloadEmployeeReportByStatus({
-            filters: appliedFilters,
+            filters: requestFilters,
             columns: selectedColumns,
           }),
         ),
@@ -851,6 +887,8 @@ export default function EmployeeReportTable({
               managerEmails={managerEmails}
               companies={companies}
               offices={offices}
+              showLeadershipGroupFilter={true}
+              leadershipGroups={leadershipGroups}
             />
           </>
         )}

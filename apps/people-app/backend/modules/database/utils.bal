@@ -193,39 +193,42 @@ isolated function csvEscape(string? value) returns string {
     return v;
 }
 
-# Calculate the length of service from a start date string to today.
+# Calculate the length of service from a start date up to the end date or today, whichever
+# is earlier, so a leaver's service stops at their final day of employment. The final day is
+# a day worked, so it counts towards the service.
 #
 # + startDateStr - Start date in YYYY-MM-DD format
+# + endDateStr - Final day of employment in YYYY-MM-DD format, if any
+# + today - Date to count up to when there is no earlier end date; defaults to today (UTC)
 # + return - Human-readable string like "2 Year(s) 3 Month(s)"
-isolated function calculateLengthOfService(string startDateStr) returns string {
-    time:Utc now = time:utcNow();
-    time:Civil civil = time:utcToCivil(now);
-    int todayYear = civil.year;
-    int todayMonth = civil.month;
-    int todayDay = civil.day;
+isolated function calculateLengthOfService(string startDateStr, string? endDateStr = (),
+        time:Date? today = ()) returns string {
+    time:Date until = today ?: time:utcToCivil(time:utcNow());
 
-    string[] parts = re`-`.split(startDateStr);
-    if parts.length() != 3 {
+    time:Date? 'start = parseIsoDate(startDateStr);
+    if 'start is () {
         return "";
     }
-    int|error startYear = int:fromString(parts[0]);
-    int|error startMonth = int:fromString(parts[1]);
-    int|error startDay = int:fromString(parts[2]);
-    if startYear is error || startMonth is error || startDay is error {
-        return "";
-    }
-
     // Return empty string if start date is in the future
-    if startYear > todayYear
-        || (startYear == todayYear && startMonth > todayMonth)
-        || (startYear == todayYear && startMonth == todayMonth && startDay > todayDay) {
+    if dateKey('start) > dateKey(until) {
         return "";
     }
 
-    int years = todayYear - startYear;
-    int months = todayMonth - startMonth;
+    time:Date? end = endDateStr is string ? parseIsoDate(endDateStr) : ();
+    if end is time:Date && dateKey(end) <= dateKey(until) {
+        time:Date? dayAfterEnd = nextDay(end);
+        if dayAfterEnd is time:Date {
+            until = dayAfterEnd;
+        }
+    }
+    if dateKey('start) > dateKey(until) {
+        return "";
+    }
+
+    int years = until.year - 'start.year;
+    int months = until.month - 'start.month;
     // If the anniversary day hasn't been reached yet this month, subtract one month
-    if todayDay < startDay {
+    if until.day < 'start.day {
         months -= 1;
     }
     if months < 0 {
@@ -234,6 +237,46 @@ isolated function calculateLengthOfService(string startDateStr) returns string {
     }
     return string `${years} Year(s) ${months} Month(s)`;
 }
+
+# Parse a YYYY-MM-DD string into its year, month and day.
+#
+# + dateStr - Date in YYYY-MM-DD format
+# + return - The parsed date, or () if the string is not in that shape
+isolated function parseIsoDate(string dateStr) returns time:Date? {
+    string[] parts = re`-`.split(dateStr);
+    if parts.length() != 3 {
+        return ();
+    }
+    int|error year = int:fromString(parts[0]);
+    int|error month = int:fromString(parts[1]);
+    int|error day = int:fromString(parts[2]);
+    if year is error || month is error || day is error {
+        return ();
+    }
+    return {year, month, day};
+}
+
+# The calendar day after a date, rolling over month and year ends.
+#
+# + date - Date to move forward
+# + return - The following day, or () if the date is not a real calendar date
+isolated function nextDay(time:Date date) returns time:Date? {
+    time:Utc|time:Error utc = time:utcFromCivil({
+        year: date.year, month: date.month, day: date.day,
+        hour: 0, minute: 0, second: 0, utcOffset: {hours: 0, minutes: 0}
+    });
+    if utc is time:Error {
+        return ();
+    }
+    time:Civil next = time:utcToCivil(time:utcAddSeconds(utc, 86400));
+    return {year: next.year, month: next.month, day: next.day};
+}
+
+# Collapse a date into a single sortable number (YYYYMMDD).
+#
+# + date - Date to collapse
+# + return - The date as YYYYMMDD
+isolated function dateKey(time:Date date) returns int => date.year * 10000 + date.month * 100 + date.day;
 
 # Resolve a comma-separated list of additional manager emails to full names using the name map.
 # Falls back to the original email if a name is not found.
@@ -252,23 +295,29 @@ isolated function resolveAdditionalManagerNames(string? emails, map<string> name
     return string:'join(", ", ...names);
 }
 
-# Ordered canonical column keys for the active-employee CSV (27 columns).
+# Ordered canonical column keys for the active-employee CSV (41 columns).
 final string[] & readonly EMPLOYEE_CSV_COLUMNS = [
     "employeeId", "firstName", "lastName", "gender", "workEmail", "company",
     "location", "employmentType", "jobRole", "externalDesignation", "jobBand", "startDate",
     "continuousServiceDate", "lengthOfService", "reportsTo", "additionalManager",
     "employeeStatus", "team", "subTeam", "epfNumber", "leadEmail", "businessUnit",
-    "house", "unit", "office", "probationEndDate", "agreementEndDate"
+    "house", "leadershipGroups", "unit", "office", "probationEndDate", "agreementEndDate",
+    "nicOrPassport", "dateOfBirth", "nationality", "personalEmail", "personalPhone",
+    "residentNumber", "addressLine1", "addressLine2", "city", "stateOrProvince",
+    "postalCode", "country", "emergencyContacts"
 ];
 
-# Ordered canonical column keys for the resignation CSV (27 shared + 4 resignation-specific).
+# Ordered canonical column keys for the resignation CSV (41 shared + 4 resignation-specific).
 final string[] & readonly RESIGNATION_CSV_COLUMNS = [
     "employeeId", "firstName", "lastName", "gender", "workEmail", "company",
     "location", "employmentType", "jobRole", "externalDesignation", "jobBand", "startDate",
     "continuousServiceDate", "lengthOfService", "reportsTo", "additionalManager",
     "employeeStatus", "team", "subTeam", "epfNumber", "leadEmail", "businessUnit",
-    "house", "unit", "office", "probationEndDate", "agreementEndDate",
-    "resignationDate", "finalDayInOffice", "finalDayOfEmployment", "resignationReason"
+    "house", "leadershipGroups", "unit", "office", "probationEndDate", "agreementEndDate",
+    "resignationDate", "finalDayInOffice", "finalDayOfEmployment", "resignationReason",
+    "nicOrPassport", "dateOfBirth", "nationality", "personalEmail", "personalPhone",
+    "residentNumber", "addressLine1", "addressLine2", "city", "stateOrProvince",
+    "postalCode", "country", "emergencyContacts"
 ];
 
 # Map from canonical column key to its CSV header label.
@@ -277,6 +326,19 @@ final map<string> & readonly COLUMN_HEADER_MAP = {
     "firstName":             "First Name",
     "lastName":              "Last Name",
     "gender":                "Gender",
+    "nicOrPassport":         "NIC/Passport",
+    "dateOfBirth":           "Date of Birth",
+    "nationality":           "Nationality",
+    "personalEmail":         "Personal Email",
+    "personalPhone":         "Personal Phone",
+    "residentNumber":        "Resident Number",
+    "addressLine1":          "Address Line 1",
+    "addressLine2":          "Address Line 2",
+    "city":                  "City",
+    "stateOrProvince":       "State/Province",
+    "postalCode":            "Postal Code",
+    "country":               "Country",
+    "emergencyContacts":     "Emergency Contacts",
     "workEmail":             "Work Email",
     "company":               "Company",
     "location":              "Location",
@@ -318,6 +380,19 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
         "firstName"             => { return csvEscape(e.firstName); }
         "lastName"              => { return csvEscape(e.lastName); }
         "gender"                => { return csvEscape(e.gender); }
+        "nicOrPassport"         => { return csvEscape(e.nicOrPassport); }
+        "dateOfBirth"           => { return csvEscape(e.dateOfBirth); }
+        "nationality"           => { return csvEscape(e.nationality); }
+        "personalEmail"         => { return csvEscape(e.personalEmail); }
+        "personalPhone"         => { return csvEscape(e.personalPhone); }
+        "residentNumber"        => { return csvEscape(e.residentNumber); }
+        "addressLine1"          => { return csvEscape(e.addressLine1); }
+        "addressLine2"          => { return csvEscape(e.addressLine2); }
+        "city"                  => { return csvEscape(e.city); }
+        "stateOrProvince"       => { return csvEscape(e.stateOrProvince); }
+        "postalCode"            => { return csvEscape(e.postalCode); }
+        "country"               => { return csvEscape(e.country); }
+        "emergencyContacts"     => { return csvEscape(e.emergencyContacts); }
         "workEmail"             => { return csvEscape(e.workEmail); }
         "company"               => { return csvEscape(e.company); }
         "location"              => { return csvEscape(e.workLocation); }
@@ -329,7 +404,7 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
         "continuousServiceDate" => { return csvEscape(e.continuousServiceDate); }
         "lengthOfService"       => {
             string effectiveStartDate = e.continuousServiceDate ?: e.startDate;
-            return csvEscape(calculateLengthOfService(effectiveStartDate));
+            return csvEscape(calculateLengthOfService(effectiveStartDate, e.finalDayOfEmployment));
         }
         "reportsTo"             => { return csvEscape(e.managerName); }
         "additionalManager"     => { return csvEscape(resolveAdditionalManagerNames(e.additionalManagerEmails, nameMap)); }
@@ -352,6 +427,70 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
     }
 }
 
+# Sentinel key that the CSV builder expands into one column per active leadership attribute.
+const LEADERSHIP_COLUMN_KEY = "leadershipGroups";
+
+# Prefix marking a synthetic per-attribute leadership column key.
+const LEADERSHIP_COLUMN_PREFIX = "__leadership__";
+
+# Expand the leadership sentinel key into one synthetic key per active attribute.
+#
+# Synthetic keys are prefixed so they cannot collide with a real column key. Ordering is
+# alphabetical by name so column order is stable between exports and independent of the
+# order rows were inserted into leadership_group.
+#
+# + cols - Effective column list, possibly containing the sentinel
+# + groups - Active leadership attributes
+# + return - Column list with the sentinel replaced in place
+isolated function expandLeadershipColumns(string[] cols, LeadershipGroup[] groups) returns string[] {
+    if cols.indexOf(LEADERSHIP_COLUMN_KEY) == () {
+        return cols;
+    }
+    LeadershipGroup[] sorted = from LeadershipGroup g in groups
+        order by g.name ascending
+        select g;
+    string[] expanded = [];
+    foreach string key in cols {
+        if key == LEADERSHIP_COLUMN_KEY {
+            foreach LeadershipGroup g in sorted {
+                expanded.push(string `${LEADERSHIP_COLUMN_PREFIX}${g.name}`);
+            }
+        } else {
+            expanded.push(key);
+        }
+    }
+    return expanded;
+}
+
+# Header text for a column key, resolving synthetic leadership keys to the attribute name.
+#
+# + key - Canonical or synthetic (`__leadership__`-prefixed) column key
+# + return - Header text to print in the CSV
+isolated function leadershipAwareHeader(string key) returns string {
+    if key.startsWith(LEADERSHIP_COLUMN_PREFIX) {
+        return key.substring(LEADERSHIP_COLUMN_PREFIX.length());
+    }
+    return COLUMN_HEADER_MAP[key] ?: key;
+}
+
+# Cell value for a column key, resolving synthetic leadership keys to Yes/No.
+#
+# + e - Employee row being rendered
+# + key - Canonical or synthetic (`__leadership__`-prefixed) column key
+# + nameMap - email->name resolution map, forwarded to resolveColumnValue for non-leadership keys
+# + return - Cell value to print in the CSV
+isolated function leadershipAwareValue(Employee e, string key, map<string> nameMap) returns string {
+    if key.startsWith(LEADERSHIP_COLUMN_PREFIX) {
+        string name = key.substring(LEADERSHIP_COLUMN_PREFIX.length());
+        string held = e.leadershipGroups ?: "";
+        // leadershipGroups arrives comma-joined from GROUP_CONCAT; compare whole entries so
+        // "Senior Leadership" never matches inside another attribute's name.
+        string[] parts = re `,`.split(held);
+        return parts.indexOf(name) == () ? "No" : "Yes";
+    }
+    return resolveColumnValue(e, key, nameMap);
+}
+
 # Shared CSV builder — used by both buildEmployeeCsv and buildResignationCsv.
 # Filters the effective column list to only keys present in defaultCols (ignores unknown keys).
 #
@@ -359,12 +498,14 @@ isolated function resolveColumnValue(Employee e, string key, map<string> nameMap
 # + nameMap - email->name resolution map
 # + defaultCols - Full ordered column list for this report type
 # + requestedCols - Optional subset requested by the caller; nil or empty means use defaultCols
+# + leadershipGroups - Active leadership attributes used to expand the leadership sentinel column
 # + return - CSV string
 isolated function buildCsvWithColumns(
         Employee[] employees,
         map<string> nameMap,
         string[] defaultCols,
-        string[]? requestedCols) returns string {
+        string[]? requestedCols,
+        LeadershipGroup[] leadershipGroups) returns string {
     string[] effectiveCols;
     if requestedCols is () || requestedCols.length() == 0 {
         effectiveCols = defaultCols;
@@ -381,12 +522,14 @@ isolated function buildCsvWithColumns(
         // Fall back to the full default set if every requested key was unknown.
         effectiveCols = filtered.length() > 0 ? filtered : defaultCols;
     }
+    effectiveCols = expandLeadershipColumns(effectiveCols, leadershipGroups);
+
     string[] headers = from string key in effectiveCols
-        select COLUMN_HEADER_MAP[key] ?: key;
+        select csvEscape(leadershipAwareHeader(key));
     string[] lines = [string:'join(",", ...headers)];
     foreach Employee e in employees {
         string[] row = from string key in effectiveCols
-            select resolveColumnValue(e, key, nameMap);
+            select leadershipAwareValue(e, key, nameMap);
         lines.push(string:'join(",", ...row));
     }
     return string:'join("\n", ...lines);
@@ -396,24 +539,166 @@ isolated function buildCsvWithColumns(
 #
 # + employees - List of employees
 # + nameMap - Map of work_email -> full name for resolving additional manager names
-# + columns - Optional column allowlist (canonical keys). nil or empty = all 26 columns.
+# + columns - Optional column allowlist (canonical keys). nil or empty = all 41 columns.
+# + leadershipGroups - Active leadership attributes used to expand the leadership sentinel column
 # + return - CSV string
-public isolated function buildEmployeeCsv(
-        Employee[] employees,
-        map<string> nameMap,
-        string[]? columns = ()) returns string {
-    return buildCsvWithColumns(employees, nameMap, EMPLOYEE_CSV_COLUMNS, columns);
-}
+public isolated function buildEmployeeCsv(Employee[] employees, map<string> nameMap,
+        string[]? columns, LeadershipGroup[] leadershipGroups) returns string =>
+    buildCsvWithColumns(employees, nameMap, EMPLOYEE_CSV_COLUMNS, columns, leadershipGroups);
 
 # Build a CSV string from a list of resigned employees aligned with the People HR report format.
 #
 # + employees - List of resigned employees
 # + nameMap - Map of work_email -> full name for resolving additional manager names
-# + columns - Optional column allowlist (canonical keys). nil or empty = all 30 columns.
+# + columns - Optional column allowlist (canonical keys). nil or empty = all 45 columns.
+# + leadershipGroups - Active leadership attributes used to expand the leadership sentinel column
 # + return - CSV string
-public isolated function buildResignationCsv(
-        Employee[] employees,
-        map<string> nameMap,
-        string[]? columns = ()) returns string {
-    return buildCsvWithColumns(employees, nameMap, RESIGNATION_CSV_COLUMNS, columns);
+public isolated function buildResignationCsv(Employee[] employees, map<string> nameMap,
+        string[]? columns, LeadershipGroup[] leadershipGroups) returns string =>
+    buildCsvWithColumns(employees, nameMap, RESIGNATION_CSV_COLUMNS, columns, leadershipGroups);
+
+# Whether a prior record can be linked as the employment another one continues from.
+#
+# Continuous service carries over from an employment that came before, so the linked record
+# must have ended or be ending (status Left or Marked leaver) and must have started before
+# the target. Marked leaver covers a relocation: the new employment is onboarded while the
+# old one is still on its way out. The start-date rule also rules out cycles: two records
+# cannot each start before the other. An employment can never continue from itself.
+#
+# + priorRecord - Candidate record from the continuous-service-records lookup
+# + targetStartDate - Start date (YYYY-MM-DD) of the employment being linked
+# + targetEmployeeId - Employee ID of the employment being linked, or () when creating one
+# + return - true when the candidate is an eligible prior employment
+public isolated function isEligiblePriorEmployment(ContinuousServiceRecordInfo priorRecord,
+        string targetStartDate, string? targetEmployeeId) returns boolean =>
+    (priorRecord.employeeStatus == EMPLOYEE_LEFT || priorRecord.employeeStatus == EMPLOYEE_MARKED_LEAVER)
+        && priorRecord.employeeId != targetEmployeeId
+        && priorRecord.startDate < targetStartDate;
+
+# Whether a work email is one of the shared placeholders rather than a person's own address.
+#
+# A placeholder is held by many unrelated employees, so it must never be used to recognise a
+# returning employee or to look up anyone's earlier employment.
+#
+# + email - Work email to check
+# + return - true for FUTURE_JOINER_EMAIL or EX_EMPLOYEE_EMAIL, ignoring case and surrounding space
+public isolated function isPlaceholderWorkEmail(string email) returns boolean {
+    string normalized = email.trim().toLowerAscii();
+    return normalized == FUTURE_JOINER_EMAIL || normalized == EX_EMPLOYEE_EMAIL;
+}
+
+# The status a newly onboarded employee starts in.
+#
+# A start date still to come starts them as a New joiner, and the scheduler makes them Active on that
+# date. Today counts as started, so someone joining today is Active at once rather than waiting
+# for the next sweep. Dates compare as YYYY-MM-DD strings, against today in UTC like the
+# scheduler's own check.
+#
+# + startDate - Start date in YYYY-MM-DD form
+# + today - Today's date in YYYY-MM-DD form (UTC)
+# + return - EMPLOYEE_NEW_JOINER for a future start date, otherwise EMPLOYEE_ACTIVE
+public isolated function initialEmployeeStatus(string startDate, string today) returns EmployeeStatus =>
+    startDate > today ? EMPLOYEE_NEW_JOINER : EMPLOYEE_ACTIVE;
+
+# Whether a status means the person is employed now or about to be, so the same person cannot
+# be onboarded again.
+#
+# A Marked leaver is on their way out, so they do not count: an employee who relocates gets a
+# new employment onboarded while the old one is Marked leaver.
+#
+# + status - Employee status
+# + return - true for Active and New joiner
+public isolated function isCurrentEmploymentStatus(string status) returns boolean =>
+    status == EMPLOYEE_ACTIVE || status == EMPLOYEE_NEW_JOINER;
+
+# The status recording a resignation moves an employee to.
+#
+# Resigning someone is what makes them a Marked leaver, whether they have started (Active)
+# or not yet (New joiner): a joiner who withdraws then leaves through the leaver sweep on
+# their final day, instead of being made Active on their start date. Correcting the details
+# of someone already leaving or gone must not resurrect their departure, so a Marked leaver
+# or Left employee keeps their status.
+#
+# + currentStatus - The employee's status before the resignation is recorded
+# + return - EMPLOYEE_MARKED_LEAVER, or nil to leave the status as it is
+public isolated function statusAfterResignation(string currentStatus) returns EmployeeStatus? =>
+    currentStatus == EMPLOYEE_ACTIVE || currentStatus == EMPLOYEE_NEW_JOINER ? EMPLOYEE_MARKED_LEAVER : ();
+
+# Decide whether the person behind a NIC/Passport may be onboarded with the given work email.
+#
+# Someone still employed (or already onboarded as a New joiner) is refused outright. A former
+# employee, or a Marked leaver whose next employment this is (a relocation), must come back
+# under a work email they held before, so the NIC and the email agree on who they are.
+# Placeholder emails on their earlier records say nothing about who they are, so a former
+# employee whose records hold only placeholders is accepted on the NIC alone.
+#
+# + employments - The person's employments, newest first (empty for someone new)
+# + requestedEmail - Work email from the submission, nil when left empty
+# + return - The refusal message, or nil when onboarding may go ahead
+public isolated function checkReturningEmployee(EmploymentMatch[] employments, string? requestedEmail)
+        returns string? {
+
+    foreach EmploymentMatch employment in employments {
+        if isCurrentEmploymentStatus(employment.employeeStatus) {
+            return string `Employee with the given NIC/Passport already exists `
+                + string `(${employment.employeeId}, ${employment.employeeStatus})`;
+        }
+    }
+
+    EmploymentMatch[] withRealEmail = employments.filter(e => !isPlaceholderWorkEmail(e.workEmail));
+    if withRealEmail.length() == 0 {
+        return;
+    }
+    if requestedEmail is string {
+        string normalized = requestedEmail.trim().toLowerAscii();
+        foreach EmploymentMatch employment in withRealEmail {
+            if employment.workEmail.trim().toLowerAscii() == normalized {
+                return;
+            }
+        }
+    }
+    EmploymentMatch latest = withRealEmail[0];
+    return string `This NIC/Passport belongs to former employee ${latest.firstName} ${latest.lastName} `
+        + string `(${latest.employeeId}). Use their work email ${latest.workEmail} to rehire them`;
+}
+
+# Which identity checks an edit of an employee needs, so it cannot leave the same person with
+# two current (Active or New joiner) employments.
+#
+# Only an edit that ends with the employee current needs them. The work email is checked when
+# the employee becomes current or their email changes; the NIC/Passport only when they become
+# current, such as a Marked leaver set back to Active after their relocation was onboarded.
+# Other edits, a team or a job role on its own, need neither.
+#
+# + currentStatus - The employee's status before the edit
+# + requestedStatus - Status the edit sets, nil when it leaves the status alone
+# + currentEmail - The employee's work email before the edit
+# + requestedEmail - Work email the edit sets, nil when it leaves the email alone
+# + return - Whether to check the work email and the NIC/Passport
+public isolated function identityChecksForEdit(string currentStatus, string? requestedStatus,
+        string currentEmail, string? requestedEmail) returns record {|boolean email; boolean nic;|} {
+
+    if !isCurrentEmploymentStatus(requestedStatus ?: currentStatus) {
+        return {email: false, nic: false};
+    }
+    boolean becomesCurrent = !isCurrentEmploymentStatus(currentStatus);
+    boolean emailChanges = requestedEmail is string
+        && requestedEmail.trim().toLowerAscii() != currentEmail.trim().toLowerAscii();
+    return {email: becomesCurrent || emailChanges, nic: becomesCurrent};
+}
+
+# Another current (Active or New joiner) employment among a person's employments.
+#
+# + employments - The person's employments, newest first
+# + employeeId - Employee ID of the employment being edited, which does not count
+# + return - The other current employment, or nil when there is none
+public isolated function otherCurrentEmployment(EmploymentMatch[] employments, string employeeId)
+        returns EmploymentMatch? {
+
+    foreach EmploymentMatch employment in employments {
+        if employment.employeeId != employeeId && isCurrentEmploymentStatus(employment.employeeStatus) {
+            return employment;
+        }
+    }
+    return;
 }

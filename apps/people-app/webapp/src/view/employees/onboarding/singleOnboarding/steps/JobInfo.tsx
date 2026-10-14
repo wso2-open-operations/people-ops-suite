@@ -37,6 +37,7 @@ import {
   InputAdornment,
   IconButton,
   Autocomplete,
+  Alert,
 } from "@mui/material";
 import { useFormikContext } from "formik";
 import * as Yup from "yup";
@@ -46,10 +47,18 @@ import {
   fetchContinuousServiceRecord,
   resetContinuousService,
   validateEpf,
+  lookupReturningEmployee,
   type ContinuousServiceRecordInfo,
+  type ReturningEmployeeLookup,
 } from "@slices/employeeSlice/employee";
 import { EmployeeStatus } from "@/types/types";
-import { sortAndFormatOptions } from "@utils/utils";
+import {
+  RESIGNATION_DATE_ORDER_MESSAGE,
+  isPlaceholderWorkEmail,
+  isResignationDateOrderValid,
+  normalizeEmail,
+  sortAndFormatOptions,
+} from "@utils/utils";
 import { ResignationReasons } from "@config/constant";
 import {
   canonicalizeReason,
@@ -81,6 +90,15 @@ import {
   LogoutOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
+import {
+  isEligiblePriorEmployment,
+  isStaleContinuousServiceLink,
+} from "@utils/continuousService";
+
+import {
+  OFFICE_CLEAR_SENTINEL,
+  UNIT_CLEAR_SENTINEL,
+} from "@slices/careerFunctionSlice/careerFunction";
 
 // Sentinel for the synthetic "Add "<text>"" row offered by the resignation-reason
 // Autocomplete's filterOptions. It is a distinct OBJECT type (not a string) so it
@@ -111,12 +129,30 @@ const SECTION_HEADER_BOX_SX = {
 
 export const createJobInfoValidationSchema = (
   employmentTypes?: { id: number; name: string }[],
+  // Onboarding has no House field to fill in, so the requirement below is only applied
+  // where there is one to answer it — see the note on houseId.
+  {
+    requireHouse = true,
+    // Onboarding may leave the work email empty for a joiner whose account is not created
+    // yet, and must not be given a placeholder by hand. Existing records keep requiring one,
+    // and may already hold a placeholder, so that check is onboarding-only.
+    requireWorkEmail = true,
+  }: { requireHouse?: boolean; requireWorkEmail?: boolean } = {},
 ) =>
   Yup.object().shape({
-    workEmail: Yup.string()
-      .required("Work email is required")
-      .email("Invalid email format")
-      .max(254, "Email must be at most 254 characters"),
+    workEmail: requireWorkEmail
+      ? Yup.string()
+          .required("Work email is required")
+          .email("Invalid email format")
+          .max(254, "Email must be at most 254 characters")
+      : Yup.string()
+          .email("Invalid email format")
+          .max(254, "Email must be at most 254 characters")
+          .test(
+            "not-placeholder",
+            "Leave the work email empty when the account is not created yet",
+            (value) => !value || !isPlaceholderWorkEmail(value),
+          ),
     epf: Yup.string()
       .max(45, "EPF must be at most 45 characters")
       .transform((value) => (value === "" ? null : value))
@@ -152,7 +188,20 @@ export const createJobInfoValidationSchema = (
     companyId: Yup.number()
       .required("Company is required")
       .min(1, "Select a valid company"),
-    officeId: Yup.number().optional(),
+    // Every employee belongs to a house. Onboarding assigns one on the server — from the
+    // employee's previous employment where they are rejoining, otherwise derived from the
+    // employee ID — and shows no House field, so requiring one there would fail a form
+    // that offers no way to satisfy it.
+    //
+    // The profile editor does show the field, and there a missing house means a record
+    // predating automatic assignment: it has to be set before the record can be saved
+    // again, since a house-less employee cannot have a QR code generated.
+    houseId: requireHouse
+      ? Yup.number().required("House is required").min(1, "Select a valid house")
+      : Yup.number().nullable(),
+    officeId: Yup.number()
+      .optional()
+      .notOneOf([0], 'Select an office or explicitly choose "None"'),
     workLocation: Yup.string()
       .required("Work location is required")
       .min(1, "Select a valid work location"),
@@ -189,7 +238,18 @@ export const createJobInfoValidationSchema = (
           status === EmployeeStatus.MarkedLeaver || status === EmployeeStatus.Left,
         then: (schema) =>
           schema.required("Required when status is Marked leaver or Left"),
-      }),
+      })
+      // Employment cannot end before someone stops coming in. The same day is valid.
+      .test(
+        "after-final-day-in-office",
+        RESIGNATION_DATE_ORDER_MESSAGE,
+        function (value) {
+          return isResignationDateOrderValid(
+            this.parent.finalDayInOffice,
+            value,
+          );
+        },
+      ),
     resignationReason: Yup.string()
       .max(300, "Resignation reason must be at most 300 characters")
       .transform((value) =>
@@ -219,8 +279,8 @@ export const createJobInfoValidationSchema = (
             : false;
           return isFixed
             ? schema.required(
-                "Employee ID is required for fixed-term employment",
-              )
+              "Employee ID is required for fixed-term employment",
+            )
             : schema;
         },
       ),
@@ -425,9 +485,144 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
   const {
     employeesBasicInfo,
     employeeBasicInfoState,
-    continuousServiceRecord,
+    continuousServiceRecord: serviceRecords,
+    continuousServiceRecordEmail: serviceRecordsEmail,
     errorMessage,
   } = useAppSelector((s) => s.employee);
+  // Only an earlier employment under this address that has ended or is ending (Left or
+  // Marked leaver, as in a relocation) can be carried over; the backend enforces the same
+  // rule on create.
+  const continuousServiceRecord = useMemo(
+    () =>
+      serviceRecords.filter((record) =>
+        isEligiblePriorEmployment(record, values.startDate),
+      ),
+    [serviceRecords, values.startDate],
+  );
+  // Clears a link whose record is no longer offered (e.g. the start date moved before
+  // it), so a stale id is never sent and a hidden checkbox never stays ticked. It only
+  // acts on a list fetched for this form's work email, never on one still loading or
+  // left over from another page.
+  const recordsLoadedForThisEmail =
+    serviceRecordsEmail != null &&
+    serviceRecordsEmail === normalizeEmail(values.workEmail ?? "");
+  useEffect(() => {
+    if (
+      recordsLoadedForThisEmail &&
+      isStaleContinuousServiceLink(
+        continuousServiceRecord,
+        values.continuousServiceRecord,
+      )
+    ) {
+      setFieldValue("continuousServiceRecord", null);
+      setFieldValue("isRelocation", false);
+    }
+  }, [
+    recordsLoadedForThisEmail,
+    continuousServiceRecord,
+    values.continuousServiceRecord,
+    setFieldValue,
+  ]);
+
+  // This step clears the prior records when it is left (see the unmount cleanup below)
+  // and otherwise loads them only when Work Email loses focus. Coming back to the step
+  // with an email already entered would then show "No Record" while the form still held
+  // a ticked relocation link, so the records are loaded again as the step opens.
+  useEffect(() => {
+    const email = normalizeEmail(values.workEmail ?? "");
+    if (email && Yup.string().email().isValidSync(email)) {
+      dispatch(fetchContinuousServiceRecord(email));
+    }
+    // Once, on open; later email edits re-fetch on blur as before.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Who the NIC/Passport from the previous step belongs to, so a returning employee is
+  // recognised before submitting: the backend refuses someone still employed, and requires
+  // a rehire to keep a work email they held. Onboarding only — an existing record being
+  // edited is not someone returning.
+  const [returningEmployee, setReturningEmployee] =
+    useState<ReturningEmployeeLookup | null>(null);
+  const nicOrPassport = values.personalInfo?.nicOrPassport?.trim() ?? "";
+  useEffect(() => {
+    if (isEditMode || !nicOrPassport) {
+      setReturningEmployee(null);
+      return;
+    }
+    let cancelled = false;
+    dispatch(lookupReturningEmployee(nicOrPassport))
+      .unwrap()
+      .then((result) => {
+        if (cancelled) return;
+        setReturningEmployee(result);
+        // Fill in the email a rehire has to use, unless one has been typed already.
+        const formerEmail = result.formerWorkEmail;
+        if (formerEmail && !result.isCurrentEmployee && !(values.workEmail ?? "").trim()) {
+          setFieldValue("workEmail", formerEmail);
+          dispatch(fetchContinuousServiceRecord(formerEmail));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setReturningEmployee(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Looked up as the step opens; the NIC is entered on the previous step.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, nicOrPassport]);
+
+  const identityNotice = useMemo((): {
+    severity: "error" | "warning" | "info";
+    message: string;
+  } | null => {
+    const nameAndId = (m: {
+      firstName: string | null;
+      lastName: string | null;
+      employeeId: string;
+    }) =>
+      `${`${m.firstName ?? ""} ${m.lastName ?? ""}`.trim() || "N/A"} (${m.employeeId})`;
+    // Matches the backend: only an Active or New joiner employee holds on to their email. A
+    // Marked leaver's email is free, so an employee who relocates can keep it.
+    const isCurrent = (status: string) =>
+      status === EmployeeStatus.Active || status === EmployeeStatus.NewJoiner;
+
+    const former = returningEmployee?.latestEmployment ?? null;
+    if (former && returningEmployee?.isCurrentEmployee) {
+      return {
+        severity: "error",
+        message: `This NIC/Passport belongs to ${nameAndId(former)}, who is ${former.employeeStatus}. They can't be onboarded again.`,
+      };
+    }
+    if (former && returningEmployee?.formerWorkEmail) {
+      return {
+        severity: "info",
+        message: `Returning employee: ${nameAndId(former)}. To rehire them, use a work email they held before — ${returningEmployee.formerWorkEmail}.`,
+      };
+    }
+    if (former) {
+      return {
+        severity: "info",
+        message: `Returning employee: ${nameAndId(former)}. Their previous work email isn't on record — enter their work email, or leave it empty if the account isn't created yet.`,
+      };
+    }
+
+    // The NIC matched nobody, but the email did: either it is taken, or a former employee is
+    // coming back under a different NIC, whose earlier employment can still be linked.
+    if (!recordsLoadedForThisEmail || serviceRecords.length === 0) return null;
+    const currentHolder = serviceRecords.find((r) => isCurrent(r.employeeStatus));
+    if (currentHolder) {
+      return {
+        severity: "warning",
+        message: `${values.workEmail} is already in use by ${nameAndId(currentHolder)}.`,
+      };
+    }
+    return {
+      severity: "info",
+      message: `This work email belonged to ${nameAndId(serviceRecords[0])}. If this is the same person, link their earlier employment with the Relocation option.`,
+    };
+  }, [returningEmployee, recordsLoadedForThisEmail, serviceRecords, values.workEmail]);
+
   const {
     state: organizationState,
     businessUnits,
@@ -829,7 +1024,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         initialLoadRef.current.offices = true;
 
         if (!currentCompanyId || currentCompanyId !== newCompanyId) {
-          setFieldValue("officeId", 0);
+          setFieldValue("officeId", OFFICE_CLEAR_SENTINEL);
           setFieldValue("workLocation", "");
         }
       }
@@ -849,14 +1044,14 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         if (prevBusinessUnitId !== newBusinessUnitId) {
           setFieldValue("teamId", 0);
           setFieldValue("subTeamId", 0);
-          setFieldValue("unitId", 0);
+          setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
           initialLoadRef.current.subTeams = false;
           initialLoadRef.current.units = false;
         }
       } else {
         setFieldValue("teamId", 0);
         setFieldValue("subTeamId", 0);
-        setFieldValue("unitId", 0);
+        setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
       }
     },
     [dispatch, setFieldValue, values.businessUnitId],
@@ -873,12 +1068,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
 
         if (prevTeamId !== newTeamId) {
           setFieldValue("subTeamId", 0);
-          setFieldValue("unitId", 0);
+          setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
           initialLoadRef.current.units = false;
         }
       } else {
         setFieldValue("subTeamId", 0);
-        setFieldValue("unitId", 0);
+        setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
       }
     },
     [dispatch, setFieldValue, values.teamId],
@@ -894,10 +1089,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         initialLoadRef.current.units = true;
 
         if (prevSubTeamId !== newSubTeamId) {
-          setFieldValue("unitId", 0);
+          setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
         }
       } else {
-        setFieldValue("unitId", 0);
+        setFieldValue("unitId", UNIT_CLEAR_SENTINEL);
       }
     },
     [dispatch, setFieldValue, values.subTeamId],
@@ -923,7 +1118,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         selectedRecordIndex !== null
           ? continuousServiceRecord?.[selectedRecordIndex]
           : continuousServiceRecord?.[0];
-      setFieldValue("continuousServiceRecord", record?.employeeId ?? null);
+      setFieldValue("continuousServiceRecord", record?.id ?? null);
     },
     [setFieldValue, selectedRecordIndex, continuousServiceRecord],
   );
@@ -937,18 +1132,28 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
           headerBoxSx={SECTION_HEADER_BOX_SX}
           iconBoxSx={iconBoxSx}
         />
+        {identityNotice && (
+          <Alert severity={identityNotice.severity} sx={{ mb: 3 }}>
+            {identityNotice.message}
+          </Alert>
+        )}
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <TextField
               fullWidth
-              required
+              required={isEditMode}
               name="workEmail"
               label="Work Email"
               value={values.workEmail ?? ""}
               onChange={handleChange}
               onBlur={(e: { target: { value: string } }) => {
                 handleBlur(e);
-                const email = e.target.value?.trim();
+                // Normalise on blur rather than per keystroke, so the field does not
+                // fight someone typing a capital letter mid-address.
+                const email = normalizeEmail(e.target.value ?? "");
+                if (email !== (values.workEmail ?? "")) {
+                  setFieldValue("workEmail", email);
+                }
                 if (email && Yup.string().email().isValidSync(email)) {
                   dispatch(fetchContinuousServiceRecord(email));
                 } else {
@@ -957,7 +1162,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                 }
               }}
               error={Boolean(touched.workEmail && errors.workEmail)}
-              helperText={touched.workEmail && errors.workEmail}
+              helperText={
+                (touched.workEmail && errors.workEmail) ||
+                (isEditMode
+                  ? undefined
+                  : "Leave empty if the account isn't created yet")
+              }
               sx={textFieldSx}
             />
           </Grid>
@@ -991,7 +1201,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                     setSelectedRecordIndex(index);
                     setFieldValue(
                       "continuousServiceRecord",
-                      continuousServiceRecord[index].employeeId,
+                      continuousServiceRecord[index].id,
                     );
                   }}
                   disabled={!!errorMessage}
@@ -1204,7 +1414,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
                 ...disabledSx,
               }}
             >
-              <MenuItem value={0}>
+              <MenuItem value={UNIT_CLEAR_SENTINEL}>
                 <em>None</em>
               </MenuItem>
               {units.length ? (
@@ -1401,7 +1611,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
               helperText={touched.officeId && errors.officeId}
               sx={textFieldSx}
             >
-              <MenuItem value={0}>
+              <MenuItem value={OFFICE_CLEAR_SENTINEL}>
                 <em>None</em>
               </MenuItem>
               {offices.length ? (

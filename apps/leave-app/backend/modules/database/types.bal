@@ -57,6 +57,8 @@ public type LeaveFilter record {|
     string? endDate?;
     # Leave type
     string[]? leaveTypes?;
+    # Leave types to leave out
+    string[]? excludedLeaveTypes?;
     # Leave period type
     string? periodType?;
     # Email addresses of employees

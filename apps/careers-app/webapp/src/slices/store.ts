@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -21,14 +21,12 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import authReducer from "@slices/authSlice/auth";
 import careersReducer from "@slices/careersSlice/careers";
 import commonReducer from "@slices/commonSlice/common";
-import userReducer from "@slices/userSlice/user";
 
 enableMapSet();
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    user: userReducer,
     common: commonReducer,
     careers: careersReducer,
   },

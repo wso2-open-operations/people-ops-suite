@@ -114,18 +114,16 @@ type CreateParkingReservationResponse record {|
     decimal coinsAmount;
 |};
 
-# Request body for confirming reservation with transaction hash.
+# Request body for confirming a reservation with the selected payer wallet.
 type ConfirmParkingReservationRequest record {|
     # Reservation identifier (from create response)
     int reservationId;
-    # Transaction hash from payment
-    string transactionHash;
+    # Payer wallet address selected by the user
+    string fromAddress;
 |};
 
-# Car park config returned to the micro app (e.g. for Wallet app redirect).
+# Car park config returned to the micro app.
 type CarParkConfigResponse record {|
-    # Master wallet address for O2C car park payments (0x-prefixed).
-    string publicWalletAddress;
     # First hour (Asia/Colombo) when same-day reservations are allowed.
     int reservationWindowStartHour;
     # Hour after which same-day reservations are no longer allowed.

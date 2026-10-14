@@ -24,7 +24,7 @@ import {
   GridSortItem,
   GridSortModel,
 } from "@mui/x-data-grid";
-import { EmployeeStatus } from "@/types/types";
+import { CURRENT_EMPLOYEE_STATUSES, isCurrentEmployeeStatusSet } from "@/types/types";
 import {
   Employee,
   EmployeeSearchPayload,
@@ -52,7 +52,7 @@ export default function MyTeamTable() {
 
   const [filterState, setFilterState] = useState<Pick<EmployeeSearchPayload, "filters" | "searchString">>({
     filters: {
-      employeeStatuses: [EmployeeStatus.Active, EmployeeStatus.MarkedLeaver],
+      employeeStatuses: [...CURRENT_EMPLOYEE_STATUSES],
       directReports: false,
       excludeFutureStartDate: true,
     },
@@ -101,16 +101,14 @@ export default function MyTeamTable() {
     dispatch(fetchFilteredEmployees(appliedFilter));
   }, [dispatch, appliedFilter]);
 
-  // Capture team count when only the baseline (Active + Marked leaver) filter is applied.
+  // Capture team count when only the baseline (current employees) filter is applied.
   // directReports is intentionally excluded: toggling it should still refresh the count.
   const isBaselineFilter = useMemo(() => {
     const { employeeStatuses, directReports: _dr, excludeFutureStartDate, ...rest } = filterState.filters;
     const statuses = employeeStatuses ?? [];
     return (
       excludeFutureStartDate === true &&
-      statuses.length === 2 &&
-      statuses.includes(EmployeeStatus.Active) &&
-      statuses.includes(EmployeeStatus.MarkedLeaver) &&
+      isCurrentEmployeeStatusSet(statuses) &&
       !Object.values(rest).some(Boolean) &&
       !filterState.searchString?.trim()
     );

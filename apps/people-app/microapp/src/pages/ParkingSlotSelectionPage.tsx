@@ -170,7 +170,9 @@ function ParkingSlotSelectionPage() {
         setReservationConfigLoaded(true);
       },
       () => {
-        /* keep defaults */
+        // keep the default hours, but mark config resolved so the view-only
+        // warning stays consistent with the (default-hours) booking window.
+        setReservationConfigLoaded(true);
       },
       () => {
         /* no loading UI for config */
@@ -325,6 +327,34 @@ function ParkingSlotSelectionPage() {
 
         <MaintenanceBanner />
 
+        {existingBooking && (
+          <div className="flex flex-col items-center justify-center text-center min-h-[calc(100vh-160px)] px-8">
+            <div className="w-20 h-20 rounded-full bg-[#FFE1C9] grid place-items-center mb-5">
+              <div
+                className="w-12 h-12 rounded-full border-2 grid place-items-center"
+                style={{ borderColor: "#ff7300", color: "#ff7300" }}
+              >
+                <span className="font-extrabold text-2xl">P</span>
+              </div>
+            </div>
+            <div className="text-[19px] font-bold text-[#1F2A44]">
+              You already have a booking for today
+            </div>
+            <div className="mt-2 text-[14px] text-[#808080] font-medium leading-snug max-w-[300px]">
+              Only one parking booking is allowed per day.
+            </div>
+            <button
+              type="button"
+              className="mt-7 w-full max-w-[340px] p-[0.9rem] text-[15px] font-semibold rounded-[0.7rem] bg-primary text-white"
+              onClick={() => navigate("/services/parking/bookings")}
+            >
+              View My Bookings
+            </button>
+          </div>
+        )}
+
+        {!existingBooking && (
+          <>
         <section className="px-4">
           {isBookingWindowActive && (
             <div className="mt-6 border border-[#8FC4FF] bg-[#EAF3FF] rounded-lg px-3 py-2 flex items-start gap-2">
@@ -460,25 +490,7 @@ function ParkingSlotSelectionPage() {
         </section>
 
         <div className="fixed left-4 right-4 bottom-[calc(84px+var(--safe-bottom))]">
-          {existingBooking && (
-            <div className="bg-white rounded-[1rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-[#E5E5E5] p-4">
-              <div className="text-[15px] font-bold text-[#1F2A44]">
-                You already have a booking for today
-              </div>
-              <div className="mt-1 text-[13px] text-[#808080] font-medium leading-snug">
-                Only one parking booking is allowed per day.
-              </div>
-              <button
-                type="button"
-                className="mt-3 w-full p-[0.85rem] text-[15px] font-semibold rounded-[0.7rem] bg-primary text-white"
-                onClick={() => navigate("/services/parking/bookings")}
-              >
-                View My Bookings
-              </button>
-            </div>
-          )}
-
-          {!existingBooking && reservationConfigLoaded && !isBookingWindowActive && (
+          {reservationConfigLoaded && !isBookingWindowActive && (
             <div className="bg-[#FFF7EB] rounded-[1rem] shadow-[0_8px_24px_rgba(0,0,0,0.08)] border border-[#FFB74D] px-4 py-3">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 shrink-0">
@@ -500,7 +512,7 @@ function ParkingSlotSelectionPage() {
             </div>
           )}
 
-          {!existingBooking && isBookingWindowActive && selectedSlot && (
+          {isBookingWindowActive && selectedSlot && (
             <div className="bg-white rounded-[1rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-[#E5E5E5] p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -567,6 +579,8 @@ function ParkingSlotSelectionPage() {
             </div>
           )}
         </div>
+          </>
+        )}
 
         <BottomNav active="parking" />
       </div>

@@ -17,8 +17,6 @@
 export const TOPIC = {
   TOKEN: "token",
   QR_REQUEST: "qr_request",
-  SAVE_LOCAL_DATA: "save_local_data",
-  GET_LOCAL_DATA: "get_local_data",
   ALERT: "alert",
   CONFIRM_ALERT: "confirm_alert",
   TOTP: "totp",

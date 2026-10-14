@@ -3,6 +3,7 @@
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
 // in compliance with the License.
+// You may obtain a copy of the License at
 //
 // http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -15,38 +16,42 @@
 
 import type { NavigateFunction } from "react-router-dom";
 
-import { saveLocalDataAsync } from "@/components/microapp-bridge";
 import { serviceUrls } from "@/config/config";
-import type { ParkingReservationDetails } from "@/types";
+import type { ParkingReservationDetails, WalletDetails } from "@/types";
 import {
   clearParkingPaymentContextState,
   setConfirmationState,
 } from "@/utils/parkingStorage";
-import { Logger } from "@/utils/logger";
 import { executeWithTokenHandling, type RequestOptions } from "@/utils/http";
-
-/** Bridge local keys written by the wallet / read by People parking flow. */
-export const PARKING_WALLET_PAYMENT_STATUS_KEY = "people_parking_payment_status";
-export const PARKING_WALLET_PAYMENT_TX_HASH_KEY =
-  "people_parking_payment_tx_hash";
-export const PARKING_WALLET_PAYMENT_ERROR_KEY = "people_parking_payment_error";
 
 type HttpHandleRequest = (options: RequestOptions) => Promise<void>;
 type HttpHandleRequestWithNewToken = (callback: () => void) => void;
 
-export async function clearWalletParkingPaymentBridgeKeys(): Promise<void> {
-  await saveLocalDataAsync(PARKING_WALLET_PAYMENT_STATUS_KEY, "");
-  await saveLocalDataAsync(PARKING_WALLET_PAYMENT_TX_HASH_KEY, "");
-  await saveLocalDataAsync(PARKING_WALLET_PAYMENT_ERROR_KEY, "");
+export function fetchUserWallets(
+  handleRequest: HttpHandleRequest,
+  handleRequestWithNewToken: HttpHandleRequestWithNewToken,
+): Promise<WalletDetails[]> {
+  return new Promise<WalletDetails[]>((resolve, reject) => {
+    executeWithTokenHandling(
+      handleRequest,
+      handleRequestWithNewToken,
+      serviceUrls.fetchParkingWallets(),
+      "GET",
+      null,
+      (data) => resolve((data as WalletDetails[] | null) ?? []),
+      (err) => reject(err ?? "Failed to load wallets"),
+      () => {},
+    );
+  });
 }
 
 export function confirmParkingReservation(
   handleRequest: HttpHandleRequest,
   handleRequestWithNewToken: HttpHandleRequestWithNewToken,
   reservationId: number,
-  transactionHash: string,
+  fromAddress: string,
 ): Promise<ParkingReservationDetails> {
-  const body = { reservationId, transactionHash };
+  const body = { reservationId, fromAddress };
   return new Promise<ParkingReservationDetails>((resolve, reject) => {
     executeWithTokenHandling(
       handleRequest,
@@ -81,22 +86,14 @@ export function fetchParkingReservationById(
 }
 
 /**
- * After a successful confirm API: clear wallet bridge keys, persist receipt,
- * drop payment context, navigate to confirmation.
+ * After a successful confirm API: persist the receipt, drop the payment
+ * context, and navigate to the in-app confirmation screen.
  */
-export async function finalizeParkingConfirmationAfterSuccess(
+export function finalizeParkingConfirmationAfterSuccess(
   confirmed: ParkingReservationDetails,
   navigate: NavigateFunction,
   options?: { replace?: boolean },
-): Promise<void> {
-  try {
-    await clearWalletParkingPaymentBridgeKeys();
-  } catch (e) {
-    Logger.error(
-      "Wallet bridge key cleanup failed",
-      e,
-    );
-  }
+): void {
   setConfirmationState(confirmed);
   clearParkingPaymentContextState();
   navigate("/services/parking/confirmation", {

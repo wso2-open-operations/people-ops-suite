@@ -67,6 +67,10 @@ public isolated function formatDisplayDate(string isoDate) returns string {
     return string `${MONTH_NAMES[month - 1]} ${parts[2]}, ${year}`;
 }
 
+# Placeholders whose values are HTML built by this module, with their own values already
+# escaped. They are bound as-is; every other value is escaped on binding.
+final readonly & string[] PREBUILT_HTML_KEYS = ["EMPLOYEE_LIST", "PENDING_EMAIL_NOTE"];
+
 # Bind values to the email template and encode.
 #
 # + content - Email content
@@ -76,7 +80,7 @@ public isolated function bindKeyValues(string content, map<string> keyValPairs) 
     string bindContent = keyValPairs.entries().reduce(
         isolated function(string accumulation, [string, string] keyVal) returns string {
         regexp:RegExp r = re `<!-- \[${keyVal[0].toUpperAscii()}\] -->`;
-        string valueToReplace = keyVal[0] == "EMPLOYEE_LIST" ? keyVal[1] : htmlEscape(keyVal[1]);
+        string valueToReplace = PREBUILT_HTML_KEYS.indexOf(keyVal[0]) is int ? keyVal[1] : htmlEscape(keyVal[1]);
         return r.replaceAll(accumulation, valueToReplace);
     },
     content);

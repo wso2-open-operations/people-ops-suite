@@ -44,15 +44,17 @@ public isolated function notifyLeaverAutoTransition(database:LeaverTransition[] 
         return boundTemplate;
     }
 
+    string[] recipients = emailServiceConfig.leaverTransitionRecipients;
+
     EmailPayload emailPayload = {
-        to: emailServiceConfig.to,
+        to: recipients,
         'from: emailServiceConfig.'from,
         subject: string `Employee Offboarding Alert (${runDate}): ${transitions.length()} employee(s) transitioned to Left`,
         template: boundTemplate
     };
 
     log:printInfo("Sending leaver auto-transition summary email", count = transitions.length(),
-            recipientCount = emailServiceConfig.to.length());
+            recipientCount = recipients.length());
 
     http:Response|http:ClientError response = emailClient->/send\-email.post(emailPayload);
     if response is http:ClientError {

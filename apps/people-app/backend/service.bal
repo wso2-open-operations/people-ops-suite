@@ -19,6 +19,7 @@ import people.database;
 import people.promotion;
 import people.qr;
 import people.wso2_coin;
+
 // Temporarily disabled together with the Asgardeo/SCIM provisioning blocks in the onboarding
 // handlers below (see the NOTE there). Re-enable these imports when provisioning is restored.
 // import people.email;
@@ -27,6 +28,7 @@ import people.wso2_coin;
 import ballerina/http;
 import ballerina/log;
 import ballerina/time;
+import ballerina/uuid;
 
 @display {
     label: "People Service",
@@ -53,6 +55,32 @@ service class ErrorInterceptor {
     }
 }
 
+# Whether the caller may use the QR code report.
+#
+# The QR export role reaches this and nothing else: it grants no visibility of an
+# employee profile, so it is checked separately from canReadAnyEmployee rather than
+# folded into it.
+#
+# + userInfo - Invoker's JWT payload
+# + return - true when the caller may search for and download QR codes
+isolated function canExportQrCodes(authorization:CustomJwtPayload userInfo) returns boolean =>
+    authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.QR_EXPORT_ROLE], userInfo.groups);
+
+# Whether the caller may read any employee's record.
+#
+# Admins have always been able to; the employee-view role grants the same visibility
+# without any ability to change a record. Both are IAM-group-backed, so this is a pure
+# group check with no database lookup.
+#
+# + userInfo - Invoker's JWT payload
+# + return - true when the caller may read any employee
+isolated function canReadAnyEmployee(authorization:CustomJwtPayload userInfo) returns boolean =>
+    authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_VIEW_ROLE], userInfo.groups)
+    || authorization:checkPermissions([authorization:authorizedRoles.RESIGNATION_ROLE], userInfo.groups);
+
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Service initialization.
@@ -70,7 +98,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - App config
     resource function get configs() returns AppConfig {
-        return { isMaintenanceMode };
+        return {isMaintenanceMode};
     }
 
     # Get user information.
@@ -117,6 +145,15 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups) {
             privileges.push(authorization:SERVICE_DESK_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_VIEW_ROLE], userInfo.groups) {
+            privileges.push(authorization:EMPLOYEE_VIEW_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.RESIGNATION_ROLE], userInfo.groups) {
+            privileges.push(authorization:RESIGNATION_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.QR_EXPORT_ROLE], userInfo.groups) {
+            privileges.push(authorization:QR_EXPORT_PRIVILEGE);
         }
         boolean|error isLeadUser = database:isLead(userInfo.email);
         if isLeadUser is error {
@@ -184,6 +221,65 @@ service http:InterceptableService / on new http:Listener(9090) {
         return {epfExists: employeeId is string};
     }
 
+    # Recognise a returning employee from the NIC/Passport on the onboarding form, so the form
+    # can say who they are and fill in the work email a rehire has to use. Creating the employee
+    # applies the same rules again; this only lets the form show them before submitting.
+    #
+    # + payload - NIC/Passport to look up
+    # + return - The person's latest employment and former work email, or HTTP errors
+    resource function post employees/returning\-employee(http:RequestContext ctx,
+            database:ReturningEmployeeLookupPayload payload)
+        returns database:ReturningEmployeeLookupResponse|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to look up returning employees", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to look up returning employees"
+                }
+            };
+        }
+
+        string nicOrPassport = payload.nicOrPassport.trim();
+        if nicOrPassport == "" {
+            string customErr = "NIC/Passport cannot be empty";
+            log:printWarn(customErr);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        database:EmploymentMatch[]|error employments = database:getEmploymentsByNic(nicOrPassport);
+        if employments is error {
+            string customErr = "Error occurred while looking up the returning employee";
+            log:printError(customErr, employments);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        database:EmploymentMatch[] withRealEmail =
+            employments.filter(e => !database:isPlaceholderWorkEmail(e.workEmail));
+        return {
+            latestEmployment: employments.length() > 0 ? employments[0] : (),
+            isCurrentEmployee: employments.some(e => database:isCurrentEmploymentStatus(e.employeeStatus)),
+            formerWorkEmail: withRealEmail.length() > 0 ? withRealEmail[0].workEmail : ()
+        };
+    }
+
     # Fetch employee detailed information.
     #
     # + employeeId - Employee ID
@@ -211,7 +307,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
         boolean isSelf = employeeInfo != () && employeeInfo.workEmail == userInfo.email;
         if !hasAdminAccess && !isSelf {
             boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
@@ -231,6 +327,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             log:printWarn(customErr, employeeId = employeeId);
             return <http:NotFound>{body: {message: customErr}};
         }
+
+        int[]|error heldGroups = database:getEmployeeLeadershipIds(employeeId);
+        if heldGroups is error {
+            log:printError("Error fetching leadership attributes", heldGroups);
+            return <http:InternalServerError>{body: {message: "Error fetching employee"}};
+        }
+        employeeInfo.leadershipGroupIds = heldGroups;
 
         return employeeInfo;
     }
@@ -262,19 +365,17 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        // Personal information is admin-or-self only. A lead legitimately sees a subordinate's
+        // work details through the sibling employee endpoint, but personal_info carries
+        // NIC/passport, date of birth, gender, home address, personal contact details and
+        // emergency contacts — none of which a lead needs in order to manage someone. Unlike the
+        // history endpoint there is no lead projection here: the whole record is withheld.
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
         boolean isSelf = employeeInfo != () && employeeInfo.workEmail == userInfo.email;
         if !hasAdminAccess && !isSelf {
-            boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
-            if isSubordinate is error {
-                string customErr = string `Error occurred while checking lead authorization for ID: ${employeeId}`;
-                log:printError(customErr, isSubordinate, employeeId = employeeId);
-                return <http:InternalServerError>{body: {message: customErr}};
-            }
-            if !isSubordinate {
-                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
-                return <http:Forbidden>{body: {message: "You are not authorized to view this employee's information"}};
-            }
+            log:printWarn("User is not authorized to view this employee's personal information",
+                    invokerEmail = userInfo.email, employeeId = employeeId);
+            return <http:Forbidden>{body: {message: "You are not authorized to view this employee's information"}};
         }
 
         if employeeInfo is () {
@@ -318,9 +419,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
         }
 
-        boolean hasQrExportAccess
-                = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
-                || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
+        boolean hasQrExportAccess = canExportQrCodes(userInfo);
 
         database:Employee|error? employee = database:getEmployeeInfo(employeeId);
         if employee is error {
@@ -361,11 +460,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         byte[]|error imageBytes = qr:generateEmployeeQrCode({
-            employeeNumber: employee.employeeId,
-            firstName: employee.firstName,
-            lastName: employee.lastName,
-            house
-        });
+                                                                employeeNumber: employee.employeeId,
+                                                                firstName: employee.firstName,
+                                                                lastName: employee.lastName,
+                                                                house
+                                                            });
         if imageBytes is error {
             string customErr = "Error occurred while generating QR code";
             log:printError(customErr, imageBytes);
@@ -389,8 +488,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess
-            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
 
         if !hasAdminAccess {
             boolean|error isLeadUser = database:isLead(userInfo.email);
@@ -434,8 +532,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess
-            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean hasAdminAccess = canReadAnyEmployee(userInfo);
 
         string sortField = payload.sort.sortField;
         if !database:EmployeeSortField.hasKey(sortField) {
@@ -460,7 +557,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if hasAdminAccess && !payload.leadOnly {
-            database:EmployeesResponse|error employees = database:getEmployees(payload);
+            database:EmployeesResponse|error employees = database:getEmployees(payload, includePersonalInfo = true);
             if employees is error {
                 string customErr = "Error occurred while fetching employees";
                 log:printError(customErr, employees);
@@ -493,8 +590,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Lead: results restricted to their subordinates.
-        database:EmployeesResponse|error employees = database:getEmployees(payload, userInfo.email);
+        // Lead: results restricted to their subordinates, and without personal information.
+        // A lead sees a subordinate's work details but not their NIC, date of birth, home
+        // address or emergency contacts — the same rule the personal-info endpoint states,
+        // where the whole record is withheld from a lead rather than projected.
+        database:EmployeesResponse|error employees =
+            database:getEmployees(payload, userInfo.email);
         if employees is error {
             string customErr = "Error occurred while fetching employees";
             log:printError(customErr, employees);
@@ -521,9 +622,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasQrSearchAccess
-            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
-            || authorization:checkPermissions([authorization:authorizedRoles.SERVICE_DESK_ROLE], userInfo.groups);
+        boolean hasQrSearchAccess = canExportQrCodes(userInfo);
 
         if !hasQrSearchAccess {
             log:printWarn("User is not authorized to search employees for QR export",
@@ -550,11 +649,14 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         database:EmployeesResponse|error result = database:getEmployees({
-            searchString: payload.searchString,
-            filters: {employeeStatus: payload.filters.employeeStatus},
-            pagination: payload.pagination,
-            sort: payload.sort
-        });
+                                                                            searchString: payload.searchString,
+                                                                            filters: {
+                                                                                employeeStatus: payload.filters.employeeStatus,
+                                                                                startDate: payload.filters.startDate
+                                                                            },
+                                                                            pagination: payload.pagination,
+                                                                            sort: payload.sort
+                                                                        });
         if result is error {
             string customErr = "Error occurred while fetching employees for QR export";
             log:printError(customErr, result);
@@ -640,11 +742,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         return serviceRecords;
     }
 
-    # Fetch all employees' basic information.
+    # Fetch directory information for all currently employed staff (Active and Marked leaver).
+    # Available to every authenticated user.
     #
-    # + return - All employees' basic information
+    # + return - Directory information for Active and Marked leaver employees
     resource function get employees/basic\-info(http:RequestContext ctx)
-        returns database:EmployeeBasicInfo[]|http:Forbidden|http:InternalServerError {
+        returns database:EmployeeDirectoryInfo[]|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -655,17 +758,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view employees basic information", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view employees basic information"
-                }
-            };
-        }
-
-        database:EmployeeBasicInfo[]|error employeesBasicInfos = database:getAllEmployeesBasicInfo();
+        database:EmployeeDirectoryInfo[]|error employeesBasicInfos = database:getAllEmployeesBasicInfo();
         if employeesBasicInfos is error {
             string customErr = "Error occurred while fetching employees' basic information";
             log:printError(customErr, employeesBasicInfos);
@@ -694,7 +787,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
                 log:printWarn("Unauthorized attempt to fetch inactive business units",
-                    invokerEmail = userInfo.email);
+                        invokerEmail = userInfo.email);
                 return <http:Forbidden>{
                     body: {message: "You are not authorized to view inactive business units"}
                 };
@@ -731,7 +824,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
                 log:printWarn("Unauthorized attempt to fetch inactive teams",
-                    invokerEmail = userInfo.email);
+                        invokerEmail = userInfo.email);
                 return <http:Forbidden>{
                     body: {message: "You are not authorized to view inactive teams"}
                 };
@@ -768,7 +861,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
                 log:printWarn("Unauthorized attempt to fetch inactive sub-teams",
-                    invokerEmail = userInfo.email);
+                        invokerEmail = userInfo.email);
                 return <http:Forbidden>{
                     body: {message: "You are not authorized to view inactive sub-teams"}
                 };
@@ -805,7 +898,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
                 log:printWarn("Unauthorized attempt to fetch inactive units",
-                    invokerEmail = userInfo.email);
+                        invokerEmail = userInfo.email);
                 return <http:Forbidden>{
                     body: {message: "You are not authorized to view inactive units"}
                 };
@@ -844,9 +937,28 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get career functions.
     #
-    # + return - Career functions
-    resource function get career\-functions() returns database:CareerFunction[]|http:InternalServerError {
-        database:CareerFunction[]|error careerFunctions = database:getCareerFunctions();
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
+    # + includeInactive - If true return all including inactive (ADMIN-only)
+    # + return - Career functions or HTTP errors
+    resource function get career\-functions(http:RequestContext ctx, boolean includeInactive = false)
+            returns database:CareerFunction[]|http:Forbidden|http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive career functions",
+                        invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive career functions"}
+                };
+            }
+        }
+
+        database:CareerFunction[]|error careerFunctions = database:getCareerFunctions(includeInactive);
         if careerFunctions is error {
             string customErr = "Error while fetching Career Functions";
             log:printError(customErr, careerFunctions);
@@ -861,12 +973,30 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get designations.
     #
+    # + ctx - Request context (used only when `includeInactive=true` to gate admin access)
     # + careerFunctionId - Career function ID (optional)
-    # + return - Designations
-    resource function get designations(int? careerFunctionId = ())
-        returns database:Designation[]|http:InternalServerError {
+    # + includeInactive - If true return all including inactive (ADMIN-only)
+    # + return - Designations or HTTP errors
+    resource function get designations(http:RequestContext ctx, int? careerFunctionId = (),
+            boolean includeInactive = false)
+            returns database:Designation[]|http:Forbidden|http:InternalServerError {
 
-        database:Designation[]|error designations = database:getDesignations(careerFunctionId);
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                log:printError(ERROR_USER_INFORMATION_HEADER_NOT_FOUND, userInfo);
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to fetch inactive designations",
+                        invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to view inactive designations"}
+                };
+            }
+        }
+
+        database:Designation[]|error designations = database:getDesignations(careerFunctionId, includeInactive);
         if designations is error {
             string customErr = "Error while fetching Designations";
             log:printError(customErr, designations);
@@ -929,6 +1059,48 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return employmentTypes;
+    }
+
+    # Fetch the assignable leadership attributes.
+    #
+    # Every caller gets the active attributes. `includeInactive` is the master data view:
+    # retired attributes too, each with its current holder count, and admin only.
+    #
+    # + ctx - Request context
+    # + includeInactive - Include retired attributes and holder counts (admin only)
+    # + return - Leadership attributes or an error
+    resource function get leadership\-groups(http:RequestContext ctx, boolean includeInactive = false)
+            returns database:LeadershipGroup[]|database:LeadershipGroupWithUsage[]|http:Forbidden
+                |http:InternalServerError {
+
+        if includeInactive {
+            authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+            if userInfo is error {
+                return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+            }
+            if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+                log:printWarn("Unauthorized attempt to list all leadership attributes",
+                        invokerEmail = userInfo.email);
+                return <http:Forbidden>{body: {message: "You are not authorized to manage leadership attributes"}};
+            }
+            database:LeadershipGroupWithUsage[]|error withUsage = database:getLeadershipGroupsWithUsage();
+            if withUsage is error {
+                log:printError("Error fetching leadership groups with usage", withUsage);
+                return <http:InternalServerError>{
+                    body: {message: "Error fetching leadership attributes"}
+                };
+            }
+            return withUsage;
+        }
+
+        database:LeadershipGroup[]|error groups = database:getLeadershipGroups();
+        if groups is error {
+            log:printError("Error fetching leadership groups", groups);
+            return <http:InternalServerError>{
+                body: {message: "Error fetching leadership attributes"}
+            };
+        }
+        return groups;
     }
 
     # Get houses.
@@ -1193,59 +1365,24 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int?|error existingPersonalInfoId = database:getPersonalInfoIdByNic(payload.personalInfo.nicOrPassport);
-        if existingPersonalInfoId is error {
-            string customErr = "Error occurred while checking existing employee personal information";
-            log:printError(customErr, existingPersonalInfoId, nicOrPassport = payload.personalInfo.nicOrPassport);
-            return <http:InternalServerError>{
+        // An empty work email means the joiner's account does not exist yet; FUTURE_JOINER_EMAIL
+        // is stored in its place below. Typing a placeholder in is refused rather than treated
+        // the same, so every placeholder joiner is one the backend knows has no email.
+        string? requestedEmail = payload.workEmail;
+        if requestedEmail is string && database:isPlaceholderWorkEmail(requestedEmail) {
+            string customErr = "Leave the work email empty when the employee's account is not created yet";
+            log:printWarn(customErr, workEmail = requestedEmail);
+            return <http:BadRequest>{
                 body: {
-                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                    message: customErr
                 }
             };
         }
-        if existingPersonalInfoId is int {
-            boolean|error hasActiveEmployment = database:hasActiveEmploymentByPersonalInfoId(existingPersonalInfoId);
-            if hasActiveEmployment is error {
-                string customErr = "Error occurred while checking existing employee status";
-                log:printError(customErr, hasActiveEmployment, nicOrPassport = payload.personalInfo.nicOrPassport);
-                return <http:InternalServerError>{
-                    body: {
-                        message: ERROR_EMPLOYEE_CREATION_FAILED
-                    }
-                };
-            }
-            if hasActiveEmployment {
-                string customErr = "Employee with the given NIC/Passport already exists";
-                log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
-                return <http:BadRequest>{
-                    body: {
-                        message: customErr
-                    }
-                };
-            }
 
-            boolean|error isSameEmployee = database:hasEmployeeWithWorkEmail(existingPersonalInfoId, payload.workEmail);
-            if isSameEmployee is error {
-                string customErr = "Error occurred while verifying rehire eligibility";
-                log:printError(customErr, isSameEmployee, nicOrPassport = payload.personalInfo.nicOrPassport);
-                return <http:InternalServerError>{
-                    body: {
-                        message: ERROR_EMPLOYEE_CREATION_FAILED
-                    }
-                };
-            }
-            if !isSameEmployee {
-                string customErr = "Employee with the given NIC/Passport already exists";
-                log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
-                return <http:BadRequest>{
-                    body: {
-                        message: customErr
-                    }
-                };
-            }
-            // NIC/Passport belongs to a former employee (no active employment) under the same
-            // work email — this is a rehire. Fall through and let addEmployee's upsert refresh
-            // their personal_info row and link the new employee record to that same personal_info ID.
+        http:BadRequest|http:InternalServerError? rejectedIdentity =
+            validateOnboardingIdentity(payload.personalInfo.nicOrPassport, requestedEmail);
+        if rejectedIdentity is http:BadRequest|http:InternalServerError {
+            return rejectedIdentity;
         }
 
         string? epfOpt = payload.epf;
@@ -1271,15 +1408,43 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
+        int? continuousServiceRecord = payload.continuousServiceRecord;
+        if continuousServiceRecord is int {
+            // Earlier employments are found by work email, so without one there is nothing
+            // the link could be checked against.
+            if requestedEmail is () {
+                string customErr = "A continuous service record can only be linked when a work email is given";
+                log:printWarn(customErr, linkedId = continuousServiceRecord);
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+            http:BadRequest|http:InternalServerError? invalidLink =
+                validateContinuousServiceRecord(continuousServiceRecord, requestedEmail, payload.startDate);
+            if invalidLink is http:BadRequest|http:InternalServerError {
+                return invalidLink;
+            }
+        }
+
+        string workEmail = requestedEmail ?: database:FUTURE_JOINER_EMAIL;
+        payload.workEmail = workEmail;
+        // Set here rather than taken from the request: whether someone has started is decided
+        // by their start date, and the scheduler moves a New joiner to Active on it.
+        payload.employeeStatus = database:initialEmployeeStatus(payload.startDate, todayUtc());
+
         string|http:BadRequest|http:InternalServerError generatedEmployeeId = generateEmployeeId(payload);
         if generatedEmployeeId is http:BadRequest|http:InternalServerError {
             return generatedEmployeeId;
         }
         string employeeId = generatedEmployeeId;
 
-        // House is assigned automatically from the employee ID's numeric part — not a
-        // user-editable choice, and not known until the ID above is resolved.
-        int|error autoHouseId = database:houseIdForEmployeeId(employeeId);
+        // House is assigned automatically — a returning employee keeps the one they had,
+        // everyone else gets it from the employee ID's numeric part. Not a user-editable
+        // choice, and not known until the ID above is resolved.
+        int|error autoHouseId = database:resolveHouseIdForNewEmployee(payload.personalInfo.nicOrPassport,
+                workEmail, employeeId);
         if autoHouseId is error {
             log:printError("Error occurred while computing automatic house assignment",
                     autoHouseId, employeeId = employeeId);
@@ -1397,7 +1562,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - HTTP OK or HTTP errors
     resource function patch employees/[string employeeId]/personal\-info(http:RequestContext ctx,
             database:UpdateEmployeePersonalInfoPayload payload)
-        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+        returns http:Ok|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1409,6 +1574,27 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        string? firstName = payload.firstName;
+        string? lastName = payload.lastName;
+        if firstName is string {
+            if firstName.trim().length() == 0 {
+                return <http:BadRequest>{
+                    body: {
+                        message: "First name and last name must not be blank"
+                    }
+                };
+            }
+        }
+        if lastName is string {
+            if lastName.trim().length() == 0 {
+                return <http:BadRequest>{
+                    body: {
+                        message: "First name and last name must not be blank"
+                    }
+                };
+            }
+        }
 
         database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
         if employeeInfo is error {
@@ -1495,6 +1681,71 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
+    # Record an employee's resignation.
+    #
+    # A dedicated route rather than a rule inside the job-info handler: the permission is
+    # then structural — this role may call this endpoint, and this endpoint can only write
+    # these three fields. A field-level check on the 25-field job-info payload would be a
+    # negative rule that has to stay correct about every other field, and would silently
+    # widen the moment a new one is added.
+    #
+    # Employment status is not accepted from the caller; recording a departure is what
+    # makes someone a leaver, so it is set to "Marked leaver" here.
+    #
+    # + employeeId - Employee ID
+    # + payload - Resignation details
+    # + return - HTTP OK or HTTP errors
+    resource function patch employees/[string employeeId]/resignation(http:RequestContext ctx,
+            @http:Payload database:UpdateResignationPayload payload)
+        returns http:Ok|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        boolean isAuthorized =
+            authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups)
+            || authorization:checkPermissions([authorization:authorizedRoles.RESIGNATION_ROLE], userInfo.groups);
+        if !isAuthorized {
+            log:printWarn("User is not authorized to record a resignation", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to record a resignation"}
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
+        if employeeInfo is error {
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        if employeeInfo is () {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
+        }
+
+        error? updateResult = database:updateResignation(employeeId, payload, userInfo.email);
+        if updateResult is error {
+            // An impossible date pair is the caller's mistake, not a server fault, so it
+            // is reported as such with the reason rather than a generic failure. Matched
+            // on the error type rather than its message: the wording is a user-facing
+            // string and rewording it should not turn somebody's bad input into a 500.
+            if updateResult is database:InvalidResignationDatesError {
+                log:printWarn(updateResult.message(), employeeId = employeeId);
+                return <http:BadRequest>{body: {message: updateResult.message()}};
+            }
+            string customErr = string `Error occurred while recording the resignation for ID: ${employeeId}`;
+            log:printError(customErr, updateResult, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        return http:OK;
+    }
+
     # Update employee job information.
     #
     # + employeeId - Employee ID
@@ -1543,6 +1794,51 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        if (payload.officeId is int && payload.officeId <= 0
+                && payload.officeId != database:OFFICE_CLEAR_SENTINEL)
+                || (payload.unitId is int && payload.unitId <= 0
+                && payload.unitId != database:UNIT_CLEAR_SENTINEL) {
+            return <http:BadRequest>{
+                body: {
+                    message: "Office and unit IDs must be positive IDs or the clear sentinel"
+                }
+            };
+        }
+
+        http:BadRequest|http:InternalServerError? identityError =
+            validateEditIdentity(employeeInfo, payload.employeeStatus, payload.workEmail);
+        if identityError !is () {
+            return identityError;
+        }
+
+        // A link sent in the request is checked against the email and start date the
+        // employment will hold afterwards. A stored link the request leaves alone is checked
+        // too when either of those changes, so an edit cannot turn it into a forward link.
+        int? continuousServiceRecord = payload.continuousServiceRecord;
+        boolean keepsStoredLink = continuousServiceRecord is ()
+            && (payload.workEmail is string || payload.startDate is string);
+        int? linkToCheck = keepsStoredLink ? employeeInfo.continuousServiceRecord : continuousServiceRecord;
+        if linkToCheck is int && linkToCheck != database:CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL {
+            http:BadRequest|http:InternalServerError? invalidLink = validateContinuousServiceRecord(
+                    linkToCheck, payload.workEmail ?: employeeInfo.workEmail,
+                    payload.startDate ?: employeeInfo.startDate, employeeId);
+            if invalidLink is http:BadRequest {
+                return keepsStoredLink
+                    ? <http:BadRequest>{
+                        body: {
+                            message: "This change makes the existing continuous service record invalid: it must be an "
+                                + "earlier employment under the same work email that has ended or is ending "
+                                + "(status Left or Marked leaver). "
+                                + "Remove the link in the same update."
+                        }
+                    }
+                    : invalidLink;
+            }
+            if invalidLink is http:InternalServerError {
+                return invalidLink;
+            }
+        }
+
         string? epfOpt = payload.epf;
         if epfOpt is string && epfOpt.trim() != "" {
             string|error? existingEmp = database:getEmployeeIdByEpf(epfOpt);
@@ -1581,7 +1877,15 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if isLeaverStatus {
+        // Keyed on the status this request sets, not on the status the employee already
+        // holds. The rule is "recording a departure has to say when and why", which is
+        // about the moment somebody becomes a leaver. Reading isLeaverStatus here instead
+        // asked "is this person a leaver", which is true forever once they have left — so
+        // every later edit of their record, a job role or a team on its own, was refused
+        // unless it resent all three resignation fields.
+        boolean isBecomingLeaver = payload.employeeStatus == database:EMPLOYEE_LEFT
+            || payload.employeeStatus == database:EMPLOYEE_MARKED_LEAVER;
+        if isBecomingLeaver {
             string? payloadFinalDayInOffice = payload.finalDayInOffice;
             string? payloadFinalDayOfEmployment = payload.finalDayOfEmployment;
             string? payloadResignationReason = payload.resignationReason;
@@ -1596,6 +1900,19 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
+        }
+
+        // Validated up front so an unknown or inactive id rejects the whole request before
+        // anything is written. The de-duplicated set is then written inside
+        // updateEmployeeJobInfo's transaction, together with the rest of the update.
+        int[]? requestedGroups = payload.leadershipGroupIds;
+        if requestedGroups is int[] {
+            int[]|http:BadRequest|http:InternalServerError validGroups =
+                validateLeadershipGroupIds(requestedGroups, employeeId);
+            if validGroups is http:BadRequest|http:InternalServerError {
+                return validGroups;
+            }
+            payload.leadershipGroupIds = validGroups;
         }
 
         error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);
@@ -1689,12 +2006,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error vehicleResult = database:addVehicle({
-            owner: userInfo.email,
-            vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
-            vehicleType: vehicle.vehicleType,
-            vehicleStatus: database:ACTIVE,
-            createdBy: userInfo.email
-        });
+                                                          owner: userInfo.email,
+                                                          vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
+                                                          vehicleType: vehicle.vehicleType,
+                                                          vehicleStatus: database:ACTIVE,
+                                                          createdBy: userInfo.email
+                                                      });
         if vehicleResult is error {
             string customError = string `Error occurred while adding vehicle!`;
             log:printError(customError, vehicleResult);
@@ -1731,10 +2048,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updateResult = database:updateVehicle({
-            vehicleId,
-            vehicleStatus: database:INACTIVE,
-            updatedBy: userInfo.email
-        });
+                                                                vehicleId,
+                                                                vehicleStatus: database:INACTIVE,
+                                                                updatedBy: userInfo.email
+                                                            });
 
         if updateResult is error {
             string customError = string `Error occurred while updating vehicle!`;
@@ -1772,10 +2089,41 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return {
-            publicWalletAddress: wso2_coin:masterWalletAddress,
             reservationWindowStartHour: wso2_coin:reservationWindowStartHour,
             reservationWindowEndHour: wso2_coin:reservationWindowEndHour
         };
+    }
+
+    # List the current user's wallets available for car park payments.
+    #
+    # + return - The caller's wallets with balances, or error response
+    resource function get parkings/wallets(http:RequestContext ctx, http:Request request)
+        returns wso2_coin:WalletDetails[]|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        string|error userAssertion = request.getHeader(authorization:JWT_ASSERTION_HEADER);
+        if userAssertion is error {
+            log:printError("Missing user assertion header while listing wallets", userAssertion,
+                    invokerEmail = userInfo.email);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while fetching wallets."}
+            };
+        }
+
+        wso2_coin:WalletDetails[]|error wallets = wso2_coin:getUserWallets(userAssertion);
+        if wallets is error {
+            log:printError("Error fetching user wallets", wallets, invokerEmail = userInfo.email);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while fetching wallets."}
+            };
+        }
+        return wallets;
     }
 
     # List parking floors.
@@ -1823,7 +2171,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date,
-            wso2_coin:pendingReservationExpiryMinutes);
+                wso2_coin:pendingReservationExpiryMinutes);
         if slots is error {
             log:printError("Error fetching parking slots", slots);
             return <http:InternalServerError>{
@@ -1905,7 +2253,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Expire the caller's own stale pending reservations for the date (any slot), so an
         // abandoned attempt does not block a fresh booking.
         boolean|error clearedForEmployee = database:expireStalePendingParkingReservationsForEmployeeDate(
-            userInfo.email, body.bookingDate, wso2_coin:pendingReservationExpiryMinutes);
+                userInfo.email, body.bookingDate, wso2_coin:pendingReservationExpiryMinutes);
         if clearedForEmployee is error {
             log:printError("Error expiring stale pending reservations for employee", clearedForEmployee);
             return <http:InternalServerError>{
@@ -1929,7 +2277,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 // Keep the reused reservation aligned with the vehicle chosen on this attempt.
                 if activeReservation.vehicleId != body.vehicleId {
                     boolean|error vehicleUpdated = database:updateParkingReservationVehicle(
-                        activeReservation.id, body.vehicleId, userInfo.email);
+                            activeReservation.id, body.vehicleId, userInfo.email);
                     if vehicleUpdated is error {
                         log:printError("Error updating vehicle on reused reservation", vehicleUpdated);
                         return <http:InternalServerError>{
@@ -1957,7 +2305,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Expire stale pending reservations so the slot/date becomes reusable.
         boolean|error cleared = database:expireStalePendingParkingReservationForSlotDate(body.slotId, body.bookingDate,
-            wso2_coin:pendingReservationExpiryMinutes);
+                wso2_coin:pendingReservationExpiryMinutes);
         if cleared is error {
             log:printError("Error expiring stale pending reservations", cleared);
             return <http:InternalServerError>{
@@ -1966,7 +2314,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate,
-            wso2_coin:pendingReservationExpiryMinutes);
+                wso2_coin:pendingReservationExpiryMinutes);
         if booked is error {
             log:printError("Error checking slot availability", booked);
             return <http:InternalServerError>{
@@ -1982,15 +2330,21 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Mint the transaction hash up front (0x + 64 hex); it is reused as the payment
+        // idempotency key on confirm, so retries never double-charge.
+        string transactionHash = "0x" + (re `-`).replaceAll(uuid:createType4AsString(), "")
+            + (re `-`).replaceAll(uuid:createType4AsString(), "");
+
         // Insert a new PENDING row
         int|error reservationId = database:addParkingReservation({
-            slotId: body.slotId,
-            bookingDate: body.bookingDate,
-            employeeEmail: userInfo.email,
-            vehicleId: body.vehicleId,
-            coinsAmount: slot.coinsPerSlot,
-            createdBy: userInfo.email
-        });
+                                                                     slotId: body.slotId,
+                                                                     bookingDate: body.bookingDate,
+                                                                     employeeEmail: userInfo.email,
+                                                                     vehicleId: body.vehicleId,
+                                                                     coinsAmount: slot.coinsPerSlot,
+                                                                     transactionHash,
+                                                                     createdBy: userInfo.email
+                                                                 });
         if reservationId is database:DuplicateActiveReservationError {
             log:printWarn("Duplicate active parking reservation blocked by unique index",
                     invokerEmail = userInfo.email, bookingDate = body.bookingDate, slotId = body.slotId);
@@ -2074,7 +2428,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Report generation options (status filter, future-joiner exclusion, marked-leaver inclusion)
     # + return - CSV file response or HTTP errors
     resource function post reports/employees/generate(http:RequestContext ctx,
-        @http:Payload database:EmployeeReportPayload payload)
+            @http:Payload database:EmployeeReportPayload payload)
         returns http:Response|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -2083,7 +2437,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
-        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+        // Employee reports only. QR code generation stays with admin and service desk,
+        // which is checked on its own endpoint.
+        if !canReadAnyEmployee(userInfo) {
             log:printWarn("User is not authorized to access reports", invokerEmail = userInfo.email);
             return <http:Forbidden>{
                 body: {message: "You are not authorized to access reports"}
@@ -2095,12 +2451,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         int offset = 0;
 
         while fetchMore {
-            database:EmployeesResponse|error pageResult = database:getEmployees({
-                searchString: (),
-                filters: payload.filters,
-                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                sort: {sortField: "employeeId", sortOrder: "ASC"}
-            });
+            database:EmployeesResponse|error pageResult = database:getEmployees(includePersonalInfo = true, payload = {
+                                                                                    searchString: (),
+                                                                                    filters: payload.filters,
+                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
+                                                                                });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
@@ -2122,9 +2478,15 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        database:LeadershipGroup[]|error leadershipGroups = database:getLeadershipGroups();
+        if leadershipGroups is error {
+            log:printError("Error fetching leadership groups for report", leadershipGroups);
+            return <http:InternalServerError>{body: {message: "Error generating report"}};
+        }
+
         string csvContent = payload.filters.employeeStatus == database:EMPLOYEE_LEFT
-            ? database:buildResignationCsv(allEmployees, nameMap, payload.columns)
-            : database:buildEmployeeCsv(allEmployees, nameMap, payload.columns);
+            ? database:buildResignationCsv(allEmployees, nameMap, payload.columns, leadershipGroups)
+            : database:buildEmployeeCsv(allEmployees, nameMap, payload.columns, leadershipGroups);
         string? filterStatus = payload.filters.employeeStatus;
         string statusLabel = filterStatus is () ? "all" : re ` `.replaceAll(filterStatus.toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
@@ -2136,17 +2498,36 @@ service http:InterceptableService / on new http:Listener(9090) {
         return response;
     }
 
-    # Confirm parking reservation with transaction hash.
+    # Confirm a parking reservation by collecting payment from the selected wallet.
     #
-    # + body - Request containing transaction hash and optional reservation ID
+    # + body - Request containing the reservation ID and the payer wallet address
     # + return - Reservation details with CONFIRMED status or error response
-    resource function post parkings/reservations/confirm(http:RequestContext ctx, ConfirmParkingReservationRequest body)
+    resource function post parkings/reservations/confirm(http:RequestContext ctx, http:Request request,
+            ConfirmParkingReservationRequest body)
         returns database:ParkingReservationDetails|http:BadRequest|http:InternalServerError|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        string|error userAssertion = request.getHeader(authorization:JWT_ASSERTION_HEADER);
+        if userAssertion is error {
+            log:printError("Missing user assertion header while confirming reservation", userAssertion,
+                    invokerEmail = userInfo.email);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while confirming reservation."}
+            };
+        }
+
+        string fromAddress = body.fromAddress.trim();
+        if fromAddress.length() == 0 {
+            log:printWarn("Parking reservation confirmation missing payer wallet address",
+                    invokerEmail = userInfo.email, reservationId = body.reservationId);
+            return <http:BadRequest>{
+                body: {message: "A payer wallet address is required."}
             };
         }
 
@@ -2159,56 +2540,63 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if reservation is () || reservation.employeeEmail != userInfo.email {
+            log:printWarn("Unauthorized parking reservation confirmation attempt", invokerEmail = userInfo.email,
+                    reservationId = body.reservationId);
             return <http:Forbidden>{
                 body: {message: "You are not allowed to confirm this reservation."}
             };
         }
 
         if reservation.status != database:PENDING {
+            log:printWarn("Attempt to confirm a non-pending parking reservation", invokerEmail = userInfo.email,
+                    reservationId = reservation.id, status = reservation.status);
             return <http:BadRequest>{
                 body: {message: string `Reservation is already ${reservation.status.toString()}. Cannot confirm.`}
             };
         }
 
-        // Prevent reuse of the same blockchain transaction hash across multiple reservations.
-        database:ReservationIdRow|error? existingTx =
-            database:getParkingReservationByTransactionHash(body.transactionHash);
-        if existingTx is error {
-            log:printError("Error checking transaction hash reuse", existingTx);
-            return <http:InternalServerError>{
-                body: {message: "Error occurred while verifying transaction hash."}
-            };
-        }
-        if existingTx is database:ReservationIdRow && existingTx.id != reservation.id {
-            return <http:BadRequest>{
-                body: {message: "This transaction hash has already been used for another reservation."}
-            };
-        }
-
-        error? confirmErr = wso2_coin:confirmTransaction(body.transactionHash, wso2_coin:masterWalletAddress,
-                reservation.coinsAmount);
-        if confirmErr is error {
-            log:printError("Error confirming transaction", confirmErr);
-            return <http:BadRequest>{
-                body: {message: "Transaction verification failed."}
-            };
-        }
-
-        boolean|error updated = database:updateParkingReservationStatus({
-            reservationId: reservation.id,
-            status: database:CONFIRMED,
-            transactionHash: body.transactionHash,
-            updatedBy: userInfo.email
-        });
-        if updated is error {
-            log:printError("Error confirming reservation", updated);
+        // Reuse the transaction hash minted at create as the idempotency key; fall back to the
+        // reservation-derived reference for any row created before this field was populated.
+        string paymentReference = reservation.paymentReference
+            ?: (wso2_coin:PARKING_PAYMENT_REFERENCE_PREFIX + reservation.id.toString());
+        wso2_coin:CollectPaymentResponse|error payment = wso2_coin:collectPayment(userAssertion, fromAddress,
+                reservation.coinsAmount, paymentReference);
+        if payment is wso2_coin:PaymentError {
+            wso2_coin:PaymentErrorDetail detail = payment.detail();
+            log:printWarn("Parking payment rejected by the payment service", invokerEmail = userInfo.email,
+                    reservationId = reservation.id, statusCode = detail.statusCode);
+            match detail.statusCode {
+                http:STATUS_FORBIDDEN => {
+                    return <http:Forbidden>{
+                        body: {message: "The selected wallet does not belong to you."}
+                    };
+                }
+                http:STATUS_BAD_REQUEST|http:STATUS_CONFLICT => {
+                    return <http:BadRequest>{
+                        body: {message: detail.reason}
+                    };
+                }
+            }
             return <http:InternalServerError>{
                 body: {message: "Error occurred while confirming reservation."}
             };
         }
-        if !updated {
+        if payment is error {
+            log:printError("Error collecting parking payment", payment, invokerEmail = userInfo.email,
+                    reservationId = reservation.id);
             return <http:InternalServerError>{
-                body: {message: "Failed to update reservation status."}
+                body: {message: "Error occurred while confirming reservation."}
+            };
+        }
+
+        // Transition PENDING -> CONFIRMED atomically so two concurrent confirms cannot both proceed.
+        boolean|error confirmed = database:confirmParkingReservation(reservation.id, payment.reference,
+                userInfo.email);
+        if confirmed is error {
+            log:printError("Error confirming reservation", confirmed, invokerEmail = userInfo.email,
+                    reservationId = reservation.id);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while confirming reservation."}
             };
         }
 
@@ -2220,7 +2608,21 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Append to Google Sheet.
+        if !confirmed {
+            // A concurrent request already transitioned this reservation. The payment used the
+            // deterministic parking-<id> reference, so it was charged at most once.
+            if confirmedReservation.status == database:CONFIRMED {
+                return confirmedReservation;
+            }
+            log:printWarn("Parking reservation confirmation lost a concurrent transition",
+                    invokerEmail = userInfo.email, reservationId = reservation.id,
+                    status = confirmedReservation.status);
+            return <http:BadRequest>{
+                body: {message: string `Reservation is ${confirmedReservation.status.toString()}. Cannot confirm.`}
+            };
+        }
+
+        // This request performed the transition — append to Google Sheet.
         error? sheetErr = wso2_coin:appendParkingReservation(confirmedReservation);
         if sheetErr is error {
             log:printError("Failed to append parking reservation to Google Sheet", sheetErr,
@@ -2291,7 +2693,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this business unit"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this business unit"}
                 };
             }
         }
@@ -2377,7 +2779,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this team"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this team"}
                 };
             }
         }
@@ -2463,7 +2865,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this sub-team"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this sub-team"}
                 };
             }
         }
@@ -2549,7 +2951,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this unit"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this unit"}
                 };
             }
         }
@@ -2570,6 +2972,244 @@ service http:InterceptableService / on new http:Listener(9090) {
         if updateResult is error {
             log:printError("Error occurred while updating unit", updateResult, id = id);
             return <http:InternalServerError>{body: {message: "Error occurred while updating unit"}};
+        }
+        return http:OK;
+    }
+
+    # Create a career function.
+    #
+    # + ctx - Request context
+    # + payload - Career function creation payload
+    # + return - ID of the new career function, or HTTP errors
+    resource function post career\-functions(http:RequestContext ctx,
+            database:CreateCareerFunctionPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create career function", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage career functions"}};
+        }
+
+        int|error newId = database:createCareerFunction(payload, userInfo.email);
+        if newId is database:DuplicateCareerFunctionError {
+            return <http:BadRequest>{body: {message: newId.message()}};
+        }
+        if newId is error {
+            string customErr = "Error occurred while creating career function";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a career function.
+    #
+    # + ctx - Request context
+    # + id - Career function ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch career\-functions/[int id](http:RequestContext ctx,
+            database:UpdateCareerFunctionPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update career function", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage career functions"}};
+        }
+
+        if payload.isActive == false {
+            // Only the active-employee check gates deactivation. A career function with
+            // active-but-unstaffed designations may be deactivated: the onboarding form
+            // fetches designations scoped to a chosen career function
+            // (fetchDesignations({ careerFunctionId })) and the career function dropdown
+            // comes from GET /career-functions, which is active-only by default — so a
+            // deactivated function's designations are already unreachable for new hires.
+            boolean|error hasEmployees = database:hasActiveEmployeesInCareerFunction(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in career function", hasEmployees, id = id);
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while updating career function"}
+                };
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees or new joiners in this career function"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateCareerFunction(id, payload, userInfo.email);
+        if updateResult is database:DuplicateCareerFunctionError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating career function", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating career function"}};
+        }
+        return http:OK;
+    }
+
+    # Create a leadership attribute.
+    #
+    # + ctx - Request context
+    # + payload - Leadership attribute creation payload
+    # + return - New attribute ID or HTTP errors
+    resource function post leadership\-groups(http:RequestContext ctx,
+            database:CreateLeadershipGroupPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create leadership attribute", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage leadership attributes"}};
+        }
+
+        int|error newId = database:createLeadershipGroup(payload, userInfo.email);
+        if newId is database:DuplicateLeadershipGroupError {
+            return <http:BadRequest>{body: {message: newId.message()}};
+        }
+        if newId is error {
+            string customErr = "Error occurred while creating leadership attribute";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Rename, retire or reactivate a leadership attribute.
+    #
+    # Retiring is refused while current employees hold the attribute.
+    #
+    # + ctx - Request context
+    # + id - Leadership attribute ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch leadership\-groups/[int id](http:RequestContext ctx,
+            database:UpdateLeadershipGroupPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update leadership attribute", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage leadership attributes"}};
+        }
+
+        error? updateResult = database:updateLeadershipGroup(id, payload, userInfo.email);
+        if updateResult is database:DuplicateLeadershipGroupError|database:LeadershipGroupInUseError
+                |database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating leadership attribute", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating leadership attribute"}};
+        }
+        return http:OK;
+    }
+
+    # Create a designation.
+    #
+    # + ctx - Request context
+    # + payload - Designation creation payload
+    # + return - ID of the new designation, or HTTP errors
+    resource function post designations(http:RequestContext ctx, database:CreateDesignationPayload payload)
+            returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to create designation", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage designations"}};
+        }
+
+        int|error newId = database:createDesignation(payload, userInfo.email);
+        if newId is database:DuplicateDesignationError || newId is database:UnknownCareerFunctionError {
+            return <http:BadRequest>{body: {message: newId.message()}};
+        }
+        if newId is error {
+            string customErr = "Error occurred while creating designation";
+            log:printError(customErr, newId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return newId;
+    }
+
+    # Update a designation.
+    #
+    # + ctx - Request context
+    # + id - Designation ID
+    # + payload - Update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch designations/[int id](http:RequestContext ctx,
+            database:UpdateDesignationPayload payload)
+            returns http:Ok|http:Forbidden|http:NotFound|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to update designation", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to manage designations"}};
+        }
+
+        if payload.isActive == false {
+            boolean|error hasEmployees = database:hasActiveEmployeesInDesignation(id);
+            if hasEmployees is error {
+                log:printError("Error checking active employees in designation", hasEmployees, id = id);
+                return <http:InternalServerError>{body: {message: "Error occurred while updating designation"}};
+            }
+            if hasEmployees {
+                return <http:BadRequest>{
+                    body: {message: "Cannot deactivate: there are active employees or new joiners with this designation"}
+                };
+            }
+        }
+
+        error? updateResult = database:updateDesignation(id, payload, userInfo.email);
+        if updateResult is database:DuplicateDesignationError
+                || updateResult is database:UnknownCareerFunctionError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:EntityNotFoundError {
+            return <http:NotFound>{body: {message: updateResult.message()}};
+        }
+        if updateResult is database:NoFieldsToUpdateError {
+            return <http:BadRequest>{body: {message: updateResult.message()}};
+        }
+        if updateResult is error {
+            log:printError("Error occurred while updating designation", updateResult, id = id);
+            return <http:InternalServerError>{body: {message: "Error occurred while updating designation"}};
         }
         return http:OK;
     }
@@ -2632,14 +3272,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamMapping(id);
             if hasEmployees is error {
                 log:printError("Error checking active employees in business unit team mapping",
-                    hasEmployees, id = id);
+                        hasEmployees, id = id);
                 return <http:InternalServerError>{
                     body: {message: "Error occurred while updating business unit team mapping"}
                 };
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this mapping"}
                 };
             }
         }
@@ -2682,7 +3322,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to create business unit team sub-team mapping",
-                invokerEmail = userInfo.email);
+                    invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
@@ -2718,7 +3358,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to update business unit team sub-team mapping",
-                invokerEmail = userInfo.email);
+                    invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
@@ -2726,14 +3366,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamSubTeamMapping(id);
             if hasEmployees is error {
                 log:printError("Error checking active employees in business unit team sub-team mapping",
-                    hasEmployees, id = id);
+                        hasEmployees, id = id);
                 return <http:InternalServerError>{
                     body: {message: "Error occurred while updating business unit team sub-team mapping"}
                 };
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this mapping"}
                 };
             }
         }
@@ -2753,7 +3393,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if updateResult is error {
             log:printError("Error occurred while updating business unit team sub-team mapping",
-                updateResult, id = id);
+                    updateResult, id = id);
             return <http:InternalServerError>{
                 body: {message: "Error occurred while updating business unit team sub-team mapping"}
             };
@@ -2777,7 +3417,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to create business unit team sub-team unit mapping",
-                invokerEmail = userInfo.email);
+                    invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
@@ -2813,7 +3453,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to update business unit team sub-team unit mapping",
-                invokerEmail = userInfo.email);
+                    invokerEmail = userInfo.email);
             return <http:Forbidden>{body: {message: "You are not authorized to manage the company org chart"}};
         }
 
@@ -2821,14 +3461,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             boolean|error hasEmployees = database:hasActiveEmployeesInBUTeamSubTeamUnitMapping(id);
             if hasEmployees is error {
                 log:printError("Error checking active employees in business unit team sub-team unit mapping",
-                    hasEmployees, id = id);
+                        hasEmployees, id = id);
                 return <http:InternalServerError>{
                     body: {message: "Error occurred while updating business unit team sub-team unit mapping"}
                 };
             }
             if hasEmployees {
                 return <http:BadRequest>{
-                    body: {message: "Cannot deactivate: there are active employees assigned to this mapping"}
+                    body: {message: "Cannot deactivate: there are active employees or new joiners assigned to this mapping"}
                 };
             }
         }
@@ -2848,7 +3488,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if updateResult is error {
             log:printError("Error occurred while updating business unit team sub-team unit mapping",
-                updateResult, id = id);
+                    updateResult, id = id);
             return <http:InternalServerError>{
                 body: {message: "Error occurred while updating business unit team sub-team unit mapping"}
             };
@@ -2870,7 +3510,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             log:printWarn("Unauthorized attempt to access company org chart structure",
-                invokerEmail = userInfo.email);
+                    invokerEmail = userInfo.email);
             return <http:Forbidden>{
                 body: {message: "You are not authorized to access the company org chart structure"}
             };
@@ -2913,8 +3553,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         //   designation, manager, status and dates through the sibling employee endpoint;
         //   history adds only *when* those changed, so withholding it would be inconsistent.
         // - Self gets the employee projection: no actionBy, no system rows.
-        boolean hasFullProjection = authorization:checkPermissions(
-                [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        // The employee-view role reads any employee's record, so it gets the same
+        // projection an admin does: the fallback below is self-only, which would
+        // otherwise deny it a history it is allowed to see.
+        boolean hasFullProjection = canReadAnyEmployee(userInfo);
 
         if !hasFullProjection {
             // Two conditions, and both are required.
@@ -3052,6 +3694,180 @@ service http:InterceptableService / on new http:Listener(9090) {
             events: projectHistoryEvents(events, hasFullProjection),
             promotionsUnavailable: promotionsUnavailable
         };
+    }
+
+    # Schedule a change to an employee's general information for a future date.
+    #
+    # The same edit an admin can apply immediately, held until the date it should take
+    # effect: a promotion effective the first of the month, a transfer effective when the
+    # quarter starts. The scheduler applies it on the day through a plain update, so the
+    # audit trail and the profile history read exactly as they would for a change made by
+    # hand.
+    #
+    # The caller sends what the targeted fields hold now alongside the change. The sweep
+    # compares against it on the day, so a change overtaken by a direct edit to the same
+    # field is reported rather than quietly undoing the more recent decision.
+    #
+    # + employeeId - Employee ID
+    # + payload - Effective date and the fields to change
+    # + return - HTTP Created with the scheduled change id, or HTTP errors
+    resource function post employees/[string employeeId]/scheduled\-changes(http:RequestContext ctx,
+            @http:Payload database:ScheduleChangePayload payload)
+        returns http:Created|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        // Scheduling is the same act as editing, deferred, so it is gated the same way the
+        // inline section editor is.
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to schedule an employee change",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to schedule a change"}
+            };
+        }
+
+        // Today is refused along with the past: the sweep runs once a day, so a change
+        // dated today lands either immediately or a day late depending on whether it has
+        // already run. An edit meant to take effect now should be applied now.
+        if !isFutureDate(payload.effectiveDate) {
+            log:printWarn("Scheduled change rejected: effective date is not in the future",
+                    employeeId = employeeId, effectiveDate = payload.effectiveDate);
+            return <http:BadRequest>{
+                body: {message: "The effective date must be a future date"}
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
+        if employeeInfo is error {
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        if employeeInfo is () {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
+        }
+
+        // Refused while somebody is present to be told. A field the sweep cannot write
+        // would otherwise sit pending until its date and fail there, long after the person
+        // who scheduled it has moved on.
+        map<json>|error columnChanges = toSchedulableColumns(payload.changes);
+        if columnChanges is error {
+            log:printWarn("Scheduled change rejected: a field cannot be scheduled",
+                    employeeId = employeeId, reason = columnChanges.message());
+            return <http:BadRequest>{body: {message: columnChanges.message()}};
+        }
+
+        // Refused rather than scheduled without it: the sweep compares against these on
+        // the day, and a change carrying none would be applied without that check.
+        map<json>|error expected = expectedValuesFor(employeeInfo, columnChanges);
+        if expected is error {
+            string customErr = string `Error occurred while recording the current values for ID: ${employeeId}`;
+            log:printError(customErr, expected, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        int|error scheduled = database:scheduleEmployeeChange(employeeId, payload.effectiveDate,
+                columnChanges.toJsonString(), expected.toJsonString(), userInfo.email);
+        if scheduled is error {
+            string customErr = string `Error occurred while scheduling a change for ID: ${employeeId}`;
+            log:printError(customErr, scheduled, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        return <http:Created>{body: {id: scheduled}};
+    }
+
+    # Fetch an employee's scheduled changes.
+    #
+    # + employeeId - Employee ID
+    # + pendingOnly - Limit to changes still waiting for their date
+    # + return - The scheduled changes, or HTTP errors
+    resource function get employees/[string employeeId]/scheduled\-changes(http:RequestContext ctx,
+            boolean pendingOnly = true)
+        returns database:ScheduledChange[]|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        // Read access matches the profile: anyone who may read the record may see what is
+        // queued against it, so the record is never shown as settled when it is not.
+        if !canReadAnyEmployee(userInfo) {
+            log:printWarn("User is not authorized to view scheduled changes",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to view scheduled changes"}
+            };
+        }
+
+        database:ScheduledChange[]|error changes = database:getScheduledChanges(employeeId, pendingOnly);
+        if changes is error {
+            string customErr = string `Error occurred while fetching scheduled changes for ID: ${employeeId}`;
+            log:printError(customErr, changes, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        return changes;
+    }
+
+    # Withdraw a scheduled change before its date arrives.
+    #
+    # + employeeId - Employee ID
+    # + changeId - Scheduled change id
+    # + return - HTTP OK, or HTTP errors
+    resource function delete employees/[string employeeId]/scheduled\-changes/[int changeId](
+            http:RequestContext ctx)
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to cancel a scheduled change",
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to cancel a scheduled change"}
+            };
+        }
+
+        database:ScheduledChange|error? existing = database:getScheduledChangeById(changeId);
+        if existing is error {
+            string customErr = string `Error occurred while fetching scheduled change: ${changeId}`;
+            log:printError(customErr, existing, changeId = changeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        // The id is checked against the employee in the path as well as existing at all,
+        // so a change cannot be cancelled through another employee's URL.
+        if existing is () || existing.employeeIdentifier != employeeId {
+            return <http:NotFound>{body: {message: "Scheduled change not found"}};
+        }
+
+        boolean|error cancelled = database:cancelScheduledChange(changeId, userInfo.email);
+        if cancelled is error {
+            string customErr = string `Error occurred while cancelling scheduled change: ${changeId}`;
+            log:printError(customErr, cancelled, changeId = changeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+        if !cancelled {
+            // Already applied or already cancelled: there is no pending change to withdraw.
+            return <http:NotFound>{body: {message: "No pending scheduled change to cancel"}};
+        }
+
+        return http:OK;
     }
 
     # Get Employee Hub dashboard data: current employees, non-intern leavers and

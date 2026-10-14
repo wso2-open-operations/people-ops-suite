@@ -89,6 +89,11 @@ isolated function getLeavesQuery(LeaveFilter filter, int? 'limit = (), int? offs
     if leaveTypes is string[] && leaveTypes.length() != 0 {
         filterQueries.push(sql:queryConcat(`leave_type IN (`, sql:arrayFlattenQuery(leaveTypes), `)`));
     }
+    string[]? excludedLeaveTypes = filter?.excludedLeaveTypes;
+    if excludedLeaveTypes is string[] && excludedLeaveTypes.length() != 0 {
+        filterQueries.push(
+            sql:queryConcat(`leave_type NOT IN (`, sql:arrayFlattenQuery(excludedLeaveTypes), `)`));
+    }
 
     sql:ParameterizedQuery sqlQuery = buildSqlQuery(mainQuery, filterQueries);
     sql:ParameterizedQuery orderBy = filter?.orderBy == ASC ? `ASC` : `DESC`;

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -16,20 +16,14 @@
 
 import { lazy } from "react";
 
-const dashboard = lazy(() => import("@view/dashboard/Dashboard"));
 const profile = lazy(() => import("@view/profile/Profile"));
 const jobs = lazy(() => import("@view/jobs/Jobs"));
 const jobDetail = lazy(() => import("@view/jobs/JobDetail"));
 const applications = lazy(() => import("@view/applications/Applications"));
-const savedJobs = lazy(() => import("@view/saved/SavedJobs"));
-const help = lazy(() => import("@view/help/Help"));
 
 export const View = {
-  dashboard,
   profile,
   jobs,
   jobDetail,
   applications,
-  savedJobs,
-  help,
 };

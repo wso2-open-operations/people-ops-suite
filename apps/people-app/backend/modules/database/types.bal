@@ -17,7 +17,6 @@
 import ballerina/constraint;
 import ballerina/lang.regexp;
 import ballerina/sql;
-import ballerinax/mysql;
 
 # Email validation pattern.
 public final regexp:RegExp EMAIL_PATTERN = re `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`;
@@ -45,7 +44,38 @@ public type NoFieldsToUpdateError distinct error;
 # active-reservation unique index (slot/date or employee/date already active).
 public type DuplicateActiveReservationError distinct error;
 
+# Raised when an active designation with the same name already exists in the career function.
+public type DuplicateDesignationError distinct error;
+
+# Raised when a career function with the same name already exists. Unlike designations, this
+# applies to every row regardless of `is_active` — a career function name is never reusable.
+public type DuplicateCareerFunctionError distinct error;
+
+# Raised when a leadership attribute name collides with an existing one (the unique key on
+# leadership_group.name is case-insensitive), so the caller gets a 400 rather than a 500.
+public type DuplicateLeadershipGroupError distinct error;
+
+# Raised when retiring a leadership attribute that current employees still hold. Retiring
+# is refused rather than silently hiding the attribute from their records.
+public type LeadershipGroupInUseError distinct error;
+
+# Raised when a designation references a career function that does not exist (foreign key
+# violation), so the caller gets a 400 rather than an opaque 500.
+public type UnknownCareerFunctionError distinct error;
+
+# Raised when a departure's final day of employment precedes its last day in office, so the
+# caller gets a 400 naming the problem rather than an opaque 500. The type carries that
+# meaning, not the message: RESIGNATION_DATE_ORDER_ERROR supplies the wording and can be
+# reworded without changing which status the caller receives.
+public type InvalidResignationDatesError distinct error;
+
 # [Configurable] Database configs.
+# Deliberately flat (primitive fields only) rather than embedding mysql:Options/
+# sql:ConnectionPool directly: Choreo's config UI introspects configurable variable
+# types, so nesting the actual library types here would expose their entire field
+# surface (many more knobs than we use) as configurable entries. initPeopleOpsDbClient()
+# in client.bal builds the real mysql:Options/sql:ConnectionPool values internally
+# from these primitives, which stays invisible to that introspection.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
     string user;
@@ -57,10 +87,16 @@ type DatabaseConfig record {|
     string host;
     # Port number of the MySQL server
     int port;
-    # The `mysql:Options` configurations
-    mysql:Options options?;
-    # The `sql:ConnectionPool` configurations
-    sql:ConnectionPool connectionPool?;
+    # Max open connections in the pool
+    int maxOpenConnections = 10;
+    # Max connection lifetime (seconds)
+    decimal maxConnectionLifeTime = 1800;
+    # Min idle connections in the pool
+    int minIdleConnections = 0;
+    # Connection timeout (seconds)
+    decimal connectTimeout = 30;
+    # SSL mode for DB connection 
+    string sslMode = "PREFERRED";
 |};
 
 # Employee basic information.
@@ -84,6 +120,36 @@ public type EmployeeBasicInfo record {|
     string designation?;
     # External-facing designation
     string? externalDesignation?;
+    # Work location of the Employee
+    @sql:Column {name: "work_location"}
+    string workLocation?;
+|};
+
+# Employee information for the employee directory listing.
+public type EmployeeDirectoryInfo record {|
+    *EmployeeBasicInfo;
+    # Job band of the employee's designation
+    int? jobBand;
+    # Start date of employment
+    string startDate;
+    # Manager email
+    string managerEmail;
+    # Business unit
+    string businessUnit;
+    # Team
+    string team;
+    # Sub-team
+    string? subTeam;
+    # Unit
+    string? unit;
+    # Employment type
+    string employmentType;
+    # Company name
+    string company;
+    # Work location
+    string workLocation;
+    # Employee status ("Active" or "Marked leaver")
+    string employeeStatus;
 |};
 
 # User information with privileges.
@@ -104,6 +170,25 @@ public type EpfValidationPayload record {|
 public type EpfValidationResponse record {|
     # Whether the EPF already exists
     boolean epfExists;
+|};
+
+# Payload for recognising a returning employee by NIC/Passport. Sent in a body rather than the
+# URL so the NIC stays out of access logs.
+public type ReturningEmployeeLookupPayload record {|
+    # NIC/Passport entered on the onboarding form
+    @constraint:String {maxLength: 20}
+    string nicOrPassport;
+|};
+
+# Who the onboarding form is dealing with, as far as the NIC/Passport tells.
+public type ReturningEmployeeLookupResponse record {|
+    # The person's latest employment, nil for someone new
+    EmploymentMatch? latestEmployment;
+    # Whether the person is employed now or already onboarded (Active or New joiner)
+    boolean isCurrentEmployee;
+    # The latest real work email they held, nil when their records hold only placeholders. A
+    # rehire must use one of their earlier real emails; this is the one the form fills in.
+    string? formerWorkEmail;
 |};
 
 # Context record returned by the employee ID generation query.
@@ -150,12 +235,42 @@ public type Employee record {|
     string? managerName;
     # Additional manager email
     string? additionalManagerEmails;
+    # Leadership attribute IDs held by this employee — drives the edit form
+    int[]? leadershipGroupIds = ();
+    # Leadership attribute names, comma-joined and alphabetical — drives the report preview column
+    string? leadershipGroups = ();
     # Gender (from employee personal info)
     string? gender;
+    # NIC or passport number (from employee personal info)
+    string? nicOrPassport;
+    # Date of birth (from employee personal info)
+    string? dateOfBirth;
+    # Nationality (from employee personal info)
+    string? nationality;
+    # Personal email address (from employee personal info)
+    string? personalEmail;
+    # Personal phone number (from employee personal info)
+    string? personalPhone;
+    # Resident number (from employee personal info)
+    string? residentNumber;
+    # Address line 1 (from employee personal info)
+    string? addressLine1;
+    # Address line 2 (from employee personal info)
+    string? addressLine2;
+    # City (from employee personal info)
+    string? city;
+    # State or province (from employee personal info)
+    string? stateOrProvince;
+    # Postal code (from employee personal info)
+    string? postalCode;
+    # Country (from employee personal info)
+    string? country;
+    # Emergency contacts, flattened as "name - relationship - mobile" entries
+    string? emergencyContacts;
     # Employee status
     string employeeStatus;
-    # Continuous service record reference (Employee ID)
-    string? continuousServiceRecord;
+    # Primary key (`employee.id`) of the prior employment this record continues from
+    int? continuousServiceRecord;
     # Start date of the continuous service record (resolved via DB join)
     string? continuousServiceDate;
     # Probation end date
@@ -264,6 +379,9 @@ public type EmployeeFilters record {|
     int? employmentTypeId = ();
     # Employment type IDs (multi-select). When non-empty, takes precedence over employmentTypeId.
     int[]? employmentTypeIds = ();
+    # Leadership attribute IDs (multi-select). Matches employees holding ALL of the
+    # given attributes — deliberately AND, unlike the OR multi-selects above.
+    int[]? leadershipGroupIds = ();
     # Employee Status
     string? employeeStatus = ();
     # Employee Statuses (multi-select). When non-empty, takes precedence over employeeStatus/includeMarkedLeavers.
@@ -272,6 +390,8 @@ public type EmployeeFilters record {|
     boolean? directReports = ();
     # When true, excludes employees whose start date is in the future
     boolean? excludeFutureStartDate = ();
+    # Matches employees whose start date is exactly this day
+    string? startDate = ();
     # When true, includes employees with "Marked leaver" status alongside the primary employeeStatus filter
     boolean? includeMarkedLeavers = ();
 |};
@@ -385,6 +505,10 @@ public type EmployeeQrInfoResponse record {|
 public type QrCodeSearchFilters record {|
     # Employee status
     string? employeeStatus = ();
+    # Matches employees whose start date is exactly this day, so a joining cohort can be
+    # selected for badge printing without picking each person out of the search
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string? startDate = ();
 |};
 
 # Search payload for the QR code export endpoint.
@@ -452,8 +576,25 @@ public type EmployeePersonalInfo record {|
     EmergencyContact[] emergencyContacts = [];
 |};
 
+# An employment found when recognising a person at onboarding — by NIC/Passport for a returning
+# employee, or by work email for someone currently employed.
+public type EmploymentMatch record {|
+    # Employee ID
+    string employeeId;
+    # First name
+    string firstName;
+    # Last name
+    string lastName;
+    # Work email held on that employment
+    string workEmail;
+    # Employee status
+    string employeeStatus;
+|};
+
 # Continuous service record information.
 public type ContinuousServiceRecordInfo record {|
+    # Employee table primary key, the value a continuous service record link stores
+    int id;
     # Employee ID of the user
     string employeeId;
     # First name
@@ -466,6 +607,8 @@ public type ContinuousServiceRecordInfo record {|
     string workLocation;
     # Start date
     string startDate;
+    # Employee status; only a Left employment can be carried over as continuous service
+    string employeeStatus;
     # Manager email
     string managerEmail;
     # Additional manager emails
@@ -561,6 +704,12 @@ public type CareerFunction record {|
     # Career function name
     @sql:Column {name: "career_function"}
     string careerFunction;
+    # Whether the career function is active
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # Number of active employees across this career function's designations
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
 |};
 
 # Designation.
@@ -572,6 +721,70 @@ public type Designation record {|
     # Job band
     @sql:Column {name: "job_band"}
     int? jobBand;
+    # Parent career function ID, nil when unassigned
+    @sql:Column {name: "career_function_id"}
+    int? careerFunctionId;
+    # Whether the designation is active
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+    # Number of active employees holding this designation
+    @sql:Column {name: "active_employee_count"}
+    int activeEmployeeCount;
+|};
+
+# Payload to create a career function.
+public type CreateCareerFunctionPayload record {|
+    # Career function name. The pattern rejects whitespace-only input: minLength alone
+    # sees the raw value, and the name is trimmed only after validation passes.
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
+    string careerFunction;
+|};
+
+# Payload to update a career function (all fields optional for PATCH).
+public type UpdateCareerFunctionPayload record {|
+    # Career function name; whitespace-only is rejected (see CreateCareerFunctionPayload)
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
+    string? careerFunction = ();
+    # Whether the career function is active
+    boolean? isActive = ();
+|};
+
+# Payload to create a designation.
+public type CreateDesignationPayload record {|
+    # Designation name
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
+    string designation;
+    # Job band (optional): nil, 0, or any positive integer. Negatives are rejected so a
+    # real band can never collide with JOB_BAND_CLEAR_SENTINEL (-1), which means
+    # "clear to NULL" on the update path only.
+    @constraint:Int {minValue: 0}
+    int? jobBand = ();
+    # Parent career function ID. Required: every designation must belong to a career
+    # function. Must be a real id — a bad value would otherwise violate the foreign key
+    # and surface as a 500. Rows predating this rule may still hold NULL in the column
+    # (the column stays nullable so they remain readable and reassignable), but no new
+    # designation can be created without a career function.
+    @constraint:Int {minValue: 1}
+    int careerFunctionId;
+|};
+
+# Payload to update a designation (all fields optional for PATCH).
+# NOTE: jobBand and careerFunctionId are deliberately NOT constrained here, unlike on
+# `CreateDesignationPayload`. On the update path -1 is meaningful: it is
+# JOB_BAND_CLEAR_SENTINEL / CAREER_FUNCTION_CLEAR_SENTINEL, meaning "clear this column to
+# NULL". Adding a minValue constraint here would silently break unassigning a designation
+# and clearing its job band.
+public type UpdateDesignationPayload record {|
+    # Designation name
+    @constraint:String {maxLength: 150, pattern: re `^\s*\S.*$`}
+    string? designation = ();
+    # Job band; -1 (JOB_BAND_CLEAR_SENTINEL) clears it, nil leaves it unchanged
+    int? jobBand = ();
+    # Parent career function ID; -1 (CAREER_FUNCTION_CLEAR_SENTINEL) clears it, nil
+    # leaves it unchanged
+    int? careerFunctionId = ();
+    # Whether the designation is active
+    boolean? isActive = ();
 |};
 
 # [Database] Company record with allowed locations as a JSON string.
@@ -639,6 +852,42 @@ public type House record {|
     string name;
 |};
 
+# A leadership attribute an employee can hold.
+public type LeadershipGroup record {|
+    # Identifier
+    int id;
+    # Display name — also the CSV column header for this attribute
+    string name;
+    # Whether it can still be assigned
+    boolean isActive;
+|};
+
+# A leadership attribute as the master data screen lists it.
+public type LeadershipGroupWithUsage record {|
+    *LeadershipGroup;
+    # Active and Marked-leaver employees holding it; these are what block retiring it
+    int holderCount;
+|};
+
+# Create a leadership attribute.
+public type CreateLeadershipGroupPayload record {|
+    # Attribute name, also its CSV column header. It must start with a letter, then use only
+    # letters, digits, spaces, &, -, ' and . (surrounding spaces are trimmed after
+    # validation). Starting with a letter means the header can never begin with =, +, - or @
+    # and be run as a spreadsheet formula; leaving out the comma matters because a holder's
+    # attributes travel comma-joined (GROUP_CONCAT) and are split on commas.
+    @constraint:String {maxLength: 100, pattern: re `^ *\p{L}[\p{L}\p{M}\p{N} &'.-]*$`}
+    string name;
+|};
+
+# Rename, retire or reactivate a leadership attribute.
+public type UpdateLeadershipGroupPayload record {|
+    # New name, under the same rules as CreateLeadershipGroupPayload
+    @constraint:String {maxLength: 100, pattern: re `^ *\p{L}[\p{L}\p{M}\p{N} &'.-]*$`}
+    string? name = ();
+    # false retires the attribute, true reactivates it
+    boolean? isActive = ();
+|};
 
 # Manager payload.
 public type Manager record {|
@@ -709,6 +958,12 @@ public type AdditionalManagerEmailRow record {|
     # Additional manager email
     @sql:Column {name: "additional_manager_email"}
     string additionalManagerEmail;
+|};
+
+# A single leadership assignment row, as read back for diffing.
+type LeadershipGroupIdRow record {|
+    # Leadership attribute (leadership_group) ID
+    int leadershipGroupId;
 |};
 
 # Bulk onboarding validation error.
@@ -840,9 +1095,10 @@ public type CreateEmployeePayload record {|
     # Work location
     @constraint:String {maxLength: 100}
     string workLocation;
-    # Work email of the user
+    # Work email of the user. Left out for a joiner whose account does not exist yet, in which
+    # case FUTURE_JOINER_EMAIL is stored; onboarding fills it in before the record is written.
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN}`}
-    string workEmail;
+    string? workEmail = ();
     # Start date
     @constraint:String {pattern: re `${DATE_PATTERN}`}
     string startDate;
@@ -885,9 +1141,8 @@ public type CreateEmployeePayload record {|
     int? unitId = ();
     # House ID
     int? houseId = ();
-    # Continuous service record
-    @constraint:String {maxLength: 99}
-    string? continuousServiceRecord = ();
+    # Primary key (`employee.id`) of the prior employment this record continues from
+    int? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus employeeStatus = EMPLOYEE_ACTIVE;
     # Employee ID (required for fixed-term employment type)
@@ -902,11 +1157,13 @@ public type UpdateEmployeePersonalInfoPayload record {|
     # National Identity Card number or Passport
     @constraint:String {maxLength: 100}
     string? nicOrPassport = ();
-    # First name
-    @constraint:String {maxLength: 100}
+    # First name. minLength guards against a blank string being accepted as "set the name to
+    # empty" — see updateEmployeeNameQuery, which forwards this value into employee.first_name
+    # whenever it is non-nil, with no separate blank check of its own.
+    @constraint:String {minLength: 1, maxLength: 100}
     string? firstName = ();
-    # Last name
-    @constraint:String {maxLength: 100}
+    # Last name. Same minLength rationale as firstName above.
+    @constraint:String {minLength: 1, maxLength: 100}
     string? lastName = ();
     # Full name
     @constraint:String {maxLength: 255}
@@ -997,7 +1254,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     int? employmentTypeId = ();
     # Designation ID
     int? designationId = ();
-    # Office ID
+    # Office ID; -1 (OFFICE_CLEAR_SENTINEL) clears it to NULL, nil leaves it unchanged.
+    # NOTE: the edit form only sends this field when it actually changed, so nil (absent from
+    # the request) must NEVER be treated as "clear" here — see updateEmployeeJobInfoQuery.
     int? officeId = ();
     # Team ID
     int? teamId = ();
@@ -1005,13 +1264,16 @@ public type UpdateEmployeeJobInfoPayload record {|
     int? subTeamId = ();
     # Business unit ID
     int? businessUnitId = ();
-    # Unit ID
+    # Unit ID; -1 (UNIT_CLEAR_SENTINEL) clears it to NULL, nil leaves it unchanged.
+    # NOTE: same caveat as officeId above — absence must never be treated as "clear."
     int? unitId = ();
-    # House ID
+    # House ID. The House selection does not provide a "None" option,
+    # so there is no way to clear houseId through this payload and no clear
+    # sentinel is required.
     int? houseId = ();
-    # Continuous service record
-    @constraint:String {maxLength: 99}
-    string? continuousServiceRecord = ();
+    # Primary key (`employee.id`) of the prior employment this record continues from.
+    # `CONTINUOUS_SERVICE_RECORD_CLEAR_SENTINEL` clears the link.
+    int? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus? employeeStatus = ();
     # Final day in office
@@ -1020,13 +1282,37 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Final day of employment 
     @constraint:String {pattern: re `${DATE_PATTERN}`}
     string? finalDayOfEmployment = ();
-    # Resignation reason
+    # Resignation reason; whitespace-only is rejected (see UpdateResignationPayload). Left
+    # optional: absence means the field is not part of this edit, not a blank reason.
+    @constraint:String {maxLength: 300, pattern: re `^\s*\S.*$`}
     string? resignationReason = ();
+    # Leadership attribute IDs to assign. Omitted (nil) leaves assignments unchanged;
+    # an empty array clears every assignment. Unknown or inactive ids reject the whole update.
+    int[]? leadershipGroupIds = ();
+|};
+
+# [Database] Payload for updating an employee's resignation details.
+#
+# Employment status is deliberately absent: recording a departure is what makes someone
+# a leaver, so the status is derived from this call rather than supplied by the caller.
+# Accepting it would let a narrow resignation permission set an arbitrary status.
+public type UpdateResignationPayload record {|
+    # Last day the employee is physically in office
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string finalDayInOffice;
+    # Final day of employment
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string finalDayOfEmployment;
+    # Reason for leaving. The pattern rejects whitespace-only input: minLength alone sees
+    # the raw value, so "   " satisfies it and stores a reason that reads as blank
+    # wherever a departure is displayed. Same rule as CreateCareerFunctionPayload.
+    @constraint:String {maxLength: 300, pattern: re `^\s*\S.*$`}
+    string resignationReason;
 |};
 
 # [Database] Intern profile record - sourced from `employee` (joined with
 # `personal_info`/`business_unit`/`team`/`sub_team`), plus university
-# from `internship` - see people_app_table_update_v1.0.23.sql.
+# from `internship` - see people_app_table_update_v1.2.2.sql.
 public type InternProfile record {|
     # Employee primary key (employee.id)
     int id;
@@ -1229,8 +1515,8 @@ public type ParkingReservation record {|
     int vehicleId;
     # Reservation status
     ParkingReservationStatus status;
-    # Transaction hash
-    string? transactionHash;
+    # Payment reference
+    string? paymentReference;
     # Amount to be paid in coins
     decimal coinsAmount;
     # Timestamp when created
@@ -1255,20 +1541,10 @@ public type AddParkingReservationPayload record {|
     int vehicleId;
     # Amount to be paid in coins
     decimal coinsAmount;
+    # Transaction hash minted at create, reused as the payment idempotency key on confirm
+    string transactionHash;
     # User who created the parking reservation record
     string createdBy;
-|};
-
-# [Database] Payload to update parking reservation status.
-public type UpdateParkingReservationStatusPayload record {|
-    # Reservation id
-    int reservationId;
-    # New status
-    ParkingReservationStatus status;
-    # Transaction hash
-    string? transactionHash;
-    # Updated by
-    string updatedBy;
 |};
 
 # [Database] Parking reservation details (slot, floor, vehicle).
@@ -1289,8 +1565,8 @@ public type ParkingReservationDetails record {|
     string? vehicleType;
     # Reservation status
     ParkingReservationStatus status;
-    # Transaction hash
-    string? transactionHash;
+    # Payment reference
+    string? paymentReference;
     # Amount to be paid in coins
     decimal coinsAmount;
     # Floor name (e.g. "Ground Floor")
@@ -1519,3 +1795,54 @@ public type HistoryLookupName record {|
     # The human-readable name
     string name;
 |};
+
+# Status of a scheduled change.
+public enum ScheduledChangeStatus {
+    SCHEDULED_CHANGE_PENDING = "PENDING",
+    SCHEDULED_CHANGE_APPLIED = "APPLIED",
+    SCHEDULED_CHANGE_CANCELLED = "CANCELLED",
+    SCHEDULED_CHANGE_SUPERSEDED = "SUPERSEDED",
+    SCHEDULED_CHANGE_FAILED = "FAILED"
+}
+
+# A change to an employee's general information waiting for its effective date.
+public type ScheduledChange record {|
+    # Scheduled change id
+    int id;
+    # Employee table primary key the change applies to
+    int employeeId;
+    # Employee ID as people refer to it. Every read path joins the employee table for
+    # it, so a caller can tell whose rows these are without resolving the primary key:
+    # the profile page checks it before rendering, since a response can arrive after the
+    # viewer has moved to somebody else.
+    string employeeIdentifier;
+    # Date the change takes effect
+    string effectiveDate;
+    # Fields being changed, keyed by database column rather than by the payload field
+    # names the form uses — house_id, not houseId — because that is the shape the sweep
+    # applies and the shape expected below is captured in.
+    json changes;
+    # What those same fields held when the change was scheduled, keyed the same way
+    json expected;
+    # Where the change is in its life. Typed as the enum rather than a string: the column
+    # is a MySQL ENUM over exactly these five values, so nothing else can be read back.
+    ScheduledChangeStatus status;
+    # When it was written to the employee record, if it was
+    string? appliedOn;
+    # Why it could not be applied, if it could not
+    string? failureReason;
+    # Who scheduled it
+    string createdBy;
+    # When it was scheduled
+    string createdOn;
+|};
+
+# Payload for scheduling a change to an employee's general information.
+public type ScheduleChangePayload record {|
+    # Date the change takes effect; today or later
+    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    string effectiveDate;
+    # Fields to change when that date arrives
+    UpdateEmployeeJobInfoPayload changes;
+|};
+

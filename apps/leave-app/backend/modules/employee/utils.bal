@@ -33,6 +33,7 @@ public isolated function toEmployee(EmployeeResponse response) returns readonly 
         finalDayOfEmployment: response.finalDayOfEmployment,
         employeeStatus: response.employeeStatus,
         lead: response.lead,
-        subordinateCount: response?.subordinateCount ?: 0
+        subordinateCount: response?.subordinateCount ?: 0,
+        jobBand: response?.jobBand
     };
 }
