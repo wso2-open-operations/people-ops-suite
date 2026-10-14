@@ -34,6 +34,7 @@ import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import SchoolIcon from "@mui/icons-material/School";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
@@ -93,6 +94,13 @@ const OnboardingRoot = () => {
   return React.createElement(Outlet);
 };
 
+const EmployeeHubRoot = () => {
+  const { pathname } = useLocation();
+  if (pathname === "/intern-hub") {
+    return React.createElement(Navigate, { to: "/intern-hub/employees", replace: true });
+  }
+  return React.createElement(Outlet);
+};
 
 export const routes: RouteObjectWithRole[] = [
   {
@@ -101,6 +109,30 @@ export const routes: RouteObjectWithRole[] = [
     icon: React.createElement(AccountCircleIcon),
     element: React.createElement(View.me),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+  },
+  {
+    // Intern Hub: Permanent employees and Interns dashboards (admin-only).
+    path: "/intern-hub",
+    text: "Intern Hub",
+    icon: React.createElement(SchoolIcon),
+    element: React.createElement(EmployeeHubRoot),
+    allowRoles: [Role.ADMIN],
+    children: [
+      {
+        path: "/intern-hub/employees",
+        text: "Permanent",
+        icon: React.createElement(BadgeSharp),
+        element: React.createElement(View.employeeHubDashboard),
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/intern-hub/intern-overview",
+        text: "Interns",
+        icon: React.createElement(GroupsIcon),
+        element: React.createElement(View.employeeHubDashboard),
+        allowRoles: [Role.ADMIN],
+      },
+    ],
   },
   {
     path: "/employees",

@@ -71,6 +71,9 @@ export interface Employee {
   unitId: number | null;
   house: string | null;
   houseId: number | null;
+  // From the `internship` table (people_app_table_update_v1.0.23.sql) via a
+  // LEFT JOIN - null for anyone who was never an intern.
+  university: string | null;
 }
 
 export interface EmployeeBasicInfo {

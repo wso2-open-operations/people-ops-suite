@@ -374,6 +374,18 @@ CREATE TABLE `resignation` (
     FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
 );
 
+-- Internship table
+CREATE TABLE `internship` (
+  `employee_id` INT PRIMARY KEY,
+  `university` VARCHAR(200) NULL,
+  `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  CONSTRAINT `fk_emp_internship`
+    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
+);
+
 -- Additional_managers table
 CREATE TABLE `employee_additional_managers` (
   `id` INT NOT NULL AUTO_INCREMENT,
