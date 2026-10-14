@@ -51,15 +51,26 @@ export interface VacancyDetail {
   additionalContent: string | null;
 }
 
+// Longer than the backend's 15 second wait on the vacancy service, so a slow upstream comes back as the backend's
+// gateway error rather than a client timeout.
+const READ_TIMEOUT_MS = 20_000;
+
+// Longer than the backend's 90 second wait for an application and its CV upload.
+const APPLY_TIMEOUT_MS = 100_000;
+
 // Guests have no token, so they send no credentials at all.
 function authHeader(accessToken: string) {
   return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 }
 
+// The credentials and timeout every request carries.
+const requestOptions = (accessToken: string, timeout: number = READ_TIMEOUT_MS) => ({
+  headers: authHeader(accessToken),
+  timeout,
+});
+
 export async function fetchVacancies(accessToken: string): Promise<Job[]> {
-  const response = await axios.get<VacancyBasicInfo[]>(AppConfig.serviceUrls.jobs, {
-    headers: authHeader(accessToken),
-  });
+  const response = await axios.get<VacancyBasicInfo[]>(AppConfig.serviceUrls.jobs, requestOptions(accessToken));
 
   return response.data.map((v) => ({
     id: String(v.id),
@@ -100,9 +111,7 @@ export async function fetchVacancyDetail(id: string, accessToken: string): Promi
     mainContent: string | null;
     taskInformation: string | null;
     additionalContent: string | null;
-  }>(`${AppConfig.serviceUrls.jobs}/${id}`, {
-    headers: authHeader(accessToken),
-  }).catch(jobMissingOr);
+  }>(`${AppConfig.serviceUrls.jobs}/${id}`, requestOptions(accessToken)).catch(jobMissingOr);
 
   const v = response.data;
   return {
@@ -125,7 +134,7 @@ export async function fetchVacancyDetail(id: string, accessToken: string): Promi
 export async function fetchOrgStructure(accessToken: string): Promise<OrgStructure> {
   const response = await axios.get<{ location_list: Record<string, string>; team_list: Record<string, string> }>(
     `${AppConfig.serviceUrls.jobs}/org-structure`,
-    { headers: authHeader(accessToken) },
+    requestOptions(accessToken),
   );
 
   return {
@@ -145,7 +154,5 @@ export async function submitApplicationForm(
   Object.entries(details).forEach(([key, value]) => form.append(key, String(value)));
   form.append("cv", cv);
   // No Content-Type here: the browser adds it with the multipart boundary.
-  await axios.post(`${AppConfig.serviceUrls.jobs}/${jobId}/apply`, form, {
-    headers: authHeader(accessToken),
-  });
+  await axios.post(`${AppConfig.serviceUrls.jobs}/${jobId}/apply`, form, requestOptions(accessToken, APPLY_TIMEOUT_MS));
 }
