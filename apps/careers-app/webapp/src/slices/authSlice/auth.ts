@@ -24,22 +24,18 @@ export enum Role {
   ADMIN = "ADMIN",
 }
 
-interface ExtendedDecodedIDTokenPayload extends DecodedIDTokenPayload {
-  groups?: string[];
-}
-
 interface AuthState {
   status: State;
   mode: "active" | "maintenance";
   statusMessage: string | null;
   userInfo: BasicUserInfo | null;
-  decodedIdToken: ExtendedDecodedIDTokenPayload | null;
+  decodedIdToken: DecodedIDTokenPayload | null;
   roles: Role[];
 }
 
 interface AuthData {
   userInfo: BasicUserInfo;
-  decodedIdToken: ExtendedDecodedIDTokenPayload;
+  decodedIdToken: DecodedIDTokenPayload;
 }
 
 const initialState: AuthState = {
