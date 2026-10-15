@@ -163,7 +163,13 @@ function anIpv6EntryMustBeEightGroupsOfUpToFourHexDigits() {
 function anIpv4MappedIpv6AddressIsTheSameAsItsIpv4Address() {
     test:assertEquals(forwardedHop("::ffff:203.0.113.7", 1, "192.168.1.5"), "203.0.113.7");
     test:assertEquals(forwardedHop("::FFFF:203.0.113.7", 1, "192.168.1.5"), "203.0.113.7");
+    test:assertEquals(forwardedHop("::ffff:cb00:7107", 1, "192.168.1.5"), "203.0.113.7");
+    test:assertEquals(forwardedHop("::FFFF:CB00:7107", 1, "192.168.1.5"), "203.0.113.7");
+    test:assertEquals(forwardedHop("0:0:0:0:0:ffff:cb00:7107", 1, "192.168.1.5"), "203.0.113.7");
+    test:assertEquals(forwardedHop("0000:0000:0000:0000:0000:ffff:203.0.113.7", 1, "192.168.1.5"), "203.0.113.7");
+    test:assertEquals(forwardedHop("[::ffff:203.0.113.7]:443", 1, "192.168.1.5"), "203.0.113.7");
     test:assertEquals(forwardedHop("::ffff:999.0.0.1", 1, "192.168.1.5"), "192.168.1.5");
+    test:assertEquals(forwardedHop("::fffe:cb00:7107", 1, "192.168.1.5"), "0:0:0:0:0:fffe:cb00:7107");
 }
 
 @test:Config {}

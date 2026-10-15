@@ -35,8 +35,6 @@ const int MAX_TRACKED_KEYS = 10000;
 
 const int SWEEP_INTERVAL_SECONDS = 60;
 
-const string IPV4_MAPPED_PREFIX = "::ffff:";
-
 isolated function recentAttempts(int[] attempts, int windowStart) returns int[] {
     int[] recent = [];
     foreach int attempt in attempts {
@@ -89,8 +87,11 @@ isolated function normalisedAddress(string entry) returns string {
     if zone is int {
         address = address.substring(0, zone);
     }
-    if address.startsWith(IPV4_MAPPED_PREFIX) && isIpv4(address.substring(IPV4_MAPPED_PREFIX.length())) {
-        return address.substring(IPV4_MAPPED_PREFIX.length());
+    if re `(::|(0{1,4}:){5})ffff:[0-9.]+`.isFullMatch(address) {
+        string embedded = address.substring(<int>address.lastIndexOf(":") + 1);
+        if isIpv4(embedded) {
+            return embedded;
+        }
     }
     return address.includes(":") && !address.includes(".") ? expandedIpv6(address) : address;
 }
@@ -122,6 +123,13 @@ isolated function expandedIpv6(string address) returns string {
     string[] trimmed = from string group in groups
         let string withoutZeros = re `^0+`.replace(group, "")
         select withoutZeros == "" ? "0" : withoutZeros;
+    if trimmed.slice(0, 6) == ["0", "0", "0", "0", "0", "ffff"] {
+        int|error high = int:fromHexString(trimmed[6]);
+        int|error low = int:fromHexString(trimmed[7]);
+        if high is int && low is int {
+            return string `${high / 256}.${high % 256}.${low / 256}.${low % 256}`;
+        }
+    }
     return string:'join(":", ...trimmed);
 }
 
