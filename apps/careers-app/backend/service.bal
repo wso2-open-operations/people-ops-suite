@@ -125,7 +125,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         }
         string requestId = types:requestIdOf(ctx);
         string address = apply:clientAddress(req, apply:remoteHost(ctx));
-        if !applyRateLimiter.tryAcquire(apply:limiterKey("ip", address)) {
+        if !applyRateLimiter.tryAcquireAddress(address) {
             log:printWarn("Application rate limit reached for a client address", requestId = requestId);
             return <http:TooManyRequests>{body: {message: "Too many applications. Please try again later."}};
         }
@@ -135,7 +135,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             return <http:BadRequest>{body: {message: form}};
         }
 
-        if !applyRateLimiter.tryAcquire(apply:limiterKey("email", form.email.toLowerAscii())) {
+        if !applyRateLimiter.tryAcquireEmail(form.email) {
             log:printWarn("Application rate limit reached for an email address", requestId = requestId);
             return <http:TooManyRequests>{body: {message: "Too many applications. Please try again later."}};
         }

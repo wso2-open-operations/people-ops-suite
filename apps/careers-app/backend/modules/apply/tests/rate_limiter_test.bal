@@ -20,23 +20,33 @@ import ballerina/test;
 @test:Config {}
 function limiterAllowsTheConfiguredNumberThenBlocks() {
     ApplyRateLimiter limiter = new;
-    string key = limiterKey("ip", "1.1.1.1");
-    foreach int attempt in 1 ... applyMaxPerWindow {
-        test:assertTrue(limiter.tryAcquire(key), string `Attempt ${attempt} should be allowed`);
+    foreach int attempt in 1 ... applyMaxPerAddress {
+        test:assertTrue(limiter.tryAcquireAddress("1.1.1.1"), string `Attempt ${attempt} should be allowed`);
     }
-    test:assertFalse(limiter.tryAcquire(key));
+    test:assertFalse(limiter.tryAcquireAddress("1.1.1.1"));
 }
 
 @test:Config {}
 function eachAddressAndEachEmailHasItsOwnAllowance() {
     ApplyRateLimiter limiter = new;
-    string firstAddress = limiterKey("ip", "1.1.1.1");
-    foreach int _ in 1 ... applyMaxPerWindow {
-        _ = limiter.tryAcquire(firstAddress);
+    foreach int _ in 1 ... applyMaxPerAddress {
+        _ = limiter.tryAcquireAddress("1.1.1.1");
     }
-    test:assertFalse(limiter.tryAcquire(firstAddress));
-    test:assertTrue(limiter.tryAcquire(limiterKey("ip", "2.2.2.2")));
-    test:assertTrue(limiter.tryAcquire(limiterKey("email", "1.1.1.1")));
+    test:assertFalse(limiter.tryAcquireAddress("1.1.1.1"));
+    test:assertTrue(limiter.tryAcquireAddress("2.2.2.2"));
+    test:assertTrue(limiter.tryAcquireEmail("1.1.1.1"));
+}
+
+@test:Config {}
+function theEmailLimitIsSeparateFromTheAddressLimit() {
+    ApplyRateLimiter limiter = new;
+    foreach int attempt in 1 ... applyMaxPerEmail {
+        test:assertTrue(limiter.tryAcquireEmail("someone@example.test"), string `Attempt ${attempt} should be allowed`);
+    }
+    test:assertFalse(limiter.tryAcquireEmail("someone@example.test"));
+    test:assertFalse(limiter.tryAcquireEmail("SOMEONE@Example.test"));
+    test:assertTrue(limiter.tryAcquireAddress("1.1.1.1"));
+    test:assertTrue(applyMaxPerEmail < applyMaxPerAddress);
 }
 
 @test:Config {}

@@ -19,8 +19,11 @@ import ballerina/http;
 import ballerina/lang.array;
 import ballerina/time;
 
-# How many applications one address, and one email, may make within the window.
-configurable int applyMaxPerWindow = 300;
+# How many applications one address may make within the window.
+configurable int applyMaxPerAddress = 300;
+
+# How many applications one email may make within the window.
+configurable int applyMaxPerEmail = 5;
 
 # The length of the window, in seconds.
 configurable int applyWindowSeconds = 3600;
@@ -70,8 +73,15 @@ isolated function forwardedHop(string forwarded, int proxyHops, string remoteHos
 public isolated class ApplyRateLimiter {
     private map<int[]> attempts = {};
 
-    # Records an attempt for the key; false when the key has used its allowance within the window.
-    public isolated function tryAcquire(string key) returns boolean {
+    # Records an application from the address; false when it has used its allowance within the window.
+    public isolated function tryAcquireAddress(string address) returns boolean =>
+        self.tryAcquire(limiterKey("ip", address), applyMaxPerAddress);
+
+    # Records an application for the email; false when it has used its allowance within the window.
+    public isolated function tryAcquireEmail(string email) returns boolean =>
+        self.tryAcquire(limiterKey("email", email.toLowerAscii()), applyMaxPerEmail);
+
+    isolated function tryAcquire(string key, int maxAttempts) returns boolean {
         int now = time:utcNow()[0];
         int windowStart = now - applyWindowSeconds;
         lock {
@@ -79,7 +89,7 @@ public isolated class ApplyRateLimiter {
                 self.sweep(windowStart);
             }
             int[] recent = recentAttempts(self.attempts[key] ?: [], windowStart);
-            if recent.length() >= applyMaxPerWindow {
+            if recent.length() >= maxAttempts {
                 self.attempts[key] = recent;
                 return false;
             }

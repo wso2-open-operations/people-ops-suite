@@ -15,7 +15,8 @@ audience = ""
 
 # Optional: limit on guest applications.
 # [careers_app.apply]
-# applyMaxPerWindow = 300
+# applyMaxPerAddress = 300
+# applyMaxPerEmail = 5
 # applyWindowSeconds = 3600
 # trustedProxyHops = 1
 
