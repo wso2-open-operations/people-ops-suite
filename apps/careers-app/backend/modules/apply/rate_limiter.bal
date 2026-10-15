@@ -53,8 +53,9 @@ public isolated function limiterKey(string kind, string value) returns string {
 # right by `trustedProxyHops`. The connection's own address is used when the setting is 0, the header is
 # missing, the chain is shorter than the setting, or the selected entry is empty.
 public isolated function clientAddress(http:Request req, string remoteHost) returns string {
-    string|http:HeaderNotFoundError forwarded = req.getHeader("X-Forwarded-For");
-    return forwarded is string ? forwardedHop(forwarded, trustedProxyHops, remoteHost) : remoteHost;
+    string[]|http:HeaderNotFoundError forwarded = req.getHeaders("X-Forwarded-For");
+    return forwarded is string[] ? forwardedHop(string:'join(",", ...forwarded), trustedProxyHops, remoteHost)
+        : remoteHost;
 }
 
 isolated function forwardedHop(string forwarded, int proxyHops, string remoteHost) returns string {
