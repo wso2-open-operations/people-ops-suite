@@ -143,6 +143,30 @@ function anEntryThatIsNotAnAddressFallsBackToTheConnectionAddress() {
 }
 
 @test:Config {}
+function anIpv4EntryMustBeFourOctetsUpTo255() {
+    test:assertEquals(forwardedHop("255.255.255.255", 1, "192.168.1.5"), "255.255.255.255");
+    test:assertEquals(forwardedHop("0.0.0.0", 1, "192.168.1.5"), "0.0.0.0");
+    foreach string invalid in ["256.1.1.1", "999.999.999.999", "1.2.3", "1.2.3.4.5", "1.2.3.04", "1.2.3.4.", "1..3.4"] {
+        test:assertEquals(forwardedHop(invalid, 1, "192.168.1.5"), "192.168.1.5", invalid);
+    }
+}
+
+@test:Config {}
+function anIpv6EntryMustBeEightGroupsOfUpToFourHexDigits() {
+    foreach string invalid in ["1:2:3", "1:2:3:4:5:6:7:8:9", "1::2::3", ":::", "12345::1", "g::1", "1:2:3:4:5:6:7::8:9"] {
+        test:assertEquals(forwardedHop(invalid, 1, "192.168.1.5"), "192.168.1.5", invalid);
+    }
+    test:assertEquals(forwardedHop("1:2:3:4:5:6:7::", 1, "192.168.1.5"), "1:2:3:4:5:6:7:0");
+}
+
+@test:Config {}
+function anIpv4MappedIpv6AddressIsTheSameAsItsIpv4Address() {
+    test:assertEquals(forwardedHop("::ffff:203.0.113.7", 1, "192.168.1.5"), "203.0.113.7");
+    test:assertEquals(forwardedHop("::FFFF:203.0.113.7", 1, "192.168.1.5"), "203.0.113.7");
+    test:assertEquals(forwardedHop("::ffff:999.0.0.1", 1, "192.168.1.5"), "192.168.1.5");
+}
+
+@test:Config {}
 function forwardedHopFallsBackToTheConnectionAddress() {
     test:assertEquals(forwardedHop("10.0.0.1", 0, "192.168.1.5"), "192.168.1.5");
     test:assertEquals(forwardedHop("10.0.0.1", 2, "192.168.1.5"), "192.168.1.5");

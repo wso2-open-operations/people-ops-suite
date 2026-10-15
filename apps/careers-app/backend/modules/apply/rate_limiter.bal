@@ -35,6 +35,8 @@ const int MAX_TRACKED_KEYS = 10000;
 
 const int SWEEP_INTERVAL_SECONDS = 60;
 
+const string IPV4_MAPPED_PREFIX = "::ffff:";
+
 isolated function recentAttempts(int[] attempts, int windowStart) returns int[] {
     int[] recent = [];
     foreach int attempt in attempts {
@@ -53,7 +55,7 @@ public isolated function limiterKey(string kind, string value) returns string {
 
 # The caller's address: the X-Forwarded-For entry that the outermost trusted proxy appended, counted from the
 # right by `trustedProxyHops`. The connection's own address is used when the setting is 0, the header is
-# missing, the chain is shorter than the setting, or the selected entry is empty.
+# missing, the chain is shorter than the setting, or the selected entry is not a valid IP address.
 public isolated function clientAddress(http:Request req, string remoteHost) returns string =>
     clientAddressBehind(req, trustedProxyHops, remoteHost);
 
@@ -87,10 +89,16 @@ isolated function normalisedAddress(string entry) returns string {
     if zone is int {
         address = address.substring(0, zone);
     }
+    if address.startsWith(IPV4_MAPPED_PREFIX) && isIpv4(address.substring(IPV4_MAPPED_PREFIX.length())) {
+        return address.substring(IPV4_MAPPED_PREFIX.length());
+    }
     return address.includes(":") && !address.includes(".") ? expandedIpv6(address) : address;
 }
 
 isolated function expandedIpv6(string address) returns string {
+    if address.includes(":::") {
+        return address;
+    }
     int? gap = address.indexOf("::");
     string headPart = gap is int ? address.substring(0, gap) : address;
     string tailPart = gap is int ? address.substring(gap + 2) : "";
@@ -103,14 +111,36 @@ isolated function expandedIpv6(string address) returns string {
         }
     }
     groups.push(...tail);
+    if groups.length() != 8 {
+        return address;
+    }
+    foreach string group in groups {
+        if !re `[0-9a-f]{1,4}`.isFullMatch(group) {
+            return address;
+        }
+    }
     string[] trimmed = from string group in groups
         let string withoutZeros = re `^0+`.replace(group, "")
         select withoutZeros == "" ? "0" : withoutZeros;
     return string:'join(":", ...trimmed);
 }
 
+// Whether the text is an IPv4 address, or an IPv6 address in the full form that `expandedIpv6` produces.
 isolated function isIpAddress(string address) returns boolean =>
-    re `(\d{1,3}\.){3}\d{1,3}`.isFullMatch(address) || re `[0-9a-f:.]*:[0-9a-f:.]*`.isFullMatch(address);
+    isIpv4(address) || re `([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}`.isFullMatch(address);
+
+isolated function isIpv4(string address) returns boolean {
+    if !re `(0|[1-9][0-9]{0,2})(\.(0|[1-9][0-9]{0,2})){3}`.isFullMatch(address) {
+        return false;
+    }
+    foreach string octet in re `\.`.split(address) {
+        int|error value = int:fromString(octet);
+        if value is error || value > 255 {
+            return false;
+        }
+    }
+    return true;
+}
 
 # Sliding-window limiter, so one caller cannot flood the ATS with candidates.
 public isolated class ApplyRateLimiter {
