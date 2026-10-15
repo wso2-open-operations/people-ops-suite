@@ -33,6 +33,8 @@ configurable int trustedProxyHops = 1;
 
 const int MAX_TRACKED_KEYS = 10000;
 
+const int SWEEP_INTERVAL_SECONDS = 60;
+
 isolated function recentAttempts(int[] attempts, int windowStart) returns int[] {
     int[] recent = [];
     foreach int attempt in attempts {
@@ -111,6 +113,7 @@ isolated function isIpAddress(string address) returns boolean =>
 # Sliding-window limiter, so one caller cannot flood the ATS with candidates.
 public isolated class ApplyRateLimiter {
     private map<int[]> attempts = {};
+    private int lastSweep = 0;
 
     # Records an application from the address; false when it has used its allowance within the window.
     public isolated function tryAcquireAddress(string address) returns boolean =>
@@ -124,7 +127,8 @@ public isolated class ApplyRateLimiter {
         int now = time:utcNow()[0];
         int windowStart = now - applyWindowSeconds;
         lock {
-            if self.attempts.length() > MAX_TRACKED_KEYS {
+            if self.attempts.length() > MAX_TRACKED_KEYS && now - self.lastSweep >= SWEEP_INTERVAL_SECONDS {
+                self.lastSweep = now;
                 self.sweep(windowStart);
             }
             int[] recent = recentAttempts(self.attempts[key] ?: [], windowStart);
