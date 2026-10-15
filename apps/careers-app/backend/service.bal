@@ -26,7 +26,7 @@ configurable string[] allowedOrigins = ?;
 configurable int port = ?;
 
 # Longest piece of an upstream reply written to the log.
-const int MAX_LOGGED_REPLY_LENGTH = 200;
+const MAX_LOGGED_REPLY_LENGTH = 200;
 
 final apply:ApplyRateLimiter applyRateLimiter = new;
 
@@ -58,7 +58,7 @@ isolated function forwardOrError(http:Response|error resp, string failureMessage
         allowOrigins: allowedOrigins,
         allowMethods: [http:GET, http:POST, http:OPTIONS],
         allowHeaders: [http:CONTENT_TYPE, http:AUTH_HEADER, types:REQUEST_ID_HEADER],
-        allowCredentials: true,
+        allowCredentials: false,
         maxAge: 84900
     }
 }
@@ -125,7 +125,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         }
         string requestId = types:requestIdOf(ctx);
         string address = apply:clientAddress(req, apply:remoteHost(ctx));
-        if !applyRateLimiter.tryAcquire(apply:limiterKey("ip", address)) {
+        if !applyRateLimiter.tryAcquireAddress(address) {
             log:printWarn("Application rate limit reached for a client address", requestId = requestId);
             return <http:TooManyRequests>{body: {message: "Too many applications. Please try again later."}};
         }
@@ -135,7 +135,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             return <http:BadRequest>{body: {message: form}};
         }
 
-        if !applyRateLimiter.tryAcquire(apply:limiterKey("email", form.email.toLowerAscii())) {
+        if !applyRateLimiter.tryAcquireEmail(form.email) {
             log:printWarn("Application rate limit reached for an email address", requestId = requestId);
             return <http:TooManyRequests>{body: {message: "Too many applications. Please try again later."}};
         }

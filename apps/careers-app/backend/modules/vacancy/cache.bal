@@ -28,14 +28,14 @@ configurable int maxStaleSeconds = 21600;
 # Seconds a failed load is remembered, doubling with each failure in a row. From 1 to 60.
 configurable int failFastSeconds = 5;
 
-const int MAX_FAIL_FAST_SECONDS = 60;
-const int MAX_CACHED_ENTRIES = 500;
-const int MAX_REMEMBERED_FAILURES = 1000;
-const int MAX_BACKOFF_DOUBLINGS = 6;
+const MAX_FAIL_FAST_SECONDS = 60;
+const MAX_CACHED_ENTRIES = 500;
+const MAX_REMEMBERED_FAILURES = 1000;
+const MAX_BACKOFF_DOUBLINGS = 6;
 const decimal WAIT_STEP_SECONDS = 0.05;
 // The most seconds one load can take: two token requests and two reads, plus a margin.
 const decimal LONGEST_LOAD_SECONDS = 4 * UPSTREAM_TIMEOUT_SECONDS + 5;
-const string WARM_UP_REQUEST_ID = "startup-warm-up";
+const WARM_UP_REQUEST_ID = "startup-warm-up";
 
 type CachedBody record {|
     json value;
@@ -50,7 +50,7 @@ type FailedLoad record {|
 |};
 
 // Failures further apart than this many back-offs count as separate.
-const int RESET_AFTER_BACKOFFS = 2;
+const RESET_AFTER_BACKOFFS = 2;
 
 // The number of failures in a row that this failure makes.
 isolated function failureCount(FailedLoad? previous, int now, int failFast) returns int {

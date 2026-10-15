@@ -17,7 +17,7 @@
 import ballerina/http;
 import ballerina/mime;
 
-const int MAX_EMAIL_LENGTH = 254;
+const MAX_EMAIL_LENGTH = 254;
 
 // Same shape the webapp checks before submitting.
 final string:RegExp EMAIL_PATTERN = re `[^\s@]+@[^\s@.]+(\.[^\s@.]+)+`;

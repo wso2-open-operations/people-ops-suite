@@ -16,7 +16,7 @@
 
 import ballerina/http;
 
-const string CTX_REMOTE_HOST = "careers-app-remote-host";
+const CTX_REMOTE_HOST = "careers-app-remote-host";
 
 # Records the connection's address in the request context; a resource that takes `http:Caller` cannot return
 # typed responses, so the apply resource reads it from here.
