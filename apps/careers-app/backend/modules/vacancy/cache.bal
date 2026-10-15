@@ -33,8 +33,8 @@ const MAX_CACHED_ENTRIES = 500;
 const MAX_REMEMBERED_FAILURES = 1000;
 const MAX_BACKOFF_DOUBLINGS = 6;
 const decimal WAIT_STEP_SECONDS = 0.05;
-// The most seconds one load can take: two token requests and two reads, plus a margin.
-const decimal LONGEST_LOAD_SECONDS = 4 * UPSTREAM_TIMEOUT_SECONDS + 5;
+// The most seconds one load can take: eight upstream calls plus a margin.
+const decimal LONGEST_LOAD_SECONDS = 8 * UPSTREAM_TIMEOUT_SECONDS + 5;
 const WARM_UP_REQUEST_ID = "startup-warm-up";
 
 type CachedBody record {|
