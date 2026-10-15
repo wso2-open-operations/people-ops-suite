@@ -54,10 +54,12 @@ public isolated function limiterKey(string kind, string value) returns string {
 # The caller's address: the X-Forwarded-For entry that the outermost trusted proxy appended, counted from the
 # right by `trustedProxyHops`. The connection's own address is used when the setting is 0, the header is
 # missing, the chain is shorter than the setting, or the selected entry is empty.
-public isolated function clientAddress(http:Request req, string remoteHost) returns string {
+public isolated function clientAddress(http:Request req, string remoteHost) returns string =>
+    clientAddressBehind(req, trustedProxyHops, remoteHost);
+
+isolated function clientAddressBehind(http:Request req, int proxyHops, string remoteHost) returns string {
     string[]|http:HeaderNotFoundError forwarded = req.getHeaders("X-Forwarded-For");
-    return forwarded is string[] ? forwardedHop(string:'join(",", ...forwarded), trustedProxyHops, remoteHost)
-        : remoteHost;
+    return forwarded is string[] ? forwardedHop(string:'join(",", ...forwarded), proxyHops, remoteHost) : remoteHost;
 }
 
 isolated function forwardedHop(string forwarded, int proxyHops, string remoteHost) returns string {

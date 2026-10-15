@@ -65,22 +65,52 @@ function attemptsOutsideTheWindowAreForgotten() {
 }
 
 @test:Config {}
-function clientAddressIsTheLastForwardedHop() {
+function clientAddressIsTheLastForwardedHopBehindOneProxy() {
     http:Request spoofed = new;
     spoofed.setHeader("X-Forwarded-For", "9.9.9.9, 10.0.0.1");
-    test:assertEquals(clientAddress(spoofed, "192.168.1.5"), "10.0.0.1");
+    test:assertEquals(clientAddressBehind(spoofed, 1, "192.168.1.5"), "10.0.0.1");
 
     http:Request single = new;
     single.setHeader("X-Forwarded-For", "10.0.0.2");
-    test:assertEquals(clientAddress(single, "192.168.1.5"), "10.0.0.2");
+    test:assertEquals(clientAddressBehind(single, 1, "192.168.1.5"), "10.0.0.2");
+}
+
+@test:Config {}
+function aClientCannotChangeItsAddressByPaddingTheHeader() {
+    http:Request first = new;
+    first.setHeader("X-Forwarded-For", "1.2.3.4, 10.0.0.1");
+    http:Request second = new;
+    second.setHeader("X-Forwarded-For", "5.6.7.8, 9.9.9.9, 10.0.0.1");
+    test:assertEquals(clientAddressBehind(first, 1, "192.168.1.5"), "10.0.0.1");
+    test:assertEquals(clientAddressBehind(second, 1, "192.168.1.5"), "10.0.0.1");
+}
+
+@test:Config {}
+function aClientLineBeforeTheProxyLineDoesNotChangeTheAddress() {
+    http:Request first = new;
+    first.addHeader("X-Forwarded-For", "1.2.3.4");
+    first.addHeader("X-Forwarded-For", "10.0.0.1");
+    http:Request second = new;
+    second.addHeader("X-Forwarded-For", "5.6.7.8");
+    second.addHeader("X-Forwarded-For", "10.0.0.1");
+    test:assertEquals(clientAddressBehind(first, 1, "192.168.1.5"), "10.0.0.1");
+    test:assertEquals(clientAddressBehind(second, 1, "192.168.1.5"), "10.0.0.1");
+}
+
+@test:Config {}
+function ignoringTheHeaderUsesTheConnectionAddress() {
+    http:Request req = new;
+    req.setHeader("X-Forwarded-For", "9.9.9.9, 10.0.0.1");
+    test:assertEquals(clientAddressBehind(req, 0, "192.168.1.5"), "192.168.1.5");
 }
 
 @test:Config {}
 function clientAddressCountsAcrossSeparateForwardedHeaderLines() {
     http:Request twoLines = new;
-    twoLines.addHeader("X-Forwarded-For", "9.9.9.9");
+    twoLines.addHeader("X-Forwarded-For", "9.9.9.9, 10.0.0.2");
     twoLines.addHeader("X-Forwarded-For", "10.0.0.1");
-    test:assertEquals(clientAddress(twoLines, "192.168.1.5"), "10.0.0.1");
+    test:assertEquals(clientAddressBehind(twoLines, 1, "192.168.1.5"), "10.0.0.1");
+    test:assertEquals(clientAddressBehind(twoLines, 2, "192.168.1.5"), "10.0.0.2");
 }
 
 @test:Config {}
@@ -121,6 +151,6 @@ function forwardedHopFallsBackToTheConnectionAddress() {
 
 @test:Config {}
 function clientAddressFallsBackToTheConnectionAddress() {
-    test:assertEquals(clientAddress(new, "192.168.1.5"), "192.168.1.5");
-    test:assertEquals(clientAddress(new, "192.168.1.6"), "192.168.1.6");
+    test:assertEquals(clientAddressBehind(new, 1, "192.168.1.5"), "192.168.1.5");
+    test:assertEquals(clientAddressBehind(new, 1, "192.168.1.6"), "192.168.1.6");
 }
