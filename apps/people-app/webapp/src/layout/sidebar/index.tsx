@@ -18,7 +18,7 @@ import List from "@mui/material/List";
 import { SIDEBAR_WIDTH } from "@config/ui";
 import { ColorModeContext } from "@src/App";
 import MuiDrawer from "@mui/material/Drawer";
-import { Stack, Typography } from "@mui/material";
+import { Backdrop, Stack, Typography, useMediaQuery } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import { getActiveRouteDetails, RouteDetail } from "@src/route";
 import { Box, MUIStyledCommonProps } from "@mui/system";
@@ -40,7 +40,7 @@ import {
   alpha,
   useTheme,
 } from "@mui/material/styles";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface SidebarProps {
   open: boolean;
@@ -87,10 +87,20 @@ const Sidebar = (props: SidebarProps) => {
   );
   const SIDEBAR_OPEN_KEY = "sidebar-open";
 
-  const [isOpen, setIsOpen] = useState(() => {
+  const [desktopOpen, setDesktopOpen] = useState(() => {
     const stored = localStorage.getItem(SIDEBAR_OPEN_KEY);
     return stored === null ? true : stored === "true";
   });
+  // Phones and small tablets: the open sidebar (220px) would leave almost no
+  // room for the page, so there it starts collapsed, slides *over* the page
+  // when opened (instead of pushing it aside), and closes again on navigation
+  // or a tap outside. Its state isn't saved, so desktop keeps its own choice.
+  const isCompact = useMediaQuery(theme.breakpoints.down("md"));
+  const [compactOpen, setCompactOpen] = useState(false);
+  const isOpen = isCompact ? compactOpen : desktopOpen;
+  useEffect(() => {
+    setCompactOpen(false);
+  }, [location.pathname, isCompact]);
 
   const handleExpandCollapse = (item: RouteDetail) => {
     if (item.children && item.children.length > 0) {
@@ -103,7 +113,11 @@ const Sidebar = (props: SidebarProps) => {
   };
 
   const handleDrawer = () => {
-    setIsOpen((prev) => {
+    if (isCompact) {
+      setCompactOpen((prev) => !prev);
+      return;
+    }
+    setDesktopOpen((prev) => {
       localStorage.setItem(SIDEBAR_OPEN_KEY, (!prev).toString());
       return !prev;
     });
@@ -112,9 +126,15 @@ const Sidebar = (props: SidebarProps) => {
   return (
     <ColorModeContext.Consumer>
       {(colorMode) => (
+        <>
+        {isCompact && (
+          <Backdrop open={compactOpen} onClick={() => setCompactOpen(false)}
+            sx={{ zIndex: (t) => t.zIndex.drawer - 1 }} />
+        )}
         <Drawer
           variant="permanent"
           open={isOpen}
+          overlay={isCompact}
           isChildExpanded={expandedPaths.length > 0}
           sx={{
             "& .MuiDrawer-paper": {
@@ -328,6 +348,7 @@ const Sidebar = (props: SidebarProps) => {
             </Stack>
           </DrawerFooter>
         </Drawer>
+        </>
       )}
     </ColorModeContext.Consumer>
   );
@@ -357,16 +378,23 @@ export const DrawerFooter = styled("div")(({ theme }) => ({
 
 interface CustomDrawerProps {
   isChildExpanded?: boolean;
+  // Compact screens: the drawer only ever reserves the collapsed rail's width;
+  // when open, its panel overlays the page.
+  overlay?: boolean;
 }
 
 const Drawer = styled(MuiDrawer, {
-  shouldForwardProp: (prop) => prop !== "open" && prop !== "isChildExpanded",
-})<CustomDrawerProps>(({ theme, open, isChildExpanded }) => ({
+  shouldForwardProp: (prop) => prop !== "open" && prop !== "isChildExpanded" && prop !== "overlay",
+})<CustomDrawerProps>(({ theme, open, isChildExpanded, overlay }) => ({
   width: SIDEBAR_WIDTH,
   flexShrink: 0,
   display: "flex",
   whiteSpace: "nowrap",
-  ...(open && {
+  ...(open && overlay && {
+    ...closedMixin(theme),
+    "& .MuiDrawer-paper": { ...openedMixin(theme), boxShadow: theme.shadows[8] },
+  }),
+  ...(open && !overlay && {
     ...openedMixin(theme),
     "& .MuiDrawer-paper": openedMixin(theme),
   }),

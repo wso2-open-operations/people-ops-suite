@@ -69,6 +69,7 @@ Runtime config injected via `window.config`. Required keys: `CLIENT_ID`, `SIGN_I
   - **`promotion`** — Read-only client for the separate HRIS database (`promotionDbConfig`), supplying approved promotion history to the employee history timeline. Kept apart from `database` because it is a second datasource: its own client, config and types, so the dependency can be replaced or removed without touching the primary database module.
   - **`wso2_coin`** — Car park reservation + O2C payment integration. Bundles the blockchain transaction client (`transaction.bal`, `clients.bal`), Google Sheets parking-record sync (`parkingSheet.bal`), shared types/constants, and admin scripts. Exposes config values like `masterWalletAddress`, `reservationWindowStartHour/EndHour`, and `pendingReservationExpiryMinutes` consumed directly from `service.bal`. The microapp's parking booking flow (`/services/parking/*`) is the frontend surface for this module.
 - Every resource function in `service.bal` extracts `userInfo` from `ctx` and checks role permissions before executing business logic.
+- Employee Hub dashboard endpoints (read-only, admin-only): `GET /intern-profiles` (intern roster; university comes from the `internship` table) and `GET /employee-hub/employees` (current staff, non-intern leavers, and headcount per team and job band). Both depend on the `internship` table from `people_app_table_update_v1.2.2.sql`, as do the employee search/detail queries (`LEFT JOIN internship` for `university`).
 - Four privilege levels — `EMPLOYEE_PRIVILEGE`, `LEAD_PRIVILEGE`, `SERVICE_DESK_PRIVILEGE`, and `ADMIN_PRIVILEGE` — are returned to the frontend in `/user-info`.
 - Database schema is managed via SQL files in `backend/resources/` (initial creation script + numbered migration files).
 
@@ -82,6 +83,7 @@ Runtime config injected via `window.config`. Required keys: `CLIENT_ID`, `SIGN_I
 - `organizationSlice` — org hierarchy data (BUs, teams, sub-teams, etc.). All fetch thunks share a single `state.state` field — any pending thunk sets the entire slice to `loading`.
 - `masterDataSlice` — CRUD state for org master data (entities + parent/child mappings) backing the `view/masterData/` admin screens (`MasterDataView`, `EntityTab`, `EntityDialog`, `MappingDialog`, `HierarchyView`).
 - `bulkOnboardingSlice` — state for bulk CSV employee upload: tracks created/skipped counts, per-row validation errors, SCIM provisioning errors, and group assignment warnings.
+- `employeeHubSlice` — Employee Hub dashboard data: intern roster (`GET /intern-profiles`), employees/leavers and job band counts (`GET /employee-hub/employees`). Each fetch runs once and is cached; `{ force: true }` refetches. Read via `@hooks/useEmployeeHub`; fetched on mount by `@hooks/useEmployeeHubBootstrap`.
 - `commonSlice` — snackbar/notification queue
 - `configSlice` — app config from backend
 
@@ -89,7 +91,7 @@ Runtime config injected via `window.config`. Required keys: `CLIENT_ID`, `SIGN_I
 
 **API service** (`src/utils/apiService.ts`): Singleton Axios instance with retry-axios (3 retries, 401 triggers token refresh). Uses a per-endpoint `CancelToken` map — any new request to the same URL automatically cancels the previous in-flight request to that URL.
 
-**Routing:** `src/route.ts` defines `RouteObjectWithRole[]` where each route has `allowRoles`. `getActiveRoutesV2()` filters routes by user roles. Views in `src/view/` (employees, me, cases, help, reports, masterData).
+**Routing:** `src/route.ts` defines `RouteObjectWithRole[]` where each route has `allowRoles`. `getActiveRoutesV2()` filters routes by user roles. Views in `src/view/` (employees, me, cases, help, reports, masterData, employeeHub).
 
 **Path aliases** (defined in `tsconfig.paths.json`, applied via `config-overrides.js` with react-app-rewired):
 - `@src/*` → `src/`
@@ -101,6 +103,7 @@ Runtime config injected via `window.config`. Required keys: `CLIENT_ID`, `SIGN_I
 - `@slices/*` → `src/slices/`
 - `@view/*` → `src/view/`
 - `@utils/*` → `src/utils/`
+- `@hooks/*` → `src/hooks/`
 
 **Runtime config:** All env vars are injected via `window.config` (not `process.env` at build time for the deployed app). `src/config/config.ts` reads from `window.config` with fallback to empty strings.
 
@@ -172,6 +175,9 @@ A user may hold more than one role simultaneously (e.g., `[EMPLOYEE, LEAD]` or `
 | `/reports/inactive-employees` | `ADMIN` | — | Admins only |
 | `/reports/qr-codes` | `ADMIN, SERVICE_DESK` | — | Admins and Service Desk |
 | `/master-data` | `ADMIN` | — | Admins only |
+| `/employee-hub` (parent) | `ADMIN` | — | Admins only (redirects to `/employee-hub/employees`) |
+| `/employee-hub/employees` (Permanent) | `ADMIN` | — | Admins only |
+| `/employee-hub/interns` (Interns) | `ADMIN` | — | Admins only |
 
 The dual `/employees/my-team` route entries ensure that lead+admin users see **My Team** nested under the **Employees** group, while lead-only users see it as a standalone top-level entry. The `excludeRoles` guard on the top-level entry prevents duplication for admin+lead users.
 

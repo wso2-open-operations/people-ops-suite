@@ -74,6 +74,8 @@ export const AppConfig = {
     qrCodesSearch: SERVICE_BASE_URL + "/reports/qr-codes/search",
 
     reportsEmployees: SERVICE_BASE_URL + "/reports/employees/generate",
+    internProfiles: SERVICE_BASE_URL + "/intern-profiles",
+    employeeHubEmployees: SERVICE_BASE_URL + "/employee-hub/employees",
 
     businessUnits: SERVICE_BASE_URL + "/business-units",
     businessUnit: (id: number) => SERVICE_BASE_URL + `/business-units/${id}`,
