@@ -37,14 +37,14 @@ type GraphQlRetryConfig record {|
 |};
 
 # Employee fields the reminder needs from the HR entity service.
-public type Employee record {
+public type Employee record {|
     # First name of the employee
     string? firstName;
     # Last name of the employee
     string? lastName;
     # Work email of the employee's current lead
     string? managerEmail;
-};
+|};
 
 # GraphQL single employee response.
 type SingleEmployeeResponse record {|
