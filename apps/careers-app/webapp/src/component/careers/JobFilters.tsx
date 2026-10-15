@@ -319,12 +319,6 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
 
         {hasActive && (
           <Stack direction="row" flexWrap="wrap" alignItems="center" gap={1} sx={{ mt: 2 }}>
-            <Typography
-              component="span"
-              sx={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.08em", color: "#6b7591", mr: 0.5 }}
-            >
-              ACTIVE
-            </Typography>
             {activeChips.map(({ key, value }) => (
               <Stack
                 key={`${key}-${value}`}

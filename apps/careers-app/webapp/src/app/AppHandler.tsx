@@ -58,6 +58,8 @@ const AppHandler = () => {
             {
               element: <RequireSignIn />,
               children: [
+                // The address Asgardeo's "Sign in" links return to: it starts the sign-in, then opens the jobs.
+                { path: "/sign-in", element: <Navigate to="/jobs" replace /> },
                 { path: "/profile", element: <View.profile /> },
                 { path: "/applications", element: <View.applications /> },
                 { path: "/applications/:id", element: <View.applications /> },

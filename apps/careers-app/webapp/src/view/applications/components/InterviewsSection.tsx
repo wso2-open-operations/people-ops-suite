@@ -72,7 +72,7 @@ const InterviewsSection = ({ interviews }: InterviewsSectionProps) => {
                     component="a"
                     href={interview.location}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     endIcon={<ExternalLink size={13} />}
                     sx={{ fontWeight: 600 }}
                   >
