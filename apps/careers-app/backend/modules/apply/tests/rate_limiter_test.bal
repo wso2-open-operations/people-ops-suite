@@ -92,6 +92,27 @@ function forwardedHopIsCountedFromTheRight() {
 }
 
 @test:Config {}
+function aPortDoesNotChangeTheAddress() {
+    test:assertEquals(forwardedHop("203.0.113.7:51234", 1, "192.168.1.5"), "203.0.113.7");
+    test:assertEquals(forwardedHop("203.0.113.7:40000", 1, "192.168.1.5"), "203.0.113.7");
+}
+
+@test:Config {}
+function ipv6AddressesAreInOneForm() {
+    test:assertEquals(forwardedHop("[2001:DB8::1]:443", 1, "192.168.1.5"), "2001:db8:0:0:0:0:0:1");
+    test:assertEquals(forwardedHop("2001:db8:0:0:0:0:0:1", 1, "192.168.1.5"), "2001:db8:0:0:0:0:0:1");
+    test:assertEquals(forwardedHop("::1", 1, "192.168.1.5"), "0:0:0:0:0:0:0:1");
+    test:assertEquals(forwardedHop("0:0:0:0:0:0:0:1", 1, "192.168.1.5"), "0:0:0:0:0:0:0:1");
+    test:assertEquals(forwardedHop("fe80::1%eth0", 1, "192.168.1.5"), "fe80:0:0:0:0:0:0:1");
+}
+
+@test:Config {}
+function anEntryThatIsNotAnAddressFallsBackToTheConnectionAddress() {
+    test:assertEquals(forwardedHop("not-an-ip", 1, "192.168.1.5"), "192.168.1.5");
+    test:assertEquals(forwardedHop("999", 1, "192.168.1.5"), "192.168.1.5");
+}
+
+@test:Config {}
 function forwardedHopFallsBackToTheConnectionAddress() {
     test:assertEquals(forwardedHop("10.0.0.1", 0, "192.168.1.5"), "192.168.1.5");
     test:assertEquals(forwardedHop("10.0.0.1", 2, "192.168.1.5"), "192.168.1.5");

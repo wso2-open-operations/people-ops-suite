@@ -66,9 +66,47 @@ isolated function forwardedHop(string forwarded, int proxyHops, string remoteHos
     if hops.length() < proxyHops {
         return remoteHost;
     }
-    string hop = hops[hops.length() - proxyHops].trim();
-    return hop == "" ? remoteHost : hop;
+    string hop = normalisedAddress(hops[hops.length() - proxyHops]);
+    return isIpAddress(hop) ? hop : remoteHost;
 }
+
+// The address without its port, brackets or zone, with an IPv6 address in its full lower-case form.
+isolated function normalisedAddress(string entry) returns string {
+    string address = entry.trim().toLowerAscii();
+    if address.startsWith("[") {
+        int? close = address.indexOf("]");
+        address = close is int ? address.substring(1, close) : address.substring(1);
+    } else if re `:`.split(address).length() == 2 && address.includes(".") {
+        address = address.substring(0, <int>address.indexOf(":"));
+    }
+    int? zone = address.indexOf("%");
+    if zone is int {
+        address = address.substring(0, zone);
+    }
+    return address.includes(":") && !address.includes(".") ? expandedIpv6(address) : address;
+}
+
+isolated function expandedIpv6(string address) returns string {
+    int? gap = address.indexOf("::");
+    string headPart = gap is int ? address.substring(0, gap) : address;
+    string tailPart = gap is int ? address.substring(gap + 2) : "";
+    string[] head = headPart == "" ? [] : re `:`.split(headPart);
+    string[] tail = tailPart == "" ? [] : re `:`.split(tailPart);
+    string[] groups = [...head];
+    if gap is int {
+        foreach int _ in 0 ..< 8 - head.length() - tail.length() {
+            groups.push("0");
+        }
+    }
+    groups.push(...tail);
+    string[] trimmed = from string group in groups
+        let string withoutZeros = re `^0+`.replace(group, "")
+        select withoutZeros == "" ? "0" : withoutZeros;
+    return string:'join(":", ...trimmed);
+}
+
+isolated function isIpAddress(string address) returns boolean =>
+    re `(\d{1,3}\.){3}\d{1,3}`.isFullMatch(address) || re `[0-9a-f:.]*:[0-9a-f:.]*`.isFullMatch(address);
 
 # Sliding-window limiter, so one caller cannot flood the ATS with candidates.
 public isolated class ApplyRateLimiter {
