@@ -22,25 +22,25 @@ public type AtsConfig record {|
     string clientSecret;
 |};
 
-const string STATUS_PUBLISHED = "PUBLISHED";
+const STATUS_PUBLISHED = "PUBLISHED";
 
-const string EMPLOYMENT_INTERNSHIP = "Internship";
+const EMPLOYMENT_INTERNSHIP = "Internship";
 
 # The ATS employment type that is shown as EMPLOYMENT_FULL_TIME.
-const string EMPLOYMENT_PERMANENT = "Permanent";
-const string EMPLOYMENT_FULL_TIME = "Full Time";
+const EMPLOYMENT_PERMANENT = "Permanent";
+const EMPLOYMENT_FULL_TIME = "Full Time";
 
-const string MODE_REMOTE = "Remote";
-const string MODE_HYBRID = "Hybrid";
+const MODE_REMOTE = "Remote";
+const MODE_HYBRID = "Hybrid";
 
-const string CANDIDATE_STATUS_CREATED = "CREATED";
-const string APPLIED_FROM_CAREER_SITE = "Career Site";
+const CANDIDATE_STATUS_CREATED = "CREATED";
+const APPLIED_FROM_CAREER_SITE = "Career Site";
 
 # The address recorded for an internship.
-const string ADDRESS_NOT_APPLICABLE = "N/A";
+const ADDRESS_NOT_APPLICABLE = "N/A";
 
 # The name used when an org id has no match.
-const string UNKNOWN_NAME = "Unknown";
+const UNKNOWN_NAME = "Unknown";
 
 # An ATS reply with a status other than 200.
 type UpstreamError distinct error<record {|int status;|}>;
