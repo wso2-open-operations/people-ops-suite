@@ -22,7 +22,7 @@ import ballerina/time;
 configurable VacancyConfig vacancyConfig = ?;
 
 // Identifies this service in the upstream's logs.
-const string USER_AGENT = "careers-app-backend/0.1.0";
+const USER_AGENT = "careers-app-backend/0.1.0";
 
 // The longest a read, or a token request, waits for the upstream to reply.
 const decimal UPSTREAM_TIMEOUT_SECONDS = 15;

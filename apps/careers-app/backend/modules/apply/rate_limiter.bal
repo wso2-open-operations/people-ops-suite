@@ -31,9 +31,9 @@ configurable int applyWindowSeconds = 3600;
 # How many proxies in front of the service append to X-Forwarded-For. 0 ignores the header.
 configurable int trustedProxyHops = 1;
 
-const int MAX_TRACKED_KEYS = 10000;
+const MAX_TRACKED_KEYS = 10000;
 
-const int SWEEP_INTERVAL_SECONDS = 60;
+const SWEEP_INTERVAL_SECONDS = 60;
 
 isolated function recentAttempts(int[] attempts, int windowStart) returns int[] {
     int[] recent = [];

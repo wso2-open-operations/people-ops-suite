@@ -26,7 +26,7 @@ configurable string[] allowedOrigins = ?;
 configurable int port = ?;
 
 # Longest piece of an upstream reply written to the log.
-const int MAX_LOGGED_REPLY_LENGTH = 200;
+const MAX_LOGGED_REPLY_LENGTH = 200;
 
 final apply:ApplyRateLimiter applyRateLimiter = new;
 
