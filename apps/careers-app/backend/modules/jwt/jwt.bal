@@ -78,15 +78,13 @@ final cache:Cache emailCache = new ({capacity: 1000, defaultMaxAge: 300, cleanup
 public isolated function callerEmail(AsgardeoJwt user, string accessToken) returns string|error? {
     any|cache:Error cached = emailCache.get(user.sub);
     if cached is string {
-        return cached;
+        return cached == "" ? () : cached;
     }
     json userInfo = check userInfoClient->get("", {"Authorization": "Bearer " + accessToken});
     string? email = emailOf(userInfo);
-    if email is string {
-        cache:Error? stored = emailCache.put(user.sub, email);
-        if stored is cache:Error {
-            log:printWarn("Could not keep the caller's email in the cache", stored);
-        }
+    cache:Error? stored = emailCache.put(user.sub, email ?: "");
+    if stored is cache:Error {
+        log:printWarn("Could not keep the caller's email in the cache", stored);
     }
     return email;
 }
