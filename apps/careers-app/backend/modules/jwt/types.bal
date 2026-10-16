@@ -20,17 +20,19 @@ import ballerina/http;
 
 
 const CTX_USER = "careers-app-user";
+const CTX_TOKEN = "careers-app-token";
 
 # The caller's validated identity.
 public type AsgardeoJwt record {|
     string sub;
 |};
 
-# Asgardeo connection details for token validation
+# Asgardeo connection details for token validation. `userInfoUrl` defaults to the issuer's user-info endpoint.
 public type AuthConfig record {|
     string jwksUrl;
     string issuer;
     string audience;
+    string userInfoUrl?;
 |};
 
 public type AppUnauthorizedError record {|

@@ -12,6 +12,8 @@ clientSecret = ""
 jwksUrl = ""
 issuer = ""
 audience = ""
+# Optional: defaults to the issuer's /userinfo endpoint.
+# userInfoUrl = ""
 
 # Optional: limit on guest applications.
 # [careers_app.apply]

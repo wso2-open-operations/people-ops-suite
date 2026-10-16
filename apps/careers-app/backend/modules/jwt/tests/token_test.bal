@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import ballerina/jwt;
 import ballerina/test;
 
 // Header {"alg":"none"} with a payload that looks valid (right issuer and audience, far-future expiry) and no signature.
@@ -33,4 +34,34 @@ function malformedTokenIsRejected() {
 @test:Config {}
 function unsignedTokenIsRejected() {
     test:assertTrue(validateToken(UNSIGNED_TOKEN) is error);
+}
+
+@test:Config {}
+function identityIsTheSubject() {
+    jwt:Payload payload = {sub: "user-1"};
+    test:assertEquals(identityOf(payload), {sub: "user-1"});
+}
+
+@test:Config {}
+function identityNeedsASubject() {
+    test:assertTrue(identityOf({iss: "issuer"}) is error);
+    test:assertTrue(identityOf({sub: ""}) is error);
+}
+
+@test:Config {}
+function emailComesFromTheUserInfoInLowerCase() {
+    test:assertEquals(emailOf({"sub": "u", "email": " Ada@Example.test "}), "ada@example.test");
+    test:assertEquals(emailOf({"sub": "u", "email": "  "}), ());
+    test:assertEquals(emailOf({"sub": "u"}), ());
+    test:assertEquals(emailOf("not an object"), ());
+}
+
+@test:Config {}
+function userInfoUrlDefaultsToTheIssuersUserInfoEndpoint() {
+    test:assertEquals(userInfoUrlOf({jwksUrl: "j", issuer: "https://idp.example.test/t/org/oauth2/token", audience: "a"}),
+        "https://idp.example.test/t/org/oauth2/userinfo");
+    test:assertEquals(userInfoUrlOf({jwksUrl: "j", issuer: "https://idp.example.test/issuer", audience: "a"}),
+        "https://idp.example.test/issuer");
+    test:assertEquals(userInfoUrlOf({jwksUrl: "j", issuer: "i", audience: "a", userInfoUrl: "https://idp.example.test/me"}),
+        "https://idp.example.test/me");
 }

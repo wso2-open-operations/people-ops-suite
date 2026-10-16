@@ -14,12 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import ballerina/cache;
 import ballerina/http;
 import ballerina/jwt;
+import ballerina/log;
 
 configurable AuthConfig authConfig = ?;
 
-# Validates the token's signature (against Asgardeo's JWKS), issuer, audience and expiry, and returns the caller's subject.
+# Validates the token's signature (against Asgardeo's JWKS), issuer, audience and expiry, and returns the caller's
+# identity.
 public isolated function validateToken(string token) returns AsgardeoJwt|error {
     // Reject a malformed token before attempting signature validation.
     [jwt:Header, jwt:Payload] _ = check jwt:decode(token);
@@ -37,11 +40,62 @@ public isolated function validateToken(string token) returns AsgardeoJwt|error {
     if payload?.exp is () {
         return error("Invalid token: missing exp");
     }
+    return identityOf(payload);
+}
+
+isolated function identityOf(jwt:Payload payload) returns AsgardeoJwt|error {
     string? sub = payload?.sub;
     if sub is () || sub == "" {
         return error("Invalid token: missing sub");
     }
     return {sub};
+}
+
+isolated function userInfoUrlOf(AuthConfig config) returns string {
+    string? configured = config?.userInfoUrl;
+    if configured is string {
+        return configured;
+    }
+    string issuer = config.issuer;
+    return issuer.endsWith("/token") ? issuer.substring(0, issuer.length() - "token".length()) + "userinfo" : issuer;
+}
+
+isolated function emailOf(json userInfo) returns string? {
+    if userInfo is map<json> {
+        json email = userInfo["email"];
+        if email is string && email.trim() != "" {
+            return email.trim().toLowerAscii();
+        }
+    }
+    return ();
+}
+
+final http:Client userInfoClient = check new (userInfoUrlOf(authConfig), {timeout: 15});
+
+// Emails by subject, so the identity provider is asked once per caller for a few minutes.
+final cache:Cache emailCache = new ({capacity: 1000, defaultMaxAge: 300, cleanupInterval: 600});
+
+# The caller's email in lower case, asked from the identity provider with the caller's access token; nothing when the
+# account has none.
+public isolated function callerEmail(AsgardeoJwt user, string accessToken) returns string|error? {
+    any|cache:Error cached = emailCache.get(user.sub);
+    if cached is string {
+        return cached;
+    }
+    json userInfo = check userInfoClient->get("", {"Authorization": "Bearer " + accessToken});
+    string? email = emailOf(userInfo);
+    if email is string {
+        cache:Error? stored = emailCache.put(user.sub, email);
+        if stored is cache:Error {
+            log:printWarn("Could not keep the caller's email in the cache", stored);
+        }
+    }
+    return email;
+}
+
+# The access token of the validated caller, for resource functions that need to ask the identity provider about them.
+public isolated function getAccessToken(http:RequestContext ctx) returns string|error {
+    return ctx.getWithType(CTX_TOKEN);
 }
 
 # Read the validated caller back out of the request context, for resource functions that need the caller's identity.
