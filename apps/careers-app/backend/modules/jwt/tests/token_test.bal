@@ -67,9 +67,10 @@ function detailsComeFromTheUserInfo() {
 
 @test:Config {}
 function missingUserInfoValuesAreEmptyText() {
-    test:assertEquals(detailsOf({"sub": "u", "email": "  "}), {});
-    test:assertEquals(detailsOf({"sub": "u", "given_name": 5}), {});
-    test:assertEquals(detailsOf("not an object"), {});
+    CallerDetails unknown = {};
+    test:assertEquals(detailsOf({"sub": "u", "email": "  "}), unknown);
+    test:assertEquals(detailsOf({"sub": "u", "given_name": 5}), unknown);
+    test:assertEquals(detailsOf("not an object"), unknown);
 }
 
 @test:Config {}
