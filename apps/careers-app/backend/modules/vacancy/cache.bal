@@ -77,7 +77,7 @@ isolated function jsonBodyOf(http:Response resp) returns json|error {
 
 isolated function replyFor(FailedLoad failed) returns http:Response|error {
     if failed.status == 0 {
-        return error("The vacancy service could not be reached");
+        return error("The ATS could not be reached");
     }
     http:Response resp = new;
     resp.statusCode = failed.status;
@@ -139,7 +139,7 @@ public isolated class VacancyCache {
             }
             runtime:sleep(WAIT_STEP_SECONDS);
         }
-        return error("Timed out waiting for the vacancy service");
+        return error("Timed out waiting for the ATS");
     }
 
     isolated function load(string key, isolated function () returns http:Response|error call)

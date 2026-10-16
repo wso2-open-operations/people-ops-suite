@@ -72,7 +72,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     public function createInterceptors() returns http:Interceptor[] =>
         [new types:RequestIdInterceptor(), new apply:RemoteAddressInterceptor(), new jwt:JwtInterceptor()];
 
-    # Proxies the job listing from career-vacancy-service. Public: no sign-in needed.
+    # The published job list. Public: no sign-in needed.
     resource function get jobs(http:RequestContext ctx) returns json|http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
         json|http:Response|error result = vacancy:cachedJobs(requestId);
@@ -82,7 +82,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         return forwardOrError(result, "Failed to fetch jobs from upstream service", requestId);
     }
 
-    # Proxies the team/location org structure from career-vacancy-service. Public: no sign-in needed.
+    # The team and location org structure. Public: no sign-in needed.
     resource function get jobs/org\-structure(http:RequestContext ctx)
             returns json|http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
@@ -93,7 +93,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         return forwardOrError(result, "Failed to fetch org structure from upstream service", requestId);
     }
 
-    # Proxies a single job's detail from career-vacancy-service, 404 if it doesn't exist. Public: no sign-in needed.
+    # One published job's detail, 404 if it doesn't exist. Public: no sign-in needed.
     resource function get jobs/[string jobId](http:RequestContext ctx)
             returns json|http:BadRequest|http:NotFound|http:BadGateway|http:GatewayTimeout {
         if !types:isValidJobId(jobId) {
@@ -108,14 +108,14 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             log:printError("Failed to fetch job from upstream service", result, requestId = requestId);
             return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
         }
-        // The vacancy service answers 400 for a vacancy that is not published, and that is also "not found" here.
+        // A vacancy that is not published is answered with 400, which is also "not found" here.
         if result.statusCode == 404 || result.statusCode == 400 {
             return <http:NotFound>{body: {message: "Job not found"}};
         }
         return forwardOrError(result, "Failed to fetch job from upstream service", requestId);
     }
 
-    # Validates the application form and CV, then creates the candidate in career-vacancy-service.
+    # Validates the application form and CV, then creates the candidate in the ATS.
     # Public: guests have no account, so each address and each email is rate limited instead.
     resource function post jobs/[string jobId]/apply(http:Request req, http:RequestContext ctx)
             returns http:Created|http:BadRequest|http:NotFound|http:Conflict|http:TooManyRequests|http:BadGateway
@@ -150,7 +150,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         };
         http:Response|error resp = vacancy:applyForJob(jobId, candidate, requestId);
         if resp is error {
-            log:printError("Failed to reach the vacancy service for an application", resp, requestId = requestId);
+            log:printError("Failed to reach the ATS for an application", resp, requestId = requestId);
             return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
         }
         if resp.statusCode < 200 || resp.statusCode >= 300 {
@@ -158,7 +158,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             string|error reply = resp.getTextPayload();
             string replySnippet = reply is string ? (reply.length() > MAX_LOGGED_REPLY_LENGTH
                 ? reply.substring(0, MAX_LOGGED_REPLY_LENGTH) : reply) : "";
-            log:printError(string `Vacancy service did not accept an application for vacancy ${jobId}: status ${resp.statusCode}`,
+            log:printError(string `The ATS did not accept an application for vacancy ${jobId}: status ${resp.statusCode}`,
                 reply = replySnippet, requestId = requestId);
             return apply:applyFailure(resp.statusCode);
         }
@@ -244,9 +244,13 @@ isolated function callerEmailOf(http:RequestContext ctx, string requestId)
     return email;
 }
 
+// The text with every email address, plain or URL-encoded, replaced, so that it is safe to write to a log.
+isolated function withoutEmails(string text) returns string =>
+    re `[^\s/?&=]+(%40|@)[^\s/?&=]+`.replaceAll(text, "{email}");
+
 isolated function candidateFailure(error err, string failureMessage, string requestId)
         returns http:BadGateway|http:GatewayTimeout {
-    log:printError(failureMessage, err, requestId = requestId);
+    log:printError(failureMessage, errorMessage = withoutEmails(err.message()), requestId = requestId);
     if err is http:ClientError {
         return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
     }

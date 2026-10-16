@@ -45,7 +45,7 @@ function routesNotListedAsPublicNeedAToken() returns error? {
 
 @test:Config {}
 function publicJobReadsReachTheServiceWithoutAToken() returns error? {
-    // No vacancy service runs in the tests, so a request that passes the interceptor ends in a 504.
+    // No ATS runs in the tests, so a request that passes the interceptor ends in a 504.
     http:Response list = check testClient->get("/jobs");
     test:assertEquals(list.statusCode, 504);
     http:Response detail = check testClient->get("/jobs/258");
@@ -135,6 +135,14 @@ function candidateRoutesWithAMalformedAuthorizationHeaderAreUnauthorized() retur
     test:assertEquals(basic.statusCode, 401);
     http:Response bare = check testClient->get("/applications", {"Authorization": "not-a-bearer-header"});
     test:assertEquals(bare.statusCode, 401);
+}
+
+@test:Config {}
+function emailAddressesAreRemovedFromLoggedText() {
+    test:assertEquals(withoutEmails("failed for /candidates/ada%40example.test/histories"),
+        "failed for /candidates/{email}/histories");
+    test:assertEquals(withoutEmails("failed for ada@example.test and more"), "failed for {email} and more");
+    test:assertEquals(withoutEmails("connection refused"), "connection refused");
 }
 
 @test:Config {}
