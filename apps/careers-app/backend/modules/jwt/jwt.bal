@@ -50,6 +50,9 @@ isolated function identityOf(jwt:Payload payload) returns AsgardeoJwt|error {
     return {sub};
 }
 
+isolated function isUserInfoOf(json userInfo, string sub) returns boolean =>
+    userInfo is map<json> && userInfo["sub"] == sub;
+
 isolated function textOf(json value) returns string => value is string ? value.trim() : "";
 
 isolated function detailsOf(json userInfo) returns CallerDetails {
@@ -77,6 +80,9 @@ public isolated function callerDetails(AsgardeoJwt user, string accessToken) ret
         return cached;
     }
     json userInfo = check userInfoClient->get("", {"Authorization": "Bearer " + accessToken});
+    if !isUserInfoOf(userInfo, user.sub) {
+        return error("The user-info reply does not belong to the caller");
+    }
     CallerDetails details = detailsOf(userInfo);
     cache:Error? stored = detailsCache.put(user.sub, details.cloneReadOnly());
     if stored is cache:Error {

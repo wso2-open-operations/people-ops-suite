@@ -66,6 +66,15 @@ function detailsComeFromTheUserInfo() {
 }
 
 @test:Config {}
+function userInfoMustBelongToTheCaller() {
+    test:assertTrue(isUserInfoOf({"sub": "user-1", "email": "ada@example.test"}, "user-1"));
+    test:assertFalse(isUserInfoOf({"sub": "user-2", "email": "ada@example.test"}, "user-1"));
+    test:assertFalse(isUserInfoOf({"email": "ada@example.test"}, "user-1"));
+    test:assertFalse(isUserInfoOf({"sub": 1}, "1"));
+    test:assertFalse(isUserInfoOf("not an object", "user-1"));
+}
+
+@test:Config {}
 function missingUserInfoValuesAreEmptyText() {
     CallerDetails unknown = {};
     test:assertEquals(detailsOf({"sub": "u", "email": "  "}), unknown);
