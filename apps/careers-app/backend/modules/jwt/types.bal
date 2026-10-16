@@ -41,7 +41,7 @@ public type AuthConfig record {|
     string jwksUrl;
     string issuer;
     string audience;
-    string userInfoUrl?;
+    string userInfoUrl;
 |};
 
 public type AppUnauthorizedError record {|

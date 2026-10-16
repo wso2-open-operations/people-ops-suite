@@ -50,15 +50,6 @@ isolated function identityOf(jwt:Payload payload) returns AsgardeoJwt|error {
     return {sub};
 }
 
-isolated function userInfoUrlOf(AuthConfig config) returns string {
-    string? configured = config?.userInfoUrl;
-    if configured is string {
-        return configured;
-    }
-    string issuer = config.issuer;
-    return issuer.endsWith("/token") ? issuer.substring(0, issuer.length() - "token".length()) + "userinfo" : issuer;
-}
-
 isolated function textOf(json value) returns string => value is string ? value.trim() : "";
 
 isolated function detailsOf(json userInfo) returns CallerDetails {
@@ -74,7 +65,7 @@ isolated function detailsOf(json userInfo) returns CallerDetails {
     };
 }
 
-final http:Client userInfoClient = check new (userInfoUrlOf(authConfig), {timeout: 15});
+final http:Client userInfoClient = check new (authConfig.userInfoUrl, {timeout: 15});
 
 // Callers' details by subject.
 final cache:Cache detailsCache = new ({capacity: 1000, defaultMaxAge: 300, cleanupInterval: 600});

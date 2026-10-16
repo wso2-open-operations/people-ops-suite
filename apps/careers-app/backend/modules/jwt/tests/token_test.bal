@@ -73,12 +73,3 @@ function missingUserInfoValuesAreEmptyText() {
     test:assertEquals(detailsOf("not an object"), unknown);
 }
 
-@test:Config {}
-function userInfoUrlDefaultsToTheIssuersUserInfoEndpoint() {
-    test:assertEquals(userInfoUrlOf({jwksUrl: "j", issuer: "https://idp.example.test/t/org/oauth2/token", audience: "a"}),
-        "https://idp.example.test/t/org/oauth2/userinfo");
-    test:assertEquals(userInfoUrlOf({jwksUrl: "j", issuer: "https://idp.example.test/issuer", audience: "a"}),
-        "https://idp.example.test/issuer");
-    test:assertEquals(userInfoUrlOf({jwksUrl: "j", issuer: "i", audience: "a", userInfoUrl: "https://idp.example.test/me"}),
-        "https://idp.example.test/me");
-}
