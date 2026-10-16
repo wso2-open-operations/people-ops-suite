@@ -34,6 +34,10 @@ const MODE_REMOTE = "Remote";
 const MODE_HYBRID = "Hybrid";
 
 const CANDIDATE_STATUS_CREATED = "CREATED";
+const CANDIDATE_STATUS_DELETED = "DELETED";
+
+# The most applications of one candidate that are read.
+const MAX_HISTORY_ENTRIES = 100;
 const APPLIED_FROM_CAREER_SITE = "Career Site";
 
 # The address recorded for an internship.
@@ -153,6 +157,68 @@ type JobDetail record {|
 type OrgStructure record {|
     map<string> location_list;
     map<string> team_list;
+|};
+
+# One application in a candidate's history as the ATS returns it. The interview and feedback fields it also
+# carries are never read.
+type AtsHistoryEntry record {
+    int id;
+    int candidateId = 0;
+    int vacancyId;
+    string vacancyTitle = "";
+    string status;
+    string firstName = "";
+    string lastName = "";
+    string gender = "";
+    string contactNo = "";
+    string? address = ();
+    string? university = ();
+    string createdOn = "";
+};
+
+type AtsHistoryResponse record {
+    AtsHistoryEntry[] candidates;
+};
+
+# The signed-in candidate's details, in the shape the web app reads.
+public type CandidateProfile record {|
+    string firstName;
+    string lastName;
+    string gender;
+    string personalEmail;
+    string contactNo;
+    string? address;
+    string? university;
+|};
+
+# The details a candidate can change; a null address or university clears it.
+public type ProfileChanges record {|
+    string firstName?;
+    string lastName?;
+    string gender?;
+    string contactNo?;
+    string? address?;
+    string? university?;
+|};
+
+# The changes in the form the ATS takes.
+type AtsCandidateUpdate record {|
+    string firstName?;
+    string lastName?;
+    string gender?;
+    string contactNo?;
+    string address?;
+    string university?;
+|};
+
+# One of the signed-in candidate's applications, in the shape the web app reads.
+public type ApplicationSummary record {|
+    string id;
+    string jobId;
+    string jobTitle;
+    string department;
+    string appliedDate;
+    string status;
 |};
 
 # Candidate details from the application form. `resume` holds the CV's bytes.

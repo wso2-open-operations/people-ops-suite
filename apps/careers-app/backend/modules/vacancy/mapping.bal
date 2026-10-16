@@ -165,6 +165,122 @@ isolated function orgStructureOf(AtsCompany[] companies, AtsBusinessUnit[] units
     return {location_list: indexed(locations), team_list: indexed(teams)};
 }
 
+// The status the web app shows for an ATS candidate status.
+isolated function applicationStatusOf(string atsStatus) returns string {
+    match atsStatus {
+        "IN_REVIEW" => {
+            return "Screening";
+        }
+        "INTERVIEW_IN_PROGRESS"|"INTERVIEW_COMPLETED" => {
+            return "Interview";
+        }
+        "HIRED" => {
+            return "Offer Accepted";
+        }
+        "REJECTED" => {
+            return "Rejected";
+        }
+    }
+    return "Applied";
+}
+
+// The team of each published vacancy, keyed by vacancy id.
+isolated function departmentsOf(json jobs) returns map<string> {
+    map<string> departments = {};
+    if jobs is json[] {
+        foreach json job in jobs {
+            if job is map<json> {
+                json id = job["id"];
+                json team = job["team"];
+                if id is int && team is string {
+                    departments[id.toString()] = team;
+                }
+            }
+        }
+    }
+    return departments;
+}
+
+// The candidate's applications, newest first, without the ones that were deleted.
+isolated function applicationsOf(AtsHistoryEntry[] history, map<string> departments) returns ApplicationSummary[] =>
+    from AtsHistoryEntry entry in history
+    where entry.status != CANDIDATE_STATUS_DELETED
+    order by entry.id descending
+    select {
+        id: entry.id.toString(),
+        jobId: entry.vacancyId.toString(),
+        jobTitle: entry.vacancyTitle,
+        department: departments[entry.vacancyId.toString()] ?: "",
+        appliedDate: entry.createdOn,
+        status: applicationStatusOf(entry.status)
+    };
+
+// The candidate's most recent application that was not deleted.
+isolated function latestEntry(AtsHistoryEntry[] history) returns AtsHistoryEntry? {
+    AtsHistoryEntry[] latest = from AtsHistoryEntry entry in history
+        where entry.status != CANDIDATE_STATUS_DELETED
+        order by entry.id descending
+        limit 1
+        select entry;
+    return latest.length() == 0 ? () : latest[0];
+}
+
+// The candidate's details from their most recent application.
+isolated function profileOf(AtsHistoryEntry[] history, string email) returns CandidateProfile? {
+    AtsHistoryEntry? entry = latestEntry(history);
+    if entry is () {
+        return ();
+    }
+    string? address = entry.address;
+    return {
+        firstName: entry.firstName,
+        lastName: entry.lastName,
+        gender: entry.gender,
+        personalEmail: email,
+        contactNo: entry.contactNo,
+        address: address is string && address.trim() != "" && address != ADDRESS_NOT_APPLICABLE ? address : (),
+        university: entry.university
+    };
+}
+
+// The changes in the form the ATS takes, or the reason they cannot be accepted. The ATS changes only what it is given
+// as text, so a null address or university is sent as empty text.
+isolated function atsUpdateOf(ProfileChanges changes) returns AtsCandidateUpdate|string {
+    AtsCandidateUpdate update = {};
+    string? firstName = changes?.firstName;
+    if firstName is string {
+        if firstName.trim() == "" {
+            return "Enter your first name.";
+        }
+        update.firstName = firstName.trim();
+    }
+    string? lastName = changes?.lastName;
+    if lastName is string {
+        if lastName.trim() == "" {
+            return "Enter your last name.";
+        }
+        update.lastName = lastName.trim();
+    }
+    string? gender = changes?.gender;
+    if gender is string {
+        if gender !is "Male"|"Female"|"Prefer not to say" {
+            return "Choose Male, Female or Prefer not to say as the gender.";
+        }
+        update.gender = gender;
+    }
+    string? contactNo = changes?.contactNo;
+    if contactNo is string {
+        update.contactNo = contactNo.trim();
+    }
+    if changes.hasKey("address") {
+        update.address = (changes?.address ?: "").trim();
+    }
+    if changes.hasKey("university") {
+        update.university = (changes?.university ?: "").trim();
+    }
+    return update;
+}
+
 // The candidate in the form the ATS takes, or the reason it cannot be accepted.
 isolated function atsCandidateOf(CandidateApplication candidate, string employmentType, int vacancyId)
         returns AtsCandidate|string {

@@ -75,6 +75,105 @@ function anUnreadableReplyBecomesBadGateway() {
     test:assertTrue(reply is http:Response && reply.statusCode == 502);
 }
 
+function historyEntry(int id, string status = "CREATED", int vacancyId = 7) returns AtsHistoryEntry => {
+    id,
+    vacancyId,
+    vacancyTitle: "Engineer",
+    status,
+    firstName: "Ada",
+    lastName: "Lovelace",
+    gender: "Female",
+    contactNo: "+94771234567",
+    address: "1 Main Street",
+    createdOn: "2026-01-01T00:00:00Z"
+};
+
+@test:Config {}
+function atsStatusesAreShownAsTheWebAppNamesThem() {
+    test:assertEquals(applicationStatusOf("CREATED"), "Applied");
+    test:assertEquals(applicationStatusOf("IN_REVIEW"), "Screening");
+    test:assertEquals(applicationStatusOf("INTERVIEW_IN_PROGRESS"), "Interview");
+    test:assertEquals(applicationStatusOf("INTERVIEW_COMPLETED"), "Interview");
+    test:assertEquals(applicationStatusOf("HIRED"), "Offer Accepted");
+    test:assertEquals(applicationStatusOf("REJECTED"), "Rejected");
+    test:assertEquals(applicationStatusOf("SOMETHING_NEW"), "Applied");
+}
+
+@test:Config {}
+function applicationsAreNewestFirstWithoutDeletedOnes() {
+    AtsHistoryEntry[] history = [historyEntry(1), historyEntry(3, "DELETED"), historyEntry(2, "HIRED", 8)];
+    ApplicationSummary[] applications = applicationsOf(history, {"7": "Engineering"});
+    test:assertEquals(applications.length(), 2);
+    test:assertEquals(applications[0].id, "2");
+    test:assertEquals(applications[0].department, "");
+    test:assertEquals(applications[0].status, "Offer Accepted");
+    test:assertEquals(applications[1].id, "1");
+    test:assertEquals(applications[1].jobId, "7");
+    test:assertEquals(applications[1].jobTitle, "Engineer");
+    test:assertEquals(applications[1].department, "Engineering");
+    test:assertEquals(applications[1].appliedDate, "2026-01-01T00:00:00Z");
+}
+
+@test:Config {}
+function profileComesFromTheMostRecentApplication() {
+    AtsHistoryEntry older = historyEntry(1);
+    older.firstName = "Old";
+    AtsHistoryEntry latest = historyEntry(2);
+    latest.address = "N/A";
+    latest.university = "State University";
+    CandidateProfile? profile = profileOf([older, latest], "ada@example.test");
+    if profile is () {
+        test:assertFail("A profile was expected");
+    }
+    test:assertEquals(profile.firstName, "Ada");
+    test:assertEquals(profile.personalEmail, "ada@example.test");
+    test:assertEquals(profile.address, ());
+    test:assertEquals(profile.university, "State University");
+}
+
+@test:Config {}
+function noProfileWithoutAnApplication() {
+    test:assertEquals(profileOf([], "ada@example.test"), ());
+    test:assertEquals(profileOf([historyEntry(1, "DELETED")], "ada@example.test"), ());
+}
+
+@test:Config {}
+function departmentsComeFromTheJobList() {
+    json jobs = [{"id": 7, "team": "Engineering"}, {"id": "x", "team": "Ignored"}, "not a job"];
+    test:assertEquals(departmentsOf(jobs), {"7": "Engineering"});
+    test:assertEquals(departmentsOf(()), {});
+}
+
+@test:Config {}
+function changesAreTrimmedAndClearedValuesAreSentAsEmptyText() {
+    ProfileChanges changes = {firstName: " Ada ", contactNo: " +94771234567 ", address: (), university: "State University"};
+    AtsCandidateUpdate|string update = atsUpdateOf(changes);
+    if update is string {
+        test:assertFail(update);
+    }
+    test:assertEquals(update.firstName, "Ada");
+    test:assertEquals(update.contactNo, "+94771234567");
+    test:assertEquals(update.address, "");
+    test:assertEquals(update.university, "State University");
+    test:assertFalse(update.hasKey("lastName"));
+    test:assertFalse(update.hasKey("gender"));
+}
+
+@test:Config {}
+function noChangesMakeAnEmptyUpdate() {
+    AtsCandidateUpdate|string update = atsUpdateOf({});
+    test:assertTrue(update is AtsCandidateUpdate && update.length() == 0);
+}
+
+@test:Config {}
+function changesThatCannotBeSavedAreRefused() {
+    test:assertEquals(atsUpdateOf({firstName: "  "}), "Enter your first name.");
+    test:assertEquals(atsUpdateOf({lastName: ""}), "Enter your last name.");
+    test:assertEquals(atsUpdateOf({gender: "Other"}), "Choose Male, Female or Prefer not to say as the gender.");
+    test:assertTrue(atsUpdateOf({gender: "Female"}) is AtsCandidateUpdate);
+    test:assertTrue(atsUpdateOf({gender: "Prefer not to say"}) is AtsCandidateUpdate);
+}
+
 @test:Config {}
 function permanentIsShownAsFullTime() {
     test:assertEquals(jobTypeOf("Permanent"), "Full Time");

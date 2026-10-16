@@ -141,6 +141,19 @@ isolated function postWithToken(string path, AtsCandidate payload, string reques
     return atsApplyHttpClient->post(path, payload, authHeaders(freshToken, requestId));
 }
 
+# PATCH to the ATS with automatic token refresh on 401.
+isolated function patchWithToken(string path, AtsCandidateUpdate payload, string requestId)
+        returns http:Response|error {
+    string token = check getAtsToken();
+    http:Response resp = check atsHttpClient->patch(path, payload, authHeaders(token, requestId));
+    if resp.statusCode != http:STATUS_UNAUTHORIZED {
+        return resp;
+    }
+    tokenCache.clear(token);
+    string freshToken = check getAtsToken();
+    return atsHttpClient->patch(path, payload, authHeaders(freshToken, requestId));
+}
+
 // The JSON of a 200 reply; any other status becomes an UpstreamError.
 isolated function atsJson(string path, string requestId) returns json|error {
     http:Response resp = check getWithToken(path, requestId);
@@ -291,6 +304,62 @@ public isolated function getOrgStructure(string requestId) returns http:Response
 public isolated function getJob(string jobId, string requestId) returns http:Response|error {
     JobDetail|error detail = loadJobDetail(jobId, requestId);
     return detail is error ? failedReply(detail, requestId) : okReply(detail.toJson());
+}
+
+isolated function candidateHistory(string email, string requestId) returns AtsHistoryEntry[]|error {
+    string path = "/candidates/" + check url:encode(email, "UTF-8") + "/histories?limit=" + MAX_HISTORY_ENTRIES.toString();
+    json body = check atsJson(path, requestId);
+    AtsHistoryResponse history = check body.fromJsonWithType();
+    return history.candidates;
+}
+
+# The candidate's details from their most recent application, or nothing when they have not applied.
+public isolated function getProfile(string email, string requestId) returns CandidateProfile|error? {
+    AtsHistoryEntry[] history = check candidateHistory(email, requestId);
+    return profileOf(history, email);
+}
+
+# The candidate's applications, newest first.
+public isolated function listApplications(string email, string requestId) returns ApplicationSummary[]|error {
+    AtsHistoryEntry[] history = check candidateHistory(email, requestId);
+    json|http:Response|error jobs = cachedJobs(requestId);
+    return applicationsOf(history, departmentsOf(jobs is json ? jobs : ()));
+}
+
+isolated function saveProfile(string email, ProfileChanges changes, string requestId) returns CandidateProfile|error {
+    AtsCandidateUpdate|string update = atsUpdateOf(changes);
+    if update is string {
+        return error UpstreamError(update, status = http:STATUS_BAD_REQUEST);
+    }
+    AtsHistoryEntry[] history = check candidateHistory(email, requestId);
+    AtsHistoryEntry? latest = latestEntry(history);
+    if latest is () || latest.candidateId < 1 {
+        return error UpstreamError("No applications found for this account", status = http:STATUS_NOT_FOUND);
+    }
+    if update.length() > 0 {
+        string path = string `/candidates/${latest.candidateId}/vacancies/${latest.id}`;
+        http:Response resp = check patchWithToken(path, update, requestId);
+        if resp.statusCode == http:STATUS_BAD_REQUEST {
+            return error UpstreamError("The details were not accepted. Please check them and try again.",
+                status = http:STATUS_BAD_REQUEST);
+        }
+        if resp.statusCode != http:STATUS_OK {
+            return error UpstreamError(string `The ATS replied with status ${resp.statusCode}`, status = resp.statusCode);
+        }
+    }
+    AtsHistoryEntry[] saved = check candidateHistory(email, requestId);
+    CandidateProfile? profile = profileOf(saved, email);
+    if profile is () {
+        return error UpstreamError("No applications found for this account", status = http:STATUS_NOT_FOUND);
+    }
+    return profile;
+}
+
+# Saves the changes to the candidate's details, found through their own email, and returns their profile.
+public isolated function updateProfile(string email, ProfileChanges changes, string requestId)
+        returns http:Response|error {
+    CandidateProfile|error profile = saveProfile(email, changes, requestId);
+    return profile is error ? failedReply(profile, requestId) : okReply(profile.toJson());
 }
 
 # Creates the candidate in the ATS and returns its reply unchanged.

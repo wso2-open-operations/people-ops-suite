@@ -56,7 +56,7 @@ isolated function forwardOrError(http:Response|error resp, string failureMessage
 @http:ServiceConfig {
     cors: {
         allowOrigins: allowedOrigins,
-        allowMethods: [http:GET, http:POST, http:OPTIONS],
+        allowMethods: [http:GET, http:POST, http:OPTIONS, http:PATCH],
         allowHeaders: [http:CONTENT_TYPE, http:AUTH_HEADER, types:REQUEST_ID_HEADER],
         allowCredentials: false,
         maxAge: 84900
@@ -165,4 +165,95 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         log:printInfo(string `Application submitted for vacancy ${jobId}`, requestId = requestId);
         return <http:Created>{body: {message: "Application submitted"}};
     }
+
+    # The signed-in candidate's details, taken from their most recent application.
+    resource function get candidates/me(http:RequestContext ctx)
+            returns vacancy:CandidateProfile|http:Forbidden|http:NotFound|http:BadGateway|http:GatewayTimeout {
+        string requestId = types:requestIdOf(ctx);
+        string|http:Forbidden|http:BadGateway|http:GatewayTimeout email = callerEmailOf(ctx, requestId);
+        if email !is string {
+            return email;
+        }
+        vacancy:CandidateProfile|error? profile = vacancy:getProfile(email, requestId);
+        if profile is error {
+            return candidateFailure(profile, "Failed to fetch the candidate profile", requestId);
+        }
+        if profile is () {
+            return <http:NotFound>{body: {message: "No applications found for this account"}};
+        }
+        return profile;
+    }
+
+    # Saves changes to the signed-in candidate's details and returns their profile.
+    resource function patch candidates/me(http:RequestContext ctx, vacancy:ProfileChanges changes)
+            returns json|http:BadRequest|http:Forbidden|http:NotFound|http:BadGateway|http:GatewayTimeout {
+        string requestId = types:requestIdOf(ctx);
+        string|http:Forbidden|http:BadGateway|http:GatewayTimeout email = callerEmailOf(ctx, requestId);
+        if email !is string {
+            return email;
+        }
+        http:Response|error resp = vacancy:updateProfile(email, changes, requestId);
+        if resp is error {
+            return candidateFailure(resp, "Failed to save the candidate profile", requestId);
+        }
+        if resp.statusCode == http:STATUS_OK {
+            json|error profile = resp.getJsonPayload();
+            if profile is json {
+                return profile;
+            }
+            return candidateFailure(profile, "Failed to save the candidate profile", requestId);
+        }
+        string|error reason = resp.getTextPayload();
+        string message = reason is string ? reason : "The profile could not be saved";
+        if resp.statusCode == http:STATUS_BAD_REQUEST {
+            return <http:BadRequest>{body: {message}};
+        }
+        if resp.statusCode == http:STATUS_NOT_FOUND {
+            return <http:NotFound>{body: {message}};
+        }
+        log:printError("The ATS refused a profile change", status = resp.statusCode, requestId = requestId);
+        return <http:BadGateway>{body: {message: "Failed to save the candidate profile"}};
+    }
+
+    # The signed-in candidate's applications, newest first.
+    resource function get applications(http:RequestContext ctx)
+            returns vacancy:ApplicationSummary[]|http:Forbidden|http:BadGateway|http:GatewayTimeout {
+        string requestId = types:requestIdOf(ctx);
+        string|http:Forbidden|http:BadGateway|http:GatewayTimeout email = callerEmailOf(ctx, requestId);
+        if email !is string {
+            return email;
+        }
+        vacancy:ApplicationSummary[]|error applications = vacancy:listApplications(email, requestId);
+        if applications is error {
+            return candidateFailure(applications, "Failed to fetch the candidate's applications", requestId);
+        }
+        return applications;
+    }
+}
+
+# The caller's email from the identity provider, or a refusal when the account has none.
+isolated function callerEmailOf(http:RequestContext ctx, string requestId)
+        returns string|http:Forbidden|http:BadGateway|http:GatewayTimeout {
+    jwt:AsgardeoJwt|error user = jwt:getUser(ctx);
+    string|error token = jwt:getAccessToken(ctx);
+    if user is error || token is error {
+        return <http:Forbidden>{body: {message: "The caller could not be identified"}};
+    }
+    string|error? email = jwt:callerEmail(user, token);
+    if email is error {
+        return candidateFailure(email, "Failed to read the caller's email address", requestId);
+    }
+    if email is () {
+        return <http:Forbidden>{body: {message: "The account has no email address"}};
+    }
+    return email;
+}
+
+isolated function candidateFailure(error err, string failureMessage, string requestId)
+        returns http:BadGateway|http:GatewayTimeout {
+    log:printError(failureMessage, err, requestId = requestId);
+    if err is http:ClientError {
+        return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
+    }
+    return <http:BadGateway>{body: {message: failureMessage}};
 }
