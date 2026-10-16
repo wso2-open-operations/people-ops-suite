@@ -62,6 +62,7 @@ public isolated service class JwtInterceptor {
         }
 
         ctx.set(CTX_USER, user);
+        ctx.set(CTX_TOKEN, token);
         return ctx.next();
     }
 }
