@@ -34,6 +34,7 @@ isolated function getExpiredLeaversQuery() returns sql:ParameterizedQuery =>
         e.last_name,
         e.work_email,
         r.final_day_of_employment,
+        e.work_location,
         cal.time_zone
     FROM employee e
     JOIN resignation r ON r.employee_id = e.id
@@ -96,6 +97,7 @@ isolated function getDueNewJoinersQuery() returns sql:ParameterizedQuery =>
         e.last_name,
         e.work_email,
         e.start_date,
+        e.work_location,
         cal.time_zone
     FROM employee e
     LEFT JOIN companies_allowed_locations cal
@@ -148,6 +150,7 @@ isolated function getDueScheduledChangesQuery() returns sql:ParameterizedQuery =
         sc.changes,
         sc.expected,
         sc.created_by,
+        e.work_location,
         cal.time_zone
      FROM scheduled_employee_change sc
      INNER JOIN employee e ON e.id = sc.employee_id

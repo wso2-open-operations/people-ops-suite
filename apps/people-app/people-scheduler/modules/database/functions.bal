@@ -584,6 +584,8 @@ isolated function closeWith(ScheduledChange change, string employeeName, string[
         effectiveDate: change.effectiveDate,
         status: closeFailure is string ? SCHEDULED_CHANGE_FAILED : status,
         failureReason: closeFailure ?: failureReason,
-        fields
+        fields,
+        workLocation: change.workLocation,
+        timeZone: change.timeZone
     };
 }

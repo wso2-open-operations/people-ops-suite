@@ -19,7 +19,7 @@ import ballerina/time;
 
 # Where HR works. Used for an employee whose work location has no usable timezone, and for
 # the date the summary emails are headed with.
-public const string DEFAULT_TIME_ZONE = "Asia/Colombo";
+public const DEFAULT_TIME_ZONE = "Asia/Colombo";
 
 # The calendar date it is in a timezone at a given moment.
 #
@@ -90,3 +90,63 @@ isolated function dueScheduledChanges(ScheduledChange[] candidates, time:Utc now
     from ScheduledChange candidate in candidates
     where candidate.effectiveDate <= employeeToday(candidate.employeeId, candidate.timeZone, now)
     select candidate;
+
+# The latest of a set of dates.
+#
+# + dates - Dates in YYYY-MM-DD form
+# + return - The latest, or nil when there are none
+public isolated function latestDate(string[] dates) returns string? {
+    string? latest = ();
+    foreach string date in dates {
+        if latest is () || date > latest {
+            latest = date;
+        }
+    }
+    return latest;
+}
+
+# The location every employee in a set shares.
+#
+# + locations - Work locations
+# + return - The location when there is exactly one, otherwise nil
+public isolated function sharedLocation(string[] locations) returns string? {
+    if locations.length() == 0 {
+        return ();
+    }
+    string first = locations[0];
+    foreach string location in locations {
+        if location != first {
+            return ();
+        }
+    }
+    return first;
+}
+
+# An employee's work location and the timezone their dates are read in, as HR reads it.
+#
+# Named by city ("Australia · Sydney time") rather than by IANA name. When the default was
+# used instead, it says so: the summary is where HR sees a location that needs fixing.
+#
+# + workLocation - Work location, as stored on the employee
+# + timeZone - Timezone of the work location, if it has one
+# + return - Reader-facing label
+public isolated function locationLabel(string workLocation, string? timeZone) returns string {
+    if timeZone is () {
+        return string `${workLocation} · ${cityTime(DEFAULT_TIME_ZONE)} (no timezone on record)`;
+    }
+    time:Zone?|error zone = trap time:getZone(timeZone);
+    if zone !is time:Zone {
+        return string `${workLocation} · ${cityTime(DEFAULT_TIME_ZONE)} (timezone not recognised)`;
+    }
+    return string `${workLocation} · ${cityTime(timeZone)}`;
+}
+
+# A timezone named by its city: "Sydney time" for "Australia/Sydney".
+#
+# + timeZone - IANA timezone name
+# + return - Reader-facing name
+isolated function cityTime(string timeZone) returns string {
+    int? slash = timeZone.lastIndexOf("/");
+    string city = slash is int ? timeZone.substring(slash + 1) : timeZone;
+    return string `${re `_`.replaceAll(city, " ")} time`;
+}

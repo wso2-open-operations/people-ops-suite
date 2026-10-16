@@ -26,6 +26,7 @@ isolated function joiner(string employeeId, string startDate, string? timeZone) 
     lastName: "Joiner",
     workEmail: "future-joiner@wso2.com",
     startDate,
+    workLocation: "Test location",
     timeZone
 };
 
@@ -35,6 +36,7 @@ isolated function leaver(string employeeId, string finalDay, string? timeZone) r
     lastName: "Leaver",
     workEmail: "leaver@wso2.com",
     finalDayOfEmployment: finalDay,
+    workLocation: "Test location",
     timeZone
 };
 
@@ -48,6 +50,7 @@ isolated function scheduledChange(int id, string effectiveDate, string? timeZone
     changes: {},
     expected: {},
     createdBy: "admin@wso2.com",
+    workLocation: "Test location",
     timeZone
 };
 
@@ -171,7 +174,8 @@ const int HOURLY_RUN_MINUTE = 35;
 # + return - The run that moves them, or nil when none in four days does
 isolated function firstHourlyRunThatMoves(string date, string timeZone, boolean leaving) returns time:Utc?|error {
     time:Civil dayBefore = check time:civilFromString(string `${date}T00:00:00Z`);
-    time:Utc first = time:utcAddSeconds(check time:utcFromCivil(dayBefore), -2 * 86400d + <decimal>(HOURLY_RUN_MINUTE * 60));
+    time:Utc first = time:utcAddSeconds(check time:utcFromCivil(dayBefore),
+            -2 * 86400d + <decimal>(HOURLY_RUN_MINUTE * 60));
     foreach int hour in 0 ..< 96 {
         time:Utc run = time:utcAddSeconds(first, <decimal>(hour * 3600));
         boolean moves = leaving
@@ -209,7 +213,8 @@ function hourlyRunsMoveEveryLiveLocationWithinAnHourOfLocalMidnight() returns er
             time:Utc activated = check (check firstHourlyRunThatMoves(date, zone, false)).ensureType();
             [string, int] [activatedOn, activatedMinute] = check localDateAndMinute(activated, zone);
             test:assertEquals(activatedOn, date, string `${zone}: activated on the wrong local day for ${date}`);
-            test:assertTrue(activatedMinute < 60, string `${zone}: activated ${activatedMinute} minutes after local midnight`);
+            test:assertTrue(activatedMinute < 60,
+                    string `${zone}: activated ${activatedMinute} minutes after local midnight`);
 
             // A leaver moves in the first hour after their final day ends.
             time:Utc left = check (check firstHourlyRunThatMoves(date, zone, true)).ensureType();

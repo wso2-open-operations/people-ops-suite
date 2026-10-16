@@ -75,17 +75,3 @@ WHERE `time_zone` IS NULL;
 -- add a WHEN for the location and run this file again from the UPDATE above.
 ALTER TABLE `companies_allowed_locations`
   MODIFY COLUMN `time_zone` VARCHAR(64) NOT NULL;
-
--- ---------------------------------------------------------------------------
--- Joiners onboarded before New joiner existed
---
--- Until v1.3.0 everyone was onboarded Active, whatever their start date. Anyone
--- still waiting to start becomes a New joiner, so the scheduler activates them on
--- the day and "Exclude future joiners", which now goes by status, leaves them out
--- until then.
--- ---------------------------------------------------------------------------
-
-UPDATE `employee`
-SET `employee_status` = 'New joiner', `updated_by` = 'MIGRATION'
-WHERE `employee_status` = 'Active'
-  AND `start_date` > UTC_DATE();

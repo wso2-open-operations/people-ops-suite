@@ -87,7 +87,9 @@ function anUnknownWorkLocationFallsBackToSriLanka() returns error? {
 @test:Config {}
 function anUnusableTimezoneFallsBackToSriLanka() returns error? {
     time:Utc now = check time:utcFromString(SRI_LANKA_JUST_AFTER_MIDNIGHT);
-    map<string> zones = toLocationTimeZoneMap([{companyId: US_COMPANY, allowedLocation: "US", timeZone: "America/Las_Angeles"}]);
+    map<string> zones = toLocationTimeZoneMap([
+        {companyId: US_COMPANY, allowedLocation: "US", timeZone: "America/Las_Angeles"}
+    ]);
     test:assertEquals(localDateAt(zones, US_COMPANY, "US", now), "2026-10-15");
 }
 
@@ -102,7 +104,8 @@ function locationTimezonesIncludeInactiveLocations() {
 function excludingFutureJoinersExcludesTheNewJoinerStatus() {
     // Whether someone has started is the status the scheduler keeps per work location, not
     // a start date compared with the database server's own date.
-    sql:ParameterizedQuery query = getEmployeesQuery({filters: {excludeFutureStartDate: true}, pagination: {}, sort: {}});
+    sql:ParameterizedQuery query = getEmployeesQuery(
+            {filters: {excludeFutureStartDate: true}, pagination: {}, sort: {}});
     string text = sqlText(query);
     test:assertTrue(text.includes("e.employee_status <> ?"), "future joiners should be excluded by status");
     test:assertFalse(text.includes("CURDATE"), "the server's own date should not decide who has started");

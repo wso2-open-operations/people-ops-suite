@@ -18,7 +18,6 @@ import people_scheduler.database;
 
 import ballerina/lang.regexp;
 import ballerina/mime;
-import ballerina/time;
 
 # HTML-escape a string to prevent injection/XSS.
 # Escapes &, <, >, ", and ' (& first to prevent double-escaping).
@@ -90,13 +89,18 @@ public isolated function bindKeyValues(string content, map<string> keyValPairs) 
     return mime:base64Encode(bindContent).ensureType();
 }
 
-# The date a run's summary email is headed with: today where HR works.
+# The date a summary email is for, and the subject's heading for it.
 #
-# The sweep runs through the day as each location reaches midnight, so the UTC date would
-# often name the day before the one HR is reading the email on.
+# The date is the latest one the employees in the email moved on (their start date,
+# effective date or final day) rather than the date of the run, which for a location ahead
+# of Sri Lanka falls on the day before. The heading adds the location when everyone in the
+# email shares one; otherwise each row names its own.
 #
-# + return - The date in YYYY-MM-DD form
-isolated function summaryRunDate() returns string {
-    time:Utc now = time:utcNow();
-    return database:dateIn(database:DEFAULT_TIME_ZONE, now) ?: time:utcToString(now).substring(0, 10);
+# + dates - The date each employee in the email moved on, in YYYY-MM-DD form
+# + locations - Each employee's work location
+# + return - The date, and the subject's heading for it
+isolated function summaryDateAndHeading(string[] dates, string[] locations) returns [string, string] {
+    string date = database:latestDate(dates) ?: "";
+    string? location = database:sharedLocation(locations);
+    return [date, location is string ? string `${date}, ${location}` : date];
 }
