@@ -170,22 +170,26 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     resource function get candidates/me(http:RequestContext ctx)
             returns json|http:Forbidden|http:BadRequest|http:NotFound|http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        string|http:Forbidden|http:BadGateway|http:GatewayTimeout email = callerEmailOf(ctx, requestId);
-        if email !is string {
-            return email;
+        jwt:CallerDetails|http:Forbidden|http:BadGateway|http:GatewayTimeout caller = callerOf(ctx, requestId);
+        if caller !is jwt:CallerDetails {
+            return caller;
         }
-        return profileReply(vacancy:getProfile(email, requestId), "Failed to fetch the candidate profile", requestId);
+        http:Response|error resp = vacancy:getProfile(caller.email, requestId);
+        if resp is http:Response && resp.statusCode == http:STATUS_NOT_FOUND {
+            return profileFrom(caller);
+        }
+        return profileReply(resp, "Failed to fetch the candidate profile", requestId);
     }
 
     # Saves changes to the signed-in candidate's details and returns their profile.
     resource function patch candidates/me(http:RequestContext ctx, vacancy:ProfileChanges changes)
             returns json|http:BadRequest|http:Forbidden|http:NotFound|http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        string|http:Forbidden|http:BadGateway|http:GatewayTimeout email = callerEmailOf(ctx, requestId);
-        if email !is string {
-            return email;
+        jwt:CallerDetails|http:Forbidden|http:BadGateway|http:GatewayTimeout caller = callerOf(ctx, requestId);
+        if caller !is jwt:CallerDetails {
+            return caller;
         }
-        return profileReply(vacancy:updateProfile(email, changes, requestId), "Failed to save the candidate profile",
+        return profileReply(vacancy:updateProfile(caller.email, changes, requestId), "Failed to save the candidate profile",
             requestId);
     }
 
@@ -193,11 +197,11 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     resource function get applications(http:RequestContext ctx)
             returns vacancy:ApplicationSummary[]|http:Forbidden|http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        string|http:Forbidden|http:BadGateway|http:GatewayTimeout email = callerEmailOf(ctx, requestId);
-        if email !is string {
-            return email;
+        jwt:CallerDetails|http:Forbidden|http:BadGateway|http:GatewayTimeout caller = callerOf(ctx, requestId);
+        if caller !is jwt:CallerDetails {
+            return caller;
         }
-        vacancy:ApplicationSummary[]|error applications = vacancy:listApplications(email, requestId);
+        vacancy:ApplicationSummary[]|error applications = vacancy:listApplications(caller.email, requestId);
         if applications is error {
             return candidateFailure(applications, "Failed to fetch the candidate's applications", requestId);
         }
@@ -226,23 +230,46 @@ isolated function profileReply(http:Response|error resp, string failureMessage, 
     return <http:BadGateway>{body: {message: failureMessage}};
 }
 
-# The caller's email from the identity provider, or a refusal when the account has none.
-isolated function callerEmailOf(http:RequestContext ctx, string requestId)
-        returns string|http:Forbidden|http:BadGateway|http:GatewayTimeout {
+# The caller's details from the identity provider, or a refusal when the account has no email.
+isolated function callerOf(http:RequestContext ctx, string requestId)
+        returns jwt:CallerDetails|http:Forbidden|http:BadGateway|http:GatewayTimeout {
     jwt:AsgardeoJwt|error user = jwt:getUser(ctx);
     string|error token = jwt:getAccessToken(ctx);
     if user is error || token is error {
         return <http:Forbidden>{body: {message: "The caller could not be identified"}};
     }
-    string|error? email = jwt:callerEmail(user, token);
-    if email is error {
-        return candidateFailure(email, "Failed to read the caller's email address", requestId);
+    jwt:CallerDetails|error details = jwt:callerDetails(user, token);
+    if details is error {
+        return candidateFailure(details, "Failed to read the caller's details", requestId);
     }
-    if email is () {
+    if details.email == "" {
         return <http:Forbidden>{body: {message: "The account has no email address"}};
     }
-    return email;
+    return details;
 }
+
+isolated function genderOf(string gender) returns string {
+    match gender.toLowerAscii() {
+        "male" => {
+            return "Male";
+        }
+        "female" => {
+            return "Female";
+        }
+    }
+    return "";
+}
+
+# The profile of a caller who has not applied yet, from what the identity provider knows.
+isolated function profileFrom(jwt:CallerDetails caller) returns json => {
+    firstName: caller.firstName,
+    lastName: caller.lastName,
+    gender: genderOf(caller.gender),
+    personalEmail: caller.email,
+    contactNo: caller.contactNo,
+    address: (),
+    university: ()
+};
 
 isolated function candidateFailure(error err, string failureMessage, string requestId)
         returns http:BadGateway|http:GatewayTimeout {

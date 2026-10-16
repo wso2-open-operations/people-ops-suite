@@ -49,11 +49,27 @@ function identityNeedsASubject() {
 }
 
 @test:Config {}
-function emailComesFromTheUserInfoInLowerCase() {
-    test:assertEquals(emailOf({"sub": "u", "email": " Ada@Example.test "}), "ada@example.test");
-    test:assertEquals(emailOf({"sub": "u", "email": "  "}), ());
-    test:assertEquals(emailOf({"sub": "u"}), ());
-    test:assertEquals(emailOf("not an object"), ());
+function detailsComeFromTheUserInfo() {
+    CallerDetails details = detailsOf({
+        "sub": "u",
+        "email": " Ada@Example.test ",
+        "given_name": " Ada ",
+        "family_name": "Lovelace",
+        "gender": "female",
+        "phone_number": "+94771234567"
+    });
+    test:assertEquals(details.email, "ada@example.test");
+    test:assertEquals(details.firstName, "Ada");
+    test:assertEquals(details.lastName, "Lovelace");
+    test:assertEquals(details.gender, "female");
+    test:assertEquals(details.contactNo, "+94771234567");
+}
+
+@test:Config {}
+function missingUserInfoValuesAreEmptyText() {
+    test:assertEquals(detailsOf({"sub": "u", "email": "  "}), {});
+    test:assertEquals(detailsOf({"sub": "u", "given_name": 5}), {});
+    test:assertEquals(detailsOf("not an object"), {});
 }
 
 @test:Config {}

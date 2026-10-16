@@ -59,34 +59,39 @@ isolated function userInfoUrlOf(AuthConfig config) returns string {
     return issuer.endsWith("/token") ? issuer.substring(0, issuer.length() - "token".length()) + "userinfo" : issuer;
 }
 
-isolated function emailOf(json userInfo) returns string? {
-    if userInfo is map<json> {
-        json email = userInfo["email"];
-        if email is string && email.trim() != "" {
-            return email.trim().toLowerAscii();
-        }
+isolated function textOf(json value) returns string => value is string ? value.trim() : "";
+
+isolated function detailsOf(json userInfo) returns CallerDetails {
+    if userInfo !is map<json> {
+        return {};
     }
-    return ();
+    return {
+        email: textOf(userInfo["email"]).toLowerAscii(),
+        firstName: textOf(userInfo["given_name"]),
+        lastName: textOf(userInfo["family_name"]),
+        gender: textOf(userInfo["gender"]),
+        contactNo: textOf(userInfo["phone_number"])
+    };
 }
 
 final http:Client userInfoClient = check new (userInfoUrlOf(authConfig), {timeout: 15});
 
-// Callers' emails by subject.
-final cache:Cache emailCache = new ({capacity: 1000, defaultMaxAge: 300, cleanupInterval: 600});
+// Callers' details by subject.
+final cache:Cache detailsCache = new ({capacity: 1000, defaultMaxAge: 300, cleanupInterval: 600});
 
-# The caller's email in lower case from the identity provider; nothing when the account has none.
-public isolated function callerEmail(AsgardeoJwt user, string accessToken) returns string|error? {
-    any|cache:Error cached = emailCache.get(user.sub);
-    if cached is string {
-        return cached == "" ? () : cached;
+# The caller's details from the identity provider, with the email in lower case.
+public isolated function callerDetails(AsgardeoJwt user, string accessToken) returns CallerDetails|error {
+    any|cache:Error cached = detailsCache.get(user.sub);
+    if cached is CallerDetails {
+        return cached;
     }
     json userInfo = check userInfoClient->get("", {"Authorization": "Bearer " + accessToken});
-    string? email = emailOf(userInfo);
-    cache:Error? stored = emailCache.put(user.sub, email ?: "");
+    CallerDetails details = detailsOf(userInfo);
+    cache:Error? stored = detailsCache.put(user.sub, details.cloneReadOnly());
     if stored is cache:Error {
-        log:printWarn("Could not keep the caller's email in the cache", stored);
+        log:printWarn("Could not keep the caller's details in the cache", stored);
     }
-    return email;
+    return details;
 }
 
 # The access token of the validated caller.

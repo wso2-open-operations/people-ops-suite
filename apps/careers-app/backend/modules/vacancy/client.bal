@@ -321,7 +321,7 @@ isolated function saveProfile(string email, ProfileChanges changes, string reque
     AtsHistoryEntry[] history = check candidateHistory(email, requestId);
     AtsHistoryEntry? latest = latestEntry(history);
     if latest is () || latest.candidateId < 1 {
-        return error UpstreamError(NO_APPLICATIONS_MESSAGE, status = http:STATUS_NOT_FOUND);
+        return error UpstreamError(PROFILE_NOT_EDITABLE_MESSAGE, status = http:STATUS_NOT_FOUND);
     }
     if update.length() > 0 {
         string path = string `/candidates/${latest.candidateId}/vacancies/${latest.id}`;

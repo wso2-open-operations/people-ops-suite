@@ -37,6 +37,7 @@ const CANDIDATE_STATUS_CREATED = "CREATED";
 const CANDIDATE_STATUS_DELETED = "DELETED";
 
 const NO_APPLICATIONS_MESSAGE = "No applications found for this account";
+const PROFILE_NOT_EDITABLE_MESSAGE = "Your details can be edited after your first application.";
 
 # The most applications of one candidate that are read.
 const MAX_HISTORY_ENTRIES = 100;

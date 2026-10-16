@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import wso2/careers_app.jwt;
+
 import ballerina/http;
 import ballerina/mime;
 import ballerina/test;
@@ -135,6 +137,34 @@ function candidateRoutesWithAMalformedAuthorizationHeaderAreUnauthorized() retur
     test:assertEquals(basic.statusCode, 401);
     http:Response bare = check testClient->get("/applications", {"Authorization": "not-a-bearer-header"});
     test:assertEquals(bare.statusCode, 401);
+}
+
+@test:Config {}
+function aCallerWhoHasNotAppliedGetsTheirProfileFromTheIdentityProvider() {
+    jwt:CallerDetails caller = {
+        email: "ada@example.test",
+        firstName: "Ada",
+        lastName: "Lovelace",
+        gender: "female",
+        contactNo: "+94771234567"
+    };
+    test:assertEquals(profileFrom(caller), {
+        firstName: "Ada",
+        lastName: "Lovelace",
+        gender: "Female",
+        personalEmail: "ada@example.test",
+        contactNo: "+94771234567",
+        address: (),
+        university: ()
+    });
+}
+
+@test:Config {}
+function genderFromTheIdentityProviderIsMappedToTheAtsValues() {
+    test:assertEquals(genderOf("MALE"), "Male");
+    test:assertEquals(genderOf("female"), "Female");
+    test:assertEquals(genderOf("other"), "");
+    test:assertEquals(genderOf(""), "");
 }
 
 @test:Config {}
