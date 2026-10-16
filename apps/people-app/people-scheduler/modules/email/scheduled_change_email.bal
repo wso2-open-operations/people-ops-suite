@@ -31,7 +31,7 @@ import ballerina/time;
 public isolated function notifyScheduledChanges(database:ScheduledChangeOutcome[] outcomes)
     returns error? {
 
-    string runDate = time:utcToString(time:utcNow()).substring(0, 10);
+    string runDate = summaryRunDate();
 
     map<string> keyValues = {
         APP_NAME: appName,

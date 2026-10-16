@@ -53,6 +53,9 @@ public type LeaverTransition record {|
     # Final day of employment
     @sql:Column {name: "final_day_of_employment"}
     string finalDayOfEmployment;
+    # Timezone of their work location, or nil when the location has none on record
+    @sql:Column {name: "time_zone"}
+    string? timeZone;
 |};
 
 # Row mapping for a New joiner whose start date has arrived and who should become Active.
@@ -72,6 +75,9 @@ public type JoinerActivation record {|
     # Start date
     @sql:Column {name: "start_date"}
     string startDate;
+    # Timezone of their work location, or nil when the location has none on record
+    @sql:Column {name: "time_zone"}
+    string? timeZone;
 |};
 
 # A change to an employee's general information waiting for its effective date.
@@ -100,6 +106,9 @@ public type ScheduledChange record {|
     # Who scheduled it
     @sql:Column {name: "created_by"}
     string createdBy;
+    # Timezone of the employee's work location, or nil when the location has none on record
+    @sql:Column {name: "time_zone"}
+    string? timeZone;
 |};
 
 # What the sweep did with one scheduled change, for the run's summary.

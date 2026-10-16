@@ -27,7 +27,7 @@ import ballerina/time;
 public isolated function notifyLeaverAutoTransition(database:LeaverTransition[] transitions) returns error? {
     string employeeListHtml = buildTransitionRows(transitions);
 
-    string runDate = time:utcToString(time:utcNow()).substring(0, 10);
+    string runDate = summaryRunDate();
 
     map<string> keyValues = {
         APP_NAME: appName,

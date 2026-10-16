@@ -30,7 +30,7 @@ const string FUTURE_JOINER_EMAIL = "future-joiner@wso2.com";
 # + activations - Employees that were activated during this sweep (must be non-empty)
 # + return - Error if the email notification fails to send
 public isolated function notifyJoinerActivation(database:JoinerActivation[] activations) returns error? {
-    string runDate = time:utcToString(time:utcNow()).substring(0, 10);
+    string runDate = summaryRunDate();
 
     map<string> keyValues = {
         APP_NAME: appName,

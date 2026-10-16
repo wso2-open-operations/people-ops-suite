@@ -14,8 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import people_scheduler.database;
+
 import ballerina/lang.regexp;
 import ballerina/mime;
+import ballerina/time;
 
 # HTML-escape a string to prevent injection/XSS.
 # Escapes &, <, >, ", and ' (& first to prevent double-escaping).
@@ -85,4 +88,15 @@ public isolated function bindKeyValues(string content, map<string> keyValPairs) 
     },
     content);
     return mime:base64Encode(bindContent).ensureType();
+}
+
+# The date a run's summary email is headed with: today where HR works.
+#
+# The sweep runs through the day as each location reaches midnight, so the UTC date would
+# often name the day before the one HR is reading the email on.
+#
+# + return - The date in YYYY-MM-DD form
+isolated function summaryRunDate() returns string {
+    time:Utc now = time:utcNow();
+    return database:dateIn(database:DEFAULT_TIME_ZONE, now) ?: time:utcToString(now).substring(0, 10);
 }
