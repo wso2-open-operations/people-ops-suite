@@ -16,7 +16,6 @@
 
 import wso2/careers_app.types;
 
-import ballerina/cache;
 import ballerina/http;
 import ballerina/log;
 import ballerina/time;
@@ -29,9 +28,6 @@ const USER_AGENT = "careers-app-backend/0.1.0";
 
 // The longest a read, or a token request, waits for the upstream to reply.
 const decimal UPSTREAM_TIMEOUT_SECONDS = 15;
-
-// Seconds the org data is cached.
-const decimal REFERENCE_DATA_MAX_AGE_SECONDS = 3600;
 
 final http:Client atsHttpClient = check new (atsConfig.baseUrl, {
     timeout: UPSTREAM_TIMEOUT_SECONDS
@@ -48,12 +44,6 @@ final http:Client tokenHttpClient = check new (atsConfig.tokenUrl, {
         password: atsConfig.clientSecret
     },
     timeout: UPSTREAM_TIMEOUT_SECONDS
-});
-
-final cache:Cache referenceCache = new ({
-    capacity: 10,
-    defaultMaxAge: REFERENCE_DATA_MAX_AGE_SECONDS,
-    cleanupInterval: 3600
 });
 
 isolated function currentEpoch() returns int {
@@ -169,20 +159,6 @@ isolated function atsJson(string path, string requestId) returns json|error {
     return resp.getJsonPayload();
 }
 
-// Org data from the ATS, cached for REFERENCE_DATA_MAX_AGE_SECONDS.
-isolated function referenceJson(string path, string requestId) returns json|error {
-    any|cache:Error cached = referenceCache.get(path);
-    if cached is json {
-        return cached;
-    }
-    json body = check atsJson(path, requestId);
-    cache:Error? stored = referenceCache.put(path, body.cloneReadOnly());
-    if stored is cache:Error {
-        log:printWarn("Could not keep the org data in the cache", stored, path = path);
-    }
-    return body;
-}
-
 // The reply for a failed load.
 isolated function failedReply(error err, string requestId) returns http:Response|error {
     if err is http:ClientError {
@@ -228,22 +204,22 @@ isolated function fetchVacancy(string jobId, string requestId) returns AtsVacanc
 }
 
 isolated function orgDetails(string requestId) returns AtsBusinessUnit[]|error {
-    json body = check referenceJson("/org-details", requestId);
+    json body = check atsJson("/org-details", requestId);
     return body.fromJsonWithType();
 }
 
 isolated function companies(string requestId) returns AtsCompany[]|error {
-    json body = check referenceJson("/companies", requestId);
+    json body = check atsJson("/companies", requestId);
     return body.fromJsonWithType();
 }
 
 isolated function careerFunctions(string requestId) returns AtsCareerFunction[]|error {
-    json body = check referenceJson("/career-functions", requestId);
+    json body = check atsJson("/career-functions", requestId);
     return body.fromJsonWithType();
 }
 
 isolated function appConfig(string requestId) returns AtsAppConfig|error {
-    json body = check referenceJson("/app-config", requestId);
+    json body = check atsJson("/app-config", requestId);
     return body.fromJsonWithType();
 }
 
