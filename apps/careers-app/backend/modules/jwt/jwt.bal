@@ -21,8 +21,7 @@ import ballerina/log;
 
 configurable AuthConfig authConfig = ?;
 
-# Validates the token's signature (against Asgardeo's JWKS), issuer, audience and expiry, and returns the caller's
-# identity.
+# Validates the token's signature, issuer, audience and expiry, and returns the caller's identity.
 public isolated function validateToken(string token) returns AsgardeoJwt|error {
     // Reject a malformed token before attempting signature validation.
     [jwt:Header, jwt:Payload] _ = check jwt:decode(token);
@@ -72,11 +71,10 @@ isolated function emailOf(json userInfo) returns string? {
 
 final http:Client userInfoClient = check new (userInfoUrlOf(authConfig), {timeout: 15});
 
-// Emails by subject, so the identity provider is asked once per caller for a few minutes.
+// Callers' emails by subject.
 final cache:Cache emailCache = new ({capacity: 1000, defaultMaxAge: 300, cleanupInterval: 600});
 
-# The caller's email in lower case, asked from the identity provider with the caller's access token; nothing when the
-# account has none.
+# The caller's email in lower case from the identity provider; nothing when the account has none.
 public isolated function callerEmail(AsgardeoJwt user, string accessToken) returns string|error? {
     any|cache:Error cached = emailCache.get(user.sub);
     if cached is string {
@@ -93,7 +91,7 @@ public isolated function callerEmail(AsgardeoJwt user, string accessToken) retur
     return email;
 }
 
-# The access token of the validated caller, for resource functions that need to ask the identity provider about them.
+# The access token of the validated caller.
 public isolated function getAccessToken(http:RequestContext ctx) returns string|error {
     return ctx.getWithType(CTX_TOKEN);
 }

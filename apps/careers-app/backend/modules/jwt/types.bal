@@ -27,7 +27,7 @@ public type AsgardeoJwt record {|
     string sub;
 |};
 
-# Asgardeo connection details for token validation. `userInfoUrl` defaults to the issuer's user-info endpoint.
+# Asgardeo connection details for token validation.
 public type AuthConfig record {|
     string jwksUrl;
     string issuer;

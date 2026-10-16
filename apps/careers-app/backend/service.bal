@@ -168,20 +168,13 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
 
     # The signed-in candidate's details, taken from their most recent application.
     resource function get candidates/me(http:RequestContext ctx)
-            returns vacancy:CandidateProfile|http:Forbidden|http:NotFound|http:BadGateway|http:GatewayTimeout {
+            returns json|http:Forbidden|http:BadRequest|http:NotFound|http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
         string|http:Forbidden|http:BadGateway|http:GatewayTimeout email = callerEmailOf(ctx, requestId);
         if email !is string {
             return email;
         }
-        vacancy:CandidateProfile|error? profile = vacancy:getProfile(email, requestId);
-        if profile is error {
-            return candidateFailure(profile, "Failed to fetch the candidate profile", requestId);
-        }
-        if profile is () {
-            return <http:NotFound>{body: {message: "No applications found for this account"}};
-        }
-        return profile;
+        return profileReply(vacancy:getProfile(email, requestId), "Failed to fetch the candidate profile", requestId);
     }
 
     # Saves changes to the signed-in candidate's details and returns their profile.
@@ -192,27 +185,8 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         if email !is string {
             return email;
         }
-        http:Response|error resp = vacancy:updateProfile(email, changes, requestId);
-        if resp is error {
-            return candidateFailure(resp, "Failed to save the candidate profile", requestId);
-        }
-        if resp.statusCode == http:STATUS_OK {
-            json|error profile = resp.getJsonPayload();
-            if profile is json {
-                return profile;
-            }
-            return candidateFailure(profile, "Failed to save the candidate profile", requestId);
-        }
-        string|error reason = resp.getTextPayload();
-        string message = reason is string ? reason : "The profile could not be saved";
-        if resp.statusCode == http:STATUS_BAD_REQUEST {
-            return <http:BadRequest>{body: {message}};
-        }
-        if resp.statusCode == http:STATUS_NOT_FOUND {
-            return <http:NotFound>{body: {message}};
-        }
-        log:printError("The ATS refused a profile change", status = resp.statusCode, requestId = requestId);
-        return <http:BadGateway>{body: {message: "Failed to save the candidate profile"}};
+        return profileReply(vacancy:updateProfile(email, changes, requestId), "Failed to save the candidate profile",
+            requestId);
     }
 
     # The signed-in candidate's applications, newest first.
@@ -229,6 +203,27 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         }
         return applications;
     }
+}
+
+isolated function profileReply(http:Response|error resp, string failureMessage, string requestId)
+        returns json|http:BadRequest|http:NotFound|http:BadGateway|http:GatewayTimeout {
+    if resp is error {
+        return candidateFailure(resp, failureMessage, requestId);
+    }
+    if resp.statusCode == http:STATUS_OK {
+        json|error profile = resp.getJsonPayload();
+        return profile is json ? profile : candidateFailure(profile, failureMessage, requestId);
+    }
+    string|error reason = resp.getTextPayload();
+    string message = reason is string ? reason : failureMessage;
+    if resp.statusCode == http:STATUS_BAD_REQUEST {
+        return <http:BadRequest>{body: {message}};
+    }
+    if resp.statusCode == http:STATUS_NOT_FOUND {
+        return <http:NotFound>{body: {message}};
+    }
+    log:printError("The ATS refused a profile request", status = resp.statusCode, requestId = requestId);
+    return <http:BadGateway>{body: {message: failureMessage}};
 }
 
 # The caller's email from the identity provider, or a refusal when the account has none.

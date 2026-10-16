@@ -36,6 +36,8 @@ const MODE_HYBRID = "Hybrid";
 const CANDIDATE_STATUS_CREATED = "CREATED";
 const CANDIDATE_STATUS_DELETED = "DELETED";
 
+const NO_APPLICATIONS_MESSAGE = "No applications found for this account";
+
 # The most applications of one candidate that are read.
 const MAX_HISTORY_ENTRIES = 100;
 const APPLIED_FROM_CAREER_SITE = "Career Site";
@@ -159,8 +161,7 @@ type OrgStructure record {|
     map<string> team_list;
 |};
 
-# One application in a candidate's history as the ATS returns it. The interview and feedback fields it also
-# carries are never read.
+# One application in a candidate's history as the ATS returns it.
 type AtsHistoryEntry record {
     int id;
     int candidateId = 0;
@@ -181,7 +182,7 @@ type AtsHistoryResponse record {
 };
 
 # The signed-in candidate's details, in the shape the web app reads.
-public type CandidateProfile record {|
+type CandidateProfile record {|
     string firstName;
     string lastName;
     string gender;

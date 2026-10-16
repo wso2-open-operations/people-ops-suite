@@ -243,8 +243,7 @@ isolated function profileOf(AtsHistoryEntry[] history, string email) returns Can
     };
 }
 
-// The changes in the form the ATS takes, or the reason they cannot be accepted. The ATS changes only what it is given
-// as text, so a null address or university is sent as empty text.
+// The changes in the form the ATS takes, or the reason they cannot be accepted.
 isolated function atsUpdateOf(ProfileChanges changes) returns AtsCandidateUpdate|string {
     AtsCandidateUpdate update = {};
     string? firstName = changes?.firstName;

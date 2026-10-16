@@ -318,11 +318,21 @@ isolated function candidateHistory(string email, string requestId) returns AtsHi
     return history.candidates;
 }
 
-# The candidate's details from their most recent application, or nothing when they have not applied.
-public isolated function getProfile(string email, string requestId) returns CandidateProfile|error? {
+isolated function profileFor(string email, string requestId) returns CandidateProfile|error {
     AtsHistoryEntry[] history = check candidateHistory(email, requestId);
-    return profileOf(history, email);
+    CandidateProfile? profile = profileOf(history, email);
+    if profile is () {
+        return error UpstreamError(NO_APPLICATIONS_MESSAGE, status = http:STATUS_NOT_FOUND);
+    }
+    return profile;
 }
+
+isolated function profileReplyOf(CandidateProfile|error profile, string requestId) returns http:Response|error =>
+    profile is error ? failedReply(profile, requestId) : okReply(profile.toJson());
+
+# The candidate's details from their most recent application; a 404 reply when they have not applied.
+public isolated function getProfile(string email, string requestId) returns http:Response|error =>
+    profileReplyOf(profileFor(email, requestId), requestId);
 
 # The candidate's applications, newest first.
 public isolated function listApplications(string email, string requestId) returns ApplicationSummary[]|error {
@@ -339,7 +349,7 @@ isolated function saveProfile(string email, ProfileChanges changes, string reque
     AtsHistoryEntry[] history = check candidateHistory(email, requestId);
     AtsHistoryEntry? latest = latestEntry(history);
     if latest is () || latest.candidateId < 1 {
-        return error UpstreamError("No applications found for this account", status = http:STATUS_NOT_FOUND);
+        return error UpstreamError(NO_APPLICATIONS_MESSAGE, status = http:STATUS_NOT_FOUND);
     }
     if update.length() > 0 {
         string path = string `/candidates/${latest.candidateId}/vacancies/${latest.id}`;
@@ -352,20 +362,12 @@ isolated function saveProfile(string email, ProfileChanges changes, string reque
             return error UpstreamError(string `The ATS replied with status ${resp.statusCode}`, status = resp.statusCode);
         }
     }
-    AtsHistoryEntry[] saved = check candidateHistory(email, requestId);
-    CandidateProfile? profile = profileOf(saved, email);
-    if profile is () {
-        return error UpstreamError("No applications found for this account", status = http:STATUS_NOT_FOUND);
-    }
-    return profile;
+    return profileFor(email, requestId);
 }
 
 # Saves the changes to the candidate's details, found through their own email, and returns their profile.
 public isolated function updateProfile(string email, ProfileChanges changes, string requestId)
-        returns http:Response|error {
-    CandidateProfile|error profile = saveProfile(email, changes, requestId);
-    return profile is error ? failedReply(profile, requestId) : okReply(profile.toJson());
-}
+        returns http:Response|error => profileReplyOf(saveProfile(email, changes, requestId), requestId);
 
 # Creates the candidate in the ATS and returns its reply unchanged.
 public isolated function applyForJob(string jobId, CandidateApplication candidate, string requestId)
