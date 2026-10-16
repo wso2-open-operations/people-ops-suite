@@ -144,15 +144,11 @@ isolated function patchWithToken(string path, AtsCandidateUpdate payload, string
     return atsHttpClient->patch(path, payload, authHeaders(freshToken, requestId));
 }
 
-// The path with a candidate's email replaced, so that it is safe to write to a log.
-isolated function loggablePath(string path) returns string =>
-    re `^/candidates/[^/]+/`.replace(path, "/candidates/{email}/");
-
 // The JSON of a 200 reply; any other status becomes an UpstreamError.
 isolated function atsJson(string path, string requestId) returns json|error {
     http:Response resp = check getWithToken(path, requestId);
     if resp.statusCode != http:STATUS_OK {
-        log:printWarn("The ATS did not return 200", path = loggablePath(path), status = resp.statusCode,
+        log:printWarn("The ATS did not return 200", path = types:withoutEmails(path), status = resp.statusCode,
             requestId = requestId);
         return error UpstreamError(string `The ATS replied with status ${resp.statusCode}`, status = resp.statusCode);
     }

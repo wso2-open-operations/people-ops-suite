@@ -138,14 +138,6 @@ function candidateRoutesWithAMalformedAuthorizationHeaderAreUnauthorized() retur
 }
 
 @test:Config {}
-function emailAddressesAreRemovedFromLoggedText() {
-    test:assertEquals(withoutEmails("failed for /candidates/ada%40example.test/histories"),
-        "failed for /candidates/{email}/histories");
-    test:assertEquals(withoutEmails("failed for ada@example.test and more"), "failed for {email} and more");
-    test:assertEquals(withoutEmails("connection refused"), "connection refused");
-}
-
-@test:Config {}
 function unreachableCandidateLookupBecomesGatewayTimeout() {
     http:BadGateway|http:GatewayTimeout failure = candidateFailure(error http:GenericClientError("connection refused"),
         "failed", "test-request");

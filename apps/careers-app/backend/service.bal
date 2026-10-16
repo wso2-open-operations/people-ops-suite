@@ -244,13 +244,9 @@ isolated function callerEmailOf(http:RequestContext ctx, string requestId)
     return email;
 }
 
-// The text with every email address, plain or URL-encoded, replaced, so that it is safe to write to a log.
-isolated function withoutEmails(string text) returns string =>
-    re `[^\s/?&=]+(%40|@)[^\s/?&=]+`.replaceAll(text, "{email}");
-
 isolated function candidateFailure(error err, string failureMessage, string requestId)
         returns http:BadGateway|http:GatewayTimeout {
-    log:printError(failureMessage, errorMessage = withoutEmails(err.message()), requestId = requestId);
+    log:printError(failureMessage, errorMessage = types:withoutEmails(err.message()), requestId = requestId);
     if err is http:ClientError {
         return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
     }

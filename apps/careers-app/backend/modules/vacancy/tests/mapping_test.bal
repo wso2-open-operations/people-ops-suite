@@ -175,21 +175,6 @@ function changesThatCannotBeSavedAreRefused() {
 }
 
 @test:Config {}
-function aCandidatesEmailIsNotPartOfALoggedPath() {
-    string logged = loggablePath("/candidates/ada%40example.test/histories?limit=100");
-    test:assertEquals(logged, "/candidates/{email}/histories?limit=100");
-    test:assertFalse(logged.includes("ada"));
-    test:assertFalse(logged.includes("example"));
-}
-
-@test:Config {}
-function otherPathsAreLoggedAsTheyAre() {
-    test:assertEquals(loggablePath("/vacancies/224"), "/vacancies/224");
-    test:assertEquals(loggablePath("/vacancies?status=PUBLISHED"), "/vacancies?status=PUBLISHED");
-    test:assertEquals(loggablePath("/org-details"), "/org-details");
-}
-
-@test:Config {}
 function permanentIsShownAsFullTime() {
     test:assertEquals(jobTypeOf("Permanent"), "Full Time");
     test:assertEquals(jobTypeOf("Internship"), "Internship");

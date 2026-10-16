@@ -30,3 +30,24 @@ function pathTraversalAndOddJobIdsAreRejected() {
         test:assertFalse(isValidJobId(jobId), string `Job id "${jobId}" should be rejected`);
     }
 }
+
+@test:Config {}
+function emailAddressesAreRemovedFromLoggedText() {
+    test:assertEquals(withoutEmails("failed for ada@example.test and more"), "failed for {email} and more");
+    test:assertEquals(withoutEmails("connection refused"), "connection refused");
+}
+
+@test:Config {}
+function aCandidatesEmailIsNotPartOfALoggedPath() {
+    string logged = withoutEmails("/candidates/ada%40example.test/histories?limit=100");
+    test:assertEquals(logged, "/candidates/{email}/histories?limit=100");
+    test:assertFalse(logged.includes("ada"));
+    test:assertFalse(logged.includes("example"));
+}
+
+@test:Config {}
+function pathsWithoutAnEmailAreLoggedAsTheyAre() {
+    test:assertEquals(withoutEmails("/vacancies/224"), "/vacancies/224");
+    test:assertEquals(withoutEmails("/vacancies?status=PUBLISHED"), "/vacancies?status=PUBLISHED");
+    test:assertEquals(withoutEmails("/org-details"), "/org-details");
+}
