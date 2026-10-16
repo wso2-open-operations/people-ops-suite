@@ -42,7 +42,7 @@ import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { isValidE164 } from "@utils/phone";
 import { cardSx, pillButtonSx } from "@utils/styles";
 
-const GENDERS = ["Male", "Female", "Other", "Prefer not to say"];
+const GENDERS = ["Male", "Female", "Prefer not to say"];
 
 interface ProfileForm {
   firstName: string;
