@@ -306,6 +306,21 @@ function tooLongProfileDetailsAreRefused() {
 }
 
 @test:Config {}
+function onlyOurOwnRefusalsKeepTheStatus422() {
+    http:Response refused = new;
+    refused.statusCode = 422;
+    test:assertEquals(atsReply(refused).statusCode, 400);
+
+    http:Response created = new;
+    created.statusCode = 201;
+    test:assertEquals(atsReply(created).statusCode, 201);
+
+    http:Response duplicate = new;
+    duplicate.statusCode = 409;
+    test:assertEquals(atsReply(duplicate).statusCode, 409);
+}
+
+@test:Config {}
 function permanentIsShownAsFullTime() {
     test:assertEquals(jobTypeOf("Permanent"), "Full Time");
     test:assertEquals(jobTypeOf("Internship"), "Internship");

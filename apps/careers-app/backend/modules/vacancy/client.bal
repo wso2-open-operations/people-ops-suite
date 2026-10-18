@@ -411,5 +411,14 @@ public isolated function applyForJob(string jobId, CandidateApplication candidat
     if atsCandidate is error {
         return failedReply(atsCandidate, requestId);
     }
-    return postWithToken("/candidates", atsCandidate, requestId);
+    http:Response resp = check postWithToken("/candidates", atsCandidate, requestId);
+    return atsReply(resp);
+}
+
+// The ATS's reply, with a 422 turned into a 400, since only this service's own refusals use 422.
+isolated function atsReply(http:Response resp) returns http:Response {
+    if resp.statusCode == http:STATUS_UNPROCESSABLE_ENTITY {
+        resp.statusCode = http:STATUS_BAD_REQUEST;
+    }
+    return resp;
 }
