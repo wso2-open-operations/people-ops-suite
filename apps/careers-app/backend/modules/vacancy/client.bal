@@ -241,11 +241,28 @@ isolated function loadJobDetail(string jobId, string requestId) returns JobDetai
     if vacancy.status != STATUS_PUBLISHED {
         return error UpstreamError("The vacancy is not published", status = http:STATUS_BAD_REQUEST);
     }
-    AtsCompany[] allCompanies = check companies(requestId);
-    AtsBusinessUnit[] units = check orgDetails(requestId);
-    AtsCareerFunction[] functions = check careerFunctions(requestId);
-    AtsVacancy[] sameDesignation = check publishedVacancies(requestId, vacancy.designationId, vacancy.employmentType);
-    return detailOf(vacancy, allCompanies, units, functions, sameDesignation);
+    do {
+        AtsCompany[] allCompanies = check companies(requestId);
+        AtsBusinessUnit[] units = check orgDetails(requestId);
+        AtsCareerFunction[] functions = check careerFunctions(requestId);
+        return detailOf(vacancy, allCompanies, units, functions, similarVacancies(vacancy, requestId));
+    } on fail error err {
+        return asLookupFailure(err);
+    }
+}
+
+// A refused lookup that only supports the job page is a bad gateway, not a statement about the job itself.
+isolated function asLookupFailure(error err) returns error =>
+    err is UpstreamError ? error UpstreamError("A lookup for the job failed", status = http:STATUS_BAD_GATEWAY) : err;
+
+// The other vacancies like this one; none when the lookup fails, since they only add to the page.
+isolated function similarVacancies(AtsVacancy vacancy, string requestId) returns AtsVacancy[] {
+    AtsVacancy[]|error similar = publishedVacancies(requestId, vacancy.designationId, vacancy.employmentType);
+    if similar is error {
+        log:printWarn("Could not read the similar vacancies", similar, requestId = requestId);
+        return [];
+    }
+    return similar;
 }
 
 isolated function candidateFor(string jobId, CandidateApplication candidate, string requestId)

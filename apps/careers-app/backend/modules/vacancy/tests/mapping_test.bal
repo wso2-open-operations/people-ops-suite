@@ -175,6 +175,14 @@ function changesThatCannotBeSavedAreRefused() {
 }
 
 @test:Config {}
+function aFailedJobLookupIsABadGatewayNotTheJobsOwnStatus() {
+    error refused = asLookupFailure(error UpstreamError("not found", status = 404));
+    test:assertTrue(refused is UpstreamError && refused.detail().status == 502);
+    error unreadable = asLookupFailure(error("unreadable"));
+    test:assertFalse(unreadable is UpstreamError);
+}
+
+@test:Config {}
 function permanentIsShownAsFullTime() {
     test:assertEquals(jobTypeOf("Permanent"), "Full Time");
     test:assertEquals(jobTypeOf("Internship"), "Internship");
