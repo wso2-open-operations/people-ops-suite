@@ -67,6 +67,7 @@ export interface GuestApplicationDetails {
   email: string;
   phone: string;
   address: string;
+  university?: string;
   authorizedToWork: boolean;
 }
 

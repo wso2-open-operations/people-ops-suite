@@ -42,10 +42,12 @@ export interface ApplyFormValues {
   countryIso: string;
   phone: string;
   address: string;
+  university: string;
 }
 
 interface ApplyFormProps {
   form: ApplyFormValues;
+  isInternship: boolean;
   onFormChange: (form: ApplyFormValues) => void;
   cvFile: File | null;
   onCvChosen: (file: File) => void;
@@ -64,6 +66,7 @@ const MAX_CV_BYTES = 5 * 1024 * 1024;
 
 const ApplyForm = ({
   form,
+  isInternship,
   onFormChange,
   cvFile,
   onCvChosen,
@@ -153,15 +156,27 @@ const ApplyForm = ({
           />
         </Grid>
         <Grid size={{ xs: 12 }}>
-          <TextField
-            label="Address"
-            disabled={submitting}
-            required
-            fullWidth
-            size="small"
-            value={form.address}
-            onChange={(e) => onFormChange({ ...form, address: e.target.value })}
-          />
+          {isInternship ? (
+            <TextField
+              label="University"
+              disabled={submitting}
+              required
+              fullWidth
+              size="small"
+              value={form.university}
+              onChange={(e) => onFormChange({ ...form, university: e.target.value })}
+            />
+          ) : (
+            <TextField
+              label="Address"
+              disabled={submitting}
+              required
+              fullWidth
+              size="small"
+              value={form.address}
+              onChange={(e) => onFormChange({ ...form, address: e.target.value })}
+            />
+          )}
         </Grid>
         <Grid size={{ xs: 12 }}>
           <Typography fontSize="0.9rem" fontWeight={600} mb={0.75}>

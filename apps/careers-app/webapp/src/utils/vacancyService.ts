@@ -51,8 +51,7 @@ export interface VacancyDetail {
   additionalContent: string | null;
 }
 
-// Longer than the backend's 15 second wait on the vacancy service, so a slow upstream comes back as the backend's
-// gateway error rather than a client timeout.
+// The longest a job read waits for the backend.
 const READ_TIMEOUT_MS = 20_000;
 
 // Longer than the backend's 90 second wait for an application and its CV upload.
@@ -151,7 +150,9 @@ export async function submitApplicationForm(
   cv: File,
 ): Promise<void> {
   const form = new FormData();
-  Object.entries(details).forEach(([key, value]) => form.append(key, String(value)));
+  Object.entries(details).forEach(([key, value]) => {
+    if (value !== undefined) form.append(key, String(value));
+  });
   form.append("cv", cv);
   // No Content-Type here: the browser adds it with the multipart boundary.
   await axios.post(`${AppConfig.serviceUrls.jobs}/${jobId}/apply`, form, requestOptions(accessToken, APPLY_TIMEOUT_MS));

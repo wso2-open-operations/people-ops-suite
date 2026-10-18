@@ -38,13 +38,25 @@ interface ApplySectionProps {
 // The same shape the backend accepts: something@domain.tld with no spaces, so a typo is caught before the CV upload.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
-const EMPTY_FORM: ApplyFormValues = { firstName: "", lastName: "", email: "", countryIso: "", phone: "", address: "" };
+// The job type of an internship, which asks for a university instead of an address.
+const INTERNSHIP = "Internship";
+
+const EMPTY_FORM: ApplyFormValues = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  countryIso: "",
+  phone: "",
+  address: "",
+  university: "",
+};
 
 // The "Apply Now" card: the application form, its submit logic and the confirmation dialog.
 const ApplySection = ({ detail }: ApplySectionProps) => {
   const dispatch = useAppDispatch();
   const { getToken: getAccessToken, isSignedIn, appSignIn } = useAppAuthContext();
 
+  const isInternship = detail.jobType === INTERNSHIP;
   const [form, setForm] = useState<ApplyFormValues>(EMPTY_FORM);
   const profile = useAppSelector((state: RootState) => state.careers.profile);
   const profileState = useAppSelector((state: RootState) => state.careers.profileState);
@@ -71,6 +83,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
       countryIso: current.countryIso || phone?.countryIso || "",
       phone: current.phone || phone?.national || "",
       address: current.address || (profile.address ?? ""),
+      university: current.university || (profile.university ?? ""),
     }));
   }, [isSignedIn, profileState, profile]);
 
@@ -101,7 +114,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
     EMAIL_PATTERN.test(form.email.trim()) &&
     !!form.countryIso &&
     !!form.phone.trim() &&
-    !!form.address.trim() &&
+    (isInternship ? !!form.university.trim() : !!form.address.trim()) &&
     !!cvFile &&
     !!authorized &&
     consentData &&
@@ -119,9 +132,10 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
           firstName: form.firstName.trim(),
           lastName: form.lastName.trim(),
           email: form.email.trim(),
-          // The vacancy service accepts only E.164 (+ then digits, no spaces); a leading trunk "0" is dropped.
+          // The backend accepts only E.164 (+ then digits, no spaces); a leading trunk "0" is dropped.
           phone: `${dialCode}${form.phone.replace(/\D/g, "").replace(/^0+/, "")}`,
-          address: form.address.trim(),
+          address: isInternship ? "N/A" : form.address.trim(),
+          university: isInternship ? form.university.trim() : undefined,
           authorizedToWork: authorized === "yes",
         },
         cvFile,
@@ -172,6 +186,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
 
         <ApplyForm
           form={form}
+          isInternship={isInternship}
           onFormChange={setForm}
           cvFile={cvFile}
           onCvChosen={setCvFile}
