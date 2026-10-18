@@ -152,7 +152,8 @@ isolated function atsJson(string path, string requestId) returns json|error {
             requestId = requestId);
         return error UpstreamError(string `The ATS replied with status ${resp.statusCode}`, status = resp.statusCode);
     }
-    return resp.getJsonPayload();
+    json|error body = resp.getJsonPayload();
+    return body is json ? body : error("The ATS reply could not be read");
 }
 
 // The reply for a failed load.

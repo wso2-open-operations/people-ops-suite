@@ -75,6 +75,14 @@ function userInfoMustBelongToTheCaller() {
 }
 
 @test:Config {}
+function aRefusedAccessTokenIsToldApartFromOtherFailures() {
+    error refused = error UserInfoRefused("refused");
+    error other = error("unreadable reply");
+    test:assertTrue(refused is UserInfoRefused);
+    test:assertFalse(other is UserInfoRefused);
+}
+
+@test:Config {}
 function missingUserInfoValuesAreEmptyText() {
     CallerDetails unknown = {};
     test:assertEquals(detailsOf({"sub": "u", "email": "  "}), unknown);

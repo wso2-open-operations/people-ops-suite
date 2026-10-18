@@ -176,9 +176,11 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
 
     # The signed-in candidate's details, taken from their most recent application.
     resource function get candidates/me(http:RequestContext ctx)
-            returns json|http:Forbidden|http:BadRequest|http:NotFound|http:BadGateway|http:GatewayTimeout {
+            returns json|http:Unauthorized|http:Forbidden|http:BadRequest|http:NotFound|http:BadGateway
+                |http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        jwt:CallerDetails|http:Forbidden|http:BadGateway|http:GatewayTimeout caller = callerOf(ctx, requestId);
+        jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
+            callerOf(ctx, requestId);
         if caller !is jwt:CallerDetails {
             return caller;
         }
@@ -191,9 +193,11 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
 
     # Saves changes to the signed-in candidate's details and returns their profile.
     resource function patch candidates/me(http:RequestContext ctx, vacancy:ProfileChanges changes)
-            returns json|http:BadRequest|http:Forbidden|http:NotFound|http:BadGateway|http:GatewayTimeout {
+            returns json|http:Unauthorized|http:BadRequest|http:Forbidden|http:NotFound|http:BadGateway
+                |http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        jwt:CallerDetails|http:Forbidden|http:BadGateway|http:GatewayTimeout caller = callerOf(ctx, requestId);
+        jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
+            callerOf(ctx, requestId);
         if caller !is jwt:CallerDetails {
             return caller;
         }
@@ -203,9 +207,10 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
 
     # The signed-in candidate's applications, newest first.
     resource function get applications(http:RequestContext ctx)
-            returns vacancy:ApplicationSummary[]|http:Forbidden|http:BadGateway|http:GatewayTimeout {
+            returns vacancy:ApplicationSummary[]|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        jwt:CallerDetails|http:Forbidden|http:BadGateway|http:GatewayTimeout caller = callerOf(ctx, requestId);
+        jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
+            callerOf(ctx, requestId);
         if caller !is jwt:CallerDetails {
             return caller;
         }
@@ -240,13 +245,16 @@ isolated function profileReply(http:Response|error resp, string failureMessage, 
 
 # The caller's details from the identity provider, or a refusal when the account has no email.
 isolated function callerOf(http:RequestContext ctx, string requestId)
-        returns jwt:CallerDetails|http:Forbidden|http:BadGateway|http:GatewayTimeout {
+        returns jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout {
     jwt:AsgardeoJwt|error user = jwt:getUser(ctx);
     string|error token = jwt:getAccessToken(ctx);
     if user is error || token is error {
         return <http:Forbidden>{body: {message: "The caller could not be identified"}};
     }
     jwt:CallerDetails|error details = jwt:callerDetails(user, token);
+    if details is jwt:UserInfoRefused {
+        return <http:Unauthorized>{body: {message: "Unauthorized"}};
+    }
     if details is error {
         return candidateFailure(details, "Failed to read the caller's details", requestId);
     }

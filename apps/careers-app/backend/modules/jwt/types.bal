@@ -27,6 +27,9 @@ public type AsgardeoJwt record {|
     string sub;
 |};
 
+# The identity provider refused the caller's access token.
+public type UserInfoRefused distinct error;
+
 # What the identity provider knows about the caller; an empty text means it does not know.
 public type CallerDetails record {|
     string email = "";

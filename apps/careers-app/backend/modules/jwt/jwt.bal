@@ -79,7 +79,17 @@ public isolated function callerDetails(AsgardeoJwt user, string accessToken) ret
     if cached is CallerDetails {
         return cached;
     }
-    json userInfo = check userInfoClient->get("", {"Authorization": "Bearer " + accessToken});
+    http:Response resp = check userInfoClient->get("", {"Authorization": "Bearer " + accessToken});
+    if resp.statusCode == http:STATUS_UNAUTHORIZED || resp.statusCode == http:STATUS_FORBIDDEN {
+        return error UserInfoRefused("The identity provider refused the access token");
+    }
+    if resp.statusCode != http:STATUS_OK {
+        return error(string `The identity provider replied with status ${resp.statusCode}`);
+    }
+    json|error userInfo = resp.getJsonPayload();
+    if userInfo is error {
+        return error("The user-info reply could not be read");
+    }
     if !isUserInfoOf(userInfo, user.sub) {
         return error("The user-info reply does not belong to the caller");
     }
