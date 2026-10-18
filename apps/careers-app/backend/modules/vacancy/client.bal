@@ -271,10 +271,18 @@ isolated function loadJobDetail(string jobId, string requestId) returns JobDetai
         return error UpstreamError("The vacancy is not published", status = http:STATUS_BAD_REQUEST);
     }
     do {
-        AtsCompany[] allCompanies = check companies(requestId);
-        AtsBusinessUnit[] units = check orgDetails(requestId);
-        AtsCareerFunction[] functions = check careerFunctions(requestId);
-        return detailOf(vacancy, allCompanies, units, functions, similarVacancies(vacancy, requestId));
+        // The reads below do not depend on each other, so they run together once the vacancy is known.
+        future<AtsCompany[]|error> companiesRead = start companies(requestId);
+        future<AtsBusinessUnit[]|error> unitsRead = start orgDetails(requestId);
+        future<AtsCareerFunction[]|error> functionsRead = start careerFunctions(requestId);
+        future<AtsVacancy[]> similarRead = start similarVacancies(vacancy.designationId, vacancy.employmentType,
+            requestId);
+        AtsCompany[] allCompanies = check wait companiesRead;
+        AtsBusinessUnit[] units = check wait unitsRead;
+        AtsCareerFunction[] functions = check wait functionsRead;
+        AtsVacancy[]|error similarResult = wait similarRead;
+        AtsVacancy[] similar = similarResult is AtsVacancy[] ? similarResult : [];
+        return detailOf(vacancy, allCompanies, units, functions, similar);
     } on fail error err {
         return asLookupFailure(err);
     }
@@ -285,8 +293,8 @@ isolated function asLookupFailure(error err) returns error =>
     err is UpstreamError ? error UpstreamError("A lookup for the job failed", status = http:STATUS_BAD_GATEWAY) : err;
 
 // The other vacancies like this one; none when the lookup fails, since they only add to the page.
-isolated function similarVacancies(AtsVacancy vacancy, string requestId) returns AtsVacancy[] {
-    AtsVacancy[]|error similar = publishedVacancies(requestId, vacancy.designationId, vacancy.employmentType);
+isolated function similarVacancies(int designationId, string employmentType, string requestId) returns AtsVacancy[] {
+    AtsVacancy[]|error similar = publishedVacancies(requestId, designationId, employmentType);
     if similar is error {
         log:printWarn("Could not read the similar vacancies", similar, requestId = requestId);
         return [];
