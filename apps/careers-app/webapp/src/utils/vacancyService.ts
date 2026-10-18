@@ -55,7 +55,7 @@ export interface VacancyDetail {
 const READ_TIMEOUT_MS = 20_000;
 
 // Longer than the backend's 90 second wait for an application and its CV upload.
-const APPLY_TIMEOUT_MS = 100_000;
+const APPLY_TIMEOUT_MS = 120_000;
 
 // Guests have no token, so they send no credentials at all.
 function authHeader(accessToken: string) {
