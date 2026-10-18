@@ -337,8 +337,7 @@ public isolated function getProfile(string email, string requestId) returns http
 # The candidate's applications, newest first.
 public isolated function listApplications(string email, string requestId) returns ApplicationSummary[]|error {
     AtsHistoryEntry[] history = check candidateHistory(email, requestId);
-    json|http:Response|error jobs = cachedJobs(requestId);
-    return applicationsOf(history, departmentsOf(jobs is json ? jobs : ()));
+    return applicationsOf(history, departmentsOf(cachedJobsIfPresent()));
 }
 
 isolated function saveProfile(string email, ProfileChanges changes, string requestId) returns CandidateProfile|error {

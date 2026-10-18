@@ -103,6 +103,12 @@ public isolated class VacancyCache {
         });
     }
 
+    # The cached JSON for the key, or nothing when there is none; it is never loaded from the upstream.
+    public isolated function peek(string key) returns json {
+        CachedBody? cached = self.lookup(key);
+        return cached is CachedBody ? cached.value : ();
+    }
+
     # The cached JSON for the key, loaded from the upstream when missing.
     #
     # + key - Cache key
@@ -286,6 +292,9 @@ final VacancyCache vacancyCache = check createCache();
 # The cached job list.
 public isolated function cachedJobs(string requestId) returns json|http:Response|error =>
     vacancyCache.get("jobs", isolated function() returns http:Response|error => listJobs(requestId));
+
+# The cached job list when there is one; it is never loaded.
+public isolated function cachedJobsIfPresent() returns json => vacancyCache.peek("jobs");
 
 # The cached org structure.
 public isolated function cachedOrgStructure(string requestId) returns json|http:Response|error =>

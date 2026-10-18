@@ -225,6 +225,21 @@ function theEmploymentTypeIsReadFromAJobsJson() {
 }
 
 @test:Config {}
+function peekingAtTheCacheNeverLoadsIt() returns error? {
+    VacancyCache cache = new (120, 21600, 5);
+    test:assertEquals(cache.peek("jobs"), ());
+
+    json|http:Response|error loaded = cache.get("jobs", isolated function() returns http:Response|error {
+        http:Response resp = new;
+        resp.setJsonPayload([1, 2]);
+        return resp;
+    });
+    test:assertEquals(check loaded, [1, 2]);
+    test:assertEquals(cache.peek("jobs"), [1, 2]);
+    test:assertEquals(cache.peek("job:7"), ());
+}
+
+@test:Config {}
 function permanentIsShownAsFullTime() {
     test:assertEquals(jobTypeOf("Permanent"), "Full Time");
     test:assertEquals(jobTypeOf("Internship"), "Internship");
