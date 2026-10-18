@@ -272,6 +272,40 @@ function nullNestedListsInTheOrgDataAreTreatedAsEmpty() returns error? {
 }
 
 @test:Config {}
+function theVacancyQueryAsksOnlyForPubliclyListedVacancies() returns error? {
+    string query = check vacancyQuery((), ());
+    test:assertTrue(query.startsWith("status=PUBLISHED"));
+    test:assertTrue(query.includes("visibility=All"));
+    test:assertTrue(query.includes("visibility=External"));
+    test:assertFalse(query.includes("Internal"));
+    test:assertFalse(query.includes("designationId"));
+
+    string similar = check vacancyQuery(100, "Permanent");
+    test:assertTrue(similar.includes("designationId=100"));
+    test:assertTrue(similar.includes("employmentType=Permanent"));
+    test:assertTrue(similar.includes("visibility=All"));
+}
+
+@test:Config {}
+function aContactNumberMustBeInInternationalFormat() {
+    string reason = "Enter the phone number in international format, for example +94771234567.";
+    test:assertEquals(atsUpdateOf({contactNo: ""}), reason);
+    test:assertEquals(atsUpdateOf({contactNo: "call me"}), reason);
+    test:assertEquals(atsUpdateOf({contactNo: "0771234567"}), reason);
+    test:assertTrue(atsUpdateOf({contactNo: "+94771234567"}) is AtsCandidateUpdate);
+}
+
+@test:Config {}
+function tooLongProfileDetailsAreRefused() {
+    string tooLong = "".padEnd(301, "a");
+    test:assertEquals(atsUpdateOf({firstName: "".padEnd(101, "a")}), "One of the details is too long.");
+    test:assertEquals(atsUpdateOf({lastName: "".padEnd(101, "a")}), "One of the details is too long.");
+    test:assertEquals(atsUpdateOf({address: tooLong}), "One of the details is too long.");
+    test:assertEquals(atsUpdateOf({university: "".padEnd(256, "a")}), "One of the details is too long.");
+    test:assertTrue(atsUpdateOf({firstName: "".padEnd(100, "a"), address: "".padEnd(300, "a")}) is AtsCandidateUpdate);
+}
+
+@test:Config {}
 function permanentIsShownAsFullTime() {
     test:assertEquals(jobTypeOf("Permanent"), "Full Time");
     test:assertEquals(jobTypeOf("Internship"), "Internship");

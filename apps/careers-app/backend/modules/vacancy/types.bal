@@ -24,6 +24,10 @@ public type AtsConfig record {|
 
 const STATUS_PUBLISHED = "PUBLISHED";
 
+const VISIBILITY_ALL = "All";
+const VISIBILITY_EXTERNAL_ONLY = "External Only";
+const VISIBILITY_INTERNAL_ONLY = "Internal Only";
+
 const EMPLOYMENT_INTERNSHIP = "Internship";
 
 # The ATS employment type that is shown as EMPLOYMENT_FULL_TIME.
@@ -36,6 +40,11 @@ const MODE_HYBRID = "Hybrid";
 const CANDIDATE_STATUS_CREATED = "CREATED";
 const CANDIDATE_STATUS_DELETED = "DELETED";
 
+const MAX_NAME_LENGTH = 100;
+const MAX_ADDRESS_LENGTH = 300;
+const MAX_UNIVERSITY_LENGTH = 255;
+
+const DETAIL_TOO_LONG_MESSAGE = "One of the details is too long.";
 const NO_APPLICATIONS_MESSAGE = "No applications found for this account";
 const PROFILE_NOT_EDITABLE_MESSAGE = "Your details can be edited after your first application.";
 

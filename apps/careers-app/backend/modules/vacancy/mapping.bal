@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import wso2/careers_app.apply;
+
 import ballerina/lang.array;
 import ballerina/lang.value;
 
@@ -251,12 +253,18 @@ isolated function atsUpdateOf(ProfileChanges changes) returns AtsCandidateUpdate
         if firstName.trim() == "" {
             return "Enter your first name.";
         }
+        if firstName.trim().length() > MAX_NAME_LENGTH {
+            return DETAIL_TOO_LONG_MESSAGE;
+        }
         update.firstName = firstName.trim();
     }
     string? lastName = changes?.lastName;
     if lastName is string {
         if lastName.trim() == "" {
             return "Enter your last name.";
+        }
+        if lastName.trim().length() > MAX_NAME_LENGTH {
+            return DETAIL_TOO_LONG_MESSAGE;
         }
         update.lastName = lastName.trim();
     }
@@ -269,13 +277,24 @@ isolated function atsUpdateOf(ProfileChanges changes) returns AtsCandidateUpdate
     }
     string? contactNo = changes?.contactNo;
     if contactNo is string {
+        if !apply:isValidPhone(contactNo.trim()) {
+            return "Enter the phone number in international format, for example +94771234567.";
+        }
         update.contactNo = contactNo.trim();
     }
     if changes.hasKey("address") {
-        update.address = (changes?.address ?: "").trim();
+        string address = (changes?.address ?: "").trim();
+        if address.length() > MAX_ADDRESS_LENGTH {
+            return DETAIL_TOO_LONG_MESSAGE;
+        }
+        update.address = address;
     }
     if changes.hasKey("university") {
-        update.university = (changes?.university ?: "").trim();
+        string university = (changes?.university ?: "").trim();
+        if university.length() > MAX_UNIVERSITY_LENGTH {
+            return DETAIL_TOO_LONG_MESSAGE;
+        }
+        update.university = university;
     }
     return update;
 }
