@@ -148,10 +148,18 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             address: form.address,
             resume: form.cv
         };
+        string? university = form?.university;
+        if university is string {
+            candidate.university = university;
+        }
         http:Response|error resp = vacancy:applyForJob(jobId, candidate, requestId);
         if resp is error {
             log:printError("Failed to reach the ATS for an application", resp, requestId = requestId);
             return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
+        }
+        if resp.statusCode == http:STATUS_UNPROCESSABLE_ENTITY {
+            string|error reason = resp.getTextPayload();
+            return <http:BadRequest>{body: {message: reason is string ? reason : "The application was not accepted."}};
         }
         if resp.statusCode < 200 || resp.statusCode >= 300 {
             // Log the upstream status and a short piece of its reply, never the applicant's details.

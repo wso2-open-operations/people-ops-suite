@@ -260,7 +260,7 @@ isolated function candidateFor(string jobId, CandidateApplication candidate, str
     }
     AtsCandidate|string atsCandidate = atsCandidateOf(candidate, vacancy.employmentType, vacancyId);
     if atsCandidate is string {
-        return error UpstreamError(atsCandidate, status = http:STATUS_BAD_REQUEST);
+        return error UpstreamError(atsCandidate, status = http:STATUS_UNPROCESSABLE_ENTITY);
     }
     return atsCandidate;
 }
