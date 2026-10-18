@@ -307,7 +307,13 @@ public isolated function getJob(string jobId, string requestId) returns http:Res
 
 isolated function candidateHistory(string email, string requestId) returns AtsHistoryEntry[]|error {
     string path = "/candidates/" + check url:encode(email, "UTF-8") + "/histories?limit=" + MAX_HISTORY_ENTRIES.toString();
-    json body = check atsJson(path, requestId);
+    json|error body = atsJson(path, requestId);
+    if body is UpstreamError && body.detail().status == http:STATUS_NOT_FOUND {
+        return [];
+    }
+    if body is error {
+        return body;
+    }
     AtsHistoryResponse history = check body.fromJsonWithType();
     return history.candidates;
 }
