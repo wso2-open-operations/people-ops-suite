@@ -180,16 +180,25 @@ isolated function okReply(json body) returns http:Response {
     return resp;
 }
 
-// The published vacancies, optionally of one designation and employment type.
-isolated function publishedVacancies(string requestId, int? designationId = (), string? employmentType = ())
-        returns AtsVacancy[]|error {
+// The query for the vacancies listed on the public site, optionally of one designation and employment type.
+isolated function vacancyQuery(int? designationId, string? employmentType) returns string|error {
     string query = "status=PUBLISHED";
+    foreach string visibility in [VISIBILITY_ALL, VISIBILITY_EXTERNAL_ONLY] {
+        query += "&visibility=" + check url:encode(visibility, "UTF-8");
+    }
     if designationId is int {
         query += "&designationId=" + designationId.toString();
     }
     if employmentType is string {
         query += "&employmentType=" + check url:encode(employmentType, "UTF-8");
     }
+    return query;
+}
+
+// The published vacancies listed on the public site, optionally of one designation and employment type.
+isolated function publishedVacancies(string requestId, int? designationId = (), string? employmentType = ())
+        returns AtsVacancy[]|error {
+    string query = check vacancyQuery(designationId, employmentType);
     json body = check atsJson("/vacancies?" + query, requestId);
     return vacanciesOf(body, requestId);
 }
@@ -258,7 +267,7 @@ isolated function loadOrgStructure(string requestId) returns OrgStructure|error 
 
 isolated function loadJobDetail(string jobId, string requestId) returns JobDetail|error {
     AtsVacancy vacancy = check fetchVacancy(jobId, requestId);
-    if vacancy.status != STATUS_PUBLISHED {
+    if vacancy.status != STATUS_PUBLISHED || vacancy.visibility == VISIBILITY_INTERNAL_ONLY {
         return error UpstreamError("The vacancy is not published", status = http:STATUS_BAD_REQUEST);
     }
     do {
@@ -376,7 +385,7 @@ isolated function saveProfile(string email, ProfileChanges changes, string reque
             return error UpstreamError("The details were not accepted. Please check them and try again.",
                 status = http:STATUS_BAD_REQUEST);
         }
-        if resp.statusCode != http:STATUS_OK {
+        if resp.statusCode < http:STATUS_OK || resp.statusCode >= http:STATUS_MULTIPLE_CHOICES {
             return error UpstreamError(string `The ATS replied with status ${resp.statusCode}`, status = resp.statusCode);
         }
     }
