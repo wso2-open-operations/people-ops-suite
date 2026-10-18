@@ -167,15 +167,15 @@ type AtsHistoryEntry record {
     int id;
     int candidateId = 0;
     int vacancyId;
-    string vacancyTitle = "";
+    string? vacancyTitle = ();
     string status;
-    string firstName = "";
-    string lastName = "";
-    string gender = "";
-    string contactNo = "";
+    string? firstName = ();
+    string? lastName = ();
+    string? gender = ();
+    string? contactNo = ();
     string? address = ();
     string? university = ();
-    string createdOn = "";
+    string? createdOn = ();
 };
 
 type AtsHistoryResponse record {

@@ -132,6 +132,40 @@ function profileComesFromTheMostRecentApplication() {
 }
 
 @test:Config {}
+function nullsInTheHistoryDoNotBreakTheConversion() {
+    json history = {
+        "candidates": [
+            {
+                "id": 1,
+                "vacancyId": 7,
+                "status": "CREATED",
+                "vacancyTitle": null,
+                "firstName": "Ada",
+                "lastName": null,
+                "gender": null,
+                "contactNo": null,
+                "address": null,
+                "university": null,
+                "createdOn": null
+            }
+        ]
+    };
+    AtsHistoryResponse|error converted = history.fromJsonWithType();
+    if converted is error {
+        test:assertFail(converted.message());
+    }
+    CandidateProfile? profile = profileOf(converted.candidates, "ada@example.test");
+    if profile is () {
+        test:assertFail("A profile was expected");
+    }
+    test:assertEquals(profile.firstName, "Ada");
+    test:assertEquals(profile.gender, "");
+    ApplicationSummary[] applications = applicationsOf(converted.candidates, {});
+    test:assertEquals(applications[0].jobTitle, "");
+    test:assertEquals(applications[0].appliedDate, "");
+}
+
+@test:Config {}
 function noProfileWithoutAnApplication() {
     test:assertEquals(profileOf([], "ada@example.test"), ());
     test:assertEquals(profileOf([historyEntry(1, "DELETED")], "ada@example.test"), ());

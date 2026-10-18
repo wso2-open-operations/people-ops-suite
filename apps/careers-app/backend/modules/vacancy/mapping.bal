@@ -209,9 +209,9 @@ isolated function applicationsOf(AtsHistoryEntry[] history, map<string> departme
     select {
         id: entry.id.toString(),
         jobId: entry.vacancyId.toString(),
-        jobTitle: entry.vacancyTitle,
+        jobTitle: entry.vacancyTitle ?: "",
         department: departments[entry.vacancyId.toString()] ?: "",
-        appliedDate: entry.createdOn,
+        appliedDate: entry.createdOn ?: "",
         status: applicationStatusOf(entry.status)
     };
 
@@ -233,11 +233,11 @@ isolated function profileOf(AtsHistoryEntry[] history, string email) returns Can
     }
     string? address = entry.address;
     return {
-        firstName: entry.firstName,
-        lastName: entry.lastName,
-        gender: entry.gender,
+        firstName: entry.firstName ?: "",
+        lastName: entry.lastName ?: "",
+        gender: entry.gender ?: "",
         personalEmail: email,
-        contactNo: entry.contactNo,
+        contactNo: entry.contactNo ?: "",
         address: address is string && address.trim() != "" && address != ADDRESS_NOT_APPLICABLE ? address : (),
         university: entry.university
     };
