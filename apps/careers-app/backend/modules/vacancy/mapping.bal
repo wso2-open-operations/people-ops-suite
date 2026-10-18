@@ -18,6 +18,7 @@ import wso2/careers_app.apply;
 
 import ballerina/lang.array;
 import ballerina/lang.value;
+import ballerina/log;
 
 isolated function jobTypeOf(string employmentType) returns string =>
     employmentType == EMPLOYMENT_PERMANENT ? EMPLOYMENT_FULL_TIME : employmentType;
@@ -90,9 +91,19 @@ isolated function similarListings(AtsVacancy current, AtsVacancy[] sameDesignati
 
 // The sections of the job description.
 isolated function jdContentOf(json jdHtmlObject) returns JdContent|error {
-    json content = jdHtmlObject is string ? check value:fromJsonString(jdHtmlObject) : jdHtmlObject;
+    json content = jdHtmlObject;
+    if jdHtmlObject is string {
+        json|error parsed = value:fromJsonString(jdHtmlObject);
+        if parsed is error {
+            return {mainContent: jdHtmlObject};
+        }
+        content = parsed;
+    }
     if content is () {
         return {};
+    }
+    if content is string {
+        return {mainContent: content};
     }
     return content.fromJsonWithType();
 }
@@ -100,7 +111,12 @@ isolated function jdContentOf(json jdHtmlObject) returns JdContent|error {
 isolated function detailOf(AtsVacancy vacancy, AtsCompany[] companies, AtsBusinessUnit[] units,
         AtsCareerFunction[] careerFunctions, AtsVacancy[] sameDesignation) returns JobDetail|error {
     JdContent jd = check jdContentOf(vacancy.jdHtmlObject);
-    string designation = check designationNameOf(careerFunctions, vacancy.designationId);
+    string|error foundDesignation = designationNameOf(careerFunctions, vacancy.designationId);
+    if foundDesignation is error {
+        log:printWarn("The vacancy's designation is not in the career functions exactly once", vacancyId = vacancy.id,
+            designationId = vacancy.designationId);
+    }
+    string designation = foundDesignation is string ? foundDesignation : UNKNOWN_NAME;
     boolean isRemote = vacancy.modeOfWork == MODE_REMOTE;
     return {
         id: vacancy.id,

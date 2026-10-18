@@ -403,10 +403,30 @@ function aDescriptionSentAsAJsonStringIsRead() {
 }
 
 @test:Config {}
-function detailFailsWhenTheDescriptionCannotBeRead() {
+function aPlainTextDescriptionIsTheMainContent() {
+    AtsVacancy plain = vacancy(1);
+    plain.jdHtmlObject = "<p>Join us</p>";
+    JobDetail|error detail = detailOf(plain, COMPANIES, UNITS, CAREER_FUNCTIONS, []);
+    if detail is error {
+        test:assertFail(detail.message());
+    }
+    test:assertEquals(detail.mainContent, "<p>Join us</p>");
+}
+
+@test:Config {}
+function aDescriptionOfTheWrongKindIsAnError() {
     AtsVacancy unreadable = vacancy(1);
-    unreadable.jdHtmlObject = "not an object";
+    unreadable.jdHtmlObject = 5;
     test:assertTrue(detailOf(unreadable, COMPANIES, UNITS, CAREER_FUNCTIONS, []) is error);
+}
+
+@test:Config {}
+function aMissingDesignationIsShownAsUnknown() {
+    JobDetail|error detail = detailOf(vacancy(1), COMPANIES, UNITS, [], []);
+    if detail is error {
+        test:assertFail(detail.message());
+    }
+    test:assertEquals(detail.designation, "Unknown");
 }
 
 @test:Config {}
