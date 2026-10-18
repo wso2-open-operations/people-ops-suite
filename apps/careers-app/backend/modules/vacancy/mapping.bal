@@ -280,6 +280,17 @@ isolated function atsUpdateOf(ProfileChanges changes) returns AtsCandidateUpdate
     return update;
 }
 
+// The employment type in a job's JSON, or empty text when it is not there.
+isolated function employmentTypeOf(json job) returns string {
+    if job is map<json> {
+        json jobType = job["job_type"];
+        if jobType is string {
+            return jobType;
+        }
+    }
+    return "";
+}
+
 // The candidate in the form the ATS takes, or the reason it cannot be accepted.
 isolated function atsCandidateOf(CandidateApplication candidate, string employmentType, int vacancyId)
         returns AtsCandidate|string {

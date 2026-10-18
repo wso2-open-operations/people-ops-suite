@@ -271,11 +271,15 @@ isolated function candidateFor(string jobId, CandidateApplication candidate, str
     if vacancyId is error {
         return error UpstreamError("Invalid vacancy id", status = http:STATUS_BAD_REQUEST);
     }
-    AtsVacancy vacancy = check fetchVacancy(jobId, requestId);
-    if vacancy.status != STATUS_PUBLISHED {
-        return error UpstreamError("The vacancy is not published", status = http:STATUS_NOT_FOUND);
+    json|http:Response|error job = cachedJob(jobId, requestId);
+    if job is error {
+        return job;
     }
-    AtsCandidate|string atsCandidate = atsCandidateOf(candidate, vacancy.employmentType, vacancyId);
+    if job is http:Response {
+        int status = job.statusCode == http:STATUS_BAD_REQUEST ? http:STATUS_NOT_FOUND : job.statusCode;
+        return error UpstreamError("The vacancy is not available", status = status);
+    }
+    AtsCandidate|string atsCandidate = atsCandidateOf(candidate, employmentTypeOf(job), vacancyId);
     if atsCandidate is string {
         return error UpstreamError(atsCandidate, status = http:STATUS_UNPROCESSABLE_ENTITY);
     }
