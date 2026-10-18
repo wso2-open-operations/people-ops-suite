@@ -69,10 +69,6 @@ type AtsVacancy record {
     string? publishedOn = ();
 };
 
-type AtsVacancyResponse record {
-    AtsVacancy[] vacancies;
-};
-
 type AtsDepartment record {
     int id;
     string department;
@@ -90,7 +86,7 @@ type AtsOffice record {
 
 type AtsCompany record {
     string location;
-    AtsOffice[] offices;
+    AtsOffice[]? offices = ();
 };
 
 type AtsDesignation record {
@@ -99,7 +95,7 @@ type AtsDesignation record {
 };
 
 type AtsCareerFunction record {
-    AtsDesignation[] designations;
+    AtsDesignation[]? designations = ();
 };
 
 type AtsCustomHiringLocation record {

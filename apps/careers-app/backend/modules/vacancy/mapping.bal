@@ -36,7 +36,7 @@ isolated function departmentNameOf(AtsBusinessUnit[] units, int businessUnitId, 
 
 isolated function officeNameOf(AtsCompany[] companies, int? officeId) returns string {
     foreach AtsCompany company in companies {
-        foreach AtsOffice office in company.offices {
+        foreach AtsOffice office in company.offices ?: [] {
             if office.id === officeId {
                 return office.office;
             }
@@ -48,7 +48,7 @@ isolated function officeNameOf(AtsCompany[] companies, int? officeId) returns st
 isolated function designationNameOf(AtsCareerFunction[] careerFunctions, int designationId) returns string|error {
     string[] names = [];
     foreach AtsCareerFunction careerFunction in careerFunctions {
-        foreach AtsDesignation designation in careerFunction.designations {
+        foreach AtsDesignation designation in careerFunction.designations ?: [] {
             if designation.id == designationId {
                 names.push(designation.designation);
             }

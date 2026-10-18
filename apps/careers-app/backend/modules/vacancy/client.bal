@@ -191,8 +191,27 @@ isolated function publishedVacancies(string requestId, int? designationId = (), 
         query += "&employmentType=" + check url:encode(employmentType, "UTF-8");
     }
     json body = check atsJson("/vacancies?" + query, requestId);
-    AtsVacancyResponse response = check body.fromJsonWithType();
-    return response.vacancies;
+    return vacanciesOf(body, requestId);
+}
+
+// The vacancies in the ATS list reply; one that cannot be read is skipped, so it cannot hide the others.
+isolated function vacanciesOf(json body, string requestId) returns AtsVacancy[]|error {
+    json items = body is map<json> ? body["vacancies"] : ();
+    if items !is json[] {
+        return error("The ATS vacancy list could not be read");
+    }
+    AtsVacancy[] vacancies = [];
+    foreach json item in items {
+        AtsVacancy|error vacancy = item.fromJsonWithType();
+        if vacancy is error {
+            json id = item is map<json> ? item["id"] : ();
+            log:printWarn("Skipped a vacancy that could not be read", vacancyId = id is int ? id : 0,
+                requestId = requestId);
+            continue;
+        }
+        vacancies.push(vacancy);
+    }
+    return vacancies;
 }
 
 isolated function fetchVacancy(string jobId, string requestId) returns AtsVacancy|error {

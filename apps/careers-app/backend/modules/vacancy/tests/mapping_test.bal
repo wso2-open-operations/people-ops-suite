@@ -240,6 +240,38 @@ function peekingAtTheCacheNeverLoadsIt() returns error? {
 }
 
 @test:Config {}
+function aVacancyThatCannotBeReadIsSkippedNotTheWholeList() returns error? {
+    json readable = {
+        "id": 1, "title": "Engineer", "designationId": 100, "businessUnitId": 1, "departmentId": 10,
+        "employmentType": "Permanent", "modeOfWork": "Office", "hiringLocations": ["Sri Lanka"],
+        "visibility": "All", "status": "PUBLISHED"
+    };
+    json incomplete = {
+        "id": 2, "title": "Draft", "designationId": 100, "businessUnitId": 1, "departmentId": null,
+        "employmentType": "Permanent", "modeOfWork": "Office", "hiringLocations": null,
+        "visibility": "All", "status": "PUBLISHED"
+    };
+    AtsVacancy[] vacancies = check vacanciesOf({"vacancies": [readable, incomplete]}, "test-request");
+    test:assertEquals(vacancies.length(), 1);
+    test:assertEquals(vacancies[0].id, 1);
+}
+
+@test:Config {}
+function anUnreadableVacancyListIsAnError() {
+    test:assertTrue(vacanciesOf("not an object", "test-request") is error);
+    test:assertTrue(vacanciesOf({"vacancies": "none"}, "test-request") is error);
+    test:assertTrue(vacanciesOf({}, "test-request") is error);
+}
+
+@test:Config {}
+function nullNestedListsInTheOrgDataAreTreatedAsEmpty() returns error? {
+    AtsCompany[] companies = check (<json>[{"location": "Sri Lanka", "offices": null}]).fromJsonWithType();
+    test:assertEquals(officeNameOf(companies, 5), "Unknown");
+    AtsCareerFunction[] functions = check (<json>[{"designations": null}]).fromJsonWithType();
+    test:assertTrue(designationNameOf(functions, 100) is error);
+}
+
+@test:Config {}
 function permanentIsShownAsFullTime() {
     test:assertEquals(jobTypeOf("Permanent"), "Full Time");
     test:assertEquals(jobTypeOf("Internship"), "Internship");
