@@ -184,3 +184,13 @@ function clientAddressFallsBackToTheConnectionAddress() {
     test:assertEquals(clientAddressBehind(new, 1, "192.168.1.5"), "192.168.1.5");
     test:assertEquals(clientAddressBehind(new, 1, "192.168.1.6"), "192.168.1.6");
 }
+
+@test:Config {}
+function eachSignedInUserHasTheirOwnAllowance() {
+    ApplyRateLimiter limiter = new;
+    foreach int attempt in 1 ... signedInMaxPerUser {
+        test:assertTrue(limiter.tryAcquireUser("user-a"), string `Request ${attempt} should be allowed`);
+    }
+    test:assertFalse(limiter.tryAcquireUser("user-a"));
+    test:assertTrue(limiter.tryAcquireUser("user-b"));
+}

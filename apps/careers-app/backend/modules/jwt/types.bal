@@ -51,3 +51,8 @@ public type AppUnauthorizedError record {|
     *http:Unauthorized;
     types:ErrorPayload body;
 |};
+
+public type AppTooManyRequestsError record {|
+    *http:TooManyRequests;
+    types:ErrorPayload body;
+|};

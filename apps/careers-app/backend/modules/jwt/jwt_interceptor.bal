@@ -14,10 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import wso2/careers_app.apply;
 import wso2/careers_app.types;
 
 import ballerina/http;
 import ballerina/log;
+
+// Kept apart from the apply limiter, whose entries are aged out by a different window.
+final apply:ApplyRateLimiter signedInRateLimiter = new;
 
 # The routes open to guests, listed exactly: the job list, org structure, one job's detail and applying.
 # A route added later, such as GET /jobs/saved, is not public unless it is added here.
@@ -39,7 +43,7 @@ public isolated service class JwtInterceptor {
     *http:RequestInterceptor;
 
     isolated resource function 'default [string... path](http:RequestContext ctx, http:Request req)
-            returns http:NextService|AppUnauthorizedError|error? {
+            returns http:NextService|AppUnauthorizedError|AppTooManyRequestsError|error? {
         if req.method == http:OPTIONS {
             return ctx.next();
         }
@@ -59,6 +63,14 @@ public isolated service class JwtInterceptor {
         if user is error {
             log:printError("Token validation failed", user, requestId = types:requestIdOf(ctx));
             return <AppUnauthorizedError>{body: {message: "Unauthorized"}};
+        }
+
+        if !signedInRateLimiter.tryAcquireUser(user.sub) {
+            log:printWarn("Request rate limit reached for a signed-in user", requestId = types:requestIdOf(ctx));
+            return <AppTooManyRequestsError>{
+                headers: {"Retry-After": apply:signedInWindowSeconds.toString()},
+                body: {message: "Too many requests"}
+            };
         }
 
         ctx.set(CTX_USER, user);
