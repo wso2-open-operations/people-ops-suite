@@ -66,3 +66,16 @@ public isolated service class JwtInterceptor {
         return ctx.next();
     }
 }
+
+# Marks the responses to a signed-in caller as not to be stored by browsers or intermediaries.
+public isolated service class NoStoreInterceptor {
+    *http:ResponseInterceptor;
+
+    isolated remote function interceptResponse(http:RequestContext ctx, http:Response res)
+            returns http:NextService|error? {
+        if ctx.hasKey(CTX_USER) {
+            res.setHeader(http:CACHE_CONTROL, "no-store");
+        }
+        return ctx.next();
+    }
+}

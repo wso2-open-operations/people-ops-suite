@@ -70,7 +70,8 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     }
 
     public function createInterceptors() returns http:Interceptor[] =>
-        [new types:RequestIdInterceptor(), new apply:RemoteAddressInterceptor(), new jwt:JwtInterceptor()];
+        [new types:RequestIdInterceptor(), new apply:RemoteAddressInterceptor(), new jwt:JwtInterceptor(),
+            new jwt:NoStoreInterceptor()];
 
     # The published job list. Public: no sign-in needed.
     resource function get jobs(http:RequestContext ctx) returns json|http:BadGateway|http:GatewayTimeout {
