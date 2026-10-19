@@ -52,8 +52,17 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     if (isAuthenticated) setSessionWarningOpen(true);
   };
 
+  // Signs the user out when the timeout elapses, so an unattended browser does not stay signed in.
+  const onIdle = () => {
+    if (!isAuthenticated) return;
+    setSessionWarningOpen(false);
+    setUserLoaded(false);
+    signOut();
+  };
+
   const { activate } = useIdleTimer({
     onPrompt,
+    onIdle,
     timeout,
     promptBeforeIdle,
     throttle: 500,
