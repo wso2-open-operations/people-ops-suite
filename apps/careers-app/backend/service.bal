@@ -285,7 +285,8 @@ isolated function profileFrom(jwt:CallerDetails caller) returns json => {
     personalEmail: caller.email,
     contactNo: caller.contactNo,
     address: (),
-    university: ()
+    university: (),
+    editable: false
 };
 
 isolated function candidateFailure(error err, string failureMessage, string requestId)
