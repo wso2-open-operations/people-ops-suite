@@ -34,7 +34,7 @@ final apply:ApplyRateLimiter applyRateLimiter = new;
 isolated function forwardOrError(http:Response|error resp, string failureMessage, string requestId)
         returns json|http:BadGateway|http:GatewayTimeout {
     if resp is error {
-        log:printError(failureMessage, resp, requestId = requestId);
+        log:printError(failureMessage, errorMessage = types:withoutPersonalData(resp.message()), requestId = requestId);
         return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
     }
     if resp.statusCode == 503 || resp.statusCode == 504 {
@@ -47,7 +47,8 @@ isolated function forwardOrError(http:Response|error resp, string failureMessage
     }
     json|error respBody = resp.getJsonPayload();
     if respBody is error {
-        log:printError(failureMessage + " (non-JSON body)", respBody, requestId = requestId);
+        log:printError(failureMessage + " (non-JSON body)", errorMessage = types:withoutPersonalData(respBody.message()),
+            requestId = requestId);
         return <http:BadGateway>{body: {message: failureMessage}};
     }
     return respBody;
@@ -155,7 +156,8 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         }
         http:Response|error resp = vacancy:applyForJob(jobId, candidate, requestId);
         if resp is error {
-            log:printError("Failed to reach the ATS for an application", resp, requestId = requestId);
+            log:printError("Failed to reach the ATS for an application",
+                errorMessage = types:withoutPersonalData(resp.message()), requestId = requestId);
             return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
         }
         if resp.statusCode == http:STATUS_UNPROCESSABLE_ENTITY {
@@ -165,8 +167,9 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         if resp.statusCode < 200 || resp.statusCode >= 300 {
             // Log the upstream status and a short piece of its reply, never the applicant's details.
             string|error reply = resp.getTextPayload();
-            string replySnippet = reply is string ? (reply.length() > MAX_LOGGED_REPLY_LENGTH
-                ? reply.substring(0, MAX_LOGGED_REPLY_LENGTH) : reply) : "";
+            string redacted = reply is string ? types:withoutPersonalData(reply) : "";
+            string replySnippet = redacted.length() > MAX_LOGGED_REPLY_LENGTH
+                ? redacted.substring(0, MAX_LOGGED_REPLY_LENGTH) : redacted;
             log:printError(string `The ATS did not accept an application for vacancy ${jobId}: status ${resp.statusCode}`,
                 reply = replySnippet, requestId = requestId);
             return apply:applyFailure(resp.statusCode);
@@ -291,7 +294,7 @@ isolated function profileFrom(jwt:CallerDetails caller) returns json => {
 
 isolated function candidateFailure(error err, string failureMessage, string requestId)
         returns http:BadGateway|http:GatewayTimeout {
-    log:printError(failureMessage, errorMessage = types:withoutEmails(err.message()), requestId = requestId);
+    log:printError(failureMessage, errorMessage = types:withoutPersonalData(err.message()), requestId = requestId);
     if err is http:ClientError {
         return <http:GatewayTimeout>{body: {message: "Upstream service unreachable"}};
     }

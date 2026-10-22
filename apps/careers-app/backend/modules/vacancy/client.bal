@@ -165,7 +165,8 @@ isolated function failedReply(error err, string requestId) returns http:Response
     if err is UpstreamError {
         resp.statusCode = err.detail().status;
     } else {
-        log:printError("Could not build a vacancy reply from the ATS data", err, requestId = requestId);
+        log:printError("Could not build a vacancy reply from the ATS data",
+            errorMessage = types:withoutPersonalData(err.message()), requestId = requestId);
         resp.statusCode = http:STATUS_BAD_GATEWAY;
     }
     resp.setTextPayload(err.message());
