@@ -63,6 +63,7 @@ const AppHandler = () => {
                 { path: "/profile", element: <View.profile /> },
                 { path: "/applications", element: <View.applications /> },
                 { path: "/applications/:id", element: <View.applications /> },
+                { path: "/applications/:id/documents", element: <View.documents /> },
               ],
             },
           ],
