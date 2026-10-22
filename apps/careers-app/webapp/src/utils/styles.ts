@@ -19,3 +19,6 @@ export const pillButtonSx = { borderRadius: "999px", fontWeight: 700 } as const;
 
 // The thin border and rounded corners of a card.
 export const cardSx = { border: "1px solid", borderColor: "divider", borderRadius: "8px" } as const;
+
+// A grid cell that spans the whole row on a wide screen.
+export const fullRowSx = { gridColumn: { md: "1 / -1" } } as const;

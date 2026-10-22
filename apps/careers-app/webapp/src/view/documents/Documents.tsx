@@ -13,32 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import {
-  Box,
-  Button,
-  Card,
-  Checkbox,
-  Chip,
-  CircularProgress,
-  FormControlLabel,
-  LinearProgress,
-  Link,
-  Skeleton,
-  Stack,
-  Typography,
-} from "@mui/material";
-import axios from "axios";
-import { ArrowLeft, Check, FileUp, Trash2 } from "lucide-react";
+
+import { Box, Button, Card, CircularProgress, LinearProgress, Stack, Typography } from "@mui/material";
+import { ArrowLeft, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import {
-  type DocumentRequirement,
-  type DocumentRequirements,
-  type DocumentsStatus,
-  type PersonalDetails,
-  State,
-} from "@/types/types";
+import { type DocumentRequirements, type DocumentsStatus, type PersonalDetails, State } from "@/types/types";
 import Callout from "@component/common/Callout";
 import PageContainer from "@component/common/PageContainer";
 import { ApplicationStatus, SnackMessage } from "@config/constant";
@@ -48,119 +29,28 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { fetchDocumentRequirements, fetchDocumentsStatus, submitDocuments } from "@utils/profileService";
 import { cardSx, pillButtonSx } from "@utils/styles";
-import PersonalDetailsForm, {
+import {
   type DetailErrors,
   detailErrorsOf,
   detailsFromProfile,
   emptyDetails,
-  summarySectionsOf,
-} from "@view/documents/PersonalDetailsForm";
-
-const MEGABYTE = 1024 * 1024;
-
-const STEPS = ["Personal details", "Documents", "Photos", "Review & submit"];
-const DETAILS_STEP = 0;
-const DOCUMENTS_STEP = 1;
-const PHOTOS_STEP = 2;
-const REVIEW_STEP = 3;
-
-const formatSize = (bytes: number) => `${(bytes / MEGABYTE).toFixed(1)} MB`;
-
-// A deadline, from its ISO 8601 text, as a date to read.
-const deadlineText = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
-
-const extensionOf = (fileName: string) => fileName.split(".").pop()?.toLowerCase() ?? "";
-
-// The file extensions a document accepts.
-const extensionsOf = (types: string[]) => types.flatMap((type) => (type === "jpg" ? ["jpg", "jpeg"] : [type]));
-
-// The formats a document accepts, for the line under its name.
-const formatsText = (types: string[]) => (types.includes("pdf") ? "PDF" : "JPG or PNG");
-
-// The kind of file a document needs, in a sentence.
-const typesText = (types: string[]) => (types.includes("pdf") ? "a PDF file" : "a JPG or PNG image");
-
-// The hint, with any web address in it shown as a link that opens in a new tab.
-const hintContent = (hint: string) =>
-  hint.split(/(https:\/\/\S+[^\s.,;])/).map((part, index) =>
-    part.startsWith("https://") ? (
-      <Link key={index} href={part} target="_blank" rel="noopener noreferrer">
-        {part.replace("https://", "")}
-      </Link>
-    ) : (
-      part
-    ),
-  );
-
-// The message for a picture that is not square or not big enough, or an empty text when it is fine.
-const squareProblem = async (file: File, side: number) => {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const { width, height } = bitmap;
-    bitmap.close();
-    return width === height && width >= side ? "" : `The picture must be square, at least ${side} x ${side} pixels.`;
-  } catch {
-    return "This picture could not be read.";
-  }
-};
-
-// The record without the given key.
-function without<T>(record: Record<string, T>, key: string): Record<string, T> {
-  return Object.fromEntries(Object.entries(record).filter(([name]) => name !== key));
-}
-
-// The message for a file that cannot be sent, or an empty text when the file is fine.
-const problemWith = (file: File, requirements: DocumentRequirements, document: DocumentRequirement) => {
-  if (file.size === 0) return "This file is empty.";
-  if (file.size > requirements.maxFileBytes) return `This file is larger than ${formatSize(requirements.maxFileBytes)}.`;
-  if (extensionsOf(document.types).includes(extensionOf(file.name))) return "";
-  return `Send ${typesText(document.types)}.`;
-};
-
-// How far a section has got: nothing chosen yet, a file that is ready, or a file that was refused.
-const STATUS_COLORS = { Complete: "success", Pending: "default", "Action needed": "error" } as const;
-
-const statusOf = (hasFile: boolean, problem: string | undefined): keyof typeof STATUS_COLORS =>
-  problem ? "Action needed" : hasFile ? "Complete" : "Pending";
-
-// The message for a submission that was refused, taken from the reply when the backend explains why.
-const submitFailureMessage = (error: unknown) => {
-  const status = axios.isAxiosError(error) ? error.response?.status : undefined;
-  if (status === 400 || status === 403 || status === 409) {
-    const reason = axios.isAxiosError(error) ? (error.response?.data as { message?: unknown })?.message : undefined;
-    if (typeof reason === "string") return reason;
-  }
-  if (status === 400) return SnackMessage.error.submitDocuments;
-  if (status === 403 || status === 404) return SnackMessage.error.documentsNotAllowed;
-  if (status === 409) return SnackMessage.error.documentsAlreadySent;
-  if (status === 413) return SnackMessage.error.documentsTooLarge;
-  if (status === 429) return SnackMessage.error.documentsTooManyAttempts;
-  return SnackMessage.error.submitDocuments;
-};
-
-// The shape of the form while the page loads.
-const DocumentsSkeleton = () => (
-  <Card elevation={0} sx={cardSx} aria-busy="true" aria-label="Loading your documents form">
-    <Stack direction="row" gap={2} sx={{ p: 3, borderBottom: "1px solid", borderColor: "divider" }}>
-      {STEPS.map((step) => (
-        <Skeleton key={step} variant="rounded" width={110} height={28} sx={{ borderRadius: "999px" }} />
-      ))}
-    </Stack>
-    <Stack gap={2.5} sx={{ p: 3 }}>
-      {[0, 1, 2, 3].map((row) => (
-        <Box key={row}>
-          <Skeleton variant="text" width={140} height={20} />
-          <Skeleton variant="rounded" height={44} />
-        </Box>
-      ))}
-    </Stack>
-    <Stack direction="row" justifyContent="space-between" sx={{ p: 3, borderTop: "1px solid", borderColor: "divider" }}>
-      <Skeleton variant="rounded" width={80} height={36} sx={{ borderRadius: "999px" }} />
-      <Skeleton variant="rounded" width={100} height={36} sx={{ borderRadius: "999px" }} />
-    </Stack>
-  </Card>
-);
+} from "@view/documents/detailValidation";
+import DocumentFileRows from "@view/documents/DocumentFileRows";
+import {
+  DETAILS_STEP,
+  DOCUMENTS_STEP,
+  PHOTOS_STEP,
+  REVIEW_STEP,
+  STEPS,
+  deadlineText,
+  problemWith,
+  squareProblem,
+  submitFailureMessage,
+  without,
+} from "@view/documents/documentFiles";
+import DocumentsSkeleton from "@view/documents/DocumentsSkeleton";
+import PersonalDetailsForm from "@view/documents/PersonalDetailsForm";
+import ReviewStep from "@view/documents/ReviewStep";
 
 // The page where a candidate who accepted an offer sends their details and the documents needed for onboarding.
 const Documents = () => {
@@ -324,184 +214,17 @@ const Documents = () => {
 
   const backToApplication = () => navigate(applicationId ? `/applications/${applicationId}` : "/applications");
 
-  // The rows of the documents or photos step: one per document, each with its status.
-  const renderFileRows = (group: string) => (
-    <Stack divider={<Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />}>
-      {documentsIn(group).map((document) => {
-        const file = files[document.key];
-        const sentEarlier = !file && sentKeys.includes(document.key);
-        const documentStatus = statusOf(isSent(document.key), problems[document.key]);
-        return (
-          <Stack
-            key={document.key}
-            direction={{ xs: "column", sm: "row" }}
-            alignItems={{ xs: "flex-start", sm: "center" }}
-            justifyContent="space-between"
-            gap={1.5}
-            sx={{ px: 3, py: 2 }}
-          >
-            <Box sx={{ minWidth: 0 }}>
-              <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-                <Typography fontWeight={600} fontSize="0.95rem" color="text.primary">
-                  {document.label}
-                </Typography>
-                <Chip size="small" variant="outlined" color={STATUS_COLORS[documentStatus]} label={documentStatus} />
-                {!document.required && <Chip size="small" variant="outlined" label="Optional" />}
-              </Stack>
-              <Typography fontSize="0.8rem" color="text.secondary">
-                {formatsText(document.types)}
-                {document.hint && <> · {hintContent(document.hint)}</>}
-              </Typography>
-              {file && (
-                <Typography fontSize="0.85rem" color="text.secondary" sx={{ wordBreak: "break-all" }}>
-                  {file.name} · {formatSize(file.size)}
-                </Typography>
-              )}
-              {problems[document.key] && (
-                <Typography fontSize="0.85rem" color="error">
-                  {problems[document.key]}
-                </Typography>
-              )}
-            </Box>
-
-            {file ? (
-              <Button
-                startIcon={<Trash2 size={16} />}
-                onClick={() => removeFile(document.key)}
-                disabled={submitting}
-                sx={{ fontWeight: 600 }}
-              >
-                Remove
-              </Button>
-            ) : (
-              <Button
-                component="label"
-                variant="outlined"
-                startIcon={<FileUp size={16} />}
-                disabled={submitting}
-                sx={pillButtonSx}
-              >
-                {sentEarlier ? "Replace" : "Upload"}
-                <input
-                  hidden
-                  type="file"
-                  accept={extensionsOf(document.types)
-                    .map((extension) => `.${extension}`)
-                    .join(",")}
-                  onChange={(event) => {
-                    void chooseFile(document.key, event.target.files?.[0]);
-                    // Lets the same file be chosen again after it was removed.
-                    event.target.value = "";
-                  }}
-                />
-              </Button>
-            )}
-          </Stack>
-        );
-      })}
-    </Stack>
+  const fileRows = (group: string) => (
+    <DocumentFileRows
+      documents={documentsIn(group)}
+      files={files}
+      sentKeys={sentKeys}
+      problems={problems}
+      submitting={submitting}
+      onChoose={(key, file) => void chooseFile(key, file)}
+      onRemove={removeFile}
+    />
   );
-
-  // The last step: what will be sent, the declaration and the submit button.
-  const renderReview = (r: DocumentRequirements) => {
-    const missingDocuments = r.documents.filter((document) => document.required && !isSent(document.key));
-    return (
-      <>
-        {(!detailsReady || missingDocuments.length > 0) && (
-          <Box sx={{ px: 3, pt: 3 }}>
-            <Callout tone="danger">
-              <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
-                Submit unlocks when everything is complete
-              </Typography>
-              {!detailsReady && (
-                <Typography fontSize="0.9rem" color="text.primary">
-                  Some personal details are missing.{" "}
-                  <Link component="button" type="button" onClick={showDetailProblems} sx={{ verticalAlign: "baseline" }}>
-                    Go to personal details
-                  </Link>
-                </Typography>
-              )}
-              {missingDocuments.length > 0 && (
-                <Box>
-                  <Typography fontSize="0.9rem" color="text.primary" mb={0.75}>
-                    Still to add:
-                  </Typography>
-                  <Stack direction="row" flexWrap="wrap" gap={1}>
-                    {missingDocuments.map((document) => (
-                      <Chip
-                        key={document.key}
-                        label={document.label}
-                        variant="outlined"
-                        clickable
-                        onClick={() => goTo(document.group === "photos" ? PHOTOS_STEP : DOCUMENTS_STEP)}
-                      />
-                    ))}
-                  </Stack>
-                </Box>
-              )}
-            </Callout>
-          </Box>
-        )}
-        {summarySectionsOf(details).map((section) => (
-          <Box key={section.title} sx={{ p: 3, borderTop: "1px solid", borderColor: "divider" }}>
-            <Typography fontWeight={700} fontSize="0.95rem" color="text.primary" mb={1.5}>
-              {section.title}
-            </Typography>
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "260px 1fr" }, rowGap: 1, columnGap: 2 }}>
-              {section.rows.map(([label, value]) => (
-                <Box key={label} sx={{ display: "contents" }}>
-                  <Typography fontSize="0.9rem" color="text.secondary">
-                    {label}
-                  </Typography>
-                  <Typography fontSize="0.9rem" color="text.primary" sx={{ wordBreak: "break-word" }}>
-                    {value}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        ))}
-
-        <Box sx={{ px: 3, pb: 2, borderTop: "1px solid", borderColor: "divider" }}>
-          <Typography fontWeight={700} fontSize="0.95rem" color="text.primary" mt={2} mb={1}>
-            Your documents and photos
-          </Typography>
-          {r.documents.map((document) => (
-            <Stack key={document.key} direction="row" justifyContent="space-between" gap={2} sx={{ py: 0.5 }}>
-              <Typography fontSize="0.9rem" color="text.primary">
-                {document.label}
-              </Typography>
-              <Chip
-                size="small"
-                variant="outlined"
-                color={STATUS_COLORS[statusOf(isSent(document.key), undefined)]}
-                label={
-                  files[document.key]
-                    ? "Complete"
-                    : sentKeys.includes(document.key)
-                      ? "Already uploaded"
-                      : document.required
-                        ? "Pending"
-                        : "Not sent"
-                }
-              />
-            </Stack>
-          ))}
-          <Typography fontSize="0.85rem" color={tooLarge ? "error" : "text.secondary"} mt={1}>
-            {formatSize(totalBytes)} of {formatSize(r.maxTotalBytes)}
-          </Typography>
-        </Box>
-
-        <Box sx={{ px: 3, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
-          <FormControlLabel
-            control={<Checkbox checked={declared} onChange={(event) => setDeclared(event.target.checked)} disabled={submitting} />}
-            label="I declare that these documents are genuine and the details in them are correct."
-            sx={{ alignItems: "flex-start", "& .MuiTypography-root": { fontSize: "0.9rem", pt: 0.75 } }}
-          />
-        </Box>
-      </>
-    );
-  };
 
   return (
     <PageContainer>
@@ -595,9 +318,24 @@ const Documents = () => {
               disabled={submitting}
             />
           )}
-          {step === DOCUMENTS_STEP && renderFileRows("documents")}
-          {step === PHOTOS_STEP && renderFileRows("photos")}
-          {step === REVIEW_STEP && renderReview(requirements)}
+          {step === DOCUMENTS_STEP && fileRows("documents")}
+          {step === PHOTOS_STEP && fileRows("photos")}
+          {step === REVIEW_STEP && (
+            <ReviewStep
+              requirements={requirements}
+              details={details}
+              files={files}
+              sentKeys={sentKeys}
+              detailsReady={detailsReady}
+              totalBytes={totalBytes}
+              tooLarge={tooLarge}
+              declared={declared}
+              submitting={submitting}
+              onDeclaredChange={setDeclared}
+              onShowDetailProblems={showDetailProblems}
+              onGoTo={goTo}
+            />
+          )}
 
           <Stack
             direction="row"
