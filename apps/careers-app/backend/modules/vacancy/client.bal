@@ -209,6 +209,12 @@ isolated function vacanciesOf(json body, string requestId) returns AtsVacancy[]|
     if items !is json[] {
         return error("The ATS vacancy list could not be read");
     }
+    // The ATS returns at most its default page (1000) when no limit is sent, and reports the full count beside it.
+    json total = body is map<json> ? body["totalCount"] : ();
+    if total is int && total > items.length() {
+        log:printWarn("The ATS vacancy list is cut short; some published vacancies are not listed",
+            listed = items.length(), total = total, requestId = requestId);
+    }
     AtsVacancy[] vacancies = [];
     foreach json item in items {
         AtsVacancy|error vacancy = item.fromJsonWithType();
