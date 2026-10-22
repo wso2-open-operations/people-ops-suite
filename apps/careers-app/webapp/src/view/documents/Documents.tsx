@@ -13,7 +13,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Button, Card, Checkbox, Chip, FormControlLabel, Link, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  FormControlLabel,
+  LinearProgress,
+  Link,
+  Stack,
+  Typography,
+} from "@mui/material";
 import axios from "axios";
 import { ArrowLeft, Check, FileUp, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -584,12 +596,22 @@ const Documents = () => {
                 variant="contained"
                 onClick={handleSubmit}
                 disabled={submitting || !detailsReady || !allDocumentsReady || tooLarge || !declared}
+                startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : undefined}
                 sx={{ ...pillButtonSx, px: 3 }}
               >
                 {submitting ? (editing ? "Saving..." : "Submitting...") : editing ? "Save changes" : "Submit"}
               </Button>
             )}
           </Stack>
+          {submitting && (
+            <Box role="status" aria-live="polite" sx={{ px: 3, pb: 3 }}>
+              <LinearProgress sx={{ borderRadius: "999px", mb: 1 }} />
+              <Typography fontSize="0.9rem" color="text.secondary">
+                {editing ? "Saving your changes" : "Sending your details and files"}. This can take a few seconds, so
+                please keep this page open.
+              </Typography>
+            </Box>
+          )}
         </Card>
       )}
     </PageContainer>
