@@ -27,7 +27,17 @@ import { ColorModeContext } from "@context/ColorModeContext";
 import wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
 import wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
 import { State } from "@/types/types";
-import { clearUserData, loadFailed, loadJobDetail, loadJobs, loadOrgStructure } from "@slices/careersSlice/careers";
+import {
+  applicationsFailed,
+  clearUserData,
+  loadApplications,
+  loadFailed,
+  loadJobDetail,
+  loadJobs,
+  loadOrgStructure,
+  loadProfile,
+  profileFailed,
+} from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 
 const NAV_ITEMS = [
@@ -46,6 +56,8 @@ const AppShell = () => {
   const { getToken: getAccessToken, isSignedIn, appSignIn, appSignOut } = useAppAuthContext();
   const jobsState = useAppSelector((state: RootState) => state.careers.jobsState);
   const orgStructureState = useAppSelector((state: RootState) => state.careers.orgStructureState);
+  const applicationsState = useAppSelector((state: RootState) => state.careers.applicationsState);
+  const profileState = useAppSelector((state: RootState) => state.careers.profileState);
   const sessionExpired = useAppSelector((state: RootState) => state.careers.sessionExpired);
   const jobs = useAppSelector((state: RootState) => state.careers.jobs);
   const jobDetails = useAppSelector((state: RootState) => state.careers.jobDetails);
@@ -94,6 +106,21 @@ const AppShell = () => {
       cancelled = true;
     };
   }, [jobsState, jobs, dispatch, getAccessToken]);
+
+  // Once signed in, loads the candidate's applications and profile in the background, so the pages that show them
+  // open with the data in place. A load that is reset to idle is tried again here.
+  useEffect(() => {
+    if (!isSignedIn || (applicationsState !== State.idle && profileState !== State.idle)) return;
+    getAccessToken()
+      .then((token) => {
+        if (applicationsState === State.idle) dispatch(loadApplications(token));
+        if (profileState === State.idle) dispatch(loadProfile(token));
+      })
+      .catch(() => {
+        if (applicationsState === State.idle) dispatch(applicationsFailed());
+        if (profileState === State.idle) dispatch(profileFailed());
+      });
+  }, [isSignedIn, applicationsState, profileState, dispatch, getAccessToken]);
 
   // Clears the candidate's data when nobody is signed in.
   useEffect(() => {

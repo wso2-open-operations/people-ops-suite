@@ -31,9 +31,7 @@ import PageContainer from "@component/common/PageContainer";
 import { ApplicationStatus, OFFER_CONFLICT_ERROR, OFFER_EXPIRED_ERROR, SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
 import {
-  applicationsFailed,
   dismissFeedback,
-  loadApplications,
   refreshApplications,
   respondToOffer,
   retryApplications,
@@ -61,13 +59,6 @@ const Applications = () => {
 
   // The list, or one application's details when the URL has an id.
   const { id: applicationId } = useParams<{ id: string }>();
-
-  useEffect(() => {
-    if (applicationsState !== State.idle) return;
-    getToken()
-      .then((token) => dispatch(loadApplications(token)))
-      .catch(() => dispatch(applicationsFailed()));
-  }, [applicationsState, dispatch, getToken]);
 
   const selectedApplication = applicationId ? applications.find((a) => a.id === applicationId) : undefined;
   const stillLoading = applicationsState === State.idle || applicationsState === State.loading;

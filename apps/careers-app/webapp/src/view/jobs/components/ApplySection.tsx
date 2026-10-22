@@ -21,7 +21,7 @@ import { useEffect, useRef, useState } from "react";
 import { State } from "@/types/types";
 import { SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
-import { loadProfile, profileFailed, refreshApplications } from "@slices/careersSlice/careers";
+import { refreshApplications } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { isValidEmail } from "@utils/email";
@@ -61,14 +61,6 @@ const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
   const profile = useAppSelector((state: RootState) => state.careers.profile);
   const profileState = useAppSelector((state: RootState) => state.careers.profileState);
   const sessionGeneration = useAppSelector((state: RootState) => state.careers.sessionGeneration);
-
-  // A signed-in candidate's saved profile is loaded here if it isn't already.
-  useEffect(() => {
-    if (!isSignedIn || profileState !== State.idle) return;
-    getAccessToken()
-      .then((token) => dispatch(loadProfile(token)))
-      .catch(() => dispatch(profileFailed()));
-  }, [isSignedIn, profileState, dispatch, getAccessToken]);
 
   // Fills the empty fields from the profile once it has loaded; anything already typed is kept.
   const prefilled = useRef(false);

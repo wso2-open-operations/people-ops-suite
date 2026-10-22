@@ -24,7 +24,6 @@ import Callout from "@component/common/Callout";
 import PageContainer from "@component/common/PageContainer";
 import { ApplicationStatus, SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
-import { applicationsFailed, loadApplications, loadProfile, profileFailed } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { fetchDocumentRequirements, fetchDocumentsStatus, submitDocuments } from "@utils/profileService";
@@ -80,21 +79,7 @@ const Documents = () => {
   // The earlier submission: undefined until the backend answers, null when it could not.
   const [status, setStatus] = useState<DocumentsStatus | null | undefined>(undefined);
 
-  useEffect(() => {
-    if (applicationsState !== State.idle) return;
-    getToken()
-      .then((token) => dispatch(loadApplications(token)))
-      .catch(() => dispatch(applicationsFailed()));
-  }, [applicationsState, dispatch, getToken]);
-
-  // Loads the candidate's profile, which fills the form.
-  useEffect(() => {
-    if (profileState !== State.idle) return;
-    getToken()
-      .then((token) => dispatch(loadProfile(token)))
-      .catch(() => dispatch(profileFailed()));
-  }, [profileState, dispatch, getToken]);
-
+  // Fills the form from the candidate's profile once it has loaded.
   useEffect(() => {
     if (prefilled || profileState !== State.success) return;
     setDetails((current) => detailsFromProfile(current, profile));

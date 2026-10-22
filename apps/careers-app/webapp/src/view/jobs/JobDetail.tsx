@@ -23,7 +23,7 @@ import { State } from "@/types/types";
 import { PAGE_MAX_WIDTH } from "@config/brand";
 import { JOB_NOT_FOUND_ERROR } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
-import { applicationsFailed, loadApplications, loadJobDetail, toggleSaveJob } from "@slices/careersSlice/careers";
+import { loadJobDetail, toggleSaveJob } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { jobPath, opensDirectly, withoutArrivalMark } from "@utils/jobFilterUtils";
 import ApplySection from "@view/jobs/components/ApplySection";
@@ -54,13 +54,6 @@ const JobDetail = () => {
 
   // A signed-in candidate's applications decide whether they can apply here. A guest can always see the form.
   const applications = useAppSelector((state: RootState) => state.careers.applications);
-  const applicationsState = useAppSelector((state: RootState) => state.careers.applicationsState);
-  useEffect(() => {
-    if (!isSignedIn || applicationsState !== State.idle) return;
-    getAccessToken()
-      .then((token) => dispatch(loadApplications(token)))
-      .catch(() => dispatch(applicationsFailed()));
-  }, [isSignedIn, applicationsState, dispatch, getAccessToken]);
 
   // Why the candidate cannot apply for this job, or nothing when they can: they applied for it already.
   const applyBlockedReason =
