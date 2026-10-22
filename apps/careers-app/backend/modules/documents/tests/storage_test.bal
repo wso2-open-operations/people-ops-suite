@@ -210,6 +210,50 @@ function aChangeReplacesAFileOnlyWhileTheRecordIsUnchanged() returns error? {
 }
 
 @test:Config {}
+function aReplacedFileWithAnotherExtensionIsEmptiedOnlyOnceTheRecordIsSaved() returns error? {
+    Submission submission = aSubmission();
+    _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+    [Manifest, string]? loaded = check loadManifest("123");
+    if loaded is () {
+        test:assertFail("The record was not found");
+    }
+    string oldPicture = FOLDER + "/Ada Lovelace - Profile picture.png";
+    string newPicture = FOLDER + "/Ada Lovelace - Profile picture.jpg";
+    Submission update = {
+        documents: [{key: "profilePicture", extension: "jpg", contentType: "image/jpeg", content: [1, 2, 3]}],
+        details: submission.details
+    };
+
+    // The record changed since it was read, so the save is refused and the earlier picture stays as it was.
+    _ = store.write(FOLDER + "/submitted.json", "{}".toBytes(), false, ());
+    boolean refused = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    test:assertFalse(refused);
+    [byte[], string]? kept = store.read(oldPicture);
+    test:assertTrue(kept is [byte[], string] && kept[0].length() > 0);
+}
+
+@test:Config {}
+function aSavedChangeEmptiesTheReplacedFileOfAnotherExtension() returns error? {
+    Submission submission = aSubmission();
+    _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+    [Manifest, string]? loaded = check loadManifest("123");
+    if loaded is () {
+        test:assertFail("The record was not found");
+    }
+    Submission update = {
+        documents: [{key: "profilePicture", extension: "jpg", contentType: "image/jpeg", content: [1, 2, 3]}],
+        details: submission.details
+    };
+
+    boolean saved = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    test:assertTrue(saved);
+    [byte[], string]? emptied = store.read(FOLDER + "/Ada Lovelace - Profile picture.png");
+    test:assertEquals(emptied is () ? () : emptied[0], <byte[]>[]);
+    [byte[], string]? added = store.read(FOLDER + "/Ada Lovelace - Profile picture.jpg");
+    test:assertEquals(added is () ? () : added[0], <byte[]>[1, 2, 3]);
+}
+
+@test:Config {}
 function aFileThatCannotBeWrittenLeavesNoRecord() {
     store.failWritesTo("Birth certificate");
     SubmitOutcome|error outcome = storeDocuments("123", aSubmission(), "Ada Lovelace", "test-request");

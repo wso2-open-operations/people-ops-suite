@@ -15,6 +15,7 @@
 // under the License.
 
 import ballerina/http;
+import ballerina/log;
 import ballerina/time;
 import ballerina/url;
 
@@ -255,13 +256,13 @@ public isolated function saveChanges(string applicationId, Manifest current, str
     map<string> files = current.files.clone();
     // The folder and the file names keep the name the submission was made under.
     string folder = current.folder;
+    string[] replaced = [];
     foreach UploadedDocument document in update.documents {
         string name = fileName(folder, current.candidateName, document.key, document.extension);
         _ = check putBlob(name, document.content, document.contentType, metadata);
         string? previous = files[document.key];
         if previous is string && previous != name {
-            // The earlier file has another extension. It cannot be deleted with this token, so it is emptied.
-            _ = check putBlob(previous, [], "application/octet-stream", metadata);
+            replaced.push(previous);
         }
         files[document.key] = name;
     }
@@ -275,5 +276,17 @@ public isolated function saveChanges(string applicationId, Manifest current, str
         submittedAt: current.submittedAt,
         updatedAt: time:utcToString(time:utcNow())
     };
-    return putBlob(manifestName(folder), next.toJsonString().toBytes(), "application/json", metadata, etag = etag);
+    boolean saved = check putBlob(manifestName(folder), next.toJsonString().toBytes(), "application/json", metadata,
+        etag = etag);
+    if saved {
+        // A replaced file with another extension cannot be deleted with this token, so it is emptied, and only once
+        // the record no longer points at it.
+        foreach string previous in replaced {
+            boolean|error emptied = putBlob(previous, [], "application/octet-stream", metadata);
+            if emptied is error {
+                log:printWarn("Could not empty a replaced file", errorMessage = emptied.message(), requestId = requestId);
+            }
+        }
+    }
+    return saved;
 }
