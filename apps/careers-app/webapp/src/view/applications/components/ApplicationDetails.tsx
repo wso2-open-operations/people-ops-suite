@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Card, CardContent, Stack, Step, StepLabel, Stepper, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, Skeleton, Stack, Step, StepLabel, Stepper, Typography } from "@mui/material";
 import { Award, Info } from "lucide-react";
 
 import DOMPurify from "dompurify";
@@ -52,6 +52,7 @@ interface ApplicationDetailsProps {
   // What is known about the submission of the onboarding documents; undefined while that is not yet known, and null
   // when it could not be found out.
   documentsStatus: DocumentsStatus | null | undefined;
+  onRetryDocumentsStatus: () => void;
 }
 
 const ApplicationDetails = ({
@@ -64,6 +65,7 @@ const ApplicationDetails = ({
   onSubmitDocuments,
   offerLetter,
   documentsStatus,
+  onRetryDocumentsStatus,
 }: ApplicationDetailsProps) => {
   const [letterOpen, setLetterOpen] = useState(false);
   const actionNeeded = isOffer(application);
@@ -146,7 +148,18 @@ const ApplicationDetails = ({
             <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
               You accepted this offer.
             </Typography>
-            {documentsStatus?.submitted ? (
+            {documentsStatus === undefined ? (
+              <Skeleton variant="rounded" width={170} height={40} sx={{ borderRadius: "999px", mt: 1.5 }} />
+            ) : documentsStatus === null ? (
+              <>
+                <Typography fontSize="0.9rem" color="text.primary" mt={0.5}>
+                  We could not check whether your documents were submitted.
+                </Typography>
+                <Button variant="outlined" onClick={onRetryDocumentsStatus} sx={{ ...pillButtonSx, px: 3, mt: 1.5 }}>
+                  Try again
+                </Button>
+              </>
+            ) : documentsStatus.submitted ? (
               <>
                 <Typography fontSize="0.9rem" color="text.primary">
                   We received your details and documents. The hiring team will contact you with the next steps.

@@ -109,6 +109,8 @@ const Applications = () => {
 
   // Whether the documents were already submitted; unknown until the check is back.
   const [documentsStatus, setDocumentsStatus] = useState<DocumentsStatus | null | undefined>(undefined);
+  // Raised to ask for the check again after it failed.
+  const [documentsStatusAttempt, setDocumentsStatusAttempt] = useState(0);
   const hasAcceptedOffer = selectedApplication?.status === ApplicationStatus.OfferAccepted;
 
   useEffect(() => {
@@ -120,14 +122,14 @@ const Applications = () => {
       .then((loaded) => {
         if (!cancelled) setDocumentsStatus(loaded);
       })
-      // A failed check leaves the submit button; the backend refuses a second submission.
+      // A failed check is kept apart from "not submitted", and can be tried again.
       .catch(() => {
         if (!cancelled) setDocumentsStatus(null);
       });
     return () => {
       cancelled = true;
     };
-  }, [selectedId, hasAcceptedOffer, getToken]);
+  }, [selectedId, hasAcceptedOffer, getToken, documentsStatusAttempt]);
 
   const [offerDialog, setOfferDialog] = useState<"accept" | "decline" | "welcome" | null>(null);
   const [respondingToOffer, setRespondingToOffer] = useState(false);
@@ -217,6 +219,7 @@ const Applications = () => {
               onSubmitDocuments={() => navigate(`/applications/${selectedApplication.id}/documents`)}
               offerLetter={offerLetter}
               documentsStatus={documentsStatus}
+              onRetryDocumentsStatus={() => setDocumentsStatusAttempt((current) => current + 1)}
             />
           ) : stillLoading ? (
             <CenteredSpinner />
