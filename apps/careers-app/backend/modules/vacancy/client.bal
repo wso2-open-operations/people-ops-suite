@@ -390,6 +390,12 @@ isolated function profileFor(string email, string requestId) returns CandidatePr
     return profile;
 }
 
+# The candidate's full name, first and last name as saved in their profile, found through their email.
+public isolated function candidateNameOf(string email, string requestId) returns string|error {
+    CandidateProfile profile = check profileFor(email, requestId);
+    return string:'join(" ", profile.firstName, profile.lastName).trim();
+}
+
 isolated function profileReplyOf(CandidateProfile|error profile, string requestId) returns http:Response|error =>
     profile is error ? failedReply(profile, requestId) : okReply(profile.toJson());
 

@@ -125,15 +125,19 @@ public type Submission record {|
 public type Manifest record {|
     string applicationId;
     string candidateName;
-    # The folder the files are in: the candidate's full name and the application id. Empty for a record made before
-    # files were grouped this way.
-    string folder = "";
+    # The folder the files and this record are in: the candidate's full name and the application id.
+    string folder;
     PersonalDetails details;
     # The stored file of each document, by document key.
     map<string> files;
     boolean declared;
     string submittedAt;
     string updatedAt;
+|};
+
+# Where an application's submission is kept, so it can be found by the application id alone.
+type SubmissionIndex record {|
+    string folder;
 |};
 
 # What the candidate's page is told about their submission.

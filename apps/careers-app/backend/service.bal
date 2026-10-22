@@ -341,7 +341,10 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             return <http:BadRequest>{body: {message: parsed}};
         }
 
-        string candidateName = string:'join(" ", caller.firstName, caller.lastName).trim();
+        string|error candidateName = vacancy:candidateNameOf(caller.email, requestId);
+        if candidateName is error {
+            return candidateFailure(candidateName, "Failed to read the candidate's name", requestId);
+        }
         documents:SubmitOutcome|error stored = documents:storeDocuments(applicationId, parsed, candidateName, requestId);
         if stored is error {
             return candidateFailure(stored, "Failed to store the documents", requestId);
@@ -410,7 +413,10 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             return <http:BadRequest>{body: {message: parsed}};
         }
 
-        string candidateName = string:'join(" ", caller.firstName, caller.lastName).trim();
+        string|error candidateName = vacancy:candidateNameOf(caller.email, requestId);
+        if candidateName is error {
+            return candidateFailure(candidateName, "Failed to read the candidate's name", requestId);
+        }
         boolean|error saved = documents:saveChanges(applicationId, loaded[0], loaded[1], parsed, candidateName,
             requestId);
         if saved is error {

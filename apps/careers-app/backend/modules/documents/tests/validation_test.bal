@@ -352,13 +352,13 @@ function sasTokenIsUsedWithoutALeadingQuestionMark() {
 @test:Config {}
 function aSubmissionIsFiledUnderTheCandidatesNameAndTheApplicationId() {
     string folder = folderOf("Ada Lovelace", "123");
-    test:assertEquals(folder, "submissions/Ada Lovelace - 123");
+    test:assertEquals(folder, "applications/Ada Lovelace - 123");
     test:assertEquals(fileName(folder, "Ada Lovelace", "identityDocument", "pdf"),
-        "submissions/Ada Lovelace - 123/Ada Lovelace - Identity document.pdf");
+        "applications/Ada Lovelace - 123/Ada Lovelace - Identity document.pdf");
     test:assertEquals(fileName(folder, "Ada Lovelace", "profilePicture", "png"),
-        "submissions/Ada Lovelace - 123/Ada Lovelace - Profile picture.png");
+        "applications/Ada Lovelace - 123/Ada Lovelace - Profile picture.png");
     test:assertEquals(fileName(folder, "Ada Lovelace", "funPicture", "jpg"),
-        "submissions/Ada Lovelace - 123/Ada Lovelace - Fun picture of you.jpg");
+        "applications/Ada Lovelace - 123/Ada Lovelace - Fun picture of you.jpg");
 }
 
 @test:Config {}
@@ -369,16 +369,16 @@ function aNameThatAPathRejectsIsMadeSafe() {
     test:assertEquals(safeName("", "Candidate"), "Candidate");
     // Without its slashes, ".." in the middle of a name is only text and cannot climb out of the folder.
     string folder = folderOf("Ada/../Lovelace", "7");
-    test:assertEquals(folder, "submissions/Ada .. Lovelace - 7");
+    test:assertEquals(folder, "applications/Ada .. Lovelace - 7");
     test:assertEquals(re `/`.split(folder).length(), 2);
 }
 
 @test:Config {}
 function aBlobPathEncodesTheNameButKeepsItsFolders() returns error? {
-    string path = check blobPath("submissions/Ada Lovelace - 123/Ada Lovelace - Identity document.pdf");
-    test:assertTrue(path.startsWith("/test-container/submissions/Ada%20Lovelace%20-%20123/"), path);
+    string path = check blobPath("applications/Ada Lovelace - 123/Ada Lovelace - Identity document.pdf");
+    test:assertTrue(path.startsWith("/test-container/applications/Ada%20Lovelace%20-%20123/"), path);
     test:assertTrue(path.endsWith("Identity%20document.pdf?sv=test&sig=test"), path);
-    string accented = check blobPath("submissions/José Núñez - 5/a.pdf");
+    string accented = check blobPath("applications/José Núñez - 5/a.pdf");
     test:assertFalse(accented.includes("é"));
     test:assertTrue(accented.includes("Jos%C3%A9%20N%C3%BA%C3%B1ez"), accented);
 }

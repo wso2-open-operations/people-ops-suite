@@ -45,8 +45,12 @@ isolated function blobPath(string name) returns string|error {
     return string `/${storageConfig.container}/${string:'join("/", ...parts)}?${sasQuery()}`;
 }
 
-// The file that records a submission and its current state. It is found by the application id alone.
-isolated function manifestName(string applicationId) returns string => string `applications/${applicationId}/submitted.json`;
+// The file in a submission's folder that records it and its current state.
+isolated function manifestName(string folder) returns string => string `${folder}/submitted.json`;
+
+// The small file that says which folder holds an application's submission, so it can be found by the application id
+// alone. It is for this service only; the folders under applications/ are what people open.
+isolated function indexName(string applicationId) returns string => string `index/${applicationId}.json`;
 
 // The longest a candidate's name is kept in a folder or file name.
 const MAX_STORED_NAME_LENGTH = 80;
@@ -66,7 +70,7 @@ isolated function safeName(string text, string fallback) returns string {
 // The folder HR opens for a submission: the candidate's full name, then the application id so two candidates with
 // the same name never share one.
 isolated function folderOf(string candidateName, string applicationId) returns string =>
-    string `submissions/${safeName(candidateName, "Candidate")} - ${applicationId}`;
+    string `applications/${safeName(candidateName, "Candidate")} - ${applicationId}`;
 
 // What a document is called in a file name: its label without the explanation in brackets.
 isolated function shortLabelOf(string key) returns string {
@@ -137,7 +141,11 @@ public isolated function canEdit() returns boolean {
 # Reads the record of an application's submission and the tag Azure gives its current version, or nothing when
 # there is no submission. Needs a token that may read.
 public isolated function loadManifest(string applicationId) returns [Manifest, string]?|error {
-    http:Response resp = check storageClient->get(check blobPath(manifestName(applicationId)),
+    string? folder = check folderOfSubmission(applicationId);
+    if folder is () {
+        return ();
+    }
+    http:Response resp = check storageClient->get(check blobPath(manifestName(folder)),
         {"x-ms-version": STORAGE_API_VERSION});
     if resp.statusCode == http:STATUS_NOT_FOUND {
         return ();
@@ -149,6 +157,21 @@ public isolated function loadManifest(string applicationId) returns [Manifest, s
     Manifest manifest = check body.fromJsonWithType();
     string etag = check resp.getHeader("ETag");
     return [manifest, etag];
+}
+
+// The folder that holds an application's submission, from the index, or nothing when it has none.
+isolated function folderOfSubmission(string applicationId) returns string?|error {
+    http:Response resp = check storageClient->get(check blobPath(indexName(applicationId)),
+        {"x-ms-version": STORAGE_API_VERSION});
+    if resp.statusCode == http:STATUS_NOT_FOUND {
+        return ();
+    }
+    if resp.statusCode != http:STATUS_OK {
+        return storageError(resp);
+    }
+    json body = check resp.getJsonPayload();
+    SubmissionIndex index = check body.fromJsonWithType();
+    return index.folder;
 }
 
 # What the candidate's page needs to know: whether they submitted, whether they can still change it and until
@@ -195,8 +218,11 @@ public isolated function storeDocuments(string applicationId, Submission submiss
         submittedAt: now,
         updatedAt: now
     };
-    boolean written = check putBlob(manifestName(applicationId), manifest.toJsonString().toBytes(),
+    boolean written = check putBlob(manifestName(folder), manifest.toJsonString().toBytes(),
         "application/json", metadata, createOnly = true);
+    // The index is written even when the record already existed, so a submission whose index was lost is found again.
+    SubmissionIndex index = {folder};
+    _ = check putBlob(indexName(applicationId), index.toJsonString().toBytes(), "application/json", metadata);
     return written ? STORED : ALREADY_SUBMITTED;
 }
 
@@ -208,7 +234,7 @@ public isolated function saveChanges(string applicationId, Manifest current, str
     map<string> files = current.files.clone();
     // The folder and the file names keep the name the submission was made under, so a change of name does not
     // leave the earlier files behind.
-    string folder = current.folder == "" ? folderOf(current.candidateName, applicationId) : current.folder;
+    string folder = current.folder;
     foreach UploadedDocument document in update.documents {
         string name = fileName(folder, current.candidateName, document.key, document.extension);
         _ = check putBlob(name, document.content, document.contentType, metadata);
@@ -229,6 +255,5 @@ public isolated function saveChanges(string applicationId, Manifest current, str
         submittedAt: current.submittedAt,
         updatedAt: time:utcToString(time:utcNow())
     };
-    return putBlob(manifestName(applicationId), next.toJsonString().toBytes(), "application/json", metadata,
-        etag = etag);
+    return putBlob(manifestName(folder), next.toJsonString().toBytes(), "application/json", metadata, etag = etag);
 }
