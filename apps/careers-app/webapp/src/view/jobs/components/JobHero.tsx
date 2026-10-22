@@ -44,7 +44,9 @@ const JobHero = ({
   onSeeAllRoles,
 }: JobHeroProps) => {
   const color = teamColors[detail.team.toUpperCase()] ?? "#6B7280";
-  const officeLabel = detail.officeLocations.length > 0 ? detail.officeLocations.join(", ") : "Remote";
+  // A vacancy with no office is shown as remote only when it allows remote work.
+  const noOfficeLabel = detail.allowRemote ? "Remote" : "Not specified";
+  const officeLabel = detail.officeLocations.length > 0 ? detail.officeLocations.join(", ") : noOfficeLabel;
 
   const hero = heroColorsOf(useTheme().palette.mode);
 
