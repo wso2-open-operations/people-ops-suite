@@ -16,7 +16,7 @@
 
 import { Box, Button, Card, CircularProgress, LinearProgress, Stack, Typography } from "@mui/material";
 import { ArrowLeft, Check } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { type DocumentRequirements, type DocumentsStatus, type PersonalDetails, State } from "@/types/types";
@@ -108,20 +108,30 @@ const Documents = () => {
 
   // Loads the earlier submission, which decides between a first submission, a change to it, or neither. Its saved
   // details replace what was filled in from the profile.
+  // The application whose saved details were put in the form, so a later response never replaces what is being edited.
+  const savedDetailsFor = useRef<string | null>(null);
   useEffect(() => {
     if (!applicationId) return;
+    let cancelled = false;
     getToken()
       .then((token) => fetchDocumentsStatus(token, applicationId))
       .then((loaded) => {
+        if (cancelled) return;
         setStatus(loaded);
-        if (loaded.details) {
+        if (loaded.details && savedDetailsFor.current !== applicationId) {
+          savedDetailsFor.current = applicationId;
           // Details an older submission lacks are filled in as empty.
           setDetails({ ...emptyDetails(), ...loaded.details });
           setDetailsVersion((current) => current + 1);
           setPrefilled(true);
         }
       })
-      .catch(() => setStatus(null));
+      .catch(() => {
+        if (!cancelled) setStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [applicationId, getToken]);
 
   const sentKeys = status?.files ?? [];
