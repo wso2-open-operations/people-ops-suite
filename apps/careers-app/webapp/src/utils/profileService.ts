@@ -91,8 +91,8 @@ export async function submitFeedback(
 
 const refused = (name: string, message: string) => Object.assign(new Error(message), { name });
 
-// Records the candidate's answer to an offer and returns the updated application. A 409 (already answered, or another
-// offer accepted) and a 410 (expired) become errors of their own.
+// Records the candidate's answer to an offer and returns the updated application; a 409 or a 410 becomes an error of
+// its own.
 export async function respondToOffer(
   accessToken: string,
   applicationId: string,
@@ -141,7 +141,7 @@ export async function fetchDocumentsStatus(accessToken: string, applicationId: s
   );
 }
 
-// Files take longer to send than a request, so a submission waits longer for the reply.
+// How long a submission waits for the reply.
 const DOCUMENT_UPLOAD_TIMEOUT_MS = 120_000;
 
 // The documents a candidate is asked for, and the limits every file must meet.
@@ -151,8 +151,7 @@ export async function fetchDocumentRequirements(accessToken: string): Promise<Do
   );
 }
 
-// Sends the chosen files, one per requested document, for an application whose offer is accepted. The page only
-// allows a submission once the candidate has ticked the declaration, so the declaration is sent with the files.
+// Sends the chosen files, one per requested document, with the details and the declaration.
 export async function submitDocuments(
   accessToken: string,
   applicationId: string,
@@ -162,17 +161,17 @@ export async function submitDocuments(
 ): Promise<void> {
   const form = new FormData();
   form.append("declaration", "true");
-  // The details go as one block, since they hold lists such as the dependants and the emergency contacts.
+  // The details go as one block.
   form.append("details", JSON.stringify(details));
-  // Each file is sent under its document key, so the name of the candidate's own file is never sent.
+  // Each file is sent under its document key, not its own name.
   Object.entries(files).forEach(([key, file]) => form.append(key, file, key));
   const url = `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/documents`;
   const options = { ...requestOptions(accessToken), timeout: DOCUMENT_UPLOAD_TIMEOUT_MS };
-  // A first submission is a POST. Changing an earlier one is a PUT, which carries only the files that are replaced.
+  // A first submission is a POST; a change is a PUT that carries only the replaced files.
   await send(changing ? axios.put(url, form, options) : axios.post(url, form, options));
 }
 
-// With mock data on, lists an application the candidate just made; the real backend lists it on its own.
+// Lists an application the candidate just made when mock data is on.
 export function trackSubmittedApplication(jobId: string, jobTitle: string, department: string): void {
   if (UseMockProfile) mockProfile.addApplication(jobId, jobTitle, department);
 }

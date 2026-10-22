@@ -85,8 +85,7 @@ export async function fetchVacancies(accessToken: string): Promise<Job[]> {
 // The message the careers backend sends with a 404 for a job that does not exist.
 const JOB_NOT_FOUND_MESSAGE = "Job not found";
 
-// A job that does not exist is not the same as a failed load. A 404 without the backend's message, such as one from a
-// wrong service address, stays a failed load.
+// A job that does not exist is not a failed load; a 404 without the backend's message stays a failed load.
 function jobMissingOr(error: unknown): never {
   const notFound = axios.isAxiosError(error) && error.response?.status === 404;
   if (notFound && error.response?.data?.message === JOB_NOT_FOUND_MESSAGE) {

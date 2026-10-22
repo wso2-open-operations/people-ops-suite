@@ -24,6 +24,7 @@ import { useAppAuthContext } from "@context/AuthContext";
 import { loadProfile, profileFailed, refreshApplications } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { isValidEmail } from "@utils/email";
 import { COUNTRY_OPTIONS, splitE164 } from "@utils/phone";
 import { trackSubmittedApplication } from "@utils/profileService";
 import { type VacancyDetail, submitApplicationForm } from "@utils/vacancyService";
@@ -36,9 +37,6 @@ interface ApplySectionProps {
   // Whether the candidate cannot apply for this job; the form is left out when it is given.
   blockedReason: string | null;
 }
-
-// The same shape the backend accepts: something@domain.tld with no spaces, so a typo is caught before the CV upload.
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
 // The job type of an internship, which asks for a university instead of an address.
 const INTERNSHIP = "Internship";
@@ -96,8 +94,7 @@ const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
   const [submittedOpen, setSubmittedOpen] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
 
-  // When the candidate's data is cleared (sign-out or an ended session), nothing of theirs stays in the form, and the
-  // next candidate's profile can fill it.
+  // Empties the form when the candidate's data is cleared (sign-out or an ended session).
   const seenGeneration = useRef(sessionGeneration);
   useEffect(() => {
     if (seenGeneration.current === sessionGeneration) return;
@@ -113,7 +110,7 @@ const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
   const applyFormValid =
     !!form.firstName.trim() &&
     !!form.lastName.trim() &&
-    EMAIL_PATTERN.test(form.email.trim()) &&
+    isValidEmail(form.email) &&
     !!form.countryIso &&
     !!form.phone.trim() &&
     (isInternship ? !!form.university.trim() : !!form.address.trim()) &&
@@ -150,13 +147,12 @@ const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
         // A guest's details are not kept on screen once the application has been sent.
         setForm(EMPTY_FORM);
       }
-      // The CV and the ticked answers belong to this application, so the form starts clean for the next one.
       setCvFile(null);
       setAuthorized("");
       setConsentData(false);
       setConsentChecks(false);
     } catch (err) {
-      // The backend explains rejections (a missing field, a bad CV) in `message`.
+      // A rejection is explained in the reply's message.
       const data = (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
       const detailMessage = data?.detail ?? data?.message;
       dispatch(enqueueSnackbarMessage({ message: detailMessage ?? SnackMessage.error.submitApplication, type: "error" }));
@@ -165,7 +161,7 @@ const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
     }
   };
 
-  // A candidate who cannot apply is not shown the form. The reason is given at the top of the page, with the title.
+  // A candidate who cannot apply is not shown the form.
   if (blockedReason && !submittedOpen) return null;
 
   return (

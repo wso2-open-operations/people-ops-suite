@@ -59,8 +59,8 @@ const Jobs = () => {
     location: searchParams.getAll("location"),
   });
 
-  // The effect below writes the page's own changes to the URL with "replace". Any other navigation (the header's
-  // Jobs link, browser back or forward) is external, so the search and filters are re-read from the new URL.
+  // The effect below writes the page's own changes to the URL with "replace"; any other navigation re-reads the
+  // search and filters from the new URL.
   useEffect(() => {
     if (navigationType === "REPLACE") return;
     setSearch(searchParams.get("search") ?? "");
@@ -81,8 +81,7 @@ const Jobs = () => {
     [jobs, tab, savedJobIds],
   );
 
-  // Jobs that satisfy everything except the team/location dropdowns; the
-  // dropdowns derive their option counts from this list.
+  // Jobs that satisfy everything except the team and location dropdowns, which count their options from this list.
   const baseJobs = useMemo(
     () => sourceJobs.filter((job) => matchesSearch(job, search) && matchesJobType(job, urlJobType)),
     [sourceJobs, search, urlJobType],

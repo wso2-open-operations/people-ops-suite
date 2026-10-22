@@ -84,7 +84,7 @@ export interface ApplicationInterview {
   // ISO date-time of the interview.
   dateTime: string;
   mode: "Video" | "Phone" | "Onsite";
-  // A meeting link for video interviews, a number for phone, an address for onsite.
+  // Where the interview takes place: a link, a number or an address, by mode.
   location: string;
   status: "Upcoming" | "Completed" | "Cancelled";
 }
@@ -127,7 +127,7 @@ export interface OfferLetter {
 // The personal details a new joiner fills in after accepting an offer.
 export interface PersonalDetails {
   title: string;
-  // The first name and the surname (the last name), as the ATS keeps them.
+  // The first name and the last name, as the ATS keeps them.
   firstName: string;
   surname: string;
   // The full name as on the identity document, which the candidate types.
@@ -183,7 +183,7 @@ export interface EmergencyContact {
 export interface BankDetails {
   bank: string;
   branch: string;
-  // Digits only, so that leading zeros are kept.
+  // Digits only.
   accountNumber: string;
 }
 

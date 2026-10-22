@@ -93,7 +93,7 @@ const Applications = () => {
     }
   };
 
-  // The offer letter is kept in this page only, and shown once the candidate has an offer or has accepted one.
+  // The offer letter, kept in this page only and shown once the candidate has an offer or has accepted one.
   const [offerLetter, setOfferLetter] = useState<OfferLetter | null>(null);
   const selectedId = selectedApplication?.id;
   const hasOffer =
@@ -109,15 +109,14 @@ const Applications = () => {
       .then((letter) => {
         if (!cancelled) setOfferLetter(letter);
       })
-      // The letter is a convenience: the offer email has it too, so a failed load shows nothing.
+      // A failed load shows nothing.
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
   }, [selectedId, hasOffer, getToken]);
 
-  // Whether the documents were already submitted decides if an accepted offer still asks for them. It stays unknown
-  // until the check is back.
+  // Whether the documents were already submitted; unknown until the check is back.
   const [documentsStatus, setDocumentsStatus] = useState<DocumentsStatus | null | undefined>(undefined);
   const hasAcceptedOffer = selectedApplication?.status === ApplicationStatus.OfferAccepted;
 
@@ -130,7 +129,7 @@ const Applications = () => {
       .then((loaded) => {
         if (!cancelled) setDocumentsStatus(loaded);
       })
-      // When the check fails the submit button stays: the backend refuses a second submission anyway.
+      // A failed check leaves the submit button; the backend refuses a second submission.
       .catch(() => {
         if (!cancelled) setDocumentsStatus(null);
       });
@@ -157,7 +156,7 @@ const Applications = () => {
     } catch (error) {
       const name = (error as { name?: string }).name;
       if (name === OFFER_CONFLICT_ERROR || name === OFFER_EXPIRED_ERROR) {
-        // The offer is no longer open, so close the dialog and load the real state.
+        // Closes the dialog and loads the real state.
         setOfferDialog(null);
         dispatch(refreshApplications());
         const message = name === OFFER_EXPIRED_ERROR ? SnackMessage.error.offerExpired : SnackMessage.error.offerConflict;

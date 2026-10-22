@@ -128,9 +128,8 @@ export const themeSettings = (mode: PaletteMode) => {
           },
         },
       },
-      // Covers TextField, Select and multiline inputs. Error and disabled
-      // states keep their own outline colors. Theme keys such as "primary.main" are not resolved in
-      // a style override, so the brand color is given directly.
+      // Covers TextField, Select and multiline inputs; error and disabled states keep their own outline colors. The
+      // brand color is given directly, since theme keys are not resolved in a style override.
       MuiOutlinedInput: {
         styleOverrides: {
           root: {

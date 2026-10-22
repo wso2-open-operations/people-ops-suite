@@ -20,7 +20,6 @@ declare global {
   interface Window {
     config: {
       APP_NAME: string;
-      APP_DOMAIN: string;
       ASGARDEO_BASE_URL: string;
       ASGARDEO_CLIENT_ID: string;
       ASGARDEO_REVOKE_ENDPOINT: string;
@@ -41,7 +40,6 @@ export const AsgardeoConfig: BaseURLAuthClientConfig = {
 };
 
 export const APP_NAME = window.config?.APP_NAME ?? "WSO2 Careers";
-export const APP_DOMAIN = window.config?.APP_DOMAIN ?? "";
 export const ServiceBaseUrl = window.config?.CAREERS_BACKEND_BASE_URL ?? "";
 // When "true", candidate profile calls are served by an in-memory sample profile instead of the backend.
 export const UseMockProfile = window.config?.USE_MOCK_PROFILE === "true";

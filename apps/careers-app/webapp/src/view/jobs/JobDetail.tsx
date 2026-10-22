@@ -77,8 +77,7 @@ const JobDetail = () => {
     }
   }, [detail, location.pathname, location.search, location.hash, navigate]);
 
-  // A link ending in #Apply-Now opens straight at the form. The short delay lets the shell's
-  // scroll-to-top on navigation happen first.
+  // A link ending in #Apply-Now opens at the form, after the shell's scroll-to-top.
   useEffect(() => {
     if (!detail || window.location.hash !== "#Apply-Now") return;
     const timer = setTimeout(() => document.getElementById("Apply-Now")?.scrollIntoView(), 100);

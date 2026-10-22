@@ -71,7 +71,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     timeout,
     promptBeforeIdle,
     throttle: 500,
-    // Activity in any open tab counts, so a tab left in the background does not sign the user out of the others.
+    // Activity in any open tab counts.
     crossTab: true,
   });
 

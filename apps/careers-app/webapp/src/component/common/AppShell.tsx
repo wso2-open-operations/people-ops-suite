@@ -54,9 +54,8 @@ const AppShell = () => {
   const jobDetailsRef = useRef(jobDetails);
   jobDetailsRef.current = jobDetails;
 
-  // The shell is the only place that loads the job list and the org structure (the team and location options).
-  // It starts as soon as the app opens, on whichever page loads first, so /jobs never waits on a cold fetch; the
-  // pages only read the state. A failed load goes back to idle through retryLoad and is tried again here.
+  // Loads the job list and the org structure as soon as the app opens; pages only read the state. A failed load goes
+  // back to idle through retryLoad and is tried again here.
   useEffect(() => {
     if (jobsState !== State.idle && orgStructureState !== State.idle) return;
     getAccessToken()
@@ -67,14 +66,13 @@ const AppShell = () => {
       .catch(() => dispatch(loadFailed()));
   }, [dispatch, getAccessToken, jobsState, orgStructureState]);
 
-  // Once the job list is in, fetch every job's detail in the background, a few at a time, so opening a
-  // job is instant. A failed fetch is ignored: the job page loads its own detail on demand.
+  // Once the job list is in, fetches each job's detail in the background; a failed fetch is ignored.
   useEffect(() => {
     if (jobsState !== State.success) return;
     const queue = jobs.map((job) => job.id).filter((jobId) => !jobDetailsRef.current[jobId]);
     if (queue.length === 0) return;
 
-    // Two at a time, and it stops after two failures so a struggling service isn't hammered.
+    // Two at a time; stops after two failures.
     let cancelled = false;
     let failures = 0;
     const worker = async () => {

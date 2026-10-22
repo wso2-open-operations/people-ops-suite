@@ -37,7 +37,7 @@ const parseDate = (value: string): Date | null => {
   if (dateOnly) {
     const [year, month, day] = dateOnly.slice(1).map(Number);
     const date = new Date(year, month - 1, day);
-    // A day that does not exist (2026-02-30) would roll over into the next month, so it is rejected.
+    // A day that does not exist is rejected, not rolled into the next month.
     const exists = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
     return exists ? date : null;
   }

@@ -128,7 +128,6 @@ const statusOf = (hasFile: boolean, problem: string | undefined): keyof typeof S
 const submitFailureMessage = (error: unknown) => {
   const status = axios.isAxiosError(error) ? error.response?.status : undefined;
   if (status === 400 || status === 403 || status === 409) {
-    // The backend explains these in its own words, such as "The time to change your documents has ended."
     const reason = axios.isAxiosError(error) ? (error.response?.data as { message?: unknown })?.message : undefined;
     if (typeof reason === "string") return reason;
   }
@@ -140,8 +139,7 @@ const submitFailureMessage = (error: unknown) => {
   return SnackMessage.error.submitDocuments;
 };
 
-// The page where a candidate who accepted an offer sends their details and the documents needed for onboarding.
-// The shape of the form while the applications, the document list and any earlier submission load.
+// The shape of the form while the page loads.
 const DocumentsSkeleton = () => (
   <Card elevation={0} sx={cardSx} aria-busy="true" aria-label="Loading your documents form">
     <Stack direction="row" gap={2} sx={{ p: 3, borderBottom: "1px solid", borderColor: "divider" }}>
@@ -164,6 +162,7 @@ const DocumentsSkeleton = () => (
   </Card>
 );
 
+// The page where a candidate who accepted an offer sends their details and the documents needed for onboarding.
 const Documents = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -174,11 +173,10 @@ const Documents = () => {
   const profile = useAppSelector((state: RootState) => state.careers.profile);
   const profileState = useAppSelector((state: RootState) => state.careers.profileState);
 
-  // What the candidate types and chooses is kept in this page only: it is not stored in the app state and it is
-  // gone once the page closes or the candidate signs out.
+  // What the candidate types and chooses is kept in this page only, not in the app state.
   const [step, setStep] = useState(DETAILS_STEP);
   const [details, setDetails] = useState<PersonalDetails>(emptyDetails());
-  // Raised when details are loaded into the form from elsewhere, so that its inputs start again from them.
+  // Raised when the details are replaced, so the form's inputs start again from them.
   const [detailsVersion, setDetailsVersion] = useState(0);
   const [showDetailErrors, setShowDetailErrors] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
@@ -189,7 +187,7 @@ const Documents = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [declared, setDeclared] = useState(false);
-  // What the backend says about an earlier submission; undefined until it answers, null when it could not.
+  // The earlier submission: undefined until the backend answers, null when it could not.
   const [status, setStatus] = useState<DocumentsStatus | null | undefined>(undefined);
 
   useEffect(() => {
@@ -199,7 +197,7 @@ const Documents = () => {
       .catch(() => dispatch(applicationsFailed()));
   }, [applicationsState, dispatch, getToken]);
 
-  // The candidate's profile holds what the ATS keeps about them, so the form starts filled in with that.
+  // Loads the candidate's profile, which fills the form.
   useEffect(() => {
     if (profileState !== State.idle) return;
     getToken()
@@ -217,7 +215,7 @@ const Documents = () => {
   const application = applications.find((a) => a.id === applicationId);
   const eligible = application?.status === ApplicationStatus.OfferAccepted;
 
-  // The list of documents is the same for everyone, so it is asked for at once instead of after the applications.
+  // Loads the list of documents, which is the same for everyone.
   useEffect(() => {
     if (requirementsState !== State.idle) return;
     setRequirementsState(State.loading);
@@ -233,9 +231,8 @@ const Documents = () => {
       });
   }, [requirementsState, dispatch, getToken]);
 
-  // An earlier submission decides between a first submission, a change to it, or neither. Its saved details replace
-  // what was filled in from the profile. It is asked for while the applications load: the backend checks the
-  // application is an accepted offer of the caller's own, and the answer is only used once the page knows it is.
+  // Loads the earlier submission, which decides between a first submission, a change to it, or neither. Its saved
+  // details replace what was filled in from the profile.
   useEffect(() => {
     if (!applicationId) return;
     getToken()
@@ -243,7 +240,7 @@ const Documents = () => {
       .then((loaded) => {
         setStatus(loaded);
         if (loaded.details) {
-          // Anything an older submission did not have is filled in as empty, so the form never meets a missing list.
+          // Details an older submission lacks are filled in as empty.
           setDetails({ ...emptyDetails(), ...loaded.details });
           setDetailsVersion((current) => current + 1);
           setPrefilled(true);
@@ -256,8 +253,8 @@ const Documents = () => {
   const editing = Boolean(status?.submitted && status.canEdit);
   const closed = Boolean(status?.submitted && !status.canEdit);
 
-  // The list of documents and the earlier submission are only asked for once the application is known to be an
-  // accepted offer, so they are only waited for then.
+  // Whether the page is still waiting for the applications and, for an accepted offer, the document list and the
+  // earlier submission.
   const stillLoading =
     applicationsState === State.idle ||
     applicationsState === State.loading ||
@@ -288,7 +285,7 @@ const Documents = () => {
   const missingIn = (group: string) => documentsIn(group).filter((document) => document.required && !isSent(document.key));
   const allDocumentsReady = missingIn("documents").length === 0 && missingIn("photos").length === 0;
 
-  // Any step can be opened at any time: what is missing is shown on the last step, where submitting is checked.
+  // Opens a step; what is missing is shown on the last step.
   const goTo = (target: number) => {
     if (!submitting) setStep(target);
   };

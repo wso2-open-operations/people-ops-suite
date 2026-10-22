@@ -34,8 +34,7 @@ export type FormOptions = Pick<
   "tshirtSizes" | "titles" | "genders" | "civilStatuses" | "dependantRelationships" | "maxDependants" | "maxEmergencyContacts"
 >;
 
-// The problems with the details, by field. A field inside a list is named after its place, such as
-// "emergencyContacts.1.mobileNumber".
+// The problems with the details, by field; a field inside a list is named after its place in it.
 export type DetailErrors = Record<string, string>;
 
 const emptyContact = (): EmergencyContact => ({ name: "", relationship: "", address: "", mobileNumber: "", landNumber: "" });
@@ -70,8 +69,8 @@ export const emptyDetails = (): PersonalDetails => ({
   githubUserId: "",
 });
 
-// Fills what is still empty with what the application already holds, which is what the ATS keeps about the candidate.
-// The preferred name and the full name are left for the candidate to type.
+// Fills the empty fields from what the application holds; the preferred name and the full name are left to the
+// candidate.
 export const detailsFromProfile = (current: PersonalDetails, profile: CandidateProfile): PersonalDetails => {
   return {
     ...current,
@@ -351,8 +350,8 @@ const phoneOf = (countryIso: string, national: string) => {
   return dialCode && national ? toE164(dialCode, national) : "";
 };
 
-// A country code to choose and the digits of the number, as in the application form. It starts from the number it is
-// given, so it is made again (by its key) when a different number is loaded into it.
+// A country code to choose and the digits of the number. It starts from the number it is given and is remade by its
+// key when a different number is loaded.
 const PhoneInput = ({
   label,
   value,
@@ -483,10 +482,10 @@ interface PersonalDetailsFormProps {
 // The details step: what the application already holds, listed first, then the rest of what HR keeps for every new
 // employee. A * marks what is required.
 const PersonalDetailsForm = ({ details, onChange, errors, options, disabled }: PersonalDetailsFormProps) => {
-  // Raised when someone is removed from a list, so that the inputs of the people after them are made again.
+  // Raised when someone is removed from a list, so the inputs after them are remade.
   const [listVersion, setListVersion] = useState(0);
-  // What the application holds is listed, and opened for editing only when something is missing, a problem is shown
-  // with it, or the candidate asks to edit it.
+  // The details the application holds are listed, and opened for editing when one is missing, has a problem, or the
+  // candidate asks to edit them.
   const [editingApplication, setEditingApplication] = useState(() => APPLICATION_FIELDS.some((key) => !details[key].trim()));
   useEffect(() => {
     if (APPLICATION_FIELDS.some((key) => errors[key])) setEditingApplication(true);
