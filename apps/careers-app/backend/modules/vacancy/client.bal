@@ -256,16 +256,34 @@ isolated function appConfig(string requestId) returns AtsAppConfig|error {
 }
 
 isolated function loadJobList(string requestId) returns VacancyBasicInfo[]|error {
-    AtsVacancy[] vacancies = check publishedVacancies(requestId);
-    AtsBusinessUnit[] units = check orgDetails(requestId);
+    // The two reads do not depend on each other, so they run together.
+    future<AtsVacancy[]|error> vacanciesRead = start publishedVacancies(requestId);
+    future<AtsBusinessUnit[]|error> unitsRead = start orgDetails(requestId);
+    AtsVacancy[]|error vacancies = wait vacanciesRead;
+    AtsBusinessUnit[]|error units = wait unitsRead;
+    if vacancies is error {
+        return vacancies;
+    }
+    if units is error {
+        return units;
+    }
     return from AtsVacancy vacancy in vacancies
         select basicInfoOf(vacancy, units);
 }
 
 isolated function loadOrgStructure(string requestId) returns OrgStructure|error {
-    AtsCompany[] allCompanies = check companies(requestId);
-    AtsBusinessUnit[] units = check orgDetails(requestId);
-    AtsAppConfig|error config = appConfig(requestId);
+    future<AtsCompany[]|error> companiesRead = start companies(requestId);
+    future<AtsBusinessUnit[]|error> unitsRead = start orgDetails(requestId);
+    future<AtsAppConfig|error> configRead = start appConfig(requestId);
+    AtsCompany[]|error allCompanies = wait companiesRead;
+    AtsBusinessUnit[]|error units = wait unitsRead;
+    AtsAppConfig|error config = wait configRead;
+    if allCompanies is error {
+        return allCompanies;
+    }
+    if units is error {
+        return units;
+    }
     if config is error {
         log:printError("Could not read the ATS app config", config, requestId = requestId);
     }
