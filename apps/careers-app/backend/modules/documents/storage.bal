@@ -16,6 +16,7 @@
 
 import ballerina/http;
 import ballerina/time;
+import ballerina/url;
 
 // The longest a write waits for the storage service to reply.
 const decimal STORAGE_TIMEOUT_SECONDS = 60;
@@ -34,14 +35,52 @@ isolated function sasQuery() returns string {
     return token.startsWith("?") ? token.substring(1) : token;
 }
 
-isolated function blobPath(string name) returns string => string `/${storageConfig.container}/${name}?${sasQuery()}`;
+// The request path of a blob. Each part of the name is encoded, since a candidate's name can hold spaces and letters
+// a path does not allow.
+isolated function blobPath(string name) returns string|error {
+    string[] parts = [];
+    foreach string part in re `/`.split(name) {
+        parts.push(check url:encode(part, "UTF-8"));
+    }
+    return string `/${storageConfig.container}/${string:'join("/", ...parts)}?${sasQuery()}`;
+}
 
-// The file that records a submission and its current state.
+// The file that records a submission and its current state. It is found by the application id alone.
 isolated function manifestName(string applicationId) returns string => string `applications/${applicationId}/submitted.json`;
 
-// A document's file: one fixed name per document, so an edit replaces the earlier file.
-isolated function fileName(string applicationId, string key, string extension) returns string =>
-    string `applications/${applicationId}/${key}.${extension}`;
+// The longest a candidate's name is kept in a folder or file name.
+const MAX_STORED_NAME_LENGTH = 80;
+
+// The text as a name a path and a file system accept: characters they reject become spaces, and what is left is
+// trimmed. Names that end up empty are replaced by the fallback.
+isolated function safeName(string text, string fallback) returns string {
+    string cleaned = re `[\\/:*?"<>|\p{Cc}]+`.replaceAll(text, " ");
+    cleaned = re `\s+`.replaceAll(cleaned, " ").trim();
+    cleaned = re `^[.\s]+|[.\s]+$`.replaceAll(cleaned, "");
+    if cleaned.length() > MAX_STORED_NAME_LENGTH {
+        cleaned = cleaned.substring(0, MAX_STORED_NAME_LENGTH).trim();
+    }
+    return cleaned == "" ? fallback : cleaned;
+}
+
+// The folder HR opens for a submission: the candidate's full name, then the application id so two candidates with
+// the same name never share one.
+isolated function folderOf(string candidateName, string applicationId) returns string =>
+    string `submissions/${safeName(candidateName, "Candidate")} - ${applicationId}`;
+
+// What a document is called in a file name: its label without the explanation in brackets.
+isolated function shortLabelOf(string key) returns string {
+    foreach DocumentSpec spec in REQUIRED_DOCUMENTS {
+        if spec.key == key {
+            return safeName(re `\s*\(.*\)`.replaceAll(spec.label, ""), key);
+        }
+    }
+    return safeName(key, "Document");
+}
+
+// A document's file, "<full name> - <document>": one fixed name per document, so an edit replaces the earlier file.
+isolated function fileName(string folder, string candidateName, string key, string extension) returns string =>
+    string `${folder}/${safeName(candidateName, "Candidate")} - ${shortLabelOf(key)}.${extension}`;
 
 isolated function storageError(http:Response resp) returns error {
     string|http:HeaderNotFoundError reason = resp.getHeader("x-ms-error-code");
@@ -70,7 +109,7 @@ isolated function putBlob(string name, byte[] content, string contentType, map<s
     foreach [string, string] [key, value] in metadata.entries() {
         req.setHeader("x-ms-meta-" + key, value);
     }
-    http:Response resp = check storageClient->put(blobPath(name), req);
+    http:Response resp = check storageClient->put(check blobPath(name), req);
     if resp.statusCode == http:STATUS_CREATED {
         return true;
     }
@@ -98,7 +137,7 @@ public isolated function canEdit() returns boolean {
 # Reads the record of an application's submission and the tag Azure gives its current version, or nothing when
 # there is no submission. Needs a token that may read.
 public isolated function loadManifest(string applicationId) returns [Manifest, string]?|error {
-    http:Response resp = check storageClient->get(blobPath(manifestName(applicationId)),
+    http:Response resp = check storageClient->get(check blobPath(manifestName(applicationId)),
         {"x-ms-version": STORAGE_API_VERSION});
     if resp.statusCode == http:STATUS_NOT_FOUND {
         return ();
@@ -138,9 +177,10 @@ public isolated function storeDocuments(string applicationId, Submission submiss
         return ALREADY_SUBMITTED;
     }
     map<string> metadata = {applicationid: applicationId, requestid: requestId};
+    string folder = folderOf(candidateName, applicationId);
     map<string> files = {};
     foreach UploadedDocument document in submission.documents {
-        string name = fileName(applicationId, document.key, document.extension);
+        string name = fileName(folder, candidateName, document.key, document.extension);
         _ = check putBlob(name, document.content, document.contentType, metadata);
         files[document.key] = name;
     }
@@ -148,6 +188,7 @@ public isolated function storeDocuments(string applicationId, Submission submiss
     Manifest manifest = {
         applicationId,
         candidateName,
+        folder,
         details: submission.details,
         files,
         declared: true,
@@ -165,8 +206,11 @@ public isolated function saveChanges(string applicationId, Manifest current, str
         string candidateName, string requestId) returns boolean|error {
     map<string> metadata = {applicationid: applicationId, requestid: requestId};
     map<string> files = current.files.clone();
+    // The folder and the file names keep the name the submission was made under, so a change of name does not
+    // leave the earlier files behind.
+    string folder = current.folder == "" ? folderOf(current.candidateName, applicationId) : current.folder;
     foreach UploadedDocument document in update.documents {
-        string name = fileName(applicationId, document.key, document.extension);
+        string name = fileName(folder, current.candidateName, document.key, document.extension);
         _ = check putBlob(name, document.content, document.contentType, metadata);
         string? previous = files[document.key];
         if previous is string && previous != name {
@@ -178,6 +222,7 @@ public isolated function saveChanges(string applicationId, Manifest current, str
     Manifest next = {
         applicationId: current.applicationId,
         candidateName,
+        folder,
         details: update.details,
         files,
         declared: true,

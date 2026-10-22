@@ -125,6 +125,9 @@ public type Submission record {|
 public type Manifest record {|
     string applicationId;
     string candidateName;
+    # The folder the files are in: the candidate's full name and the application id. Empty for a record made before
+    # files were grouped this way.
+    string folder = "";
     PersonalDetails details;
     # The stored file of each document, by document key.
     map<string> files;
