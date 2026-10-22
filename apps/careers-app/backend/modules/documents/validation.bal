@@ -27,7 +27,7 @@ final string:RegExp ID_NUMBER_PATTERN = re `[A-Z0-9][A-Z0-9 /-]{3,29}`;
 
 final string:RegExp DATE_PATTERN = re `[0-9]{4}-[0-9]{2}-[0-9]{2}`;
 
-// A bank account number is kept as text, so that the zeros in front of it stay.
+// A bank account number is kept as text.
 final string:RegExp ACCOUNT_NUMBER_PATTERN = re `[0-9]{5,20}`;
 
 final string:RegExp GITHUB_PATTERN = re `[A-Za-z0-9-]{1,39}`;

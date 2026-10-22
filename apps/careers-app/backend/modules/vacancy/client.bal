@@ -128,8 +128,7 @@ isolated function getWithToken(string path, string requestId) returns http:Respo
 # POST to the ATS with automatic token refresh on 401.
 isolated function postWithToken(string path, AtsCandidate payload, string requestId)
         returns http:Response|error {
-    // A read-only copy, since the request may be sent twice and is built inside a function that cannot capture a
-    // mutable value.
+    // A read-only copy, which the retry can send again.
     final readonly & AtsCandidate body = payload.cloneReadOnly();
     return withToken(isolated function(string token) returns http:Response|error {
         return atsApplyHttpClient->post(path, body, authHeaders(token, requestId));
@@ -257,7 +256,7 @@ isolated function appConfig(string requestId) returns AtsAppConfig|error {
 }
 
 isolated function loadJobList(string requestId) returns VacancyBasicInfo[]|error {
-    // The two reads do not depend on each other, so they run together.
+    // The two reads run together.
     future<AtsVacancy[]|error> vacanciesRead = start publishedVacancies(requestId);
     future<AtsBusinessUnit[]|error> unitsRead = start orgDetails(requestId);
     AtsVacancy[]|error vacancies = wait vacanciesRead;
@@ -301,7 +300,7 @@ isolated function loadJobDetail(string jobId, string requestId) returns JobDetai
         return error UpstreamError("The vacancy is not published", status = http:STATUS_BAD_REQUEST);
     }
     do {
-        // The reads below do not depend on each other, so they run together once the vacancy is known.
+        // The reads below run together once the vacancy is known.
         future<AtsCompany[]|error> companiesRead = start companies(requestId);
         future<AtsBusinessUnit[]|error> unitsRead = start orgDetails(requestId);
         future<AtsCareerFunction[]|error> functionsRead = start careerFunctions(requestId);
@@ -322,7 +321,7 @@ isolated function loadJobDetail(string jobId, string requestId) returns JobDetai
 isolated function asLookupFailure(error err) returns error =>
     err is UpstreamError ? error UpstreamError("A lookup for the job failed", status = http:STATUS_BAD_GATEWAY) : err;
 
-// The other vacancies like this one; none when the lookup fails, since they only add to the page.
+// The other vacancies like this one; none when the lookup fails.
 isolated function similarVacancies(int designationId, string employmentType, string requestId) returns AtsVacancy[] {
     AtsVacancy[]|error similar = publishedVacancies(requestId, designationId, employmentType);
     if similar is error {
@@ -338,7 +337,7 @@ isolated function candidateFor(string jobId, CandidateApplication candidate, str
     if vacancyId is error {
         return error UpstreamError("Invalid vacancy id", status = http:STATUS_BAD_REQUEST);
     }
-    // Only the vacancy itself is read, so a failed lookup that feeds the job page cannot block an application.
+    // Only the vacancy is read.
     AtsVacancy vacancy = check fetchVacancy(jobId, requestId);
     if !isOpenToApply(vacancy) {
         return error UpstreamError("The vacancy is not available", status = http:STATUS_NOT_FOUND);

@@ -14,6 +14,16 @@ issuer = ""
 audience = ""
 userInfoUrl = ""
 
+# Onboarding documents storage; the SAS token needs create, write and read permission.
+[careers_app.documents.storageConfig]
+baseUrl = ""
+container = ""
+sasToken = ""
+
+# Optional: when submissions stop being editable (ISO 8601 with offset); empty means never editable.
+# [careers_app.documents]
+# submissionDeadline = ""
+
 # Optional: limit on guest applications.
 # [careers_app.apply]
 # applyMaxPerAddress = 300
@@ -23,7 +33,7 @@ userInfoUrl = ""
 # signedInMaxPerUser = 60
 # signedInWindowSeconds = 60
 
-# Optional: job reads cached duration. 
+# Optional: job read cache, in seconds.
 # [careers_app.vacancy]
 # refreshAfterSeconds = 120
 # maxStaleSeconds = 21600

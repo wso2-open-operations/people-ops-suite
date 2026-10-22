@@ -16,11 +16,11 @@
 
 # Where the onboarding documents are stored.
 public type StorageConfig record {|
-    # The blob service address, such as https://<account>.blob.core.windows.net.
+    # The blob service address.
     string baseUrl;
     # The private container the documents are written to.
     string container;
-    # A SAS token for that container, with create and write permission only.
+    # A SAS token for that container, with create, write and read permission.
     string sasToken;
 |};
 
@@ -76,14 +76,14 @@ public type EmergencyContact record {|
 public type BankDetails record {|
     string bank;
     string branch;
-    # Digits only, so that leading zeros are kept.
+    # Digits only.
     string accountNumber;
 |};
 
 # The personal details a new joiner fills in: the sheet HR keeps for every new employee.
 public type PersonalDetails record {|
     string title;
-    # The first name and the surname (the last name), as the ATS keeps them.
+    # The first name and the last name, as the ATS keeps them.
     string firstName;
     string surname;
     # The full name as on the identity document, which the candidate types.
@@ -158,8 +158,8 @@ public enum SubmitOutcome {
     ALREADY_SUBMITTED
 }
 
-# The moment the submission can no longer be changed, as an ISO 8601 time with its offset, such as
-# 2026-11-15T23:59:59+05:30. Nothing can be changed while it is empty.
+# The moment the submission can no longer be changed, as an ISO 8601 time with its offset. Nothing can be changed
+# while it is empty.
 public configurable string submissionDeadline = "";
 
 # The T-shirt sizes a candidate can choose from.

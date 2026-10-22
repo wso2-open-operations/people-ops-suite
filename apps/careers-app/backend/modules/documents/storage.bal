@@ -35,8 +35,7 @@ isolated function sasQuery() returns string {
     return token.startsWith("?") ? token.substring(1) : token;
 }
 
-// The request path of a blob. Each part of the name is encoded, since a candidate's name can hold spaces and letters
-// a path does not allow.
+// The request path of a blob, with each part of its name encoded.
 isolated function blobPath(string name) returns string|error {
     string[] parts = [];
     foreach string part in re `/`.split(name) {
@@ -49,7 +48,7 @@ isolated function blobPath(string name) returns string|error {
 isolated function manifestName(string folder) returns string => string `${folder}/submitted.json`;
 
 // The small file that says which folder holds an application's submission, so it can be found by the application id
-// alone. It is for this service only; the folders under applications/ are what people open.
+// alone.
 isolated function indexName(string applicationId) returns string => string `index/${applicationId}.json`;
 
 // The longest a candidate's name is kept in a folder or file name.
@@ -67,8 +66,7 @@ isolated function safeName(string text, string fallback) returns string {
     return cleaned == "" ? fallback : cleaned;
 }
 
-// The folder HR opens for a submission: the candidate's full name, then the application id so two candidates with
-// the same name never share one.
+// The folder of a submission: the candidate's full name and the application id.
 isolated function folderOf(string candidateName, string applicationId) returns string =>
     string `applications/${safeName(candidateName, "Candidate")} - ${applicationId}`;
 
@@ -202,7 +200,7 @@ public isolated function storeDocuments(string applicationId, Submission submiss
     map<string> & readonly metadata = {applicationid: applicationId, requestid: requestId}.cloneReadOnly();
     string folder = folderOf(candidateName, applicationId);
     map<string> files = {};
-    // The files do not depend on each other, so they are sent together and the record waits for all of them.
+    // The files are sent together; the record waits for all of them.
     future<boolean|error>[] writes = [];
     foreach UploadedDocument document in submission.documents {
         string name = fileName(folder, candidateName, document.key, document.extension);
@@ -234,7 +232,7 @@ public isolated function storeDocuments(string applicationId, Submission submiss
     };
     boolean written = check putBlob(manifestName(folder), manifest.toJsonString().toBytes(),
         "application/json", metadata, createOnly = true);
-    // The index is written even when the record already existed, so a submission whose index was lost is found again.
+    // The index is written even when the record already existed.
     SubmissionIndex index = {folder};
     _ = check putBlob(indexName(applicationId), index.toJsonString().toBytes(), "application/json", metadata);
     return written ? STORED : ALREADY_SUBMITTED;
@@ -246,8 +244,7 @@ public isolated function saveChanges(string applicationId, Manifest current, str
         string candidateName, string requestId) returns boolean|error {
     map<string> metadata = {applicationid: applicationId, requestid: requestId};
     map<string> files = current.files.clone();
-    // The folder and the file names keep the name the submission was made under, so a change of name does not
-    // leave the earlier files behind.
+    // The folder and the file names keep the name the submission was made under.
     string folder = current.folder;
     foreach UploadedDocument document in update.documents {
         string name = fileName(folder, current.candidateName, document.key, document.extension);
