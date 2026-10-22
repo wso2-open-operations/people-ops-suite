@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Grid, Stack, Tooltip, Typography, useTheme } from "@mui/material";
-import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Box, Button, CircularProgress, Grid, Stack, Tooltip, Typography, useTheme } from "@mui/material";
+import { ArrowLeft, ArrowRight, CheckCircle2, CircleAlert } from "lucide-react";
 
 import { ON_ORANGE, PAGE_MAX_WIDTH, heroColorsOf } from "@config/brand";
 import { pillButtonSx } from "@utils/styles";
@@ -30,8 +30,12 @@ interface JobHeroProps {
   isSaved: boolean;
   onBack: () => void;
   onApplyNow: () => void;
-  // Why the candidate cannot apply for this job; it is shown in place of the button when it is given.
+  // Why the candidate cannot apply for this job yet; it is shown in place of the button when it is given.
   applyBlockedReason: string | null;
+  // Whether the reason is that they applied already, that their applications are still being checked, or that the
+  // check failed.
+  applyBlockedKind: "applied" | "checking" | "failed";
+  onRetryApplyCheck: () => void;
   onToggleSave: () => void;
   onSeeAllRoles: () => void;
 }
@@ -43,6 +47,8 @@ const JobHero = ({
   onBack,
   onApplyNow,
   applyBlockedReason,
+  applyBlockedKind,
+  onRetryApplyCheck,
   onToggleSave,
   onSeeAllRoles,
 }: JobHeroProps) => {
@@ -160,10 +166,17 @@ const JobHero = ({
                   bgcolor: "background.paper",
                 }}
               >
-                <CheckCircle2 size={18} color="#059669" />
+                {applyBlockedKind === "checking" && <CircularProgress size={18} />}
+                {applyBlockedKind === "failed" && <CircleAlert size={18} color="#DC2626" />}
+                {applyBlockedKind === "applied" && <CheckCircle2 size={18} color="#059669" />}
                 <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
                   {applyBlockedReason}
                 </Typography>
+                {applyBlockedKind === "failed" && (
+                  <Button size="small" onClick={onRetryApplyCheck} sx={{ fontWeight: 700 }}>
+                    Try again
+                  </Button>
+                )}
               </Stack>
             ) : (
               <Button
