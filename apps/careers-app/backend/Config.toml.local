@@ -2,7 +2,7 @@
 allowedOrigins = [""]
 port = 8080
 
-[careers_app.vacancy.vacancyConfig]
+[careers_app.vacancy.atsConfig]
 baseUrl = ""
 tokenUrl = ""
 clientId = ""
@@ -12,6 +12,7 @@ clientSecret = ""
 jwksUrl = ""
 issuer = ""
 audience = ""
+userInfoUrl = ""
 
 # Optional: limit on guest applications.
 # [careers_app.apply]
@@ -19,6 +20,8 @@ audience = ""
 # applyMaxPerEmail = 5
 # applyWindowSeconds = 3600
 # trustedProxyHops = 1
+# signedInMaxPerUser = 60
+# signedInWindowSeconds = 60
 
 # Optional: job reads cached duration. 
 # [careers_app.vacancy]

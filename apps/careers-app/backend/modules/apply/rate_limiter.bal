@@ -28,6 +28,12 @@ configurable int applyMaxPerEmail = 5;
 # The length of the window, in seconds.
 configurable int applyWindowSeconds = 3600;
 
+# How many requests one signed-in user may make within the signed-in window.
+public configurable int signedInMaxPerUser = 60;
+
+# The length of the signed-in window, in seconds.
+public configurable int signedInWindowSeconds = 60;
+
 # How many proxies in front of the service append to X-Forwarded-For. 0 ignores the header.
 configurable int trustedProxyHops = 1;
 
@@ -157,15 +163,19 @@ public isolated class ApplyRateLimiter {
 
     # Records an application from the address; false when it has used its allowance within the window.
     public isolated function tryAcquireAddress(string address) returns boolean =>
-        self.tryAcquire(limiterKey("ip", address), applyMaxPerAddress);
+        self.tryAcquire(limiterKey("ip", address), applyMaxPerAddress, applyWindowSeconds);
 
     # Records an application for the email; false when it has used its allowance within the window.
     public isolated function tryAcquireEmail(string email) returns boolean =>
-        self.tryAcquire(limiterKey("email", email.toLowerAscii()), applyMaxPerEmail);
+        self.tryAcquire(limiterKey("email", email.toLowerAscii()), applyMaxPerEmail, applyWindowSeconds);
 
-    isolated function tryAcquire(string key, int maxAttempts) returns boolean {
+    # Records a request from the signed-in user; false when they have used their allowance within the signed-in window.
+    public isolated function tryAcquireUser(string subject) returns boolean =>
+        self.tryAcquire(limiterKey("sub", subject), signedInMaxPerUser, signedInWindowSeconds);
+
+    isolated function tryAcquire(string key, int maxAttempts, int windowSeconds) returns boolean {
         int now = time:utcNow()[0];
-        int windowStart = now - applyWindowSeconds;
+        int windowStart = now - windowSeconds;
         lock {
             if self.attempts.length() > MAX_TRACKED_KEYS && now - self.lastSweep >= SWEEP_INTERVAL_SECONDS {
                 self.lastSweep = now;

@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import wso2/careers_app.jwt;
+
 import ballerina/http;
 import ballerina/mime;
 import ballerina/test;
@@ -45,7 +47,7 @@ function routesNotListedAsPublicNeedAToken() returns error? {
 
 @test:Config {}
 function publicJobReadsReachTheServiceWithoutAToken() returns error? {
-    // No vacancy service runs in the tests, so a request that passes the interceptor ends in a 504.
+    // No ATS runs in the tests, so a request that passes the interceptor ends in a 504.
     http:Response list = check testClient->get("/jobs");
     test:assertEquals(list.statusCode, 504);
     http:Response detail = check testClient->get("/jobs/258");
@@ -106,4 +108,76 @@ function nonJsonUpstreamBodyBecomesBadGateway() {
     http:Response resp = responseWithStatus(200);
     resp.setTextPayload("not json", "text/plain");
     test:assertTrue(forwardOrError(resp, "failed", "test-request") is http:BadGateway);
+}
+
+@test:Config {}
+function candidateRoutesWithoutATokenAreUnauthorized() returns error? {
+    http:Response profile = check testClient->get("/candidates/me");
+    test:assertEquals(profile.statusCode, 401);
+    http:Response applications = check testClient->get("/applications");
+    test:assertEquals(applications.statusCode, 401);
+    http:Response save = check testClient->patch("/candidates/me", {"firstName": "Ada"});
+    test:assertEquals(save.statusCode, 401);
+}
+
+@test:Config {}
+function candidateRoutesWithAGarbageTokenAreUnauthorized() returns error? {
+    map<string> headers = {"Authorization": "Bearer not-a-jwt"};
+    http:Response profile = check testClient->get("/candidates/me", headers);
+    test:assertEquals(profile.statusCode, 401);
+    http:Response applications = check testClient->get("/applications", headers);
+    test:assertEquals(applications.statusCode, 401);
+    http:Response save = check testClient->patch("/candidates/me", {"firstName": "Ada"}, headers);
+    test:assertEquals(save.statusCode, 401);
+}
+
+@test:Config {}
+function candidateRoutesWithAMalformedAuthorizationHeaderAreUnauthorized() returns error? {
+    http:Response basic = check testClient->get("/candidates/me", {"Authorization": "Basic abc"});
+    test:assertEquals(basic.statusCode, 401);
+    http:Response bare = check testClient->get("/applications", {"Authorization": "not-a-bearer-header"});
+    test:assertEquals(bare.statusCode, 401);
+}
+
+@test:Config {}
+function aCallerWhoHasNotAppliedGetsTheirProfileFromTheIdentityProvider() {
+    jwt:CallerDetails caller = {
+        email: "ada@example.test",
+        firstName: "Ada",
+        lastName: "Lovelace",
+        gender: "female",
+        contactNo: "+94771234567"
+    };
+    test:assertEquals(profileFrom(caller), {
+        firstName: "Ada",
+        lastName: "Lovelace",
+        gender: "Female",
+        personalEmail: "ada@example.test",
+        contactNo: "+94771234567",
+        address: (),
+        university: (),
+        editable: false
+    });
+}
+
+@test:Config {}
+function genderFromTheIdentityProviderIsMappedToTheAtsValues() {
+    test:assertEquals(genderOf("MALE"), "Male");
+    test:assertEquals(genderOf("female"), "Female");
+    test:assertEquals(genderOf("other"), "");
+    test:assertEquals(genderOf(""), "");
+}
+
+@test:Config {}
+function unreachableCandidateLookupBecomesGatewayTimeout() {
+    http:BadGateway|http:GatewayTimeout failure = candidateFailure(error http:GenericClientError("connection refused"),
+        "failed", "test-request");
+    test:assertTrue(failure is http:GatewayTimeout);
+}
+
+@test:Config {}
+function otherCandidateLookupFailuresBecomeBadGateway() {
+    http:BadGateway|http:GatewayTimeout failure = candidateFailure(error("unreadable reply"), "failed",
+        "test-request");
+    test:assertTrue(failure is http:BadGateway);
 }
