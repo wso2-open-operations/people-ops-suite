@@ -20,6 +20,8 @@ userInfoUrl = ""
 # applyMaxPerEmail = 5
 # applyWindowSeconds = 3600
 # trustedProxyHops = 1
+# signedInMaxPerUser = 60
+# signedInWindowSeconds = 60
 
 # Optional: job reads cached duration. 
 # [careers_app.vacancy]
