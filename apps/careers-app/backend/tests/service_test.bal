@@ -22,6 +22,16 @@ import ballerina/test;
 
 final http:Client testClient = check new (string `http://localhost:${port}`);
 
+@test:Config {}
+function aDeclaredBodySizeIsComparedWithTheLimit() {
+    http:Request req = new;
+    req.setHeader(http:CONTENT_LENGTH, "100");
+    test:assertTrue(exceeds(req, 50));
+    test:assertFalse(exceeds(req, 100));
+    http:Request undeclared = new;
+    test:assertFalse(exceeds(undeclared, 50));
+}
+
 // "/profile" stands in for any restricted route.
 @test:Config {}
 function restrictedRouteWithoutTokenIsUnauthorized() returns error? {
