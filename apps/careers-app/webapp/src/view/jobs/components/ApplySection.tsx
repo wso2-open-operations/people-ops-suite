@@ -33,6 +33,8 @@ import GuestSignInPrompt from "@view/jobs/components/GuestSignInPrompt";
 
 interface ApplySectionProps {
   detail: VacancyDetail;
+  // Whether the candidate cannot apply for this job; the form is left out when it is given.
+  blockedReason: string | null;
 }
 
 // The same shape the backend accepts: something@domain.tld with no spaces, so a typo is caught before the CV upload.
@@ -52,7 +54,7 @@ const EMPTY_FORM: ApplyFormValues = {
 };
 
 // The "Apply Now" card: the application form, its submit logic and the confirmation dialog.
-const ApplySection = ({ detail }: ApplySectionProps) => {
+const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
   const dispatch = useAppDispatch();
   const { getToken: getAccessToken, isSignedIn, appSignIn } = useAppAuthContext();
 
@@ -162,6 +164,9 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
       setSubmitting(false);
     }
   };
+
+  // A candidate who cannot apply is not shown the form. The reason is given at the top of the page, with the title.
+  if (blockedReason && !submittedOpen) return null;
 
   return (
     <>

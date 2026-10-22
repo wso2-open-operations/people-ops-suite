@@ -21,9 +21,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { State } from "@/types/types";
 import { PAGE_MAX_WIDTH } from "@config/brand";
-import { JOB_NOT_FOUND_ERROR } from "@config/constant";
+import { ApplicationStatus, JOB_NOT_FOUND_ERROR } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
-import { loadJobDetail, toggleSaveJob } from "@slices/careersSlice/careers";
+import { applicationsFailed, loadApplications, loadJobDetail, toggleSaveJob } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { jobPath, opensDirectly, withoutArrivalMark } from "@utils/jobFilterUtils";
 import ApplySection from "@view/jobs/components/ApplySection";
@@ -51,6 +51,26 @@ const JobDetail = () => {
   const [loading, setLoading] = useState(!detail);
   const [error, setError] = useState(false);
   const [missing, setMissing] = useState(false);
+
+  // A signed-in candidate's applications decide whether they can apply here. A guest can always see the form.
+  const applications = useAppSelector((state: RootState) => state.careers.applications);
+  const applicationsState = useAppSelector((state: RootState) => state.careers.applicationsState);
+  useEffect(() => {
+    if (!isSignedIn || applicationsState !== State.idle) return;
+    getAccessToken()
+      .then((token) => dispatch(loadApplications(token)))
+      .catch(() => dispatch(applicationsFailed()));
+  }, [isSignedIn, applicationsState, dispatch, getAccessToken]);
+
+  // Why the candidate cannot apply for this job, or nothing when they can: they applied for it already, or they
+  // accepted an offer for a job.
+  const applyBlockedReason = !isSignedIn
+    ? null
+    : applications.some((application) => application.jobId === id)
+      ? "You have already applied for this job."
+      : applications.some((application) => application.status === ApplicationStatus.OfferAccepted)
+        ? "You have accepted an offer, so you can't apply for other jobs."
+        : null;
 
   // Replaces the address with the job's readable one, without the mark that let a new tab or a share open it.
   useEffect(() => {
@@ -120,13 +140,14 @@ const JobDetail = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{ bgcolor: "background.paper" }}>
       <JobHero
         detail={detail}
         isSignedIn={isSignedIn}
         isSaved={isSaved}
         onBack={goBackToJobs}
         onApplyNow={scrollToApplyForm}
+        applyBlockedReason={applyBlockedReason}
         onToggleSave={() => dispatch(toggleSaveJob(detail.id))}
         onSeeAllRoles={() => navigate("/jobs")}
       />
@@ -137,7 +158,7 @@ const JobDetail = () => {
           taskInformation={detail.taskInformation}
           additionalContent={detail.additionalContent}
         />
-        <ApplySection detail={detail} />
+        <ApplySection detail={detail} blockedReason={applyBlockedReason} />
       </Box>
     </Box>
   );

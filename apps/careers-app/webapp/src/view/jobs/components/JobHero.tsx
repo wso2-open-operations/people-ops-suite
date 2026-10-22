@@ -15,7 +15,7 @@
 // under the License.
 
 import { Box, Button, Grid, Stack, Tooltip, Typography, useTheme } from "@mui/material";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { ON_ORANGE, PAGE_MAX_WIDTH, heroColorsOf } from "@config/brand";
 import { pillButtonSx } from "@utils/styles";
@@ -30,6 +30,8 @@ interface JobHeroProps {
   isSaved: boolean;
   onBack: () => void;
   onApplyNow: () => void;
+  // Why the candidate cannot apply for this job; it is shown in place of the button when it is given.
+  applyBlockedReason: string | null;
   onToggleSave: () => void;
   onSeeAllRoles: () => void;
 }
@@ -40,6 +42,7 @@ const JobHero = ({
   isSaved,
   onBack,
   onApplyNow,
+  applyBlockedReason,
   onToggleSave,
   onSeeAllRoles,
 }: JobHeroProps) => {
@@ -142,22 +145,44 @@ const JobHero = ({
               {detail.title}
             </Typography>
 
-            <Button
-              variant="contained"
-              size="large"
-              onClick={onApplyNow}
-              endIcon={<ArrowRight size={17} />}
-              sx={{
-                ...pillButtonSx,
-                px: 3.5,
-                py: 1.2,
-                backgroundColor: "primary.main",
-                color: ON_ORANGE,
-                "&:hover": { backgroundColor: "primary.main", filter: "brightness(0.95)" },
-              }}
-            >
-              Apply Now
-            </Button>
+            {applyBlockedReason ? (
+              <Stack
+                direction="row"
+                alignItems="center"
+                gap={1}
+                sx={{
+                  display: "inline-flex",
+                  px: 2.5,
+                  py: 1.1,
+                  borderRadius: "999px",
+                  border: "1px solid",
+                  borderColor: "primary.main",
+                  bgcolor: "background.paper",
+                }}
+              >
+                <CheckCircle2 size={18} color="#059669" />
+                <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
+                  {applyBlockedReason}
+                </Typography>
+              </Stack>
+            ) : (
+              <Button
+                variant="contained"
+                size="large"
+                onClick={onApplyNow}
+                endIcon={<ArrowRight size={17} />}
+                sx={{
+                  ...pillButtonSx,
+                  px: 3.5,
+                  py: 1.2,
+                  backgroundColor: "primary.main",
+                  color: ON_ORANGE,
+                  "&:hover": { backgroundColor: "primary.main", filter: "brightness(0.95)" },
+                }}
+              >
+                Apply Now
+              </Button>
+            )}
 
             <JobShareActions
               job={detail}
