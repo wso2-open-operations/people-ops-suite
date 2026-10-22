@@ -111,15 +111,22 @@ const AppShell = () => {
   // open with the data in place. A load that is reset to idle is tried again here.
   useEffect(() => {
     if (!isSignedIn || (applicationsState !== State.idle && profileState !== State.idle)) return;
+    // Set when the candidate signs out, or the states change, before the token arrives.
+    let cancelled = false;
     getAccessToken()
       .then((token) => {
+        if (cancelled) return;
         if (applicationsState === State.idle) dispatch(loadApplications(token));
         if (profileState === State.idle) dispatch(loadProfile(token));
       })
       .catch(() => {
+        if (cancelled) return;
         if (applicationsState === State.idle) dispatch(applicationsFailed());
         if (profileState === State.idle) dispatch(profileFailed());
       });
+    return () => {
+      cancelled = true;
+    };
   }, [isSignedIn, applicationsState, profileState, dispatch, getAccessToken]);
 
   // Clears the candidate's data when nobody is signed in.
