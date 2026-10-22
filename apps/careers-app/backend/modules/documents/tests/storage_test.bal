@@ -1,0 +1,221 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+import ballerina/http;
+import ballerina/lang.array;
+import ballerina/test;
+
+// The blobs of the stand-in storage service, each with the tag the service gives it.
+isolated class BlobStore {
+    private map<byte[]> blobs = {};
+    private map<string> tags = {};
+    private int writes = 0;
+    // A write whose blob name contains this text is refused with a server error.
+    private string failingName = "";
+
+    isolated function reset() {
+        lock {
+            self.blobs = {};
+            self.tags = {};
+            self.writes = 0;
+            self.failingName = "";
+        }
+    }
+
+    isolated function failWritesTo(string name) {
+        lock {
+            self.failingName = name;
+        }
+    }
+
+    // The status of a write and the tag of the stored blob. `createOnly` and `expectedTag` are the write conditions.
+    isolated function write(string name, byte[] content, boolean createOnly, string? expectedTag)
+            returns [int, string] {
+        lock {
+            if self.failingName != "" && name.includes(self.failingName) {
+                return [http:STATUS_INTERNAL_SERVER_ERROR, ""];
+            }
+            if createOnly && self.blobs.hasKey(name) {
+                return [http:STATUS_CONFLICT, ""];
+            }
+            if expectedTag is string && self.tags[name] != expectedTag {
+                return [http:STATUS_PRECONDITION_FAILED, ""];
+            }
+            self.writes += 1;
+            self.blobs[name] = content.clone();
+            string tag = string `"${self.writes}"`;
+            self.tags[name] = tag;
+            return [http:STATUS_CREATED, tag];
+        }
+    }
+
+    isolated function read(string name) returns [byte[], string]? {
+        lock {
+            byte[]? content = self.blobs[name];
+            if content is () {
+                return ();
+            }
+            return [content.clone(), self.tags.get(name)];
+        }
+    }
+
+    isolated function names() returns string[] {
+        lock {
+            return array:sort(self.blobs.keys()).clone();
+        }
+    }
+
+    isolated function writeCount() returns int {
+        lock {
+            return self.writes;
+        }
+    }
+}
+
+final BlobStore store = new;
+
+listener http:Listener storageService = new (10000);
+
+// An in-memory stand-in for the blob service, honouring the write conditions the code relies on.
+service /test\-container on storageService {
+    isolated resource function put [string... path](http:Request req) returns http:Response|error {
+        string|error createOnly = req.getHeader("If-None-Match");
+        string|error expectedTag = req.getHeader("If-Match");
+        [int, string] result = store.write(string:'join("/", ...path), check req.getBinaryPayload(),
+            createOnly is string && createOnly == "*", expectedTag is string ? expectedTag : ());
+        // No ETag is sent back: a listener answers 304 to a conditional request when the reply carries one.
+        http:Response resp = new;
+        resp.statusCode = result[0];
+        return resp;
+    }
+
+    isolated resource function get [string... path]() returns http:Response {
+        string name = string:'join("/", ...path);
+        [byte[], string]? found = store.read(name);
+        http:Response resp = new;
+        if found is () {
+            resp.statusCode = http:STATUS_NOT_FOUND;
+            return resp;
+        }
+        resp.statusCode = http:STATUS_OK;
+        resp.setBinaryPayload(found[0], name.endsWith(".json") ? "application/json" : "application/pdf");
+        resp.setHeader("ETag", found[1]);
+        return resp;
+    }
+}
+
+@test:BeforeEach
+function emptyTheStorage() {
+    store.reset();
+}
+
+function aSubmission() returns Submission {
+    Submission|string parsed = parseDocuments(documentsRequest(requiredFiles()));
+    if parsed is string {
+        panic error("The test submission was refused: " + parsed);
+    }
+    return parsed;
+}
+
+const FOLDER = "applications/Ada Lovelace - 123";
+
+@test:Config {}
+function aFirstSubmissionIsStoredInOneFolderNamedAfterTheCandidate() returns error? {
+    Submission submission = aSubmission();
+    SubmitOutcome outcome = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+    test:assertEquals(outcome, STORED);
+
+    string[] names = store.names();
+    test:assertEquals(names.length(), submission.documents.length() + 2);
+    test:assertTrue(names.indexOf("index/123.json") is int);
+    test:assertTrue(names.indexOf(FOLDER + "/submitted.json") is int);
+    test:assertTrue(names.indexOf(FOLDER + "/Ada Lovelace - Identity document.pdf") is int);
+    foreach string name in names {
+        test:assertTrue(name == "index/123.json" || name.startsWith(FOLDER + "/"), name);
+    }
+}
+
+@test:Config {}
+function aSecondSubmissionForTheSameApplicationIsRefusedAndWritesNothing() returns error? {
+    Submission submission = aSubmission();
+    _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+    int before = store.writeCount();
+
+    SubmitOutcome outcome = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+    test:assertEquals(outcome, ALREADY_SUBMITTED);
+    test:assertEquals(store.writeCount(), before);
+}
+
+@test:Config {}
+function aSubmissionIsFoundByTheApplicationIdAndListsItsFiles() returns error? {
+    Submission submission = aSubmission();
+    _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+
+    SubmissionStatus status = check submissionStatus("123");
+    test:assertTrue(status.submitted);
+    test:assertFalse(status.canEdit);
+    test:assertEquals(status.files.length(), submission.documents.length());
+    test:assertEquals(status.details?.fullName, submission.details.fullName);
+
+    [Manifest, string]? loaded = check loadManifest("123");
+    if loaded is () {
+        test:assertFail("The record was not found through the index");
+    }
+    test:assertEquals(loaded[0].folder, FOLDER);
+    test:assertEquals(loaded[0].candidateName, "Ada Lovelace");
+}
+
+@test:Config {}
+function anApplicationWithoutASubmissionIsNotSubmitted() returns error? {
+    SubmissionStatus status = check submissionStatus("999");
+    test:assertFalse(status.submitted);
+    test:assertEquals(status.files, []);
+    test:assertEquals(check loadManifest("999"), ());
+}
+
+@test:Config {}
+function aChangeReplacesAFileOnlyWhileTheRecordIsUnchanged() returns error? {
+    Submission submission = aSubmission();
+    _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+    [Manifest, string]? loaded = check loadManifest("123");
+    if loaded is () {
+        test:assertFail("The record was not found");
+    }
+    Submission update = {
+        documents: [{key: "identityDocument", extension: "pdf", contentType: "application/pdf", content: [1, 2, 3]}],
+        details: submission.details
+    };
+
+    boolean saved = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    test:assertTrue(saved);
+    [byte[], string]? replaced = store.read(FOLDER + "/Ada Lovelace - Identity document.pdf");
+    test:assertEquals(replaced is () ? () : replaced[0], <byte[]>[1, 2, 3]);
+
+    // The record changed with that save, so the tag read earlier no longer matches.
+    boolean savedAgain = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    test:assertFalse(savedAgain);
+}
+
+@test:Config {}
+function aFileThatCannotBeWrittenLeavesNoRecordAndNoIndex() {
+    store.failWritesTo("Birth certificate");
+    SubmitOutcome|error outcome = storeDocuments("123", aSubmission(), "Ada Lovelace", "test-request");
+    test:assertTrue(outcome is error);
+
+    string[] names = store.names();
+    test:assertEquals(names.indexOf("index/123.json"), ());
+    test:assertEquals(names.indexOf(FOLDER + "/submitted.json"), ());
+}
