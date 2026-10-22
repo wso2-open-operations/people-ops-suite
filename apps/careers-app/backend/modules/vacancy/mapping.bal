@@ -37,7 +37,11 @@ isolated function departmentNameOf(AtsBusinessUnit[] units, int businessUnitId, 
     return UNKNOWN_NAME;
 }
 
-isolated function officeNameOf(AtsCompany[] companies, int? officeId) returns string {
+// The name of the office, or nothing when the vacancy has no office or it is not in the companies.
+isolated function officeNameOf(AtsCompany[] companies, int? officeId) returns string? {
+    if officeId is () {
+        return ();
+    }
     foreach AtsCompany company in companies {
         foreach AtsOffice office in company.offices ?: [] {
             if office.id === officeId {
@@ -45,7 +49,13 @@ isolated function officeNameOf(AtsCompany[] companies, int? officeId) returns st
             }
         }
     }
-    return UNKNOWN_NAME;
+    return ();
+}
+
+// The offices of a vacancy keyed by position; none for a remote vacancy or one without a known office.
+isolated function officeLocationsOf(AtsVacancy vacancy, AtsCompany[] companies) returns map<string> {
+    string? office = vacancy.modeOfWork == MODE_REMOTE ? () : officeNameOf(companies, vacancy.officeId);
+    return office is string ? {"0": office} : {};
 }
 
 isolated function designationNameOf(AtsCareerFunction[] careerFunctions, int designationId) returns string|error {
@@ -137,7 +147,7 @@ isolated function detailOf(AtsVacancy vacancy, AtsCompany[] companies, AtsBusine
         country: vacancy.hiringLocations,
         job_type: jobTypeOf(vacancy.employmentType),
         allow_remote: isRemote || vacancy.modeOfWork == MODE_HYBRID,
-        office_locations: isRemote ? {} : {"0": officeNameOf(companies, vacancy.officeId)},
+        office_locations: officeLocationsOf(vacancy, companies),
         publish_status: vacancy.visibility,
         published_on: vacancy.publishedOn,
         mainContent: jd.mainContent,

@@ -258,7 +258,7 @@ function anUnreadableVacancyListIsAnError() {
 @test:Config {}
 function nullNestedListsInTheOrgDataAreTreatedAsEmpty() returns error? {
     AtsCompany[] companies = check (<json>[{"location": "Sri Lanka", "offices": null}]).fromJsonWithType();
-    test:assertEquals(officeNameOf(companies, 5), "Unknown");
+    test:assertEquals(officeNameOf(companies, 5), ());
     AtsCareerFunction[] functions = check (<json>[{"designations": null}]).fromJsonWithType();
     test:assertTrue(designationNameOf(functions, 100) is error);
 }
@@ -383,6 +383,18 @@ function officeVacancyNamesItsOffice() {
 
     JobDetail|error hybrid = detailOf(vacancy(1, mode = "Hybrid"), COMPANIES, UNITS, CAREER_FUNCTIONS, []);
     test:assertTrue(hybrid is JobDetail && hybrid.allow_remote);
+}
+
+@test:Config {}
+function aVacancyWithoutAKnownOfficeHasNoOfficeLocation() {
+    AtsVacancy noOffice = vacancy(1);
+    noOffice.officeId = ();
+    test:assertEquals(officeLocationsOf(noOffice, COMPANIES), {});
+
+    AtsVacancy unlisted = vacancy(1);
+    unlisted.officeId = 99;
+    test:assertEquals(officeLocationsOf(unlisted, COMPANIES), {});
+    test:assertEquals(officeLocationsOf(unlisted, []), {});
 }
 
 @test:Config {}
