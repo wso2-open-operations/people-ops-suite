@@ -403,6 +403,55 @@ public isolated function listApplications(string email, string requestId) return
     return applicationsOf(history, departmentsOf(cachedJobsIfPresent()));
 }
 
+// The offer letter of one of the caller's own applications, found through their email.
+isolated function offerLetterFor(string email, string applicationId, string requestId) returns OfferLetter|error {
+    int|error id = int:fromString(applicationId);
+    if id is error {
+        return error UpstreamError("Application not found", status = http:STATUS_NOT_FOUND);
+    }
+    AtsHistoryEntry[] history = check candidateHistory(email, requestId);
+    foreach AtsHistoryEntry entry in history {
+        if entry.id == id && entry.status != CANDIDATE_STATUS_DELETED {
+            json body = check atsJson(string `/candidates/${entry.candidateId}/vacancies/${entry.id}/offer-letter`,
+                requestId);
+            AtsOfferLetter letter = check body.fromJsonWithType();
+            if letter.htmlContent == "" {
+                return error UpstreamError("No offer letter was found", status = http:STATUS_NOT_FOUND);
+            }
+            return {
+                subject: letter.subject,
+                sentOn: letter.sentOn,
+                threadId: letter.threadId ?: "",
+                html: letter.htmlContent
+            };
+        }
+    }
+    return error UpstreamError("Application not found", status = http:STATUS_NOT_FOUND);
+}
+
+# The offer letter sent for one of the caller's own applications; a 404 reply when it is not theirs or has none.
+public isolated function getOfferLetter(string email, string applicationId, string requestId)
+        returns http:Response|error {
+    OfferLetter|error letter = offerLetterFor(email, applicationId, requestId);
+    return letter is error ? failedReply(letter, requestId) : okReply(letter.toJson());
+}
+
+# Whether the application is one of the caller's own, found through their email, and the ATS shows its offer as
+# accepted. An application that is not the caller's gives false, the same as one that is not accepted.
+public isolated function isOfferAccepted(string email, string applicationId, string requestId) returns boolean|error {
+    int|error id = int:fromString(applicationId);
+    if id is error {
+        return false;
+    }
+    AtsHistoryEntry[] history = check candidateHistory(email, requestId);
+    foreach AtsHistoryEntry entry in history {
+        if entry.id == id {
+            return entry.status == CANDIDATE_STATUS_HIRED;
+        }
+    }
+    return false;
+}
+
 isolated function saveProfile(string email, ProfileChanges changes, string requestId) returns CandidateProfile|error {
     AtsCandidateUpdate|string update = atsUpdateOf(changes);
     if update is string {

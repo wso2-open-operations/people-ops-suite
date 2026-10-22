@@ -39,6 +39,7 @@ const MODE_HYBRID = "Hybrid";
 
 const CANDIDATE_STATUS_CREATED = "CREATED";
 const CANDIDATE_STATUS_DELETED = "DELETED";
+const CANDIDATE_STATUS_HIRED = "HIRED";
 
 const MAX_NAME_LENGTH = 100;
 const MAX_ADDRESS_LENGTH = 300;
@@ -216,6 +217,22 @@ type AtsCandidateUpdate record {|
     string contactNo?;
     string address?;
     string university?;
+|};
+
+# An offer letter as the ATS returns it.
+type AtsOfferLetter record {
+    string subject = "";
+    string sentOn = "";
+    string? threadId = ();
+    string htmlContent = "";
+};
+
+# The offer letter a candidate was sent, in the shape the web app reads.
+public type OfferLetter record {|
+    string subject;
+    string sentOn;
+    string threadId;
+    string html;
 |};
 
 # One of the signed-in candidate's applications, in the shape the web app reads.
