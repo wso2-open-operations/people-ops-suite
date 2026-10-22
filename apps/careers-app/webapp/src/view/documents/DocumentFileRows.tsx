@@ -15,11 +15,26 @@
 // under the License.
 
 import { Box, Button, Chip, Link, Stack, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { FileUp, Trash2 } from "lucide-react";
 
 import type { DocumentRequirement } from "@/types/types";
 import { pillButtonSx } from "@utils/styles";
 import { STATUS_COLORS, extensionsOf, formatSize, formatsText, statusOf } from "@view/documents/documentFiles";
+
+// A file input that stays in the tab order and the accessibility tree while being invisible; the button around it shows
+// its focus.
+const VisuallyHiddenInput = styled("input")({
+  clip: "rect(0 0 0 0)",
+  clipPath: "inset(50%)",
+  height: 1,
+  overflow: "hidden",
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  whiteSpace: "nowrap",
+  width: 1,
+});
 
 // The hint, with any web address in it shown as a link that opens in a new tab.
 const hintContent = (hint: string) =>
@@ -95,15 +110,18 @@ const DocumentFileRows = ({ documents, files, sentKeys, problems, submitting, on
           ) : (
             <Button
               component="label"
+              role={undefined}
+              tabIndex={-1}
               variant="outlined"
               startIcon={<FileUp size={16} />}
               disabled={submitting}
-              sx={pillButtonSx}
+              sx={{ ...pillButtonSx, "&:focus-within": { outline: "2px solid", outlineOffset: 2, outlineColor: "primary.main" } }}
             >
               {sentEarlier ? "Replace" : "Upload"}
-              <input
-                hidden
+              <VisuallyHiddenInput
                 type="file"
+                disabled={submitting}
+                aria-label={`${sentEarlier ? "Replace" : "Upload"} ${document.label}`}
                 accept={extensionsOf(document.types)
                   .map((extension) => `.${extension}`)
                   .join(",")}
