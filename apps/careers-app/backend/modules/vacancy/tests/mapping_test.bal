@@ -217,14 +217,6 @@ function aFailedJobLookupIsABadGatewayNotTheJobsOwnStatus() {
 }
 
 @test:Config {}
-function theEmploymentTypeIsReadFromAJobsJson() {
-    test:assertEquals(employmentTypeOf({"id": 7, "job_type": "Internship"}), "Internship");
-    test:assertEquals(employmentTypeOf({"id": 7}), "");
-    test:assertEquals(employmentTypeOf({"job_type": 5}), "");
-    test:assertEquals(employmentTypeOf("not a job"), "");
-}
-
-@test:Config {}
 function peekingAtTheCacheNeverLoadsIt() returns error? {
     VacancyCache cache = new (120, 21600, 5);
     test:assertEquals(cache.peek("jobs"), ());

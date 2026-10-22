@@ -265,9 +265,13 @@ isolated function loadOrgStructure(string requestId) returns OrgStructure|error 
     return orgStructureOf(allCompanies, units, config is AtsAppConfig ? config : ());
 }
 
+// Whether the vacancy is published and visible to candidates.
+isolated function isOpenToApply(AtsVacancy vacancy) returns boolean =>
+    vacancy.status == STATUS_PUBLISHED && vacancy.visibility != VISIBILITY_INTERNAL_ONLY;
+
 isolated function loadJobDetail(string jobId, string requestId) returns JobDetail|error {
     AtsVacancy vacancy = check fetchVacancy(jobId, requestId);
-    if vacancy.status != STATUS_PUBLISHED || vacancy.visibility == VISIBILITY_INTERNAL_ONLY {
+    if !isOpenToApply(vacancy) {
         return error UpstreamError("The vacancy is not published", status = http:STATUS_BAD_REQUEST);
     }
     do {
@@ -308,15 +312,12 @@ isolated function candidateFor(string jobId, CandidateApplication candidate, str
     if vacancyId is error {
         return error UpstreamError("Invalid vacancy id", status = http:STATUS_BAD_REQUEST);
     }
-    json|http:Response|error job = cachedJob(jobId, requestId);
-    if job is error {
-        return job;
+    // Only the vacancy itself is read, so a failed lookup that feeds the job page cannot block an application.
+    AtsVacancy vacancy = check fetchVacancy(jobId, requestId);
+    if !isOpenToApply(vacancy) {
+        return error UpstreamError("The vacancy is not available", status = http:STATUS_NOT_FOUND);
     }
-    if job is http:Response {
-        int status = job.statusCode == http:STATUS_BAD_REQUEST ? http:STATUS_NOT_FOUND : job.statusCode;
-        return error UpstreamError("The vacancy is not available", status = status);
-    }
-    AtsCandidate|string atsCandidate = atsCandidateOf(candidate, employmentTypeOf(job), vacancyId);
+    AtsCandidate|string atsCandidate = atsCandidateOf(candidate, vacancy.employmentType, vacancyId);
     if atsCandidate is string {
         return error UpstreamError(atsCandidate, status = http:STATUS_UNPROCESSABLE_ENTITY);
     }
