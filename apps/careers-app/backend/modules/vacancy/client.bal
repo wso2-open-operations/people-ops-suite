@@ -390,10 +390,25 @@ isolated function profileFor(string email, string requestId) returns CandidatePr
     return profile;
 }
 
-# The candidate's full name, first and last name as saved in their profile, found through their email.
-public isolated function candidateNameOf(string email, string requestId) returns string|error {
-    CandidateProfile profile = check profileFor(email, requestId);
-    return string:'join(" ", profile.firstName, profile.lastName).trim();
+# The candidate's full name, first and last name as saved in their profile, when the application is one of their own
+# and its offer is accepted; nothing otherwise. One read of the history answers both.
+public isolated function acceptedApplicantName(string email, string applicationId, string requestId)
+        returns string?|error {
+    int|error id = int:fromString(applicationId);
+    if id is error {
+        return ();
+    }
+    AtsHistoryEntry[] history = check candidateHistory(email, requestId);
+    foreach AtsHistoryEntry entry in history {
+        if entry.id == id {
+            CandidateProfile? profile = profileOf(history, email);
+            if entry.status != CANDIDATE_STATUS_HIRED || profile is () {
+                return ();
+            }
+            return string:'join(" ", profile.firstName, profile.lastName).trim();
+        }
+    }
+    return ();
 }
 
 isolated function profileReplyOf(CandidateProfile|error profile, string requestId) returns http:Response|error =>

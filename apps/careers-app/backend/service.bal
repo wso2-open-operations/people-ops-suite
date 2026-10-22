@@ -321,11 +321,11 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         }
 
         // The application is looked up through the caller's own email, so an id from the client is never trusted.
-        boolean|error accepted = vacancy:isOfferAccepted(caller.email, applicationId, requestId);
-        if accepted is error {
-            return candidateFailure(accepted, "Failed to check the application", requestId);
+        string?|error candidateName = vacancy:acceptedApplicantName(caller.email, applicationId, requestId);
+        if candidateName is error {
+            return candidateFailure(candidateName, "Failed to check the application", requestId);
         }
-        if !accepted {
+        if candidateName is () {
             log:printWarn("Documents refused: not an accepted offer of the caller", outcome = "refused",
                 applicationId = applicationId, subject = user.sub, requestId = requestId);
             return <http:NotFound>{body: {message: "Application not found"}};
@@ -341,10 +341,6 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             return <http:BadRequest>{body: {message: parsed}};
         }
 
-        string|error candidateName = vacancy:candidateNameOf(caller.email, requestId);
-        if candidateName is error {
-            return candidateFailure(candidateName, "Failed to read the candidate's name", requestId);
-        }
         documents:SubmitOutcome|error stored = documents:storeDocuments(applicationId, parsed, candidateName, requestId);
         if stored is error {
             return candidateFailure(stored, "Failed to store the documents", requestId);
@@ -379,11 +375,11 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         }
 
         // The application is looked up through the caller's own email, so an id from the client is never trusted.
-        boolean|error accepted = vacancy:isOfferAccepted(caller.email, applicationId, requestId);
-        if accepted is error {
-            return candidateFailure(accepted, "Failed to check the application", requestId);
+        string?|error candidateName = vacancy:acceptedApplicantName(caller.email, applicationId, requestId);
+        if candidateName is error {
+            return candidateFailure(candidateName, "Failed to check the application", requestId);
         }
-        if !accepted {
+        if candidateName is () {
             log:printWarn("Changes refused: not an accepted offer of the caller", outcome = "refused",
                 applicationId = applicationId, subject = user.sub, requestId = requestId);
             return <http:NotFound>{body: {message: "Application not found"}};
@@ -413,10 +409,6 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             return <http:BadRequest>{body: {message: parsed}};
         }
 
-        string|error candidateName = vacancy:candidateNameOf(caller.email, requestId);
-        if candidateName is error {
-            return candidateFailure(candidateName, "Failed to read the candidate's name", requestId);
-        }
         boolean|error saved = documents:saveChanges(applicationId, loaded[0], loaded[1], parsed, candidateName,
             requestId);
         if saved is error {

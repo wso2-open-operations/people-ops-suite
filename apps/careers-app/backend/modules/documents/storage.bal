@@ -199,13 +199,27 @@ public isolated function storeDocuments(string applicationId, Submission submiss
     if existing !is () {
         return ALREADY_SUBMITTED;
     }
-    map<string> metadata = {applicationid: applicationId, requestid: requestId};
+    map<string> & readonly metadata = {applicationid: applicationId, requestid: requestId}.cloneReadOnly();
     string folder = folderOf(candidateName, applicationId);
     map<string> files = {};
+    // The files do not depend on each other, so they are sent together and the record waits for all of them.
+    future<boolean|error>[] writes = [];
     foreach UploadedDocument document in submission.documents {
         string name = fileName(folder, candidateName, document.key, document.extension);
-        _ = check putBlob(name, document.content, document.contentType, metadata);
         files[document.key] = name;
+        future<boolean|error> write = start putBlob(name, document.content.cloneReadOnly(), document.contentType,
+            metadata);
+        writes.push(write);
+    }
+    error? failure = ();
+    foreach future<boolean|error> write in writes {
+        boolean|error written = wait write;
+        if written is error && failure is () {
+            failure = written;
+        }
+    }
+    if failure is error {
+        return failure;
     }
     string now = time:utcToString(time:utcNow());
     Manifest manifest = {
