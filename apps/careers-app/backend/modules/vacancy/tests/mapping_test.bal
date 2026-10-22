@@ -421,10 +421,19 @@ function aPlainTextDescriptionIsTheMainContent() {
 }
 
 @test:Config {}
-function aDescriptionOfTheWrongKindIsAnError() {
-    AtsVacancy unreadable = vacancy(1);
-    unreadable.jdHtmlObject = 5;
-    test:assertTrue(detailOf(unreadable, COMPANIES, UNITS, CAREER_FUNCTIONS, []) is error);
+function aDescriptionOfTheWrongKindIsShownAsText() {
+    test:assertEquals(jdContentOf(5).mainContent, "5");
+    test:assertEquals(jdContentOf("2024").mainContent, "2024");
+    test:assertEquals(jdContentOf(true).mainContent, "true");
+}
+
+@test:Config {}
+function aSectionThatIsNotTextIsLeftOutAndTheRestIsKept() {
+    JdContent jd = jdContentOf({mainContent: (), taskInformation: "Task", additionalContent: 7});
+    test:assertEquals(jd.mainContent, "");
+    test:assertEquals(jd.taskInformation, "Task");
+    test:assertEquals(jd.additionalContent, ());
+    test:assertEquals(jdContentOf("{\"mainContent\": null}").mainContent, "");
 }
 
 @test:Config {}

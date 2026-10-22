@@ -89,8 +89,9 @@ isolated function similarListings(AtsVacancy current, AtsVacancy[] sameDesignati
     return similar;
 }
 
-// The sections of the job description.
-isolated function jdContentOf(json jdHtmlObject) returns JdContent|error {
+// The sections of the job description. A description that is not in the expected shape never fails the job page: a
+// section that is not text is left out, and any other value is shown as text.
+isolated function jdContentOf(json jdHtmlObject) returns JdContent {
     json content = jdHtmlObject;
     if jdHtmlObject is string {
         json|error parsed = value:fromJsonString(jdHtmlObject);
@@ -105,12 +106,22 @@ isolated function jdContentOf(json jdHtmlObject) returns JdContent|error {
     if content is string {
         return {mainContent: content};
     }
-    return content.fromJsonWithType();
+    if content is map<json> {
+        return {
+            mainContent: sectionOf(content["mainContent"]) ?: "",
+            taskInformation: sectionOf(content["taskInformation"]),
+            additionalContent: sectionOf(content["additionalContent"])
+        };
+    }
+    return {mainContent: jdHtmlObject is string ? jdHtmlObject : content.toString()};
 }
+
+// The text of a job description section, or nothing when it is missing or not text.
+isolated function sectionOf(json section) returns string? => section is string ? section : ();
 
 isolated function detailOf(AtsVacancy vacancy, AtsCompany[] companies, AtsBusinessUnit[] units,
         AtsCareerFunction[] careerFunctions, AtsVacancy[] sameDesignation) returns JobDetail|error {
-    JdContent jd = check jdContentOf(vacancy.jdHtmlObject);
+    JdContent jd = jdContentOf(vacancy.jdHtmlObject);
     string|error foundDesignation = designationNameOf(careerFunctions, vacancy.designationId);
     if foundDesignation is error {
         log:printWarn("The vacancy's designation is not in the career functions exactly once", vacancyId = vacancy.id,
