@@ -280,7 +280,9 @@ const Documents = () => {
             </Typography>
             <Typography fontSize="0.9rem" color="text.secondary" mt={0.5} mb={2.5}>
               {editing
-                ? `You can change your details and replace files until ${deadlineText(status?.editableUntil ?? "")}.`
+                ? status?.editableUntil
+                  ? `You can change your details and replace files until ${deadlineText(status.editableUntil)}.`
+                  : "You can change your details and replace files."
                 : "Check everything on the last step before you submit."}
             </Typography>
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 1.5 }}>
