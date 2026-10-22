@@ -144,7 +144,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         vacancy:CandidateApplication candidate = {
             firstName: form.firstName,
             lastName: form.lastName,
-            personalEmail: form.email,
+            personalEmail: form.email.toLowerAscii(),
             contactNo: form.phone,
             address: form.address,
             resume: form.cv
