@@ -36,7 +36,11 @@ type AuthContextType = {
 const AuthContext = React.createContext<AuthContextType>({} as AuthContextType);
 
 const timeout = 15 * 60 * 1000;
-const promptBeforeIdle = 4_000;
+// How long the "Are you still there?" warning stays open before the user is signed out.
+const promptBeforeIdle = 60_000;
+
+// The longest a sign-in lasts, however active the user is; choosing to continue does not extend it.
+const MAX_SESSION_MS = 60 * 60 * 1000;
 
 const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const { signIn, signOut, state, getBasicUserInfo, getDecodedIDToken, getAccessToken } = useAuthContext();
@@ -45,6 +49,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   const [sessionWarningOpen, setSessionWarningOpen] = useState<boolean>(false);
   const [userLoaded, setUserLoaded] = useState<boolean>(false);
+  const [sessionEndsAt, setSessionEndsAt] = useState<number | null>(null);
 
   const dispatch = useAppDispatch();
 
@@ -52,12 +57,31 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     if (isAuthenticated) setSessionWarningOpen(true);
   };
 
+  // Signs the user out when the timeout elapses, so an unattended browser does not stay signed in.
+  const onIdle = () => {
+    if (!isAuthenticated) return;
+    setSessionWarningOpen(false);
+    setUserLoaded(false);
+    signOut();
+  };
+
   const { activate } = useIdleTimer({
     onPrompt,
+    onIdle,
     timeout,
     promptBeforeIdle,
     throttle: 500,
+    // Activity in any open tab counts, so a tab left in the background does not sign the user out of the others.
+    crossTab: true,
   });
+
+  // Signs the user out when the access token's lifetime ends, even if they kept the session alive.
+  useEffect(() => {
+    if (!isAuthenticated || sessionEndsAt === null) return;
+    const timer = setTimeout(onIdle, Math.max(sessionEndsAt - Date.now(), 0));
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, sessionEndsAt]);
 
   const handleContinue = () => {
     setSessionWarningOpen(false);
@@ -72,6 +96,8 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       try {
         const [userInfo, idToken] = await Promise.all([getBasicUserInfo(), getDecodedIDToken()]);
         dispatch(setUserAuthData({ userInfo, decodedIdToken: idToken }));
+        const tokenExpiry = typeof idToken?.exp === "number" ? idToken.exp * 1000 : Infinity;
+        setSessionEndsAt(Math.min(tokenExpiry, Date.now() + MAX_SESSION_MS));
         setUserLoaded(true);
       } catch (err) {
         console.error("Auth loadUser() failed — signing out:", err);

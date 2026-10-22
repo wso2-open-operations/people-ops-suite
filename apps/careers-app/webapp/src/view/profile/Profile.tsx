@@ -42,7 +42,7 @@ import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { isValidE164 } from "@utils/phone";
 import { cardSx, pillButtonSx } from "@utils/styles";
 
-const GENDERS = ["Male", "Female", "Other", "Prefer not to say"];
+const GENDERS = ["Male", "Female", "Prefer not to say"];
 
 interface ProfileForm {
   firstName: string;
@@ -115,6 +115,7 @@ interface SectionProps {
   canSave: boolean;
   // True while another section is being edited, so its unsaved changes are not lost.
   editDisabled: boolean;
+  canEdit: boolean;
   onEdit: () => void;
   onSave: () => void;
   onCancel: () => void;
@@ -129,6 +130,7 @@ const Section = ({
   saving,
   canSave,
   editDisabled,
+  canEdit,
   onEdit,
   onSave,
   onCancel,
@@ -141,7 +143,7 @@ const Section = ({
         <Typography component="h3" sx={{ fontSize: "1.1rem", fontWeight: 600, color: "text.primary" }}>
           {title}
         </Typography>
-        {!editing && (
+        {!editing && canEdit && (
           <Button startIcon={<Pencil size={16} />} onClick={onEdit} disabled={editDisabled} sx={{ fontWeight: 700 }}>
             Edit
           </Button>
@@ -273,6 +275,7 @@ const Profile = () => {
           saving={saving}
           canSave={canSave}
           editDisabled={editing !== null}
+          canEdit={profile.editable !== false}
           onEdit={() => startEditing("personal")}
           onSave={handleSave}
           onCancel={() => setEditing(null)}
@@ -332,6 +335,7 @@ const Profile = () => {
           saving={saving}
           canSave={canSave}
           editDisabled={editing !== null}
+          canEdit={profile.editable !== false}
           onEdit={() => startEditing("contact")}
           onSave={handleSave}
           onCancel={() => setEditing(null)}
