@@ -33,7 +33,7 @@ const SnackbarListener = () => {
       preventDuplicate: true,
       anchorOrigin: { horizontal: "right", vertical: "bottom" },
     });
-    dispatch(clearSnackbarMessage());
+    dispatch(clearSnackbarMessage(common.timestamp));
   }, [common.message, common.type, common.timestamp, enqueueSnackbar, dispatch]);
 
   return null;

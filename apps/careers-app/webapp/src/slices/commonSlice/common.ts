@@ -44,7 +44,9 @@ export const CommonSlice = createSlice({
       state.type = action.payload.type;
       state.timestamp = Date.now();
     },
-    clearSnackbarMessage: (state) => {
+    // Clears the message only if it is still the one shown, so a message queued since is not lost.
+    clearSnackbarMessage: (state, action: PayloadAction<number>) => {
+      if (state.timestamp !== action.payload) return;
       state.message = "";
       state.timestamp = null;
     },
