@@ -23,6 +23,7 @@ import {
   FormControlLabel,
   LinearProgress,
   Link,
+  Skeleton,
   Stack,
   Typography,
 } from "@mui/material";
@@ -39,7 +40,6 @@ import {
   State,
 } from "@/types/types";
 import Callout from "@component/common/Callout";
-import CenteredSpinner from "@component/common/CenteredSpinner";
 import PageContainer from "@component/common/PageContainer";
 import { ApplicationStatus, SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
@@ -141,6 +141,29 @@ const submitFailureMessage = (error: unknown) => {
 };
 
 // The page where a candidate who accepted an offer sends their details and the documents needed for onboarding.
+// The shape of the form while the applications, the document list and any earlier submission load.
+const DocumentsSkeleton = () => (
+  <Card elevation={0} sx={cardSx} aria-busy="true" aria-label="Loading your documents form">
+    <Stack direction="row" gap={2} sx={{ p: 3, borderBottom: "1px solid", borderColor: "divider" }}>
+      {STEPS.map((step) => (
+        <Skeleton key={step} variant="rounded" width={110} height={28} sx={{ borderRadius: "999px" }} />
+      ))}
+    </Stack>
+    <Stack gap={2.5} sx={{ p: 3 }}>
+      {[0, 1, 2, 3].map((row) => (
+        <Box key={row}>
+          <Skeleton variant="text" width={140} height={20} />
+          <Skeleton variant="rounded" height={44} />
+        </Box>
+      ))}
+    </Stack>
+    <Stack direction="row" justifyContent="space-between" sx={{ p: 3, borderTop: "1px solid", borderColor: "divider" }}>
+      <Skeleton variant="rounded" width={80} height={36} sx={{ borderRadius: "999px" }} />
+      <Skeleton variant="rounded" width={100} height={36} sx={{ borderRadius: "999px" }} />
+    </Stack>
+  </Card>
+);
+
 const Documents = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -194,8 +217,9 @@ const Documents = () => {
   const application = applications.find((a) => a.id === applicationId);
   const eligible = application?.status === ApplicationStatus.OfferAccepted;
 
+  // The list of documents is the same for everyone, so it is asked for at once instead of after the applications.
   useEffect(() => {
-    if (!eligible || requirementsState !== State.idle) return;
+    if (requirementsState !== State.idle) return;
     setRequirementsState(State.loading);
     getToken()
       .then(fetchDocumentRequirements)
@@ -207,12 +231,13 @@ const Documents = () => {
         setRequirementsState(State.failed);
         dispatch(enqueueSnackbarMessage({ message: SnackMessage.error.fetchDocumentRequirements, type: "error" }));
       });
-  }, [eligible, requirementsState, dispatch, getToken]);
+  }, [requirementsState, dispatch, getToken]);
 
   // An earlier submission decides between a first submission, a change to it, or neither. Its saved details replace
-  // what was filled in from the profile.
+  // what was filled in from the profile. It is asked for while the applications load: the backend checks the
+  // application is an accepted offer of the caller's own, and the answer is only used once the page knows it is.
   useEffect(() => {
-    if (!eligible || !applicationId) return;
+    if (!applicationId) return;
     getToken()
       .then((token) => fetchDocumentsStatus(token, applicationId))
       .then((loaded) => {
@@ -225,7 +250,7 @@ const Documents = () => {
         }
       })
       .catch(() => setStatus(null));
-  }, [eligible, applicationId, getToken]);
+  }, [applicationId, getToken]);
 
   const sentKeys = status?.files ?? [];
   const editing = Boolean(status?.submitted && status.canEdit);
@@ -487,7 +512,7 @@ const Documents = () => {
         Application
       </Button>
 
-      {stillLoading && <CenteredSpinner />}
+      {stillLoading && <DocumentsSkeleton />}
 
       {!stillLoading && !eligible && (
         <Typography color="text.secondary">
