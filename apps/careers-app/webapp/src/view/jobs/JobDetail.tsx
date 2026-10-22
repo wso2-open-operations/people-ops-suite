@@ -21,7 +21,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { State } from "@/types/types";
 import { PAGE_MAX_WIDTH } from "@config/brand";
-import { ApplicationStatus, JOB_NOT_FOUND_ERROR } from "@config/constant";
+import { JOB_NOT_FOUND_ERROR } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
 import { applicationsFailed, loadApplications, loadJobDetail, toggleSaveJob } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
@@ -62,15 +62,11 @@ const JobDetail = () => {
       .catch(() => dispatch(applicationsFailed()));
   }, [isSignedIn, applicationsState, dispatch, getAccessToken]);
 
-  // Why the candidate cannot apply for this job, or nothing when they can: they applied for it already, or they
-  // accepted an offer for a job.
-  const applyBlockedReason = !isSignedIn
-    ? null
-    : applications.some((application) => application.jobId === id)
+  // Why the candidate cannot apply for this job, or nothing when they can: they applied for it already.
+  const applyBlockedReason =
+    isSignedIn && applications.some((application) => application.jobId === id)
       ? "You have already applied for this job."
-      : applications.some((application) => application.status === ApplicationStatus.OfferAccepted)
-        ? "You have accepted an offer, so you can't apply for other jobs."
-        : null;
+      : null;
 
   // Replaces the address with the job's readable one, without the mark that let a new tab or a share open it.
   useEffect(() => {
