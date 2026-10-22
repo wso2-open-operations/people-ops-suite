@@ -155,7 +155,8 @@ function aCallerWhoHasNotAppliedGetsTheirProfileFromTheIdentityProvider() {
         personalEmail: "ada@example.test",
         contactNo: "+94771234567",
         address: (),
-        university: ()
+        university: (),
+        editable: false
     });
 }
 
