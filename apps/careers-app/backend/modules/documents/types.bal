@@ -176,7 +176,7 @@ public final readonly & string[] DEPENDANT_RELATIONSHIPS = ["Spouse", "Child", "
 public final readonly & string[] YES_NO = ["Yes", "No"];
 
 # The most dependants and emergency contacts accepted.
-public const MAX_DEPENDANTS = 15;
+public const MAX_DEPENDANTS = 2;
 public const MAX_EMERGENCY_CONTACTS = 5;
 
 # The name of the form field that carries the personal details, as one JSON text.

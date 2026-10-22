@@ -277,6 +277,16 @@ function theOptionalDetailsMayBeLeftOut() {
 }
 
 @test:Config {}
+function atMostTwoDependantsAreAccepted() {
+    map<json> parent = {"relationship": "Parent", "name": "Nimal Warnasooriya", "dateOfBirth": "1965-05-01", "idNumber": "196512345678"};
+    map<json> other = {"relationship": "Parent", "name": "Kamala Warnasooriya", "dateOfBirth": "1967-03-02", "idNumber": "196712345678"};
+    test:assertEquals(MAX_DEPENDANTS, 2);
+    test:assertTrue(parseDocuments(documentsRequest(requiredFiles(), true, withDetail("dependants", [parent, other]))) is Submission);
+    string tooMany = withDetail("dependants", [parent, other, parent]);
+    test:assertEquals(parseDocuments(documentsRequest(requiredFiles(), true, tooMany)), "At most 2 dependants can be added.");
+}
+
+@test:Config {}
 function aChildMayHaveNoIdNumberAndAGithubIdIsAccepted() {
     string text = withDetail("dependants",
         [{"relationship": "Child", "name": "Sithum Warnasooriya", "dateOfBirth": "2022-01-15", "idNumber": ""}]);
