@@ -51,5 +51,6 @@ export const AppConfig = {
     candidates: ServiceBaseUrl + "/candidates",
     jobs: ServiceBaseUrl + "/jobs",
     applications: ServiceBaseUrl + "/applications",
+    documents: ServiceBaseUrl + "/documents",
   },
 };

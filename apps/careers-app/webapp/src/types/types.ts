@@ -112,6 +112,126 @@ export interface OfferAnswer {
   comment?: string;
 }
 
+// The offer letter a candidate was sent.
+export interface OfferLetter {
+  // The subject of the email the letter was sent in.
+  subject: string;
+  // ISO date-time the letter was sent.
+  sentOn: string;
+  // A reference to the email thread the letter was sent in; empty when there is none.
+  threadId: string;
+  // The letter itself, as HTML.
+  html: string;
+}
+
+// The personal details a new joiner fills in after accepting an offer.
+export interface PersonalDetails {
+  title: string;
+  // The first name and the surname (the last name), as the ATS keeps them.
+  firstName: string;
+  surname: string;
+  // The full name as on the identity document, which the candidate types.
+  fullName: string;
+  preferredName: string;
+  initials: string;
+  nameWithInitials: string;
+  gender: string;
+  // The date of birth as yyyy-mm-dd.
+  dateOfBirth: string;
+  // The number of the identity document: a national identity card or a passport.
+  idNumber: string;
+  civilStatus: string;
+  tshirtSize: string;
+  homeAddress: string;
+  temporaryAddress: string;
+  // The mobile number in international format.
+  mobileNumber: string;
+  // The land line in international format; empty when there is none.
+  landNumber: string;
+  personalEmail: string;
+  // Yes or No: whether the joiner has an interest in any commercial or business pursuit.
+  businessInterest: string;
+  dependants: Dependant[];
+  emergencyContacts: EmergencyContact[];
+  bank: BankDetails;
+  highestQualification: string;
+  university: string;
+  githubUserId: string;
+}
+
+// A person the new joiner supports, who may be covered by the company's insurance policy.
+export interface Dependant {
+  // Spouse, Child or Parent.
+  relationship: string;
+  name: string;
+  // The date of birth as yyyy-mm-dd.
+  dateOfBirth: string;
+  // A child may have none.
+  idNumber: string;
+}
+
+// A person to call in an emergency.
+export interface EmergencyContact {
+  name: string;
+  relationship: string;
+  address: string;
+  mobileNumber: string;
+  landNumber: string;
+}
+
+// The account the salary is paid into.
+export interface BankDetails {
+  bank: string;
+  branch: string;
+  // Digits only, so that leading zeros are kept.
+  accountNumber: string;
+}
+
+// What the backend says about a candidate's submission of the onboarding documents.
+export interface DocumentsStatus {
+  submitted: boolean;
+  // Whether the submission can still be changed.
+  canEdit: boolean;
+  // The deadline for changes as an ISO 8601 time, or an empty text when none is set.
+  editableUntil: string;
+  // The details saved with the submission.
+  details?: PersonalDetails | null;
+  // The keys of the documents already sent.
+  files: string[];
+}
+
+// One document the candidate is asked for after accepting an offer.
+export interface DocumentRequirement {
+  // The name the file is sent under.
+  key: string;
+  label: string;
+  required: boolean;
+  // The step of the form the document belongs to.
+  group: "documents" | "photos";
+  // The file types this document accepts: pdf, jpg or png.
+  types: string[];
+  // A line of guidance shown under the name.
+  hint?: string;
+  // When above zero, the picture must be square and at least this many pixels on each side.
+  minSquareSide?: number;
+}
+
+// The documents asked for, and the limits every file must meet.
+export interface DocumentRequirements {
+  documents: DocumentRequirement[];
+  maxFiles: number;
+  maxFileBytes: number;
+  maxTotalBytes: number;
+  // The choices the details form offers.
+  tshirtSizes: string[];
+  titles: string[];
+  genders: string[];
+  civilStatuses: string[];
+  dependantRelationships: string[];
+  maxDependants: number;
+  maxEmergencyContacts: number;
+}
+
 // What a candidate tells us about their application experience.
 export interface ApplicationFeedback {
   rating: number | null;

@@ -20,8 +20,12 @@ import {
   Application,
   ApplicationFeedback,
   CandidateProfile,
+  DocumentRequirements,
+  DocumentsStatus,
   EditableProfileFields,
   OfferAnswer,
+  OfferLetter,
+  PersonalDetails,
 } from "@/types/types";
 import { AppConfig, UseMockProfile } from "@config/config";
 import { OFFER_CONFLICT_ERROR, OFFER_EXPIRED_ERROR } from "@config/constant";
@@ -109,6 +113,63 @@ export async function respondToOffer(
     if (status === 410) throw refused(OFFER_EXPIRED_ERROR, "The offer has expired.");
     throw error;
   }
+}
+
+// The offer letter sent for one of the candidate's applications, or null when none was found.
+export async function fetchOfferLetter(accessToken: string, applicationId: string): Promise<OfferLetter | null> {
+  try {
+    return await send(
+      axios.get<OfferLetter>(
+        `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/offer-letter`,
+        requestOptions(accessToken),
+      ),
+    );
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) return null;
+    throw error;
+  }
+}
+
+// Whether the candidate has submitted the documents for one of their accepted offers, whether they can still change
+// them, and what they saved.
+export async function fetchDocumentsStatus(accessToken: string, applicationId: string): Promise<DocumentsStatus> {
+  return send(
+    axios.get<DocumentsStatus>(
+      `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/documents`,
+      requestOptions(accessToken),
+    ),
+  );
+}
+
+// Files take longer to send than a request, so a submission waits longer for the reply.
+const DOCUMENT_UPLOAD_TIMEOUT_MS = 120_000;
+
+// The documents a candidate is asked for, and the limits every file must meet.
+export async function fetchDocumentRequirements(accessToken: string): Promise<DocumentRequirements> {
+  return send(
+    axios.get<DocumentRequirements>(`${AppConfig.serviceUrls.documents}/requirements`, requestOptions(accessToken)),
+  );
+}
+
+// Sends the chosen files, one per requested document, for an application whose offer is accepted. The page only
+// allows a submission once the candidate has ticked the declaration, so the declaration is sent with the files.
+export async function submitDocuments(
+  accessToken: string,
+  applicationId: string,
+  files: Record<string, File>,
+  details: PersonalDetails,
+  changing = false,
+): Promise<void> {
+  const form = new FormData();
+  form.append("declaration", "true");
+  // The details go as one block, since they hold lists such as the dependants and the emergency contacts.
+  form.append("details", JSON.stringify(details));
+  // Each file is sent under its document key, so the name of the candidate's own file is never sent.
+  Object.entries(files).forEach(([key, file]) => form.append(key, file, key));
+  const url = `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/documents`;
+  const options = { ...requestOptions(accessToken), timeout: DOCUMENT_UPLOAD_TIMEOUT_MS };
+  // A first submission is a POST. Changing an earlier one is a PUT, which carries only the files that are replaced.
+  await send(changing ? axios.put(url, form, options) : axios.post(url, form, options));
 }
 
 // With mock data on, lists an application the candidate just made; the real backend lists it on its own.
