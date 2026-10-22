@@ -42,6 +42,8 @@ export interface CandidateProfile {
   contactNo: string;
   address: string | null;
   university: string | null;
+  // False for a profile built from the sign-in details of someone who has not applied yet; absent means editable.
+  editable?: boolean;
 }
 
 // The details a candidate can change themselves.
