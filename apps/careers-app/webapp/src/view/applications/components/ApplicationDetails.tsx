@@ -17,11 +17,14 @@
 import { Box, Button, Card, CardContent, Stack, Step, StepLabel, Stepper, Typography } from "@mui/material";
 import { Award, Info } from "lucide-react";
 
-import type { Application } from "@/types/types";
+import DOMPurify from "dompurify";
+import { useState } from "react";
+
+import type { Application, DocumentsStatus, OfferLetter } from "@/types/types";
 import ApplicationStatusBadge from "@component/careers/ApplicationStatusBadge";
 import Callout from "@component/common/Callout";
 import { ApplicationStatus } from "@config/constant";
-import { cardSx } from "@utils/styles";
+import { cardSx, pillButtonSx } from "@utils/styles";
 import {
   STAGES,
   daysLeftText,
@@ -43,6 +46,12 @@ interface ApplicationDetailsProps {
   canAcceptOffer: boolean;
   onAcceptOffer: () => void;
   onDeclineOffer: () => void;
+  onSubmitDocuments: () => void;
+  // The offer letter that was sent, when the ATS has it.
+  offerLetter: OfferLetter | null;
+  // What is known about the submission of the onboarding documents; undefined while that is not yet known, and null
+  // when it could not be found out.
+  documentsStatus: DocumentsStatus | null | undefined;
 }
 
 const ApplicationDetails = ({
@@ -52,7 +61,11 @@ const ApplicationDetails = ({
   canAcceptOffer,
   onAcceptOffer,
   onDeclineOffer,
+  onSubmitDocuments,
+  offerLetter,
+  documentsStatus,
 }: ApplicationDetailsProps) => {
+  const [letterOpen, setLetterOpen] = useState(false);
   const actionNeeded = isOffer(application);
   const deadline = actionNeeded ? offerDeadlineOf(application) : null;
   const offerExpired = deadline !== null && deadline.daysLeft < 0;
@@ -133,10 +146,70 @@ const ApplicationDetails = ({
             <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
               You accepted this offer.
             </Typography>
-            <Typography fontSize="0.9rem" color="text.primary">
-              The hiring team will contact you with the next steps.
-            </Typography>
+            {documentsStatus?.submitted ? (
+              <>
+                <Typography fontSize="0.9rem" color="text.primary">
+                  We received your details and documents. The hiring team will contact you with the next steps.
+                </Typography>
+                {documentsStatus.canEdit ? (
+                  <>
+                    {documentsStatus.editableUntil && (
+                      <Typography fontSize="0.9rem" color="text.primary" mt={0.5}>
+                        You can make changes until{" "}
+                        {new Date(documentsStatus.editableUntil).toLocaleDateString(undefined, {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                        .
+                      </Typography>
+                    )}
+                    <Button variant="outlined" onClick={onSubmitDocuments} sx={{ ...pillButtonSx, px: 3, mt: 1.5 }}>
+                      Edit submission
+                    </Button>
+                  </>
+                ) : (
+                  <Typography fontSize="0.9rem" color="text.primary" mt={0.5}>
+                    The time to make changes has ended.
+                  </Typography>
+                )}
+              </>
+            ) : (
+              <>
+                <Typography fontSize="0.9rem" color="text.primary">
+                  Please submit the documents we need for your onboarding. The hiring team will contact you with the
+                  next steps.
+                </Typography>
+                <Button variant="contained" onClick={onSubmitDocuments} sx={{ ...pillButtonSx, px: 3, mt: 1.5 }}>
+                  Submit documents
+                </Button>
+              </>
+            )}
           </Callout>
+        )}
+
+        {offerLetter && (
+          <Box sx={{ mb: 3, p: 2, border: "1px solid", borderColor: "divider", borderRadius: "8px" }}>
+            <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
+              Your offer letter
+            </Typography>
+            <Typography fontSize="0.9rem" color="text.primary" mt={0.5} sx={{ wordBreak: "break-word" }}>
+              {offerLetter.subject}
+            </Typography>
+            <Typography fontSize="0.85rem" color="text.secondary">
+              Sent on {formatDate(offerLetter.sentOn)}
+              {offerLetter.threadId && ` · Email reference: ${offerLetter.threadId}`}
+            </Typography>
+            <Button size="small" onClick={() => setLetterOpen((open) => !open)} sx={{ fontWeight: 600, mt: 1, ml: -1 }}>
+              {letterOpen ? "Hide letter" : "Show letter"}
+            </Button>
+            {letterOpen && (
+              <Box
+                sx={{ mt: 1, fontSize: "0.9rem", overflowX: "auto", "& img": { maxWidth: "100%" } }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(offerLetter.html) }}
+              />
+            )}
+          </Box>
         )}
 
         {application.status === ApplicationStatus.OfferDeclined && (

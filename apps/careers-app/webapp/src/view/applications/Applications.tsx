@@ -19,7 +19,13 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { type ApplicationFeedback, type OfferAnswer, State } from "@/types/types";
+import {
+  type ApplicationFeedback,
+  type DocumentsStatus,
+  type OfferAnswer,
+  type OfferLetter,
+  State,
+} from "@/types/types";
 import CenteredSpinner from "@component/common/CenteredSpinner";
 import PageContainer from "@component/common/PageContainer";
 import { ApplicationStatus, OFFER_CONFLICT_ERROR, OFFER_EXPIRED_ERROR, SnackMessage } from "@config/constant";
@@ -36,6 +42,7 @@ import {
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { jobPath } from "@utils/jobFilterUtils";
+import { fetchDocumentsStatus, fetchOfferLetter } from "@utils/profileService";
 import AcceptOfferDialog from "@view/applications/components/AcceptOfferDialog";
 import ApplicationDetails from "@view/applications/components/ApplicationDetails";
 import ApplicationList from "@view/applications/components/ApplicationList";
@@ -85,6 +92,52 @@ const Applications = () => {
       setSendingFeedback(false);
     }
   };
+
+  // The offer letter is kept in this page only, and shown once the candidate has an offer or has accepted one.
+  const [offerLetter, setOfferLetter] = useState<OfferLetter | null>(null);
+  const selectedId = selectedApplication?.id;
+  const hasOffer =
+    selectedApplication?.status === ApplicationStatus.Offer ||
+    selectedApplication?.status === ApplicationStatus.OfferAccepted;
+
+  useEffect(() => {
+    setOfferLetter(null);
+    if (!selectedId || !hasOffer) return;
+    let cancelled = false;
+    getToken()
+      .then((token) => fetchOfferLetter(token, selectedId))
+      .then((letter) => {
+        if (!cancelled) setOfferLetter(letter);
+      })
+      // The letter is a convenience: the offer email has it too, so a failed load shows nothing.
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, hasOffer, getToken]);
+
+  // Whether the documents were already submitted decides if an accepted offer still asks for them. It stays unknown
+  // until the check is back.
+  const [documentsStatus, setDocumentsStatus] = useState<DocumentsStatus | null | undefined>(undefined);
+  const hasAcceptedOffer = selectedApplication?.status === ApplicationStatus.OfferAccepted;
+
+  useEffect(() => {
+    setDocumentsStatus(undefined);
+    if (!selectedId || !hasAcceptedOffer) return;
+    let cancelled = false;
+    getToken()
+      .then((token) => fetchDocumentsStatus(token, selectedId))
+      .then((loaded) => {
+        if (!cancelled) setDocumentsStatus(loaded);
+      })
+      // When the check fails the submit button stays: the backend refuses a second submission anyway.
+      .catch(() => {
+        if (!cancelled) setDocumentsStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, hasAcceptedOffer, getToken]);
 
   const [offerDialog, setOfferDialog] = useState<"accept" | "decline" | "welcome" | null>(null);
   const [respondingToOffer, setRespondingToOffer] = useState(false);
@@ -136,7 +189,11 @@ const Applications = () => {
         />
       )}
       {selectedApplication && offerDialog === "welcome" && (
-        <WelcomeDialog jobTitle={selectedApplication.jobTitle} onClose={() => setOfferDialog(null)} />
+        <WelcomeDialog
+          jobTitle={selectedApplication.jobTitle}
+          onSubmitDocuments={() => navigate(`/applications/${selectedApplication.id}/documents`)}
+          onClose={() => setOfferDialog(null)}
+        />
       )}
       {selectedApplication && feedbackDue && (
         <RejectionFeedbackDialog
@@ -167,6 +224,9 @@ const Applications = () => {
               canAcceptOffer={!applications.some((a) => a.status === ApplicationStatus.OfferAccepted)}
               onAcceptOffer={() => setOfferDialog("accept")}
               onDeclineOffer={() => setOfferDialog("decline")}
+              onSubmitDocuments={() => navigate(`/applications/${selectedApplication.id}/documents`)}
+              offerLetter={offerLetter}
+              documentsStatus={documentsStatus}
             />
           ) : stillLoading ? (
             <CenteredSpinner />
