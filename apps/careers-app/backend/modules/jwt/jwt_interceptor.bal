@@ -20,8 +20,7 @@ import wso2/careers_app.types;
 import ballerina/http;
 import ballerina/log;
 
-// Kept apart from the apply limiter, whose entries are aged out by a different window.
-final apply:ApplyRateLimiter signedInRateLimiter = new;
+final apply:UserRateLimiter signedInRateLimiter = new;
 
 # The routes open to guests, listed exactly: the job list, org structure, one job's detail and applying. A route
 # that is not listed is not public.

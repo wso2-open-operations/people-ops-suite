@@ -29,8 +29,6 @@ configurable int port = ?;
 # Longest piece of an upstream reply written to the log.
 const MAX_LOGGED_REPLY_LENGTH = 200;
 
-final apply:ApplyRateLimiter applyRateLimiter = new;
-
 # Whether the request declares a body larger than the limit. The listener's own limit still applies to a request
 # that does not declare its length.
 isolated function exceeds(http:Request req, int maxBytes) returns boolean {
@@ -83,8 +81,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     }
 
     public function createInterceptors() returns http:Interceptor[] =>
-        [new types:RequestIdInterceptor(), new apply:RemoteAddressInterceptor(), new jwt:JwtInterceptor(),
-            new jwt:NoStoreInterceptor()];
+        [new types:RequestIdInterceptor(), new jwt:JwtInterceptor(), new jwt:NoStoreInterceptor()];
 
     # The published job list. Public: no sign-in needed.
     resource function get jobs(http:RequestContext ctx) returns json|http:BadGateway|http:GatewayTimeout {
@@ -130,10 +127,9 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     }
 
     # Validates the application form and CV, then creates the candidate in the ATS.
-    # Public: guests have no account, so each address and each email is rate limited instead.
+    # Public: no sign-in needed.
     resource function post jobs/[string jobId]/apply(http:Request req, http:RequestContext ctx)
-            returns http:Created|http:BadRequest|http:NotFound|http:Conflict|http:TooManyRequests|http:BadGateway
-                |http:GatewayTimeout {
+            returns http:Created|http:BadRequest|http:NotFound|http:Conflict|http:BadGateway|http:GatewayTimeout {
         if !types:isValidJobId(jobId) {
             return <http:BadRequest>{body: {message: "Invalid job id"}};
         }
@@ -141,20 +137,9 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         if exceeds(req, apply:MAX_REQUEST_BYTES) {
             return <http:BadRequest>{body: {message: "The application is too large."}};
         }
-        string address = apply:clientAddress(req, apply:remoteHost(ctx));
-        if !applyRateLimiter.tryAcquireAddress(address) {
-            log:printWarn("Application rate limit reached for a client address", requestId = requestId);
-            return <http:TooManyRequests>{body: {message: "Too many applications. Please try again later."}};
-        }
-
         apply:ApplicationForm|string form = apply:parseApplicationForm(req);
         if form is string {
             return <http:BadRequest>{body: {message: form}};
-        }
-
-        if !applyRateLimiter.tryAcquireEmail(form.email) {
-            log:printWarn("Application rate limit reached for an email address", requestId = requestId);
-            return <http:TooManyRequests>{body: {message: "Too many applications. Please try again later."}};
         }
 
         vacancy:CandidateApplication candidate = {

@@ -24,12 +24,8 @@ sasToken = ""
 # [careers_app.documents]
 # submissionDeadline = ""
 
-# Optional: limit on guest applications.
+# Optional: limit on the requests of one signed-in user.
 # [careers_app.apply]
-# applyMaxPerAddress = 300
-# applyMaxPerEmail = 5
-# applyWindowSeconds = 3600
-# trustedProxyHops = 1
 # signedInMaxPerUser = 60
 # signedInWindowSeconds = 60
 
