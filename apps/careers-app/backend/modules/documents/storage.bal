@@ -140,9 +140,11 @@ public isolated function canEdit() returns boolean {
 # there is no submission. Needs a token that may read.
 public isolated function loadManifest(string applicationId) returns [Manifest, string]?|error {
     string? folder = check folderOfSubmission(applicationId);
-    if folder is () {
-        return ();
-    }
+    return folder is () ? () : manifestIn(folder);
+}
+
+// The record in a submission's folder and its tag, or nothing when the folder has none.
+isolated function manifestIn(string folder) returns [Manifest, string]?|error {
     http:Response resp = check storageClient->get(check blobPath(manifestName(folder)),
         {"x-ms-version": STORAGE_API_VERSION});
     if resp.statusCode == http:STATUS_NOT_FOUND {
@@ -189,16 +191,26 @@ public isolated function submissionStatus(string applicationId) returns Submissi
     };
 }
 
-# Stores a first submission: the documents, then the record of it. Nothing is written when the application already
-# has a submission, and the record cannot overwrite one that appears in the meantime.
+# Stores a first submission: the index, the documents, then the record of it. Nothing is written when the application
+# already has a submission, and the record cannot overwrite one that appears in the meantime. A first attempt that
+# stopped before its record was written is continued in the same folder, whatever the candidate's name is now.
 public isolated function storeDocuments(string applicationId, Submission submission, string candidateName,
         string requestId) returns SubmitOutcome|error {
-    [Manifest, string]? existing = check loadManifest(applicationId);
-    if existing !is () {
-        return ALREADY_SUBMITTED;
-    }
     map<string> & readonly metadata = {applicationid: applicationId, requestid: requestId}.cloneReadOnly();
-    string folder = folderOf(candidateName, applicationId);
+    string? earlier = check folderOfSubmission(applicationId);
+    string folder = earlier is string ? earlier : folderOf(candidateName, applicationId);
+    if earlier is string {
+        if check manifestIn(folder) !is () {
+            return ALREADY_SUBMITTED;
+        }
+    } else {
+        SubmissionIndex index = {folder};
+        boolean claimed = check putBlob(indexName(applicationId), index.toJsonString().toBytes(),
+            "application/json", metadata, createOnly = true);
+        if !claimed {
+            return ALREADY_SUBMITTED;
+        }
+    }
     map<string> files = {};
     // The files are sent together; the record waits for all of them.
     future<boolean|error>[] writes = [];
@@ -232,9 +244,6 @@ public isolated function storeDocuments(string applicationId, Submission submiss
     };
     boolean written = check putBlob(manifestName(folder), manifest.toJsonString().toBytes(),
         "application/json", metadata, createOnly = true);
-    // The index is written even when the record already existed.
-    SubmissionIndex index = {folder};
-    _ = check putBlob(indexName(applicationId), index.toJsonString().toBytes(), "application/json", metadata);
     return written ? STORED : ALREADY_SUBMITTED;
 }
 

@@ -210,12 +210,29 @@ function aChangeReplacesAFileOnlyWhileTheRecordIsUnchanged() returns error? {
 }
 
 @test:Config {}
-function aFileThatCannotBeWrittenLeavesNoRecordAndNoIndex() {
+function aFileThatCannotBeWrittenLeavesNoRecord() {
     store.failWritesTo("Birth certificate");
     SubmitOutcome|error outcome = storeDocuments("123", aSubmission(), "Ada Lovelace", "test-request");
     test:assertTrue(outcome is error);
 
+    test:assertEquals(store.names().indexOf(FOLDER + "/submitted.json"), ());
+    SubmissionStatus|error status = submissionStatus("123");
+    test:assertTrue(status is SubmissionStatus && !status.submitted);
+}
+
+@test:Config {}
+function anAttemptThatStoppedEarlyIsContinuedInTheSameFolderUnderANewName() returns error? {
+    store.failWritesTo("Birth certificate");
+    SubmitOutcome|error failed = storeDocuments("123", aSubmission(), "Ada Lovelace", "test-request");
+    test:assertTrue(failed is error);
+
+    store.failWritesTo("");
+    SubmitOutcome outcome = check storeDocuments("123", aSubmission(), "Ada King", "test-request");
+    test:assertEquals(outcome, STORED);
+
     string[] names = store.names();
-    test:assertEquals(names.indexOf("index/123.json"), ());
-    test:assertEquals(names.indexOf(FOLDER + "/submitted.json"), ());
+    test:assertEquals(names.filter(name => name.endsWith("/submitted.json")), [FOLDER + "/submitted.json"]);
+    foreach string name in names {
+        test:assertTrue(name == "index/123.json" || name.startsWith(FOLDER + "/"), name);
+    }
 }
