@@ -106,42 +106,43 @@ isolated function authHeaders(string token, string requestId) returns map<string
     [types:REQUEST_ID_HEADER]: requestId
 };
 
-# GET from the ATS with automatic token refresh on 401.
-isolated function getWithToken(string path, string requestId) returns http:Response|error {
+# Sends a request with the ATS token, and once more with a fresh token if the ATS rejects the first with a 401.
+isolated function withToken(isolated function (string token) returns http:Response|error send)
+        returns http:Response|error {
     string token = check getAtsToken();
-    http:Response resp = check atsHttpClient->get(path, authHeaders(token, requestId));
+    http:Response resp = check send(token);
     if resp.statusCode != http:STATUS_UNAUTHORIZED {
         return resp;
     }
     tokenCache.clear(token);
     string freshToken = check getAtsToken();
-    return atsHttpClient->get(path, authHeaders(freshToken, requestId));
+    return send(freshToken);
 }
+
+# GET from the ATS with automatic token refresh on 401.
+isolated function getWithToken(string path, string requestId) returns http:Response|error =>
+    withToken(isolated function(string token) returns http:Response|error {
+        return atsHttpClient->get(path, authHeaders(token, requestId));
+    });
 
 # POST to the ATS with automatic token refresh on 401.
 isolated function postWithToken(string path, AtsCandidate payload, string requestId)
         returns http:Response|error {
-    string token = check getAtsToken();
-    http:Response resp = check atsApplyHttpClient->post(path, payload, authHeaders(token, requestId));
-    if resp.statusCode != http:STATUS_UNAUTHORIZED {
-        return resp;
-    }
-    tokenCache.clear(token);
-    string freshToken = check getAtsToken();
-    return atsApplyHttpClient->post(path, payload, authHeaders(freshToken, requestId));
+    // A read-only copy, since the request may be sent twice and is built inside a function that cannot capture a
+    // mutable value.
+    final readonly & AtsCandidate body = payload.cloneReadOnly();
+    return withToken(isolated function(string token) returns http:Response|error {
+        return atsApplyHttpClient->post(path, body, authHeaders(token, requestId));
+    });
 }
 
 # PATCH to the ATS with automatic token refresh on 401.
 isolated function patchWithToken(string path, AtsCandidateUpdate payload, string requestId)
         returns http:Response|error {
-    string token = check getAtsToken();
-    http:Response resp = check atsHttpClient->patch(path, payload, authHeaders(token, requestId));
-    if resp.statusCode != http:STATUS_UNAUTHORIZED {
-        return resp;
-    }
-    tokenCache.clear(token);
-    string freshToken = check getAtsToken();
-    return atsHttpClient->patch(path, payload, authHeaders(freshToken, requestId));
+    final readonly & AtsCandidateUpdate body = payload.cloneReadOnly();
+    return withToken(isolated function(string token) returns http:Response|error {
+        return atsHttpClient->patch(path, body, authHeaders(token, requestId));
+    });
 }
 
 // The JSON of a 200 reply; any other status becomes an UpstreamError.
