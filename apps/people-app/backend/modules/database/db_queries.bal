@@ -202,6 +202,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         r.final_day_in_office AS finalDayInOffice,
         r.final_day_of_employment AS finalDayOfEmployment,
         r.reason AS resignationReason,
+        i.university AS university,
         et.name AS employmentType,
         e.employment_type_id AS employmentTypeId,
         d.career_function_id AS careerFunctionId,
@@ -262,6 +263,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         LEFT JOIN house h ON e.house_id = h.id
         LEFT JOIN personal_info pi ON pi.id = e.personal_info_id
         LEFT JOIN resignation r ON r.employee_id = e.id
+        LEFT JOIN internship i ON i.employee_id = e.id
     WHERE
         e.employee_id = ${employeeId};`;
 
@@ -310,6 +312,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             r.final_day_in_office AS finalDayInOffice,
             r.final_day_of_employment AS finalDayOfEmployment,
             r.reason AS resignationReason,
+            i.university AS university,
             et.name AS employmentType,
             e.employment_type_id AS employmentTypeId,
             d.career_function_id AS careerFunctionId,
@@ -426,6 +429,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
                 GROUP BY LOWER(work_email)
             ) mgr ON mgr.managerEmail = LOWER(e.manager_email)
             LEFT JOIN resignation r ON r.employee_id = e.id
+            LEFT JOIN internship i ON i.employee_id = e.id
         `;
 
     // Defaults to excluding personal information, so a caller that has not been considered
@@ -2321,6 +2325,117 @@ isolated function upsertResignationQuery(string employeeId, UpdateEmployeeJobInf
         updated_by              = ${updatedBy},
         updated_on              = CURRENT_TIMESTAMP(6)`;
 }
+
+# Get all intern profiles - every employee with an `internship` row or an
+# INTERNSHIP employment type, whether still interning, moved into a
+# permanent role, or long since departed. Only university comes
+# from `internship`; everything else is read from `employee`.
+#
+# + return - Query to get intern profiles
+isolated function getInternProfilesQuery() returns sql:ParameterizedQuery =>
+    `SELECT
+        e.id as 'id',
+        e.employee_id as 'employeeId',
+        e.work_email as 'email',
+        CONCAT(e.first_name, ' ', e.last_name) as 'name',
+        pi.gender as 'gender',
+        i.university as 'university',
+        e.manager_email as 'mentorEmail',
+        bu.name as 'businessUnit',
+        t.name as 'team',
+        st.name as 'subTeam',
+        e.start_date as 'joinedDate',
+        e.agreement_end_date as 'endDate',
+        e.employee_status as 'employeeStatus',
+        et.name as 'employmentType'
+    FROM employee e
+    INNER JOIN employment_type et ON et.id = e.employment_type_id
+    LEFT JOIN internship i ON i.employee_id = e.id
+    LEFT JOIN personal_info pi ON pi.id = e.personal_info_id
+    LEFT JOIN business_unit bu ON bu.id = e.business_unit_id
+    LEFT JOIN team t ON t.id = e.team_id
+    LEFT JOIN sub_team st ON st.id = e.sub_team_id
+    WHERE i.employee_id IS NOT NULL OR et.name = ${INTERNSHIP}
+    ORDER BY e.id ASC`;
+
+# Get employees for the Employee Hub dashboard, selecting only the fields its
+# charts need. Same joins as getEmployeesQuery so headcounts match the
+# Employees section.
+#
+# + leavers - true for non-intern leavers (excluding continuous service
+#             backfill records), false for current staff (Active or Marked
+#             leaver, already started)
+# + return - Query to get Employee Hub employees
+isolated function getEmployeeHubEmployeesQuery(boolean leavers) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery filter = leavers
+        ? `LOWER(e.employee_status) = 'left'
+            AND UPPER(et.name) <> ${INTERNSHIP}
+            AND (r.reason IS NULL OR LOWER(r.reason) NOT LIKE 'continuous service backfill%')`
+        : `LOWER(e.employee_status) IN ('active', 'marked leaver')
+            AND e.start_date <= CURDATE()`;
+
+    return sql:queryConcat(`
+        SELECT
+            e.employee_id AS employeeId,
+            e.first_name AS firstName,
+            e.last_name AS lastName,
+            e.work_email AS workEmail,
+            pi.gender AS gender,
+            CONCAT(
+                d.designation,
+                CASE WHEN NULLIF(TRIM(e.secondary_job_title), '') IS NOT NULL
+                    THEN CONCAT(' ', TRIM(e.secondary_job_title)) ELSE '' END,
+                CASE WHEN NULLIF(TRIM(e.job_role), '') IS NOT NULL
+                    THEN CONCAT(' & ', TRIM(e.job_role)) ELSE '' END
+            ) AS designation,
+            d.job_band AS jobBand,
+            bu.name AS businessUnit,
+            t.name AS team,
+            st.name AS subTeam,
+            e.manager_email AS managerEmail,
+            e.work_location AS workLocation,
+            e.start_date AS startDate,
+            e.probation_end_date AS probationEndDate,
+            e.agreement_end_date AS agreementEndDate,
+            e.employee_status AS employeeStatus,
+            et.name AS employmentType,
+            i.university AS university,
+            r.date AS resignationDate,
+            r.final_day_of_employment AS finalDayOfEmployment
+        FROM employee e
+            INNER JOIN personal_info pi ON pi.id = e.personal_info_id
+            INNER JOIN employment_type et ON et.id = e.employment_type_id
+            INNER JOIN designation d ON d.id = e.designation_id
+            INNER JOIN company c ON c.id = e.company_id
+            INNER JOIN business_unit bu ON bu.id = e.business_unit_id
+            INNER JOIN team t ON t.id = e.team_id
+            LEFT JOIN sub_team st ON st.id = e.sub_team_id
+            LEFT JOIN resignation r ON r.employee_id = e.id
+            LEFT JOIN internship i ON i.employee_id = e.id
+        WHERE `, filter, `
+        ORDER BY e.employee_id ASC`);
+}
+
+# Get headcount per team and job band for current, non-intern staff, for the
+# Employee Hub's job band charts.
+#
+# + return - Query to get job band counts
+isolated function getEmployeeHubJobBandCountsQuery() returns sql:ParameterizedQuery =>
+    `SELECT
+        t.name AS team,
+        d.job_band AS jobBand,
+        COUNT(*) AS headcount
+    FROM employee e
+        INNER JOIN personal_info pi ON pi.id = e.personal_info_id
+        INNER JOIN employment_type et ON et.id = e.employment_type_id
+        INNER JOIN designation d ON d.id = e.designation_id
+        INNER JOIN company c ON c.id = e.company_id
+        INNER JOIN business_unit bu ON bu.id = e.business_unit_id
+        INNER JOIN team t ON t.id = e.team_id
+    WHERE LOWER(e.employee_status) IN ('active', 'marked leaver')
+        AND e.start_date <= CURDATE()
+        AND UPPER(et.name) <> ${INTERNSHIP}
+    GROUP BY t.name, d.job_band`;
 
 # Add an additional manager for an employee.
 #

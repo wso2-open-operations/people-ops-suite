@@ -3886,4 +3886,76 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return http:OK;
     }
+
+    # Get Employee Hub dashboard data: current employees, non-intern leavers and
+    # headcount per team and job band.
+    #
+    # + return - Employee Hub data or error response
+    resource function get employee\-hub/employees(http:RequestContext ctx)
+        returns database:EmployeeHubData|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to fetch Employee Hub data", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to view Employee Hub data"}
+            };
+        }
+
+        database:EmployeeHubEmployee[]|error employees = database:getEmployeeHubEmployees(false);
+        if employees is error {
+            log:printError("Error fetching Employee Hub employees", employees);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while fetching employee data."}
+            };
+        }
+        database:EmployeeHubEmployee[]|error leavers = database:getEmployeeHubEmployees(true);
+        if leavers is error {
+            log:printError("Error fetching Employee Hub leavers", leavers);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while fetching employee data."}
+            };
+        }
+        database:EmployeeHubJobBandCount[]|error jobBandCounts = database:getEmployeeHubJobBandCounts();
+        if jobBandCounts is error {
+            log:printError("Error fetching Employee Hub job band counts", jobBandCounts);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while fetching employee data."}
+            };
+        }
+        return {employees, leavers, jobBandCounts};
+    }
+
+    # List intern profiles.
+    #
+    # + return - List of intern profiles or error response
+    resource function get intern\-profiles(http:RequestContext ctx)
+        returns database:InternProfile[]|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("Unauthorized attempt to fetch intern profiles", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to view intern profiles"}
+            };
+        }
+        database:InternProfile[]|error internProfiles = database:getInternProfiles();
+        if internProfiles is error {
+            log:printError("Error fetching intern profiles", internProfiles);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while fetching intern profiles."}
+            };
+        }
+        return internProfiles;
+    }
 }

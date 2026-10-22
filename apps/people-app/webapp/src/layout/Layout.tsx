@@ -104,8 +104,9 @@ export default function Layout() {
           component="main"
           sx={{
             flexGrow: 1,
+            minWidth: 0,
             height: "100vh",
-            p: 3,
+            p: { xs: 1, sm: 3 },
             pt: 7.5,
             pb: 4.5,
           }}

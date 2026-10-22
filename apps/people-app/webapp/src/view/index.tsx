@@ -31,6 +31,7 @@ const careerFunctionView = lazy(() => import("@view/masterData/careerFunction/Ca
 const leadershipAttributeView = lazy(
   () => import("@view/masterData/leadershipAttribute/LeadershipAttributeView"),
 );
+const employeeHubDashboard = lazy(() => import("@view/employeeHub/EmployeeHubDashboard"));
 
 export const View = {
   me,
@@ -46,4 +47,5 @@ export const View = {
   careerFunctionView,
   leadershipAttributeView,
   help,
+  employeeHubDashboard,
 };
