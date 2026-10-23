@@ -102,6 +102,7 @@ export interface Application {
   // True once the candidate has sent feedback about this application.
   feedbackSubmitted?: boolean;
   timeline?: ApplicationTimelineEvent[];
+  // Only present when the list of applications carries the interviews.
   interviews?: ApplicationInterview[];
 }
 

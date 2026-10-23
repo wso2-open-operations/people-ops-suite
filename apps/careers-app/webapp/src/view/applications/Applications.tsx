@@ -21,6 +21,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import {
   type ApplicationFeedback,
+  type ApplicationInterview,
   type DocumentsStatus,
   type OfferAnswer,
   type OfferLetter,
@@ -40,7 +41,7 @@ import {
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { jobPath } from "@utils/jobFilterUtils";
-import { fetchDocumentsStatus, fetchOfferLetter } from "@utils/profileService";
+import { fetchDocumentsStatus, fetchInterviews, fetchOfferLetter } from "@utils/profileService";
 import AcceptOfferDialog from "@view/applications/components/AcceptOfferDialog";
 import ApplicationDetails from "@view/applications/components/ApplicationDetails";
 import ApplicationList from "@view/applications/components/ApplicationList";
@@ -106,6 +107,24 @@ const Applications = () => {
       cancelled = true;
     };
   }, [selectedId, hasOffer, getToken]);
+
+  // The interviews of the opened application, past and upcoming; none when they cannot be loaded.
+  const [interviews, setInterviews] = useState<ApplicationInterview[]>([]);
+
+  useEffect(() => {
+    setInterviews([]);
+    if (!selectedId) return;
+    let cancelled = false;
+    getToken()
+      .then((token) => fetchInterviews(token, selectedId))
+      .then((loaded) => {
+        if (!cancelled) setInterviews(loaded);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, getToken]);
 
   // Whether the documents were already submitted; unknown until the check is back.
   const [documentsStatus, setDocumentsStatus] = useState<DocumentsStatus | null | undefined>(undefined);
@@ -218,6 +237,7 @@ const Applications = () => {
               onDeclineOffer={() => setOfferDialog("decline")}
               onSubmitDocuments={() => navigate(`/applications/${selectedApplication.id}/documents`)}
               offerLetter={offerLetter}
+              interviews={interviews}
               documentsStatus={documentsStatus}
               onRetryDocumentsStatus={() => setDocumentsStatusAttempt((current) => current + 1)}
             />

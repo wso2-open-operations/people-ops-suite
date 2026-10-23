@@ -20,7 +20,7 @@ import { Award, Info } from "lucide-react";
 import DOMPurify from "dompurify";
 import { useState } from "react";
 
-import type { Application, DocumentsStatus, OfferLetter } from "@/types/types";
+import type { Application, ApplicationInterview, DocumentsStatus, OfferLetter } from "@/types/types";
 import ApplicationStatusBadge from "@component/careers/ApplicationStatusBadge";
 import Callout from "@component/common/Callout";
 import { ApplicationStatus } from "@config/constant";
@@ -49,6 +49,8 @@ interface ApplicationDetailsProps {
   onSubmitDocuments: () => void;
   // The offer letter that was sent, when the ATS has it.
   offerLetter: OfferLetter | null;
+  // The interviews of the application, past and upcoming.
+  interviews: ApplicationInterview[];
   // What is known about the submission of the onboarding documents; undefined while that is not yet known, and null
   // when it could not be found out.
   documentsStatus: DocumentsStatus | null | undefined;
@@ -64,6 +66,7 @@ const ApplicationDetails = ({
   onDeclineOffer,
   onSubmitDocuments,
   offerLetter,
+  interviews,
   documentsStatus,
   onRetryDocumentsStatus,
 }: ApplicationDetailsProps) => {
@@ -241,7 +244,7 @@ const ApplicationDetails = ({
           </Callout>
         )}
 
-        <InterviewsSection interviews={application.interviews ?? []} />
+        <InterviewsSection interviews={interviews} />
 
         <ProgressHistory timeline={application.timeline ?? []} />
 

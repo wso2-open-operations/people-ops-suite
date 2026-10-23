@@ -19,6 +19,7 @@ import axios, { type AxiosResponse } from "axios";
 import {
   Application,
   ApplicationFeedback,
+  ApplicationInterview,
   CandidateProfile,
   DocumentRequirements,
   DocumentsStatus,
@@ -128,6 +129,17 @@ export async function fetchOfferLetter(accessToken: string, applicationId: strin
     if (axios.isAxiosError(error) && error.response?.status === 404) return null;
     throw error;
   }
+}
+
+// The interviews of one of the candidate's applications, in the order they take place.
+export async function fetchInterviews(accessToken: string, applicationId: string): Promise<ApplicationInterview[]> {
+  if (UseMockProfile) return mockProfile.fetchInterviews(applicationId);
+  return send(
+    axios.get<ApplicationInterview[]>(
+      `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/interviews`,
+      requestOptions(accessToken),
+    ),
+  );
 }
 
 // Whether the candidate has submitted the documents for one of their accepted offers, whether they can still change

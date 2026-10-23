@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Application, CandidateProfile, EditableProfileFields, OfferAnswer } from "@/types/types";
+import { Application, ApplicationInterview, CandidateProfile, EditableProfileFields, OfferAnswer } from "@/types/types";
 import { ApplicationStatus, OFFER_CONFLICT_ERROR, OFFER_EXPIRED_ERROR } from "@config/constant";
 import { isValidE164 } from "@utils/phone";
 
@@ -105,6 +105,14 @@ const applications: Application[] = [
     ],
     interviews: [
       {
+        id: "i0",
+        round: "Screening call",
+        dateTime: "2026-10-12T10:00:00",
+        mode: "Video",
+        location: "https://meet.example.com/screening",
+        status: "Completed",
+      },
+      {
         id: "i1",
         round: "Technical Interview",
         dateTime: "2026-11-05T11:00:00",
@@ -156,6 +164,11 @@ const applications: Application[] = [
     ],
   },
 ];
+
+export async function fetchInterviews(applicationId: string): Promise<ApplicationInterview[]> {
+  await delay();
+  return applications.find((a) => a.id === applicationId)?.interviews ?? [];
+}
 
 export async function submitFeedback(applicationId: string): Promise<void> {
   await delay();
