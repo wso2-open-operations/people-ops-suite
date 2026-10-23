@@ -347,6 +347,13 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         if stored is error {
             return candidateFailure(stored, "Failed to store the documents", requestId);
         }
+        if stored == documents:IN_PROGRESS {
+            log:printWarn("Documents refused: another submission is in progress", outcome = "in-progress",
+                applicationId = applicationId, subject = user.sub, requestId = requestId);
+            return <http:Conflict>{
+                body: {message: "Your documents are already being submitted. Please wait a moment and check the application."}
+            };
+        }
         if stored == documents:ALREADY_SUBMITTED {
             log:printWarn("Documents refused: already submitted", outcome = "duplicate",
                 applicationId = applicationId, subject = user.sub, requestId = requestId);

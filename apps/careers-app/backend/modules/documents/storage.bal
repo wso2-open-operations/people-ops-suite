@@ -162,6 +162,12 @@ isolated function manifestIn(string folder) returns [Manifest, string]?|error {
 
 // The folder that holds an application's submission, from the index, or nothing when it has none.
 isolated function folderOfSubmission(string applicationId) returns string?|error {
+    [SubmissionIndex, string]? index = check indexOf(applicationId);
+    return index is () ? () : index[0].folder;
+}
+
+// The index of an application and its tag, or nothing when there is none.
+isolated function indexOf(string applicationId) returns [SubmissionIndex, string]?|error {
     http:Response resp = check storageClient->get(check blobPath(indexName(applicationId)),
         {"x-ms-version": STORAGE_API_VERSION});
     if resp.statusCode == http:STATUS_NOT_FOUND {
@@ -172,7 +178,24 @@ isolated function folderOfSubmission(string applicationId) returns string?|error
     }
     json body = check resp.getJsonPayload();
     SubmissionIndex index = check body.fromJsonWithType();
-    return index.folder;
+    return [index, check resp.getHeader("ETag")];
+}
+
+// How long a first submission may run before another request may take its place, in seconds. It is longer than the
+// time the web app waits for a reply.
+const decimal STALE_CLAIM_SECONDS = 300;
+
+// An index that claims the folder for a request, as of now.
+isolated function claimFor(string folder, string requestId) returns SubmissionIndex =>
+    {folder, claimedBy: requestId, claimedAt: time:utcToString(time:utcNow())};
+
+// Whether the first submission an index records was released or has run too long to be still going.
+isolated function isAbandoned(SubmissionIndex index) returns boolean {
+    if index.claimedAt == "" {
+        return true;
+    }
+    time:Utc|error claimed = time:utcFromString(index.claimedAt);
+    return claimed is error || time:utcDiffSeconds(time:utcNow(), claimed) > STALE_CLAIM_SECONDS;
 }
 
 # What the candidate's page needs to know: whether they submitted, whether they can still change it and until
@@ -193,25 +216,59 @@ public isolated function submissionStatus(string applicationId) returns Submissi
 }
 
 # Stores a first submission: the index, the documents, then the record of it. Nothing is written when the application
-# already has a submission, and the record cannot overwrite one that appears in the meantime. A first attempt that
-# stopped before its record was written is continued in the same folder, whatever the candidate's name is now.
+# already has a submission, or when another request is making it: the index records which request claimed the
+# folder, and only that request writes into it. A claim that was released after a failure, or has run too long, is
+# taken over and its folder continued, whatever the candidate's name is now.
 public isolated function storeDocuments(string applicationId, Submission submission, string candidateName,
         string requestId) returns SubmitOutcome|error {
     map<string> & readonly metadata = {applicationid: applicationId, requestid: requestId}.cloneReadOnly();
-    string? earlier = check folderOfSubmission(applicationId);
-    string folder = earlier is string ? earlier : folderOf(candidateName, applicationId);
-    if earlier is string {
+    [SubmissionIndex, string]? earlier = check indexOf(applicationId);
+    string folder = earlier is () ? folderOf(candidateName, applicationId) : earlier[0].folder;
+    if earlier is () {
+        boolean claimed = check putBlob(indexName(applicationId), claimFor(folder, requestId).toJsonString().toBytes(),
+            "application/json", metadata, createOnly = true);
+        if !claimed {
+            return IN_PROGRESS;
+        }
+    } else {
         if check manifestIn(folder) !is () {
             return ALREADY_SUBMITTED;
         }
-    } else {
-        SubmissionIndex index = {folder};
-        boolean claimed = check putBlob(indexName(applicationId), index.toJsonString().toBytes(),
-            "application/json", metadata, createOnly = true);
-        if !claimed {
-            return ALREADY_SUBMITTED;
+        // An index without a record is a submission still running, or one that was abandoned.
+        if !isAbandoned(earlier[0]) {
+            return IN_PROGRESS;
+        }
+        boolean tookOver = check putBlob(indexName(applicationId), claimFor(folder, requestId).toJsonString().toBytes(),
+            "application/json", metadata, etag = earlier[1]);
+        if !tookOver {
+            return IN_PROGRESS;
         }
     }
+    SubmitOutcome|error stored = writeSubmission(applicationId, submission, candidateName, folder, requestId, metadata);
+    if stored is error {
+        releaseClaim(applicationId, folder, requestId, metadata);
+    }
+    return stored;
+}
+
+// Gives up the claim on an application's folder after a failure, so a retry does not have to wait for it to run out.
+// Nothing is done when the claim is no longer this request's.
+isolated function releaseClaim(string applicationId, string folder, string requestId, map<string> metadata) {
+    [SubmissionIndex, string]|error|() index = indexOf(applicationId);
+    if index is [SubmissionIndex, string] && index[0].claimedBy == requestId {
+        SubmissionIndex released = {folder};
+        boolean|error written = putBlob(indexName(applicationId), released.toJsonString().toBytes(),
+            "application/json", metadata, etag = index[1]);
+        if written is error {
+            log:printWarn("Could not release the claim on a submission", errorMessage = written.message(),
+                requestId = requestId);
+        }
+    }
+}
+
+// Writes the files, then the record, of a submission whose folder this request has claimed.
+isolated function writeSubmission(string applicationId, Submission submission, string candidateName, string folder,
+        string requestId, map<string> & readonly metadata) returns SubmitOutcome|error {
     map<string> files = {};
     // The files are sent together; the record waits for all of them.
     future<boolean|error>[] writes = [];
@@ -231,6 +288,11 @@ public isolated function storeDocuments(string applicationId, Submission submiss
     }
     if failure is error {
         return failure;
+    }
+    // The claim may have been taken over while the files were being sent; the record then belongs to the other request.
+    [SubmissionIndex, string]? claim = check indexOf(applicationId);
+    if claim is () || claim[0].claimedBy != requestId {
+        return IN_PROGRESS;
     }
     string now = time:utcToString(time:utcNow());
     Manifest manifest = {

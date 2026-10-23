@@ -17,6 +17,7 @@
 import ballerina/http;
 import ballerina/lang.array;
 import ballerina/test;
+import ballerina/time;
 
 // The blobs of the stand-in storage service, each with the tag the service gives it.
 isolated class BlobStore {
@@ -342,6 +343,43 @@ function aFileOfAnotherTypeIsEmptiedOnlyOnceTheRecordIsSaved() returns error? {
     test:assertTrue(check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request"));
     test:assertEquals(contentOf(newPicture), <byte[]>[1, 2, 3]);
     test:assertEquals(contentOf(oldPicture), <byte[]>[]);
+}
+
+// An index as one request leaves it when it claims the folder.
+function claimJson(string claimedBy, string claimedAt) returns string =>
+    {folder: FOLDER, claimedBy, claimedAt}.toJsonString();
+
+@test:Config {}
+function aSubmissionThatIsStillRunningIsNotWrittenOverBySecondRequest() returns error? {
+    // The first request has claimed the folder and has not written its record yet.
+    _ = store.write("index/123.json", claimJson("first-request", time:utcToString(time:utcNow())).toBytes(), false, ());
+    int writesBefore = store.writeCount();
+
+    SubmitOutcome outcome = check storeDocuments("123", aSubmission(), "Ada Lovelace", "second-request");
+    test:assertEquals(outcome, IN_PROGRESS);
+    test:assertEquals(store.writeCount(), writesBefore);
+}
+
+@test:Config {}
+function aClaimThatRanOutIsTakenOver() returns error? {
+    _ = store.write("index/123.json", claimJson("first-request", "2020-01-01T00:00:00Z").toBytes(), false, ());
+
+    SubmitOutcome outcome = check storeDocuments("123", aSubmission(), "Ada Lovelace", "second-request");
+    test:assertEquals(outcome, STORED);
+    SubmissionStatus status = check submissionStatus("123");
+    test:assertTrue(status.submitted);
+}
+
+@test:Config {}
+function aFailedFirstAttemptReleasesItsClaimSoTheRetryCanGoAhead() returns error? {
+    store.failWritesTo("Birth certificate");
+    SubmitOutcome|error failed = storeDocuments("123", aSubmission(), "Ada Lovelace", "first-request");
+    store.failWritesTo("");
+    test:assertTrue(failed is error);
+
+    // The retry is a different request, and does not wait for the claim of the failed one to run out.
+    SubmitOutcome outcome = check storeDocuments("123", aSubmission(), "Ada Lovelace", "second-request");
+    test:assertEquals(outcome, STORED);
 }
 
 @test:Config {}

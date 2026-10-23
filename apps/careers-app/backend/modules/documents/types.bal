@@ -138,6 +138,10 @@ public type Manifest record {|
 # Where an application's submission is kept, so it can be found by the application id alone.
 type SubmissionIndex record {|
     string folder;
+    # The request that is making the first submission, which is the only one that may write its files.
+    string claimedBy = "";
+    # When that request claimed it. Empty once the claim is released, as after a failure.
+    string claimedAt = "";
 |};
 
 # What the candidate's page is told about their submission.
@@ -155,7 +159,9 @@ public type SubmissionStatus record {|
 # What came of storing a first submission.
 public enum SubmitOutcome {
     STORED,
-    ALREADY_SUBMITTED
+    ALREADY_SUBMITTED,
+    # Another request is making the first submission of the application.
+    IN_PROGRESS
 }
 
 # The moment the submission can no longer be changed, as an ISO 8601 time with its offset. Nothing can be changed
