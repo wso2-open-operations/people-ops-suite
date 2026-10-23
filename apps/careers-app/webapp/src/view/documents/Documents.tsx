@@ -24,6 +24,7 @@ import Callout from "@component/common/Callout";
 import PageContainer from "@component/common/PageContainer";
 import { ApplicationStatus, SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
+import { loadProfile } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { fetchDocumentRequirements, fetchDocumentsStatus, submitDocuments } from "@utils/profileService";
@@ -139,13 +140,24 @@ const Documents = () => {
   const editing = Boolean(status?.submitted && status.canEdit);
   const closed = Boolean(status?.submitted && !status.canEdit);
 
-  // Whether the page is still waiting for the applications and, for an accepted offer, the document list and the
-  // earlier submission.
+  // Whether the page is still waiting for the applications and, for an accepted offer, the profile, the document list
+  // and the earlier submission.
   const stillLoading =
     applicationsState === State.idle ||
     applicationsState === State.loading ||
     (eligible &&
-      (requirementsState === State.idle || requirementsState === State.loading || status === undefined));
+      (profileState === State.idle ||
+        profileState === State.loading ||
+        requirementsState === State.idle ||
+        requirementsState === State.loading ||
+        status === undefined));
+
+  // The personal email comes only from the profile and cannot be changed here, so the form waits for the profile.
+  const profileReady = profileState === State.success;
+
+  const retryProfile = async () => {
+    dispatch(loadProfile(await getToken()));
+  };
 
   const chooseFile = async (key: string, file: File | undefined) => {
     if (!file || !requirements) return;
@@ -260,7 +272,16 @@ const Documents = () => {
         </Callout>
       )}
 
-      {!stillLoading && eligible && requirementsState === State.failed && (
+      {!stillLoading && eligible && !profileReady && (
+        <Stack alignItems="flex-start" gap={1.5}>
+          <Typography color="text.secondary">We couldn&apos;t load your profile, which has your email.</Typography>
+          <Button variant="outlined" onClick={retryProfile} sx={pillButtonSx}>
+            Try again
+          </Button>
+        </Stack>
+      )}
+
+      {!stillLoading && eligible && profileReady && requirementsState === State.failed && (
         <Stack alignItems="flex-start" gap={1.5}>
           <Typography color="text.secondary">We couldn&apos;t load the list of documents.</Typography>
           <Button variant="outlined" onClick={() => setRequirementsState(State.idle)} sx={pillButtonSx}>
@@ -269,7 +290,7 @@ const Documents = () => {
         </Stack>
       )}
 
-      {!stillLoading && eligible && application && requirements && submitted && (
+      {!stillLoading && eligible && profileReady && application && requirements && submitted && (
         <Callout tone="success" icon={<Check size={20} color="#059669" />}>
           <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
             {editing ? "Your changes were saved." : "We received your details and documents."}
@@ -283,7 +304,7 @@ const Documents = () => {
         </Callout>
       )}
 
-      {!stillLoading && eligible && !closed && application && requirements && !submitted && (
+      {!stillLoading && eligible && profileReady && !closed && application && requirements && !submitted && (
         <Card elevation={0} sx={cardSx}>
           <Box sx={{ p: 3, pb: 0 }}>
             <Typography
