@@ -307,6 +307,7 @@ isolated function applicationsOf(AtsHistoryEntry[] history, map<string> departme
         jobTitle: entry.vacancyTitle ?: "",
         department: departments[entry.vacancyId.toString()] ?: "",
         appliedDate: entry.createdOn ?: "",
+        updatedDate: entry.updatedOn ?: entry.createdOn ?: "",
         status: applicationStatusOf(entry.status)
     };
 

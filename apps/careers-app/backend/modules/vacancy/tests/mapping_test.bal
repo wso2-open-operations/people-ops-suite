@@ -114,6 +114,18 @@ function applicationsAreNewestFirstWithoutDeletedOnes() {
     test:assertEquals(applications[1].jobTitle, "Engineer");
     test:assertEquals(applications[1].department, "Engineering");
     test:assertEquals(applications[1].appliedDate, "2026-01-01T00:00:00Z");
+    // An application that was never changed was last updated when it was made.
+    test:assertEquals(applications[1].updatedDate, "2026-01-01T00:00:00Z");
+}
+
+@test:Config {}
+function anApplicationShowsWhenItLastChanged() {
+    AtsHistoryEntry shortlisted = historyEntry(5, "SHORTLISTED");
+    shortlisted.updatedOn = "2026-01-04T09:30:00Z";
+    ApplicationSummary[] applications = applicationsOf([shortlisted], {});
+    test:assertEquals(applications[0].status, "Screening");
+    test:assertEquals(applications[0].appliedDate, "2026-01-01T00:00:00Z");
+    test:assertEquals(applications[0].updatedDate, "2026-01-04T09:30:00Z");
 }
 
 @test:Config {}

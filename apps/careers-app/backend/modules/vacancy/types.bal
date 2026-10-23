@@ -182,6 +182,7 @@ type AtsHistoryEntry record {
     string? address = ();
     string? university = ();
     string? createdOn = ();
+    string? updatedOn = ();
 };
 
 type AtsHistoryResponse record {
@@ -280,6 +281,8 @@ public type ApplicationSummary record {|
     string jobTitle;
     string department;
     string appliedDate;
+    # When the application last changed, which is when it reached its current status.
+    string updatedDate;
     string status;
 |};
 
