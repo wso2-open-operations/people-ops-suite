@@ -22,6 +22,11 @@ import ballerina/test;
 
 final http:Client testClient = check new (string `http://localhost:${port}`);
 
+// A client that always declares the length of its body, as a browser does. The public apply route refuses a body that
+// does not.
+final http:Client sizedClient = check new (string `http://localhost:${port}`,
+    http1Settings = {chunking: http:CHUNKING_NEVER});
+
 @test:Config {}
 function aDeclaredBodySizeIsComparedWithTheLimit() {
     http:Request req = new;
@@ -30,6 +35,14 @@ function aDeclaredBodySizeIsComparedWithTheLimit() {
     test:assertFalse(exceeds(req, 100));
     http:Request undeclared = new;
     test:assertFalse(exceeds(undeclared, 50));
+}
+
+@test:Config {}
+function aRequestIsKnownToDeclareItsBodyLengthOrNot() {
+    http:Request declared = new;
+    declared.setHeader(http:CONTENT_LENGTH, "10");
+    test:assertTrue(declaresLength(declared));
+    test:assertFalse(declaresLength(new));
 }
 
 // "/profile" stands in for any restricted route.
@@ -66,7 +79,10 @@ function publicJobReadsReachTheServiceWithoutAToken() returns error? {
 
 @test:Config {}
 function applyWithoutMultipartFormIsBadRequest() returns error? {
-    http:Response resp = check testClient->post("/jobs/258/apply", {"firstName": "A"});
+    http:Request req = new;
+    req.setTextPayload("firstName=A", "application/x-www-form-urlencoded");
+    req.setHeader(http:CONTENT_LENGTH, "11");
+    http:Response resp = check sizedClient->post("/jobs/258/apply", req);
     test:assertEquals(resp.statusCode, 400);
 }
 
@@ -77,7 +93,7 @@ function applyWithAnInvalidFormShowsTheReason() returns error? {
     firstName.setText("Ada");
     http:Request req = new;
     req.setBodyParts([firstName], "multipart/form-data");
-    http:Response resp = check testClient->post("/jobs/258/apply", req);
+    http:Response resp = check sizedClient->post("/jobs/258/apply", req);
     test:assertEquals(resp.statusCode, 400);
     json body = check resp.getJsonPayload();
     test:assertEquals(check body.message, "First name, last name, phone and address are required.");

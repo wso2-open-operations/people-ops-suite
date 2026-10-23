@@ -40,6 +40,10 @@ isolated function exceeds(http:Request req, int maxBytes) returns boolean {
     return false;
 }
 
+# Whether the request declares the length of its body. The listener then reads only the declared bytes, which a body
+# sent in chunks does not allow.
+isolated function declaresLength(http:Request req) returns boolean => req.hasHeader(http:CONTENT_LENGTH);
+
 # Passes an upstream JSON response, or maps its failure to a gateway error.
 isolated function forwardOrError(http:Response|error resp, string failureMessage, string requestId)
         returns json|http:BadGateway|http:GatewayTimeout {
@@ -129,11 +133,16 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     # Validates the application form and CV, then creates the candidate in the ATS.
     # Public: no sign-in needed.
     resource function post jobs/[string jobId]/apply(http:Request req, http:RequestContext ctx)
-            returns http:Created|http:BadRequest|http:NotFound|http:Conflict|http:BadGateway|http:GatewayTimeout {
+            returns http:Created|http:BadRequest|http:LengthRequired|http:NotFound|http:Conflict|http:BadGateway
+                |http:GatewayTimeout {
         if !types:isValidJobId(jobId) {
             return <http:BadRequest>{body: {message: "Invalid job id"}};
         }
         string requestId = types:requestIdOf(ctx);
+        // The listener's size limit is the larger one the documents need, so this public route bounds its own body.
+        if !declaresLength(req) {
+            return <http:LengthRequired>{body: {message: "The request must declare the length of its body."}};
+        }
         if exceeds(req, apply:MAX_REQUEST_BYTES) {
             return <http:BadRequest>{body: {message: "The application is too large."}};
         }
