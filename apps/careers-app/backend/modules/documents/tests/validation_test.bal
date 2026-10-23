@@ -17,6 +17,7 @@
 import ballerina/http;
 import ballerina/mime;
 import ballerina/test;
+import ballerina/time;
 
 const byte[] PDF_BYTES = [0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34];
 
@@ -349,9 +350,43 @@ function onlyRequestedDocumentsAreKnown() {
 }
 
 @test:Config {}
-function nothingCanBeChangedWhileNoDeadlineIsSet() {
-    test:assertFalse(canEdit());
-    test:assertEquals(editableUntil(), ());
+function nothingCanBeChangedWhileNoDaysAreAllowed() {
+    Manifest manifest = manifestMadeAt(time:utcToString(time:utcNow()));
+    test:assertFalse(canEdit(manifest));
+    test:assertEquals(editableUntil(manifest), ());
+}
+
+// A submission made at the given time, with nothing else of interest.
+function manifestMadeAt(string submittedAt) returns Manifest => {
+    applicationId: "1",
+    candidateName: "Ada Lovelace",
+    folder: "applications/Ada Lovelace - 1",
+    details: <PersonalDetails>{
+        title: "", firstName: "", surname: "", fullName: "", preferredName: "", initials: "", nameWithInitials: "",
+        gender: "", dateOfBirth: "", idNumber: "", civilStatus: "", tshirtSize: "", homeAddress: "",
+        temporaryAddress: "", mobileNumber: "", landNumber: "", personalEmail: "", businessInterest: "",
+        dependants: [], emergencyContacts: [], bank: {bank: "", branch: "", accountNumber: ""},
+        highestQualification: "", university: "", githubUserId: ""
+    },
+    files: {},
+    declared: true,
+    submittedAt,
+    updatedAt: submittedAt
+};
+
+@test:Config {}
+function eachSubmissionHasItsOwnTimeToBeChanged() {
+    time:Utc now = time:utcNow();
+    // Made two days ago with a week allowed: five days remain. Made ten days ago: the week has run out.
+    Manifest recent = manifestMadeAt(time:utcToString(time:utcAddSeconds(now, -2 * 86400d)));
+    Manifest old = manifestMadeAt(time:utcToString(time:utcAddSeconds(now, -10 * 86400d)));
+
+    time:Utc? recentUntil = editableUntilAfter(recent, 7);
+    time:Utc? oldUntil = editableUntilAfter(old, 7);
+    test:assertTrue(recentUntil is time:Utc && time:utcDiffSeconds(recentUntil, now) > 4 * 86400d);
+    test:assertTrue(oldUntil is time:Utc && time:utcDiffSeconds(oldUntil, now) < 0d);
+    // The two submissions differ even though the setting is the same for everyone.
+    test:assertNotEquals(recentUntil, oldUntil);
 }
 
 @test:Config {}

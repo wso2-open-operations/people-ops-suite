@@ -124,19 +124,22 @@ isolated function putBlob(string name, byte[] content, string contentType, map<s
     return storageError(resp);
 }
 
-# The moment the deadline falls, or nothing when it is not set or cannot be read.
-public isolated function editableUntil() returns time:Utc? {
-    if submissionDeadline == "" {
+# The moment a submission can no longer be changed: when it was made plus the days allowed. Nothing when no days are
+# allowed or the time it was made cannot be read.
+public isolated function editableUntil(Manifest manifest) returns time:Utc? => editableUntilAfter(manifest, editableDays);
+
+isolated function editableUntilAfter(Manifest manifest, int days) returns time:Utc? {
+    if days <= 0 {
         return ();
     }
-    time:Utc|error deadline = time:utcFromString(submissionDeadline);
-    return deadline is time:Utc ? deadline : ();
+    time:Utc|error made = time:utcFromString(manifest.submittedAt);
+    return made is time:Utc ? time:utcAddSeconds(made, <decimal>days * 86400d) : ();
 }
 
-# Whether a submission can still be changed: only when a deadline is set and has not passed.
-public isolated function canEdit() returns boolean {
-    time:Utc? deadline = editableUntil();
-    return deadline is time:Utc && time:utcDiffSeconds(deadline, time:utcNow()) > 0d;
+# Whether a submission can still be changed: only while its own time to change it has not run out.
+public isolated function canEdit(Manifest manifest) returns boolean {
+    time:Utc? until = editableUntil(manifest);
+    return until is time:Utc && time:utcDiffSeconds(until, time:utcNow()) > 0d;
 }
 
 # Reads the record of an application's submission and the tag Azure gives its current version, or nothing when
@@ -205,13 +208,14 @@ isolated function isAbandoned(SubmissionIndex index) returns boolean {
 public isolated function submissionStatus(string applicationId) returns SubmissionStatus|error {
     [Manifest, string]? loaded = check loadManifest(applicationId);
     if loaded is () {
-        return {submitted: false, canEdit: false, editableUntil: submissionDeadline};
+        return {submitted: false, canEdit: false, editableUntil: ""};
     }
     Manifest manifest = loaded[0];
+    time:Utc? until = editableUntil(manifest);
     return {
         submitted: true,
-        canEdit: canEdit(),
-        editableUntil: submissionDeadline,
+        canEdit: canEdit(manifest),
+        editableUntil: until is time:Utc ? time:utcToString(until) : "",
         details: manifest.details,
         files: manifest.files.keys()
     };

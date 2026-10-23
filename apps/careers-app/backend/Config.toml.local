@@ -20,9 +20,9 @@ baseUrl = ""
 container = ""
 sasToken = ""
 
-# Optional: when submissions stop being editable (ISO 8601 with offset); empty means never editable.
+# Optional: how many days after it was made a submission can be changed; zero means it cannot be changed.
 # [careers_app.documents]
-# submissionDeadline = ""
+# editableDays = 0
 
 # Optional: limit on the requests of one signed-in user.
 # [careers_app.apply]

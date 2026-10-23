@@ -164,9 +164,9 @@ public enum SubmitOutcome {
     IN_PROGRESS
 }
 
-# The moment the submission can no longer be changed, as an ISO 8601 time with its offset. Nothing can be changed
-# while it is empty.
-public configurable string submissionDeadline = "";
+# How many days after it was made a submission can be changed, counted from that submission and not from a date for
+# everyone. Nothing can be changed while it is zero.
+public configurable int editableDays = 0;
 
 # The T-shirt sizes a candidate can choose from.
 public final readonly & string[] TSHIRT_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];

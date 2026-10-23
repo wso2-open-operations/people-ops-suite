@@ -402,19 +402,18 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
                 applicationId = applicationId, subject = user.sub, requestId = requestId);
             return <http:NotFound>{body: {message: "Application not found"}};
         }
-        // The deadline is only ever checked here, on the backend, so the page cannot extend it.
-        if !documents:canEdit() {
-            log:printWarn("Changes refused: the time to change them has ended", outcome = "closed",
-                applicationId = applicationId, subject = user.sub, requestId = requestId);
-            return <http:Forbidden>{body: {message: "The time to change your documents has ended."}};
-        }
-
         [documents:Manifest, string]?|error loaded = documents:loadManifest(applicationId);
         if loaded is error {
             return candidateFailure(loaded, "Failed to read the submission", requestId);
         }
         if loaded is () {
             return <http:NotFound>{body: {message: "There is nothing to change yet. Submit your documents first."}};
+        }
+        // The time to change a submission is only ever checked here, on the backend, so the page cannot extend it.
+        if !documents:canEdit(loaded[0]) {
+            log:printWarn("Changes refused: the time to change them has ended", outcome = "closed",
+                applicationId = applicationId, subject = user.sub, requestId = requestId);
+            return <http:Forbidden>{body: {message: "The time to change your documents has ended."}};
         }
 
         if exceeds(req, documents:MAX_REQUEST_BYTES) {
