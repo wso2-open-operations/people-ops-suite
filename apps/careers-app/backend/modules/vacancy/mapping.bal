@@ -204,6 +204,62 @@ isolated function orgStructureOf(AtsCompany[] companies, AtsBusinessUnit[] units
     return {location_list: indexed(locations), team_list: indexed(teams)};
 }
 
+// The status the web app shows for an ATS interview status.
+isolated function interviewStatusOf(string atsStatus) returns string {
+    match atsStatus {
+        "COMPLETED" => {
+            return "Completed";
+        }
+        "WITHDRAWN" => {
+            return "Cancelled";
+        }
+    }
+    return "Upcoming";
+}
+
+// The place of a physical interview: the custom location when there is one, otherwise the room and the floor.
+isolated function physicalPlaceOf(AtsInterview interview) returns string {
+    string? custom = interview.customLocation;
+    if custom is string && custom.trim() != "" {
+        return custom.trim();
+    }
+    string[] parts = [];
+    string? room = interview.roomName;
+    if room is string && room.trim() != "" {
+        parts.push(room.trim());
+    }
+    string? floor = interview.floorNumber;
+    if floor is string && floor.trim() != "" {
+        parts.push(string `floor ${floor.trim()}`);
+    }
+    return string:'join(", ", ...parts);
+}
+
+// An interview in the shape the web app reads. Nothing but the fields it shows is passed on.
+isolated function interviewOf(AtsInterview interview) returns ApplicationInterview {
+    boolean isVirtual = interview.interviewModality == "Virtual";
+    string? link = interview.meetingUrl;
+    string? stage = interview.interviewStage;
+    string? title = interview.title;
+    string round = stage is string && stage.trim() != "" ? stage.trim()
+        : title is string && title.trim() != "" ? title.trim() : "Interview";
+    return {
+        id: interview.id.toString(),
+        round,
+        dateTime: interview.startTime ?: "",
+        mode: isVirtual ? "Video" : "Onsite",
+        location: isVirtual ? (link is string ? link.trim() : "") : physicalPlaceOf(interview),
+        status: interviewStatusOf(interview.status)
+    };
+}
+
+// The interviews of an application in the order they take place.
+isolated function interviewsOf(AtsInterview[] interviews) returns ApplicationInterview[] =>
+    from AtsInterview interview in interviews
+    let ApplicationInterview shown = interviewOf(interview)
+    order by shown.dateTime ascending
+    select shown;
+
 // The status the web app shows for an ATS candidate status.
 isolated function applicationStatusOf(string atsStatus) returns string {
     match atsStatus {

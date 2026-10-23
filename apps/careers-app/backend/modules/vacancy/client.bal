@@ -423,6 +423,32 @@ public isolated function listApplications(string email, string requestId) return
     return applicationsOf(history, departmentsOf(cachedJobsIfPresent()));
 }
 
+// The interviews of one of the caller's own applications, found through their email.
+isolated function interviewsFor(string email, string applicationId, string requestId)
+        returns ApplicationInterview[]|error {
+    int|error id = int:fromString(applicationId);
+    if id is error {
+        return error UpstreamError("Application not found", status = http:STATUS_NOT_FOUND);
+    }
+    AtsHistoryEntry[] history = check candidateHistory(email, requestId);
+    foreach AtsHistoryEntry entry in history {
+        if entry.id == id && entry.status != CANDIDATE_STATUS_DELETED {
+            json body = check atsJson(string `/interviews?status=SCHEDULED&status=COMPLETED&status=WITHDRAWN&candidateVacancyId=${entry.id}&limit=${MAX_INTERVIEWS}`,
+                requestId);
+            AtsInterviewResponse reply = check body.fromJsonWithType();
+            return interviewsOf(reply.interviews);
+        }
+    }
+    return error UpstreamError("Application not found", status = http:STATUS_NOT_FOUND);
+}
+
+# The interviews of one of the caller's own applications; a 404 reply when it is not theirs.
+public isolated function getInterviews(string email, string applicationId, string requestId)
+        returns http:Response|error {
+    ApplicationInterview[]|error interviews = interviewsFor(email, applicationId, requestId);
+    return interviews is error ? failedReply(interviews, requestId) : okReply(interviews.toJson());
+}
+
 // The offer letter of one of the caller's own applications, found through their email.
 isolated function offerLetterFor(string email, string applicationId, string requestId) returns OfferLetter|error {
     int|error id = int:fromString(applicationId);

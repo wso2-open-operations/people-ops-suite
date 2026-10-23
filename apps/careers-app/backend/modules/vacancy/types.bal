@@ -235,6 +235,44 @@ public type OfferLetter record {|
     string html;
 |};
 
+# An interview as the ATS returns it. Only the fields below are read; the rest of the reply, which holds internal
+# details such as the interviewers and the score cards, is ignored and never passed on.
+type AtsInterview record {
+    int id;
+    string status = "";
+    string? startTime = ();
+    string? title = ();
+    string? interviewStage = ();
+    string? interviewModality = ();
+    string? meetingUrl = ();
+    string? customLocation = ();
+    string? roomName = ();
+    string? floorNumber = ();
+};
+
+# The ATS reply to a list of interviews.
+type AtsInterviewResponse record {
+    AtsInterview[] interviews = [];
+};
+
+# One interview of a candidate's application, in the shape the web app reads.
+public type ApplicationInterview record {|
+    string id;
+    # The stage of the interview, or its title.
+    string round;
+    # The start of the interview as the ATS gives it.
+    string dateTime;
+    # "Video" for a virtual interview and "Onsite" for a physical one.
+    string mode;
+    # The meeting link of a video interview, or the place of an onsite one.
+    string location;
+    # "Upcoming", "Completed" or "Cancelled".
+    string status;
+|};
+
+# The most interviews of one application that are read.
+const MAX_INTERVIEWS = 50;
+
 # One of the signed-in candidate's applications, in the shape the web app reads.
 public type ApplicationSummary record {|
     string id;

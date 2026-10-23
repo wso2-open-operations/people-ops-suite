@@ -242,6 +242,23 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             "Failed to fetch the offer letter", requestId);
     }
 
+    # The interviews of one of the signed-in candidate's own applications, in the order they take place.
+    resource function get applications/[string applicationId]/interviews(http:RequestContext ctx)
+            returns json|http:Unauthorized|http:Forbidden|http:BadRequest|http:NotFound|http:BadGateway
+                |http:GatewayTimeout {
+        string requestId = types:requestIdOf(ctx);
+        if !types:isValidJobId(applicationId) {
+            return <http:NotFound>{body: {message: "Application not found"}};
+        }
+        jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
+            callerOf(ctx, requestId);
+        if caller !is jwt:CallerDetails {
+            return caller;
+        }
+        return profileReply(vacancy:getInterviews(caller.email, applicationId, requestId),
+            "Failed to fetch the interviews", requestId);
+    }
+
     # Whether the signed-in candidate has submitted the documents for one of their own accepted offers, whether they
     # can still change them and until when, and, when they have submitted, what they saved.
     resource function get applications/[string applicationId]/documents(http:RequestContext ctx)
