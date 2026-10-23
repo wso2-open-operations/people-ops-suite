@@ -29,6 +29,7 @@ import {
   STAGES,
   daysLeftText,
   formatDate,
+  historyOf,
   isOffer,
   nextStepOf,
   offerDeadlineOf,
@@ -246,7 +247,7 @@ const ApplicationDetails = ({
 
         <InterviewsSection interviews={interviews} />
 
-        <ProgressHistory timeline={application.timeline ?? []} />
+        <ProgressHistory entries={historyOf(application, interviews)} />
 
         {jobOpen && (
           <Button size="small" onClick={() => onOpenJob(application.jobId)} sx={{ fontWeight: 600 }}>

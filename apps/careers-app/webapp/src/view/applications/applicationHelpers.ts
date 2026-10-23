@@ -60,6 +60,55 @@ export function trackerOf(application: Application): { activeStep: number; error
   return { activeStep: STAGE_INDEX[application.status] ?? 0, errorStep: null };
 }
 
+// One line of an application's history. A stage the candidate passed has no date, because the ATS does not record
+// when an application moved from one stage to the next.
+export interface HistoryEntry {
+  label: string;
+  date: string | null;
+  // Whether the date carries a time of day.
+  withTime?: boolean;
+  detail?: string;
+}
+
+// The statuses that end an application's journey or answer its offer; the date it last changed is when it got there.
+const FINAL_STATUSES = [
+  ApplicationStatus.Offer,
+  ApplicationStatus.OfferAccepted,
+  ApplicationStatus.OfferDeclined,
+  ApplicationStatus.Rejected,
+];
+
+// What happened to the application, in the order it happened: when it was applied for, when it was screened (the
+// date it last changed, while it is still at screening or interview), each interview from the ATS's interviews, and
+// the final status with the date it was reached.
+export function historyOf(application: Application, interviews: ApplicationInterview[]): HistoryEntry[] {
+  const entries: HistoryEntry[] = [{ label: ApplicationStatus.Applied, date: application.appliedDate }];
+  const { status } = application;
+  if ((STAGE_INDEX[status] ?? 0) >= STAGE_INDEX[ApplicationStatus.Screening]!) {
+    const screeningIsCurrent = status === ApplicationStatus.Screening;
+    const screeningDated = screeningIsCurrent || status === ApplicationStatus.Interview;
+    entries.push({
+      label: ApplicationStatus.Screening,
+      date: screeningDated ? (application.updatedDate ?? null) : null,
+      detail: screeningIsCurrent ? "Current" : "Passed",
+    });
+  }
+  [...interviews]
+    .sort((a, b) => a.dateTime.localeCompare(b.dateTime))
+    .forEach((interview) =>
+      entries.push({
+        label: interview.round,
+        date: interview.dateTime || null,
+        withTime: true,
+        detail: `Interview · ${interview.status}`,
+      }),
+    );
+  if (FINAL_STATUSES.includes(status)) {
+    entries.push({ label: status, date: application.updatedDate ?? null, detail: "Current" });
+  }
+  return entries;
+}
+
 // Whether an offer is waiting for the candidate's answer.
 export const isOffer = (application: Application) => application.status === ApplicationStatus.Offer;
 

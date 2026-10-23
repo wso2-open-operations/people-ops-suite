@@ -96,6 +96,8 @@ export interface Application {
   jobTitle: string;
   department: string;
   appliedDate: string;
+  // When the application last changed, which is when it reached its current status.
+  updatedDate?: string;
   status: ApplicationStatus;
   // The last day the candidate can answer an offer.
   offerExpiresOn?: string;
