@@ -134,12 +134,13 @@ const AppShell = () => {
     if (!isSignedIn) dispatch(clearUserData());
   }, [isSignedIn, dispatch]);
 
-  // Sends the candidate to sign in again when the backend refused their access token.
+  // Signs the candidate out when the backend refused their access token, so a live identity-provider session cannot
+  // sign them straight back in.
   useEffect(() => {
     if (!sessionExpired) return;
     dispatch(clearUserData());
-    appSignIn();
-  }, [sessionExpired, dispatch, appSignIn]);
+    appSignOut();
+  }, [sessionExpired, dispatch, appSignOut]);
 
   // Guests only see the Jobs link.
   const navItems = isSignedIn ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.path === "/jobs");

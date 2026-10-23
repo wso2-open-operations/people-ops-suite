@@ -15,10 +15,12 @@
 // under the License.
 
 import { useAuthContext } from "@asgardeo/auth-react";
+import { useIdleTimer } from "react-idle-timer";
 
 import React, { useCallback, useContext, useEffect, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
+import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import { setUserAuthData } from "@slices/authSlice/auth";
 import { useAppDispatch } from "@slices/store";
 
@@ -36,6 +38,10 @@ type AuthContextType = {
 
 const AuthContext = React.createContext<AuthContextType>({} as AuthContextType);
 
+// How long a signed-in user can be inactive before the sign-out warning opens, and how long it stays open.
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const WARNING_MS = 60 * 1000;
+
 const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const {
     signIn,
@@ -50,6 +56,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const isAuthenticated = state.isAuthenticated;
   const isLoading = state.isLoading;
 
+  const [sessionWarningOpen, setSessionWarningOpen] = useState<boolean>(false);
   const [userLoaded, setUserLoaded] = useState<boolean>(false);
 
   const dispatch = useAppDispatch();
@@ -81,6 +88,31 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     signOut();
   }, [signOut]);
 
+  // Signs the user out of the app and the identity provider once the inactivity period ends, so an unattended browser
+  // does not stay signed in.
+  const onIdle = () => {
+    if (!isAuthenticated) return;
+    setSessionWarningOpen(false);
+    appSignOut();
+  };
+
+  const { activate } = useIdleTimer({
+    onPrompt: () => {
+      if (isAuthenticated) setSessionWarningOpen(true);
+    },
+    onIdle,
+    timeout: IDLE_TIMEOUT_MS,
+    promptBeforeIdle: WARNING_MS,
+    throttle: 500,
+    // Activity in any open tab counts, and the sign-out reaches every tab.
+    crossTab: true,
+  });
+
+  const handleContinue = () => {
+    setSessionWarningOpen(false);
+    activate();
+  };
+
   // Guests browse and apply without a token; calls made on their behalf send no credentials.
   const getToken = useCallback(async () => {
     if (!isAuthenticated) return "";
@@ -110,6 +142,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider value={authContext}>
+      <SessionWarningDialog open={sessionWarningOpen} handleContinue={handleContinue} appSignOut={appSignOut} />
       {isAuthenticated && !userLoaded ? (
         <PreLoader isLoading message="Setting up your Candidate Passport ..." />
       ) : (
