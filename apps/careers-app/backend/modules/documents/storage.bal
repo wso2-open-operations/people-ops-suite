@@ -94,7 +94,8 @@ isolated function storageError(http:Response resp) returns error {
 }
 
 // Writes a blob. With `createOnly` it must not exist yet, and with `etag` it must be unchanged since it was read.
-// False when that condition is not met.
+// False when that condition is not met. A write without a condition that is refused (a lease, a retention policy) is
+// an error, since the blob was not written.
 isolated function putBlob(string name, byte[] content, string contentType, map<string> metadata,
         boolean createOnly = false, string? etag = ()) returns boolean|error {
     http:Request req = new;
@@ -116,7 +117,8 @@ isolated function putBlob(string name, byte[] content, string contentType, map<s
     if resp.statusCode == http:STATUS_CREATED {
         return true;
     }
-    if resp.statusCode == http:STATUS_CONFLICT || resp.statusCode == http:STATUS_PRECONDITION_FAILED {
+    if (resp.statusCode == http:STATUS_CONFLICT || resp.statusCode == http:STATUS_PRECONDITION_FAILED)
+            && (createOnly || etag is string) {
         return false;
     }
     return storageError(resp);

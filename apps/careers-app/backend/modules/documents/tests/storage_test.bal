@@ -383,6 +383,40 @@ function aFailedFirstAttemptReleasesItsClaimSoTheRetryCanGoAhead() returns error
 }
 
 @test:Config {}
+function aFileWriteRefusedByTheStorageIsAnErrorNotAStoredFile() {
+    // A lease or a retention policy refuses the write of a file with a conflict, which is not a stored file.
+    store.refuseWritesTo("Identity document");
+    SubmitOutcome|error outcome = storeDocuments("123", aSubmission(), "Ada Lovelace", "test-request");
+    store.refuseWritesTo("");
+    test:assertTrue(outcome is error);
+    test:assertEquals(store.names().indexOf(FOLDER + "/submitted.json"), ());
+}
+
+@test:Config {}
+function aChangeWhoseFileWriteIsRefusedFailsAndKeepsTheEarlierSubmission() returns error? {
+    Submission submission = aSubmission();
+    _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+    [Manifest, string]? loaded = check loadManifest("123");
+    if loaded is () {
+        test:assertFail("The record was not found");
+    }
+    string identity = FOLDER + "/Ada Lovelace - Identity document.pdf";
+    byte[] identityBefore = contentOf(identity);
+    Submission update = {
+        documents: [{key: "identityDocument", extension: "pdf", contentType: "application/pdf", content: [1, 2, 3]}],
+        details: submission.details
+    };
+
+    store.refuseWritesTo("Identity document");
+    boolean|error result = saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    store.refuseWritesTo("");
+    test:assertTrue(result is error);
+    test:assertEquals(contentOf(identity), identityBefore);
+    [Manifest, string]? after = check loadManifest("123");
+    test:assertEquals(after is () ? () : after[1], loaded[1]);
+}
+
+@test:Config {}
 function aFileThatCannotBeWrittenLeavesNoRecord() {
     store.failWritesTo("Birth certificate");
     SubmitOutcome|error outcome = storeDocuments("123", aSubmission(), "Ada Lovelace", "test-request");
