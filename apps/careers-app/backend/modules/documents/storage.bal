@@ -191,8 +191,8 @@ isolated function indexOf(string applicationId) returns [SubmissionIndex, string
 const decimal STALE_CLAIM_SECONDS = 300;
 
 // An index that claims the folder for a request, as of now.
-isolated function claimFor(string folder, string requestId) returns SubmissionIndex =>
-    {folder, claimedBy: requestId, claimedAt: time:utcToString(time:utcNow())};
+isolated function claimFor(string folder, string candidateName, string requestId) returns SubmissionIndex =>
+    {folder, candidateName, claimedBy: requestId, claimedAt: time:utcToString(time:utcNow())};
 
 // Whether the first submission an index records was released or has run too long to be still going.
 isolated function isAbandoned(SubmissionIndex index) returns boolean {
@@ -229,10 +229,13 @@ public isolated function storeDocuments(string applicationId, Submission submiss
         string requestId) returns SubmitOutcome|error {
     map<string> & readonly metadata = {applicationid: applicationId, requestid: requestId}.cloneReadOnly();
     [SubmissionIndex, string]? earlier = check indexOf(applicationId);
-    string folder = earlier is () ? folderOf(candidateName, applicationId) : earlier[0].folder;
+    // A retry gives the files the name the first attempt gave them, so no second set of names is left in the folder.
+    string submissionName = earlier is () || earlier[0].candidateName == "" ? candidateName : earlier[0].candidateName;
+    string folder = earlier is () ? folderOf(submissionName, applicationId) : earlier[0].folder;
     if earlier is () {
-        boolean claimed = check putBlob(indexName(applicationId), claimFor(folder, requestId).toJsonString().toBytes(),
-            "application/json", metadata, createOnly = true);
+        boolean claimed = check putBlob(indexName(applicationId),
+            claimFor(folder, submissionName, requestId).toJsonString().toBytes(), "application/json", metadata,
+            createOnly = true);
         if !claimed {
             return IN_PROGRESS;
         }
@@ -244,13 +247,15 @@ public isolated function storeDocuments(string applicationId, Submission submiss
         if !isAbandoned(earlier[0]) {
             return IN_PROGRESS;
         }
-        boolean tookOver = check putBlob(indexName(applicationId), claimFor(folder, requestId).toJsonString().toBytes(),
-            "application/json", metadata, etag = earlier[1]);
+        boolean tookOver = check putBlob(indexName(applicationId),
+            claimFor(folder, submissionName, requestId).toJsonString().toBytes(), "application/json", metadata,
+            etag = earlier[1]);
         if !tookOver {
             return IN_PROGRESS;
         }
     }
-    SubmitOutcome|error stored = writeSubmission(applicationId, submission, candidateName, folder, requestId, metadata);
+    SubmitOutcome|error stored = writeSubmission(applicationId, submission, submissionName, folder, requestId,
+        metadata);
     if stored is error {
         releaseClaim(applicationId, folder, requestId, metadata);
     }
@@ -262,7 +267,7 @@ public isolated function storeDocuments(string applicationId, Submission submiss
 isolated function releaseClaim(string applicationId, string folder, string requestId, map<string> metadata) {
     [SubmissionIndex, string]|error|() index = indexOf(applicationId);
     if index is [SubmissionIndex, string] && index[0].claimedBy == requestId {
-        SubmissionIndex released = {folder};
+        SubmissionIndex released = {folder, candidateName: index[0].candidateName};
         boolean|error written = putBlob(indexName(applicationId), released.toJsonString().toBytes(),
             "application/json", metadata, etag = index[1]);
         if written is error {
@@ -321,7 +326,7 @@ isolated function writeSubmission(string applicationId, Submission submission, s
 # record is saved, and if that is refused or anything fails, the earlier files are put back, so the candidate has
 # either the new submission or the old one. False when the record had changed.
 public isolated function saveChanges(string applicationId, Manifest current, string etag, Submission update,
-        string candidateName, string requestId) returns boolean|error {
+        string requestId) returns boolean|error {
     map<string> metadata = {applicationid: applicationId, requestid: requestId};
     // The folder and the file names keep the name the submission was made under.
     string folder = current.folder;
@@ -357,7 +362,8 @@ public isolated function saveChanges(string applicationId, Manifest current, str
         }
         Manifest next = {
             applicationId: current.applicationId,
-            candidateName,
+            // The name the submission was made under, which its files carry, whatever the candidate's name is now.
+            candidateName: current.candidateName,
             folder,
             details: update.details,
             files,

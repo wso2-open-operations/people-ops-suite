@@ -222,7 +222,7 @@ function aChangeReplacesAFileOnlyWhileTheRecordIsUnchanged() returns error? {
     };
 
     int filesBefore = store.names().length();
-    boolean saved = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    boolean saved = check saveChanges("123", loaded[0], loaded[1], update, "test-request");
     test:assertTrue(saved);
 
     // The file is replaced under its own name, and the folder holds nothing extra.
@@ -230,7 +230,7 @@ function aChangeReplacesAFileOnlyWhileTheRecordIsUnchanged() returns error? {
     test:assertEquals(store.names().length(), filesBefore);
 
     // The record changed with that save, so the tag read earlier no longer matches.
-    boolean savedAgain = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    boolean savedAgain = check saveChanges("123", loaded[0], loaded[1], update, "test-request");
     test:assertFalse(savedAgain);
 }
 
@@ -253,9 +253,9 @@ function aChangeOnARecordThatMovedOnWritesNothing() returns error? {
     };
 
     // Both read the record with the same tag. A saves first, so B is refused before it writes anything.
-    test:assertTrue(check saveChanges("123", loaded[0], loaded[1], byA, "Ada Lovelace", "test-request"));
+    test:assertTrue(check saveChanges("123", loaded[0], loaded[1], byA, "test-request"));
     int writesAfterA = store.writeCount();
-    test:assertFalse(check saveChanges("123", loaded[0], loaded[1], byB, "Ada Lovelace", "test-request"));
+    test:assertFalse(check saveChanges("123", loaded[0], loaded[1], byB, "test-request"));
     test:assertEquals(store.writeCount(), writesAfterA);
     test:assertEquals(contentOf(identity), <byte[]>[1, 1, 1]);
 }
@@ -277,7 +277,7 @@ function aChangeRefusedAfterTheFilesWereReplacedPutsThemBack() returns error? {
 
     // The record still matches when the change starts, but its own write is refused after the file was replaced.
     store.refuseWritesTo("submitted.json");
-    boolean saved = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    boolean saved = check saveChanges("123", loaded[0], loaded[1], update, "test-request");
     test:assertFalse(saved);
     test:assertEquals(contentOf(identity), identityBefore);
 }
@@ -305,7 +305,7 @@ function aChangeThatFailsPartwayPutsTheEarlierFilesBack() returns error? {
 
     // The second file cannot be written, so the change fails after the first one was replaced.
     store.failWritesTo("Birth certificate");
-    boolean|error result = saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    boolean|error result = saveChanges("123", loaded[0], loaded[1], update, "test-request");
     store.failWritesTo("");
     test:assertTrue(result is error);
 
@@ -334,13 +334,13 @@ function aFileOfAnotherTypeIsEmptiedOnlyOnceTheRecordIsSaved() returns error? {
 
     // The record write is refused, so the earlier picture stays and the new file holds nothing.
     store.refuseWritesTo("submitted.json");
-    test:assertFalse(check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request"));
+    test:assertFalse(check saveChanges("123", loaded[0], loaded[1], update, "test-request"));
     store.refuseWritesTo("");
     test:assertEquals(contentOf(oldPicture), oldBefore);
     test:assertEquals(contentOf(newPicture), <byte[]>[]);
 
     // Saved, so the record points at the new picture and the earlier one is emptied.
-    test:assertTrue(check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request"));
+    test:assertTrue(check saveChanges("123", loaded[0], loaded[1], update, "test-request"));
     test:assertEquals(contentOf(newPicture), <byte[]>[1, 2, 3]);
     test:assertEquals(contentOf(oldPicture), <byte[]>[]);
 }
@@ -408,7 +408,7 @@ function aChangeWhoseFileWriteIsRefusedFailsAndKeepsTheEarlierSubmission() retur
     };
 
     store.refuseWritesTo("Identity document");
-    boolean|error result = saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    boolean|error result = saveChanges("123", loaded[0], loaded[1], update, "test-request");
     store.refuseWritesTo("");
     test:assertTrue(result is error);
     test:assertEquals(contentOf(identity), identityBefore);
@@ -428,18 +428,51 @@ function aFileThatCannotBeWrittenLeavesNoRecord() {
 }
 
 @test:Config {}
-function anAttemptThatStoppedEarlyIsContinuedInTheSameFolderUnderANewName() returns error? {
+function aRetryAfterAFailedAttemptKeepsTheNamesOfTheFirstAttemptWhateverTheNameIsNow() returns error? {
     store.failWritesTo("Birth certificate");
-    SubmitOutcome|error failed = storeDocuments("123", aSubmission(), "Ada Lovelace", "test-request");
+    SubmitOutcome|error failed = storeDocuments("123", aSubmission(), "Ada Lovelace", "first-request");
     test:assertTrue(failed is error);
 
+    // The candidate's name has changed by the retry, but the files carry the name of the first attempt.
     store.failWritesTo("");
-    SubmitOutcome outcome = check storeDocuments("123", aSubmission(), "Ada King", "test-request");
+    SubmitOutcome outcome = check storeDocuments("123", aSubmission(), "Ada King", "second-request");
     test:assertEquals(outcome, STORED);
 
     string[] names = store.names();
     test:assertEquals(names.filter(name => name.endsWith("/submitted.json")), [FOLDER + "/submitted.json"]);
     foreach string name in names {
-        test:assertTrue(name == "index/123.json" || name.startsWith(FOLDER + "/"), name);
+        test:assertTrue(name == "index/123.json" || name.startsWith(FOLDER + "/Ada Lovelace - ")
+            || name == FOLDER + "/submitted.json", name);
+        test:assertFalse(name.includes("Ada King"), name);
+    }
+    [Manifest, string]? loaded = check loadManifest("123");
+    test:assertEquals(loaded is () ? () : loaded[0].candidateName, "Ada Lovelace");
+}
+
+@test:Config {}
+function aChangeAfterTheCandidatesNameChangedKeepsTheNamesOfTheSubmission() returns error? {
+    Submission submission = aSubmission();
+    _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+    int filesBefore = store.names().length();
+
+    // Two changes in a row, as when the ATS name has changed in between: neither renames anything.
+    foreach int round in 1 ... 2 {
+        [Manifest, string]? loaded = check loadManifest("123");
+        if loaded is () {
+            test:assertFail("The record was not found");
+        }
+        Submission update = {
+            documents: [{key: "identityDocument", extension: "pdf", contentType: "application/pdf", content: [<byte>round, 9]}],
+            details: submission.details
+        };
+        test:assertTrue(check saveChanges("123", loaded[0], loaded[1], update, "test-request"));
+    }
+
+    [Manifest, string]? after = check loadManifest("123");
+    test:assertEquals(after is () ? () : after[0].candidateName, "Ada Lovelace");
+    test:assertEquals(contentOf(FOLDER + "/Ada Lovelace - Identity document.pdf"), <byte[]>[2, 9]);
+    test:assertEquals(store.names().length(), filesBefore);
+    foreach string name in store.names() {
+        test:assertFalse(name.includes("Ada King"), name);
     }
 }

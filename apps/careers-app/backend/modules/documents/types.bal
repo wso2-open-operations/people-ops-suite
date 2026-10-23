@@ -138,6 +138,8 @@ public type Manifest record {|
 # Where an application's submission is kept, so it can be found by the application id alone.
 type SubmissionIndex record {|
     string folder;
+    # The name the files of the submission are given, which a retry keeps whatever the candidate's name is by then.
+    string candidateName = "";
     # The request that is making the first submission, which is the only one that may write its files.
     string claimedBy = "";
     # When that request claimed it. Empty once the claim is released, as after a failure.

@@ -426,8 +426,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             return <http:BadRequest>{body: {message: parsed}};
         }
 
-        boolean|error saved = documents:saveChanges(applicationId, loaded[0], loaded[1], parsed, candidateName,
-            requestId);
+        boolean|error saved = documents:saveChanges(applicationId, loaded[0], loaded[1], parsed, requestId);
         if saved is error {
             return candidateFailure(saved, "Failed to save the changes", requestId);
         }
