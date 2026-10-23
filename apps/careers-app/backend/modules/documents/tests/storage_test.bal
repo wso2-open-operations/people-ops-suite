@@ -25,6 +25,8 @@ isolated class BlobStore {
     private int writes = 0;
     // A write whose blob name contains this text is refused with a server error.
     private string failingName = "";
+    // A write whose blob name contains this text is refused as if its tag were out of date.
+    private string refusedName = "";
 
     isolated function reset() {
         lock {
@@ -32,6 +34,13 @@ isolated class BlobStore {
             self.tags = {};
             self.writes = 0;
             self.failingName = "";
+            self.refusedName = "";
+        }
+    }
+
+    isolated function refuseWritesTo(string name) {
+        lock {
+            self.refusedName = name;
         }
     }
 
@@ -47,6 +56,9 @@ isolated class BlobStore {
         lock {
             if self.failingName != "" && name.includes(self.failingName) {
                 return [http:STATUS_INTERNAL_SERVER_ERROR, ""];
+            }
+            if self.refusedName != "" && name.includes(self.refusedName) {
+                return [http:STATUS_PRECONDITION_FAILED, ""];
             }
             if createOnly && self.blobs.hasKey(name) {
                 return [http:STATUS_CONFLICT, ""];
@@ -120,6 +132,15 @@ service /test\-container on storageService {
 @test:BeforeEach
 function emptyTheStorage() {
     store.reset();
+}
+
+// What a stored blob holds; empty when it holds nothing or does not exist.
+function contentOf(string name) returns byte[] {
+    [byte[], string]? found = store.read(name);
+    if found is () {
+        return [];
+    }
+    return found[0];
 }
 
 function aSubmission() returns Submission {
@@ -199,10 +220,13 @@ function aChangeReplacesAFileOnlyWhileTheRecordIsUnchanged() returns error? {
         details: submission.details
     };
 
+    int filesBefore = store.names().length();
     boolean saved = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
     test:assertTrue(saved);
-    [byte[], string]? replaced = store.read(FOLDER + "/Ada Lovelace - Identity document.pdf");
-    test:assertEquals(replaced is () ? () : replaced[0], <byte[]>[1, 2, 3]);
+
+    // The file is replaced under its own name, and the folder holds nothing extra.
+    test:assertEquals(contentOf(FOLDER + "/Ada Lovelace - Identity document.pdf"), <byte[]>[1, 2, 3]);
+    test:assertEquals(store.names().length(), filesBefore);
 
     // The record changed with that save, so the tag read earlier no longer matches.
     boolean savedAgain = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
@@ -210,7 +234,89 @@ function aChangeReplacesAFileOnlyWhileTheRecordIsUnchanged() returns error? {
 }
 
 @test:Config {}
-function aReplacedFileWithAnotherExtensionIsEmptiedOnlyOnceTheRecordIsSaved() returns error? {
+function aChangeOnARecordThatMovedOnWritesNothing() returns error? {
+    Submission submission = aSubmission();
+    _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+    [Manifest, string]? loaded = check loadManifest("123");
+    if loaded is () {
+        test:assertFail("The record was not found");
+    }
+    string identity = FOLDER + "/Ada Lovelace - Identity document.pdf";
+    Submission byA = {
+        documents: [{key: "identityDocument", extension: "pdf", contentType: "application/pdf", content: [1, 1, 1]}],
+        details: submission.details
+    };
+    Submission byB = {
+        documents: [{key: "identityDocument", extension: "pdf", contentType: "application/pdf", content: [2, 2, 2]}],
+        details: submission.details
+    };
+
+    // Both read the record with the same tag. A saves first, so B is refused before it writes anything.
+    test:assertTrue(check saveChanges("123", loaded[0], loaded[1], byA, "Ada Lovelace", "test-request"));
+    int writesAfterA = store.writeCount();
+    test:assertFalse(check saveChanges("123", loaded[0], loaded[1], byB, "Ada Lovelace", "test-request"));
+    test:assertEquals(store.writeCount(), writesAfterA);
+    test:assertEquals(contentOf(identity), <byte[]>[1, 1, 1]);
+}
+
+@test:Config {}
+function aChangeRefusedAfterTheFilesWereReplacedPutsThemBack() returns error? {
+    Submission submission = aSubmission();
+    _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+    [Manifest, string]? loaded = check loadManifest("123");
+    if loaded is () {
+        test:assertFail("The record was not found");
+    }
+    string identity = FOLDER + "/Ada Lovelace - Identity document.pdf";
+    byte[] identityBefore = contentOf(identity);
+    Submission update = {
+        documents: [{key: "identityDocument", extension: "pdf", contentType: "application/pdf", content: [1, 2, 3]}],
+        details: submission.details
+    };
+
+    // The record still matches when the change starts, but its own write is refused after the file was replaced.
+    store.refuseWritesTo("submitted.json");
+    boolean saved = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    test:assertFalse(saved);
+    test:assertEquals(contentOf(identity), identityBefore);
+}
+
+@test:Config {}
+function aChangeThatFailsPartwayPutsTheEarlierFilesBack() returns error? {
+    Submission submission = aSubmission();
+    _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
+    [Manifest, string]? loaded = check loadManifest("123");
+    if loaded is () {
+        test:assertFail("The record was not found");
+    }
+    string identity = FOLDER + "/Ada Lovelace - Identity document.pdf";
+    string birth = FOLDER + "/Ada Lovelace - Birth certificate.pdf";
+    byte[] identityBefore = contentOf(identity);
+    byte[] birthBefore = contentOf(birth);
+    int filesBefore = store.names().length();
+    Submission update = {
+        documents: [
+            {key: "identityDocument", extension: "pdf", contentType: "application/pdf", content: [1, 2, 3]},
+            {key: "birthCertificate", extension: "pdf", contentType: "application/pdf", content: [4, 5, 6]}
+        ],
+        details: submission.details
+    };
+
+    // The second file cannot be written, so the change fails after the first one was replaced.
+    store.failWritesTo("Birth certificate");
+    boolean|error result = saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
+    store.failWritesTo("");
+    test:assertTrue(result is error);
+
+    test:assertEquals(contentOf(identity), identityBefore);
+    test:assertEquals(contentOf(birth), birthBefore);
+    test:assertEquals(store.names().length(), filesBefore);
+    [Manifest, string]? after = check loadManifest("123");
+    test:assertEquals(after is () ? () : after[0].files, loaded[0].files);
+}
+
+@test:Config {}
+function aFileOfAnotherTypeIsEmptiedOnlyOnceTheRecordIsSaved() returns error? {
     Submission submission = aSubmission();
     _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
     [Manifest, string]? loaded = check loadManifest("123");
@@ -219,38 +325,23 @@ function aReplacedFileWithAnotherExtensionIsEmptiedOnlyOnceTheRecordIsSaved() re
     }
     string oldPicture = FOLDER + "/Ada Lovelace - Profile picture.png";
     string newPicture = FOLDER + "/Ada Lovelace - Profile picture.jpg";
+    byte[] oldBefore = contentOf(oldPicture);
     Submission update = {
         documents: [{key: "profilePicture", extension: "jpg", contentType: "image/jpeg", content: [1, 2, 3]}],
         details: submission.details
     };
 
-    // The record changed since it was read, so the save is refused and the earlier picture stays as it was.
-    _ = store.write(FOLDER + "/submitted.json", "{}".toBytes(), false, ());
-    boolean refused = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
-    test:assertFalse(refused);
-    [byte[], string]? kept = store.read(oldPicture);
-    test:assertTrue(kept is [byte[], string] && kept[0].length() > 0);
-}
+    // The record write is refused, so the earlier picture stays and the new file holds nothing.
+    store.refuseWritesTo("submitted.json");
+    test:assertFalse(check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request"));
+    store.refuseWritesTo("");
+    test:assertEquals(contentOf(oldPicture), oldBefore);
+    test:assertEquals(contentOf(newPicture), <byte[]>[]);
 
-@test:Config {}
-function aSavedChangeEmptiesTheReplacedFileOfAnotherExtension() returns error? {
-    Submission submission = aSubmission();
-    _ = check storeDocuments("123", submission, "Ada Lovelace", "test-request");
-    [Manifest, string]? loaded = check loadManifest("123");
-    if loaded is () {
-        test:assertFail("The record was not found");
-    }
-    Submission update = {
-        documents: [{key: "profilePicture", extension: "jpg", contentType: "image/jpeg", content: [1, 2, 3]}],
-        details: submission.details
-    };
-
-    boolean saved = check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request");
-    test:assertTrue(saved);
-    [byte[], string]? emptied = store.read(FOLDER + "/Ada Lovelace - Profile picture.png");
-    test:assertEquals(emptied is () ? () : emptied[0], <byte[]>[]);
-    [byte[], string]? added = store.read(FOLDER + "/Ada Lovelace - Profile picture.jpg");
-    test:assertEquals(added is () ? () : added[0], <byte[]>[1, 2, 3]);
+    // Saved, so the record points at the new picture and the earlier one is emptied.
+    test:assertTrue(check saveChanges("123", loaded[0], loaded[1], update, "Ada Lovelace", "test-request"));
+    test:assertEquals(contentOf(newPicture), <byte[]>[1, 2, 3]);
+    test:assertEquals(contentOf(oldPicture), <byte[]>[]);
 }
 
 @test:Config {}

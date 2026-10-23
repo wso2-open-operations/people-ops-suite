@@ -249,44 +249,98 @@ public isolated function storeDocuments(string applicationId, Submission submiss
 }
 
 # Applies a candidate's changes to a submission: the files they sent replace the earlier ones, and the details are
-# replaced. The record is only replaced if nobody changed it since it was read, which is false when someone did.
+# replaced. Nothing is written when the record has changed since it was read. Otherwise the files are replaced and the
+# record is saved, and if that is refused or anything fails, the earlier files are put back, so the candidate has
+# either the new submission or the old one. False when the record had changed.
 public isolated function saveChanges(string applicationId, Manifest current, string etag, Submission update,
         string candidateName, string requestId) returns boolean|error {
     map<string> metadata = {applicationid: applicationId, requestid: requestId};
-    map<string> files = current.files.clone();
     // The folder and the file names keep the name the submission was made under.
     string folder = current.folder;
-    string[] replaced = [];
-    foreach UploadedDocument document in update.documents {
-        string name = fileName(folder, current.candidateName, document.key, document.extension);
-        _ = check putBlob(name, document.content, document.contentType, metadata);
-        string? previous = files[document.key];
-        if previous is string && previous != name {
-            replaced.push(previous);
-        }
-        files[document.key] = name;
+    [Manifest, string]? latest = check manifestIn(folder);
+    if latest is () || latest[1] != etag {
+        return false;
     }
-    Manifest next = {
-        applicationId: current.applicationId,
-        candidateName,
-        folder,
-        details: update.details,
-        files,
-        declared: true,
-        submittedAt: current.submittedAt,
-        updatedAt: time:utcToString(time:utcNow())
-    };
-    boolean saved = check putBlob(manifestName(folder), next.toJsonString().toBytes(), "application/json", metadata,
-        etag = etag);
-    if saved {
-        // A replaced file with another extension cannot be deleted with this token, so it is emptied, and only once
-        // the record no longer points at it.
-        foreach string previous in replaced {
-            boolean|error emptied = putBlob(previous, [], "application/octet-stream", metadata);
-            if emptied is error {
-                log:printWarn("Could not empty a replaced file", errorMessage = emptied.message(), requestId = requestId);
+
+    map<string> files = current.files.clone();
+    // The files replaced under their own name, with what they held, to put back; the files written under a new name
+    // (the type changed); and the earlier files of those, to remove once the record points at the new ones.
+    [string, byte[], string][] overwritten = [];
+    string[] added = [];
+    string[] superseded = [];
+    boolean|error saved = false;
+    do {
+        foreach UploadedDocument document in update.documents {
+            string name = fileName(folder, current.candidateName, document.key, document.extension);
+            string? previous = files[document.key];
+            if previous is string && previous == name {
+                [byte[], string]? earlier = check readBlob(name);
+                if earlier is [byte[], string] {
+                    overwritten.push([name, earlier[0], earlier[1]]);
+                }
+            } else {
+                added.push(name);
+                if previous is string {
+                    superseded.push(previous);
+                }
+            }
+            _ = check putBlob(name, document.content, document.contentType, metadata);
+            files[document.key] = name;
+        }
+        Manifest next = {
+            applicationId: current.applicationId,
+            candidateName,
+            folder,
+            details: update.details,
+            files,
+            declared: true,
+            submittedAt: current.submittedAt,
+            updatedAt: time:utcToString(time:utcNow())
+        };
+        saved = check putBlob(manifestName(folder), next.toJsonString().toBytes(), "application/json", metadata,
+            etag = etag);
+    } on fail error failure {
+        saved = failure;
+    }
+
+    if saved is true {
+        // A file of another type has another name. It cannot be deleted with this token, so the earlier one is
+        // emptied, and only once the record no longer points at it.
+        emptyBlobs(superseded, metadata, requestId);
+    } else {
+        foreach [string, byte[], string] [name, content, contentType] in overwritten {
+            boolean|error restored = putBlob(name, content, contentType, metadata);
+            if restored is error {
+                log:printWarn("Could not put back an earlier file", errorMessage = restored.message(),
+                    requestId = requestId);
             }
         }
+        emptyBlobs(added, metadata, requestId);
     }
     return saved;
+}
+
+// What a blob holds and its content type, or nothing when there is no such blob.
+isolated function readBlob(string name) returns [byte[], string]?|error {
+    http:Response resp = check storageClient->get(check blobPath(name), {"x-ms-version": STORAGE_API_VERSION});
+    if resp.statusCode == http:STATUS_NOT_FOUND {
+        return ();
+    }
+    if resp.statusCode != http:STATUS_OK {
+        return storageError(resp);
+    }
+    byte[] content = check resp.getBinaryPayload();
+    string|http:HeaderNotFoundError contentType = resp.getHeader("Content-Type");
+    return [content, contentType is string ? contentType : "application/octet-stream"];
+}
+
+// Empties blobs that no record points at, since this token cannot delete them. A blob that cannot be emptied is
+// logged and left.
+isolated function emptyBlobs(string[] names, map<string> metadata, string requestId) {
+    foreach string name in names {
+        boolean|error emptied = putBlob(name, [], "application/octet-stream", metadata);
+        if emptied is error {
+            log:printWarn("Could not empty an unused file", errorMessage = emptied.message(), requestId = requestId);
+        }
+    }
 }
