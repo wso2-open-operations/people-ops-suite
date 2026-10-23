@@ -42,6 +42,7 @@ import {
   REVIEW_STEP,
   STEPS,
   deadlineText,
+  isSessionEnded,
   problemWith,
   squareProblem,
   submitFailureMessage,
@@ -55,7 +56,7 @@ import ReviewStep from "@view/documents/ReviewStep";
 const Documents = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { getToken } = useAppAuthContext();
+  const { getToken, renewToken } = useAppAuthContext();
   const { id: applicationId } = useParams<{ id: string }>();
   const applications = useAppSelector((state: RootState) => state.careers.applications);
   const applicationsState = useAppSelector((state: RootState) => state.careers.applicationsState);
@@ -195,7 +196,20 @@ const Documents = () => {
     setSubmitting(true);
     try {
       const token = await getToken();
-      await submitDocuments(token, application.id, files, details, editing);
+      try {
+        await submitDocuments(token, application.id, files, details, editing);
+      } catch (error) {
+        if (!isSessionEnded(error)) throw error;
+        // The token expired while the candidate was filling in the form. A new one is got without leaving the page, so
+        // what they entered is kept, and the submission is sent once more.
+        let fresh: string;
+        try {
+          fresh = await renewToken();
+        } catch {
+          throw error;
+        }
+        await submitDocuments(fresh, application.id, files, details, editing);
+      }
       setFiles({});
       setSubmitted(true);
       const message = editing ? SnackMessage.success.documentsUpdated : SnackMessage.success.documentsSent;

@@ -29,12 +29,24 @@ type AuthContextType = {
   isSignedIn: boolean;
   // The access token for a signed-in user, or an empty string for a guest.
   getToken: () => Promise<string>;
+  // A new access token for a signed-in user whose token has expired, got without leaving the page. It fails when the
+  // sign-in cannot be renewed that way, and the user has to sign in again.
+  renewToken: () => Promise<string>;
 };
 
 const AuthContext = React.createContext<AuthContextType>({} as AuthContextType);
 
 const AppAuthProvider = (props: { children: React.ReactNode }) => {
-  const { signIn, signOut, state, getBasicUserInfo, getDecodedIDToken, getAccessToken } = useAuthContext();
+  const {
+    signIn,
+    signOut,
+    state,
+    getBasicUserInfo,
+    getDecodedIDToken,
+    getAccessToken,
+    refreshAccessToken,
+    trySignInSilently,
+  } = useAuthContext();
   const isAuthenticated = state.isAuthenticated;
   const isLoading = state.isLoading;
 
@@ -79,7 +91,18 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     }
   }, [isAuthenticated, getAccessToken]);
 
-  const authContext: AuthContextType = { appSignIn, appSignOut, isSignedIn: isAuthenticated, getToken };
+  // Renews the access token with the refresh token, and when there is none, through the user's session with the
+  // identity provider.
+  const renewToken = useCallback(async () => {
+    try {
+      await refreshAccessToken();
+    } catch {
+      if (!(await trySignInSilently())) throw new Error("The session could not be renewed.");
+    }
+    return getAccessToken();
+  }, [refreshAccessToken, trySignInSilently, getAccessToken]);
+
+  const authContext: AuthContextType = { appSignIn, appSignOut, isSignedIn: isAuthenticated, getToken, renewToken };
 
   if (isLoading) {
     return <PreLoader isLoading message="Setting up your Candidate Passport ..." />;

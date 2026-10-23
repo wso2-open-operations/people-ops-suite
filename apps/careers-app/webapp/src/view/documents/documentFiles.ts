@@ -18,6 +18,7 @@ import axios from "axios";
 
 import type { DocumentRequirement, DocumentRequirements } from "@/types/types";
 import { SnackMessage } from "@config/constant";
+import { SESSION_EXPIRED_ERROR } from "@utils/profileService";
 
 const MEGABYTE = 1024 * 1024;
 
@@ -75,8 +76,12 @@ export const STATUS_COLORS = { Complete: "success", Pending: "default", "Action 
 export const statusOf = (hasFile: boolean, problem: string | undefined): keyof typeof STATUS_COLORS =>
   problem ? "Action needed" : hasFile ? "Complete" : "Pending";
 
+// Whether a request failed because the sign-in has ended, as opposed to being refused.
+export const isSessionEnded = (error: unknown) => error instanceof Error && error.name === SESSION_EXPIRED_ERROR;
+
 // The message for a submission that was refused, taken from the reply when the backend explains why.
 export const submitFailureMessage = (error: unknown) => {
+  if (isSessionEnded(error)) return SnackMessage.error.sessionEndedOnSubmit;
   const status = axios.isAxiosError(error) ? error.response?.status : undefined;
   if (status === 400 || status === 403 || status === 409) {
     const reason = axios.isAxiosError(error) ? (error.response?.data as { message?: unknown })?.message : undefined;

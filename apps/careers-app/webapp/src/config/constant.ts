@@ -33,6 +33,7 @@ export const SnackMessage = {
     offerExpired: "This offer has expired. Please contact the recruitment team if you still want to join.",
     fetchDocumentRequirements: "Unable to load the list of documents. Please try again.",
     submitDocuments: "Unable to submit your documents. Please try again.",
+    sessionEndedOnSubmit: "Your session has ended. Please sign in again to submit your documents.",
     documentsAlreadySent: "Your documents were already submitted for this application.",
     documentsNotAllowed: "Documents can't be submitted for this application.",
     documentsTooLarge: "The files are too large to send.",
