@@ -106,7 +106,7 @@ public isolated function getAccessToken(http:RequestContext ctx) returns string|
     return ctx.getWithType(CTX_TOKEN);
 }
 
-# Read the validated caller back out of the request context, for resource functions that need the caller's identity.
+# The validated caller, read back from the request context.
 public isolated function getUser(http:RequestContext ctx) returns AsgardeoJwt|error {
     return ctx.getWithType(CTX_USER);
 }

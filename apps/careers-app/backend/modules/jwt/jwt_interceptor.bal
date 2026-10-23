@@ -20,11 +20,10 @@ import wso2/careers_app.types;
 import ballerina/http;
 import ballerina/log;
 
-// Kept apart from the apply limiter, whose entries are aged out by a different window.
-final apply:ApplyRateLimiter signedInRateLimiter = new;
+final apply:UserRateLimiter signedInRateLimiter = new;
 
-# The routes open to guests, listed exactly: the job list, org structure, one job's detail and applying.
-# A route added later, such as GET /jobs/saved, is not public unless it is added here.
+# The routes open to guests, listed exactly: the job list, org structure, one job's detail and applying. A route
+# that is not listed is not public.
 isolated function isPublicRoute(string method, string[] path) returns boolean {
     if method == http:GET {
         return (path.length() == 1 && path[0] == "jobs")

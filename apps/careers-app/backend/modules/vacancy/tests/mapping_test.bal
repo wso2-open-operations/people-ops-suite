@@ -91,11 +91,13 @@ function historyEntry(int id, string status = "CREATED", int vacancyId = 7) retu
 @test:Config {}
 function atsStatusesAreShownAsTheWebAppNamesThem() {
     test:assertEquals(applicationStatusOf("CREATED"), "Applied");
-    test:assertEquals(applicationStatusOf("IN_REVIEW"), "Screening");
+    test:assertEquals(applicationStatusOf("SHORTLISTED"), "Screening");
     test:assertEquals(applicationStatusOf("INTERVIEW_IN_PROGRESS"), "Interview");
     test:assertEquals(applicationStatusOf("INTERVIEW_COMPLETED"), "Interview");
     test:assertEquals(applicationStatusOf("HIRED"), "Offer Accepted");
     test:assertEquals(applicationStatusOf("REJECTED"), "Rejected");
+    test:assertEquals(applicationStatusOf("NOT_SHORTLISTED"), "Rejected");
+    test:assertEquals(applicationStatusOf("VACANCY_CLOSED"), "Applied");
     test:assertEquals(applicationStatusOf("SOMETHING_NEW"), "Applied");
 }
 
@@ -112,6 +114,18 @@ function applicationsAreNewestFirstWithoutDeletedOnes() {
     test:assertEquals(applications[1].jobTitle, "Engineer");
     test:assertEquals(applications[1].department, "Engineering");
     test:assertEquals(applications[1].appliedDate, "2026-01-01T00:00:00Z");
+    // An application that was never changed was last updated when it was made.
+    test:assertEquals(applications[1].updatedDate, "2026-01-01T00:00:00Z");
+}
+
+@test:Config {}
+function anApplicationShowsWhenItLastChanged() {
+    AtsHistoryEntry shortlisted = historyEntry(5, "SHORTLISTED");
+    shortlisted.updatedOn = "2026-01-04T09:30:00Z";
+    ApplicationSummary[] applications = applicationsOf([shortlisted], {});
+    test:assertEquals(applications[0].status, "Screening");
+    test:assertEquals(applications[0].appliedDate, "2026-01-01T00:00:00Z");
+    test:assertEquals(applications[0].updatedDate, "2026-01-04T09:30:00Z");
 }
 
 @test:Config {}
@@ -501,4 +515,78 @@ function otherVacanciesNeedAnAddressAndTakeNoUniversity() {
     test:assertEquals(candidate.vacancyId, 7);
     test:assertEquals(candidate.status, "CREATED");
     test:assertEquals(candidate.appliedFrom, "Career Site");
+}
+
+@test:Config {}
+function aVirtualInterviewShowsItsMeetingLink() {
+    ApplicationInterview shown = interviewOf({
+        id: 7,
+        status: "SCHEDULED",
+        startTime: "2026-11-05T11:00:00",
+        interviewStage: "Technical interview",
+        interviewModality: "Virtual",
+        meetingUrl: " https://meet.example.test/abc "
+    });
+    test:assertEquals(shown, <ApplicationInterview>{
+        id: "7",
+        round: "Technical interview",
+        dateTime: "2026-11-05T11:00:00",
+        mode: "Video",
+        location: "https://meet.example.test/abc",
+        status: "Upcoming"
+    });
+}
+
+@test:Config {}
+function aPhysicalInterviewShowsItsPlace() {
+    AtsInterview custom = {id: 8, status: "COMPLETED", interviewModality: "Physical", customLocation: "Head office, lobby"};
+    test:assertEquals(interviewOf(custom).location, "Head office, lobby");
+    test:assertEquals(interviewOf(custom).mode, "Onsite");
+    test:assertEquals(interviewOf(custom).status, "Completed");
+
+    AtsInterview room = {id: 9, status: "SCHEDULED", interviewModality: "Physical", roomName: "Orion", floorNumber: "3"};
+    test:assertEquals(interviewOf(room).location, "Orion, floor 3");
+}
+
+@test:Config {}
+function aWithdrawnInterviewIsCancelledAndTheRoundFallsBackToTheTitle() {
+    ApplicationInterview shown = interviewOf({id: 10, status: "WITHDRAWN", title: "Final round", interviewModality: "Virtual"});
+    test:assertEquals(shown.status, "Cancelled");
+    test:assertEquals(shown.round, "Final round");
+    test:assertEquals(shown.location, "");
+    test:assertEquals(interviewOf({id: 11, status: "SCHEDULED"}).round, "Interview");
+}
+
+@test:Config {}
+function nothingInternalIsPassedOnWithAnInterview() returns error? {
+    json reply = {
+        "interviews": [
+            {
+                "id": 12,
+                "status": "SCHEDULED",
+                "startTime": "2026-11-06T09:00:00",
+                "interviewModality": "Virtual",
+                "meetingUrl": "https://meet.example.test/x",
+                "interviewerEmail": "interviewer@example.test",
+                "scoreCards": [{"score": 4}],
+                "description": "Internal notes"
+            }
+        ]
+    };
+    AtsInterviewResponse parsed = check reply.fromJsonWithType();
+    json shown = interviewsOf(parsed.interviews).toJson();
+    string text = shown.toJsonString();
+    test:assertFalse(text.includes("interviewer"));
+    test:assertFalse(text.includes("score"));
+    test:assertFalse(text.includes("Internal notes"));
+    test:assertTrue(text.includes("https://meet.example.test/x"));
+}
+
+@test:Config {}
+function interviewsAreListedInTheOrderTheyTakePlace() {
+    ApplicationInterview[] shown = interviewsOf([
+        {id: 2, status: "SCHEDULED", startTime: "2026-11-09T10:00:00"},
+        {id: 1, status: "COMPLETED", startTime: "2026-11-02T10:00:00"}
+    ]);
+    test:assertEquals(shown.map(interview => interview.id), ["1", "2"]);
 }

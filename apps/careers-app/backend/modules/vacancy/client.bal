@@ -128,8 +128,7 @@ isolated function getWithToken(string path, string requestId) returns http:Respo
 # POST to the ATS with automatic token refresh on 401.
 isolated function postWithToken(string path, AtsCandidate payload, string requestId)
         returns http:Response|error {
-    // A read-only copy, since the request may be sent twice and is built inside a function that cannot capture a
-    // mutable value.
+    // A read-only copy, which the retry can send again.
     final readonly & AtsCandidate body = payload.cloneReadOnly();
     return withToken(isolated function(string token) returns http:Response|error {
         return atsApplyHttpClient->post(path, body, authHeaders(token, requestId));
@@ -257,7 +256,7 @@ isolated function appConfig(string requestId) returns AtsAppConfig|error {
 }
 
 isolated function loadJobList(string requestId) returns VacancyBasicInfo[]|error {
-    // The two reads do not depend on each other, so they run together.
+    // The two reads run together.
     future<AtsVacancy[]|error> vacanciesRead = start publishedVacancies(requestId);
     future<AtsBusinessUnit[]|error> unitsRead = start orgDetails(requestId);
     AtsVacancy[]|error vacancies = wait vacanciesRead;
@@ -301,7 +300,7 @@ isolated function loadJobDetail(string jobId, string requestId) returns JobDetai
         return error UpstreamError("The vacancy is not published", status = http:STATUS_BAD_REQUEST);
     }
     do {
-        // The reads below do not depend on each other, so they run together once the vacancy is known.
+        // The reads below run together once the vacancy is known.
         future<AtsCompany[]|error> companiesRead = start companies(requestId);
         future<AtsBusinessUnit[]|error> unitsRead = start orgDetails(requestId);
         future<AtsCareerFunction[]|error> functionsRead = start careerFunctions(requestId);
@@ -322,7 +321,7 @@ isolated function loadJobDetail(string jobId, string requestId) returns JobDetai
 isolated function asLookupFailure(error err) returns error =>
     err is UpstreamError ? error UpstreamError("A lookup for the job failed", status = http:STATUS_BAD_GATEWAY) : err;
 
-// The other vacancies like this one; none when the lookup fails, since they only add to the page.
+// The other vacancies like this one; none when the lookup fails.
 isolated function similarVacancies(int designationId, string employmentType, string requestId) returns AtsVacancy[] {
     AtsVacancy[]|error similar = publishedVacancies(requestId, designationId, employmentType);
     if similar is error {
@@ -338,7 +337,7 @@ isolated function candidateFor(string jobId, CandidateApplication candidate, str
     if vacancyId is error {
         return error UpstreamError("Invalid vacancy id", status = http:STATUS_BAD_REQUEST);
     }
-    // Only the vacancy itself is read, so a failed lookup that feeds the job page cannot block an application.
+    // Only the vacancy is read.
     AtsVacancy vacancy = check fetchVacancy(jobId, requestId);
     if !isOpenToApply(vacancy) {
         return error UpstreamError("The vacancy is not available", status = http:STATUS_NOT_FOUND);
@@ -390,6 +389,27 @@ isolated function profileFor(string email, string requestId) returns CandidatePr
     return profile;
 }
 
+# The candidate's full name, first and last name as saved in their profile, when the application is one of their own
+# and its offer is accepted; nothing otherwise. One read of the history answers both.
+public isolated function acceptedApplicantName(string email, string applicationId, string requestId)
+        returns string?|error {
+    int|error id = int:fromString(applicationId);
+    if id is error {
+        return ();
+    }
+    AtsHistoryEntry[] history = check candidateHistory(email, requestId);
+    foreach AtsHistoryEntry entry in history {
+        if entry.id == id {
+            CandidateProfile? profile = profileOf(history, email);
+            if entry.status != CANDIDATE_STATUS_HIRED || profile is () {
+                return ();
+            }
+            return string:'join(" ", profile.firstName, profile.lastName).trim();
+        }
+    }
+    return ();
+}
+
 isolated function profileReplyOf(CandidateProfile|error profile, string requestId) returns http:Response|error =>
     profile is error ? failedReply(profile, requestId) : okReply(profile.toJson());
 
@@ -401,6 +421,81 @@ public isolated function getProfile(string email, string requestId) returns http
 public isolated function listApplications(string email, string requestId) returns ApplicationSummary[]|error {
     AtsHistoryEntry[] history = check candidateHistory(email, requestId);
     return applicationsOf(history, departmentsOf(cachedJobsIfPresent()));
+}
+
+// The interviews of one of the caller's own applications, found through their email.
+isolated function interviewsFor(string email, string applicationId, string requestId)
+        returns ApplicationInterview[]|error {
+    int|error id = int:fromString(applicationId);
+    if id is error {
+        return error UpstreamError("Application not found", status = http:STATUS_NOT_FOUND);
+    }
+    AtsHistoryEntry[] history = check candidateHistory(email, requestId);
+    foreach AtsHistoryEntry entry in history {
+        if entry.id == id && entry.status != CANDIDATE_STATUS_DELETED {
+            json body = check atsJson(string `/interviews?status=SCHEDULED&status=COMPLETED&status=WITHDRAWN&candidateVacancyId=${entry.id}&limit=${MAX_INTERVIEWS}`,
+                requestId);
+            AtsInterviewResponse reply = check body.fromJsonWithType();
+            return interviewsOf(reply.interviews);
+        }
+    }
+    return error UpstreamError("Application not found", status = http:STATUS_NOT_FOUND);
+}
+
+# The interviews of one of the caller's own applications; a 404 reply when it is not theirs.
+public isolated function getInterviews(string email, string applicationId, string requestId)
+        returns http:Response|error {
+    ApplicationInterview[]|error interviews = interviewsFor(email, applicationId, requestId);
+    return interviews is error ? failedReply(interviews, requestId) : okReply(interviews.toJson());
+}
+
+// The offer letter of one of the caller's own applications, found through their email.
+isolated function offerLetterFor(string email, string applicationId, string requestId) returns OfferLetter|error {
+    int|error id = int:fromString(applicationId);
+    if id is error {
+        return error UpstreamError("Application not found", status = http:STATUS_NOT_FOUND);
+    }
+    AtsHistoryEntry[] history = check candidateHistory(email, requestId);
+    foreach AtsHistoryEntry entry in history {
+        if entry.id == id && entry.status != CANDIDATE_STATUS_DELETED {
+            json body = check atsJson(string `/candidates/${entry.candidateId}/vacancies/${entry.id}/offer-letter`,
+                requestId);
+            AtsOfferLetter letter = check body.fromJsonWithType();
+            if letter.htmlContent == "" {
+                return error UpstreamError("No offer letter was found", status = http:STATUS_NOT_FOUND);
+            }
+            return {
+                subject: letter.subject,
+                sentOn: letter.sentOn,
+                threadId: letter.threadId ?: "",
+                html: letter.htmlContent
+            };
+        }
+    }
+    return error UpstreamError("Application not found", status = http:STATUS_NOT_FOUND);
+}
+
+# The offer letter sent for one of the caller's own applications; a 404 reply when it is not theirs or has none.
+public isolated function getOfferLetter(string email, string applicationId, string requestId)
+        returns http:Response|error {
+    OfferLetter|error letter = offerLetterFor(email, applicationId, requestId);
+    return letter is error ? failedReply(letter, requestId) : okReply(letter.toJson());
+}
+
+# Whether the application is one of the caller's own, found through their email, and the ATS shows its offer as
+# accepted. An application that is not the caller's gives false, the same as one that is not accepted.
+public isolated function isOfferAccepted(string email, string applicationId, string requestId) returns boolean|error {
+    int|error id = int:fromString(applicationId);
+    if id is error {
+        return false;
+    }
+    AtsHistoryEntry[] history = check candidateHistory(email, requestId);
+    foreach AtsHistoryEntry entry in history {
+        if entry.id == id {
+            return entry.status == CANDIDATE_STATUS_HIRED;
+        }
+    }
+    return false;
 }
 
 isolated function saveProfile(string email, ProfileChanges changes, string requestId) returns CandidateProfile|error {

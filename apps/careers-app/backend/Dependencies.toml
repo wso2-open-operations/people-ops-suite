@@ -383,6 +383,7 @@ dependencies = [
 modules = [
 	{org = "wso2", packageName = "careers_app", moduleName = "careers_app"},
 	{org = "wso2", packageName = "careers_app", moduleName = "careers_app.apply"},
+	{org = "wso2", packageName = "careers_app", moduleName = "careers_app.documents"},
 	{org = "wso2", packageName = "careers_app", moduleName = "careers_app.jwt"},
 	{org = "wso2", packageName = "careers_app", moduleName = "careers_app.types"},
 	{org = "wso2", packageName = "careers_app", moduleName = "careers_app.vacancy"}

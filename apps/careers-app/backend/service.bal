@@ -15,6 +15,7 @@
 // under the License.
 
 import wso2/careers_app.apply;
+import wso2/careers_app.documents;
 import wso2/careers_app.jwt;
 import wso2/careers_app.types;
 import wso2/careers_app.vacancy;
@@ -28,7 +29,20 @@ configurable int port = ?;
 # Longest piece of an upstream reply written to the log.
 const MAX_LOGGED_REPLY_LENGTH = 200;
 
-final apply:ApplyRateLimiter applyRateLimiter = new;
+# Whether the request declares a body larger than the limit. The listener's own limit still applies to a request
+# that does not declare its length.
+isolated function exceeds(http:Request req, int maxBytes) returns boolean {
+    string|http:HeaderNotFoundError declared = req.getHeader(http:CONTENT_LENGTH);
+    if declared is string {
+        int|error length = int:fromString(declared);
+        return length is int && length > maxBytes;
+    }
+    return false;
+}
+
+# Whether the request declares the length of its body. The listener then reads only the declared bytes, which a body
+# sent in chunks does not allow.
+isolated function declaresLength(http:Request req) returns boolean => req.hasHeader(http:CONTENT_LENGTH);
 
 # Passes an upstream JSON response, or maps its failure to a gateway error.
 isolated function forwardOrError(http:Response|error resp, string failureMessage, string requestId)
@@ -57,13 +71,13 @@ isolated function forwardOrError(http:Response|error resp, string failureMessage
 @http:ServiceConfig {
     cors: {
         allowOrigins: allowedOrigins,
-        allowMethods: [http:GET, http:POST, http:OPTIONS, http:PATCH],
+        allowMethods: [http:GET, http:POST, http:PUT, http:OPTIONS, http:PATCH],
         allowHeaders: [http:CONTENT_TYPE, http:AUTH_HEADER, types:REQUEST_ID_HEADER],
         allowCredentials: false,
         maxAge: 84900
     }
 }
-service http:InterceptableService / on new http:Listener(port, requestLimits = {maxEntityBodySize: apply:MAX_REQUEST_BYTES}) {
+service http:InterceptableService / on new http:Listener(port, requestLimits = {maxEntityBodySize: documents:MAX_REQUEST_BYTES}) {
 
     function init() {
         log:printInfo("Careers App backend started...");
@@ -71,8 +85,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     }
 
     public function createInterceptors() returns http:Interceptor[] =>
-        [new types:RequestIdInterceptor(), new apply:RemoteAddressInterceptor(), new jwt:JwtInterceptor(),
-            new jwt:NoStoreInterceptor()];
+        [new types:RequestIdInterceptor(), new jwt:JwtInterceptor(), new jwt:NoStoreInterceptor()];
 
     # The published job list. Public: no sign-in needed.
     resource function get jobs(http:RequestContext ctx) returns json|http:BadGateway|http:GatewayTimeout {
@@ -118,28 +131,24 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     }
 
     # Validates the application form and CV, then creates the candidate in the ATS.
-    # Public: guests have no account, so each address and each email is rate limited instead.
+    # Public: no sign-in needed.
     resource function post jobs/[string jobId]/apply(http:Request req, http:RequestContext ctx)
-            returns http:Created|http:BadRequest|http:NotFound|http:Conflict|http:TooManyRequests|http:BadGateway
+            returns http:Created|http:BadRequest|http:LengthRequired|http:NotFound|http:Conflict|http:BadGateway
                 |http:GatewayTimeout {
         if !types:isValidJobId(jobId) {
             return <http:BadRequest>{body: {message: "Invalid job id"}};
         }
         string requestId = types:requestIdOf(ctx);
-        string address = apply:clientAddress(req, apply:remoteHost(ctx));
-        if !applyRateLimiter.tryAcquireAddress(address) {
-            log:printWarn("Application rate limit reached for a client address", requestId = requestId);
-            return <http:TooManyRequests>{body: {message: "Too many applications. Please try again later."}};
+        // The listener's size limit is the larger one the documents need, so this public route bounds its own body.
+        if !declaresLength(req) {
+            return <http:LengthRequired>{body: {message: "The request must declare the length of its body."}};
         }
-
+        if exceeds(req, apply:MAX_REQUEST_BYTES) {
+            return <http:BadRequest>{body: {message: "The application is too large."}};
+        }
         apply:ApplicationForm|string form = apply:parseApplicationForm(req);
         if form is string {
             return <http:BadRequest>{body: {message: form}};
-        }
-
-        if !applyRateLimiter.tryAcquireEmail(form.email) {
-            log:printWarn("Application rate limit reached for an email address", requestId = requestId);
-            return <http:TooManyRequests>{body: {message: "Too many applications. Please try again later."}};
         }
 
         vacancy:CandidateApplication candidate = {
@@ -223,6 +232,212 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             return candidateFailure(applications, "Failed to fetch the candidate's applications", requestId);
         }
         return applications;
+    }
+
+    # The offer letter sent for one of the signed-in candidate's own applications, 404 when there is none.
+    resource function get applications/[string applicationId]/offer\-letter(http:RequestContext ctx)
+            returns json|http:Unauthorized|http:Forbidden|http:BadRequest|http:NotFound|http:BadGateway
+                |http:GatewayTimeout {
+        string requestId = types:requestIdOf(ctx);
+        if !types:isValidJobId(applicationId) {
+            return <http:NotFound>{body: {message: "Application not found"}};
+        }
+        jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
+            callerOf(ctx, requestId);
+        if caller !is jwt:CallerDetails {
+            return caller;
+        }
+        return profileReply(vacancy:getOfferLetter(caller.email, applicationId, requestId),
+            "Failed to fetch the offer letter", requestId);
+    }
+
+    # The interviews of one of the signed-in candidate's own applications, in the order they take place.
+    resource function get applications/[string applicationId]/interviews(http:RequestContext ctx)
+            returns json|http:Unauthorized|http:Forbidden|http:BadRequest|http:NotFound|http:BadGateway
+                |http:GatewayTimeout {
+        string requestId = types:requestIdOf(ctx);
+        if !types:isValidJobId(applicationId) {
+            return <http:NotFound>{body: {message: "Application not found"}};
+        }
+        jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
+            callerOf(ctx, requestId);
+        if caller !is jwt:CallerDetails {
+            return caller;
+        }
+        return profileReply(vacancy:getInterviews(caller.email, applicationId, requestId),
+            "Failed to fetch the interviews", requestId);
+    }
+
+    # Whether the signed-in candidate has submitted the documents for one of their own accepted offers, whether they
+    # can still change them and until when, and, when they have submitted, what they saved.
+    resource function get applications/[string applicationId]/documents(http:RequestContext ctx)
+            returns json|http:Unauthorized|http:Forbidden|http:NotFound|http:BadGateway|http:GatewayTimeout {
+        string requestId = types:requestIdOf(ctx);
+        if !types:isValidJobId(applicationId) {
+            return <http:NotFound>{body: {message: "Application not found"}};
+        }
+        jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
+            callerOf(ctx, requestId);
+        if caller !is jwt:CallerDetails {
+            return caller;
+        }
+        // The submission is read while the ATS is asked about the application, and is used only once the application
+        // is known to be an accepted offer of the caller's own.
+        future<documents:SubmissionStatus|error> read = start documents:submissionStatus(applicationId);
+        boolean|error accepted = vacancy:isOfferAccepted(caller.email, applicationId, requestId);
+        if accepted is error {
+            return candidateFailure(accepted, "Failed to check the application", requestId);
+        }
+        if !accepted {
+            return <http:NotFound>{body: {message: "Application not found"}};
+        }
+        documents:SubmissionStatus|error status = wait read;
+        if status is error {
+            return candidateFailure(status, "Failed to check the submission", requestId);
+        }
+        return status.toJson();
+    }
+
+    # The documents asked for after an offer is accepted, and the limits each file must meet.
+    resource function get documents/requirements() returns json => {
+        documents: documents:REQUIRED_DOCUMENTS.toJson(),
+        maxFiles: documents:MAX_FILES,
+        maxFileBytes: documents:MAX_FILE_BYTES,
+        maxTotalBytes: documents:MAX_TOTAL_BYTES,
+        tshirtSizes: documents:TSHIRT_SIZES,
+        titles: documents:TITLES,
+        genders: documents:GENDERS,
+        civilStatuses: documents:CIVIL_STATUSES,
+        dependantRelationships: documents:DEPENDANT_RELATIONSHIPS,
+        maxDependants: documents:MAX_DEPENDANTS,
+        maxEmergencyContacts: documents:MAX_EMERGENCY_CONTACTS
+    };
+
+    # Stores the signed-in candidate's onboarding documents for one of their own applications whose offer is accepted.
+    resource function post applications/[string applicationId]/documents(http:Request req, http:RequestContext ctx)
+            returns http:Created|http:BadRequest|http:Unauthorized|http:Forbidden|http:NotFound|http:Conflict
+                |http:BadGateway|http:GatewayTimeout {
+        string requestId = types:requestIdOf(ctx);
+        if !types:isValidJobId(applicationId) {
+            return <http:NotFound>{body: {message: "Application not found"}};
+        }
+        jwt:AsgardeoJwt|error user = jwt:getUser(ctx);
+        if user is error {
+            return <http:Forbidden>{body: {message: "The caller could not be identified"}};
+        }
+        jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
+            callerOf(ctx, requestId);
+        if caller !is jwt:CallerDetails {
+            return caller;
+        }
+
+        // The application is looked up through the caller's own email, so an id from the client is never trusted.
+        string?|error candidateName = vacancy:acceptedApplicantName(caller.email, applicationId, requestId);
+        if candidateName is error {
+            return candidateFailure(candidateName, "Failed to check the application", requestId);
+        }
+        if candidateName is () {
+            log:printWarn("Documents refused: not an accepted offer of the caller", outcome = "refused",
+                applicationId = applicationId, subject = user.sub, requestId = requestId);
+            return <http:NotFound>{body: {message: "Application not found"}};
+        }
+
+        if exceeds(req, documents:MAX_REQUEST_BYTES) {
+            return <http:BadRequest>{body: {message: "The documents are too large."}};
+        }
+        documents:Submission|string parsed = documents:parseDocuments(req);
+        if parsed is string {
+            log:printWarn("Documents refused: the files were not valid", outcome = "invalid",
+                applicationId = applicationId, subject = user.sub, requestId = requestId);
+            return <http:BadRequest>{body: {message: parsed}};
+        }
+
+        documents:SubmitOutcome|error stored = documents:storeDocuments(applicationId, parsed, candidateName, requestId);
+        if stored is error {
+            return candidateFailure(stored, "Failed to store the documents", requestId);
+        }
+        if stored == documents:IN_PROGRESS {
+            log:printWarn("Documents refused: another submission is in progress", outcome = "in-progress",
+                applicationId = applicationId, subject = user.sub, requestId = requestId);
+            return <http:Conflict>{
+                body: {message: "Your documents are already being submitted. Please wait a moment and check the application."}
+            };
+        }
+        if stored == documents:ALREADY_SUBMITTED {
+            log:printWarn("Documents refused: already submitted", outcome = "duplicate",
+                applicationId = applicationId, subject = user.sub, requestId = requestId);
+            return <http:Conflict>{body: {message: "Your documents were already submitted for this application."}};
+        }
+        log:printInfo("Onboarding documents stored", outcome = "stored", applicationId = applicationId,
+            subject = user.sub, files = parsed.documents.length(), requestId = requestId);
+        return <http:Created>{body: {message: "Documents submitted"}};
+    }
+
+    # Changes what the signed-in candidate submitted, until the deadline: the details are replaced, and so are the
+    # files they send. A file they do not send stays as it was.
+    resource function put applications/[string applicationId]/documents(http:Request req, http:RequestContext ctx)
+            returns http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:NotFound|http:Conflict
+                |http:BadGateway|http:GatewayTimeout {
+        string requestId = types:requestIdOf(ctx);
+        if !types:isValidJobId(applicationId) {
+            return <http:NotFound>{body: {message: "Application not found"}};
+        }
+        jwt:AsgardeoJwt|error user = jwt:getUser(ctx);
+        if user is error {
+            return <http:Forbidden>{body: {message: "The caller could not be identified"}};
+        }
+        jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
+            callerOf(ctx, requestId);
+        if caller !is jwt:CallerDetails {
+            return caller;
+        }
+
+        // The application is looked up through the caller's own email, so an id from the client is never trusted.
+        string?|error candidateName = vacancy:acceptedApplicantName(caller.email, applicationId, requestId);
+        if candidateName is error {
+            return candidateFailure(candidateName, "Failed to check the application", requestId);
+        }
+        if candidateName is () {
+            log:printWarn("Changes refused: not an accepted offer of the caller", outcome = "refused",
+                applicationId = applicationId, subject = user.sub, requestId = requestId);
+            return <http:NotFound>{body: {message: "Application not found"}};
+        }
+        [documents:Manifest, string]?|error loaded = documents:loadManifest(applicationId);
+        if loaded is error {
+            return candidateFailure(loaded, "Failed to read the submission", requestId);
+        }
+        if loaded is () {
+            return <http:NotFound>{body: {message: "There is nothing to change yet. Submit your documents first."}};
+        }
+        // The time to change a submission is only ever checked here, on the backend, so the page cannot extend it.
+        if !documents:canEdit(loaded[0]) {
+            log:printWarn("Changes refused: the time to change them has ended", outcome = "closed",
+                applicationId = applicationId, subject = user.sub, requestId = requestId);
+            return <http:Forbidden>{body: {message: "The time to change your documents has ended."}};
+        }
+
+        if exceeds(req, documents:MAX_REQUEST_BYTES) {
+            return <http:BadRequest>{body: {message: "The documents are too large."}};
+        }
+        documents:Submission|string parsed = documents:parseDocuments(req, loaded[0].files.keys());
+        if parsed is string {
+            log:printWarn("Changes refused: the files were not valid", outcome = "invalid",
+                applicationId = applicationId, subject = user.sub, requestId = requestId);
+            return <http:BadRequest>{body: {message: parsed}};
+        }
+
+        boolean|error saved = documents:saveChanges(applicationId, loaded[0], loaded[1], parsed, requestId);
+        if saved is error {
+            return candidateFailure(saved, "Failed to save the changes", requestId);
+        }
+        if !saved {
+            log:printWarn("Changes refused: the submission changed in the meantime", outcome = "changed",
+                applicationId = applicationId, subject = user.sub, requestId = requestId);
+            return <http:Conflict>{body: {message: "Your submission was changed elsewhere. Reload the page and try again."}};
+        }
+        log:printInfo("Onboarding documents changed", outcome = "updated", applicationId = applicationId,
+            subject = user.sub, files = parsed.documents.length(), requestId = requestId);
+        return <http:Ok>{body: {message: "Changes saved"}};
     }
 }
 
