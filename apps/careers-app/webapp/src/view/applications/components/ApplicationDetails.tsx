@@ -99,7 +99,7 @@ const ApplicationDetails = ({
           fontWeight={actionNeeded ? 700 : 500}
           sx={{ mt: 1.5, color: actionNeeded ? "#ff6700" : "text.secondary" }}
         >
-          {nextStepOf(application)}
+          {nextStepOf(application, interviews)}
         </Typography>
       </Box>
 
@@ -187,7 +187,9 @@ const ApplicationDetails = ({
                   </>
                 ) : (
                   <Typography fontSize="0.9rem" color="text.primary" mt={0.5}>
-                    The time to make changes has ended.
+                    {documentsStatus.editableUntil
+                      ? "The time to make changes has ended."
+                      : "Please contact the hiring team if something needs to change."}
                   </Typography>
                 )}
               </>

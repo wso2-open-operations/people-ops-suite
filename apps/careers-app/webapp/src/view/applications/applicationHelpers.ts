@@ -164,15 +164,15 @@ export const timeAgo = (value: string) => {
   return `${Math.floor(days / 30)} months ago`;
 };
 
-// The one-line summary of what happens next.
-export function nextStepOf(application: Application): string {
+// The one-line summary of what happens next, given the interviews fetched for the application.
+export function nextStepOf(application: Application, interviews: ApplicationInterview[]): string {
   switch (application.status) {
     case ApplicationStatus.Applied:
       return "Waiting for the hiring team to review your application";
     case ApplicationStatus.Screening:
       return "Your profile is being reviewed";
     case ApplicationStatus.Interview: {
-      const upcoming = (application.interviews ?? []).find((interview) => interview.status === "Upcoming");
+      const upcoming = interviews.find((interview) => interview.status === "Upcoming");
       return upcoming
         ? `Next: ${upcoming.round} · ${formatDateTime(upcoming.dateTime)}`
         : "Waiting for the interview outcome";

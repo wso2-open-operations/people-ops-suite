@@ -24,7 +24,7 @@ import Callout from "@component/common/Callout";
 import PageContainer from "@component/common/PageContainer";
 import { ApplicationStatus, SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
-import { loadProfile } from "@slices/careersSlice/careers";
+import { loadProfile, retryApplications } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { fetchDocumentRequirements, fetchDocumentsStatus, submitDocuments } from "@utils/profileService";
@@ -80,6 +80,8 @@ const Documents = () => {
   const [declared, setDeclared] = useState(false);
   // The earlier submission: undefined until the backend answers, null when it could not.
   const [status, setStatus] = useState<DocumentsStatus | null | undefined>(undefined);
+  // Raised to ask for the earlier submission again after it failed to load.
+  const [statusAttempt, setStatusAttempt] = useState(0);
 
   // Fills the form from the candidate's profile once it has loaded.
   useEffect(() => {
@@ -134,7 +136,12 @@ const Documents = () => {
     return () => {
       cancelled = true;
     };
-  }, [applicationId, getToken]);
+  }, [applicationId, getToken, statusAttempt]);
+
+  const retryStatus = () => {
+    setStatus(undefined);
+    setStatusAttempt((current) => current + 1);
+  };
 
   const sentKeys = status?.files ?? [];
   const editing = Boolean(status?.submitted && status.canEdit);
@@ -255,7 +262,16 @@ const Documents = () => {
 
       {stillLoading && <DocumentsSkeleton />}
 
-      {!stillLoading && !eligible && (
+      {!stillLoading && applicationsState === State.failed && (
+        <Stack alignItems="flex-start" gap={1.5}>
+          <Typography color="text.secondary">{SnackMessage.error.fetchApplications}</Typography>
+          <Button variant="outlined" onClick={() => dispatch(retryApplications())} sx={pillButtonSx}>
+            Try again
+          </Button>
+        </Stack>
+      )}
+
+      {!stillLoading && applicationsState !== State.failed && !eligible && (
         <Typography color="text.secondary">
           Documents can be submitted once you have accepted the offer for this application.
         </Typography>
@@ -267,7 +283,8 @@ const Documents = () => {
             Your documents were submitted.
           </Typography>
           <Typography fontSize="0.9rem" color="text.primary">
-            The time to change them has ended. Please contact the hiring team if something needs to change.
+            {status?.editableUntil ? "The time to change them has ended. " : ""}Please contact the hiring team if
+            something needs to change.
           </Typography>
         </Callout>
       )}
@@ -276,6 +293,15 @@ const Documents = () => {
         <Stack alignItems="flex-start" gap={1.5}>
           <Typography color="text.secondary">We couldn&apos;t load your profile, which has your email.</Typography>
           <Button variant="outlined" onClick={retryProfile} sx={pillButtonSx}>
+            Try again
+          </Button>
+        </Stack>
+      )}
+
+      {!stillLoading && eligible && profileReady && status === null && (
+        <Stack alignItems="flex-start" gap={1.5}>
+          <Typography color="text.secondary">We couldn&apos;t check whether your documents were submitted.</Typography>
+          <Button variant="outlined" onClick={retryStatus} sx={pillButtonSx}>
             Try again
           </Button>
         </Stack>
@@ -304,7 +330,14 @@ const Documents = () => {
         </Callout>
       )}
 
-      {!stillLoading && eligible && profileReady && !closed && application && requirements && !submitted && (
+      {!stillLoading &&
+        eligible &&
+        profileReady &&
+        status !== null &&
+        !closed &&
+        application &&
+        requirements &&
+        !submitted && (
         <Card elevation={0} sx={cardSx}>
           <Box sx={{ p: 3, pb: 0 }}>
             <Typography
