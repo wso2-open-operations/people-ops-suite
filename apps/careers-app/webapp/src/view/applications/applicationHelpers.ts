@@ -37,7 +37,7 @@ const parseDate = (value: string): Date | null => {
   if (dateOnly) {
     const [year, month, day] = dateOnly.slice(1).map(Number);
     const date = new Date(year, month - 1, day);
-    // A day that does not exist (2026-02-30) would roll over into the next month, so it is rejected.
+    // A day that does not exist is rejected, not rolled into the next month.
     const exists = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
     return exists ? date : null;
   }
@@ -58,6 +58,55 @@ export function trackerOf(application: Application): { activeStep: number; error
     return { activeStep: reached, errorStep: reached };
   }
   return { activeStep: STAGE_INDEX[application.status] ?? 0, errorStep: null };
+}
+
+// One line of an application's history. A stage the candidate passed has no date, because the ATS does not record
+// when an application moved from one stage to the next.
+export interface HistoryEntry {
+  label: string;
+  date: string | null;
+  // Whether the date carries a time of day.
+  withTime?: boolean;
+  detail?: string;
+}
+
+// The statuses that end an application's journey or answer its offer; the date it last changed is when it got there.
+const FINAL_STATUSES = [
+  ApplicationStatus.Offer,
+  ApplicationStatus.OfferAccepted,
+  ApplicationStatus.OfferDeclined,
+  ApplicationStatus.Rejected,
+];
+
+// What happened to the application, in the order it happened: when it was applied for, when it was screened (the
+// date it last changed, while it is still at screening or interview), each interview from the ATS's interviews, and
+// the final status with the date it was reached.
+export function historyOf(application: Application, interviews: ApplicationInterview[]): HistoryEntry[] {
+  const entries: HistoryEntry[] = [{ label: ApplicationStatus.Applied, date: application.appliedDate }];
+  const { status } = application;
+  if ((STAGE_INDEX[status] ?? 0) >= STAGE_INDEX[ApplicationStatus.Screening]!) {
+    const screeningIsCurrent = status === ApplicationStatus.Screening;
+    const screeningDated = screeningIsCurrent || status === ApplicationStatus.Interview;
+    entries.push({
+      label: ApplicationStatus.Screening,
+      date: screeningDated ? (application.updatedDate ?? null) : null,
+      detail: screeningIsCurrent ? "Current" : "Passed",
+    });
+  }
+  [...interviews]
+    .sort((a, b) => a.dateTime.localeCompare(b.dateTime))
+    .forEach((interview) =>
+      entries.push({
+        label: interview.round,
+        date: interview.dateTime || null,
+        withTime: true,
+        detail: `Interview · ${interview.status}`,
+      }),
+    );
+  if (FINAL_STATUSES.includes(status)) {
+    entries.push({ label: status, date: application.updatedDate ?? null, detail: "Current" });
+  }
+  return entries;
 }
 
 // Whether an offer is waiting for the candidate's answer.
@@ -115,15 +164,15 @@ export const timeAgo = (value: string) => {
   return `${Math.floor(days / 30)} months ago`;
 };
 
-// The one-line summary of what happens next.
-export function nextStepOf(application: Application): string {
+// The one-line summary of what happens next, given the interviews fetched for the application.
+export function nextStepOf(application: Application, interviews: ApplicationInterview[]): string {
   switch (application.status) {
     case ApplicationStatus.Applied:
       return "Waiting for the hiring team to review your application";
     case ApplicationStatus.Screening:
       return "Your profile is being reviewed";
     case ApplicationStatus.Interview: {
-      const upcoming = (application.interviews ?? []).find((interview) => interview.status === "Upcoming");
+      const upcoming = interviews.find((interview) => interview.status === "Upcoming");
       return upcoming
         ? `Next: ${upcoming.round} · ${formatDateTime(upcoming.dateTime)}`
         : "Waiting for the interview outcome";

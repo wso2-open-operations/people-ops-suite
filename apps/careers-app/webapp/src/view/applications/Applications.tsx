@@ -19,15 +19,20 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { type ApplicationFeedback, type OfferAnswer, State } from "@/types/types";
+import {
+  type ApplicationFeedback,
+  type ApplicationInterview,
+  type DocumentsStatus,
+  type OfferAnswer,
+  type OfferLetter,
+  State,
+} from "@/types/types";
 import CenteredSpinner from "@component/common/CenteredSpinner";
 import PageContainer from "@component/common/PageContainer";
 import { ApplicationStatus, OFFER_CONFLICT_ERROR, OFFER_EXPIRED_ERROR, SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
 import {
-  applicationsFailed,
   dismissFeedback,
-  loadApplications,
   refreshApplications,
   respondToOffer,
   retryApplications,
@@ -36,6 +41,7 @@ import {
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { jobPath } from "@utils/jobFilterUtils";
+import { fetchDocumentsStatus, fetchInterviews, fetchOfferLetter } from "@utils/profileService";
 import AcceptOfferDialog from "@view/applications/components/AcceptOfferDialog";
 import ApplicationDetails from "@view/applications/components/ApplicationDetails";
 import ApplicationList from "@view/applications/components/ApplicationList";
@@ -54,13 +60,6 @@ const Applications = () => {
 
   // The list, or one application's details when the URL has an id.
   const { id: applicationId } = useParams<{ id: string }>();
-
-  useEffect(() => {
-    if (applicationsState !== State.idle) return;
-    getToken()
-      .then((token) => dispatch(loadApplications(token)))
-      .catch(() => dispatch(applicationsFailed()));
-  }, [applicationsState, dispatch, getToken]);
 
   const selectedApplication = applicationId ? applications.find((a) => a.id === applicationId) : undefined;
   const stillLoading = applicationsState === State.idle || applicationsState === State.loading;
@@ -86,6 +85,71 @@ const Applications = () => {
     }
   };
 
+  // The offer letter, kept in this page only and shown once the candidate has an offer or has accepted one.
+  const [offerLetter, setOfferLetter] = useState<OfferLetter | null>(null);
+  const selectedId = selectedApplication?.id;
+  const hasOffer =
+    selectedApplication?.status === ApplicationStatus.Offer ||
+    selectedApplication?.status === ApplicationStatus.OfferAccepted;
+
+  useEffect(() => {
+    setOfferLetter(null);
+    if (!selectedId || !hasOffer) return;
+    let cancelled = false;
+    getToken()
+      .then((token) => fetchOfferLetter(token, selectedId))
+      .then((letter) => {
+        if (!cancelled) setOfferLetter(letter);
+      })
+      // A failed load shows nothing.
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, hasOffer, getToken]);
+
+  // The interviews of the opened application, past and upcoming; none when they cannot be loaded.
+  const [interviews, setInterviews] = useState<ApplicationInterview[]>([]);
+
+  useEffect(() => {
+    setInterviews([]);
+    if (!selectedId) return;
+    let cancelled = false;
+    getToken()
+      .then((token) => fetchInterviews(token, selectedId))
+      .then((loaded) => {
+        if (!cancelled) setInterviews(loaded);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, getToken]);
+
+  // Whether the documents were already submitted; unknown until the check is back.
+  const [documentsStatus, setDocumentsStatus] = useState<DocumentsStatus | null | undefined>(undefined);
+  // Raised to ask for the check again after it failed.
+  const [documentsStatusAttempt, setDocumentsStatusAttempt] = useState(0);
+  const hasAcceptedOffer = selectedApplication?.status === ApplicationStatus.OfferAccepted;
+
+  useEffect(() => {
+    setDocumentsStatus(undefined);
+    if (!selectedId || !hasAcceptedOffer) return;
+    let cancelled = false;
+    getToken()
+      .then((token) => fetchDocumentsStatus(token, selectedId))
+      .then((loaded) => {
+        if (!cancelled) setDocumentsStatus(loaded);
+      })
+      // A failed check is kept apart from "not submitted", and can be tried again.
+      .catch(() => {
+        if (!cancelled) setDocumentsStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, hasAcceptedOffer, getToken, documentsStatusAttempt]);
+
   const [offerDialog, setOfferDialog] = useState<"accept" | "decline" | "welcome" | null>(null);
   const [respondingToOffer, setRespondingToOffer] = useState(false);
 
@@ -104,7 +168,7 @@ const Applications = () => {
     } catch (error) {
       const name = (error as { name?: string }).name;
       if (name === OFFER_CONFLICT_ERROR || name === OFFER_EXPIRED_ERROR) {
-        // The offer is no longer open, so close the dialog and load the real state.
+        // Closes the dialog and loads the real state.
         setOfferDialog(null);
         dispatch(refreshApplications());
         const message = name === OFFER_EXPIRED_ERROR ? SnackMessage.error.offerExpired : SnackMessage.error.offerConflict;
@@ -136,7 +200,11 @@ const Applications = () => {
         />
       )}
       {selectedApplication && offerDialog === "welcome" && (
-        <WelcomeDialog jobTitle={selectedApplication.jobTitle} onClose={() => setOfferDialog(null)} />
+        <WelcomeDialog
+          jobTitle={selectedApplication.jobTitle}
+          onSubmitDocuments={() => navigate(`/applications/${selectedApplication.id}/documents`)}
+          onClose={() => setOfferDialog(null)}
+        />
       )}
       {selectedApplication && feedbackDue && (
         <RejectionFeedbackDialog
@@ -167,6 +235,11 @@ const Applications = () => {
               canAcceptOffer={!applications.some((a) => a.status === ApplicationStatus.OfferAccepted)}
               onAcceptOffer={() => setOfferDialog("accept")}
               onDeclineOffer={() => setOfferDialog("decline")}
+              onSubmitDocuments={() => navigate(`/applications/${selectedApplication.id}/documents`)}
+              offerLetter={offerLetter}
+              interviews={interviews}
+              documentsStatus={documentsStatus}
+              onRetryDocumentsStatus={() => setDocumentsStatusAttempt((current) => current + 1)}
             />
           ) : stillLoading ? (
             <CenteredSpinner />

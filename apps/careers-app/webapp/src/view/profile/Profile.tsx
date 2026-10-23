@@ -27,7 +27,7 @@ import {
   Typography,
 } from "@mui/material";
 import { GraduationCap, Mail, MapPin, Pencil, Phone, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { type CandidateProfile, type EditableProfileFields, State } from "@/types/types";
 import CenteredSpinner from "@component/common/CenteredSpinner";
@@ -184,11 +184,6 @@ const Profile = () => {
     getToken()
       .then((token) => dispatch(loadProfile(token)))
       .catch(() => dispatch(profileFailed()));
-
-  useEffect(() => {
-    if (profileState === State.idle) load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileState]);
 
   const startEditing = (section: "personal" | "contact") => {
     setForm(formOf(profile));

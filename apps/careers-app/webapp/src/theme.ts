@@ -49,14 +49,14 @@ export const themeSettings = (mode: PaletteMode) => {
       info: { main: "#3B82F6", light: "#60A5FA", dark: "#2563EB" },
       success: { main: "#10B981", light: "#34D399", dark: "#059669" },
       background: {
-        default: isDark ? "#0B1220" : "#F1F4F9",
-        paper: isDark ? "#131E38" : "#FFFFFF",
+        default: isDark ? "#080D1C" : "#F1F4F9",
+        paper: isDark ? "#0D1530" : "#FFFFFF",
       },
-      divider: isDark ? "#2A3A5F" : "#e2e5ec",
+      divider: isDark ? "#1E2D52" : "#e2e5ec",
       text: {
-        primary: isDark ? "#F9FAFB" : "#17223A",
-        secondary: isDark ? "#9CA3AF" : "#6B7280",
-        disabled: isDark ? "#4B5563" : "#9CA3AF",
+        primary: isDark ? "#E8EEFB" : "#17223A",
+        secondary: isDark ? "#8C9BBF" : "#6B7280",
+        disabled: isDark ? "#4A5878" : "#9CA3AF",
       },
     },
 
@@ -96,7 +96,9 @@ export const themeSettings = (mode: PaletteMode) => {
           contained: {
             backgroundColor: wso2.orange[500],
             "&:hover": { backgroundColor: wso2.orange[600] },
-            "&.Mui-disabled": { backgroundColor: "#FFD4A8", color: "#fff" },
+            "&.Mui-disabled": isDark
+              ? { backgroundColor: "rgba(255,103,0,0.22)", color: "rgba(232,238,251,0.55)" }
+              : { backgroundColor: "#FFD4A8", color: "#fff" },
           },
         },
       },
@@ -126,9 +128,8 @@ export const themeSettings = (mode: PaletteMode) => {
           },
         },
       },
-      // Covers TextField, Select and multiline inputs. Error and disabled
-      // states keep their own outline colors. Theme keys such as "primary.main" are not resolved in
-      // a style override, so the brand color is given directly.
+      // Covers TextField, Select and multiline inputs; error and disabled states keep their own outline colors. The
+      // brand color is given directly, since theme keys are not resolved in a style override.
       MuiOutlinedInput: {
         styleOverrides: {
           root: {

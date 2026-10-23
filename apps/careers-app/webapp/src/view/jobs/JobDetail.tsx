@@ -52,6 +52,15 @@ const JobDetail = () => {
   const [error, setError] = useState(false);
   const [missing, setMissing] = useState(false);
 
+  // A signed-in candidate's applications decide whether they can apply here. A guest can always see the form.
+  const applications = useAppSelector((state: RootState) => state.careers.applications);
+
+  // Why the candidate cannot apply for this job, or nothing when they can: they applied for it already.
+  const applyBlockedReason =
+    isSignedIn && applications.some((application) => application.jobId === id)
+      ? "You have already applied for this job."
+      : null;
+
   // Replaces the address with the job's readable one, without the mark that let a new tab or a share open it.
   useEffect(() => {
     if (!detail) return;
@@ -61,8 +70,7 @@ const JobDetail = () => {
     }
   }, [detail, location.pathname, location.search, location.hash, navigate]);
 
-  // A link ending in #Apply-Now opens straight at the form. The short delay lets the shell's
-  // scroll-to-top on navigation happen first.
+  // A link ending in #Apply-Now opens at the form, after the shell's scroll-to-top.
   useEffect(() => {
     if (!detail || window.location.hash !== "#Apply-Now") return;
     const timer = setTimeout(() => document.getElementById("Apply-Now")?.scrollIntoView(), 100);
@@ -120,13 +128,14 @@ const JobDetail = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{ bgcolor: "background.paper" }}>
       <JobHero
         detail={detail}
         isSignedIn={isSignedIn}
         isSaved={isSaved}
         onBack={goBackToJobs}
         onApplyNow={scrollToApplyForm}
+        applyBlockedReason={applyBlockedReason}
         onToggleSave={() => dispatch(toggleSaveJob(detail.id))}
         onSeeAllRoles={() => navigate("/jobs")}
       />
@@ -137,7 +146,7 @@ const JobDetail = () => {
           taskInformation={detail.taskInformation}
           additionalContent={detail.additionalContent}
         />
-        <ApplySection detail={detail} />
+        <ApplySection detail={detail} blockedReason={applyBlockedReason} />
       </Box>
     </Box>
   );

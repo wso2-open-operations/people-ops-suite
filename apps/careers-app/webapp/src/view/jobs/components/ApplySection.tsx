@@ -21,9 +21,10 @@ import { useEffect, useRef, useState } from "react";
 import { State } from "@/types/types";
 import { SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
-import { loadProfile, profileFailed, refreshApplications } from "@slices/careersSlice/careers";
+import { refreshApplications } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { isValidEmail } from "@utils/email";
 import { COUNTRY_OPTIONS, splitE164 } from "@utils/phone";
 import { trackSubmittedApplication } from "@utils/profileService";
 import { type VacancyDetail, submitApplicationForm } from "@utils/vacancyService";
@@ -33,10 +34,9 @@ import GuestSignInPrompt from "@view/jobs/components/GuestSignInPrompt";
 
 interface ApplySectionProps {
   detail: VacancyDetail;
+  // Whether the candidate cannot apply for this job; the form is left out when it is given.
+  blockedReason: string | null;
 }
-
-// The same shape the backend accepts: something@domain.tld with no spaces, so a typo is caught before the CV upload.
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
 // The job type of an internship, which asks for a university instead of an address.
 const INTERNSHIP = "Internship";
@@ -52,7 +52,7 @@ const EMPTY_FORM: ApplyFormValues = {
 };
 
 // The "Apply Now" card: the application form, its submit logic and the confirmation dialog.
-const ApplySection = ({ detail }: ApplySectionProps) => {
+const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
   const dispatch = useAppDispatch();
   const { getToken: getAccessToken, isSignedIn, appSignIn } = useAppAuthContext();
 
@@ -61,14 +61,6 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
   const profile = useAppSelector((state: RootState) => state.careers.profile);
   const profileState = useAppSelector((state: RootState) => state.careers.profileState);
   const sessionGeneration = useAppSelector((state: RootState) => state.careers.sessionGeneration);
-
-  // A signed-in candidate's saved profile is loaded here if it isn't already.
-  useEffect(() => {
-    if (!isSignedIn || profileState !== State.idle) return;
-    getAccessToken()
-      .then((token) => dispatch(loadProfile(token)))
-      .catch(() => dispatch(profileFailed()));
-  }, [isSignedIn, profileState, dispatch, getAccessToken]);
 
   // Fills the empty fields from the profile once it has loaded; anything already typed is kept.
   const prefilled = useRef(false);
@@ -94,8 +86,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
   const [submittedOpen, setSubmittedOpen] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
 
-  // When the candidate's data is cleared (sign-out or an ended session), nothing of theirs stays in the form, and the
-  // next candidate's profile can fill it.
+  // Empties the form when the candidate's data is cleared (sign-out or an ended session).
   const seenGeneration = useRef(sessionGeneration);
   useEffect(() => {
     if (seenGeneration.current === sessionGeneration) return;
@@ -111,7 +102,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
   const applyFormValid =
     !!form.firstName.trim() &&
     !!form.lastName.trim() &&
-    EMAIL_PATTERN.test(form.email.trim()) &&
+    isValidEmail(form.email) &&
     !!form.countryIso &&
     !!form.phone.trim() &&
     (isInternship ? !!form.university.trim() : !!form.address.trim()) &&
@@ -148,13 +139,12 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
         // A guest's details are not kept on screen once the application has been sent.
         setForm(EMPTY_FORM);
       }
-      // The CV and the ticked answers belong to this application, so the form starts clean for the next one.
       setCvFile(null);
       setAuthorized("");
       setConsentData(false);
       setConsentChecks(false);
     } catch (err) {
-      // The backend explains rejections (a missing field, a bad CV) in `message`.
+      // A rejection is explained in the reply's message.
       const data = (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
       const detailMessage = data?.detail ?? data?.message;
       dispatch(enqueueSnackbarMessage({ message: detailMessage ?? SnackMessage.error.submitApplication, type: "error" }));
@@ -162,6 +152,9 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
       setSubmitting(false);
     }
   };
+
+  // A candidate who cannot apply is not shown the form.
+  if (blockedReason && !submittedOpen) return null;
 
   return (
     <>

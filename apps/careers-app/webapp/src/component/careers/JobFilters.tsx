@@ -48,10 +48,8 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
   const teamAnchor = useRef<HTMLButtonElement>(null);
   const locationAnchor = useRef<HTMLButtonElement>(null);
 
-  // How many open positions each option would match given the other
-  // dropdown's selection, so a badge always equals the results it produces.
-  // A dropdown's counts ignore its own selection, which keeps the remaining
-  // options of that dropdown available to add.
+  // How many open positions each option would match given the other dropdown's selection; a dropdown's counts ignore
+  // its own selection.
   const teamCounts = useMemo(() => {
     const scoped = jobs.filter((job) => matchesLocation(job, filters.location));
     const counts: Record<string, number> = {};

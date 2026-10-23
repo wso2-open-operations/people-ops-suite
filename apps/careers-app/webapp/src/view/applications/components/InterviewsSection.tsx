@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Chip, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Link, Stack, Typography } from "@mui/material";
 import { ExternalLink } from "lucide-react";
 
 import type { ApplicationInterview } from "@/types/types";
@@ -61,8 +61,19 @@ const InterviewsSection = ({ interviews }: InterviewsSectionProps) => {
                   </Typography>
                   <Typography fontSize="0.85rem" color="text.secondary">
                     {formatDateTime(interview.dateTime)} · {interview.mode}
-                    {!isLink && ` · ${interview.location}`}
+                    {!isLink && interview.location && ` · ${interview.location}`}
                   </Typography>
+                  {isLink && interview.status !== "Upcoming" && (
+                    <Link
+                      href={interview.location}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      fontSize="0.8rem"
+                      sx={{ wordBreak: "break-all" }}
+                    >
+                      Meeting link
+                    </Link>
+                  )}
                 </Box>
               </Stack>
               <Stack direction="row" alignItems="center" gap={1}>

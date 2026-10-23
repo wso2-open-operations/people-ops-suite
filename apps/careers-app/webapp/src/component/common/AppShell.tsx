@@ -27,7 +27,17 @@ import { ColorModeContext } from "@context/ColorModeContext";
 import wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
 import wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
 import { State } from "@/types/types";
-import { clearUserData, loadFailed, loadJobDetail, loadJobs, loadOrgStructure } from "@slices/careersSlice/careers";
+import {
+  applicationsFailed,
+  clearUserData,
+  loadApplications,
+  loadFailed,
+  loadJobDetail,
+  loadJobs,
+  loadOrgStructure,
+  loadProfile,
+  profileFailed,
+} from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 
 const NAV_ITEMS = [
@@ -46,6 +56,8 @@ const AppShell = () => {
   const { getToken: getAccessToken, isSignedIn, appSignIn, appSignOut } = useAppAuthContext();
   const jobsState = useAppSelector((state: RootState) => state.careers.jobsState);
   const orgStructureState = useAppSelector((state: RootState) => state.careers.orgStructureState);
+  const applicationsState = useAppSelector((state: RootState) => state.careers.applicationsState);
+  const profileState = useAppSelector((state: RootState) => state.careers.profileState);
   const sessionExpired = useAppSelector((state: RootState) => state.careers.sessionExpired);
   const jobs = useAppSelector((state: RootState) => state.careers.jobs);
   const jobDetails = useAppSelector((state: RootState) => state.careers.jobDetails);
@@ -54,9 +66,8 @@ const AppShell = () => {
   const jobDetailsRef = useRef(jobDetails);
   jobDetailsRef.current = jobDetails;
 
-  // The shell is the only place that loads the job list and the org structure (the team and location options).
-  // It starts as soon as the app opens, on whichever page loads first, so /jobs never waits on a cold fetch; the
-  // pages only read the state. A failed load goes back to idle through retryLoad and is tried again here.
+  // Loads the job list and the org structure as soon as the app opens; pages only read the state. A failed load goes
+  // back to idle through retryLoad and is tried again here.
   useEffect(() => {
     if (jobsState !== State.idle && orgStructureState !== State.idle) return;
     getAccessToken()
@@ -67,14 +78,13 @@ const AppShell = () => {
       .catch(() => dispatch(loadFailed()));
   }, [dispatch, getAccessToken, jobsState, orgStructureState]);
 
-  // Once the job list is in, fetch every job's detail in the background, a few at a time, so opening a
-  // job is instant. A failed fetch is ignored: the job page loads its own detail on demand.
+  // Once the job list is in, fetches each job's detail in the background; a failed fetch is ignored.
   useEffect(() => {
     if (jobsState !== State.success) return;
     const queue = jobs.map((job) => job.id).filter((jobId) => !jobDetailsRef.current[jobId]);
     if (queue.length === 0) return;
 
-    // Two at a time, and it stops after two failures so a struggling service isn't hammered.
+    // Two at a time; stops after two failures.
     let cancelled = false;
     let failures = 0;
     const worker = async () => {
@@ -97,17 +107,40 @@ const AppShell = () => {
     };
   }, [jobsState, jobs, dispatch, getAccessToken]);
 
+  // Once signed in, loads the candidate's applications and profile in the background, so the pages that show them
+  // open with the data in place. A load that is reset to idle is tried again here.
+  useEffect(() => {
+    if (!isSignedIn || (applicationsState !== State.idle && profileState !== State.idle)) return;
+    // Set when the candidate signs out, or the states change, before the token arrives.
+    let cancelled = false;
+    getAccessToken()
+      .then((token) => {
+        if (cancelled) return;
+        if (applicationsState === State.idle) dispatch(loadApplications(token));
+        if (profileState === State.idle) dispatch(loadProfile(token));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        if (applicationsState === State.idle) dispatch(applicationsFailed());
+        if (profileState === State.idle) dispatch(profileFailed());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn, applicationsState, profileState, dispatch, getAccessToken]);
+
   // Clears the candidate's data when nobody is signed in.
   useEffect(() => {
     if (!isSignedIn) dispatch(clearUserData());
   }, [isSignedIn, dispatch]);
 
-  // Sends the candidate to sign in again when the backend refused their access token.
+  // Signs the candidate out when the backend refused their access token, so a live identity-provider session cannot
+  // sign them straight back in.
   useEffect(() => {
     if (!sessionExpired) return;
     dispatch(clearUserData());
-    appSignIn();
-  }, [sessionExpired, dispatch, appSignIn]);
+    appSignOut();
+  }, [sessionExpired, dispatch, appSignOut]);
 
   // Guests only see the Jobs link.
   const navItems = isSignedIn ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.path === "/jobs");

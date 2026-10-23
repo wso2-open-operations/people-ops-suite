@@ -89,8 +89,7 @@ const initialState: CareersState = {
   dismissedFeedbackIds: [],
   sessionExpired: false,
   sessionGeneration: 0,
-  // Save state is local/in-memory only -- not yet persisted to the backend,
-  // so it resets on refresh.
+  // Saved jobs are kept in memory only.
   savedJobIds: [],
 };
 
