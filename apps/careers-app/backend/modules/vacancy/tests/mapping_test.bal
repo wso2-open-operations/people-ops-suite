@@ -91,11 +91,13 @@ function historyEntry(int id, string status = "CREATED", int vacancyId = 7) retu
 @test:Config {}
 function atsStatusesAreShownAsTheWebAppNamesThem() {
     test:assertEquals(applicationStatusOf("CREATED"), "Applied");
-    test:assertEquals(applicationStatusOf("IN_REVIEW"), "Screening");
+    test:assertEquals(applicationStatusOf("SHORTLISTED"), "Screening");
     test:assertEquals(applicationStatusOf("INTERVIEW_IN_PROGRESS"), "Interview");
     test:assertEquals(applicationStatusOf("INTERVIEW_COMPLETED"), "Interview");
     test:assertEquals(applicationStatusOf("HIRED"), "Offer Accepted");
     test:assertEquals(applicationStatusOf("REJECTED"), "Rejected");
+    test:assertEquals(applicationStatusOf("NOT_SHORTLISTED"), "Rejected");
+    test:assertEquals(applicationStatusOf("VACANCY_CLOSED"), "Applied");
     test:assertEquals(applicationStatusOf("SOMETHING_NEW"), "Applied");
 }
 

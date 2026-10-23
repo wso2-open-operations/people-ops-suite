@@ -263,7 +263,7 @@ isolated function interviewsOf(AtsInterview[] interviews) returns ApplicationInt
 // The status the web app shows for an ATS candidate status.
 isolated function applicationStatusOf(string atsStatus) returns string {
     match atsStatus {
-        "IN_REVIEW" => {
+        "SHORTLISTED" => {
             return "Screening";
         }
         "INTERVIEW_IN_PROGRESS"|"INTERVIEW_COMPLETED" => {
@@ -272,7 +272,7 @@ isolated function applicationStatusOf(string atsStatus) returns string {
         "HIRED" => {
             return "Offer Accepted";
         }
-        "REJECTED" => {
+        "REJECTED"|"NOT_SHORTLISTED" => {
             return "Rejected";
         }
     }
