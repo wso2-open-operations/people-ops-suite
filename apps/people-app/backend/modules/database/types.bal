@@ -1255,8 +1255,8 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Employee thumbnail URL
     @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN}`}
     string? employeeThumbnail = ();
-    # Probation end date
-    @constraint:String {pattern: re `${DATE_PATTERN}`}
+    # Probation end date; an empty string clears it
+    @constraint:String {pattern: re `^(\d{4}-\d{2}-\d{2})?$`}
     string? probationEndDate = ();
     # Agreement end date
     @constraint:String {pattern: re `${DATE_PATTERN}`}
