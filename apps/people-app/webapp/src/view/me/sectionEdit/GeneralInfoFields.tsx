@@ -327,18 +327,19 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
     field: keyof CreateEmployeeFormValues,
     label: string,
     disabled?: boolean,
-    clearable?: boolean,
+    onClear?: () => void,
   ) => (
     <DatePicker
       label={label}
       format="YYYY-MM-DD"
       value={values[field] ? dayjs(values[field] as string) : null}
       disabled={isSaving || disabled}
-      onChange={(v: dayjs.Dayjs | null) =>
-        setFieldValue(field, v ? v.format("YYYY-MM-DD") : null)
-      }
+      onChange={(v: dayjs.Dayjs | null) => {
+        setFieldValue(field, v ? v.format("YYYY-MM-DD") : null);
+        if (!v) onClear?.();
+      }}
       slotProps={{
-        field: { clearable },
+        field: { clearable: Boolean(onClear) },
         textField: {
           size: "small",
           fullWidth: true,
@@ -486,7 +487,9 @@ const GeneralInfoFields = ({ isSaving }: { isSaving: boolean }) => {
         {!isPermanent && !isProbationType && values.employmentTypeId > 0 && (
           <Cell>
             {addProbationEndDate ? (
-              date("probationEndDate", "Probation End Date", false, true)
+              date("probationEndDate", "Probation End Date", false, () =>
+                setAddProbationEndDate(false),
+              )
             ) : (
               <FormControlLabel
                 control={

@@ -182,10 +182,11 @@ export const useEmploymentRules = () => {
       const isNewInternship = /^internship$/i.test(nextName);
       const isAutoIdType = AUTO_ID_EMPLOYMENT_TYPES.test(nextName);
 
-      if (
-        !/^permanent$/i.test(nextName) &&
-        !PROBATION_EMPLOYMENT_TYPE.test(nextName)
-      ) {
+      const isNewPermanentOrProbation =
+        /^permanent$/i.test(nextName) ||
+        PROBATION_EMPLOYMENT_TYPE.test(nextName);
+
+      if (!isNewPermanentOrProbation || (!isPermanent && !isProbationType)) {
         setFieldValue("probationEndDate", null);
         setAddProbationEndDate(false);
       }
@@ -216,7 +217,14 @@ export const useEmploymentRules = () => {
         setFieldValue("agreementEndDate", null);
       }
     },
-    [setFieldValue, employmentTypes, values.startDate, computeAgreementEndDate],
+    [
+      setFieldValue,
+      employmentTypes,
+      values.startDate,
+      computeAgreementEndDate,
+      isPermanent,
+      isProbationType,
+    ],
   );
 
   return {

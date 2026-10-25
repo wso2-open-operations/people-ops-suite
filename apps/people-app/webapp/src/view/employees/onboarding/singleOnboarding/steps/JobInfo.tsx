@@ -964,7 +964,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
       const isNewConsultancy = /consultancy/i.test(typeName);
       const isAutoIdType = AUTO_ID_EMPLOYMENT_TYPES.test(typeName);
 
-      if (!isNewPermanent && !PROBATION_EMPLOYMENT_TYPE.test(typeName)) {
+      const isNewProbation = PROBATION_EMPLOYMENT_TYPE.test(typeName);
+
+      if (
+        (!isNewPermanent && !isNewProbation) ||
+        (!isPermanent && !isProbationType)
+      ) {
         setFieldValue("probationEndDate", null);
         setAddProbationEndDate(false);
       }
@@ -982,7 +987,14 @@ export default function JobInfoStep({ isEditMode }: { isEditMode: boolean }) {
         if (isAutoIdType) setFieldValue("employeeId", "");
       }
     },
-    [setFieldValue, employmentTypes, computeAgreementEndDate, values.startDate],
+    [
+      setFieldValue,
+      employmentTypes,
+      computeAgreementEndDate,
+      values.startDate,
+      isPermanent,
+      isProbationType,
+    ],
   );
 
   const handleInternshipDurationChange = useCallback(
