@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import { Box, Button, useTheme } from "@mui/material";
@@ -21,11 +20,11 @@ import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
 import { useState } from "react";
 
+import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import { getLeaveHistory } from "@root/src/services/leaveService";
 import { approveLeaveAction } from "@root/src/slices/leaveSlice/leave";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import {
   Action,
   ConfirmationType,
@@ -35,20 +34,72 @@ import {
   State,
   Status,
 } from "@root/src/types/types";
+import { leaveTypeLabel } from "@root/src/utils/leaveRules";
+
+import RejectReasonDialog from "./RejectReasonDialog";
 
 interface ApproveLeaveTableProps {
   rows: SingleLeaveHistory[];
   onRefresh?: () => void;
+  /** Reject asks for a written reason (Other Authorized leave). */
+  requireRejectionReason?: boolean;
+  /** Adds a column showing when the request was submitted. */
+  showWaitingSince?: boolean;
 }
 
-export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTableProps) {
+const dateOnly = (value: string | null | undefined) => String(value ?? "").substring(0, 10);
+
+export default function ApproveLeaveTable({
+  rows,
+  onRefresh,
+  requireRejectionReason = false,
+  showWaitingSince = false,
+}: ApproveLeaveTableProps) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const userInfo = useAppSelector(selectUser);
   const { showConfirmation } = useConfirmationModalContext();
   const [subordinateCount] = useState<number>(userInfo?.subordinateCount || 0);
 
+  const [rejectTarget, setRejectTarget] = useState<SingleLeaveHistory | null>(null);
+
+  const handleReject = async (reason: string) => {
+    const item = rejectTarget;
+    setRejectTarget(null);
+    if (!item) return;
+    const result = await dispatch(
+      approveLeaveAction({ leaveId: String(item.id), action: Action.REJECT, reason }),
+    );
+    if (approveLeaveAction.fulfilled.match(result)) {
+      onRefresh?.();
+    }
+  };
+
+  const handleApproveOther = (item: SingleLeaveHistory) => {
+    const dateRange = `${dateOnly(item.startDate)} – ${dateOnly(item.endDate)}`;
+    showConfirmation(
+      "Do you want to approve this leave?",
+      `This will approve the ${leaveTypeLabel(item.leaveType)} request for ${item.email} (${dateRange}).`,
+      ConfirmationType.accept,
+      async () => {
+        const result = await dispatch(
+          approveLeaveAction({ leaveId: String(item.id), action: Action.APPROVE }),
+        );
+        if (approveLeaveAction.fulfilled.match(result)) {
+          onRefresh?.();
+        }
+      },
+      "Yes, Approve",
+      "Cancel",
+    );
+  };
+
   const handleOpenDialog = async (item: SingleLeaveHistory, isApproval: boolean) => {
+    if (requireRejectionReason) {
+      if (isApproval) handleApproveOther(item);
+      else setRejectTarget(item);
+      return;
+    }
     let percentage = "";
     try {
       const history: LeaveHistoryResponse = await getLeaveHistory({
@@ -94,6 +145,15 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
     );
   };
 
+  const waitingColumn: GridColDef = {
+    field: "createdDate",
+    headerName: "Waiting since",
+    type: "string",
+    flex: 1,
+    editable: false,
+    renderCell: (params) => <span>{dateOnly(params.row?.createdDate)}</span>,
+  };
+
   const columns: GridColDef[] = [
     {
       field: "email",
@@ -125,6 +185,7 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
       flex: 1,
       editable: false,
     },
+    ...(showWaitingSince ? [waitingColumn] : []),
     {
       field: "approval",
       headerName: "Approval",
@@ -191,6 +252,11 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
             },
           },
         }}
+      />
+      <RejectReasonDialog
+        open={rejectTarget !== null}
+        onCancel={() => setRejectTarget(null)}
+        onConfirm={handleReject}
       />
     </Box>
   );

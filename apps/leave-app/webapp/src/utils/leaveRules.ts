@@ -16,7 +16,7 @@ import { LeaveType, Status } from "@/types/types";
 
 const MB = 1024 * 1024;
 const CANCEL_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
-const REJECTION_REASON_MAX = 500;
+export const REJECTION_REASON_MAX = 500;
 const SICK_NOTE_EXTENSIONS = ["pdf", "jpg", "jpeg", "png"];
 
 const LEAVE_LABELS: Record<string, string> = {

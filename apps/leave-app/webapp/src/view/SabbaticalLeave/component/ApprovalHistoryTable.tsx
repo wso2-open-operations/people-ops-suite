@@ -13,11 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Box, Chip, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
 import { SingleLeaveHistory } from "@root/src/types/types";
+import { leaveTypeLabel } from "@root/src/utils/leaveRules";
 
 export default function ApprovalHistoryTable({ rows }: { rows: SingleLeaveHistory[] }) {
   const theme = useTheme();
@@ -29,6 +29,14 @@ export default function ApprovalHistoryTable({ rows }: { rows: SingleLeaveHistor
       type: "string",
       flex: 1,
       editable: false,
+    },
+    {
+      field: "leaveType",
+      headerName: "Leave type",
+      type: "string",
+      flex: 1,
+      editable: false,
+      valueGetter: (value) => (value ? leaveTypeLabel(String(value)) : ""),
     },
     {
       field: "startDate",
@@ -123,6 +131,14 @@ export default function ApprovalHistoryTable({ rows }: { rows: SingleLeaveHistor
           />
         );
       },
+    },
+    {
+      field: "rejectionReason",
+      headerName: "Reason",
+      type: "string",
+      flex: 1.5,
+      editable: false,
+      valueGetter: (value) => value ?? "",
     },
   ];
 

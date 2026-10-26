@@ -34,6 +34,7 @@ import LeadReportTab from "@view/LeadReport/panel/LeadReportTab";
 import SabbaticalLeaveHistory from "@view/LeaveHistory/SabbaticalLeaveHistory";
 import ApproveHistoryTab from "@view/SabbaticalLeave/Panel/ApproveHistoryTab";
 import ApproveLeaveTab from "@view/SabbaticalLeave/Panel/ApproveLeaveTab";
+import OtherAuthorizedApproveTab from "@view/SabbaticalLeave/Panel/OtherAuthorizedApproveTab";
 import SabbaticalLeave from "@view/SabbaticalLeave/SabbaticalLeave";
 
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
@@ -93,6 +94,13 @@ export const routes: RouteObjectWithMeta[] = [
         text: "Sabbatical",
         icon: React.createElement(EventAvailableIcon),
         element: React.createElement(ApproveLeaveTab),
+        allowRoles: [Role.LEAD],
+      },
+      {
+        path: "other-authorized",
+        text: "Other Authorized",
+        icon: React.createElement(EventAvailableIcon),
+        element: React.createElement(OtherAuthorizedApproveTab),
         allowRoles: [Role.LEAD],
       },
       {
