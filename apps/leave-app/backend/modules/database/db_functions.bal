@@ -96,6 +96,22 @@ public isolated function setLeaveStatus(int leaveId, Status approvalStatus, stri
     return check leaveDbClient->execute(sqlQuery);
 }
 
+# Reject a pending leave request, storing the approver and the reason.
+#
+# + leaveId - Leave ID
+# + approverEmail - Email of the approver rejecting the request
+# + reason - Reason for the rejection
+# + return - Nil on success, `LeaveNotPendingError` if the leave is no longer pending, or an error on failure
+public isolated function rejectLeave(int leaveId, string approverEmail, string reason) returns error? {
+    sql:ExecutionResult|sql:Error result = leaveDbClient->execute(rejectLeaveQuery(leaveId, approverEmail, reason));
+    if result is sql:Error {
+        return error("Error occurred while rejecting leave!", result);
+    }
+    if result.affectedRowCount == 0 {
+        return error LeaveNotPendingError(ERR_MSG_LEAVE_NOT_PENDING);
+    }
+}
+
 # Get the end date of the last sabbatical leave for an employee.
 #
 # + employeeEmail - Email of the employee

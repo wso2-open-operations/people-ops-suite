@@ -618,6 +618,10 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: "Valid leave request"
                 };
             }
+            // Leave that needs the lead's approval is saved as pending; the team email and calendar event wait.
+            if policy:needsLeadApproval(payload.leaveType) {
+                return submitForApproval(input, jwt);
+            }
 
             final readonly & email:EmailNotificationDetails emailContentForLeave = check email:generateContentForLeave(
                         jwt, email, payload
@@ -1009,6 +1013,25 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
+            if leaveResponse.status == REJECTED {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Rejected leave cannot be cancelled!"
+                    }
+                };
+            }
+            // A pending Other Authorized Leave has no team email or calendar event yet; only the lead is told.
+            if leaveResponse.leaveType == database:OTHER_AUTHORIZED_LEAVE && leaveResponse.status == PENDING {
+                error? withdrawalResult = withdrawOtherAuthorizedLeave(leave);
+                if withdrawalResult is error {
+                    fail error(withdrawalResult.message(), withdrawalResult);
+                }
+                return <http:Ok>{
+                    body: {
+                        message: "Leave cancelled successfully"
+                    }
+                };
+            }
 
             any|error result = database:cancelLeave(id);
             if result is error {
@@ -1332,11 +1355,13 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
     }
 
-    # Approve / Reject the sabbatical leave application request.
+    # Approve / Reject a leave request that needs the lead's approval (sabbatical or Other Authorized Leave).
     #
     # + ctx - Request context
+    # + payload - Optional decision payload. A reason is required to reject Other Authorized Leave
     # + return - Success response if the application is approved/rejected successfully, otherwise an error response
-    resource function post leaves/[int id]/[Action action](http:RequestContext ctx)
+    resource function post leaves/[int id]/[Action action](http:RequestContext ctx,
+            @http:Payload DecisionPayload? payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
         authorization:CustomJwtPayload|error {email, groups} = ctx.getWithType(authorization:HEADER_USER_INFO);
         if !authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, groups) {
@@ -1387,6 +1412,26 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:Forbidden>{
                 body: {
                     message: errMsg
+                }
+            };
+        }
+        if leave.leaveType == database:OTHER_AUTHORIZED_LEAVE {
+            string|error jwt = ctx.getWithType(authorization:INVOKER_TOKEN);
+            if jwt is error {
+                string errMsg = "Error occurred while reading the invoker token.";
+                log:printError(errMsg, jwt);
+                return <http:InternalServerError>{
+                    body: {
+                        message: errMsg
+                    }
+                };
+            }
+            return decideOtherAuthorizedLeave(leave, action, email, payload, jwt);
+        }
+        if leave.leaveType != database:SABBATICAL_LEAVE {
+            return <http:BadRequest>{
+                body: {
+                    message: "This leave type does not need approval."
                 }
             };
         }

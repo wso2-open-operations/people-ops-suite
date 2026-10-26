@@ -319,6 +319,12 @@ public type SabbaticalLeaveEligibilityResponse record {|
     boolean isEligible;
 |};
 
+# Payload for approving or rejecting a leave request.
+public type DecisionPayload record {|
+    # Reason for the rejection. Required to reject Other Authorized Leave; not used otherwise
+    string? reason = ();
+|};
+
 # APPROVE/REJECT Action enum.
 public enum Action {
     APPROVE_ACTION = "approve",

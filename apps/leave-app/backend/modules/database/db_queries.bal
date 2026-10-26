@@ -42,7 +42,8 @@ isolated function getCommonLeaveQuery() returns sql:ParameterizedQuery => `
         calendar_event_id,
         location,
         status,
-        approver_email
+        approver_email,
+        rejection_reason
     FROM leave_submissions
 `;
 
@@ -185,6 +186,24 @@ isolated function setLeaveStatusQuery(Status status, int leaveId, string? approv
             id = ${leaveId}
     `;
 }
+
+# Query to reject a pending leave request.
+#
+# + leaveId - ID of the leave record
+# + approverEmail - Email of the approver rejecting the request
+# + reason - Reason for the rejection
+# + return - Update query that only changes the leave while it is pending
+isolated function rejectLeaveQuery(int leaveId, string approverEmail, string reason)
+    returns sql:ParameterizedQuery => `
+        UPDATE
+            leave_submissions
+        SET
+            status = ${REJECTED},
+            approver_email = ${approverEmail},
+            rejection_reason = ${reason}
+        WHERE
+            id = ${leaveId} AND status = ${PENDING}
+    `;
 
 # Query to get the end date of the last approved sabbatical leave for an employee.
 #

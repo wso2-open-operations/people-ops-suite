@@ -142,7 +142,13 @@ public type Leave record {|
     # Approver email
     @sql:Column {name: "approver_email"}
     string? approverEmail;
+    # Reason given by the approver for rejecting the leave
+    @sql:Column {name: "rejection_reason"}
+    string? rejectionReason;
 |};
+
+# Error returned when a leave request is no longer pending, so it cannot be decided.
+public type LeaveNotPendingError distinct error;
 
 # Day record.
 public type Day record {|

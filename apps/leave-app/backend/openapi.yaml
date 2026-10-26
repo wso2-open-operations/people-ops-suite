@@ -435,7 +435,7 @@ paths:
                 $ref: '#/components/schemas/ErrorPayload'
   /leaves/{id}/{action}:
     post:
-      summary: Approve / Reject the sabbatical leave application request.
+      summary: Approve / Reject a leave request that needs the lead's approval (sabbatical or Other Authorized Leave).
       operationId: postLeavesIdAction
       parameters:
       - name: id
@@ -449,6 +449,13 @@ paths:
         required: true
         schema:
           $ref: '#/components/schemas/Action'
+      requestBody:
+        description: Optional decision payload. A reason is required to reject Other Authorized Leave
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionPayload'
+        required: false
       responses:
         "200":
           description: Ok
@@ -560,6 +567,15 @@ components:
             $ref: '#/components/schemas/Holiday'
       additionalProperties: false
       description: Calculated leave.
+    DecisionPayload:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Reason for the rejection. Required to reject Other Authorized Leave; not used otherwise
+          nullable: true
+      additionalProperties: false
+      description: Payload for approving or rejecting a leave request.
     DefaultMail:
       required:
       - email
@@ -679,6 +695,7 @@ components:
       - notifyEveryone
       - numberOfDays
       - periodType
+      - rejectionReason
       - startDate
       - startHalf
       - status
@@ -777,6 +794,10 @@ components:
         approverEmail:
           type: string
           description: Approver email
+          nullable: true
+        rejectionReason:
+          type: string
+          description: Reason given by the approver for rejecting the leave
           nullable: true
       additionalProperties: false
       description: "[Database] Leave type."
