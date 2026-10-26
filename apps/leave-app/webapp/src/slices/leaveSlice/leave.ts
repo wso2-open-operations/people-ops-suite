@@ -26,6 +26,7 @@ import {
   LeaveSubmissionResponse,
   SingleLeaveHistory,
   State,
+  Status,
 } from "@/types/types";
 import { SnackMessage } from "@config/constant";
 import {
@@ -256,7 +257,8 @@ const LeaveSlice = createSlice({
       })
       .addCase(cancelLeave.fulfilled, (state, action) => {
         state.cancellingLeaveId = null;
-        state.leaves = state.leaves.filter((leave) => leave.id !== action.payload);
+        const cancelled = state.leaves.find((leave) => leave.id === action.payload);
+        if (cancelled) cancelled.status = Status.CANCELLED;
       })
       .addCase(cancelLeave.rejected, (state) => {
         state.cancellingLeaveId = null;
