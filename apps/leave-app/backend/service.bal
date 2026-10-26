@@ -19,6 +19,7 @@ import leave_service.database;
 import leave_service.email;
 import leave_service.employee;
 import leave_service.policy;
+import leave_service.sick_note;
 
 import ballerina/http;
 import ballerina/log;
@@ -68,6 +69,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             if isPeopleOpsTeamMember ||
                 authorization:hasAnyRole(authorization:authorizedRoles.sabbaticalReportRoles, userInfo.groups) {
                 privileges.push(authorization:SABBATICAL_REPORT_PRIVILEGE);
+            }
+            if authorization:hasAnyRole(authorization:authorizedRoles.sickNoteRoles, userInfo.groups) {
+                privileges.push(authorization:SICK_NOTE_PRIVILEGE);
             }
             employee:Employee[]|error subordinates = employee:getEmployees(
                     {
@@ -186,7 +190,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             sabbaticalLeaveMaxApplicationDuration,
             sabbaticalLeaveMinJobBand,
             cachedEmails,
-            onBehalfAllowedLeaveTypes
+            onBehalfAllowedLeaveTypes,
+            sickNoteMaxBytes: sick_note:MAX_SICK_NOTE_BYTES,
+            sickNoteContentTypes: sick_note:SICK_NOTE_CONTENT_TYPES
         };
     }
 
@@ -573,130 +579,42 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            [time:Utc, time:Utc]|error validatedDateRange = validateDateRange(payload.startDate, payload.endDate);
-            if validatedDateRange is error {
-                log:printError(ERR_MSG_INVALID_DATE_FORMAT, validatedDateRange);
-                return <http:BadRequest>{
-                    body: {
-                        message: ERR_MSG_INVALID_DATE_FORMAT
-                    }
-                };
-            }
-            // Day[] weekdaysFromRange = getWeekdaysFromRange(validatedDateRange[0], validatedDateRange[1]);
-            LeaveInput input = {
-                email,
-                startDate: payload.startDate,
-                endDate: payload.endDate,
-                leaveType: payload.leaveType,
-                periodType: payload.periodType,
-                isMorningLeave: payload.isMorningLeave,
-                emailRecipients: payload.emailRecipients,
-                calendarEventId: payload.calendarEventId,
-                comment: payload.comment,
-                isPublicComment: payload.isPublicComment,
-                emailSubject: payload.emailSubject,
-                status: APPROVED
-            };
-            // France-only leave types are refused here as a 400, not via `fail` (which maps to 500).
-            string|error employeeLocation = employee:getEmployeeLocation(email, jwt);
-            if employeeLocation is error {
-                fail error(employeeLocation.message(), employeeLocation);
-            }
-            error? leaveTypeError = policy:checkLeaveTypeAllowed(payload.leaveType, employeeLocation);
-            if leaveTypeError is error {
-                return <http:BadRequest>{
-                    body: {
-                        message: leaveTypeError.message()
-                    }
-                };
-            }
-            if isValidationOnlyMode {
-                LeaveDetails|error validatedLeave = insertLeaveToDatabase(input, isValidationOnlyMode, jwt);
-                if validatedLeave is error {
-                    fail error(validatedLeave.message(), validatedLeave);
-                }
+            return submitLeave(payload, email, jwt, isValidationOnlyMode);
 
-                return {
-                    workingDays: payload.periodType is database:HALF_DAY_LEAVE
-                        ? 0.5
-                        : <float>validatedLeave.effectiveDays.length(),
-                    hasOverlap: false,
-                    message: "Valid leave request"
-                };
-            }
-            // Leave that needs the lead's approval is saved as pending; the team email and calendar event wait.
-            if policy:needsLeadApproval(payload.leaveType) {
-                return submitForApproval(input, jwt);
-            }
-
-            final readonly & email:EmailNotificationDetails emailContentForLeave = check email:generateContentForLeave(
-                        jwt, email, payload
-                );
-            final readonly & string calendarEventId = createUuidForCalendarEvent();
-            final readonly & string[]|error allRecipientsForUser = getAllEmailRecipientsForUser(
-                        email,
-                    payload.emailRecipients,
-                    jwt
-                );
-            if allRecipientsForUser is error {
-                fail error(allRecipientsForUser.message(), allRecipientsForUser);
-            }
-            final readonly & string? comment = payload.comment;
-
-            payload.emailSubject = emailContentForLeave.subject;
-            payload.calendarEventId = calendarEventId;
-            input.emailSubject = emailContentForLeave.subject;
-            input.calendarEventId = calendarEventId;
-            input.emailRecipients = allRecipientsForUser;
-
-            LeaveDetails|error leave = insertLeaveToDatabase(input, isValidationOnlyMode, jwt);
-            if leave is error {
-                fail error(leave.message(), leave);
-            }
-            final readonly & LeaveResponse leaveResponse = {
-                id: leave.id,
-                startDate: leave.startDate,
-                calendarEventId: leave.calendarEventId,
-                periodType: leave.periodType,
-                createdDate: leave.createdDate,
-                leaveType: leave.leaveType,
-                endDate: leave.endDate,
-                location: leave.location,
-                numberOfDays: leave.numberOfDays ?: 0.0,
-                status: <Status>leave.status,
-                email: leave.email,
-                isMorningLeave: leave.isMorningLeave
-            };
-
-            future<error?> notificationFuture = start email:sendLeaveNotification(
-                        emailContentForLeave,
-                    allRecipientsForUser
-                );
-            _ = start createLeaveEventInCalendar(email, leaveResponse, calendarEventId);
-            if comment is string && !checkIfEmptyString(comment) {
-                string[] commentRecipients = allRecipientsForUser;
-                if !payload.isPublicComment {
-                    commentRecipients = check getPrivateRecipientsForUser(
-                                email,
-                            payload.emailRecipients,
-                            jwt
-                        );
-                }
-
-                error? notificationResult = wait notificationFuture;
-                if notificationResult is () {
-                    // Does not send the additional comment notification if the main notification has failed
-                    final email:EmailNotificationDetails contentForAdditionalComment =
-                        email:generateContentForAdditionalComment(emailContentForLeave.subject, comment);
-                    _ = start email:sendAdditionalComment(contentForAdditionalComment.cloneReadOnly(),
-                            commentRecipients.cloneReadOnly());
-                }
-            }
-            return <http:Ok>{
+        } on fail error internalErr {
+            string errMsg = "Error occurred while submitting a leave";
+            log:printError(errMsg, internalErr);
+            return <http:InternalServerError>{
                 body: {
-                    message: "Leave submitted successfully"
+                    message: errMsg
                 }
             };
+        }
+    }
+
+    # Submit sick leave in France with its sick note, in one multipart request.
+    #
+    # The `leave` part carries the leave as JSON, as for `POST /leaves`, and the `sickNote` part carries a PDF, JPG or
+    # PNG file of at most 5 MB. The leave and the encrypted note are saved in one transaction. Date previews
+    # (`isValidationOnlyMode`) stay on `POST /leaves`.
+    #
+    # + ctx - HTTP request context
+    # + req - Multipart request with the `leave` and `sickNote` parts
+    # + return - Success response if the leave is submitted, otherwise an error response
+    resource function post leaves/sick\-leave(http:RequestContext ctx, http:Request req)
+        returns http:Ok|http:BadRequest|http:Unauthorized|http:InternalServerError {
+
+        do {
+            readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
+            string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
+            if !authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, userInfo.groups) {
+                return <http:Unauthorized>{
+                    body: {
+                        message: "You are not authorized to access this resource."
+                    }
+                };
+            }
+            return submitSickLeave(req, userInfo.email, jwt);
 
         } on fail error internalErr {
             string errMsg = "Error occurred while submitting a leave";
@@ -1128,6 +1046,78 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+    }
+
+    # Download the sick note of a leave. Only the applicant and members of `sickNoteRoles` may download it, and every
+    # download is recorded.
+    #
+    # + id - Leave ID
+    # + ctx - HTTP request context
+    # + return - The sick note file, otherwise an error response
+    resource function get leaves/[int id]/sick\-note(http:RequestContext ctx)
+        returns http:Response|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        readonly & authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            string errMsg = "Error occurred while decoding user info from token";
+            log:printError(errMsg, userInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        return downloadSickNote(id, userInfo.email, userInfo.groups);
+    }
+
+    # List sick leaves in France that have a sick note and overlap the given dates, newest first. Only for members of
+    # `sickNoteRoles`.
+    #
+    # + ctx - HTTP request context
+    # + startDate - Start of the date range
+    # + endDate - End of the date range, inclusive
+    # + return - Sick notes, otherwise an error response
+    resource function get sick\-notes(http:RequestContext ctx, string startDate, string endDate)
+        returns database:SickNoteSummary[]|http:BadRequest|http:Forbidden|http:InternalServerError {
+
+        readonly & authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            string errMsg = "Error occurred while decoding user info from token";
+            log:printError(errMsg, userInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        if !authorization:hasAnyRole(authorization:authorizedRoles.sickNoteRoles, userInfo.groups) {
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view sick notes."
+                }
+            };
+        }
+        [time:Utc, time:Utc]|error dateRange = validateDateRange(startDate, endDate);
+        if dateRange is error {
+            return <http:BadRequest>{
+                body: {
+                    message: dateRange.message()
+                }
+            };
+        }
+        // validateDateRange accepts yyyy-mm-dd and full ISO 8601 timestamps; the query compares whole days.
+        database:SickNoteSummary[]|error sickNotes = database:getSickNotes(startDate.substring(0, 10),
+                endDate.substring(0, 10));
+        if sickNotes is error {
+            string errMsg = "Error occurred while fetching sick notes";
+            log:printError(errMsg, sickNotes);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        return sickNotes;
     }
 
     # Fetch all the employees.

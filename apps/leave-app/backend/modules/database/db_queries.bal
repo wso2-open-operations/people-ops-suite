@@ -43,7 +43,14 @@ isolated function getCommonLeaveQuery() returns sql:ParameterizedQuery => `
         location,
         status,
         approver_email,
-        rejection_reason
+        rejection_reason,
+        EXISTS (
+            SELECT 1 FROM leave_attachments attachment WHERE attachment.leave_id = leave_submissions.id
+        ) AS has_sick_note,
+        (
+            SELECT attachment.deleted_at FROM leave_attachments attachment
+            WHERE attachment.leave_id = leave_submissions.id
+        ) AS sick_note_deleted_on
     FROM leave_submissions
 `;
 
@@ -158,6 +165,99 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
 
     return insertQuery;
 }
+
+# Query to insert the sick note of a leave.
+#
+# + leaveId - ID of the leave the note belongs to
+# + sickNote - Encrypted sick note
+# + return - Insert query
+isolated function insertSickNoteQuery(int leaveId, SickNoteInput sickNote) returns sql:ParameterizedQuery => `
+        INSERT INTO leave_attachments (
+            leave_id,
+            content,
+            iv,
+            key_id,
+            content_type,
+            size_bytes,
+            uploaded_by
+        ) VALUES (
+            ${leaveId},
+            ${sickNote.content},
+            ${sickNote.iv},
+            ${sickNote.keyId},
+            ${sickNote.contentType},
+            ${sickNote.sizeBytes},
+            ${sickNote.uploadedBy}
+        )
+    `;
+
+# Query to get the sick note of a leave, with the email of the employee the leave belongs to.
+#
+# + leaveId - Leave ID
+# + return - Select query
+isolated function getSickNoteQuery(int leaveId) returns sql:ParameterizedQuery => `
+        SELECT
+            attachment.id AS id,
+            attachment.leave_id AS leave_id,
+            leave_submissions.email AS email,
+            attachment.content AS content,
+            attachment.iv AS iv,
+            attachment.key_id AS key_id,
+            attachment.content_type AS content_type,
+            attachment.deleted_at AS deleted_at
+        FROM
+            leave_attachments attachment
+            JOIN leave_submissions ON leave_submissions.id = attachment.leave_id
+        WHERE
+            attachment.leave_id = ${leaveId}
+    `;
+
+# Query to record a sick note download.
+#
+# + attachmentId - ID of the sick note attachment
+# + leaveId - ID of the leave the note belongs to
+# + downloadedBy - Email of the user who downloaded the note
+# + return - Insert query
+isolated function recordSickNoteDownloadQuery(int attachmentId, int leaveId, string downloadedBy)
+    returns sql:ParameterizedQuery => `
+        INSERT INTO leave_attachment_downloads (
+            attachment_id,
+            leave_id,
+            downloaded_by
+        ) VALUES (
+            ${attachmentId},
+            ${leaveId},
+            ${downloadedBy}
+        )
+    `;
+
+# Query to list sick leaves in France that have a sick note and overlap the given dates, newest first.
+#
+# + startDate - Start of the date range (yyyy-mm-dd)
+# + endDate - End of the date range (yyyy-mm-dd), inclusive
+# + return - Select query
+isolated function getSickNotesQuery(string startDate, string endDate) returns sql:ParameterizedQuery => `
+        SELECT
+            leave_submissions.id AS leave_id,
+            leave_submissions.email AS email,
+            leave_submissions.start_date AS start_date,
+            leave_submissions.end_date AS end_date,
+            leave_submissions.num_days AS num_days,
+            leave_submissions.status AS status,
+            attachment.uploaded_at AS uploaded_at,
+            attachment.deleted_at AS deleted_at,
+            attachment.size_bytes AS size_bytes,
+            attachment.content_type AS content_type
+        FROM
+            leave_attachments attachment
+            JOIN leave_submissions ON leave_submissions.id = attachment.leave_id
+        WHERE
+            leave_submissions.leave_type = ${SICK_LEAVE} AND leave_submissions.location = ${FRANCE} AND
+            leave_submissions.start_date < DATE_ADD(${endDate}, INTERVAL 1 DAY) AND
+            leave_submissions.end_date >= ${startDate}
+        ORDER BY
+            leave_submissions.start_date DESC, leave_submissions.id DESC
+    `;
 
 # Set the status of a leave application.
 #

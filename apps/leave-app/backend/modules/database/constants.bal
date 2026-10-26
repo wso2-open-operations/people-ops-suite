@@ -26,3 +26,6 @@ public const UPPER_LIMIT = 1000;
 
 # Message returned when a leave request can no longer be approved or rejected.
 public const ERR_MSG_LEAVE_NOT_PENDING = "This request is no longer pending.";
+
+# Employee location whose sick leave carries a sick note.
+const FRANCE = "France";

@@ -295,6 +295,10 @@ public type AppConfig record {|
     # leave-type options on the admin recording screen, so widening the
     # configuration needs no UI change.
     database:LeaveType[] onBehalfAllowedLeaveTypes;
+    # Largest sick note accepted, in bytes
+    int sickNoteMaxBytes;
+    # Content types accepted for a sick note
+    string[] sickNoteContentTypes;
 |};
 
 # Sabbatical Leave Response.
