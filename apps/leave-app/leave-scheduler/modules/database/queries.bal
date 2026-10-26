@@ -95,3 +95,22 @@ isolated function markApprovalReminderSentQuery(int leaveId) returns sql:Paramet
     WHERE
         id = ${leaveId} AND status = 'PENDING'
 `;
+
+# Query to clear the encrypted content of sick notes whose leave ended before the cutoff, or whose leave was
+# cancelled. The row is kept, with `deleted_at` set, so the history can still say a note was provided and deleted.
+#
+# + endedBefore - Leaves that ended before this date (yyyy-mm-dd) have their sick note cleared
+# + return - Update query
+isolated function deleteExpiredSickNotesQuery(string endedBefore) returns sql:ParameterizedQuery => `
+    UPDATE
+        leave_attachments a
+    JOIN
+        leave_submissions l ON l.id = a.leave_id
+    SET
+        a.content = NULL,
+        a.iv = NULL,
+        a.deleted_at = CURRENT_TIMESTAMP
+    WHERE
+        a.deleted_at IS NULL
+        AND (DATE(l.end_date) < ${endedBefore} OR l.status = 'CANCELLED')
+`;

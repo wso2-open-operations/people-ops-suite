@@ -65,3 +65,13 @@ public isolated function markApprovalReminderSent(int leaveId) returns error? {
         return error(string `Leave id ${leaveId} is no longer pending, reminder not recorded`);
     }
 }
+
+# Clear the content of sick notes whose leave ended before the given date, or whose leave was cancelled. The
+# rows are kept, marked as deleted.
+#
+# + endedBefore - Leaves that ended before this date (yyyy-mm-dd) have their sick note cleared
+# + return - Number of sick notes cleared, or an error if the update fails
+public isolated function deleteExpiredSickNotes(string endedBefore) returns int|error {
+    sql:ExecutionResult result = check databaseClient->execute(deleteExpiredSickNotesQuery(endedBefore));
+    return result.affectedRowCount ?: 0;
+}

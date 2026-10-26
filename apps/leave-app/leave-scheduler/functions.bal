@@ -31,6 +31,9 @@ configurable int approvalReminderFirstDelayInDays = ?;
 # How many days after a reminder a still-pending Other Authorized Leave gets the next one (at least 1).
 configurable int approvalReminderIntervalInDays = ?;
 
+# How many days after a leave ends its sick note is deleted (at least 1).
+configurable int sickNoteRetentionInDays = ?;
+
 # Leave App page where a lead approves leaves; linked from the approval reminder.
 configurable string approvalPageUrl = ?;
 
@@ -208,4 +211,20 @@ function sendApprovalReminderFor(database:ApprovalReminder reminder, string toda
     }
     check database:markApprovalReminderSent(reminder.id);
     log:printInfo("Approval reminder sent", leaveId = reminder.id);
+}
+
+# Run the sick note retention job: clear the encrypted content of sick notes whose leave ended more than
+# `sickNoteRetentionInDays` days ago, and of cancelled leaves. The rows are kept so the history can still say a
+# note was provided and deleted. The job never needs the encryption key. Debug mode does not skip the deletion.
+#
+# + return - Error if the setting is invalid or the sick notes could not be cleared
+function runSickNoteRetention() returns error? {
+    check dates:requireAtLeastOne("sickNoteRetentionInDays", sickNoteRetentionInDays);
+
+    string today = time:utcToString(time:utcNow()).substring(0, 10);
+    string endedBefore = check dates:subtractDays(today, sickNoteRetentionInDays);
+    log:printInfo("Sick note retention run started", today = today, endedBefore = endedBefore);
+
+    int deleted = check database:deleteExpiredSickNotes(endedBefore);
+    log:printInfo("Sick note retention run completed", deleted = deleted);
 }
