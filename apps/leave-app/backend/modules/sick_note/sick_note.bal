@@ -85,8 +85,9 @@ public isolated function decodeKey(string base64Key) returns byte[]|error {
 #
 # + content - The plain file content
 # + key - The 32-byte key from `decodeKey`
-# + return - The encrypted note to store, or an error
+# + return - The encrypted note to store, or an error, including when the key is not 32 bytes
 public isolated function encrypt(byte[] content, byte[] key) returns EncryptedSickNote|error {
+    check checkKeyLength(key);
     byte[] iv = check randomIv();
     byte[] encrypted = check crypto:encryptAesGcm(content, key, iv, crypto:NONE, GCM_TAG_BITS);
     return {content: encrypted, iv, keyId: CURRENT_KEY_ID};
@@ -96,8 +97,9 @@ public isolated function encrypt(byte[] content, byte[] key) returns EncryptedSi
 #
 # + note - The stored note
 # + key - The 32-byte key for the note's key id
-# + return - The plain file content, or an error
+# + return - The plain file content, or an error, including when the key is not 32 bytes
 public isolated function decrypt(EncryptedSickNote note, byte[] key) returns byte[]|error {
+    check checkKeyLength(key);
     return crypto:decryptAesGcm(note.content, key, note.iv, crypto:NONE, GCM_TAG_BITS);
 }
 
@@ -107,9 +109,12 @@ public isolated function decrypt(EncryptedSickNote note, byte[] key) returns byt
 # + requesterGroups - Groups of the user asking for the file
 # + applicantEmail - Email of the employee the leave belongs to
 # + sickNoteRoles - Groups allowed to download any sick note
-# + return - `true` when the download is allowed
+# + return - `true` when the download is allowed; never for a blank requester email
 public isolated function canDownload(string requesterEmail, string[] requesterGroups, string applicantEmail,
         string[] sickNoteRoles) returns boolean {
+    if requesterEmail.trim() == "" {
+        return false;
+    }
     if requesterEmail.toLowerAscii() == applicantEmail.toLowerAscii() {
         return true;
     }
@@ -129,6 +134,13 @@ public isolated function canDownload(string requesterEmail, string[] requesterGr
 public isolated function downloadFileName(int leaveId, string contentType) returns string {
     string extension = contentType == "application/pdf" ? "pdf" : contentType == "image/png" ? "png" : "jpg";
     return string `sick-note-${leaveId}.${extension}`;
+}
+
+// crypto accepts 16- and 24-byte keys too, which would quietly mean AES-128 or AES-192.
+isolated function checkKeyLength(byte[] key) returns error? {
+    if key.length() != KEY_LENGTH {
+        return error(string `The sick note key must be ${KEY_LENGTH} bytes for AES-256.`);
+    }
 }
 
 isolated function startsWith(byte[] content, byte[] prefix) returns boolean {

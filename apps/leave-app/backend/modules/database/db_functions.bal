@@ -102,10 +102,10 @@ public isolated function insertLeaveWithSickNote(LeaveInput input, float numDays
     return insertedLeave;
 }
 
-# Get the sick note of a leave.
+# Get the details of a leave's sick note, without its content, so access can be checked before the file is read.
 #
 # + leaveId - Leave ID
-# + return - The stored sick note, nil if the leave has none, or an error on failure
+# + return - The sick note details, nil if the leave has none, or an error on failure
 public isolated function getSickNote(int leaveId) returns StoredSickNote|error? {
     StoredSickNote|error sickNote = leaveDbClient->queryRow(getSickNoteQuery(leaveId));
     if sickNote is sql:NoRowsError {
@@ -115,6 +115,21 @@ public isolated function getSickNote(int leaveId) returns StoredSickNote|error? 
         return error("Error occurred while fetching the sick note!", sickNote);
     }
     return sickNote;
+}
+
+# Get the encrypted content of a sick note.
+#
+# + attachmentId - ID of the sick note attachment
+# + return - The encrypted content, nil if the attachment does not exist, or an error on failure
+public isolated function getSickNoteContent(int attachmentId) returns SickNoteContent|error? {
+    SickNoteContent|error content = leaveDbClient->queryRow(getSickNoteContentQuery(attachmentId));
+    if content is sql:NoRowsError {
+        return ();
+    }
+    if content is error {
+        return error("Error occurred while fetching the sick note content!", content);
+    }
+    return content;
 }
 
 # Record that a user downloaded a sick note.

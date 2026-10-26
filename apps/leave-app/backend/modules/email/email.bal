@@ -371,7 +371,8 @@ public isolated function rejectionContent(string employeeName, string startDate,
     };
 }
 
-# Generate the email content telling the reporting lead that a pending Other Authorized Leave request was withdrawn.
+# Generate the email content telling the applicant and the reporting lead that a pending Other Authorized Leave
+# request was withdrawn. The wording does not say who cancelled it, as People Operations may cancel it too.
 #
 # + employeeName - Name of the applicant
 # + startDate - Leave start date (ISO 8601)
@@ -387,7 +388,7 @@ public isolated function withdrawalContent(string employeeName, string startDate
             <p>
                 Hi,
                 <br/><br/>
-                ${employeeName} has withdrawn the Other Authorized Leave request ${period}. No action is needed.
+                The Other Authorized Leave request of ${employeeName} ${period} has been withdrawn. No action is needed.
             </p>
         `
     };

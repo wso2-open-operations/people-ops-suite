@@ -211,8 +211,7 @@ paths:
         "200":
           description: Ok
         "400":
-          description: BadRequest. Also returned when the request does not declare its length (Content-Length), as
-            a body sent in chunks does not
+          description: BadRequest
           content:
             application/json:
               schema:
@@ -220,7 +219,7 @@ paths:
         "401":
           description: Unauthorized
         "413":
-          description: PayloadTooLarge. The request declares more than 6 MB (the 5 MB sick note plus 1 MB)
+          description: PayloadTooLarge. The request is, or declares, more than 6 MB (the 5 MB sick note plus 1 MB)
         "500":
           description: InternalServerError
   /leaves/on-behalf:
@@ -317,6 +316,10 @@ paths:
                 type: string
             Cache-Control:
               description: no-store
+              schema:
+                type: string
+            X-Content-Type-Options:
+              description: nosniff
               schema:
                 type: string
           content:

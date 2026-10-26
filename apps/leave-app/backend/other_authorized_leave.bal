@@ -275,9 +275,11 @@ function rejectOtherAuthorizedLeave(database:Leave leave, string leadEmail, stri
     _ = start sendOtherAuthorizedLeaveEmail(rejection.cloneReadOnly(), [leave.email, leadEmail].cloneReadOnly());
 }
 
-# Cancel a pending Other Authorized Leave request and tell the reporting lead it was withdrawn.
+# Cancel a pending Other Authorized Leave request and tell the applicant and the reporting lead it was withdrawn.
 #
-# There is no team email to retract and no calendar event to delete, as both wait for the approval.
+# The notice goes to the lead the approval reminders go to: the applicant's current lead in HR, or the approver stored
+# with the leave when HR has none. There is no team email to retract and no calendar event to delete, as both wait for
+# the approval.
 #
 # + leave - Pending leave to cancel
 # + return - `database:LeaveNotPendingError` if the request is no longer pending (nothing is changed or sent), or an
@@ -285,18 +287,32 @@ function rejectOtherAuthorizedLeave(database:Leave leave, string leadEmail, stri
 function withdrawOtherAuthorizedLeave(database:Leave leave) returns error? {
     check database:cancelPendingLeave(leave.id);
 
+    employee:Employee & readonly|error applicant = employee:getEmployee(leave.email);
+    if applicant is error {
+        log:printWarn(string `Failed to fetch employee info for email: ${leave.email}. Using the email address and ` +
+                "the stored approver for the withdrawal notice instead.", applicant);
+    }
+    string employeeName = applicant is error ? leave.email : getEmployeeDisplayName(applicant);
+    string? hrLeadEmail = applicant is error ? () : nonBlankEmail(applicant.leadEmail);
+    string? leadEmail = hrLeadEmail ?: nonBlankEmail(leave.approverEmail);
+
     string[] recipients = [leave.email];
-    string? approverEmail = leave.approverEmail;
-    if approverEmail is string {
-        recipients.unshift(approverEmail);
+    if leadEmail is string {
+        recipients.unshift(leadEmail);
     } else {
-        log:printWarn(string `Approver email is not available for leave with ID: ${leave.id}. ` +
+        log:printWarn(string `No reporting lead is available for leave with ID: ${leave.id}. ` +
                 "The withdrawal notice goes to the applicant only.");
     }
-    email:EmailNotificationDetails withdrawal = email:withdrawalContent(getEmployeeName(leave.email),
-            leave.startDate, leave.endDate);
+    email:EmailNotificationDetails withdrawal = email:withdrawalContent(employeeName, leave.startDate, leave.endDate);
     _ = start sendOtherAuthorizedLeaveEmail(withdrawal.cloneReadOnly(), recipients.cloneReadOnly());
 }
+
+# Get an email address, treating a blank one as none.
+#
+# + email - Email address, if any
+# + return - The trimmed email address, or nil when it is missing or blank
+isolated function nonBlankEmail(string? email) returns string? =>
+    email is string && email.trim() != "" ? email.trim() : ();
 
 # Send an Other Authorized Leave email to the given recipients, all as To recipients.
 #

@@ -177,7 +177,7 @@ public type SickNoteInput record {|
     string uploadedBy;
 |};
 
-# Sick note as it is stored, with the email of the employee the leave belongs to.
+# Sick note as it is stored, without its content, with the email of the employee the leave belongs to.
 public type StoredSickNote record {|
     # Attachment ID
     @sql:Column {name: "id"}
@@ -188,12 +188,6 @@ public type StoredSickNote record {|
     # Email of the employee the leave belongs to
     @sql:Column {name: "email"}
     string email;
-    # Encrypted content, or nil once the note is deleted
-    @sql:Column {name: "content"}
-    byte[]? content;
-    # Initialization vector, or nil once the note is deleted
-    @sql:Column {name: "iv"}
-    byte[]? iv;
     # Id of the key that encrypted the note
     @sql:Column {name: "key_id"}
     int keyId;
@@ -203,6 +197,16 @@ public type StoredSickNote record {|
     # When the note was deleted, if it was
     @sql:Column {name: "deleted_at"}
     string? deletedAt;
+|};
+
+# Encrypted content of a stored sick note.
+public type SickNoteContent record {|
+    # Encrypted content, or nil once the note is deleted
+    @sql:Column {name: "content"}
+    byte[]? content;
+    # Initialization vector, or nil once the note is deleted
+    @sql:Column {name: "iv"}
+    byte[]? iv;
 |};
 
 # Sick leave in France with a sick note, as listed for People Ops. Holds no note content.

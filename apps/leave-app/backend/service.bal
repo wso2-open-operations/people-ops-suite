@@ -617,7 +617,7 @@ service http:InterceptableService / on new http:Listener(9090,
                 };
             }
             // Checked from the headers, before any of the body is read.
-            http:BadRequest|http:PayloadTooLarge? sizeRefusal = checkSickLeaveRequestSize(req);
+            http:PayloadTooLarge? sizeRefusal = checkSickLeaveRequestSize(req);
             if sizeRefusal !is () {
                 return sizeRefusal;
             }
@@ -1389,7 +1389,7 @@ service http:InterceptableService / on new http:Listener(9090,
         // Get the lead info from the database and check if the approver is the relevant lead then proceed
         database:Leave|error? leave = database:getLeave(id);
         if leave is error || leave is () {
-            string errMsg = "Error occurred while fetching sabbatical leave records.";
+            string errMsg = "Error occurred while fetching the leave request.";
             log:printError(errMsg, leave);
             return <http:InternalServerError>{
                 body: {
@@ -1412,7 +1412,7 @@ service http:InterceptableService / on new http:Listener(9090,
 
         string? applicantLeadEmail = applicantInfo.leadEmail;
         if applicantLeadEmail is () {
-            string errMsg = "Sabbatical leave applicant's reporting lead is not available.";
+            string errMsg = "The leave applicant's reporting lead is not available.";
             log:printError(errMsg);
             return <http:BadRequest>{
                 body: {
@@ -1421,7 +1421,7 @@ service http:InterceptableService / on new http:Listener(9090,
             };
         }
         if applicantLeadEmail.toLowerAscii() != email.toLowerAscii() {
-            string errMsg = "The current user is not authorized to approve/reject this sabbatical leave application";
+            string errMsg = "The current user is not authorized to approve/reject this leave request";
             log:printError(errMsg);
             return <http:Forbidden>{
                 body: {

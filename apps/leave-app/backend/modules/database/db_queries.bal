@@ -191,7 +191,8 @@ isolated function insertSickNoteQuery(int leaveId, SickNoteInput sickNote) retur
         )
     `;
 
-# Query to get the sick note of a leave, with the email of the employee the leave belongs to.
+# Query to get the details of a leave's sick note, without its content, with the email of the employee the leave
+# belongs to.
 #
 # + leaveId - Leave ID
 # + return - Select query
@@ -200,8 +201,6 @@ isolated function getSickNoteQuery(int leaveId) returns sql:ParameterizedQuery =
             attachment.id AS id,
             attachment.leave_id AS leave_id,
             leave_submissions.email AS email,
-            attachment.content AS content,
-            attachment.iv AS iv,
             attachment.key_id AS key_id,
             attachment.content_type AS content_type,
             attachment.deleted_at AS deleted_at
@@ -210,6 +209,20 @@ isolated function getSickNoteQuery(int leaveId) returns sql:ParameterizedQuery =
             JOIN leave_submissions ON leave_submissions.id = attachment.leave_id
         WHERE
             attachment.leave_id = ${leaveId}
+    `;
+
+# Query to get the encrypted content of a sick note.
+#
+# + attachmentId - ID of the sick note attachment
+# + return - Select query
+isolated function getSickNoteContentQuery(int attachmentId) returns sql:ParameterizedQuery => `
+        SELECT
+            content,
+            iv
+        FROM
+            leave_attachments
+        WHERE
+            id = ${attachmentId}
     `;
 
 # Query to record a sick note download.

@@ -48,6 +48,7 @@ const ERR_MSG_SICK_NOTE_TOO_LARGE = "The sick note must be at most 5 MB.";
 const ERR_MSG_SICK_LEAVE_PARTS = "The request must contain exactly one leave part and one sickNote part.";
 const ERR_MSG_SICK_NOTE_NOT_FOUND = "No sick note was found for this leave.";
 const ERR_MSG_SICK_NOTE_UNREADABLE = "The sick note could not be read.";
+const ERR_MSG_SICK_NOTE_FETCH_FAILED = "Error occurred while fetching the sick note";
 
 # Leave and sick note sent together to submit sick leave in France.
 type SickLeaveSubmission record {|
@@ -57,23 +58,15 @@ type SickLeaveSubmission record {|
     byte[] sickNote;
 |};
 
-# Refuse a sick leave request whose size is unknown or too large, before any of its body is read. A body sent in
-# chunks declares no length, so it is refused too.
+# Refuse a sick leave request that declares a length over the limit, before any of its body is read. A body sent in
+# chunks declares no length and is not refused here: the listener's `maxEntityBodySize` still bounds it.
 #
 # + req - Sick leave request
-# + return - BadRequest if the request does not declare a valid length, PayloadTooLarge if the declared length is over
-# `MAX_SICK_LEAVE_REQUEST_BYTES`, otherwise nil
-function checkSickLeaveRequestSize(http:Request req) returns http:BadRequest|http:PayloadTooLarge? {
+# + return - PayloadTooLarge if the declared length is over `MAX_SICK_LEAVE_REQUEST_BYTES`, otherwise nil
+function checkSickLeaveRequestSize(http:Request req) returns http:PayloadTooLarge? {
     string|http:HeaderNotFoundError declared = req.getHeader(http:CONTENT_LENGTH);
     int|error length = declared is string ? int:fromString(declared) : declared;
-    if length is error || length < 0 {
-        return <http:BadRequest>{
-            body: {
-                message: "The request must declare the length of its body."
-            }
-        };
-    }
-    if length > MAX_SICK_LEAVE_REQUEST_BYTES {
+    if length is int && length > MAX_SICK_LEAVE_REQUEST_BYTES {
         return <http:PayloadTooLarge>{
             body: {
                 message: ERR_MSG_SICK_NOTE_TOO_LARGE
@@ -223,8 +216,9 @@ function readLeavePart(mime:Entity part) returns LeavePayload|error {
     return value:fromJsonStringWithType(check string:fromBytes(content));
 }
 
-# Send a sick note to the applicant or a member of `sickNoteRoles`. The download is recorded before the file is sent,
-# and the file is not sent if the record cannot be saved.
+# Send a sick note to the applicant or a member of `sickNoteRoles`. Access is checked from the note's details before
+# its encrypted content is read. The download is recorded before the file is sent, and the file is not sent if the
+# record cannot be saved.
 #
 # + leaveId - Leave ID
 # + requesterEmail - Email of the user asking for the file
@@ -236,11 +230,10 @@ function downloadSickNote(int leaveId, string requesterEmail, string[] requester
 
     database:StoredSickNote|error? sickNote = database:getSickNote(leaveId);
     if sickNote is error {
-        string errMsg = "Error occurred while fetching the sick note";
-        log:printError(errMsg, sickNote, leaveId = leaveId);
+        log:printError(ERR_MSG_SICK_NOTE_FETCH_FAILED, sickNote, leaveId = leaveId);
         return <http:InternalServerError>{
             body: {
-                message: errMsg
+                message: ERR_MSG_SICK_NOTE_FETCH_FAILED
             }
         };
     }
@@ -260,9 +253,28 @@ function downloadSickNote(int leaveId, string requesterEmail, string[] requester
             }
         };
     }
-    byte[]? content = sickNote.content;
-    byte[]? iv = sickNote.iv;
-    if sickNote.deletedAt is string || content is () || iv is () {
+    if sickNote.deletedAt is string {
+        return <http:NotFound>{
+            body: {
+                message: ERR_MSG_SICK_NOTE_NOT_FOUND
+            }
+        };
+    }
+
+    // Read only once the caller may download the note.
+    database:SickNoteContent|error? stored = database:getSickNoteContent(sickNote.id);
+    if stored is error {
+        log:printError(ERR_MSG_SICK_NOTE_FETCH_FAILED, stored, leaveId = leaveId);
+        return <http:InternalServerError>{
+            body: {
+                message: ERR_MSG_SICK_NOTE_FETCH_FAILED
+            }
+        };
+    }
+    // The retention job may have cleared the content since the details were read.
+    byte[]? content = stored is () ? () : stored.content;
+    byte[]? iv = stored is () ? () : stored.iv;
+    if content is () || iv is () {
         return <http:NotFound>{
             body: {
                 message: ERR_MSG_SICK_NOTE_NOT_FOUND
@@ -299,5 +311,6 @@ function downloadSickNote(int leaveId, string requesterEmail, string[] requester
     response.setHeader("Content-Disposition",
             string `attachment; filename="${sick_note:downloadFileName(leaveId, sickNote.contentType)}"`);
     response.setHeader("Cache-Control", "no-store");
+    response.setHeader("X-Content-Type-Options", "nosniff");
     return response;
 }

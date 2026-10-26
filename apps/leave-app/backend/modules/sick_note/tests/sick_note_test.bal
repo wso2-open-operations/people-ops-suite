@@ -73,6 +73,16 @@ function tamperedOrWrongKeyNotesDoNotDecrypt() returns error? {
 }
 
 @test:Config {}
+function onlyA32ByteKeyEncryptsOrDecrypts() returns error? {
+    // crypto would accept this 16-byte key as AES-128.
+    byte[] aes128Key = testKey().slice(0, 16);
+    string keyError = "The sick note key must be 32 bytes for AES-256.";
+    test:assertEquals((<error>encrypt("%PDF-1.7".toBytes(), aes128Key)).message(), keyError);
+    EncryptedSickNote stored = check encrypt("%PDF-1.7".toBytes(), testKey());
+    test:assertEquals((<error>decrypt(stored, aes128Key)).message(), keyError);
+}
+
+@test:Config {}
 function onlyTheApplicantAndSickNoteRolesMayDownload() {
     string[] roles = ["people-ops"];
     test:assertTrue(canDownload("jane@wso2.com", ["wso2-everyone"], "jane@wso2.com", roles));
@@ -84,6 +94,12 @@ function onlyTheApplicantAndSickNoteRolesMayDownload() {
 @test:Config {}
 function canDownloadIgnoresEmailCase() {
     test:assertTrue(canDownload("jane.doe@wso2.com", [], "Jane.Doe@wso2.com", []));
+}
+
+@test:Config {}
+function aBlankRequesterMayNotDownload() {
+    test:assertFalse(canDownload("", [], "", []));
+    test:assertFalse(canDownload("  ", [], "  ", []));
 }
 
 @test:Config {}
