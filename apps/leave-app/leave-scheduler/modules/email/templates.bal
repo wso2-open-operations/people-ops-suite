@@ -2217,7 +2217,7 @@ final string approvalReminderTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              <!-- [START_NOTE] --> Please review it in the Leave App:
+                              <!-- [START_NOTE] --> The request is in the Leave App:
                               <a href="<!-- [APPROVAL_URL] -->"><!-- [APPROVAL_URL] --></a>
                             </p>
                           <p
@@ -3494,8 +3494,8 @@ final string noLeadAlertTemplate = string `
                             >
                               <!-- [EMPLOYEE_NAME] --> (<!-- [EMPLOYEE_EMAIL] -->) applied for Other Authorized Leave from
                               <!-- [LEAVE_START_DATE] --> to <!-- [LEAVE_END_DATE] -->, and the request has been waiting for
-                              approval for <!-- [DAYS_WAITING] -->. No lead is recorded for this employee in HR, so no
-                              one could be reminded.
+                              approval for <!-- [DAYS_WAITING] -->. The employee has no lead in HR, or is no longer in HR, so
+                              no one could be reminded.
                             </p>
                             <p
                               style="
@@ -3510,7 +3510,8 @@ final string noLeadAlertTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              Please assign a lead to the employee in HR so the leave can be approved.
+                              Please check the employee's record in HR. Once the employee has a lead there, the request
+                              appears in that lead's Approve tab.
                             </p>
                      <p
                               style="

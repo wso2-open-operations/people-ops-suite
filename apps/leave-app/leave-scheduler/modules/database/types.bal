@@ -72,7 +72,7 @@ public type ApprovalReminder record {|
     @sql:Column {name: "end_date"}
     string endDate;
     # Number of leave days
-    @sql:Column {name: "number_of_days"}
+    @sql:Column {name: "num_days"}
     float numberOfDays;
     # Date the leave was submitted (yyyy-mm-dd)
     @sql:Column {name: "created_on"}

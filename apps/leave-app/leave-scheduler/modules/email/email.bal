@@ -97,7 +97,8 @@ public isolated function sendApprovalReminder(ApprovalReminderDetails details) r
     }
 }
 
-# Alert People Operations that a pending leave has no lead in HR to approve it.
+# Alert People Operations that a pending leave has no lead in HR to approve it: HR has no lead for the employee, or
+# no longer has the employee.
 #
 # + details - Alert details
 # + return - Error if the email could not be sent

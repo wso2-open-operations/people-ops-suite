@@ -161,21 +161,29 @@ function runApprovalReminder() returns error? {
 }
 
 # Send the approval reminder for one pending leave and record it as sent. The reminder goes only to the
-# applicant's current lead in HR; when HR has no lead, People Operations is alerted instead.
+# applicant's current lead in HR; when HR has no lead for the applicant, or no longer has the applicant (for
+# example after they left), People Operations is alerted instead.
 #
 # + reminder - Leave due for a reminder
 # + today - Today's date (yyyy-mm-dd)
 # + return - Error if HR could not be reached, or the email could not be sent or recorded
 function sendApprovalReminderFor(database:ApprovalReminder reminder, string today) returns error? {
     // Without HR there is no way to tell the current lead (the lead recorded on the leave may no longer be
-    // one), so the leave fails and is retried on the next run.
-    employee:Employee employeeInfo = check employee:getEmployee(reminder.email);
-    string employeeName = employee:fullName(employeeInfo, reminder.email);
+    // one), so an HR error fails the leave and it is retried on the next run. An applicant HR no longer has is
+    // treated like one with no lead, so the alert reaches People Operations instead of failing every run.
+    employee:Employee|error employeeInfo = employee:getEmployee(reminder.email);
+    if employeeInfo is error && employeeInfo !is employee:EmployeeNotFoundError {
+        return employeeInfo;
+    }
+    string employeeName = employeeInfo is employee:Employee
+        ? employee:fullName(employeeInfo, reminder.email) : reminder.email;
     int daysWaiting = check dates:daysBetween(reminder.createdOn, today);
 
-    string? leadEmail = employee:leadEmail(employeeInfo);
+    string? leadEmail = employeeInfo is employee:Employee ? employee:leadEmail(employeeInfo) : ();
     if leadEmail is () {
-        log:printWarn("No lead recorded in HR, alerting People Operations", leaveId = reminder.id);
+        log:printWarn(employeeInfo is employee:Employee
+                ? "No lead recorded in HR, alerting People Operations"
+                : "Employee not found in HR, alerting People Operations", leaveId = reminder.id);
         check email:sendNoLeadAlert({
             employeeName,
             employeeEmail: reminder.email,

@@ -68,7 +68,7 @@ isolated function getDueApprovalRemindersQuery(string firstReminderCutoff, strin
         approver_email,
         DATE_FORMAT(start_date, '%Y-%m-%d') AS start_date,
         DATE_FORMAT(end_date, '%Y-%m-%d') AS end_date,
-        number_of_days,
+        num_days,
         DATE_FORMAT(created_date, '%Y-%m-%d') AS created_on
     FROM
         leave_submissions
