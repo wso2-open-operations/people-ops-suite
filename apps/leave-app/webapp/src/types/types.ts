@@ -90,6 +90,8 @@ export enum LeaveType {
   RTT = "rtt",
   MEDICAL = "medical",
   NO_PAY = "no-pay",
+  COMPASSIONATE = "compassionate",
+  OTHER_AUTHORIZED = "other_authorized",
 }
 
 export enum LeaveLabel {
@@ -103,6 +105,8 @@ export enum LeaveLabel {
   RTT = "RTT",
   MEDICAL = "Medical",
   NO_PAY = "No-Pay",
+  COMPASSIONATE = "Compassionate Leave",
+  OTHER_AUTHORIZED = "Other Authorized Leave",
   SPAIN_ANNUAL = "Annual Leave",
   SPAIN_CASUAL = "Casual Leave",
   INDIA_ANNUAL = "Annual / Earned",
@@ -114,6 +118,8 @@ export const LeaveTooltip: Partial<Record<LeaveType, string>> = {
   [LeaveType.CONGES_PAYES]: "Paid Annual Leave",
   [LeaveType.RTT]: "Réduction du Temps de Travail",
   [LeaveType.SICK]: "Sick Leave",
+  [LeaveType.COMPASSIONATE]: "Leave for a bereavement or a family emergency",
+  [LeaveType.OTHER_AUTHORIZED]: "Other authorized absence approved by your manager",
 };
 
 // Leave Approval action.
