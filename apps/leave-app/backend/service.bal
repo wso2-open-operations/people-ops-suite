@@ -18,6 +18,7 @@ import leave_service.calendar_events;
 import leave_service.database;
 import leave_service.email;
 import leave_service.employee;
+import leave_service.policy;
 
 import ballerina/http;
 import ballerina/log;
@@ -590,6 +591,19 @@ service http:InterceptableService / on new http:Listener(9090) {
                 emailSubject: payload.emailSubject,
                 status: APPROVED
             };
+            // France-only leave types are refused here as a 400, not via `fail` (which maps to 500).
+            string|error employeeLocation = employee:getEmployeeLocation(email, jwt);
+            if employeeLocation is error {
+                fail error(employeeLocation.message(), employeeLocation);
+            }
+            error? leaveTypeError = policy:checkLeaveTypeAllowed(payload.leaveType, employeeLocation);
+            if leaveTypeError is error {
+                return <http:BadRequest>{
+                    body: {
+                        message: leaveTypeError.message()
+                    }
+                };
+            }
             if isValidationOnlyMode {
                 LeaveDetails|error validatedLeave = insertLeaveToDatabase(input, isValidationOnlyMode, jwt);
                 if validatedLeave is error {
@@ -740,6 +754,20 @@ service http:InterceptableService / on new http:Listener(9090) {
                 return <http:BadRequest>{
                     body: {
                         message: "Half day leave cannot be recorded on behalf of an employee."
+                    }
+                };
+            }
+
+            // France-only leave types, checked against the employee the leave is recorded for.
+            string|error employeeLocation = employee:getEmployeeLocation(employeeEmail, jwt);
+            if employeeLocation is error {
+                fail error(employeeLocation.message(), employeeLocation);
+            }
+            error? leaveTypeError = policy:checkLeaveTypeAllowed(payload.leaveType, employeeLocation);
+            if leaveTypeError is error {
+                return <http:BadRequest>{
+                    body: {
+                        message: leaveTypeError.message()
                     }
                 };
             }

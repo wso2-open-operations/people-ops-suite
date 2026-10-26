@@ -892,6 +892,8 @@ components:
       - annual
       - sick
       - casual
+      - compassionate
+      - other_authorized
     MinimalEmployeeInfo:
       type: object
       description: Minimal Employee information.
