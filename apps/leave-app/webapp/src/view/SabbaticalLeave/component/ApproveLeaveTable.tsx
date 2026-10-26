@@ -13,18 +13,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import { Box, Button, useTheme } from "@mui/material";
+import { Box, Button, Tooltip, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
 import { useState } from "react";
 
-import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import { getLeaveHistory } from "@root/src/services/leaveService";
 import { approveLeaveAction } from "@root/src/slices/leaveSlice/leave";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
+import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import {
   Action,
   ConfirmationType,
@@ -43,17 +44,34 @@ interface ApproveLeaveTableProps {
   onRefresh?: () => void;
   /** Reject asks for a written reason (Other Authorized leave). */
   requireRejectionReason?: boolean;
-  /** Adds a column showing when the request was submitted. */
+  /** Adds a column showing how long the request has been waiting. */
   showWaitingSince?: boolean;
+  /** Adds a column showing the applicant's comment. */
+  showComment?: boolean;
 }
 
 const dateOnly = (value: string | null | undefined) => String(value ?? "").substring(0, 10);
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/** "3 days (since 2026-10-23)"; "Today" / "1 day" for the short cases. */
+const waitingSince = (createdDate: string | null | undefined): string => {
+  const since = dateOnly(createdDate);
+  const start = Date.parse(`${since}T00:00:00Z`);
+  if (!since || Number.isNaN(start)) return "";
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.max(0, Math.round((today - start) / MS_PER_DAY));
+  const label = days === 0 ? "Today" : `${days} ${days === 1 ? "day" : "days"}`;
+  return days === 0 ? `${label} (${since})` : `${label} (since ${since})`;
+};
 
 export default function ApproveLeaveTable({
   rows,
   onRefresh,
   requireRejectionReason = false,
   showWaitingSince = false,
+  showComment = false,
 }: ApproveLeaveTableProps) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
@@ -67,12 +85,11 @@ export default function ApproveLeaveTable({
     const item = rejectTarget;
     setRejectTarget(null);
     if (!item) return;
-    const result = await dispatch(
+    await dispatch(
       approveLeaveAction({ leaveId: String(item.id), action: Action.REJECT, reason }),
     );
-    if (approveLeaveAction.fulfilled.match(result)) {
-      onRefresh?.();
-    }
+    // Refetch on success and on a refusal, so a stale row doesn't linger.
+    onRefresh?.();
   };
 
   const handleApproveOther = (item: SingleLeaveHistory) => {
@@ -82,12 +99,8 @@ export default function ApproveLeaveTable({
       `This will approve the ${leaveTypeLabel(item.leaveType)} request for ${item.email} (${dateRange}).`,
       ConfirmationType.accept,
       async () => {
-        const result = await dispatch(
-          approveLeaveAction({ leaveId: String(item.id), action: Action.APPROVE }),
-        );
-        if (approveLeaveAction.fulfilled.match(result)) {
-          onRefresh?.();
-        }
+        await dispatch(approveLeaveAction({ leaveId: String(item.id), action: Action.APPROVE }));
+        onRefresh?.();
       },
       "Yes, Approve",
       "Cancel",
@@ -147,11 +160,29 @@ export default function ApproveLeaveTable({
 
   const waitingColumn: GridColDef = {
     field: "createdDate",
-    headerName: "Waiting since",
+    headerName: "Waiting",
     type: "string",
-    flex: 1,
+    flex: 1.2,
     editable: false,
-    renderCell: (params) => <span>{dateOnly(params.row?.createdDate)}</span>,
+    valueGetter: (_value, row) => waitingSince(row?.createdDate),
+  };
+
+  const commentColumn: GridColDef = {
+    field: "submitComment",
+    headerName: "Comment",
+    type: "string",
+    flex: 2,
+    editable: false,
+    renderCell: (params) => (
+      <Tooltip title={params.value ?? ""} placement="bottom-start">
+        <Box
+          component="span"
+          sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+        >
+          {params.value}
+        </Box>
+      </Tooltip>
+    ),
   };
 
   const columns: GridColDef[] = [
@@ -185,6 +216,7 @@ export default function ApproveLeaveTable({
       flex: 1,
       editable: false,
     },
+    ...(showComment ? [commentColumn] : []),
     ...(showWaitingSince ? [waitingColumn] : []),
     {
       field: "approval",

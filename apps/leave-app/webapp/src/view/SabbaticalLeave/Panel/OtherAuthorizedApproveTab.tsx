@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { CircularProgress, Stack, useTheme } from "@mui/material";
 
 import { useCallback, useEffect } from "react";
@@ -72,6 +73,7 @@ export default function OtherAuthorizedApproveTab() {
           onRefresh={handleRefresh}
           requireRejectionReason
           showWaitingSince
+          showComment
         />
       )}
     </Stack>
