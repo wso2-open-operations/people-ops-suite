@@ -3476,7 +3476,7 @@ final string noLeadAlertTemplate = string `
                                 margin-top: 0;
                               "
                             >
-                              Dear <!-- [LEAD_NAME] -->,
+                              Dear People Operations team,
                             </p>
 
                                    <p
