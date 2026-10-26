@@ -448,7 +448,7 @@ modules = [
 [[package]]
 org = "wso2"
 name = "leave_service"
-version = "1.1.2"
+version = "1.2.0"
 dependencies = [
 	{org = "ballerina", name = "cache"},
 	{org = "ballerina", name = "graphql"},
