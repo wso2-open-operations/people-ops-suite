@@ -12,6 +12,7 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
+// under the License.
 
 import axios from "axios";
 
@@ -45,7 +46,10 @@ export async function sickNoteErrorMessage(err: unknown): Promise<string> {
   return SICK_NOTE_ERROR;
 }
 
-// Saves a sick note through a temporary object URL (revoked afterwards). Nothing is retained.
+// How long the temporary object URL outlives the click, so the browser can start the download first.
+export const OBJECT_URL_REVOKE_DELAY_MS = 10_000;
+
+// Saves a sick note through a temporary object URL (revoked shortly afterwards). Nothing is retained.
 export function saveSickNoteBlob(blob: Blob, leaveId: number): void {
   const url = URL.createObjectURL(blob);
   try {
@@ -56,6 +60,7 @@ export function saveSickNoteBlob(blob: Blob, leaveId: number): void {
     link.click();
     document.body.removeChild(link);
   } finally {
-    URL.revokeObjectURL(url);
+    // Revoking straight after click() can cancel the download in Safari and some Firefox versions.
+    setTimeout(() => URL.revokeObjectURL(url), OBJECT_URL_REVOKE_DELAY_MS);
   }
 }

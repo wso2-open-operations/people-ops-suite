@@ -12,12 +12,15 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
+// under the License.
+
 import { describe, expect, it } from "vitest";
 
 import { LeaveType, Status } from "@/types/types";
 import {
   HISTORY_STATUSES,
   canCancelLeave,
+  canDownloadSickNote,
   leaveTypeLabel,
   needsSickNote,
   rejectionReasonProblem,
@@ -94,5 +97,10 @@ describe("history and sick notes", () => {
     expect(needsSickNote("France", LeaveType.SICK)).toBe(true);
     expect(needsSickNote("Spain", LeaveType.SICK)).toBe(false);
     expect(needsSickNote(null, LeaveType.SICK)).toBe(false);
+  });
+  it("offers the sick note download only until the note is deleted", () => {
+    expect(canDownloadSickNote(true, null)).toBe(true);
+    expect(canDownloadSickNote(true, "2026-10-20T02:00:00")).toBe(false);
+    expect(canDownloadSickNote(false, null)).toBe(false);
   });
 });

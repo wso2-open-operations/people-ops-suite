@@ -31,7 +31,7 @@ import {
 
 import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import { ConfirmationType, LeaveType, Status } from "@root/src/types/types";
-import { canCancelLeave, leaveTypeLabel } from "@root/src/utils/leaveRules";
+import { canCancelLeave, canDownloadSickNote, leaveTypeLabel } from "@root/src/utils/leaveRules";
 
 const STATUS_LABELS: Record<Status, string> = {
   [Status.PENDING]: "Pending",
@@ -250,7 +250,7 @@ export default function LeaveCard({
               </Typography>
             )}
 
-            {isSick && hasSickNote && (
+            {isSick && canDownloadSickNote(hasSickNote, sickNoteDeletedOn) && (
               <Box>
                 <Button
                   size="small"
@@ -262,7 +262,7 @@ export default function LeaveCard({
                 </Button>
               </Box>
             )}
-            {isSick && !hasSickNote && sickNoteDeletedOn && (
+            {sickNoteDeletedOn && (
               <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                 Sick note deleted on {sickNoteDeletedOn.substring(0, 10)}
               </Typography>

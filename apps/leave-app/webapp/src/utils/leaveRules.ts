@@ -12,6 +12,8 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
+// under the License.
+
 import { LeaveType, Status } from "@/types/types";
 
 const MB = 1024 * 1024;
@@ -74,4 +76,15 @@ export function canCancelLeave(status: Status, startDate: string, today: Date): 
 /** Sick leave taken in France needs a sick note. */
 export function needsSickNote(location: string | null, leaveType: LeaveType): boolean {
   return location === "France" && leaveType === LeaveType.SICK;
+}
+
+/**
+ * A sick note can be downloaded until it is deleted. A deleted note keeps its row, so `hasSickNote`
+ * stays true after the deletion.
+ */
+export function canDownloadSickNote(
+  hasSickNote: boolean,
+  sickNoteDeletedOn: string | null,
+): boolean {
+  return hasSickNote && !sickNoteDeletedOn;
 }

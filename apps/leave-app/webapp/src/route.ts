@@ -143,7 +143,8 @@ export const routes: RouteObjectWithMeta[] = [
     text: "Employee Leave",
     icon: React.createElement(EditCalendarIcon),
     element: React.createElement(OutletWrapper),
-    // People Ops only: recording leave for another employee is an admin action.
+    // People Ops and sick note readers; each page below narrows it further (recording leave for another
+    // employee is a People Ops action, and Sick Notes is for the sick note roles only).
     allowRoles: [Role.PEOPLE_OPS_TEAM, Role.SICK_NOTE_READER],
     children: [
       {
