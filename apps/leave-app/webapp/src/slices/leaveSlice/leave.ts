@@ -180,11 +180,11 @@ export const submitLeave = createAsyncThunk<
 // Async thunk for approving/rejecting a leave
 export const approveLeaveAction = createAsyncThunk<
   ApprovalResponse & { leaveId: string; action: Action },
-  { leaveId: string; action: Action },
+  { leaveId: string; action: Action; reason?: string },
   { rejectValue: string }
->("leave/approveLeave", async ({ leaveId, action }, { dispatch, rejectWithValue }) => {
+>("leave/approveLeave", async ({ leaveId, action, reason }, { dispatch, rejectWithValue }) => {
   try {
-    const response = await approveLeave(leaveId, action);
+    const response = await approveLeave(leaveId, action, reason);
     dispatch(
       enqueueSnackbarMessage({
         message:

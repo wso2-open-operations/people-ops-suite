@@ -233,6 +233,24 @@ export interface SingleLeaveHistory {
   isPublicComment: boolean;
   calendarEventId: string | null;
   location: string;
+  status: Status;
+  rejectionReason: string | null;
+  hasSickNote: boolean;
+  sickNoteDeletedOn: string | null;
+}
+
+// Sick note summary (mirrors backend SickNoteSummary).
+export interface SickNoteSummary {
+  leaveId: number;
+  email: string;
+  startDate: string;
+  endDate: string;
+  numberOfDays: number;
+  status: Status;
+  uploadedAt: string;
+  deletedAt: string | null;
+  sizeBytes: number;
+  contentType: string;
 }
 
 // Leave history response type.
@@ -325,6 +343,8 @@ export interface AppConfigResponse {
   // Leave types People Ops may record on behalf of an employee. Server-driven,
   // so enabling another type needs no frontend change.
   onBehalfAllowedLeaveTypes?: LeaveType[];
+  sickNoteMaxBytes: number;
+  sickNoteContentTypes: string[];
 }
 
 // Leave policy entitlement/consumed counts.
