@@ -36,7 +36,16 @@ const LEAVE_PART = "leave";
 # Name of the multipart part that carries the sick note file.
 const SICK_NOTE_PART = "sickNote";
 
+# Largest sick leave request accepted, in bytes: the largest sick note plus 1 MB for the leave and the multipart
+# framing. It is also the listener's body limit, as every other endpoint takes a small JSON body.
+const int MAX_SICK_LEAVE_REQUEST_BYTES = sick_note:MAX_SICK_NOTE_BYTES + 1048576;
+
+# Largest `leave` part accepted, in bytes.
+const int MAX_LEAVE_PART_BYTES = 65536;
+
 const ERR_MSG_SUBMIT_LEAVE_FAILED = "Error occurred while submitting a leave";
+const ERR_MSG_SICK_NOTE_TOO_LARGE = "The sick note must be at most 5 MB.";
+const ERR_MSG_SICK_LEAVE_PARTS = "The request must contain exactly one leave part and one sickNote part.";
 const ERR_MSG_SICK_NOTE_NOT_FOUND = "No sick note was found for this leave.";
 const ERR_MSG_SICK_NOTE_UNREADABLE = "The sick note could not be read.";
 
@@ -47,6 +56,32 @@ type SickLeaveSubmission record {|
     # The sick note file. Empty when the request has no sick note part
     byte[] sickNote;
 |};
+
+# Refuse a sick leave request whose size is unknown or too large, before any of its body is read. A body sent in
+# chunks declares no length, so it is refused too.
+#
+# + req - Sick leave request
+# + return - BadRequest if the request does not declare a valid length, PayloadTooLarge if the declared length is over
+# `MAX_SICK_LEAVE_REQUEST_BYTES`, otherwise nil
+function checkSickLeaveRequestSize(http:Request req) returns http:BadRequest|http:PayloadTooLarge? {
+    string|http:HeaderNotFoundError declared = req.getHeader(http:CONTENT_LENGTH);
+    int|error length = declared is string ? int:fromString(declared) : declared;
+    if length is error || length < 0 {
+        return <http:BadRequest>{
+            body: {
+                message: "The request must declare the length of its body."
+            }
+        };
+    }
+    if length > MAX_SICK_LEAVE_REQUEST_BYTES {
+        return <http:PayloadTooLarge>{
+            body: {
+                message: ERR_MSG_SICK_NOTE_TOO_LARGE
+            }
+        };
+    }
+    return ();
+}
 
 # Submit sick leave in France with its sick note. The note is checked, encrypted and saved with the leave in one
 # transaction; the leave then goes through the same submission as `POST /leaves`. The note is never sent by email or
@@ -122,7 +157,8 @@ function submitSickLeave(http:Request req, string email, string jwt)
     return result;
 }
 
-# Read the `leave` and `sickNote` parts of a multipart sick leave request.
+# Read the `leave` and `sickNote` parts of a multipart sick leave request. A repeated or unknown part is refused, and
+# a part that declares a size over its limit is refused before it is read.
 #
 # + req - Multipart request
 # + return - The leave and the sick note file, or an error whose message can be shown to the user
@@ -131,28 +167,51 @@ function readSickLeaveParts(http:Request req) returns SickLeaveSubmission|error 
     if parts is http:ClientError {
         return error("Send the leave and the sick note as multipart/form-data.", parts);
     }
+    if parts.length() > 2 {
+        return error(ERR_MSG_SICK_LEAVE_PARTS);
+    }
     LeavePayload? leave = ();
-    byte[] sickNote = [];
+    byte[]? sickNote = ();
     foreach mime:Entity part in parts {
         string partName = part.getContentDisposition().name;
-        if partName == LEAVE_PART {
+        if partName == LEAVE_PART && leave is () {
+            if declaresMoreThan(part, MAX_LEAVE_PART_BYTES) {
+                return error("The leave part is too large.");
+            }
             LeavePayload|error leavePart = readLeavePart(part);
             if leavePart is error {
                 return error("The leave part is not a valid leave.", leavePart);
             }
             leave = leavePart;
-        } else if partName == SICK_NOTE_PART {
+        } else if partName == SICK_NOTE_PART && sickNote is () {
+            if declaresMoreThan(part, sick_note:MAX_SICK_NOTE_BYTES) {
+                return error(ERR_MSG_SICK_NOTE_TOO_LARGE);
+            }
             byte[]|mime:ParserError sickNotePart = part.getByteArray();
             if sickNotePart is mime:ParserError {
                 return error("The sick note could not be read from the request.", sickNotePart);
             }
             sickNote = sickNotePart;
+        } else {
+            return error(ERR_MSG_SICK_LEAVE_PARTS);
         }
     }
     if leave is () {
         return error("The leave part is missing.");
     }
-    return {leave, sickNote};
+    // A missing sick note is reported by `sick_note:detectContentType` as an empty one.
+    return {leave, sickNote: sickNote ?: []};
+}
+
+# Check whether a multipart part declares a size over the given limit. A part that declares no size is not refused
+# here; the request's own size limit still bounds it.
+#
+# + part - Multipart part
+# + maxBytes - Largest size allowed, in bytes
+# + return - `true` if the part's `Content-Length` header is over `maxBytes`
+function declaresMoreThan(mime:Entity part, int maxBytes) returns boolean {
+    int|error declared = part.getContentLength();
+    return declared is int && declared > maxBytes;
 }
 
 # Read the leave from the `leave` part, which carries the same JSON as the `POST /leaves` body.

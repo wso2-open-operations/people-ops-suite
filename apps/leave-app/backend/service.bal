@@ -31,7 +31,9 @@ import ballerina/time;
     id: "people-ops/leave-application"
 }
 
-service http:InterceptableService / on new http:Listener(9090) {
+// The body limit is the sick leave request's; every other endpoint takes a small JSON body.
+service http:InterceptableService / on new http:Listener(9090,
+        requestLimits = {maxEntityBodySize: MAX_SICK_LEAVE_REQUEST_BYTES}) {
 
     # Request interceptor.
     # + return - authorization:JwtInterceptor
@@ -602,7 +604,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + req - Multipart request with the `leave` and `sickNote` parts
     # + return - Success response if the leave is submitted, otherwise an error response
     resource function post leaves/sick\-leave(http:RequestContext ctx, http:Request req)
-        returns http:Ok|http:BadRequest|http:Unauthorized|http:InternalServerError {
+        returns http:Ok|http:BadRequest|http:Unauthorized|http:PayloadTooLarge|http:InternalServerError {
 
         do {
             readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -613,6 +615,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                         message: "You are not authorized to access this resource."
                     }
                 };
+            }
+            // Checked from the headers, before any of the body is read.
+            http:BadRequest|http:PayloadTooLarge? sizeRefusal = checkSickLeaveRequestSize(req);
+            if sizeRefusal !is () {
+                return sizeRefusal;
             }
             return submitSickLeave(req, userInfo.email, jwt);
 
@@ -696,6 +703,15 @@ service http:InterceptableService / on new http:Listener(9090) {
                 return <http:BadRequest>{
                     body: {
                         message: leaveTypeError.message()
+                    }
+                };
+            }
+            // France sick leave is saved only with its sick note, which this path cannot take.
+            if policy:requiresSickNote(payload.leaveType, employeeLocation) {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Sick leave in France needs a sick note, so it can't be recorded on behalf of an " +
+                        "employee."
                     }
                 };
             }

@@ -211,13 +211,16 @@ paths:
         "200":
           description: Ok
         "400":
-          description: BadRequest
+          description: BadRequest. Also returned when the request does not declare its length (Content-Length), as
+            a body sent in chunks does not
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorPayload'
         "401":
           description: Unauthorized
+        "413":
+          description: PayloadTooLarge. The request declares more than 6 MB (the 5 MB sick note plus 1 MB)
         "500":
           description: InternalServerError
   /leaves/on-behalf:
