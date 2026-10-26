@@ -16,7 +16,6 @@
 
 import { Box, CircularProgress, Stack, MenuItem, Select, SelectChangeEvent, Typography, useTheme } from "@mui/material";
 
-import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
@@ -34,32 +33,13 @@ import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
 import { LeaveType, OrderBy, State } from "@root/src/types/types";
 import { HISTORY_STATUSES } from "@root/src/utils/leaveRules";
+import { saveSickNoteBlob, sickNoteErrorMessage } from "@root/src/utils/sickNoteDownload";
 
 import LeaveCard from "./component/LeaveCard";
 
 interface LeaveHistoryProps {
   leaveType?: LeaveType[];
   title?: { firstWord: string; secondWord: string };
-}
-
-const SICK_NOTE_ERROR = "The sick note could not be downloaded.";
-const SICK_NOTE_EXTENSIONS: Record<string, string> = {
-  "application/pdf": ".pdf",
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-};
-
-// With responseType "blob", axios delivers error bodies as a Blob, so read it to get the message.
-async function sickNoteErrorMessage(err: unknown): Promise<string> {
-  if (axios.isAxiosError(err) && err.response?.data instanceof Blob) {
-    try {
-      const body = JSON.parse(await err.response.data.text()) as { message?: string };
-      if (body.message) return body.message;
-    } catch {
-      // Fall through to the generic message.
-    }
-  }
-  return SICK_NOTE_ERROR;
 }
 
 export default function LeaveHistory({ leaveType, title }: LeaveHistoryProps = {}) {
@@ -114,18 +94,7 @@ export default function LeaveHistory({ leaveType, title }: LeaveHistoryProps = {
 
   const handleDownloadSickNote = async (id: number) => {
     try {
-      const blob = await downloadSickNote(id);
-      const url = URL.createObjectURL(blob);
-      try {
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `sick-note-${id}${SICK_NOTE_EXTENSIONS[blob.type] ?? ""}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } finally {
-        URL.revokeObjectURL(url);
-      }
+      saveSickNoteBlob(await downloadSickNote(id), id);
     } catch (err) {
       dispatch(enqueueSnackbarMessage({ message: await sickNoteErrorMessage(err), type: "error" }));
     }
