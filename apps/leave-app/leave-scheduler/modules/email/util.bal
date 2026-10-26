@@ -88,3 +88,12 @@ isolated function bindKeyValues(string content, map<string> keyValPairs) returns
     content);
     return mime:base64Encode(bindContent).ensureType();
 }
+
+# Format a number of days for display, e.g. `1 day`, `2 days`, `1.5 days`.
+#
+# + days - Number of days
+# + return - Display text
+isolated function formatDays(float|int days) returns string {
+    string text = days is float && days == <float><int>days ? (<int>days).toString() : days.toString();
+    return days == 1 ? string `${text} day` : string `${text} days`;
+}

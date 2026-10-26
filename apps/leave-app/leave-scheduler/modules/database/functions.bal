@@ -40,3 +40,28 @@ public isolated function markSabbaticalReminderSent(int leaveId) returns error? 
         return error(string `Reminder was already marked as sent for leave id: ${leaveId}`);
     }
 }
+
+# Fetch pending Other Authorized Leaves that are due for an approval reminder.
+#
+# + firstReminderCutoff - Latest submission date for a first reminder (yyyy-mm-dd)
+# + repeatReminderCutoff - Latest previous-reminder date for a repeat reminder (yyyy-mm-dd)
+# + return - Leaves due for a reminder, or an error
+public isolated function getDueApprovalReminders(string firstReminderCutoff, string repeatReminderCutoff)
+    returns ApprovalReminder[]|error {
+
+    stream<ApprovalReminder, error?> resultStream =
+        databaseClient->query(getDueApprovalRemindersQuery(firstReminderCutoff, repeatReminderCutoff));
+    return from ApprovalReminder reminder in resultStream
+        select reminder;
+}
+
+# Record that an approval reminder has been sent for a leave.
+#
+# + leaveId - Leave id
+# + return - Error if the update fails or the leave is no longer pending
+public isolated function markApprovalReminderSent(int leaveId) returns error? {
+    sql:ExecutionResult result = check databaseClient->execute(markApprovalReminderSentQuery(leaveId));
+    if result.affectedRowCount == 0 {
+        return error(string `Leave id ${leaveId} is no longer pending, reminder not recorded`);
+    }
+}
