@@ -178,8 +178,8 @@ reminder on the next run; a failed send is retried on the next run.
 Reminds the applicant's current lead (from the HR entity service) about Other Authorized Leave that is still pending.
 The first reminder goes out once the request has waited `approvalReminderFirstDelayInDays`, then again every
 `approvalReminderIntervalInDays`; each reminder is recorded so it is not repeated early, and a failed send is retried
-on the next run. When HR has no lead for the applicant, People Operations is alerted instead. The email links to
-`approvalPageUrl`.
+on the next run. When HR has no lead for the applicant, or no longer has the applicant (for example after they left),
+People Operations is alerted instead, on the same schedule. The email links to `approvalPageUrl`.
 
 | Config | Description |
 |--------|-------------|
@@ -200,8 +200,8 @@ later deleted. The job does not need the encryption key, and debug mode does not
 #### Running the Scheduler
 
 1. Apply `backend/resources/leave_app_update_v1.1.1.sql` and `backend/resources/leave_app_update_v1.2.0.sql` to the
-   leave database (reminder column; France leave types, approvals and sick notes). The scheduler's database user
-   needs `UPDATE` on `leave_attachments` for the retention job.
+   leave database (reminder column; France leave types, approvals and sick notes), and give the scheduler's database
+   user the [grants below](#scheduler-database-access).
 2. Copy `leave-scheduler/Config.toml.local` to `leave-scheduler/Config.toml` and fill it in. In non-production
    environments keep `isDebug = true` with your address in `debugRecipients`: reminders then go only there, with no
    CC, and are not marked as sent. Set every required setting (`approvalReminderFirstDelayInDays`,
@@ -213,6 +213,23 @@ later deleted. The job does not need the encryption key, and debug mode does not
 cd leave-scheduler
 bal build
 bal run
+```
+
+#### Scheduler Database Access
+
+| Job | Reads | Writes |
+|-----|-------|--------|
+| Sabbatical reminder | `leave_submissions` | `leave_submissions.sabbatical_reminder_sent_on` |
+| Approval reminder | `leave_submissions` | `leave_submissions.approval_reminder_sent_on` |
+| Sick note retention | `leave_attachments`, and `leave_submissions` to find ended and cancelled leaves | `leave_attachments.content`, `iv` and `deleted_at` |
+
+The retention job's `UPDATE … JOIN` also reads both tables, so the scheduler's database user needs at least:
+
+```sql
+GRANT SELECT ON <leave_db>.leave_submissions TO '<scheduler_user>'@'<host>';
+GRANT UPDATE (sabbatical_reminder_sent_on, approval_reminder_sent_on)
+  ON <leave_db>.leave_submissions TO '<scheduler_user>'@'<host>';
+GRANT SELECT, UPDATE ON <leave_db>.leave_attachments TO '<scheduler_user>'@'<host>';
 ```
 
 ## Leave Types by Location
@@ -244,9 +261,10 @@ applicant's current lead (HR entity service) is emailed a link (`otherAuthorized
 
 - Rejecting requires a reason of 1–500 characters, which is sent to the applicant.
 - A pending request blocks overlapping leave requests.
-- The applicant can withdraw a pending request.
+- The applicant can withdraw a pending request. The applicant and their current lead in HR (or the stored approver
+  when HR has none) are told it was withdrawn.
 - If the request is still pending, the lead is reminded by the [Approval Reminder Job](#approval-reminder-job); with no
-  lead in HR, People Operations is alerted.
+  lead in HR, or with the applicant no longer in HR, People Operations is alerted.
 - My History shows every leave's status (Pending, Approved, Rejected, Cancelled) to everyone.
 
 ## Sick Notes
@@ -263,7 +281,9 @@ France sick leave requires a sick note (PDF, JPG or PNG, up to 5 MB), uploaded w
 ## Release 1.2.0 notes
 
 1. Run `backend/resources/leave_app_update_v1.2.0.sql` before deploying the backend.
-2. Grant the scheduler's database user `UPDATE` on `leave_attachments`.
+2. Give the scheduler's database user `SELECT` and `UPDATE` on `leave_attachments`, plus `SELECT` and the
+   `approval_reminder_sent_on` `UPDATE` on `leave_submissions` (see
+   [Scheduler Database Access](#scheduler-database-access)).
 3. Set all new required configs: backend `sickNoteEncryptionKey`, `otherAuthorizedApprovalUrl`,
    `authorizedRoles.sickNoteRoles`; scheduler `approvalReminderFirstDelayInDays`, `approvalReminderIntervalInDays`,
    `approvalPageUrl`, `sickNoteRetentionInDays`. A missing one stops the service or scheduler at startup.
