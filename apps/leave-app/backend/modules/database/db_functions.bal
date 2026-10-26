@@ -112,6 +112,39 @@ public isolated function rejectLeave(int leaveId, string approverEmail, string r
     }
 }
 
+# Approve a pending leave request, storing the approver and the calendar event ID in the same update.
+#
+# + leaveId - Leave ID
+# + approverEmail - Email of the approver approving the request
+# + calendarEventId - ID of the calendar event to be created for the leave
+# + return - Nil on success, `LeaveNotPendingError` if the leave is no longer pending, or an error on failure
+public isolated function approvePendingLeave(int leaveId, string approverEmail, string calendarEventId)
+    returns error? {
+
+    sql:ExecutionResult|sql:Error result = leaveDbClient->execute(
+            approvePendingLeaveQuery(leaveId, approverEmail, calendarEventId));
+    if result is sql:Error {
+        return error("Error occurred while approving leave!", result);
+    }
+    if result.affectedRowCount == 0 {
+        return error LeaveNotPendingError(ERR_MSG_LEAVE_NOT_PENDING);
+    }
+}
+
+# Cancel a leave request only while it is pending.
+#
+# + leaveId - Leave ID
+# + return - Nil on success, `LeaveNotPendingError` if the leave is no longer pending, or an error on failure
+public isolated function cancelPendingLeave(int leaveId) returns error? {
+    sql:ExecutionResult|sql:Error result = leaveDbClient->execute(cancelPendingLeaveQuery(leaveId));
+    if result is sql:Error {
+        return error("Error occurred while cancelling leave!", result);
+    }
+    if result.affectedRowCount == 0 {
+        return error LeaveNotPendingError(ERR_MSG_LEAVE_NOT_PENDING);
+    }
+}
+
 # Get the end date of the last sabbatical leave for an employee.
 #
 # + employeeEmail - Email of the employee

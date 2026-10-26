@@ -341,6 +341,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+        // A lead's rejection reason is only for the applicant, their leads and People Ops, not report readers.
+        if isCrossEmployeeRead && !isPeopleOpsTeamMember {
+            foreach database:Leave leave in leaves {
+                leave.rejectionReason = ();
+            }
+        }
 
         // Clip first element: if the leave starts before the given startDate,
         // recalculate numberOfDays from startDate to the leave's endDate.
@@ -1006,31 +1012,33 @@ service http:InterceptableService / on new http:Listener(9090) {
                     };
                 }
             }
-            if leaveResponse.status == CANCELLED {
-                return <http:BadRequest>{
-                    body: {
-                        message: "Leave is already cancelled!"
-                    }
-                };
-            }
-            if leaveResponse.status == REJECTED {
-                return <http:BadRequest>{
-                    body: {
-                        message: "Rejected leave cannot be cancelled!"
-                    }
-                };
+            http:BadRequest? cancellationRefusal = getCancellationRefusal(leaveResponse.status);
+            if cancellationRefusal is http:BadRequest {
+                return cancellationRefusal;
             }
             // A pending Other Authorized Leave has no team email or calendar event yet; only the lead is told.
             if leaveResponse.leaveType == database:OTHER_AUTHORIZED_LEAVE && leaveResponse.status == PENDING {
                 error? withdrawalResult = withdrawOtherAuthorizedLeave(leave);
-                if withdrawalResult is error {
+                if withdrawalResult is () {
+                    return <http:Ok>{
+                        body: {
+                            message: "Leave cancelled successfully"
+                        }
+                    };
+                }
+                if withdrawalResult !is database:LeaveNotPendingError {
                     fail error(withdrawalResult.message(), withdrawalResult);
                 }
-                return <http:Ok>{
-                    body: {
-                        message: "Leave cancelled successfully"
-                    }
-                };
+                // The lead decided the request after it was read above, so cancel it as it now stands.
+                database:Leave|error? decidedLeave = database:getLeave(id);
+                if decidedLeave is error? {
+                    fail error(ERR_MSG_LEAVE_RETRIEVAL_FAILED, decidedLeave);
+                }
+                leaveResponse = check toLeaveEntity(decidedLeave, jwt);
+                cancellationRefusal = getCancellationRefusal(leaveResponse.status);
+                if cancellationRefusal is http:BadRequest {
+                    return cancellationRefusal;
+                }
             }
 
             any|error result = database:cancelLeave(id);

@@ -691,3 +691,25 @@ isolated function getOptionalMailsToNotify(string email) returns employee:Defaul
     }
     return optionalMailsToNotify;
 }
+
+# Get the response refusing to cancel a leave in the given status, if it cannot be cancelled.
+#
+# + status - Leave status
+# + return - BadRequest for a cancelled or rejected leave, otherwise nil
+isolated function getCancellationRefusal(Status? status) returns http:BadRequest? {
+    if status == CANCELLED {
+        return <http:BadRequest>{
+            body: {
+                message: "Leave is already cancelled!"
+            }
+        };
+    }
+    if status == REJECTED {
+        return <http:BadRequest>{
+            body: {
+                message: "Rejected leave cannot be cancelled!"
+            }
+        };
+    }
+    return;
+}

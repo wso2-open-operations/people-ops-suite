@@ -121,6 +121,13 @@ function decideOtherAuthorizedLeave(database:Leave leave, Action action, string 
 
     if action == APPROVE_ACTION {
         error? approvalResult = approveOtherAuthorizedLeave(leave, leadEmail, jwt);
+        if approvalResult is database:LeaveNotPendingError {
+            return <http:BadRequest>{
+                body: {
+                    message: approvalResult.message()
+                }
+            };
+        }
         if approvalResult is error {
             string errMsg = "Error occurred while approving Other Authorized Leave!";
             log:printError(string `${errMsg} Leave ID: ${leave.id}.`, approvalResult);
@@ -169,13 +176,13 @@ function decideOtherAuthorizedLeave(database:Leave leave, Action action, string 
     };
 }
 
-# Approve a pending Other Authorized Leave request, then send the usual leave notification to the stored recipients
-# and create the calendar event.
+# Approve a pending Other Authorized Leave request, then send what a self-service leave sends: the usual leave
+# notification to the stored recipients, the additional comment email when there is a comment, and the calendar event.
 #
 # + leave - Pending leave to approve
 # + leadEmail - Email of the reporting lead approving the request
 # + jwt - JWT token of the reporting lead
-# + return - Error if the approval fails
+# + return - `database:LeaveNotPendingError` if the request is no longer pending, or an error if the approval fails
 function approveOtherAuthorizedLeave(database:Leave leave, string leadEmail, string jwt) returns error? {
     LeaveDetails leaveDetails = check getLeaveEntityFromDbRecord(leave, jwt);
     string calendarEventId = createUuidForCalendarEvent();
@@ -195,14 +202,63 @@ function approveOtherAuthorizedLeave(database:Leave leave, string leadEmail, str
     };
     email:EmailNotificationDetails & readonly leaveContent = check email:generateContentForLeave(jwt, leave.email,
             leaveResponse, emailSubject = leave.emailSubject);
+    readonly & string[] recipients = leaveDetails.emailRecipients.cloneReadOnly();
 
-    // The event ID is stored before the status changes, so a failure in between leaves the request pending and
-    // decidable again rather than approved without a calendar event.
-    _ = check database:setCalendarEventIdForSabbaticalLeave(leave.id, calendarEventId);
-    _ = check database:setLeaveStatus(leave.id, APPROVED, leadEmail);
+    // The stored comment goes out as at submission: to everyone notified if public, otherwise privately.
+    (email:EmailNotificationDetails & readonly)? commentContent = ();
+    readonly & string[] commentRecipients = [];
+    string? comment = leave.submitComment;
+    if comment is string && !checkIfEmptyString(comment) {
+        commentContent = email:generateContentForAdditionalComment(leaveContent.subject, comment).cloneReadOnly();
+        commentRecipients = leave.isPublicComment == true
+            ? recipients
+            : getPrivateCommentRecipients(recipients).cloneReadOnly();
+    }
 
-    _ = start email:sendLeaveNotification(leaveContent, leaveDetails.emailRecipients.cloneReadOnly());
+    // A single guarded update: a request decided or withdrawn meanwhile is left as it is, and nothing is sent.
+    check database:approvePendingLeave(leave.id, leadEmail, calendarEventId);
+
+    _ = start sendApprovedLeaveNotifications(leaveContent, recipients, commentContent, commentRecipients);
     _ = start createLeaveEventInCalendar(leave.email, leaveResponse.cloneReadOnly(), calendarEventId);
+}
+
+# Send the usual leave notification for an approved request and, only if it succeeds, the additional comment email,
+# as a self-service leave does.
+#
+# + leaveContent - Leave notification content
+# + recipients - Leave notification recipients
+# + commentContent - Additional comment email content, if the leave has a comment
+# + commentRecipients - Additional comment email recipients
+# + return - Error if sending an email fails
+isolated function sendApprovedLeaveNotifications(readonly & email:EmailNotificationDetails leaveContent,
+        readonly & string[] recipients, (readonly & email:EmailNotificationDetails)? commentContent,
+        readonly & string[] commentRecipients) returns error? {
+
+    check email:sendLeaveNotification(leaveContent, recipients);
+    if commentContent is email:EmailNotificationDetails {
+        check email:sendAdditionalComment(commentContent, commentRecipients);
+    }
+}
+
+# Get the recipients of a private comment from the stored recipients of a leave: everyone except the default
+# recipients and the leave notification group, as `getPrivateRecipientsForUser` works them out at submission.
+#
+# + storedRecipients - Recipients stored with the leave
+# + return - Private comment recipients
+function getPrivateCommentRecipients(string[] storedRecipients) returns string[] {
+    map<true> recipientMap = {};
+    foreach string recipient in storedRecipients {
+        recipientMap[recipient] = true;
+    }
+    foreach string defaultRecipient in defaultRecipients {
+        if recipientMap.hasKey(defaultRecipient) {
+            _ = recipientMap.remove(defaultRecipient);
+        }
+    }
+    if recipientMap.hasKey(emailGroupToNotify) {
+        _ = recipientMap.remove(emailGroupToNotify);
+    }
+    return recipientMap.keys();
 }
 
 # Reject a pending Other Authorized Leave request and email the reason to the applicant and the reporting lead.
@@ -224,9 +280,10 @@ function rejectOtherAuthorizedLeave(database:Leave leave, string leadEmail, stri
 # There is no team email to retract and no calendar event to delete, as both wait for the approval.
 #
 # + leave - Pending leave to cancel
-# + return - Error if the cancellation fails
+# + return - `database:LeaveNotPendingError` if the request is no longer pending (nothing is changed or sent), or an
+# error if the cancellation fails
 function withdrawOtherAuthorizedLeave(database:Leave leave) returns error? {
-    check database:cancelLeave(leave.id);
+    check database:cancelPendingLeave(leave.id);
 
     string[] recipients = [leave.email];
     string? approverEmail = leave.approverEmail;

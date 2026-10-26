@@ -327,7 +327,7 @@ public isolated function approvalRequestContent(string employeeName, string star
     string period = getEmailLeavePeriod(startDate, endDate);
     string workingDays = getWorkingDaysText(numberOfDays);
     string commentLine = comment is string && comment.trim().length() > 0
-        ? string `<br/><br/>Comment: ${comment}`
+        ? string `<br/><br/>Comment: ${escapeHtml(comment)}`
         : "";
     return {
         subject: getPrefixedEmailSubject(
@@ -365,7 +365,7 @@ public isolated function rejectionContent(string employeeName, string startDate,
                 <br/><br/>
                 The Other Authorized Leave request of ${employeeName} ${period} has been rejected by the reporting lead.
                 <br/><br/>
-                Reason: ${reason}
+                Reason: ${escapeHtml(reason)}
             </p>
         `
     };
@@ -413,4 +413,16 @@ isolated function getEmailLeavePeriod(string startDate, string endDate) returns 
 isolated function getWorkingDaysText(float numberOfDays) returns string {
     string count = numberOfDays == numberOfDays.floor() ? (<int>numberOfDays).toString() : numberOfDays.toString();
     return string `${count} working day${numberOfDays > 1.0 ? "s" : ""}`;
+}
+
+# Escape text typed by a user so it shows as plain text in an HTML email.
+#
+# + text - Text to escape
+# + return - Text with &, <, >, " and ' replaced by HTML entities
+isolated function escapeHtml(string text) returns string {
+    string escaped = re `&`.replaceAll(text, "&amp;");
+    escaped = re `<`.replaceAll(escaped, "&lt;");
+    escaped = re `>`.replaceAll(escaped, "&gt;");
+    escaped = re `"`.replaceAll(escaped, "&quot;");
+    return re `'`.replaceAll(escaped, "&#39;");
 }

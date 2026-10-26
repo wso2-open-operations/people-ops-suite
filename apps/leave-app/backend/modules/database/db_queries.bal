@@ -205,6 +205,37 @@ isolated function rejectLeaveQuery(int leaveId, string approverEmail, string rea
             id = ${leaveId} AND status = ${PENDING}
     `;
 
+# Query to approve a pending leave request and store its calendar event ID.
+#
+# + leaveId - ID of the leave record
+# + approverEmail - Email of the approver approving the request
+# + calendarEventId - ID of the calendar event to be created for the leave
+# + return - Update query that only changes the leave while it is pending
+isolated function approvePendingLeaveQuery(int leaveId, string approverEmail, string calendarEventId)
+    returns sql:ParameterizedQuery => `
+        UPDATE
+            leave_submissions
+        SET
+            status = ${APPROVED},
+            approver_email = ${approverEmail},
+            calendar_event_id = ${calendarEventId}
+        WHERE
+            id = ${leaveId} AND status = ${PENDING}
+    `;
+
+# Query to cancel a pending leave request.
+#
+# + leaveId - ID of the leave record
+# + return - Update query that only changes the leave while it is pending
+isolated function cancelPendingLeaveQuery(int leaveId) returns sql:ParameterizedQuery => `
+        UPDATE
+            leave_submissions
+        SET
+            status = ${CANCELLED}
+        WHERE
+            id = ${leaveId} AND status = ${PENDING}
+    `;
+
 # Query to get the end date of the last approved sabbatical leave for an employee.
 #
 # + employeeEmail - Email of the employee
