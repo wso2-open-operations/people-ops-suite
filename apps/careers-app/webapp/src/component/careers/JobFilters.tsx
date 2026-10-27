@@ -122,7 +122,7 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
             gap: 1,
             width: "100%",
             height: "100%",
-            minWidth: 150,
+            minWidth: 0,
             padding: "0 12px",
             backgroundColor: "background.paper",
             border: "1px solid",
@@ -302,7 +302,7 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
             gap: 2,
             alignItems: "center",
           }}

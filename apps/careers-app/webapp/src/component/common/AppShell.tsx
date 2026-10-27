@@ -83,12 +83,20 @@ const AppShell = () => {
     const loadJobList = needsJobs && jobsState === State.idle;
     const loadOrgs = needsOrgStructure && orgStructureState === State.idle;
     if (!loadJobList && !loadOrgs) return;
+    // Set when the effect is replaced before the token arrives, so the newer one does the load.
+    let cancelled = false;
     getAccessToken()
       .then((token) => {
+        if (cancelled) return;
         if (loadJobList) dispatch(loadJobs(token));
         if (loadOrgs) dispatch(loadOrgStructure(token));
       })
-      .catch(() => dispatch(loadFailed()));
+      .catch(() => {
+        if (!cancelled) dispatch(loadFailed());
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [dispatch, getAccessToken, jobsState, orgStructureState, needsJobs, needsOrgStructure]);
 
   // Prefetches each job's detail in the background.
