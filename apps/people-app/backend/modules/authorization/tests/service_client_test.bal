@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -84,11 +84,11 @@ function allowedServiceClientIsLimitedToTheDirectory() returns error? {
 
 @test:Config
 function unknownServiceClientIsRefusedAsBefore() returns error? {
-    // Not listed: falls through to the user path, which can't read a user from it (unchanged behaviour).
+    // An application token whose client isn't listed is refused as 403, not treated as a malformed user token.
     http:Response res = check call("GET", "/employees/basic-info", {azp: "someone-else", aut: "APPLICATION"});
-    test:assertEquals(res.statusCode, 500);
+    test:assertEquals(res.statusCode, 403);
     http:Response blank = check call("GET", "/employees/basic-info", {azp: "  ", aut: "APPLICATION"});
-    test:assertEquals(blank.statusCode, 500);
+    test:assertEquals(blank.statusCode, 403);
 }
 
 @test:Config

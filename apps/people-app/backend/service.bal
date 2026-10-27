@@ -744,7 +744,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetch directory information for all currently employed staff (Active and Marked leaver).
     # Available to every authenticated user, and to the service clients listed in
-    # `authorization.serviceClients.directoryClientIds` (see `authorization:ServiceClientConfig`).
+    # `authorization.serviceClients.clientRoutes` (see `authorization:ServiceClientConfig`).
     #
     # + return - Directory information for Active and Marked leaver employees
     resource function get employees/basic\-info(http:RequestContext ctx)
