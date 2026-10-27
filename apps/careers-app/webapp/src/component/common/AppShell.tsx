@@ -37,6 +37,8 @@ import {
   loadOrgStructure,
   loadProfile,
   profileFailed,
+  readSavedJobs,
+  setSavedJobs,
 } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 
@@ -151,6 +153,19 @@ const AppShell = () => {
   useEffect(() => {
     if (!isSignedIn) dispatch(clearUserData());
   }, [isSignedIn, dispatch]);
+
+  // Brings back the jobs the candidate saved in this browser once they are signed in, once for each sign-in.
+  const userId = useAppSelector((state: RootState) => state.auth.decodedIdToken?.sub);
+  const savedJobsOf = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isSignedIn || !userId) {
+      savedJobsOf.current = null;
+      return;
+    }
+    if (savedJobsOf.current === userId) return;
+    savedJobsOf.current = userId;
+    dispatch(setSavedJobs(readSavedJobs(userId)));
+  }, [isSignedIn, userId, dispatch]);
 
   // Signs the candidate out when the backend refused their access token, so a live identity-provider session cannot
   // sign them straight back in.

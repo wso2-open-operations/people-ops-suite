@@ -20,7 +20,7 @@ import { Link } from "react-router-dom";
 
 import { Job } from "@/types/types";
 import { useAppAuthContext } from "@context/AuthContext";
-import { toggleSaveJob } from "@slices/careersSlice/careers";
+import { toggleSavedJob } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { jobPath } from "@utils/jobFilterUtils";
 
@@ -143,7 +143,7 @@ const JobCard = ({ job }: JobCardProps) => {
             <Box
               component="button"
               aria-label={saveLabel}
-              onClick={() => dispatch(toggleSaveJob(job.id))}
+              onClick={() => dispatch(toggleSavedJob(job.id))}
               sx={{
                 border: "none",
                 background: "none",

@@ -23,7 +23,7 @@ import { State } from "@/types/types";
 import { PAGE_MARGIN_X, PAGE_PADDING_X } from "@config/brand";
 import { JOB_NOT_FOUND_ERROR } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
-import { loadJobDetail, toggleSaveJob } from "@slices/careersSlice/careers";
+import { loadJobDetail, toggleSavedJob } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { jobPath, opensDirectly, withoutArrivalMark } from "@utils/jobFilterUtils";
 import ApplySection from "@view/jobs/components/ApplySection";
@@ -126,7 +126,7 @@ const JobDetail = () => {
         isSaved={isSaved}
         onBack={goBackToJobs}
         onApplyNow={scrollToApplyForm}
-        onToggleSave={() => dispatch(toggleSaveJob(detail.id))}
+        onToggleSave={() => dispatch(toggleSavedJob(detail.id))}
         onSeeAllRoles={() => navigate("/jobs")}
       />
 

@@ -226,16 +226,8 @@ const Jobs = () => {
           </Typography>
 
           {filtered.length === 0 ? (
-            <Box
-              sx={{
-                py: 8,
-                textAlign: "center",
-                border: "1px dashed",
-                borderColor: "divider",
-                borderRadius: "12px",
-              }}
-            >
-              <Typography color="text.secondary">
+            <Box sx={{ py: 8, textAlign: "center" }}>
+              <Typography color="primary.main" fontWeight={600} fontSize="1rem">
                 {tab === "saved" && sourceJobs.length === 0
                   ? "You haven't saved any jobs yet. Click the bookmark icon on a job card to save it here."
                   : "There are no available vacancies that match your search"}

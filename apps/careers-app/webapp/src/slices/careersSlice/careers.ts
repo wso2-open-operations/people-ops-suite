@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { PayloadAction, createAsyncThunk, createSlice, isRejected } from "@reduxjs/toolkit";
+import { Dispatch, PayloadAction, createAsyncThunk, createSlice, isRejected } from "@reduxjs/toolkit";
 
 import {
   Application,
@@ -25,6 +25,7 @@ import {
   OfferAnswer,
   State,
 } from "@/types/types";
+import type { RootState } from "@slices/store";
 import {
   fetchApplications as fetchApplicationsApi,
   fetchProfile as fetchProfileApi,
@@ -40,6 +41,30 @@ import {
   fetchVacancies,
   fetchVacancyDetail,
 } from "@utils/vacancyService";
+
+// Saved jobs are kept in the browser for each candidate, so they are there again when the candidate signs back in.
+const SAVED_JOBS_KEY_PREFIX = "careers-app-saved-jobs:";
+const MAX_SAVED_JOBS = 200;
+
+// The job ids a candidate saved earlier in this browser; none when nothing is stored or it cannot be read.
+export function readSavedJobs(userId: string): string[] {
+  try {
+    const stored: unknown = JSON.parse(localStorage.getItem(SAVED_JOBS_KEY_PREFIX + userId) ?? "[]");
+    return Array.isArray(stored)
+      ? stored.filter((id): id is string => typeof id === "string").slice(0, MAX_SAVED_JOBS)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSavedJobs(userId: string, jobIds: string[]): void {
+  try {
+    localStorage.setItem(SAVED_JOBS_KEY_PREFIX + userId, JSON.stringify(jobIds.slice(-MAX_SAVED_JOBS)));
+  } catch {
+    // Storage is blocked or full: the saved jobs stay for this visit only.
+  }
+}
 
 interface CareersState {
   profile: CandidateProfile;
@@ -89,7 +114,7 @@ const initialState: CareersState = {
   dismissedFeedbackIds: [],
   sessionExpired: false,
   sessionGeneration: 0,
-  // Saved jobs are kept in memory only.
+  // Filled from the browser's storage when the candidate signs in.
   savedJobIds: [],
 };
 
@@ -160,6 +185,10 @@ export const CareersSlice = createSlice({
   name: "careers",
   initialState,
   reducers: {
+    // Replaces the saved jobs, with those read from the browser's storage.
+    setSavedJobs: (state, action: PayloadAction<string[]>) => {
+      state.savedJobIds = action.payload;
+    },
     toggleSaveJob: (state, action: PayloadAction<string>) => {
       const idx = state.savedJobIds.indexOf(action.payload);
       if (idx >= 0) {
@@ -278,6 +307,7 @@ export const CareersSlice = createSlice({
 });
 
 export const {
+  setSavedJobs,
   toggleSaveJob,
   loadFailed,
   retryLoad,
@@ -288,4 +318,13 @@ export const {
   dismissFeedback,
   clearUserData,
 } = CareersSlice.actions;
+
+// Saves or unsaves a job and keeps the candidate's saved jobs in the browser.
+export const toggleSavedJob = (jobId: string) => (dispatch: Dispatch, getState: () => RootState) => {
+  dispatch(CareersSlice.actions.toggleSaveJob(jobId));
+  const state = getState();
+  const userId = state.auth.decodedIdToken?.sub;
+  if (userId) writeSavedJobs(userId, state.careers.savedJobIds);
+};
+
 export default CareersSlice.reducer;
