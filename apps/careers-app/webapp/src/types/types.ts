@@ -71,6 +71,8 @@ export interface GuestApplicationDetails {
   address: string;
   university?: string;
   authorizedToWork: boolean;
+  // Whether the candidate agreed to receive emails from WSO2.
+  marketingEmails: boolean;
 }
 
 export interface ApplicationTimelineEvent {

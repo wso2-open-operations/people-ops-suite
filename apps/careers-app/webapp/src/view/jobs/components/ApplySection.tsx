@@ -82,6 +82,7 @@ const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
   const [authorized, setAuthorized] = useState<"yes" | "no" | "">("");
   const [consentData, setConsentData] = useState(false);
   const [consentChecks, setConsentChecks] = useState(false);
+  const [consentMarketing, setConsentMarketing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submittedOpen, setSubmittedOpen] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -97,6 +98,7 @@ const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
     setAuthorized("");
     setConsentData(false);
     setConsentChecks(false);
+    setConsentMarketing(false);
   }, [sessionGeneration]);
 
   const applyFormValid =
@@ -128,6 +130,7 @@ const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
           address: isInternship ? "N/A" : form.address.trim(),
           university: isInternship ? form.university.trim() : undefined,
           authorizedToWork: authorized === "yes",
+          marketingEmails: consentMarketing,
         },
         cvFile,
       );
@@ -143,6 +146,7 @@ const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
       setAuthorized("");
       setConsentData(false);
       setConsentChecks(false);
+      setConsentMarketing(false);
     } catch (err) {
       // A rejection is explained in the reply's message.
       const data = (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
@@ -189,6 +193,8 @@ const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
           onConsentDataChange={setConsentData}
           consentChecks={consentChecks}
           onConsentChecksChange={setConsentChecks}
+          consentMarketing={consentMarketing}
+          onConsentMarketingChange={setConsentMarketing}
           canSubmit={applyFormValid}
           submitting={submitting}
           onSubmit={handleSubmitApplication}
