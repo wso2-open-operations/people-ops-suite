@@ -24,7 +24,7 @@ import CenteredSpinner from "@component/common/CenteredSpinner";
 import PageHeading from "@component/common/PageHeading";
 import { SnackMessage } from "@config/constant";
 import { cardSx } from "@utils/styles";
-import { type ApplicationFilter, tabOf } from "@view/applications/applicationHelpers";
+import { type ApplicationFilter, defaultTabOf, tabOf } from "@view/applications/applicationHelpers";
 import ApplicationListCard from "@view/applications/components/ApplicationListCard";
 
 interface ApplicationListProps {
@@ -44,7 +44,9 @@ const TABS: { key: ApplicationFilter; label: string }[] = [
 
 // The applications list with its loading, failed and empty states, tabs and cards.
 const ApplicationList = ({ applications, applicationsState, onView, onBrowseJobs, onRetry }: ApplicationListProps) => {
-  const [tab, setTab] = useState<ApplicationFilter>("all");
+  // The tab the candidate picked; until they pick one, the list opens on the most important one.
+  const [chosenTab, setChosenTab] = useState<ApplicationFilter | null>(null);
+  const tab = chosenTab ?? defaultTabOf(applications);
 
   const countOf = (key: ApplicationFilter) =>
     key === "all" ? applications.length : applications.filter((a) => tabOf(a) === key).length;
@@ -84,7 +86,7 @@ const ApplicationList = ({ applications, applicationsState, onView, onBrowseJobs
         <>
           <Tabs
             value={tab}
-            onChange={(_, value: ApplicationFilter) => setTab(value)}
+            onChange={(_, value: ApplicationFilter) => setChosenTab(value)}
             sx={{
               mb: 3,
               borderBottom: "1px solid",

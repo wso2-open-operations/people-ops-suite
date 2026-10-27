@@ -150,6 +150,16 @@ export const tabOf = (application: Application): ApplicationTab => {
   }
 };
 
+// The tab to open the list on: offers first, then interviews (under active), then rejections (under closed), then
+// the rest. All when there is nothing to show.
+export function defaultTabOf(applications: Application[]): ApplicationFilter {
+  if (applications.length === 0) return "all";
+  if (applications.some((a) => tabOf(a) === "offers")) return "offers";
+  if (applications.some((a) => a.status === ApplicationStatus.Interview)) return "active";
+  if (applications.some((a) => a.status === ApplicationStatus.Rejected)) return "closed";
+  return tabOf(applications[0]);
+}
+
 // How long ago a date was, in words.
 export const timeAgo = (value: string) => {
   const date = parseDate(value);
