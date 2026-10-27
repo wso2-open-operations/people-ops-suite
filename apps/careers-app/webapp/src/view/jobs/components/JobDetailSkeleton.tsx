@@ -18,7 +18,7 @@ import { Box, Grid, Skeleton, type Theme } from "@mui/material";
 
 import { PAGE_MARGIN_X, PAGE_PADDING_X, heroColorsOf } from "@config/brand";
 
-// The skeleton uses the hero's colours, so it matches the page it stands in for in both theme modes.
+// Skeleton of the job page, in the hero's colours.
 const heroBackground = (theme: Theme) => heroColorsOf(theme.palette.mode).background;
 const skeletonFill = (theme: Theme) => heroColorsOf(theme.palette.mode).skeleton;
 

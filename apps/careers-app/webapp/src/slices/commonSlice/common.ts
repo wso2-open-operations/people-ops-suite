@@ -29,7 +29,7 @@ const initialState: CommonState = {
   type: "success",
 };
 
-export const CommonSlice = createSlice({
+const CommonSlice = createSlice({
   name: "common",
   initialState,
   reducers: {

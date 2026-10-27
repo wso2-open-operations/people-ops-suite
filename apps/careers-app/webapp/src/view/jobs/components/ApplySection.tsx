@@ -24,7 +24,7 @@ import { useAppAuthContext } from "@context/AuthContext";
 import { refreshApplications } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
-import { isValidEmail } from "@utils/email";
+import { isApplyFormComplete } from "@utils/applyForm";
 import { COUNTRY_OPTIONS, splitE164 } from "@utils/phone";
 import { trackSubmittedApplication } from "@utils/profileService";
 import { type VacancyDetail, submitApplicationForm } from "@utils/vacancyService";
@@ -36,7 +36,7 @@ interface ApplySectionProps {
   detail: VacancyDetail;
 }
 
-// The job type of an internship, which asks for a university instead of an address.
+// The job type of an internship.
 const INTERNSHIP = "Internship";
 
 const EMPTY_FORM: ApplyFormValues = {
@@ -60,7 +60,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
   const profileState = useAppSelector((state: RootState) => state.careers.profileState);
   const sessionGeneration = useAppSelector((state: RootState) => state.careers.sessionGeneration);
 
-  // Fills the empty fields from the profile once it has loaded; anything already typed is kept.
+  // Prefills the empty fields from the profile.
   const prefilled = useRef(false);
   useEffect(() => {
     if (!isSignedIn || profileState !== State.success || prefilled.current) return;
@@ -85,7 +85,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
   const [submittedOpen, setSubmittedOpen] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
 
-  // Empties the form when the candidate's data is cleared (sign-out or an ended session).
+  // Empties the form when the candidate's data is cleared.
   const seenGeneration = useRef(sessionGeneration);
   useEffect(() => {
     if (seenGeneration.current === sessionGeneration) return;
@@ -99,17 +99,14 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
     setConsentMarketing(false);
   }, [sessionGeneration]);
 
-  const applyFormValid =
-    !!form.firstName.trim() &&
-    !!form.lastName.trim() &&
-    isValidEmail(form.email) &&
-    !!form.countryIso &&
-    !!form.phone.trim() &&
-    (isInternship ? !!form.university.trim() : !!form.address.trim()) &&
-    !!cvFile &&
-    !!authorized &&
-    consentData &&
-    consentChecks;
+  const applyFormValid = isApplyFormComplete({
+    ...form,
+    isInternship,
+    hasCv: !!cvFile,
+    authorized,
+    consentData,
+    consentChecks,
+  });
 
   const handleSubmitApplication = async () => {
     if (!applyFormValid || !cvFile) return;
@@ -123,7 +120,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
           firstName: form.firstName.trim(),
           lastName: form.lastName.trim(),
           email: form.email.trim(),
-          // The backend accepts only E.164 (+ then digits, no spaces); a leading trunk "0" is dropped.
+          // E.164 phone number; a leading 0 is dropped.
           phone: `${dialCode}${form.phone.replace(/\D/g, "").replace(/^0+/, "")}`,
           address: isInternship ? "N/A" : form.address.trim(),
           university: isInternship ? form.university.trim() : undefined,
@@ -137,7 +134,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
         trackSubmittedApplication(detail.id, detail.title, detail.team);
         dispatch(refreshApplications());
       } else {
-        // A guest's details are not kept on screen once the application has been sent.
+        // A guest's details are cleared after sending.
         setForm(EMPTY_FORM);
       }
       setCvFile(null);
@@ -146,7 +143,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
       setConsentChecks(false);
       setConsentMarketing(false);
     } catch (err) {
-      // A rejection is explained in the reply's message.
+      // The reply's message explains a rejection.
       const data = (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
       const detailMessage = data?.detail ?? data?.message;
       dispatch(enqueueSnackbarMessage({ message: detailMessage ?? SnackMessage.error.submitApplication, type: "error" }));
@@ -164,7 +161,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
           scrollMarginTop: "24px",
           p: { xs: 2.5, md: 4 },
           border: "1px solid",
-          // The shadow marks the card's edge in light mode; dark mode keeps a line, since a shadow does not show there.
+          // The shadow marks the card edge; dark mode keeps a line.
           borderColor: (theme) => (theme.palette.mode === "dark" ? theme.palette.divider : "transparent"),
           borderRadius: "16px",
           boxShadow: "0 4px 24px rgb(23 34 58 / 28%)",

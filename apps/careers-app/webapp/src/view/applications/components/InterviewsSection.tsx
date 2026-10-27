@@ -51,7 +51,7 @@ const InterviewsSection = ({ interviews }: InterviewsSectionProps) => {
                 border: "1px solid",
                 borderColor: "primary.main",
                 transition: "border-color 0.15s, background-color 0.15s, box-shadow 0.15s, transform 0.15s",
-                // A box with a meeting link lifts and turns orange under the pointer.
+                // Lift and orange tint on hover for a box with a meeting link.
                 ...(isLink && {
                   "&:hover": {
                     backgroundColor: BRAND_TINT.faint,
@@ -97,7 +97,7 @@ const InterviewsSection = ({ interviews }: InterviewsSectionProps) => {
                     endIcon={<ExternalLink size={13} />}
                     sx={{
                       fontWeight: 600,
-                      // The border is there all the time, clear, so the button does not shift when it shows.
+                      // A clear border keeps the button size on hover.
                       border: "1px solid transparent",
                       "&:hover": { borderColor: "primary.main", backgroundColor: BRAND_TINT.soft },
                     }}

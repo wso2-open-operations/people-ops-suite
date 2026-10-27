@@ -185,59 +185,57 @@ const ApplyForm = ({
           )}
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <>
-            <input
-              ref={cvInputRef}
-              type="file"
-              accept="application/pdf"
-              hidden
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                e.target.value = "";
-                if (!file) return;
-                if (file.type !== "application/pdf") {
-                  setCvError("Only PDF files are accepted.");
-                  return;
-                }
-                if (file.size > MAX_CV_BYTES) {
-                  setCvError("File must be 5MB or smaller.");
-                  return;
-                }
-                setCvError(null);
-                onCvChosen(file);
-              }}
-            />
-            <TextField
-              label="Upload CV (PDF only / 5MB)"
-              required
-              fullWidth
-              size="small"
-              disabled={submitting}
-              value={cvFile?.name ?? ""}
-              placeholder="No file chosen"
-              error={!!cvError}
-              helperText={cvError}
-              onClick={() => cvInputRef.current?.click()}
-              slotProps={{
-                inputLabel: { shrink: true },
-                htmlInput: { readOnly: true, style: { cursor: "pointer" } },
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start" sx={{ mr: 1 }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        disabled={submitting}
-                        sx={{ borderRadius: "6px", whiteSpace: "nowrap", py: 0, px: 1, minWidth: 0, fontSize: "0.8rem" }}
-                      >
-                        Choose file
-                      </Button>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-          </>
+          <input
+            ref={cvInputRef}
+            type="file"
+            accept="application/pdf"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (!file) return;
+              if (file.type !== "application/pdf") {
+                setCvError("Only PDF files are accepted.");
+                return;
+              }
+              if (file.size > MAX_CV_BYTES) {
+                setCvError("File must be 5MB or smaller.");
+                return;
+              }
+              setCvError(null);
+              onCvChosen(file);
+            }}
+          />
+          <TextField
+            label="Upload CV (PDF only / 5MB)"
+            required
+            fullWidth
+            size="small"
+            disabled={submitting}
+            value={cvFile?.name ?? ""}
+            placeholder="No file chosen"
+            error={!!cvError}
+            helperText={cvError}
+            onClick={() => cvInputRef.current?.click()}
+            slotProps={{
+              inputLabel: { shrink: true },
+              htmlInput: { readOnly: true, style: { cursor: "pointer" } },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start" sx={{ mr: 1 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      disabled={submitting}
+                      sx={{ borderRadius: "6px", whiteSpace: "nowrap", py: 0, px: 1, minWidth: 0, fontSize: "0.8rem" }}
+                    >
+                      Choose file
+                    </Button>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
         </Grid>
       </Grid>
 

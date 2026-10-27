@@ -44,7 +44,7 @@ const TABS: { key: ApplicationFilter; label: string }[] = [
 
 // The applications list with its loading, failed and empty states, tabs and cards.
 const ApplicationList = ({ applications, applicationsState, onView, onBrowseJobs, onRetry }: ApplicationListProps) => {
-  // The tab the candidate picked; until they pick one, the list opens on the most important one.
+  // The tab the candidate picked; the default one until then.
   const [chosenTab, setChosenTab] = useState<ApplicationFilter | null>(null);
   const tab = chosenTab ?? defaultTabOf(applications);
 

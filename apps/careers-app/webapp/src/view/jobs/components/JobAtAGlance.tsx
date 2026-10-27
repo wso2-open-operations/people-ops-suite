@@ -28,7 +28,7 @@ const JobAtAGlance = ({ team, officeLabel, jobType, onSeeAllRoles }: JobAtAGlanc
   <Box
     sx={{
       borderRadius: "16px",
-      // The size of the vacancy info card on wso2.com: 28px and 32px of padding, and about 387px wide.
+      // Size of the vacancy info card on wso2.com.
       p: "28px 32px",
       width: "100%",
       maxWidth: "387px",

@@ -23,6 +23,7 @@ import { useState } from "react";
 import type { Application, ApplicationInterview, DocumentsStatus, OfferLetter } from "@/types/types";
 import ApplicationStatusBadge from "@component/careers/ApplicationStatusBadge";
 import Callout from "@component/common/Callout";
+import { orangeTextOf } from "@config/brand";
 import { ApplicationStatus } from "@config/constant";
 import { cardSx, pillButtonSx } from "@utils/styles";
 import {
@@ -53,8 +54,7 @@ interface ApplicationDetailsProps {
   offerLetter: OfferLetter | null;
   // The interviews of the application, past and upcoming.
   interviews: ApplicationInterview[];
-  // What is known about the submission of the onboarding documents; undefined while that is not yet known, and null
-  // when it could not be found out.
+  // Documents submission status; undefined while loading, null when it failed.
   documentsStatus: DocumentsStatus | null | undefined;
   onRetryDocumentsStatus: () => void;
 }
@@ -74,7 +74,7 @@ const ApplicationDetails = ({
 }: ApplicationDetailsProps) => {
   const [letterOpen, setLetterOpen] = useState(false);
   const actionNeeded = isOffer(application);
-  // An interview that is coming up is shown in orange, like an offer waiting for an answer.
+  // An upcoming interview is shown in orange.
   const interviewComing = upcomingInterviewOf(application, interviews) !== undefined;
   const deadline = actionNeeded ? offerDeadlineOf(application) : null;
   const offerExpired = deadline !== null && deadline.daysLeft < 0;
@@ -100,7 +100,10 @@ const ApplicationDetails = ({
         <Typography
           fontSize="0.95rem"
           fontWeight={actionNeeded || interviewComing ? 700 : 500}
-          sx={{ mt: 1.5, color: actionNeeded || interviewComing ? "#ff6700" : "text.secondary" }}
+          sx={{
+            mt: 1.5,
+            color: (theme) => (actionNeeded || interviewComing ? orangeTextOf(theme) : theme.palette.text.secondary),
+          }}
         >
           {nextStepOf(application, interviews)}
         </Typography>

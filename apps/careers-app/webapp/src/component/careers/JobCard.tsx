@@ -20,9 +20,9 @@ import { Link } from "react-router-dom";
 
 import { Job } from "@/types/types";
 import { useAppAuthContext } from "@context/AuthContext";
-import { toggleSavedJob } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { jobPath } from "@utils/jobFilterUtils";
+import { toggleSavedJob } from "@utils/savedJobs";
 
 interface JobCardProps {
   job: Job;

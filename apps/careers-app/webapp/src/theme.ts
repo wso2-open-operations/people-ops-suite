@@ -16,20 +16,25 @@
 
 import { type PaletteMode } from "@mui/material";
 
+import { BRAND_ORANGE } from "@config/brand";
+
 // WSO2 brand palette
 const wso2 = {
   orange: {
     400: "#FB923C",
-    500: "#ff6700",
+    500: BRAND_ORANGE,
     600: "#EA6A00",
     700: "#C2570A",
   },
 };
 
+// Solid background of dark dialogs and menus.
+const DARK_OVERLAY = "#131d33";
+
 export const themeSettings = (mode: PaletteMode) => {
   const isDark = mode === "dark";
-  // The dark theme follows the WSO2 theme of Oxygen UI (wso2/oxygen-ui, WSO2Theme.ts); its orange is a little lighter.
-  const brand = isDark ? "#FF7300" : "#ff6700";
+  // Dark mode follows the Oxygen UI WSO2 theme; both modes use the brand orange.
+  const brand = BRAND_ORANGE;
 
   return {
     palette: {
@@ -51,7 +56,7 @@ export const themeSettings = (mode: PaletteMode) => {
       info: { main: "#3B82F6", light: "#60A5FA", dark: "#2563EB" },
       success: { main: "#10B981", light: "#34D399", dark: "#059669" },
       background: {
-        // In dark mode the paper is a translucent black over the page gradient, blurred by the MuiPaper override.
+        // Dark paper is translucent and blurred by the MuiPaper override.
         default: isDark ? "#0f172a" : "#FFFFFF",
         paper: isDark ? "#00000026" : "#FFFFFF",
       },
@@ -85,7 +90,7 @@ export const themeSettings = (mode: PaletteMode) => {
       MuiCssBaseline: {
         styleOverrides: {
           ":focus-visible": { outline: `2px solid ${brand}`, outlineOffset: "2px" },
-          // The page gradient of the Oxygen UI dark theme.
+          // Oxygen UI dark page gradient.
           ...(isDark && {
             body: {
               backgroundAttachment: "fixed",
@@ -99,13 +104,15 @@ export const themeSettings = (mode: PaletteMode) => {
           }),
         },
       },
-      // Dark paper is translucent, so it is blurred and carries no elevation tint, as in Oxygen UI.
+      // Dark paper is translucent and blurred; dialogs and menus are solid.
       ...(isDark && {
         MuiPaper: {
           styleOverrides: {
             root: { backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", backgroundImage: "none" },
           },
         },
+        MuiDialog: { styleOverrides: { paper: { backgroundColor: DARK_OVERLAY, backdropFilter: "none" } } },
+        MuiPopover: { styleOverrides: { paper: { backgroundColor: DARK_OVERLAY, backdropFilter: "none" } } },
       }),
       MuiButton: {
         styleOverrides: {
@@ -125,7 +132,7 @@ export const themeSettings = (mode: PaletteMode) => {
           },
         },
       },
-      // Tooltips close with no fade-out. They stay hoverable unless a tooltip sets disableInteractive.
+      // Tooltips close without a fade-out.
       MuiTooltip: {
         defaultProps: { slotProps: { transition: { timeout: 0 } } },
       },
@@ -151,8 +158,7 @@ export const themeSettings = (mode: PaletteMode) => {
           },
         },
       },
-      // Covers TextField, Select and multiline inputs; error and disabled states keep their own outline colors. The
-      // brand color is given directly, since theme keys are not resolved in a style override.
+      // Brand outline on hover and focus for outlined inputs.
       MuiOutlinedInput: {
         styleOverrides: {
           root: {
@@ -179,5 +185,3 @@ export const themeSettings = (mode: PaletteMode) => {
     },
   };
 };
-
-export default themeSettings;

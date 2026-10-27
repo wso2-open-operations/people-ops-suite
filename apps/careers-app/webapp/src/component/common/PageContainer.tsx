@@ -18,7 +18,7 @@ import { Box } from "@mui/material";
 
 import { PAGE_MARGIN_X, PAGE_PADDING_X } from "@config/brand";
 
-// The padded column, set in from both sides, that holds the content of a page.
+// Page content column with the side margin and padding.
 const PageContainer = ({ children }: { children: React.ReactNode }) => (
   <Box sx={{ mx: PAGE_MARGIN_X, px: PAGE_PADDING_X, pt: { xs: 2.5, md: 3 }, pb: { xs: 4, md: 5 } }}>
     {children}

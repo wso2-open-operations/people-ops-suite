@@ -32,13 +32,13 @@ const STAGE_INDEX: Partial<Record<ApplicationStatus, number>> = {
   [ApplicationStatus.OfferDeclined]: 3,
 };
 
-// Reads a date, or null when it cannot be read. A date without a time is read as a local day, not midnight UTC.
+// Parses a date, or null when invalid; a date without a time is a local day.
 const parseDate = (value: string): Date | null => {
   const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (dateOnly) {
     const [year, month, day] = dateOnly.slice(1).map(Number);
     const date = new Date(year, month - 1, day);
-    // A day that does not exist is rejected, not rolled into the next month.
+    // Rejects a day that does not exist.
     const exists = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
     return exists ? date : null;
   }
@@ -61,8 +61,7 @@ export function trackerOf(application: Application): { activeStep: number; error
   return { activeStep: STAGE_INDEX[application.status] ?? 0, errorStep: null };
 }
 
-// One line of an application's history. A stage the candidate passed has no date, because the ATS does not record
-// when an application moved from one stage to the next.
+// One line of an application's history.
 export interface HistoryEntry {
   label: string;
   date: string | null;
@@ -71,7 +70,7 @@ export interface HistoryEntry {
   detail?: string;
 }
 
-// The statuses that end an application's journey or answer its offer; the date it last changed is when it got there.
+// Statuses that end the journey or answer the offer.
 const FINAL_STATUSES = [
   ApplicationStatus.Offer,
   ApplicationStatus.OfferAccepted,
@@ -79,9 +78,7 @@ const FINAL_STATUSES = [
   ApplicationStatus.Rejected,
 ];
 
-// What happened to the application, in the order it happened: when it was applied for, when it was screened (the
-// date it last changed, while it is still at screening or interview), each interview from the ATS's interviews, and
-// the final status with the date it was reached.
+// The application's history: applied, screened, each interview and the final status.
 export function historyOf(application: Application, interviews: ApplicationInterview[]): HistoryEntry[] {
   const entries: HistoryEntry[] = [{ label: ApplicationStatus.Applied, date: application.appliedDate }];
   const { status } = application;
@@ -115,7 +112,7 @@ export const isOffer = (application: Application) => application.status === Appl
 
 const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
-// The deadline to answer an offer, with the days left (0 on the last day, below 0 once it has passed).
+// The offer deadline with the days left.
 export function offerDeadlineOf(application: Application): { date: string; daysLeft: number } | null {
   const end = application.offerExpiresOn ? parseDate(application.offerExpiresOn) : null;
   if (!end) return null;
@@ -151,8 +148,7 @@ export const tabOf = (application: Application): ApplicationTab => {
   }
 };
 
-// The tab to open the list on: offers first, then interviews (under active), then rejections (under closed), then
-// the rest. All when there is nothing to show.
+// The tab to open the list on: offers, then interviews, then rejections.
 export function defaultTabOf(applications: Application[]): ApplicationFilter {
   if (applications.length === 0) return "all";
   if (applications.some((a) => tabOf(a) === "offers")) return "offers";
@@ -175,13 +171,13 @@ export const timeAgo = (value: string) => {
   return `${Math.floor(days / 30)} months ago`;
 };
 
-// The interview the candidate has coming up, when the application is at the interview stage.
+// The upcoming interview of an application at the interview stage.
 export const upcomingInterviewOf = (application: Application, interviews: ApplicationInterview[]) =>
   application.status === ApplicationStatus.Interview
     ? interviews.find((interview) => interview.status === "Upcoming")
     : undefined;
 
-// The one-line summary of what happens next, given the interviews fetched for the application.
+// The one-line next step of an application.
 export function nextStepOf(application: Application, interviews: ApplicationInterview[]): string {
   switch (application.status) {
     case ApplicationStatus.Applied:
@@ -208,7 +204,7 @@ export function nextStepOf(application: Application, interviews: ApplicationInte
 }
 
 export const interviewChip: Record<ApplicationInterview["status"], { color: string; bg: string }> = {
-  // Solid orange, so an interview that is coming up stands out like an alert.
+  // Solid orange for an upcoming interview.
   Upcoming: { color: ON_ORANGE, bg: BRAND_ORANGE },
   Completed: { color: "#059669", bg: "rgba(5,150,105,0.14)" },
   Cancelled: { color: "#6B7280", bg: "rgba(107,114,128,0.16)" },

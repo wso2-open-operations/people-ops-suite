@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Dispatch, PayloadAction, createAsyncThunk, createSlice, isRejected } from "@reduxjs/toolkit";
+import { PayloadAction, createAsyncThunk, createSlice, isRejected } from "@reduxjs/toolkit";
 
 import {
   Application,
@@ -25,7 +25,6 @@ import {
   OfferAnswer,
   State,
 } from "@/types/types";
-import type { RootState } from "@slices/store";
 import {
   fetchApplications as fetchApplicationsApi,
   fetchProfile as fetchProfileApi,
@@ -42,30 +41,6 @@ import {
   fetchVacancyDetail,
 } from "@utils/vacancyService";
 
-// Saved jobs are kept in the browser for each candidate, so they are there again when the candidate signs back in.
-const SAVED_JOBS_KEY_PREFIX = "careers-app-saved-jobs:";
-const MAX_SAVED_JOBS = 200;
-
-// The job ids a candidate saved earlier in this browser; none when nothing is stored or it cannot be read.
-export function readSavedJobs(userId: string): string[] {
-  try {
-    const stored: unknown = JSON.parse(localStorage.getItem(SAVED_JOBS_KEY_PREFIX + userId) ?? "[]");
-    return Array.isArray(stored)
-      ? stored.filter((id): id is string => typeof id === "string").slice(0, MAX_SAVED_JOBS)
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeSavedJobs(userId: string, jobIds: string[]): void {
-  try {
-    localStorage.setItem(SAVED_JOBS_KEY_PREFIX + userId, JSON.stringify(jobIds.slice(-MAX_SAVED_JOBS)));
-  } catch {
-    // Storage is blocked or full: the saved jobs stay for this visit only.
-  }
-}
-
 interface CareersState {
   profile: CandidateProfile;
   profileState: State;
@@ -78,14 +53,14 @@ interface CareersState {
   applicationsState: State;
   // Applications whose feedback request the candidate dismissed.
   dismissedFeedbackIds: string[];
-  // True when the backend refused the access token, so the candidate has to sign in again.
+  // True when the backend refused the access token.
   sessionExpired: boolean;
-  // Goes up each time the candidate's data is cleared, so requests started before it can be told apart.
+  // Counts the clears of the candidate's data.
   sessionGeneration: number;
   savedJobIds: string[];
 }
 
-// The name of the error a request ends with when the candidate's data was cleared while it was running.
+// Error name of a request that ended after the candidate's data was cleared.
 const STALE_SESSION_ERROR = "StaleSessionError";
 
 const isSessionExpired = (error: { name?: string }) => error.name === SESSION_EXPIRED_ERROR;
@@ -114,7 +89,7 @@ const initialState: CareersState = {
   dismissedFeedbackIds: [],
   sessionExpired: false,
   sessionGeneration: 0,
-  // Filled from the browser's storage when the candidate signs in.
+  // Loaded from the browser on sign-in.
   savedJobIds: [],
 };
 
@@ -133,8 +108,7 @@ export const loadJobDetail = createAsyncThunk(
   },
 );
 
-// Builds a thunk for a signed-in candidate's request. If the candidate's data is cleared while the request is running,
-// the request ends as a stale error, so a late response never writes the previous candidate's data into the store.
+// Builds a signed-in request; a response arriving after the data was cleared is dropped as stale.
 function userRequest<Arg, Result>(type: string, call: (arg: Arg) => Promise<Result>) {
   return createAsyncThunk<Result, Arg>(type, async (arg, { getState }) => {
     const generation = () => (getState() as { careers: CareersState }).careers.sessionGeneration;
@@ -181,11 +155,11 @@ export const respondToOffer = userRequest(
     respondToOfferApi(accessToken, applicationId, answer),
 );
 
-export const CareersSlice = createSlice({
+const CareersSlice = createSlice({
   name: "careers",
   initialState,
   reducers: {
-    // Replaces the saved jobs, with those read from the browser's storage.
+    // Replaces the saved jobs.
     setSavedJobs: (state, action: PayloadAction<string[]>) => {
       state.savedJobIds = action.payload;
     },
@@ -296,7 +270,7 @@ export const CareersSlice = createSlice({
         const index = state.applications.findIndex((a) => a.id === action.payload.id);
         if (index >= 0) state.applications[index] = action.payload;
       })
-      // Any signed-in request the backend refuses with a 401 asks the user to sign in again.
+      // A 401 on any signed-in request ends the session.
       .addMatcher(
         isRejected(loadProfile, updateProfile, loadApplications, sendFeedback, respondToOffer),
         (state, action) => {
@@ -318,13 +292,5 @@ export const {
   dismissFeedback,
   clearUserData,
 } = CareersSlice.actions;
-
-// Saves or unsaves a job and keeps the candidate's saved jobs in the browser.
-export const toggleSavedJob = (jobId: string) => (dispatch: Dispatch, getState: () => RootState) => {
-  dispatch(CareersSlice.actions.toggleSaveJob(jobId));
-  const state = getState();
-  const userId = state.auth.decodedIdToken?.sub;
-  if (userId) writeSavedJobs(userId, state.careers.savedJobIds);
-};
 
 export default CareersSlice.reducer;
