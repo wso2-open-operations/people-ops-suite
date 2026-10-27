@@ -34,6 +34,7 @@ import {
   nextStepOf,
   offerDeadlineOf,
   trackerOf,
+  upcomingInterviewOf,
 } from "@view/applications/applicationHelpers";
 import InterviewsSection from "@view/applications/components/InterviewsSection";
 import OfferActions from "@view/applications/components/OfferActions";
@@ -73,6 +74,8 @@ const ApplicationDetails = ({
 }: ApplicationDetailsProps) => {
   const [letterOpen, setLetterOpen] = useState(false);
   const actionNeeded = isOffer(application);
+  // An interview that is coming up is shown in orange, like an offer waiting for an answer.
+  const interviewComing = upcomingInterviewOf(application, interviews) !== undefined;
   const deadline = actionNeeded ? offerDeadlineOf(application) : null;
   const offerExpired = deadline !== null && deadline.daysLeft < 0;
   const { activeStep, errorStep } = trackerOf(application);
@@ -96,8 +99,8 @@ const ApplicationDetails = ({
         </Stack>
         <Typography
           fontSize="0.95rem"
-          fontWeight={actionNeeded ? 700 : 500}
-          sx={{ mt: 1.5, color: actionNeeded ? "#ff6700" : "text.secondary" }}
+          fontWeight={actionNeeded || interviewComing ? 700 : 500}
+          sx={{ mt: 1.5, color: actionNeeded || interviewComing ? "#ff6700" : "text.secondary" }}
         >
           {nextStepOf(application, interviews)}
         </Typography>

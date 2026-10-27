@@ -17,6 +17,7 @@
 import { MapPin, Phone, Video } from "lucide-react";
 
 import type { Application, ApplicationInterview } from "@/types/types";
+import { BRAND_ORANGE, ON_ORANGE } from "@config/brand";
 import { ApplicationStatus } from "@config/constant";
 
 // The stages shown in the tracker.
@@ -174,6 +175,12 @@ export const timeAgo = (value: string) => {
   return `${Math.floor(days / 30)} months ago`;
 };
 
+// The interview the candidate has coming up, when the application is at the interview stage.
+export const upcomingInterviewOf = (application: Application, interviews: ApplicationInterview[]) =>
+  application.status === ApplicationStatus.Interview
+    ? interviews.find((interview) => interview.status === "Upcoming")
+    : undefined;
+
 // The one-line summary of what happens next, given the interviews fetched for the application.
 export function nextStepOf(application: Application, interviews: ApplicationInterview[]): string {
   switch (application.status) {
@@ -182,7 +189,7 @@ export function nextStepOf(application: Application, interviews: ApplicationInte
     case ApplicationStatus.Screening:
       return "Your profile is being reviewed";
     case ApplicationStatus.Interview: {
-      const upcoming = interviews.find((interview) => interview.status === "Upcoming");
+      const upcoming = upcomingInterviewOf(application, interviews);
       return upcoming
         ? `Next: ${upcoming.round} · ${formatDateTime(upcoming.dateTime)}`
         : "Waiting for the interview outcome";
@@ -201,7 +208,8 @@ export function nextStepOf(application: Application, interviews: ApplicationInte
 }
 
 export const interviewChip: Record<ApplicationInterview["status"], { color: string; bg: string }> = {
-  Upcoming: { color: "primary.main", bg: "#ff670015" },
+  // Solid orange, so an interview that is coming up stands out like an alert.
+  Upcoming: { color: ON_ORANGE, bg: BRAND_ORANGE },
   Completed: { color: "#059669", bg: "rgba(5,150,105,0.14)" },
   Cancelled: { color: "#6B7280", bg: "rgba(107,114,128,0.16)" },
 };
