@@ -22,7 +22,12 @@ export const BRAND_TINT = {
   border: "#ff670040",
 };
 
-export const PAGE_MAX_WIDTH = 1080;
+// The space left and right of a page's content: 116px on a wide screen, less on narrower ones and none on a phone,
+// with 15px of padding inside it.
+export const PAGE_MARGIN_X = { xs: 0, md: "48px", lg: "116px" };
+export const PAGE_PADDING_X = "15px";
+// The same margin as a negative one, for an element that sits at the edge of the screen.
+export const PAGE_PULL_LEFT = { xs: 0, md: "-48px", lg: "-116px" };
 
 // Text on the brand orange: dark in both modes.
 export const ON_ORANGE = "#0B1220";

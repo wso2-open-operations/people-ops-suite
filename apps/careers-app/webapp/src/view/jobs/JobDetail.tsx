@@ -20,7 +20,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 
 import { State } from "@/types/types";
-import { PAGE_MAX_WIDTH } from "@config/brand";
+import { PAGE_MARGIN_X, PAGE_PADDING_X } from "@config/brand";
 import { JOB_NOT_FOUND_ERROR } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
 import { loadJobDetail, toggleSaveJob } from "@slices/careersSlice/careers";
@@ -130,7 +130,7 @@ const JobDetail = () => {
         onSeeAllRoles={() => navigate("/jobs")}
       />
 
-      <Box sx={{ maxWidth: PAGE_MAX_WIDTH, mx: "auto", px: { xs: 2, md: 3 }, py: { xs: 5, md: 7 } }}>
+      <Box sx={{ mx: PAGE_MARGIN_X, px: PAGE_PADDING_X, py: { xs: 5, md: 7 } }}>
         <JobDescription
           mainContent={detail.mainContent}
           taskInformation={detail.taskInformation}
