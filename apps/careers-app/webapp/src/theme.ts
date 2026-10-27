@@ -58,8 +58,8 @@ export const themeSettings = (mode: PaletteMode) => {
       divider: isDark ? "rgba(255,255,255,0.12)" : "#e2e5ec",
       text: {
         primary: isDark ? "#FFFFFF" : "#17223A",
-        secondary: isDark ? "rgba(255,255,255,0.7)" : "#6B7280",
-        disabled: isDark ? "rgba(255,255,255,0.38)" : "#9CA3AF",
+        secondary: isDark ? "rgba(255,255,255,0.7)" : "#1F2937",
+        disabled: isDark ? "rgba(255,255,255,0.38)" : "#4B5563",
       },
     },
 
