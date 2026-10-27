@@ -107,9 +107,9 @@ function userTokensAreUnchanged() returns error? {
 @test:Config
 function userTokenWithAListedClientIdStaysAUser() returns error? {
     // A user signed in through an app whose id happens to be listed still goes through the role check.
-    http:Response res = check call("GET", "/employees/E1",
-            {email: "ada@wso2.com", groups: [], azp: "amplify-api-client"});
-    test:assertEquals(res.statusCode, 403);
+    http:Response res = check call("GET", "/employees/basic-info",
+            {email: "ada@wso2.com", groups: [], azp: "amplify-api-client", aut: "APPLICATION"});
+    test:assertEquals(res.statusCode, 403, "a user token is never admitted as a service client");
 }
 
 @test:Config
