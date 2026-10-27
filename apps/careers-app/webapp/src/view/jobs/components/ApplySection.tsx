@@ -34,8 +34,6 @@ import GuestSignInPrompt from "@view/jobs/components/GuestSignInPrompt";
 
 interface ApplySectionProps {
   detail: VacancyDetail;
-  // Whether the candidate cannot apply for this job; the form is left out when it is given.
-  blockedReason: string | null;
 }
 
 // The job type of an internship, which asks for a university instead of an address.
@@ -52,7 +50,7 @@ const EMPTY_FORM: ApplyFormValues = {
 };
 
 // The "Apply Now" card: the application form, its submit logic and the confirmation dialog.
-const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
+const ApplySection = ({ detail }: ApplySectionProps) => {
   const dispatch = useAppDispatch();
   const { getToken: getAccessToken, isSignedIn, appSignIn } = useAppAuthContext();
 
@@ -156,9 +154,6 @@ const ApplySection = ({ detail, blockedReason }: ApplySectionProps) => {
       setSubmitting(false);
     }
   };
-
-  // A candidate who cannot apply is not shown the form.
-  if (blockedReason && !submittedOpen) return null;
 
   return (
     <>

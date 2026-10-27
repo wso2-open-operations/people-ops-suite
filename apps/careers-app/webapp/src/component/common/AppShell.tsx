@@ -76,7 +76,7 @@ const AppShell = () => {
   // The job list also tells the applications page whether a vacancy is still open.
   const needsJobs = onJobPages || onApplications;
   const needsOrgStructure = onJobList;
-  const needsApplications = onApplications || onJobPage;
+  const needsApplications = onApplications;
   const needsProfile = pathname === "/profile" || onJobPage || pathname.endsWith("/documents");
 
   // Loads the job list and the org structure when the open route needs them; pages only read the state. A failed load

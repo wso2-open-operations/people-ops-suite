@@ -223,12 +223,12 @@ const ApplyForm = ({
                 htmlInput: { readOnly: true, style: { cursor: "pointer" } },
                 input: {
                   startAdornment: (
-                    <InputAdornment position="start">
+                    <InputAdornment position="start" sx={{ mr: 1 }}>
                       <Button
                         size="small"
                         variant="outlined"
                         disabled={submitting}
-                        sx={{ borderRadius: "6px", whiteSpace: "nowrap" }}
+                        sx={{ borderRadius: "6px", whiteSpace: "nowrap", py: 0, px: 1, minWidth: 0, fontSize: "0.8rem" }}
                       >
                         Choose file
                       </Button>
