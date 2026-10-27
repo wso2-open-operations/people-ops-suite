@@ -64,7 +64,7 @@ export const themeSettings = (mode: PaletteMode) => {
     },
 
     typography: {
-      fontFamily: '"Plus Jakarta Sans", sans-serif',
+      fontFamily: '"Inter Variable", Inter, sans-serif',
       fontSize: 14,
       h1: { fontSize: "2.5rem", fontWeight: 800, lineHeight: 1.2 },
       h2: { fontSize: "2rem", fontWeight: 700, lineHeight: 1.25 },
