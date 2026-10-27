@@ -66,21 +66,37 @@ const AppShell = () => {
   const jobDetailsRef = useRef(jobDetails);
   jobDetailsRef.current = jobDetails;
 
-  // Loads the job list and the org structure as soon as the app opens; pages only read the state. A failed load goes
-  // back to idle through retryLoad and is tried again here.
+  // What the open route reads; a route loads only that, and the rest waits until a route that needs it is opened.
+  const { pathname } = location;
+  const onJobList = pathname === "/" || pathname === "/jobs";
+  const onJobPage = pathname.startsWith("/jobs/");
+  const onApplications = pathname.startsWith("/applications");
+  // The job details are needed by the pages that show jobs.
+  const onJobPages = onJobList || onJobPage;
+  // The job list also tells the applications page whether a vacancy is still open.
+  const needsJobs = onJobPages || onApplications;
+  const needsOrgStructure = onJobList;
+  const needsApplications = onApplications || onJobPage;
+  const needsProfile = pathname === "/profile" || onJobPage || pathname.endsWith("/documents");
+
+  // Loads the job list and the org structure when the open route needs them; pages only read the state. A failed load
+  // goes back to idle through retryLoad and is tried again here.
   useEffect(() => {
-    if (jobsState !== State.idle && orgStructureState !== State.idle) return;
+    const loadJobList = needsJobs && jobsState === State.idle;
+    const loadOrgs = needsOrgStructure && orgStructureState === State.idle;
+    if (!loadJobList && !loadOrgs) return;
     getAccessToken()
       .then((token) => {
-        if (jobsState === State.idle) dispatch(loadJobs(token));
-        if (orgStructureState === State.idle) dispatch(loadOrgStructure(token));
+        if (loadJobList) dispatch(loadJobs(token));
+        if (loadOrgs) dispatch(loadOrgStructure(token));
       })
       .catch(() => dispatch(loadFailed()));
-  }, [dispatch, getAccessToken, jobsState, orgStructureState]);
+  }, [dispatch, getAccessToken, jobsState, orgStructureState, needsJobs, needsOrgStructure]);
 
-  // Once the job list is in, fetches each job's detail in the background; a failed fetch is ignored.
+  // Once the job list is in and a job page is open, fetches each job's detail in the background; a failed fetch is
+  // ignored.
   useEffect(() => {
-    if (jobsState !== State.success) return;
+    if (jobsState !== State.success || !onJobPages) return;
     const queue = jobs.map((job) => job.id).filter((jobId) => !jobDetailsRef.current[jobId]);
     if (queue.length === 0) return;
 
@@ -105,29 +121,31 @@ const AppShell = () => {
     return () => {
       cancelled = true;
     };
-  }, [jobsState, jobs, dispatch, getAccessToken]);
+  }, [jobsState, jobs, onJobPages, dispatch, getAccessToken]);
 
-  // Once signed in, loads the candidate's applications and profile in the background, so the pages that show them
-  // open with the data in place. A load that is reset to idle is tried again here.
+  // Once signed in, loads the candidate's applications and profile when the open route needs them. A load that is
+  // reset to idle is tried again here.
   useEffect(() => {
-    if (!isSignedIn || (applicationsState !== State.idle && profileState !== State.idle)) return;
+    const loadApps = needsApplications && applicationsState === State.idle;
+    const loadOwnProfile = needsProfile && profileState === State.idle;
+    if (!isSignedIn || (!loadApps && !loadOwnProfile)) return;
     // Set when the candidate signs out, or the states change, before the token arrives.
     let cancelled = false;
     getAccessToken()
       .then((token) => {
         if (cancelled) return;
-        if (applicationsState === State.idle) dispatch(loadApplications(token));
-        if (profileState === State.idle) dispatch(loadProfile(token));
+        if (loadApps) dispatch(loadApplications(token));
+        if (loadOwnProfile) dispatch(loadProfile(token));
       })
       .catch(() => {
         if (cancelled) return;
-        if (applicationsState === State.idle) dispatch(applicationsFailed());
-        if (profileState === State.idle) dispatch(profileFailed());
+        if (loadApps) dispatch(applicationsFailed());
+        if (loadOwnProfile) dispatch(profileFailed());
       });
     return () => {
       cancelled = true;
     };
-  }, [isSignedIn, applicationsState, profileState, dispatch, getAccessToken]);
+  }, [isSignedIn, applicationsState, profileState, needsApplications, needsProfile, dispatch, getAccessToken]);
 
   // Clears the candidate's data when nobody is signed in.
   useEffect(() => {
