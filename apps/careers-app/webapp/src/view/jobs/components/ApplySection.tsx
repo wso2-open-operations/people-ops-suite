@@ -164,9 +164,10 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
           scrollMarginTop: "24px",
           p: { xs: 2.5, md: 4 },
           border: "1px solid",
-          borderColor: "divider",
+          // The shadow marks the card's edge in light mode; dark mode keeps a line, since a shadow does not show there.
+          borderColor: (theme) => (theme.palette.mode === "dark" ? theme.palette.divider : "transparent"),
           borderRadius: "16px",
-          boxShadow: "0 18px 40px -16px rgb(7 20 46 / 18%)",
+          boxShadow: "0 4px 24px rgb(23 34 58 / 28%)",
           "& .MuiInputBase-root, & .MuiInputLabel-root": { fontSize: "1rem" },
           backgroundColor: "background.paper",
         }}
