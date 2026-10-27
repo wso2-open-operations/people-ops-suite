@@ -124,9 +124,10 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
             height: "100%",
             minWidth: 150,
             padding: "0 12px",
-            backgroundColor: "transparent",
-            border: "1.5px solid",
-            borderColor: isOpen ? "#ff6700" : "transparent",
+            backgroundColor: "background.paper",
+            border: "1px solid",
+            borderColor: (theme) =>
+              isOpen ? theme.palette.primary.main : theme.palette.mode === "dark" ? theme.palette.divider : "rgba(0,0,0,0.15)",
             outline: "none",
             borderRadius: "40px",
             textAlign: "left",
@@ -301,14 +302,9 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(2, minmax(0, 1fr)) auto" },
-            gap: 1,
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 2,
             alignItems: "center",
-            maxWidth: 1200,
-            padding: "4px",
-            backgroundColor: "background.paper",
-            borderRadius: "40px",
-            boxShadow: "0 14px 40px -14px rgb(7 20 46 / 35%), 0 1px 0 rgb(7 20 46 / 6%)",
           }}
         >
           {renderDropdown("team", "Team", teams, 2)}
