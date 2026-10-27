@@ -28,18 +28,20 @@ const wso2 = {
 
 export const themeSettings = (mode: PaletteMode) => {
   const isDark = mode === "dark";
+  // The dark theme follows the WSO2 theme of Oxygen UI (wso2/oxygen-ui, WSO2Theme.ts); its orange is a little lighter.
+  const brand = isDark ? "#FF7300" : "#ff6700";
 
   return {
     palette: {
       mode,
       primary: {
-        main: wso2.orange[500],
+        main: brand,
         light: wso2.orange[400],
         dark: wso2.orange[700],
         contrastText: "#ffffff",
       },
       secondary: {
-        main: "#0EA5E9",
+        main: isDark ? "#5CD1FF" : "#0EA5E9",
         light: "#38BDF8",
         dark: "#0284C7",
         contrastText: "#ffffff",
@@ -49,14 +51,15 @@ export const themeSettings = (mode: PaletteMode) => {
       info: { main: "#3B82F6", light: "#60A5FA", dark: "#2563EB" },
       success: { main: "#10B981", light: "#34D399", dark: "#059669" },
       background: {
-        default: isDark ? "#080D1C" : "#FFFFFF",
-        paper: isDark ? "#0D1530" : "#FFFFFF",
+        // In dark mode the paper is a translucent black over the page gradient, blurred by the MuiPaper override.
+        default: isDark ? "#0f172a" : "#FFFFFF",
+        paper: isDark ? "#00000026" : "#FFFFFF",
       },
-      divider: isDark ? "#1E2D52" : "#e2e5ec",
+      divider: isDark ? "rgba(255,255,255,0.12)" : "#e2e5ec",
       text: {
-        primary: isDark ? "#E8EEFB" : "#17223A",
-        secondary: isDark ? "#8C9BBF" : "#6B7280",
-        disabled: isDark ? "#4A5878" : "#9CA3AF",
+        primary: isDark ? "#FFFFFF" : "#17223A",
+        secondary: isDark ? "rgba(255,255,255,0.7)" : "#6B7280",
+        disabled: isDark ? "rgba(255,255,255,0.38)" : "#9CA3AF",
       },
     },
 
@@ -81,9 +84,29 @@ export const themeSettings = (mode: PaletteMode) => {
     components: {
       MuiCssBaseline: {
         styleOverrides: {
-          ":focus-visible": { outline: `2px solid ${wso2.orange[500]}`, outlineOffset: "2px" },
+          ":focus-visible": { outline: `2px solid ${brand}`, outlineOffset: "2px" },
+          // The page gradient of the Oxygen UI dark theme.
+          ...(isDark && {
+            body: {
+              backgroundAttachment: "fixed",
+              backgroundImage:
+                "radial-gradient(circle at 50% 25%, #233248 0%, rgba(153, 170, 205, 0) 40%)," +
+                "radial-gradient(circle at 500% 90%, #3b4e69 0%, rgba(153, 170, 205, 0) 20%)," +
+                "radial-gradient(circle at 100% 125%, #3b4e69 0%, rgba(153, 170, 205, 0) 20%)," +
+                "linear-gradient(120deg, #060812 100%)",
+              backgroundBlendMode: "screen",
+            },
+          }),
         },
       },
+      // Dark paper is translucent, so it is blurred and carries no elevation tint, as in Oxygen UI.
+      ...(isDark && {
+        MuiPaper: {
+          styleOverrides: {
+            root: { backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", backgroundImage: "none" },
+          },
+        },
+      }),
       MuiButton: {
         styleOverrides: {
           root: {
@@ -94,7 +117,7 @@ export const themeSettings = (mode: PaletteMode) => {
             "&:hover": { boxShadow: "none" },
           },
           contained: {
-            backgroundColor: wso2.orange[500],
+            backgroundColor: brand,
             "&:hover": { backgroundColor: wso2.orange[600] },
             "&.Mui-disabled": isDark
               ? { backgroundColor: "rgba(255,103,0,0.22)", color: "rgba(232,238,251,0.55)" }
@@ -134,10 +157,10 @@ export const themeSettings = (mode: PaletteMode) => {
         styleOverrides: {
           root: {
             "&:not(.Mui-error):not(.Mui-disabled):hover .MuiOutlinedInput-notchedOutline": {
-              borderColor: wso2.orange[500],
+              borderColor: brand,
             },
             "&.Mui-focused:not(.Mui-error) .MuiOutlinedInput-notchedOutline": {
-              borderColor: wso2.orange[500],
+              borderColor: brand,
             },
           },
         },
@@ -145,7 +168,7 @@ export const themeSettings = (mode: PaletteMode) => {
       MuiInputLabel: {
         styleOverrides: {
           root: {
-            "&.Mui-focused:not(.Mui-error)": { color: wso2.orange[500] },
+            "&.Mui-focused:not(.Mui-error)": { color: brand },
           },
         },
       },

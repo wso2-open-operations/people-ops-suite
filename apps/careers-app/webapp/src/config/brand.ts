@@ -30,7 +30,7 @@ export const ON_ORANGE = "#0B1220";
 // The colours of the job page hero, and of the loading skeleton that stands in for it, for each theme mode.
 const HERO_COLORS = {
   dark: {
-    background: "#080D1C",
+    background: "#0f172a",
     gridLine: "rgba(255,255,255,0.05)",
     outline: "rgba(255,255,255,0.2)",
     orangeGlow: "rgba(255,115,0,0.38)",
