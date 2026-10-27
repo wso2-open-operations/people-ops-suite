@@ -45,6 +45,9 @@ service http:InterceptableService / on new http:Listener(TEST_PORT) {
 final http:Client testClient = check new (string `http://localhost:${TEST_PORT}`);
 
 # An unsigned JWT: the interceptor only decodes (the gateway verifies), so the signature is never read.
+#
+# + claims - JWT payload claims
+# + return - Compact JWT string
 function token(map<json> claims) returns string {
     string header = {alg: "RS256", typ: "JWT"}.toJsonString().toBytes().toBase64();
     string payload = claims.toJsonString().toBytes().toBase64();
