@@ -16,7 +16,7 @@
 import ballerina/sql;
 import ballerina/test;
 
-const string LEAD_EMAIL = "lead@example.invalid";
+const LEAD_EMAIL = "lead@example.invalid";
 
 # A lead's My Team search, either the whole reporting chain or direct reports only.
 #
