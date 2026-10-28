@@ -19,10 +19,13 @@ import { PayloadAction, createAsyncThunk, createSlice, isRejected } from "@redux
 import {
   Application,
   ApplicationFeedback,
+  ApplicationInterview,
   CandidateProfile,
+  DocumentsStatus,
   EditableProfileFields,
   Job,
   OfferAnswer,
+  OfferLetter,
   State,
 } from "@/types/types";
 import {
@@ -41,6 +44,14 @@ import {
   fetchVacancyDetail,
 } from "@utils/vacancyService";
 
+// What the application page loads for one application; a field is missing until it has been loaded once.
+export interface ApplicationExtras {
+  offerLetter?: OfferLetter | null;
+  interviews?: ApplicationInterview[];
+  // Undefined while loading, null when the check failed.
+  documentsStatus?: DocumentsStatus | null;
+}
+
 interface CareersState {
   profile: CandidateProfile;
   profileState: State;
@@ -51,6 +62,9 @@ interface CareersState {
   orgStructureState: State;
   applications: Application[];
   applicationsState: State;
+  // The interviews, offer letter and documents status of each opened application, by application id, kept so a page
+  // that is opened again shows them at once.
+  applicationExtras: Record<string, ApplicationExtras>;
   // Applications whose feedback request the candidate dismissed.
   dismissedFeedbackIds: string[];
   // True when the backend refused the access token.
@@ -86,6 +100,7 @@ const initialState: CareersState = {
   orgStructureState: State.idle,
   applications: [],
   applicationsState: State.idle,
+  applicationExtras: {},
   dismissedFeedbackIds: [],
   sessionExpired: false,
   sessionGeneration: 0,
@@ -163,6 +178,16 @@ const CareersSlice = createSlice({
     setSavedJobs: (state, action: PayloadAction<string[]>) => {
       state.savedJobIds = action.payload;
     },
+    // Keeps what was loaded for an application. A reply that arrives after the candidate's data was cleared, which
+    // the generation tells, is dropped.
+    setApplicationExtras: (
+      state,
+      action: PayloadAction<{ id: string; generation: number; extras: ApplicationExtras }>,
+    ) => {
+      const { id, generation, extras } = action.payload;
+      if (generation !== state.sessionGeneration) return;
+      state.applicationExtras[id] = { ...state.applicationExtras[id], ...extras };
+    },
     toggleSaveJob: (state, action: PayloadAction<string>) => {
       const idx = state.savedJobIds.indexOf(action.payload);
       if (idx >= 0) {
@@ -207,6 +232,7 @@ const CareersSlice = createSlice({
       state.profileState = State.idle;
       state.applications = [];
       state.applicationsState = State.idle;
+      state.applicationExtras = {};
       state.dismissedFeedbackIds = [];
       state.sessionExpired = false;
       state.sessionGeneration += 1;
@@ -281,6 +307,7 @@ const CareersSlice = createSlice({
 });
 
 export const {
+  setApplicationExtras,
   setSavedJobs,
   toggleSaveJob,
   loadFailed,
