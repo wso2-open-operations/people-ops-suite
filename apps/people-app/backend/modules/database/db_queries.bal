@@ -428,20 +428,52 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 
+    // Only the whole-chain list walks the chain, so only it can say which of the lead's
+    // additional reports a member came through. As in reportingLineQuery, one is named only when
+    // every route to the member starts from it, and never for the additional report themselves.
+    //
+    // The route lookup is an inner join, so it is also what restricts the list to the chain. A
+    // separate `IN (SELECT pk_id FROM subordinate_tree)` filter would read the walk a second time,
+    // and MySQL 8.0.27 shifts the columns of a recursive CTE read twice in one query.
+    boolean walksChain = leadEmail is string && payload.filters.directReports == false;
+    sql:ParameterizedQuery throughColumns = walksChain
+        ? `
+            via.employee_id AS throughEmployeeId,
+            via.first_name AS throughFirstName,
+            via.last_name AS throughLastName,
+        `
+        : `
+            NULL AS throughEmployeeId,
+            NULL AS throughFirstName,
+            NULL AS throughLastName,
+        `;
+    sql:ParameterizedQuery throughJoins = walksChain
+        ? `
+            INNER JOIN (
+                SELECT pk_id, MAX(root_additional IS NULL) AS reached_directly, MIN(root_additional) AS root_additional
+                FROM subordinate_tree
+                GROUP BY pk_id
+            ) route ON route.pk_id = e.id
+            LEFT JOIN employee via ON via.id = route.root_additional
+                AND route.reached_directly = 0
+                AND route.root_additional <> e.id
+        `
+        : ``;
+
     // Defaults to excluding personal information, so a caller that has not been considered
     // gets a field it did not expect rather than data it may not see.
     sql:ParameterizedQuery baseQuery = includePersonalInfo
-        ? sql:queryConcat(selectPrefix, personalInfoColumns, remainingQuery)
-        : sql:queryConcat(selectPrefix, remainingQuery);
+        ? sql:queryConcat(selectPrefix, personalInfoColumns, throughColumns, remainingQuery, throughJoins)
+        : sql:queryConcat(selectPrefix, throughColumns, remainingQuery, throughJoins);
 
     sql:ParameterizedQuery[] filters = [];
 
     // Lead restriction: must be the first filter so it cannot be bypassed.
     if leadEmail is string {
-        if payload.filters.directReports == false {
-            // Show all subordinates recursively
+        if walksChain {
+            // Show all subordinates recursively. The route join in throughJoins restricts the
+            // rows to the chain, so there is no filter to add here; both follow walksChain.
             baseQuery = sql:queryConcat(subordinateTreeCte(leadEmail), baseQuery);
-            filters.push(`e.id IN (SELECT pk_id FROM subordinate_tree)`);
         } else {
             // Direct reports only (default)
             filters.push(`(
@@ -561,8 +593,9 @@ isolated function getManagersQuery() returns sql:ParameterizedQuery =>
     WHERE e.manager_email IS NOT NULL AND e.manager_email <> ''
     GROUP BY LOWER(m.work_email);`;
 
-# The reporting chain below a lead, as a `subordinate_tree (pk_id, w_email, visited, traversable)`
-# CTE: everyone whose manager or active additional manager is the lead, then theirs, and so on.
+# The reporting chain below a lead, as a
+# `subordinate_tree (pk_id, w_email, visited, traversable, root_additional)` CTE: everyone whose
+# manager or active additional manager is the lead, then theirs, and so on.
 #
 # A row is `traversable` unless it is a Left employment whose work email also belongs to a
 # current one. A rehire keeps their email, so the walk would otherwise continue from their
@@ -575,7 +608,12 @@ isolated function getManagersQuery() returns sql:ParameterizedQuery =>
 # Missing work emails are left out of that list: a single NULL makes NOT IN unknown for every
 # row, which would stop the walk at every leaver.
 #
-# Shared by the My Team list and the record-access check so the two cannot disagree.
+# `root_additional` is where a row's route started: the lead's additional report it came through,
+# or NULL when it started from a direct report. The reporting line reads it to say who links
+# someone into the team.
+#
+# Shared by the My Team list, the record-access check and the reporting line so they cannot
+# disagree.
 #
 # + leadEmail - Work email of the lead
 # + return - `WITH RECURSIVE` prefix to concatenate before a query that reads `subordinate_tree`
@@ -591,22 +629,22 @@ isolated function subordinateTreeCte(string leadEmail) returns sql:Parameterized
             WHERE employee_status <> ${EMPLOYEE_LEFT}
               AND work_email IS NOT NULL
         ),
-        subordinate_tree (pk_id, w_email, visited, traversable) AS (
-            SELECT e.id, e.work_email, CAST(e.id AS CHAR(1000)), `, traversable, `
+        subordinate_tree (pk_id, w_email, visited, traversable, root_additional) AS (
+            SELECT e.id, e.work_email, CAST(e.id AS CHAR(1000)), `, traversable, `, CAST(NULL AS SIGNED)
             FROM employee e
             WHERE LOWER(e.manager_email) = LOWER(${leadEmail})
             UNION
-            SELECT e.id, e.work_email, CAST(e.id AS CHAR(1000)), `, traversable, `
+            SELECT e.id, e.work_email, CAST(e.id AS CHAR(1000)), `, traversable, `, e.id
             FROM employee e
             JOIN employee_additional_managers eam ON eam.employee_pk_id = e.id AND eam.is_active = 1
             WHERE LOWER(eam.additional_manager_email) = LOWER(${leadEmail})
             UNION ALL
-            SELECT e.id, e.work_email, CONCAT(st.visited, ',', e.id), `, traversable, `
+            SELECT e.id, e.work_email, CONCAT(st.visited, ',', e.id), `, traversable, `, st.root_additional
             FROM employee e
             JOIN subordinate_tree st ON LOWER(e.manager_email) = LOWER(st.w_email)
             WHERE st.traversable = 1 AND NOT FIND_IN_SET(e.id, st.visited)
             UNION ALL
-            SELECT e.id, e.work_email, CONCAT(st.visited, ',', e.id), `, traversable, `
+            SELECT e.id, e.work_email, CONCAT(st.visited, ',', e.id), `, traversable, `, st.root_additional
             FROM employee e
             JOIN employee_additional_managers eam ON eam.employee_pk_id = e.id AND eam.is_active = 1
             JOIN subordinate_tree st ON LOWER(eam.additional_manager_email) = LOWER(st.w_email)
@@ -625,6 +663,41 @@ isolated function isSubordinateOfLeadQuery(string leadEmail, string employeeId) 
     FROM subordinate_tree
     WHERE pk_id = (SELECT id FROM employee WHERE employee_id = ${employeeId})
     LIMIT 1`);
+
+# How a team member is linked to a lead, read from the lead's chain.
+#
+# A member can be reached by more than one route. The lead's additional report is named only
+# when every route starts from one; when several do, MIN picks one. No row means the member is
+# not in the lead's chain.
+#
+# + leadEmail - Work email of the lead
+# + employeeId - Employee ID of the team member
+# + return - Parameterized query returning at most one row
+isolated function reportingLineQuery(string leadEmail, string employeeId) returns sql:ParameterizedQuery =>
+    sql:queryConcat(subordinateTreeCte(leadEmail), `
+    SELECT
+        CASE
+            WHEN LOWER(t.manager_email) = LOWER(${leadEmail}) THEN ${DIRECT}
+            WHEN EXISTS (
+                SELECT 1
+                FROM employee_additional_managers eam
+                WHERE eam.employee_pk_id = t.id
+                  AND eam.is_active = 1
+                  AND LOWER(eam.additional_manager_email) = LOWER(${leadEmail})
+            ) THEN ${ADDITIONAL}
+            ELSE ${INDIRECT}
+        END AS relation,
+        via.employee_id AS throughEmployeeId,
+        via.first_name AS throughFirstName,
+        via.last_name AS throughLastName
+    FROM (
+        SELECT pk_id, MAX(root_additional IS NULL) AS reached_directly, MIN(root_additional) AS root_additional
+        FROM subordinate_tree
+        WHERE pk_id = (SELECT id FROM employee WHERE employee_id = ${employeeId})
+        GROUP BY pk_id
+    ) r
+    JOIN employee t ON t.id = r.pk_id
+    LEFT JOIN employee via ON via.id = r.root_additional AND r.reached_directly = 0`);
 
 # Check if an employee is a lead (has at least one direct or additional subordinate).
 #
