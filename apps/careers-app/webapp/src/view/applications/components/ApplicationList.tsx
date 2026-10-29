@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Button, Card, CardContent, Grid, Stack, Tab, Tabs, Typography } from "@wso2/oxygen-ui";
 import { ClipboardList } from "@wso2/oxygen-ui-icons-react";
 
@@ -94,36 +93,47 @@ const ApplicationList = ({
           </CardContent>
         </Card>
       ) : (
-        <>
-          <Tabs
-            value={tab}
-            onChange={(_, value: ApplicationFilter) => setChosenTab(value)}
-            sx={{
-              mb: 3,
-              borderBottom: "1px solid",
-              borderColor: "divider",
-              "& .MuiTabs-indicator": { backgroundColor: "primary.main" },
-              "& .MuiTab-root": { textTransform: "none", fontSize: "1rem", fontWeight: 500, color: "text.secondary" },
-              "& .MuiTab-root.Mui-selected": { color: "text.primary" },
-            }}
-          >
-            {TABS.map((t) => (
-              <Tab key={t.key} value={t.key} label={`${t.label} (${countOf(t.key)})`} />
-            ))}
-          </Tabs>
-
-          {visible.length === 0 ? (
-            <Typography color="text.secondary">No applications in this tab.</Typography>
-          ) : (
-            <Grid container spacing={3}>
-              {visible.map((application) => (
-                <Grid key={application.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <ApplicationListCard application={application} onView={() => onView(application.id)} />
-                </Grid>
+        // Nothing to sort while the list is loading or failed, so the tabs wait until there are applications.
+        applications.length > 0 && (
+          <>
+            <Tabs
+              value={tab}
+              onChange={(_, value: ApplicationFilter) => setChosenTab(value)}
+              sx={{
+                mb: 3,
+                borderBottom: "1px solid",
+                borderColor: "divider",
+                "& .MuiTabs-indicator": { backgroundColor: "primary.main" },
+                "& .MuiTab-root": {
+                  textTransform: "none",
+                  fontSize: "1rem",
+                  fontWeight: 500,
+                  color: "text.secondary",
+                },
+                "& .MuiTab-root.Mui-selected": { color: "text.primary" },
+              }}
+            >
+              {TABS.map((t) => (
+                <Tab key={t.key} value={t.key} label={`${t.label} (${countOf(t.key)})`} />
               ))}
-            </Grid>
-          )}
-        </>
+            </Tabs>
+
+            {visible.length === 0 ? (
+              <Typography color="text.secondary">No applications in this tab.</Typography>
+            ) : (
+              <Grid container spacing={3}>
+                {visible.map((application) => (
+                  <Grid key={application.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <ApplicationListCard
+                      application={application}
+                      onView={() => onView(application.id)}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </>
+        )
       )}
     </>
   );
