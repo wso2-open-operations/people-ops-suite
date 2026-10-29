@@ -15,7 +15,7 @@
 // under the License.
 
 // A piece of store data that a route reads.
-export type RouteNeed = "applications" | "profile";
+type RouteNeed = "applications" | "profile";
 
 // Set as `handle` on a route in app/AppHandler.tsx, so what a route needs is declared on the route itself.
 export interface RouteHandle {

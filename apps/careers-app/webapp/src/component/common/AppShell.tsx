@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Stack, Tooltip, useColorScheme } from "@wso2/oxygen-ui";
-import { Briefcase, ClipboardList, LogOut, Moon, Sun, User } from "@wso2/oxygen-ui-icons-react";
+import { Box, Button, Stack, Tooltip, Typography, useColorScheme } from "@wso2/oxygen-ui";
+import { ClipboardList, LogOut, Moon, Sun, User } from "@wso2/oxygen-ui-icons-react";
 import { Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
 
 import { useEffect, useRef } from "react";
@@ -23,8 +23,9 @@ import { useEffect, useRef } from "react";
 import SnackbarListener from "@component/common/SnackbarListener";
 import { useAppAuthContext } from "@context/AuthContext";
 
-import wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
-import wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
+import wso2LogoBlack from "@assets/images/wso2-logo-black.svg";
+import wso2LogoWhite from "@assets/images/wso2-logo-white.svg";
+
 import { State } from "@/types/types";
 import { useIsDark } from "@config/brand";
 import { CareersSiteUrl } from "@config/config";
@@ -38,9 +39,11 @@ import {
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { dataNeededBy } from "@utils/routeData";
 
-// The Jobs link leaves for the wso2.com careers page; the other links are pages of this app.
-const NAV_ITEMS: { label: string; icon: typeof Briefcase; path?: string; href?: string }[] = [
-  { href: CareersSiteUrl, label: "Jobs", icon: Briefcase },
+// The height of the logo and the size of the word next to it, in pixels, so the two match.
+const BRAND_SIZE = 22;
+
+// The pages of this app. Jobs are found on the wso2.com careers page, so there is no link for them here.
+const NAV_ITEMS: { label: string; icon: typeof ClipboardList; path: string }[] = [
   { path: "/applications", label: "Applications", icon: ClipboardList },
   { path: "/profile", label: "Profile", icon: User },
 ];
@@ -94,8 +97,8 @@ const AppShell = () => {
     appSignOut();
   }, [sessionExpired, dispatch, appSignOut]);
 
-  // Guests only see the Jobs link.
-  const navItems = isSignedIn ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href);
+  // The links are for signed-in candidates; a guest has none.
+  const navItems = isSignedIn ? NAV_ITEMS : [];
 
   const isActive = (path?: string) => !!path && location.pathname.startsWith(path);
 
@@ -125,13 +128,30 @@ const AppShell = () => {
           px: { xs: 2, md: 3 },
         }}
       >
-        <Box component="a" href="https://wso2.com" aria-label="Go to the WSO2 home page" sx={{ display: "flex" }}>
+        {/* The logo and the word next to it are one link, to the vacancies on the wso2.com careers page. */}
+        <Box
+          component="a"
+          href={CareersSiteUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="WSO2 Careers: see the open positions"
+          sx={{ display: "flex", alignItems: "center", gap: "3px", textDecoration: "none", color: "text.primary" }}
+        >
           <Box
             component="img"
             src={isDark ? wso2LogoWhite : wso2LogoBlack}
             alt=""
-            sx={{ height: 40, width: "auto" }}
+            sx={{ height: BRAND_SIZE, width: "auto" }}
           />
+          <Typography
+            component="span"
+            fontSize={BRAND_SIZE}
+            lineHeight={1}
+            fontWeight={600}
+            color="text.primary"
+          >
+            Careers
+          </Typography>
         </Box>
 
         <Stack direction="row" alignItems="center" gap={0.5}>
@@ -143,7 +163,7 @@ const AppShell = () => {
                 <Tooltip key={item.label} title={item.label} arrow disableInteractive>
                   <Box
                     component="button"
-                    onClick={() => (item.href ? window.open(item.href, "_blank", "noopener,noreferrer") : navigate(item.path ?? "/"))}
+                    onClick={() => navigate(item.path)}
                     aria-label={item.label}
                     aria-current={active ? "page" : undefined}
                     sx={{
