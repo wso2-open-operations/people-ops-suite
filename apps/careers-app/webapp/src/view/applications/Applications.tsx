@@ -93,7 +93,6 @@ const Applications = () => {
   const selectedId = selectedApplication?.id;
   const extras = useAppSelector((state: RootState) => (selectedId ? state.careers.applicationExtras[selectedId] : undefined));
   const generation = useAppSelector((state: RootState) => state.careers.sessionGeneration);
-  const offerLetter: OfferLetter | null = extras?.offerLetter ?? null;
   const interviews = extras?.interviews ?? NO_INTERVIEWS;
   // Undefined while the check is loading, null when it failed.
   const documentsStatus: DocumentsStatus | null | undefined = extras?.documentsStatus;
@@ -103,6 +102,8 @@ const Applications = () => {
   const hasOffer =
     selectedApplication?.status === ApplicationStatus.Offer ||
     selectedApplication?.status === ApplicationStatus.OfferAccepted;
+  // The stored letter is hidden once the offer is declined or the application moves on, since it stays in the store.
+  const offerLetter: OfferLetter | null = hasOffer ? (extras?.offerLetter ?? null) : null;
 
   // The offer letter, shown once the candidate has an offer or has accepted one; a failed load shows nothing.
   useEffect(() => {
