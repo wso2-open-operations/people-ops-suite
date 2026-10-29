@@ -259,7 +259,12 @@ const Documents = () => {
 
   return (
     <PageContainer>
-      <Button startIcon={<ArrowLeft size={16} />} onClick={backToApplication} sx={{ mb: 2, ml: -1, fontWeight: 600 }}>
+      <Button
+        variant="outlined"
+        startIcon={<ArrowLeft size={16} />}
+        onClick={backToApplication}
+        sx={{ ...pillButtonSx, mb: 2, px: 2.5 }}
+      >
         Application
       </Button>
 

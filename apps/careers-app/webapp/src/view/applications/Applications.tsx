@@ -47,6 +47,7 @@ import {
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { fetchDocumentsStatus, fetchInterviews, fetchOfferLetter } from "@utils/profileService";
+import { pillButtonSx } from "@utils/styles";
 import AcceptOfferDialog from "@view/applications/components/AcceptOfferDialog";
 import ApplicationDetails from "@view/applications/components/ApplicationDetails";
 import ApplicationList from "@view/applications/components/ApplicationList";
@@ -241,9 +242,10 @@ const Applications = () => {
       {applicationId ? (
         <>
           <Button
+            variant="outlined"
             startIcon={<ArrowLeft size={16} />}
             onClick={() => navigate("/applications")}
-            sx={{ mb: 2, ml: -1, fontWeight: 600 }}
+            sx={{ ...pillButtonSx, mb: 2, px: 2.5 }}
           >
             Applications
           </Button>
