@@ -30,6 +30,8 @@ import ApplicationListCard from "@view/applications/components/ApplicationListCa
 interface ApplicationListProps {
   applications: Application[];
   applicationsState: State;
+  // The email the candidate signed in with, which the applications are found by.
+  signedInEmail?: string;
   onView: (applicationId: string) => void;
   onBrowseJobs: () => void;
   onRetry: () => void;
@@ -43,7 +45,14 @@ const TABS: { key: ApplicationFilter; label: string }[] = [
 ];
 
 // The applications list with its loading, failed and empty states, tabs and cards.
-const ApplicationList = ({ applications, applicationsState, onView, onBrowseJobs, onRetry }: ApplicationListProps) => {
+const ApplicationList = ({
+  applications,
+  applicationsState,
+  signedInEmail,
+  onView,
+  onBrowseJobs,
+  onRetry,
+}: ApplicationListProps) => {
   // The tab the candidate picked; the default one until then.
   const [chosenTab, setChosenTab] = useState<ApplicationFilter | null>(null);
   const tab = chosenTab ?? defaultTabOf(applications);
@@ -72,13 +81,15 @@ const ApplicationList = ({ applications, applicationsState, onView, onBrowseJobs
           <CardContent sx={{ py: 8, textAlign: "center" }}>
             <ClipboardList size={48} style={{ marginBottom: 16, opacity: 0.4 }} />
             <Typography variant="h6" fontWeight={600} mb={1} color="text.primary">
-              No Applications Yet
+              No Applications Found
             </Typography>
             <Typography color="text.secondary" mb={3} fontSize="0.9rem">
-              You haven&apos;t applied to any positions. Start exploring open roles!
+              {signedInEmail
+                ? `We could not find an application for ${signedInEmail}. Sign in with the email you applied with, or apply for a position.`
+                : "We could not find an application. Sign in with the email you applied with, or apply for a position."}
             </Typography>
             <Button variant="contained" onClick={onBrowseJobs}>
-              Browse Jobs
+              Browse jobs
             </Button>
           </CardContent>
         </Card>

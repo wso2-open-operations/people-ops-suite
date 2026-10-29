@@ -27,24 +27,20 @@ import wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
 import wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
 import { State } from "@/types/types";
 import { useIsDark } from "@config/brand";
+import { CareersSiteUrl } from "@config/config";
 import {
   applicationsFailed,
   clearUserData,
   loadApplications,
-  loadFailed,
-  loadJobDetail,
-  loadJobs,
-  loadOrgStructure,
   loadProfile,
   profileFailed,
-  setSavedJobs,
 } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { dataNeededBy } from "@utils/routeData";
-import { readSavedJobs } from "@utils/savedJobs";
 
-const NAV_ITEMS = [
-  { path: "/jobs", label: "Jobs", icon: Briefcase },
+// The Jobs link leaves for the wso2.com careers page; the other links are pages of this app.
+const NAV_ITEMS: { label: string; icon: typeof Briefcase; path?: string; href?: string }[] = [
+  { href: CareersSiteUrl, label: "Jobs", icon: Briefcase },
   { path: "/applications", label: "Applications", icon: ClipboardList },
   { path: "/profile", label: "Profile", icon: User },
 ];
@@ -56,76 +52,12 @@ const AppShell = () => {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const { getToken: getAccessToken, isSignedIn, appSignIn, appSignOut } = useAppAuthContext();
-  const jobsState = useAppSelector((state: RootState) => state.careers.jobsState);
-  const orgStructureState = useAppSelector((state: RootState) => state.careers.orgStructureState);
   const applicationsState = useAppSelector((state: RootState) => state.careers.applicationsState);
   const profileState = useAppSelector((state: RootState) => state.careers.profileState);
   const sessionExpired = useAppSelector((state: RootState) => state.careers.sessionExpired);
-  const jobs = useAppSelector((state: RootState) => state.careers.jobs);
-  const jobDetails = useAppSelector((state: RootState) => state.careers.jobDetails);
-
-  // Latest job details for the prefetch below.
-  const jobDetailsRef = useRef(jobDetails);
-  jobDetailsRef.current = jobDetails;
 
   // The data the open route needs.
-  const {
-    jobs: needsJobs,
-    orgStructure: needsOrgStructure,
-    jobDetails: needsJobDetails,
-    applications: needsApplications,
-    profile: needsProfile,
-  } = dataNeededBy(useMatches());
-
-  // Loads the job list and org structure for the open route.
-  useEffect(() => {
-    const loadJobList = needsJobs && jobsState === State.idle;
-    const loadOrgs = needsOrgStructure && orgStructureState === State.idle;
-    if (!loadJobList && !loadOrgs) return;
-    // Set when the effect is replaced before the token arrives, so the newer one does the load.
-    let cancelled = false;
-    getAccessToken()
-      .then((token) => {
-        if (cancelled) return;
-        if (loadJobList) dispatch(loadJobs(token));
-        if (loadOrgs) dispatch(loadOrgStructure(token));
-      })
-      .catch(() => {
-        if (!cancelled) dispatch(loadFailed());
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [dispatch, getAccessToken, jobsState, orgStructureState, needsJobs, needsOrgStructure]);
-
-  // Prefetches each job's detail in the background.
-  useEffect(() => {
-    if (jobsState !== State.success || !needsJobDetails) return;
-    const queue = jobs.map((job) => job.id).filter((jobId) => !jobDetailsRef.current[jobId]);
-    if (queue.length === 0) return;
-
-    // Two at a time; stops after two failures.
-    let cancelled = false;
-    let failures = 0;
-    const worker = async () => {
-      try {
-        const token = await getAccessToken();
-        while (!cancelled && failures < 2) {
-          const jobId = queue.shift();
-          if (!jobId) return;
-          const result = await dispatch(loadJobDetail({ accessToken: token, jobId }));
-          if (loadJobDetail.rejected.match(result)) failures += 1;
-        }
-      } catch {
-        // No token: the job page loads its own detail on demand.
-      }
-    };
-    Array.from({ length: 2 }, worker);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [jobsState, jobs, needsJobDetails, dispatch, getAccessToken]);
+  const { applications: needsApplications, profile: needsProfile } = dataNeededBy(useMatches());
 
   // Loads the candidate's applications and profile for the open route.
   useEffect(() => {
@@ -155,19 +87,6 @@ const AppShell = () => {
     if (!isSignedIn) dispatch(clearUserData());
   }, [isSignedIn, dispatch]);
 
-  // Restores the candidate's saved jobs on sign-in.
-  const userId = useAppSelector((state: RootState) => state.auth.decodedIdToken?.sub);
-  const savedJobsOf = useRef<string | null>(null);
-  useEffect(() => {
-    if (!isSignedIn || !userId) {
-      savedJobsOf.current = null;
-      return;
-    }
-    if (savedJobsOf.current === userId) return;
-    savedJobsOf.current = userId;
-    dispatch(setSavedJobs(readSavedJobs(userId)));
-  }, [isSignedIn, userId, dispatch]);
-
   // Signs the candidate out when the backend refuses the access token.
   useEffect(() => {
     if (!sessionExpired) return;
@@ -176,9 +95,9 @@ const AppShell = () => {
   }, [sessionExpired, dispatch, appSignOut]);
 
   // Guests only see the Jobs link.
-  const navItems = isSignedIn ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.path === "/jobs");
+  const navItems = isSignedIn ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href);
 
-  const isActive = (path: string) => location.pathname.startsWith(path);
+  const isActive = (path?: string) => !!path && location.pathname.startsWith(path);
 
   // Resets the scroll of the page container on a route change.
   const contentRef = useRef<HTMLDivElement>(null);
@@ -221,10 +140,10 @@ const AppShell = () => {
             {navItems.map((item) => {
               const active = isActive(item.path);
               return (
-                <Tooltip key={item.path} title={item.label} arrow disableInteractive>
+                <Tooltip key={item.label} title={item.label} arrow disableInteractive>
                   <Box
                     component="button"
-                    onClick={() => navigate(item.path)}
+                    onClick={() => (item.href ? window.open(item.href, "_blank", "noopener,noreferrer") : navigate(item.path ?? "/"))}
                     aria-label={item.label}
                     aria-current={active ? "page" : undefined}
                     sx={{
@@ -308,7 +227,7 @@ const AppShell = () => {
             <Button
               size="small"
               variant="contained"
-              onClick={appSignIn}
+              onClick={() => appSignIn()}
               sx={{ ml: 1, fontWeight: 700, borderRadius: "999px", px: 2.5 }}
             >
               Sign in

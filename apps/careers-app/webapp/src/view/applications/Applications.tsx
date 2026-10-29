@@ -29,6 +29,7 @@ import {
 } from "@/types/types";
 import CenteredSpinner from "@component/common/CenteredSpinner";
 import PageContainer from "@component/common/PageContainer";
+import { CareersSiteUrl } from "@config/config";
 import { ApplicationStatus, OFFER_CONFLICT_ERROR, OFFER_EXPIRED_ERROR, SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
 import {
@@ -45,7 +46,6 @@ import {
 } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
-import { jobPath } from "@utils/jobFilterUtils";
 import { fetchDocumentsStatus, fetchInterviews, fetchOfferLetter } from "@utils/profileService";
 import AcceptOfferDialog from "@view/applications/components/AcceptOfferDialog";
 import ApplicationDetails from "@view/applications/components/ApplicationDetails";
@@ -62,8 +62,8 @@ const Applications = () => {
   const { getToken } = useAppAuthContext();
   const applications = useAppSelector((state: RootState) => state.careers.applications);
   const applicationsState = useAppSelector((state: RootState) => state.careers.applicationsState);
-  const jobs = useAppSelector((state: RootState) => state.careers.jobs);
-  const jobsState = useAppSelector((state: RootState) => state.careers.jobsState);
+  // The email the candidate signed in with, which the applications are found by.
+  const signedInEmail = useAppSelector((state: RootState) => state.auth.userInfo?.email ?? state.auth.userInfo?.username);
 
   // The list, or one application's details when the URL has an id.
   const { id: applicationId } = useParams<{ id: string }>();
@@ -251,11 +251,6 @@ const Applications = () => {
           {selectedApplication ? (
             <ApplicationDetails
               application={selectedApplication}
-              jobOpen={jobsState !== State.success || jobs.some((job) => job.id === selectedApplication.jobId)}
-              onOpenJob={(jobId) => {
-                const job = jobs.find((j) => j.id === jobId);
-                navigate(job ? jobPath(job) : `/jobs/${jobId}`);
-              }}
               canAcceptOffer={!applications.some((a) => a.status === ApplicationStatus.OfferAccepted)}
               onAcceptOffer={() => setOfferDialog("accept")}
               onDeclineOffer={() => setOfferDialog("decline")}
@@ -275,8 +270,9 @@ const Applications = () => {
         <ApplicationList
           applications={applications}
           applicationsState={applicationsState}
+          signedInEmail={signedInEmail}
           onView={(id) => navigate(`/applications/${id}`)}
-          onBrowseJobs={() => navigate("/jobs")}
+          onBrowseJobs={() => window.open(CareersSiteUrl, "_blank", "noopener,noreferrer")}
           onRetry={() => dispatch(retryApplications())}
         />
       )}
