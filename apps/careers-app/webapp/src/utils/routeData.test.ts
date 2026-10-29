@@ -27,26 +27,26 @@ const none: RouteData = {
 };
 
 describe("dataNeededBy", () => {
-  it.each([
-    ["/", { jobs: true, orgStructure: true, jobDetails: true }],
-    ["/jobs", { jobs: true, orgStructure: true, jobDetails: true }],
-    ["/jobs/228", { jobs: true, jobDetails: true, profile: true }],
-    ["/jobs/228/intern-customer-success", { jobs: true, jobDetails: true, profile: true }],
-    ["/applications", { jobs: true, applications: true }],
-    ["/applications/5442", { jobs: true, applications: true }],
-    ["/applications/5442/documents", { applications: true, profile: true }],
-    ["/profile", { profile: true }],
-  ])("loads only what %s reads", (pathname, needed) => {
-    expect(dataNeededBy(pathname)).toEqual({ ...none, ...needed });
+  it("needs nothing when no matched route declares anything", () => {
+    expect(dataNeededBy([])).toEqual(none);
+    expect(dataNeededBy([{}, { handle: undefined }, { handle: {} }])).toEqual(none);
   });
 
-  it("reads a path with a trailing slash like the same path without it", () => {
-    expect(dataNeededBy("/applications/5442/")).toEqual(dataNeededBy("/applications/5442"));
-    expect(dataNeededBy("/profile/")).toEqual(dataNeededBy("/profile"));
+  it("needs what the matched route declares", () => {
+    expect(dataNeededBy([{ handle: { needs: ["jobs", "applications"] } }])).toEqual({
+      ...none,
+      jobs: true,
+      applications: true,
+    });
   });
 
-  it("loads nothing for a path the app does not have", () => {
-    expect(dataNeededBy("/nowhere")).toEqual(none);
-    expect(dataNeededBy("/applications/5442/other")).toEqual(none);
+  it("combines what a route and the routes around it declare", () => {
+    expect(
+      dataNeededBy([
+        { handle: { needs: ["profile"] } },
+        { handle: undefined },
+        { handle: { needs: ["jobs"] } },
+      ]),
+    ).toEqual({ ...none, profile: true, jobs: true });
   });
 });

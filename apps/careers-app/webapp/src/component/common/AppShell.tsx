@@ -16,7 +16,7 @@
 
 import { Box, Button, Stack, Tooltip, useTheme } from "@mui/material";
 import { Briefcase, ClipboardList, LogOut, Moon, Sun, User } from "lucide-react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
 
 import { useContext, useEffect, useRef } from "react";
 
@@ -76,7 +76,7 @@ const AppShell = () => {
     jobDetails: needsJobDetails,
     applications: needsApplications,
     profile: needsProfile,
-  } = dataNeededBy(location.pathname);
+  } = dataNeededBy(useMatches());
 
   // Loads the job list and org structure for the open route.
   useEffect(() => {

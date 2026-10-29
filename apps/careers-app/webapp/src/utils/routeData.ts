@@ -14,31 +14,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { matchPath } from "react-router-dom";
+// A piece of store data that a route reads.
+export type RouteNeed = "jobs" | "orgStructure" | "jobDetails" | "applications" | "profile";
 
-// The store data a route needs.
-export interface RouteData {
-  jobs: boolean;
-  orgStructure: boolean;
-  jobDetails: boolean;
-  applications: boolean;
-  profile: boolean;
+// Set as `handle` on a route in app/AppHandler.tsx, so what a route needs is declared on the route itself.
+export interface RouteHandle {
+  needs?: RouteNeed[];
 }
 
-const isAt = (pattern: string, pathname: string) => matchPath({ path: pattern, end: true }, pathname) !== null;
+// The store data the open route needs.
+export type RouteData = Record<RouteNeed, boolean>;
 
-// The data the route at the path needs; keep in step with app/AppHandler.tsx.
-export function dataNeededBy(pathname: string): RouteData {
-  const onJobList = isAt("/", pathname) || isAt("/jobs", pathname);
-  const onJobPage = isAt("/jobs/:id/:slug?", pathname);
-  const onApplications = isAt("/applications", pathname) || isAt("/applications/:id", pathname);
-  const onDocuments = isAt("/applications/:id/documents", pathname);
-  return {
-    // The job list tells whether a vacancy is still open.
-    jobs: onJobList || onJobPage || onApplications,
-    orgStructure: onJobList,
-    jobDetails: onJobList || onJobPage,
-    applications: onApplications || onDocuments,
-    profile: isAt("/profile", pathname) || onJobPage || onDocuments,
+// The data needed by the matched routes, read from their handles. A route without a handle needs nothing.
+export function dataNeededBy(matches: { handle?: unknown }[]): RouteData {
+  const needed: RouteData = {
+    jobs: false,
+    orgStructure: false,
+    jobDetails: false,
+    applications: false,
+    profile: false,
   };
+  for (const match of matches) {
+    for (const need of (match.handle as RouteHandle | undefined)?.needs ?? []) needed[need] = true;
+  }
+  return needed;
 }
