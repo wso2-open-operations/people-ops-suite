@@ -14,15 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Navigate, Outlet, RouterProvider, createBrowserRouter, useLocation } from "react-router-dom";
+import { Navigate, Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import { useEffect, useMemo } from "react";
 
 import AppShell from "@component/common/AppShell";
 import NotFoundPage from "@component/common/NotFoundPage";
 import PreLoader from "@component/common/PreLoader";
+import { CareersSiteUrl } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
-import { opensDirectly } from "@utils/jobFilterUtils";
 import type { RouteHandle } from "@utils/routeData";
 import { View } from "@view/index";
 
@@ -34,15 +34,16 @@ const RequireSignIn = () => {
     if (!isSignedIn) appSignIn();
   }, [isSignedIn, appSignIn]);
 
-  return isSignedIn ? <Outlet /> : <PreLoader isLoading message="Taking you to sign in ..." />;
+  return isSignedIn ? <Outlet /> : <PreLoader isLoading message="Authenticating..." />;
 };
 
-// Shows a job when it was opened from inside the app, or from a link made for it (a new tab, a share). An address
-// typed into the browser goes to the list.
-const JobPage = () => {
-  const { key, search } = useLocation();
-  const allowed = key !== "default" || opensDirectly(search);
-  return allowed ? <View.jobDetail /> : <Navigate to="/jobs" replace />;
+// Sends the visitor to the wso2.com careers page, for the old job addresses of this app.
+const CareersSiteRedirect = () => {
+  useEffect(() => {
+    window.location.replace(CareersSiteUrl);
+  }, []);
+
+  return <PreLoader isLoading message="Taking you to the careers page ..." />;
 };
 
 const AppHandler = () => {
@@ -53,37 +54,28 @@ const AppHandler = () => {
           element: <AppShell />,
           errorElement: <NotFoundPage />,
           children: [
-            { path: "/", element: <Navigate to="/jobs" replace /> },
-            {
-              path: "/jobs",
-              element: <View.jobs />,
-              handle: { needs: ["jobs", "orgStructure", "jobDetails"] } satisfies RouteHandle,
-            },
-            {
-              path: "/jobs/:id/:slug?",
-              element: <JobPage />,
-              handle: { needs: ["jobs", "jobDetails", "profile"] } satisfies RouteHandle,
-            },
+            { path: "/", element: <View.landing /> },
+            { path: "/jobs", element: <CareersSiteRedirect /> },
+            { path: "/jobs/*", element: <CareersSiteRedirect /> },
             {
               element: <RequireSignIn />,
               children: [
-                // The address Asgardeo's "Sign in" links return to: it starts the sign-in, then opens the jobs.
-                { path: "/sign-in", element: <Navigate to="/jobs" replace /> },
+                // The address Asgardeo's "Sign in" links return to: it starts the sign-in, then opens the applications.
+                { path: "/sign-in", element: <Navigate to="/applications" replace /> },
                 {
                   path: "/profile",
                   element: <View.profile />,
                   handle: { needs: ["profile"] } satisfies RouteHandle,
                 },
-                // The job list tells whether a vacancy is still open.
                 {
                   path: "/applications",
                   element: <View.applications />,
-                  handle: { needs: ["jobs", "applications"] } satisfies RouteHandle,
+                  handle: { needs: ["applications"] } satisfies RouteHandle,
                 },
                 {
                   path: "/applications/:id",
                   element: <View.applications />,
-                  handle: { needs: ["jobs", "applications"] } satisfies RouteHandle,
+                  handle: { needs: ["applications"] } satisfies RouteHandle,
                 },
                 {
                   path: "/applications/:id/documents",

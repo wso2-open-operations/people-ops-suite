@@ -25,7 +25,8 @@ import { setUserAuthData } from "@slices/authSlice/auth";
 import { useAppDispatch } from "@slices/store";
 
 type AuthContextType = {
-  appSignIn: () => void;
+  // Opens the sign-in page; the email, when given, is filled in there.
+  appSignIn: (email?: string) => void;
   appSignOut: () => void;
   // False for visitors browsing without an account.
   isSignedIn: boolean;
@@ -79,9 +80,12 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     loadUser();
   }, [isAuthenticated, userLoaded, getBasicUserInfo, getDecodedIDToken, dispatch, signOut]);
 
-  const appSignIn = useCallback(() => {
-    signIn();
-  }, [signIn]);
+  const appSignIn = useCallback(
+    (email?: string) => {
+      signIn(email ? { login_hint: email } : undefined);
+    },
+    [signIn],
+  );
 
   const appSignOut = useCallback(() => {
     setUserLoaded(false);
@@ -145,14 +149,14 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   );
 
   if (isLoading) {
-    return <PreLoader isLoading message="Setting up your Candidate Passport ..." />;
+    return <PreLoader isLoading message="Authenticating..." />;
   }
 
   return (
     <AuthContext.Provider value={authContext}>
       <SessionWarningDialog open={sessionWarningOpen} handleContinue={handleContinue} appSignOut={appSignOut} />
       {isAuthenticated && !userLoaded ? (
-        <PreLoader isLoading message="Setting up your Candidate Passport ..." />
+        <PreLoader isLoading message="Authenticating..." />
       ) : (
         props.children
       )}
