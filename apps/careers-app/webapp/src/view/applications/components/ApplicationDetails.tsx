@@ -17,10 +17,7 @@
 import { Box, Button, Card, CardContent, Skeleton, Stack, Step, StepLabel, Stepper, Typography } from "@wso2/oxygen-ui";
 import { Award, Info } from "@wso2/oxygen-ui-icons-react";
 
-import DOMPurify from "dompurify";
-import { useState } from "react";
-
-import type { Application, ApplicationInterview, DocumentsStatus, OfferLetter } from "@/types/types";
+import type { Application, ApplicationInterview, DocumentsStatus } from "@/types/types";
 import ApplicationStatusBadge from "@component/careers/ApplicationStatusBadge";
 import Callout from "@component/common/Callout";
 import { ApplicationStatus } from "@config/constant";
@@ -46,8 +43,6 @@ interface ApplicationDetailsProps {
   onAcceptOffer: () => void;
   onDeclineOffer: () => void;
   onSubmitDocuments: () => void;
-  // The offer letter that was sent, when the ATS has it.
-  offerLetter: OfferLetter | null;
   // The interviews of the application, past and upcoming.
   interviews: ApplicationInterview[];
   // Documents submission status; undefined while loading, null when it failed.
@@ -61,12 +56,10 @@ const ApplicationDetails = ({
   onAcceptOffer,
   onDeclineOffer,
   onSubmitDocuments,
-  offerLetter,
   interviews,
   documentsStatus,
   onRetryDocumentsStatus,
 }: ApplicationDetailsProps) => {
-  const [letterOpen, setLetterOpen] = useState(false);
   const actionNeeded = isOffer(application);
   // An upcoming interview is shown in orange.
   const interviewComing = upcomingInterviewOf(application, interviews) !== undefined;
@@ -202,30 +195,6 @@ const ApplicationDetails = ({
               </>
             )}
           </Callout>
-        )}
-
-        {offerLetter && (
-          <Box sx={{ mb: 3, p: 2, border: "1px solid", borderColor: "divider", borderRadius: "8px" }}>
-            <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
-              Your offer letter
-            </Typography>
-            <Typography fontSize="0.9rem" color="text.primary" mt={0.5} sx={{ wordBreak: "break-word" }}>
-              {offerLetter.subject}
-            </Typography>
-            <Typography fontSize="0.85rem" color="text.secondary">
-              Sent on {formatDate(offerLetter.sentOn)}
-              {offerLetter.threadId && ` · Email reference: ${offerLetter.threadId}`}
-            </Typography>
-            <Button size="small" onClick={() => setLetterOpen((open) => !open)} sx={{ fontWeight: 600, mt: 1, ml: -1 }}>
-              {letterOpen ? "Hide letter" : "Show letter"}
-            </Button>
-            {letterOpen && (
-              <Box
-                sx={{ mt: 1, fontSize: "0.9rem", overflowX: "auto", "& img": { maxWidth: "100%" } }}
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(offerLetter.html) }}
-              />
-            )}
-          </Box>
         )}
 
         {application.status === ApplicationStatus.OfferDeclined && (

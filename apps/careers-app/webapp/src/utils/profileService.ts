@@ -25,7 +25,6 @@ import {
   DocumentsStatus,
   EditableProfileFields,
   OfferAnswer,
-  OfferLetter,
   PersonalDetails,
 } from "@/types/types";
 import { AppConfig } from "@config/config";
@@ -107,21 +106,6 @@ export async function respondToOffer(
     const status = axios.isAxiosError(error) ? error.response?.status : undefined;
     if (status === 409) throw refused(OFFER_CONFLICT_ERROR, "The offer cannot be answered.");
     if (status === 410) throw refused(OFFER_EXPIRED_ERROR, "The offer has expired.");
-    throw error;
-  }
-}
-
-// The offer letter sent for one of the candidate's applications, or null when none was found.
-export async function fetchOfferLetter(accessToken: string, applicationId: string): Promise<OfferLetter | null> {
-  try {
-    return await send(
-      axios.get<OfferLetter>(
-        `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/offer-letter`,
-        requestOptions(accessToken),
-      ),
-    );
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 404) return null;
     throw error;
   }
 }

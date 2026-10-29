@@ -57,10 +57,10 @@ describe("setApplicationExtras", () => {
     );
     state = reducer(
       state,
-      setApplicationExtras({ id: "a2", generation: state.sessionGeneration, extras: { offerLetter: null } }),
+      setApplicationExtras({ id: "a2", generation: state.sessionGeneration, extras: { documentsStatus: null } }),
     );
     expect(Object.keys(state.applicationExtras)).toEqual(["a1", "a2"]);
-    expect(state.applicationExtras.a2).toEqual({ offerLetter: null });
+    expect(state.applicationExtras.a2).toEqual({ documentsStatus: null });
   });
 
   it("drops a reply that arrives after the candidate's data was cleared", () => {
@@ -91,12 +91,12 @@ describe("load marks", () => {
       setApplicationExtras({
         id: "a1",
         generation,
-        extras: { offerLetter: null, loaded: { offerLetter: { at: 2, version: "v1" } } },
+        extras: { documentsStatus: null, loaded: { documentsStatus: { at: 2, version: "v1" } } },
       }),
     );
     expect(state.applicationExtras.a1.loaded).toEqual({
       interviews: { at: 1, version: "v1" },
-      offerLetter: { at: 2, version: "v1" },
+      documentsStatus: { at: 2, version: "v1" },
     });
   });
 

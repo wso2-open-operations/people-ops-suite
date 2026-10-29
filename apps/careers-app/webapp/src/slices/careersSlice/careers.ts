@@ -24,7 +24,6 @@ import {
   DocumentsStatus,
   EditableProfileFields,
   OfferAnswer,
-  OfferLetter,
   State,
 } from "@/types/types";
 import {
@@ -37,7 +36,7 @@ import {
 } from "@utils/profileService";
 
 // The fields of ApplicationExtras that are loaded from the backend.
-export type ExtrasField = "offerLetter" | "interviews" | "documentsStatus";
+export type ExtrasField = "interviews" | "documentsStatus";
 
 // When a field was loaded, and the application's status and last change at that time.
 export interface LoadedMark {
@@ -47,7 +46,6 @@ export interface LoadedMark {
 
 // What the application page loads for one application; a field is missing until it has been loaded once.
 export interface ApplicationExtras {
-  offerLetter?: OfferLetter | null;
   interviews?: ApplicationInterview[];
   // Undefined while loading, null when the check failed.
   documentsStatus?: DocumentsStatus | null;

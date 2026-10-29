@@ -24,7 +24,6 @@ import {
   type ApplicationInterview,
   type DocumentsStatus,
   type OfferAnswer,
-  type OfferLetter,
   State,
 } from "@/types/types";
 import CenteredSpinner from "@component/common/CenteredSpinner";
@@ -46,7 +45,7 @@ import {
 } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
-import { fetchDocumentsStatus, fetchInterviews, fetchOfferLetter } from "@utils/profileService";
+import { fetchDocumentsStatus, fetchInterviews } from "@utils/profileService";
 import { pillButtonSx } from "@utils/styles";
 import AcceptOfferDialog from "@view/applications/components/AcceptOfferDialog";
 import ApplicationDetails from "@view/applications/components/ApplicationDetails";
@@ -107,28 +106,6 @@ const Applications = () => {
   // shows it, and the page asks the backend again when it is missing, failed or out of date.
   const version = selectedApplication ? extrasVersionOf(selectedApplication) : "";
   const markLoaded = (): LoadedMark => ({ at: Date.now(), version });
-
-  const hasOffer =
-    selectedApplication?.status === ApplicationStatus.Offer ||
-    selectedApplication?.status === ApplicationStatus.OfferAccepted;
-  // The stored letter is hidden once the offer is declined or the application moves on, since it stays in the store.
-  const offerLetter: OfferLetter | null = hasOffer ? (extras?.offerLetter ?? null) : null;
-
-  // The offer letter, shown once the candidate has an offer or has accepted one; a failed load shows nothing.
-  useEffect(() => {
-    if (!selectedId || !hasOffer || isExtrasFresh(extras, "offerLetter", version)) return;
-    let cancelled = false;
-    getToken()
-      .then((token) => fetchOfferLetter(token, selectedId))
-      .then((letter) => {
-        if (!cancelled) keep(selectedId, { offerLetter: letter, loaded: { offerLetter: markLoaded() } });
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, hasOffer, getToken, generation, version]);
 
   // The interviews of the opened application, past and upcoming; none when they cannot be loaded.
   useEffect(() => {
@@ -257,7 +234,6 @@ const Applications = () => {
               onAcceptOffer={() => setOfferDialog("accept")}
               onDeclineOffer={() => setOfferDialog("decline")}
               onSubmitDocuments={() => navigate(`/applications/${selectedApplication.id}/documents`)}
-              offerLetter={offerLetter}
               interviews={interviews}
               documentsStatus={documentsStatus}
               onRetryDocumentsStatus={retryDocumentsStatus}

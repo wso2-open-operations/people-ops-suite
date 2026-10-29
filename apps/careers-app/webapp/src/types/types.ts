@@ -88,18 +88,6 @@ export interface OfferAnswer {
   comment?: string;
 }
 
-// The offer letter a candidate was sent.
-export interface OfferLetter {
-  // The subject of the email the letter was sent in.
-  subject: string;
-  // ISO date-time the letter was sent.
-  sentOn: string;
-  // A reference to the email thread the letter was sent in; empty when there is none.
-  threadId: string;
-  // The letter itself, as HTML.
-  html: string;
-}
-
 // The personal details a new joiner fills in after accepting an offer.
 export interface PersonalDetails {
   title: string;
