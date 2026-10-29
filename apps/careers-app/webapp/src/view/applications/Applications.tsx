@@ -141,12 +141,16 @@ const Applications = () => {
   const [documentsStatusAttempt, setDocumentsStatusAttempt] = useState(0);
   const hasAcceptedOffer = selectedApplication?.status === ApplicationStatus.OfferAccepted;
 
+  // A retry shows the loading state again, for the opened application only.
+  const retryDocumentsStatus = () => {
+    if (selectedId) keep(selectedId, { documentsStatus: undefined });
+    setDocumentsStatusAttempt((current) => current + 1);
+  };
+
   // Whether the documents were already submitted. A status already known stays on screen while it is checked again.
   useEffect(() => {
     if (!selectedId || !hasAcceptedOffer) return;
     let cancelled = false;
-    // A retry shows the loading state again.
-    if (documentsStatusAttempt > 0) keep(selectedId, { documentsStatus: undefined });
     getToken()
       .then((token) => fetchDocumentsStatus(token, selectedId))
       .then((loaded) => {
@@ -251,7 +255,7 @@ const Applications = () => {
               offerLetter={offerLetter}
               interviews={interviews}
               documentsStatus={documentsStatus}
-              onRetryDocumentsStatus={() => setDocumentsStatusAttempt((current) => current + 1)}
+              onRetryDocumentsStatus={retryDocumentsStatus}
             />
           ) : stillLoading ? (
             <CenteredSpinner />
