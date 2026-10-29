@@ -33,8 +33,6 @@ export const BRAND_TINT = {
 // Side margin of a page by breakpoint (116px on wide screens) and its inner padding.
 export const PAGE_MARGIN_X = { xs: 0, md: "48px", lg: "116px" };
 export const PAGE_PADDING_X = "15px";
-// The side margin as a negative value.
-export const PAGE_PULL_LEFT = { xs: 0, md: "-48px", lg: "-116px" };
 
 // Text on the brand orange: dark in both modes.
 export const ON_ORANGE = "#0B1220";

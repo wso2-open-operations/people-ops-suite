@@ -42,9 +42,6 @@ import ProgressHistory from "@view/applications/components/ProgressHistory";
 
 interface ApplicationDetailsProps {
   application: Application;
-  // Whether the vacancy is still listed.
-  jobOpen: boolean;
-  onOpenJob: (jobId: string) => void;
   canAcceptOffer: boolean;
   onAcceptOffer: () => void;
   onDeclineOffer: () => void;
@@ -60,8 +57,6 @@ interface ApplicationDetailsProps {
 
 const ApplicationDetails = ({
   application,
-  jobOpen,
-  onOpenJob,
   canAcceptOffer,
   onAcceptOffer,
   onDeclineOffer,
@@ -252,12 +247,6 @@ const ApplicationDetails = ({
         <InterviewsSection interviews={interviews} />
 
         <ProgressHistory entries={historyOf(application, interviews)} />
-
-        {jobOpen && (
-          <Button size="small" onClick={() => onOpenJob(application.jobId)} sx={{ fontWeight: 600 }}>
-            View job
-          </Button>
-        )}
       </CardContent>
     </Card>
   );

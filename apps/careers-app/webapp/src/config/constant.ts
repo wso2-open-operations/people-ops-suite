@@ -45,7 +45,6 @@ export const SnackMessage = {
 // The names of the errors raised when the backend refuses an offer answer.
 export const OFFER_CONFLICT_ERROR = "OfferConflictError";
 export const OFFER_EXPIRED_ERROR = "OfferExpiredError";
-export const JOB_NOT_FOUND_ERROR = "JobNotFoundError";
 
 export enum ApplicationStatus {
   Applied = "Applied",

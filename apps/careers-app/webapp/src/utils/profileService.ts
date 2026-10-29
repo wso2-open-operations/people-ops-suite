@@ -187,11 +187,6 @@ export async function submitDocuments(
   await send(changing ? axios.put(url, form, options) : axios.post(url, form, options));
 }
 
-// Lists an application the candidate just made when mock data is on.
-export function trackSubmittedApplication(jobId: string, jobTitle: string, department: string): void {
-  if (UseMockProfile) mockProfile.addApplication(jobId, jobTitle, department);
-}
-
 // The signed-in candidate's own applications.
 export async function fetchApplications(accessToken: string): Promise<Application[]> {
   if (UseMockProfile) return mockProfile.fetchApplications();

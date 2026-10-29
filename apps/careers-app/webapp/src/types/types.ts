@@ -47,29 +47,6 @@ export type EditableProfileFields = Pick<
   "firstName" | "lastName" | "gender" | "contactNo" | "address" | "university"
 >;
 
-export interface Job {
-  id: string;
-  title: string;
-  team: string;
-  country: string[];
-  jobType: string;
-  publishStatus: string;
-  postedDate: string;
-}
-
-// What an applicant submits alongside their CV.
-export interface GuestApplicationDetails {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-  university?: string;
-  authorizedToWork: boolean;
-  // Whether the candidate agreed to receive emails from WSO2.
-  marketingEmails: boolean;
-}
-
 interface ApplicationTimelineEvent {
   stage: ApplicationStatus;
   date: string;

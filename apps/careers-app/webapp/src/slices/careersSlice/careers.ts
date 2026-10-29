@@ -23,7 +23,6 @@ import {
   CandidateProfile,
   DocumentsStatus,
   EditableProfileFields,
-  Job,
   OfferAnswer,
   OfferLetter,
   State,
@@ -36,13 +35,6 @@ import {
   SESSION_EXPIRED_ERROR,
   submitFeedback as submitFeedbackApi,
 } from "@utils/profileService";
-import {
-  OrgStructure,
-  VacancyDetail,
-  fetchOrgStructure,
-  fetchVacancies,
-  fetchVacancyDetail,
-} from "@utils/vacancyService";
 
 // The fields of ApplicationExtras that are loaded from the backend.
 export type ExtrasField = "offerLetter" | "interviews" | "documentsStatus";
@@ -84,11 +76,6 @@ export function isExtrasFresh(
 interface CareersState {
   profile: CandidateProfile;
   profileState: State;
-  jobs: Job[];
-  jobsState: State;
-  jobDetails: Record<string, VacancyDetail>;
-  orgStructure: OrgStructure;
-  orgStructureState: State;
   applications: Application[];
   applicationsState: State;
   // The interviews, offer letter and documents status of each opened application, by application id, kept so a page
@@ -100,7 +87,6 @@ interface CareersState {
   sessionExpired: boolean;
   // Counts the clears of the candidate's data.
   sessionGeneration: number;
-  savedJobIds: string[];
 }
 
 // Error name of a request that ended after the candidate's data was cleared.
@@ -122,35 +108,13 @@ const emptyProfile: CandidateProfile = {
 const initialState: CareersState = {
   profile: emptyProfile,
   profileState: State.idle,
-  jobs: [],
-  jobsState: State.idle,
-  jobDetails: {},
-  orgStructure: { locations: [], teams: [] },
-  orgStructureState: State.idle,
   applications: [],
   applicationsState: State.idle,
   applicationExtras: {},
   dismissedFeedbackIds: [],
   sessionExpired: false,
   sessionGeneration: 0,
-  // Loaded from the browser on sign-in.
-  savedJobIds: [],
 };
-
-export const loadJobs = createAsyncThunk("careers/loadJobs", async (accessToken: string) => {
-  return await fetchVacancies(accessToken);
-});
-
-export const loadOrgStructure = createAsyncThunk("careers/loadOrgStructure", async (accessToken: string) => {
-  return await fetchOrgStructure(accessToken);
-});
-
-export const loadJobDetail = createAsyncThunk(
-  "careers/loadJobDetail",
-  async ({ accessToken, jobId }: { accessToken: string; jobId: string }) => {
-    return await fetchVacancyDetail(jobId, accessToken);
-  },
-);
 
 // Builds a signed-in request; a response arriving after the data was cleared is dropped as stale.
 function userRequest<Arg, Result>(type: string, call: (arg: Arg) => Promise<Result>) {
@@ -203,10 +167,6 @@ const CareersSlice = createSlice({
   name: "careers",
   initialState,
   reducers: {
-    // Replaces the saved jobs.
-    setSavedJobs: (state, action: PayloadAction<string[]>) => {
-      state.savedJobIds = action.payload;
-    },
     // Keeps what was loaded for an application. A reply that arrives after the candidate's data was cleared, which
     // the generation tells, is dropped.
     setApplicationExtras: (
@@ -223,24 +183,6 @@ const CareersSlice = createSlice({
         // The marks of other fields stay.
         ...(loaded && { loaded: { ...existing?.loaded, ...loaded } }),
       };
-    },
-    toggleSaveJob: (state, action: PayloadAction<string>) => {
-      const idx = state.savedJobIds.indexOf(action.payload);
-      if (idx >= 0) {
-        state.savedJobIds.splice(idx, 1);
-      } else {
-        state.savedJobIds.push(action.payload);
-      }
-    },
-    // Marks the jobs loads that never started as failed.
-    loadFailed: (state) => {
-      if (state.jobsState === State.idle) state.jobsState = State.failed;
-      if (state.orgStructureState === State.idle) state.orgStructureState = State.failed;
-    },
-    // Puts failed jobs loads back to idle so they load again.
-    retryLoad: (state) => {
-      if (state.jobsState === State.failed) state.jobsState = State.idle;
-      if (state.orgStructureState === State.failed) state.orgStructureState = State.idle;
     },
     // Marks the profile load as failed.
     profileFailed: (state) => {
@@ -272,35 +214,10 @@ const CareersSlice = createSlice({
       state.dismissedFeedbackIds = [];
       state.sessionExpired = false;
       state.sessionGeneration += 1;
-      state.savedJobIds = [];
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loadJobs.pending, (state) => {
-        state.jobsState = State.loading;
-      })
-      .addCase(loadJobs.fulfilled, (state, action) => {
-        state.jobs = action.payload;
-        state.jobsState = State.success;
-      })
-      .addCase(loadJobs.rejected, (state) => {
-        state.jobsState = State.failed;
-      })
-      .addCase(loadOrgStructure.pending, (state) => {
-        state.orgStructureState = State.loading;
-      })
-      .addCase(loadOrgStructure.fulfilled, (state, action) => {
-        state.orgStructure = action.payload;
-        state.orgStructureState = State.success;
-      })
-      .addCase(loadOrgStructure.rejected, (state) => {
-        state.orgStructureState = State.failed;
-        state.orgStructure = { locations: [], teams: [] };
-      })
-      .addCase(loadJobDetail.fulfilled, (state, action) => {
-        state.jobDetails[action.payload.id] = action.payload;
-      })
       .addCase(loadProfile.pending, (state) => {
         state.profileState = State.loading;
       })
@@ -344,10 +261,6 @@ const CareersSlice = createSlice({
 
 export const {
   setApplicationExtras,
-  setSavedJobs,
-  toggleSaveJob,
-  loadFailed,
-  retryLoad,
   profileFailed,
   applicationsFailed,
   retryApplications,
