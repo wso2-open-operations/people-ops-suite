@@ -49,7 +49,7 @@ const JobCard = ({ job }: JobCardProps) => {
             borderColor: "divider",
             borderRadius: "14px",
             boxShadow: "0 18px 40px -16px rgb(7 20 46 / 18%)",
-            backgroundColor: "background.paper",
+            backgroundColor: "background.glass",
             transition: "transform 0.15s, box-shadow 0.15s, border-color 0.15s",
             "&:hover": {
               transform: "translateY(-2px)",

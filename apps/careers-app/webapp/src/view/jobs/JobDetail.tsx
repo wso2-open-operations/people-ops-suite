@@ -120,7 +120,7 @@ const JobDetail = () => {
   };
 
   return (
-    <Box sx={{ bgcolor: "background.paper" }}>
+    <Box sx={{ bgcolor: "background.glass" }}>
       <JobHero
         detail={detail}
         isSignedIn={isSignedIn}

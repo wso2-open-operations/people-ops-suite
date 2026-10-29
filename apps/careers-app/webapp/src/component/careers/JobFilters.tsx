@@ -124,7 +124,7 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
             height: "100%",
             minWidth: 0,
             padding: "0 12px",
-            backgroundColor: "background.paper",
+            backgroundColor: "background.glass",
             border: "1px solid",
             borderColor: (theme) =>
               isOpen ? theme.palette.primary.main : theme.palette.mode === "dark" ? theme.palette.divider : "rgba(0,0,0,0.15)",
@@ -255,7 +255,7 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
                           width: 16,
                           height: 16,
                           flexShrink: 0,
-                          backgroundColor: checked ? "#ff6700" : "background.paper",
+                          backgroundColor: checked ? "#ff6700" : "background.glass",
                           border: "1.5px solid",
                           borderColor: checked ? "#ff6700" : "text.disabled",
                           borderRadius: "4px",
@@ -321,7 +321,7 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
                 gap={0.75}
                 sx={{
                   padding: "6px 10px 6px 14px",
-                  backgroundColor: "background.paper",
+                  backgroundColor: "background.glass",
                   border: "1px solid",
                   borderColor: "divider",
                   borderRadius: "999px",

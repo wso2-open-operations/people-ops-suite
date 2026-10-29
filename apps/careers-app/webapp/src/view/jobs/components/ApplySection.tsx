@@ -166,7 +166,7 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
           borderRadius: "16px",
           boxShadow: "0 4px 24px rgb(23 34 58 / 28%)",
           "& .MuiInputBase-root, & .MuiInputLabel-root": { fontSize: "1rem" },
-          backgroundColor: "background.paper",
+          backgroundColor: "background.glass",
         }}
       >
         <Typography variant="h4" fontWeight={800} sx={{ color: "text.primary" }} mb={3}>

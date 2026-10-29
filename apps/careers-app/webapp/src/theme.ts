@@ -18,6 +18,13 @@ import { type PaletteMode } from "@mui/material";
 
 import { BRAND_ORANGE } from "@config/brand";
 
+declare module "@mui/material/styles" {
+  interface TypeBackground {
+    // The see-through surface of cards in dark mode; white in light mode.
+    glass: string;
+  }
+}
+
 // WSO2 brand palette
 const wso2 = {
   orange: {
@@ -28,8 +35,8 @@ const wso2 = {
   },
 };
 
-// Solid background of dark dialogs and menus.
-const DARK_OVERLAY = "#131d33";
+// Solid dark paper, so dialogs, menus and every other overlay built on Paper stay readable.
+const DARK_PAPER = "#131d33";
 
 export const themeSettings = (mode: PaletteMode) => {
   const isDark = mode === "dark";
@@ -56,9 +63,9 @@ export const themeSettings = (mode: PaletteMode) => {
       info: { main: "#3B82F6", light: "#60A5FA", dark: "#2563EB" },
       success: { main: "#10B981", light: "#34D399", dark: "#059669" },
       background: {
-        // Dark paper is translucent and blurred by the MuiPaper override.
         default: isDark ? "#0f172a" : "#FFFFFF",
-        paper: isDark ? "#00000026" : "#FFFFFF",
+        paper: isDark ? DARK_PAPER : "#FFFFFF",
+        glass: isDark ? "#00000026" : "#FFFFFF",
       },
       divider: isDark ? "rgba(255,255,255,0.12)" : "#e2e5ec",
       text: {
@@ -104,16 +111,8 @@ export const themeSettings = (mode: PaletteMode) => {
           }),
         },
       },
-      // Dark paper is translucent and blurred; dialogs and menus are solid.
-      ...(isDark && {
-        MuiPaper: {
-          styleOverrides: {
-            root: { backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", backgroundImage: "none" },
-          },
-        },
-        MuiDialog: { styleOverrides: { paper: { backgroundColor: DARK_OVERLAY, backdropFilter: "none" } } },
-        MuiPopover: { styleOverrides: { paper: { backgroundColor: DARK_OVERLAY, backdropFilter: "none" } } },
-      }),
+      // Dark mode removes the lighter overlay MUI adds to raised paper.
+      ...(isDark && { MuiPaper: { styleOverrides: { root: { backgroundImage: "none" } } } }),
       MuiButton: {
         styleOverrides: {
           root: {
@@ -140,6 +139,12 @@ export const themeSettings = (mode: PaletteMode) => {
         styleOverrides: {
           root: {
             borderRadius: 12,
+            // Cards are the glass surfaces in dark mode: see-through and blurred.
+            ...(isDark && {
+              backgroundColor: "#00000026",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+            }),
             boxShadow: isDark
               ? "0 1px 3px rgba(0,0,0,0.4)"
               : "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
