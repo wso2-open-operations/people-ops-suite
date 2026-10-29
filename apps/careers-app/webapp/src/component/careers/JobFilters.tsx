@@ -257,7 +257,7 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
                           flexShrink: 0,
                           backgroundColor: checked ? "#ff6700" : "background.glass",
                           border: "1.5px solid",
-                          borderColor: checked ? "#ff6700" : "text.disabled",
+                          borderColor: checked ? "#ff6700" : "text.secondary",
                           borderRadius: "4px",
                         }}
                       >

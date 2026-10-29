@@ -71,7 +71,8 @@ export const themeSettings = (mode: PaletteMode) => {
       text: {
         primary: isDark ? "#FFFFFF" : "#17223A",
         secondary: isDark ? "rgba(255,255,255,0.7)" : "#1F2937",
-        disabled: isDark ? "rgba(255,255,255,0.38)" : "#4B5563",
+        // Lighter than secondary, so disabled fields and labels still look disabled.
+        disabled: isDark ? "rgba(255,255,255,0.38)" : "#9CA3AF",
       },
     },
 
