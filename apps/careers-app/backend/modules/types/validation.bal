@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# Whether the value is a vacancy id (digits only); nothing else may reach the upstream URL or count as a public route.
+# Whether the value is a numeric id (digits only); nothing else may reach the upstream URL.
 public isolated function isValidJobId(string jobId) returns boolean => re `[0-9]+`.isFullMatch(jobId);
 
 # The text with every email address, plain or URL-encoded, replaced, so that it is safe to write to a log.
