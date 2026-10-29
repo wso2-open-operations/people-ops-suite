@@ -97,7 +97,7 @@ const DetailItem = ({ icon, label, value }: { icon: React.ReactNode; label: stri
       <Typography fontSize="0.8rem" color="text.secondary">
         {label}
       </Typography>
-      <Typography fontSize="0.95rem" color={value ? "text.primary" : "text.disabled"} sx={{ overflowWrap: "anywhere" }}>
+      <Typography fontSize="0.95rem" color={value ? "text.primary" : "text.secondary"} sx={{ overflowWrap: "anywhere" }}>
         {value || "Not added"}
       </Typography>
     </Box>

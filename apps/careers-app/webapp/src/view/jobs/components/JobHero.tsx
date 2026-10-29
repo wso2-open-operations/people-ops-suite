@@ -15,9 +15,9 @@
 // under the License.
 
 import { Box, Button, Grid, Stack, Tooltip, Typography, useTheme } from "@mui/material";
-import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
-import { ON_ORANGE, PAGE_MAX_WIDTH, heroColorsOf } from "@config/brand";
+import { ON_ORANGE, PAGE_MARGIN_X, PAGE_PADDING_X, PAGE_PULL_LEFT, heroColorsOf } from "@config/brand";
 import { pillButtonSx } from "@utils/styles";
 import type { VacancyDetail } from "@utils/vacancyService";
 import JobAtAGlance from "@view/jobs/components/JobAtAGlance";
@@ -30,8 +30,6 @@ interface JobHeroProps {
   isSaved: boolean;
   onBack: () => void;
   onApplyNow: () => void;
-  // Why the candidate cannot apply for this job; it is shown in place of the button when it is given.
-  applyBlockedReason: string | null;
   onToggleSave: () => void;
   onSeeAllRoles: () => void;
 }
@@ -42,12 +40,11 @@ const JobHero = ({
   isSaved,
   onBack,
   onApplyNow,
-  applyBlockedReason,
   onToggleSave,
   onSeeAllRoles,
 }: JobHeroProps) => {
   const color = teamColors[detail.team.toUpperCase()] ?? "#6B7280";
-  // A vacancy with no office is shown as remote only when it allows remote work.
+  // An office-less vacancy is Remote only when remote work is allowed.
   const noOfficeLabel = detail.allowRemote ? "Remote" : "Not specified";
   const officeLabel = detail.officeLocations.length > 0 ? detail.officeLocations.join(", ") : noOfficeLabel;
 
@@ -68,7 +65,7 @@ const JobHero = ({
         backgroundSize: "auto, auto, 42px 42px, 42px 42px",
       }}
     >
-      <Box sx={{ maxWidth: PAGE_MAX_WIDTH, mx: "auto", px: { xs: 2, md: 3 }, py: { xs: 5, md: 7 } }}>
+      <Box sx={{ mx: PAGE_MARGIN_X, px: PAGE_PADDING_X, py: { xs: 5, md: 7 } }}>
         <Tooltip title="Back to jobs" arrow>
           <Box
             component="button"
@@ -78,7 +75,7 @@ const JobHero = ({
               width: 40,
               height: 40,
               mb: 3,
-              ml: `calc((min(${PAGE_MAX_WIDTH}px, 100vw) - 100vw) / 2)`,
+              ml: PAGE_PULL_LEFT,
               borderRadius: "50%",
               border: `1.5px solid ${hero.backButtonBorder}`,
               backgroundColor: hero.backButtonFill,
@@ -145,44 +142,22 @@ const JobHero = ({
               {detail.title}
             </Typography>
 
-            {applyBlockedReason ? (
-              <Stack
-                direction="row"
-                alignItems="center"
-                gap={1}
-                sx={{
-                  display: "inline-flex",
-                  px: 2.5,
-                  py: 1.1,
-                  borderRadius: "999px",
-                  border: "1px solid",
-                  borderColor: "primary.main",
-                  bgcolor: "background.paper",
-                }}
-              >
-                <CheckCircle2 size={18} color="#059669" />
-                <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
-                  {applyBlockedReason}
-                </Typography>
-              </Stack>
-            ) : (
-              <Button
-                variant="contained"
-                size="large"
-                onClick={onApplyNow}
-                endIcon={<ArrowRight size={17} />}
-                sx={{
-                  ...pillButtonSx,
-                  px: 3.5,
-                  py: 1.2,
-                  backgroundColor: "primary.main",
-                  color: ON_ORANGE,
-                  "&:hover": { backgroundColor: "primary.main", filter: "brightness(0.95)" },
-                }}
-              >
-                Apply Now
-              </Button>
-            )}
+            <Button
+              variant="contained"
+              size="large"
+              onClick={onApplyNow}
+              endIcon={<ArrowRight size={17} />}
+              sx={{
+                ...pillButtonSx,
+                px: 3.5,
+                py: 1.2,
+                backgroundColor: "primary.main",
+                color: ON_ORANGE,
+                "&:hover": { backgroundColor: "primary.main", filter: "brightness(0.95)" },
+              }}
+            >
+              Apply Now
+            </Button>
 
             <JobShareActions
               job={detail}

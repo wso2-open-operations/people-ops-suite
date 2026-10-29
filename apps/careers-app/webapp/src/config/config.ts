@@ -40,8 +40,8 @@ export const AsgardeoConfig: BaseURLAuthClientConfig = {
 };
 
 export const APP_NAME = window.config?.APP_NAME ?? "WSO2 Careers";
-export const ServiceBaseUrl = window.config?.CAREERS_BACKEND_BASE_URL ?? "";
-// When "true", candidate profile calls are served by an in-memory sample profile instead of the backend.
+const ServiceBaseUrl = window.config?.CAREERS_BACKEND_BASE_URL ?? "";
+// Serves a sample profile instead of the backend when "true".
 export const UseMockProfile = window.config?.USE_MOCK_PROFILE === "true";
 
 export const AppConfig = {

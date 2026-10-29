@@ -265,6 +265,13 @@ public type Employee record {|
     int[]? leadershipGroupIds = ();
     # Leadership attribute names, comma-joined and alphabetical — drives the report preview column
     string? leadershipGroups = ();
+    # In a lead's whole-chain list, the employee ID of the lead's additional report every route
+    # to this member starts from; nil everywhere else
+    string? throughEmployeeId = ();
+    # First name of that additional report
+    string? throughFirstName = ();
+    # Last name of that additional report
+    string? throughLastName = ();
     # Gender (from employee personal info)
     string? gender;
     # NIC or passport number (from employee personal info)
@@ -1784,3 +1791,34 @@ public type ScheduleChangePayload record {|
     UpdateEmployeeJobInfoPayload changes;
 |};
 
+
+# A lead's additional report through whom someone is in that lead's team.
+public type ReportingLinePerson record {|
+    # Employee ID
+    string employeeId;
+    # First name
+    string firstName;
+    # Last name
+    string lastName;
+|};
+
+# How a team member is linked to the lead viewing them.
+public type ReportingLine record {|
+    # How the member relates to the lead
+    ReportingRelation relation;
+    # For an indirect report, the lead's additional report every route to them starts from;
+    # nil when any route starts from a direct report
+    ReportingLinePerson? through;
+|};
+
+# Reporting line as the query returns it.
+public type ReportingLineRow record {|
+    # How the member relates to the lead
+    ReportingRelation relation;
+    # Employee ID of the additional report every route starts from, if any
+    string? throughEmployeeId = ();
+    # First name of that additional report
+    string? throughFirstName = ();
+    # Last name of that additional report
+    string? throughLastName = ();
+|};

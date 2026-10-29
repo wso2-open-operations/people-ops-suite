@@ -18,7 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Application, ApplicationInterview } from "@/types/types";
 import { ApplicationStatus } from "@config/constant";
-import { daysLeftText, historyOf, offerDeadlineOf, tabOf, trackerOf } from "@view/applications/applicationHelpers";
+import { daysLeftText, defaultTabOf, historyOf, offerDeadlineOf, tabOf, trackerOf } from "@view/applications/applicationHelpers";
 
 const application = (overrides: Partial<Application> = {}): Application => ({
   id: "a1",
@@ -161,6 +161,30 @@ describe("historyOf", () => {
   it("leaves the date out when the current status has none", () => {
     const entries = historyOf(application({ status: ApplicationStatus.Screening }), []);
     expect(entries[1].date).toBeNull();
+  });
+});
+
+describe("defaultTabOf", () => {
+  const withStatuses = (...statuses: ApplicationStatus[]) => statuses.map((status) => application({ status }));
+
+  it("opens on offers when there is an offer, even with interviews and rejections", () => {
+    expect(
+      defaultTabOf(withStatuses(ApplicationStatus.Rejected, ApplicationStatus.Interview, ApplicationStatus.Offer)),
+    ).toBe("offers");
+    expect(defaultTabOf(withStatuses(ApplicationStatus.OfferAccepted))).toBe("offers");
+  });
+
+  it("opens on active for an interview when there is no offer", () => {
+    expect(defaultTabOf(withStatuses(ApplicationStatus.Rejected, ApplicationStatus.Interview))).toBe("active");
+  });
+
+  it("opens on closed for a rejection when there is no offer or interview", () => {
+    expect(defaultTabOf(withStatuses(ApplicationStatus.Applied, ApplicationStatus.Rejected))).toBe("closed");
+  });
+
+  it("opens on active for applications still in progress, and on all when there are none", () => {
+    expect(defaultTabOf(withStatuses(ApplicationStatus.Applied, ApplicationStatus.Screening))).toBe("active");
+    expect(defaultTabOf([])).toBe("all");
   });
 });
 
