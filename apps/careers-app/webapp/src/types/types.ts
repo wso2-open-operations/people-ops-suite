@@ -68,7 +68,6 @@ export interface Application {
   id: string;
   jobId: string;
   jobTitle: string;
-  department: string;
   appliedDate: string;
   // When the application last changed, which is when it reached its current status.
   updatedDate?: string;

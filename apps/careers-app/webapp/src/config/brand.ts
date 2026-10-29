@@ -36,34 +36,3 @@ export const PAGE_PADDING_X = "15px";
 
 // Text on the brand orange: dark in both modes.
 export const ON_ORANGE = "#0B1220";
-
-// Job page hero colours for each theme mode, also used by its skeleton.
-const HERO_COLORS = {
-  dark: {
-    // The canvas of the WSO2 dark theme, so the hero blends into the page.
-    background: "#0f172a",
-    gridLine: "rgba(255,255,255,0.05)",
-    outline: "rgba(255,255,255,0.2)",
-    orangeGlow: "rgba(255,115,0,0.38)",
-    blueGlow: "rgba(60,90,160,0.35)",
-    backButtonBorder: "rgba(255,255,255,0.8)",
-    backButtonFill: "rgba(255,255,255,0.12)",
-    circleBorder: "rgba(255,255,255,0.25)",
-    circleIcon: "rgba(255,255,255,0.7)",
-    skeleton: "rgba(255,255,255,0.08)",
-  },
-  light: {
-    background: "#F6F7FA",
-    gridLine: "rgba(23,34,58,0.06)",
-    outline: "rgba(23,34,58,0.2)",
-    orangeGlow: "rgba(255,115,0,0.2)",
-    blueGlow: "rgba(60,90,160,0.16)",
-    backButtonBorder: "rgba(23,34,58,0.6)",
-    backButtonFill: "rgba(255,255,255,0.8)",
-    circleBorder: "rgba(23,34,58,0.25)",
-    circleIcon: "#6B7280",
-    skeleton: "rgba(23,34,58,0.08)",
-  },
-} as const;
-
-export const heroColorsOf = (mode: "light" | "dark") => HERO_COLORS[mode];

@@ -27,9 +27,8 @@ import reducer, {
 
 // The slice reads the app's config when it loads, which needs a browser window.
 vi.mock("@config/config", () => ({
-  AppConfig: { serviceUrls: { candidates: "", jobs: "", applications: "", documents: "" } },
+  AppConfig: { serviceUrls: { candidates: "", applications: "", documents: "" } },
   ServiceBaseUrl: "",
-  UseMockProfile: false,
 }));
 
 const initial = reducer(undefined, { type: "init" });

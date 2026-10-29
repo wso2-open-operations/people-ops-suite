@@ -122,7 +122,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const sdk = useRef({ getAccessToken, refreshAccessToken, trySignInSilently });
   sdk.current = { getAccessToken, refreshAccessToken, trySignInSilently };
 
-  // Guests browse and apply without a token; calls made on their behalf send no credentials.
+  // A guest has no token, so the call gets an empty one.
   const getToken = useCallback(async () => {
     if (!isAuthenticated) return "";
     try {

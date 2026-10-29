@@ -27,7 +27,6 @@ declare global {
       AUTH_SIGN_OUT_REDIRECT_URL: string;
       CAREERS_BACKEND_BASE_URL: string;
       CAREERS_SITE_URL?: string;
-      USE_MOCK_PROFILE?: string;
     };
   }
 }
@@ -44,8 +43,6 @@ export const APP_NAME = window.config?.APP_NAME ?? "WSO2 Careers";
 const ServiceBaseUrl = window.config?.CAREERS_BACKEND_BASE_URL ?? "";
 // The wso2.com careers page, where candidates browse and apply for jobs.
 export const CareersSiteUrl = window.config?.CAREERS_SITE_URL || "https://wso2.com/careers#careers";
-// Serves a sample profile instead of the backend when "true".
-export const UseMockProfile = window.config?.USE_MOCK_PROFILE === "true";
 
 export const AppConfig = {
   serviceUrls: {

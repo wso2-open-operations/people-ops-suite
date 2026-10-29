@@ -28,9 +28,8 @@ import {
   OfferLetter,
   PersonalDetails,
 } from "@/types/types";
-import { AppConfig, UseMockProfile } from "@config/config";
+import { AppConfig } from "@config/config";
 import { OFFER_CONFLICT_ERROR, OFFER_EXPIRED_ERROR } from "@config/constant";
-import * as mockProfile from "@utils/mockProfile";
 
 const REQUEST_TIMEOUT_MS = 15_000;
 
@@ -59,7 +58,6 @@ async function send<T>(request: Promise<AxiosResponse<T>>): Promise<T> {
 
 // The signed-in candidate's own profile.
 export async function fetchProfile(accessToken: string): Promise<CandidateProfile> {
-  if (UseMockProfile) return mockProfile.fetchProfile();
   return send(axios.get<CandidateProfile>(`${AppConfig.serviceUrls.candidates}/me`, requestOptions(accessToken)));
 }
 
@@ -68,7 +66,6 @@ export async function saveProfile(
   accessToken: string,
   changes: Partial<EditableProfileFields>,
 ): Promise<CandidateProfile> {
-  if (UseMockProfile) return mockProfile.saveProfile(changes);
   return send(
     axios.patch<CandidateProfile>(`${AppConfig.serviceUrls.candidates}/me`, changes, requestOptions(accessToken)),
   );
@@ -80,7 +77,6 @@ export async function submitFeedback(
   applicationId: string,
   feedback: ApplicationFeedback,
 ): Promise<void> {
-  if (UseMockProfile) return mockProfile.submitFeedback(applicationId);
   await send(
     axios.post(
       `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/feedback`,
@@ -99,7 +95,6 @@ export async function respondToOffer(
   applicationId: string,
   answer: OfferAnswer,
 ): Promise<Application> {
-  if (UseMockProfile) return mockProfile.respondToOffer(applicationId, answer);
   try {
     return await send(
       axios.post<Application>(
@@ -118,7 +113,6 @@ export async function respondToOffer(
 
 // The offer letter sent for one of the candidate's applications, or null when none was found.
 export async function fetchOfferLetter(accessToken: string, applicationId: string): Promise<OfferLetter | null> {
-  if (UseMockProfile) return mockProfile.fetchOfferLetter();
   try {
     return await send(
       axios.get<OfferLetter>(
@@ -134,7 +128,6 @@ export async function fetchOfferLetter(accessToken: string, applicationId: strin
 
 // The interviews of one of the candidate's applications, in the order they take place.
 export async function fetchInterviews(accessToken: string, applicationId: string): Promise<ApplicationInterview[]> {
-  if (UseMockProfile) return mockProfile.fetchInterviews(applicationId);
   return send(
     axios.get<ApplicationInterview[]>(
       `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/interviews`,
@@ -146,7 +139,6 @@ export async function fetchInterviews(accessToken: string, applicationId: string
 // Whether the candidate has submitted the documents for one of their accepted offers, whether they can still change
 // them, and what they saved.
 export async function fetchDocumentsStatus(accessToken: string, applicationId: string): Promise<DocumentsStatus> {
-  if (UseMockProfile) return mockProfile.fetchDocumentsStatus(applicationId);
   return send(
     axios.get<DocumentsStatus>(
       `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/documents`,
@@ -160,7 +152,6 @@ const DOCUMENT_UPLOAD_TIMEOUT_MS = 120_000;
 
 // The documents a candidate is asked for, and the limits every file must meet.
 export async function fetchDocumentRequirements(accessToken: string): Promise<DocumentRequirements> {
-  if (UseMockProfile) return mockProfile.fetchDocumentRequirements();
   return send(
     axios.get<DocumentRequirements>(`${AppConfig.serviceUrls.documents}/requirements`, requestOptions(accessToken)),
   );
@@ -174,7 +165,6 @@ export async function submitDocuments(
   details: PersonalDetails,
   changing = false,
 ): Promise<void> {
-  if (UseMockProfile) return mockProfile.submitDocuments(applicationId, files, details);
   const form = new FormData();
   form.append("declaration", "true");
   // The details go as one block.
@@ -189,6 +179,5 @@ export async function submitDocuments(
 
 // The signed-in candidate's own applications.
 export async function fetchApplications(accessToken: string): Promise<Application[]> {
-  if (UseMockProfile) return mockProfile.fetchApplications();
   return send(axios.get<Application[]>(AppConfig.serviceUrls.applications, requestOptions(accessToken)));
 }

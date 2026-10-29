@@ -9,5 +9,4 @@ window.config = {
   CAREERS_BACKEND_BASE_URL: "http://localhost:8080",
   // The wso2.com careers page that the Jobs link opens.
   CAREERS_SITE_URL: "https://wso2.com/careers#careers",
-  USE_MOCK_PROFILE: "false",
 };

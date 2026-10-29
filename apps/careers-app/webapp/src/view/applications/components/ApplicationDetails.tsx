@@ -86,7 +86,7 @@ const ApplicationDetails = ({
               {application.jobTitle}
             </Typography>
             <Typography fontSize="0.9rem" color="text.secondary" mt={0.5}>
-              {application.department} · Applied on {formatDate(application.appliedDate)}
+              Applied on {formatDate(application.appliedDate)}
             </Typography>
           </Box>
           <ApplicationStatusBadge status={application.status} />
