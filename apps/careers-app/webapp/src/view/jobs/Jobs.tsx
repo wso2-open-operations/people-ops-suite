@@ -24,12 +24,11 @@ import {
   Switch,
   TextField,
   Typography,
-} from "@mui/material";
-import { Search, X } from "lucide-react";
+} from "@wso2/oxygen-ui";
+import { Search, X } from "@wso2/oxygen-ui-icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigationType, useSearchParams } from "react-router-dom";
 
-import { orangeTextOf } from "@config/brand";
 import { useAppAuthContext } from "@context/AuthContext";
 
 import JobCard from "@component/careers/JobCard";
@@ -227,7 +226,7 @@ const Jobs = () => {
 
           {filtered.length === 0 ? (
             <Box sx={{ py: 8, textAlign: "center" }}>
-              <Typography fontWeight={600} fontSize="1rem" sx={{ color: (theme) => orangeTextOf(theme) }}>
+              <Typography color="primary.main" fontWeight={600} fontSize="1rem">
                 {tab === "saved" && sourceJobs.length === 0
                   ? "You haven't saved any jobs yet. Click the bookmark icon on a job card to save it here."
                   : "There are no available vacancies that match your search"}

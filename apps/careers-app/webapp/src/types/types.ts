@@ -23,11 +23,6 @@ export enum State {
   idle = "idle",
 }
 
-export enum ThemeMode {
-  Light = "light",
-  Dark = "dark",
-}
-
 export interface PreLoaderProps {
   message?: string;
   isLoading?: boolean;

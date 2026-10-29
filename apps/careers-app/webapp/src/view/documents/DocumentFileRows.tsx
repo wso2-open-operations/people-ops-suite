@@ -14,9 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Chip, Link, Stack, Typography } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import { FileUp, Trash2 } from "lucide-react";
+import { Box, Button, Chip, Link, Stack, Typography, styled } from "@wso2/oxygen-ui";
+import { FileUp, Trash2 } from "@wso2/oxygen-ui-icons-react";
 
 import type { DocumentRequirement } from "@/types/types";
 import { pillButtonSx } from "@utils/styles";

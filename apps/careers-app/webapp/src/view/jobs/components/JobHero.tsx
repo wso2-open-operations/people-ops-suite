@@ -14,10 +14,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Grid, Stack, Tooltip, Typography, useTheme } from "@mui/material";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { Box, Button, Grid, Stack, Tooltip, Typography } from "@wso2/oxygen-ui";
+import { ArrowLeft, ArrowRight } from "@wso2/oxygen-ui-icons-react";
 
-import { ON_ORANGE, PAGE_MARGIN_X, PAGE_PADDING_X, PAGE_PULL_LEFT, heroColorsOf } from "@config/brand";
+import {
+  ON_ORANGE,
+  PAGE_MARGIN_X,
+  PAGE_PADDING_X,
+  PAGE_PULL_LEFT,
+  heroColorsOf,
+  useIsDark,
+} from "@config/brand";
 import { pillButtonSx } from "@utils/styles";
 import type { VacancyDetail } from "@utils/vacancyService";
 import JobAtAGlance from "@view/jobs/components/JobAtAGlance";
@@ -48,7 +55,7 @@ const JobHero = ({
   const noOfficeLabel = detail.allowRemote ? "Remote" : "Not specified";
   const officeLabel = detail.officeLocations.length > 0 ? detail.officeLocations.join(", ") : noOfficeLabel;
 
-  const hero = heroColorsOf(useTheme().palette.mode);
+  const hero = heroColorsOf(useIsDark() ? "dark" : "light");
 
   return (
     <Box

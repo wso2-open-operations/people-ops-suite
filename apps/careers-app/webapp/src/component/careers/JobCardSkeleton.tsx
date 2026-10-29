@@ -17,7 +17,7 @@
 // Mirrors JobCard's dimensions so the listing doesn't jump/reflow once real
 // data replaces it.
 
-import { Box, Skeleton, Stack } from "@mui/material";
+import { Box, Skeleton, Stack } from "@wso2/oxygen-ui";
 
 const JobCardSkeleton = () => (
   <Box

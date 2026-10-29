@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { ArrowForward } from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -30,7 +29,8 @@ import {
   Stack,
   TextField,
   Typography,
-} from "@mui/material";
+} from "@wso2/oxygen-ui";
+import { ArrowRight } from "@wso2/oxygen-ui-icons-react";
 
 import { useRef, useState } from "react";
 
@@ -305,7 +305,7 @@ const ApplyForm = ({
         disabled={!canSubmit || submitting}
         onClick={onSubmit}
         startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : undefined}
-        endIcon={submitting ? undefined : <ArrowForward />}
+        endIcon={submitting ? undefined : <ArrowRight size={18} />}
         sx={{ ...pillButtonSx, alignSelf: "flex-start", px: 5 }}
       >
         {submitting ? "Submitting..." : "Submit"}

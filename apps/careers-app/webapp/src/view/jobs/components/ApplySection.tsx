@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Typography } from "@mui/material";
+import { Box, Typography } from "@wso2/oxygen-ui";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -162,7 +162,8 @@ const ApplySection = ({ detail }: ApplySectionProps) => {
           p: { xs: 2.5, md: 4 },
           border: "1px solid",
           // The shadow marks the card edge; dark mode keeps a line.
-          borderColor: (theme) => (theme.palette.mode === "dark" ? theme.palette.divider : "transparent"),
+          borderColor: "transparent",
+          "[data-color-scheme='dark'] &": { borderColor: "divider" },
           borderRadius: "16px",
           boxShadow: "0 4px 24px rgb(23 34 58 / 28%)",
           "& .MuiInputBase-root, & .MuiInputLabel-root": { fontSize: "1rem" },

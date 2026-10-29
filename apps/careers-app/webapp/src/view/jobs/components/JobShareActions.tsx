@@ -14,10 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Stack, Tooltip, useTheme } from "@mui/material";
-import { Bookmark, BookmarkCheck, Facebook, Linkedin, Twitter } from "lucide-react";
+import { Box, Stack, Tooltip } from "@wso2/oxygen-ui";
+import { Bookmark, BookmarkCheck, Facebook } from "@wso2/oxygen-ui-icons-react";
 
-import { heroColorsOf } from "@config/brand";
+import { heroColorsOf, useIsDark } from "@config/brand";
 import { jobShareLinks } from "@utils/jobFilterUtils";
 import type { VacancyDetail } from "@utils/vacancyService";
 
@@ -28,10 +28,23 @@ interface JobShareActionsProps {
   onToggleSave: () => void;
 }
 
+// The icon library has no X or LinkedIn logos, so they are drawn here from their official shapes.
+const XLogo = ({ size }: { size: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+  </svg>
+);
+
+const LinkedinLogo = ({ size }: { size: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286ZM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065Zm1.782 13.019H3.555V9h3.564v11.452ZM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003Z" />
+  </svg>
+);
+
 const NETWORK_ICONS = {
   facebook: <Facebook size={15} />,
-  x: <Twitter size={15} />,
-  linkedin: <Linkedin size={15} />,
+  x: <XLogo size={15} />,
+  linkedin: <LinkedinLogo size={15} />,
 };
 
 const circleSx = (hero: ReturnType<typeof heroColorsOf>) =>
@@ -48,7 +61,7 @@ const circleSx = (hero: ReturnType<typeof heroColorsOf>) =>
 
 // Share links for the job page, plus a save button that only a signed-in candidate sees.
 const JobShareActions = ({ job, isSignedIn, isSaved, onToggleSave }: JobShareActionsProps) => {
-  const hero = heroColorsOf(useTheme().palette.mode);
+  const hero = heroColorsOf(useIsDark() ? "dark" : "light");
   const links = jobShareLinks(job, window.location.origin);
 
   return (

@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Stack, Typography } from "@mui/material";
-import { ArrowRight } from "lucide-react";
+import { Box, Button, Stack, Typography } from "@wso2/oxygen-ui";
+import { ArrowRight } from "@wso2/oxygen-ui-icons-react";
 
 interface JobAtAGlanceProps {
   team: string;

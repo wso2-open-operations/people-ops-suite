@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, CircularProgress } from "@mui/material";
+import { Box, CircularProgress } from "@wso2/oxygen-ui";
 
 interface CenteredSpinnerProps {
   size?: number;

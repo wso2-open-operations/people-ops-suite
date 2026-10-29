@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Stack, Tooltip, Typography } from "@mui/material";
-import { ArrowRight, Bookmark, BookmarkCheck } from "lucide-react";
+import { Box, Stack, Tooltip, Typography } from "@wso2/oxygen-ui";
+import { ArrowRight, Bookmark, BookmarkCheck } from "@wso2/oxygen-ui-icons-react";
 import { Link } from "react-router-dom";
 
 import { Job } from "@/types/types";
@@ -64,7 +64,8 @@ const JobCard = ({ job }: JobCardProps) => {
               marginBottom: "16px",
               padding: "6px 10px",
               borderRadius: "999px",
-              backgroundColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255,103,0,0.18)" : "#ffe0cc"),
+              backgroundColor: "#ffe0cc",
+              "[data-color-scheme='dark'] &": { backgroundColor: "rgba(255,103,0,0.18)" },
               color: "#e55a00",
               fontSize: "11px",
               fontWeight: 700,
@@ -111,7 +112,8 @@ const JobCard = ({ job }: JobCardProps) => {
                 key={c}
                 sx={{
                   padding: "4px 9px",
-                  backgroundColor: (theme) => (theme.palette.mode === "dark" ? "rgba(59,130,246,0.22)" : "#dceffd"),
+                  backgroundColor: "#dceffd",
+                  "[data-color-scheme='dark'] &": { backgroundColor: "rgba(59,130,246,0.22)" },
                   border: "1px solid transparent",
                   borderRadius: "999px",
                   fontSize: "11.5px",

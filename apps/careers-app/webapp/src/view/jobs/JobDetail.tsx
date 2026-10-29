@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@wso2/oxygen-ui";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { useEffect, useRef, useState } from "react";

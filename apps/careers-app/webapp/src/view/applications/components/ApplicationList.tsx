@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { AssignmentOutlined } from "@mui/icons-material";
-import { Button, Card, CardContent, Grid, Stack, Tab, Tabs, Typography } from "@mui/material";
+import { Button, Card, CardContent, Grid, Stack, Tab, Tabs, Typography } from "@wso2/oxygen-ui";
+import { ClipboardList } from "@wso2/oxygen-ui-icons-react";
 
 import { useState } from "react";
 
@@ -70,7 +70,7 @@ const ApplicationList = ({ applications, applicationsState, onView, onBrowseJobs
       {applicationsState === State.success && applications.length === 0 ? (
         <Card elevation={0} sx={cardSx}>
           <CardContent sx={{ py: 8, textAlign: "center" }}>
-            <AssignmentOutlined sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
+            <ClipboardList size={48} style={{ marginBottom: 16, opacity: 0.4 }} />
             <Typography variant="h6" fontWeight={600} mb={1} color="text.primary">
               No Applications Yet
             </Typography>

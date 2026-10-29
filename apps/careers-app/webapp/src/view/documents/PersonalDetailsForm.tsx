@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Stack, Typography } from "@mui/material";
-import { Pencil, Plus } from "lucide-react";
+import { Box, Button, Stack, Typography } from "@wso2/oxygen-ui";
+import { Pencil, Plus } from "@wso2/oxygen-ui-icons-react";
 import { useEffect, useState } from "react";
 
 import type { Dependant, EmergencyContact, PersonalDetails } from "@/types/types";

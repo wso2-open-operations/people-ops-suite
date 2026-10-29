@@ -14,19 +14,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Stack, Tooltip, useTheme } from "@mui/material";
-import { Briefcase, ClipboardList, LogOut, Moon, Sun, User } from "lucide-react";
+import { Box, Button, Stack, Tooltip, useColorScheme } from "@wso2/oxygen-ui";
+import { Briefcase, ClipboardList, LogOut, Moon, Sun, User } from "@wso2/oxygen-ui-icons-react";
 import { Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
 
-import { useContext, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import SnackbarListener from "@component/common/SnackbarListener";
 import { useAppAuthContext } from "@context/AuthContext";
-import { ColorModeContext } from "@context/ColorModeContext";
 
 import wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
 import wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
 import { State } from "@/types/types";
+import { useIsDark } from "@config/brand";
 import {
   applicationsFailed,
   clearUserData,
@@ -50,9 +50,8 @@ const NAV_ITEMS = [
 ];
 
 const AppShell = () => {
-  const theme = useTheme();
-  const colorMode = useContext(ColorModeContext);
-  const isDark = theme.palette.mode === "dark";
+  const { setMode } = useColorScheme();
+  const isDark = useIsDark();
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
@@ -197,11 +196,10 @@ const AppShell = () => {
           height: "60px",
           flexShrink: 0,
           zIndex: 20,
-          backgroundColor: isDark ? "#00000026" : "#FFFFFF",
-          backdropFilter: isDark ? "blur(16px)" : "none",
+          backgroundColor: isDark ? "transparent" : "#FFFFFF",
           borderBottom: "1px solid",
-          borderColor: isDark ? "rgba(255,255,255,0.08)" : "divider",
-          boxShadow: isDark ? "0 4px 18px -8px rgba(0,0,0,0.6)" : "0 4px 18px -10px rgba(7,20,46,0.18)",
+          borderColor: "divider",
+          boxShadow: isDark ? "none" : "0 4px 18px -10px rgba(7,20,46,0.18)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -211,7 +209,7 @@ const AppShell = () => {
         <Box component="a" href="https://wso2.com" aria-label="Go to the WSO2 home page" sx={{ display: "flex" }}>
           <Box
             component="img"
-            src={theme.palette.mode === "dark" ? wso2LogoWhite : wso2LogoBlack}
+            src={isDark ? wso2LogoWhite : wso2LogoBlack}
             alt=""
             sx={{ height: 40, width: "auto" }}
           />
@@ -258,7 +256,7 @@ const AppShell = () => {
           <Tooltip title={isDark ? "Switch to light mode" : "Switch to dark mode"} arrow disableInteractive>
             <Box
               component="button"
-              onClick={colorMode.toggleColorMode}
+              onClick={() => setMode(isDark ? "light" : "dark")}
               aria-label="Toggle light and dark mode"
               sx={{
                 width: 34,

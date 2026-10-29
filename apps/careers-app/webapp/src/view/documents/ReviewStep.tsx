@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Checkbox, Chip, FormControlLabel, Link, Stack, Typography } from "@mui/material";
+import { Box, Checkbox, Chip, FormControlLabel, Link, Stack, Typography } from "@wso2/oxygen-ui";
 
 import type { DocumentRequirements, PersonalDetails } from "@/types/types";
 import Callout from "@component/common/Callout";

@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, MenuItem, Stack, TextField, Typography } from "@mui/material";
-import { Trash2 } from "lucide-react";
+import { Box, Button, MenuItem, Stack, TextField, Typography } from "@wso2/oxygen-ui";
+import { Trash2 } from "@wso2/oxygen-ui-icons-react";
 import { useState } from "react";
 
 import { COUNTRY_OPTIONS, splitE164, toE164 } from "@utils/phone";

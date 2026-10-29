@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Stack, Typography } from "@mui/material";
-import { User } from "lucide-react";
+import { Box, Button, Stack, Typography } from "@wso2/oxygen-ui";
+import { User } from "@wso2/oxygen-ui-icons-react";
 
 import Callout from "@component/common/Callout";
 import { BRAND_TINT } from "@config/brand";

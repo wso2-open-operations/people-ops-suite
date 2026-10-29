@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Card, CardContent, Skeleton, Stack, Step, StepLabel, Stepper, Typography } from "@mui/material";
-import { Award, Info } from "lucide-react";
+import { Box, Button, Card, CardContent, Skeleton, Stack, Step, StepLabel, Stepper, Typography } from "@wso2/oxygen-ui";
+import { Award, Info } from "@wso2/oxygen-ui-icons-react";
 
 import DOMPurify from "dompurify";
 import { useState } from "react";
@@ -23,7 +23,6 @@ import { useState } from "react";
 import type { Application, ApplicationInterview, DocumentsStatus, OfferLetter } from "@/types/types";
 import ApplicationStatusBadge from "@component/careers/ApplicationStatusBadge";
 import Callout from "@component/common/Callout";
-import { orangeTextOf } from "@config/brand";
 import { ApplicationStatus } from "@config/constant";
 import { cardSx, pillButtonSx } from "@utils/styles";
 import {
@@ -100,10 +99,7 @@ const ApplicationDetails = ({
         <Typography
           fontSize="0.95rem"
           fontWeight={actionNeeded || interviewComing ? 700 : 500}
-          sx={{
-            mt: 1.5,
-            color: (theme) => (actionNeeded || interviewComing ? orangeTextOf(theme) : theme.palette.text.secondary),
-          }}
+          sx={{ mt: 1.5, color: actionNeeded || interviewComing ? "primary.main" : "text.secondary" }}
         >
           {nextStepOf(application, interviews)}
         </Typography>

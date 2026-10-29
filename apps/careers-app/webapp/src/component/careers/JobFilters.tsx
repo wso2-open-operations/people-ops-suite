@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, ClickAwayListener, Fade, Paper, Popper, Stack, Typography } from "@mui/material";
-import { Check, ChevronDown, X } from "lucide-react";
+import { Box, ClickAwayListener, Fade, Paper, Popper, Stack, Typography } from "@wso2/oxygen-ui";
+import { Check, ChevronDown, X } from "@wso2/oxygen-ui-icons-react";
 import { useMemo, useRef, useState } from "react";
 
 import { Job } from "@/types/types";
@@ -126,8 +126,8 @@ const JobFilters = ({ jobs, filters, onChange, searchActive, onClearAll }: JobFi
             padding: "0 12px",
             backgroundColor: "background.glass",
             border: "1px solid",
-            borderColor: (theme) =>
-              isOpen ? theme.palette.primary.main : theme.palette.mode === "dark" ? theme.palette.divider : "rgba(0,0,0,0.15)",
+            borderColor: isOpen ? "primary.main" : "rgba(0,0,0,0.15)",
+            "[data-color-scheme='dark'] &": { borderColor: isOpen ? "primary.main" : "divider" },
             outline: "none",
             borderRadius: "40px",
             textAlign: "left",

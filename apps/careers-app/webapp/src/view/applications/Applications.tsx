@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Button, Typography } from "@mui/material";
-import { ArrowLeft } from "lucide-react";
+import { Button, Typography } from "@wso2/oxygen-ui";
+import { ArrowLeft } from "@wso2/oxygen-ui-icons-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 

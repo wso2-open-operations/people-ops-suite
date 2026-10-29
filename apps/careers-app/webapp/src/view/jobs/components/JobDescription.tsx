@@ -16,7 +16,7 @@
 
 import DOMPurify from "dompurify";
 
-import { Box } from "@mui/material";
+import { Box } from "@wso2/oxygen-ui";
 
 import { offerCardStyles, proseStyles } from "@view/jobs/jobDetailStyles";
 

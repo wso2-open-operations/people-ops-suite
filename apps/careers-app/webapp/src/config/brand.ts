@@ -14,13 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import type { Theme } from "@mui/material";
+import { useColorScheme } from "@wso2/oxygen-ui";
 
 export const BRAND_ORANGE = "#ff6700";
 
-// Orange for text; the darker shade on the light theme to meet contrast.
-export const orangeTextOf = (theme: Theme) =>
-  theme.palette.mode === "dark" ? theme.palette.primary.main : theme.palette.primary.dark;
+// Whether the page is in dark mode, from the library's colour scheme (the system setting when none is chosen).
+export const useIsDark = (): boolean => {
+  const { mode, systemMode } = useColorScheme();
+  return (mode === "system" ? systemMode : mode) === "dark";
+};
 
 export const BRAND_TINT = {
   faint: "#ff670010",
@@ -40,6 +42,7 @@ export const ON_ORANGE = "#0B1220";
 // Job page hero colours for each theme mode, also used by its skeleton.
 const HERO_COLORS = {
   dark: {
+    // The canvas of the WSO2 dark theme, so the hero blends into the page.
     background: "#0f172a",
     gridLine: "rgba(255,255,255,0.05)",
     outline: "rgba(255,255,255,0.2)",

@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Card, CircularProgress, LinearProgress, Stack, Typography } from "@mui/material";
-import { ArrowLeft, Check } from "lucide-react";
+import { Box, Button, Card, CircularProgress, LinearProgress, Stack, Typography } from "@wso2/oxygen-ui";
+import { ArrowLeft, Check } from "@wso2/oxygen-ui-icons-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
