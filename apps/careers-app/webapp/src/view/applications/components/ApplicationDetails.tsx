@@ -23,6 +23,7 @@ import { useState } from "react";
 import type { Application, ApplicationInterview, DocumentsStatus, OfferLetter } from "@/types/types";
 import ApplicationStatusBadge from "@component/careers/ApplicationStatusBadge";
 import Callout from "@component/common/Callout";
+import { orangeTextOf } from "@config/brand";
 import { ApplicationStatus } from "@config/constant";
 import { cardSx, pillButtonSx } from "@utils/styles";
 import {
@@ -34,6 +35,7 @@ import {
   nextStepOf,
   offerDeadlineOf,
   trackerOf,
+  upcomingInterviewOf,
 } from "@view/applications/applicationHelpers";
 import InterviewsSection from "@view/applications/components/InterviewsSection";
 import OfferActions from "@view/applications/components/OfferActions";
@@ -52,8 +54,7 @@ interface ApplicationDetailsProps {
   offerLetter: OfferLetter | null;
   // The interviews of the application, past and upcoming.
   interviews: ApplicationInterview[];
-  // What is known about the submission of the onboarding documents; undefined while that is not yet known, and null
-  // when it could not be found out.
+  // Documents submission status; undefined while loading, null when it failed.
   documentsStatus: DocumentsStatus | null | undefined;
   onRetryDocumentsStatus: () => void;
 }
@@ -73,6 +74,8 @@ const ApplicationDetails = ({
 }: ApplicationDetailsProps) => {
   const [letterOpen, setLetterOpen] = useState(false);
   const actionNeeded = isOffer(application);
+  // An upcoming interview is shown in orange.
+  const interviewComing = upcomingInterviewOf(application, interviews) !== undefined;
   const deadline = actionNeeded ? offerDeadlineOf(application) : null;
   const offerExpired = deadline !== null && deadline.daysLeft < 0;
   const { activeStep, errorStep } = trackerOf(application);
@@ -96,8 +99,11 @@ const ApplicationDetails = ({
         </Stack>
         <Typography
           fontSize="0.95rem"
-          fontWeight={actionNeeded ? 700 : 500}
-          sx={{ mt: 1.5, color: actionNeeded ? "#ff6700" : "text.secondary" }}
+          fontWeight={actionNeeded || interviewComing ? 700 : 500}
+          sx={{
+            mt: 1.5,
+            color: (theme) => (actionNeeded || interviewComing ? orangeTextOf(theme) : theme.palette.text.secondary),
+          }}
         >
           {nextStepOf(application, interviews)}
         </Typography>

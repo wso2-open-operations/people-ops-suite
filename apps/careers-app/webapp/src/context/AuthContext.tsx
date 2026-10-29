@@ -17,7 +17,7 @@
 import { useAuthContext } from "@asgardeo/auth-react";
 import { useIdleTimer } from "react-idle-timer";
 
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
@@ -113,28 +113,36 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     activate();
   };
 
+  // The identity provider's functions change on every render, so they are read through a ref. That keeps getToken and
+  // renewToken stable, and the pages that load data when they change do not reload on a theme switch.
+  const sdk = useRef({ getAccessToken, refreshAccessToken, trySignInSilently });
+  sdk.current = { getAccessToken, refreshAccessToken, trySignInSilently };
+
   // Guests browse and apply without a token; calls made on their behalf send no credentials.
   const getToken = useCallback(async () => {
     if (!isAuthenticated) return "";
     try {
-      return await getAccessToken();
+      return await sdk.current.getAccessToken();
     } catch {
       return "";
     }
-  }, [isAuthenticated, getAccessToken]);
+  }, [isAuthenticated]);
 
   // Renews the access token with the refresh token, and when there is none, through the user's session with the
   // identity provider.
   const renewToken = useCallback(async () => {
     try {
-      await refreshAccessToken();
+      await sdk.current.refreshAccessToken();
     } catch {
-      if (!(await trySignInSilently())) throw new Error("The session could not be renewed.");
+      if (!(await sdk.current.trySignInSilently())) throw new Error("The session could not be renewed.");
     }
-    return getAccessToken();
-  }, [refreshAccessToken, trySignInSilently, getAccessToken]);
+    return sdk.current.getAccessToken();
+  }, []);
 
-  const authContext: AuthContextType = { appSignIn, appSignOut, isSignedIn: isAuthenticated, getToken, renewToken };
+  const authContext: AuthContextType = useMemo(
+    () => ({ appSignIn, appSignOut, isSignedIn: isAuthenticated, getToken, renewToken }),
+    [appSignIn, appSignOut, isAuthenticated, getToken, renewToken],
+  );
 
   if (isLoading) {
     return <PreLoader isLoading message="Setting up your Candidate Passport ..." />;

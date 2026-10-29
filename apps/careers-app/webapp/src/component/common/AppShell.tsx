@@ -16,7 +16,7 @@
 
 import { Box, Button, Stack, Tooltip, useTheme } from "@mui/material";
 import { Briefcase, ClipboardList, LogOut, Moon, Sun, User } from "lucide-react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
 
 import { useContext, useEffect, useRef } from "react";
 
@@ -37,8 +37,11 @@ import {
   loadOrgStructure,
   loadProfile,
   profileFailed,
+  setSavedJobs,
 } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { dataNeededBy } from "@utils/routeData";
+import { readSavedJobs } from "@utils/savedJobs";
 
 const NAV_ITEMS = [
   { path: "/jobs", label: "Jobs", icon: Briefcase },
@@ -62,25 +65,43 @@ const AppShell = () => {
   const jobs = useAppSelector((state: RootState) => state.careers.jobs);
   const jobDetails = useAppSelector((state: RootState) => state.careers.jobDetails);
 
-  // Read inside the prefetch below without making each loaded detail restart it.
+  // Latest job details for the prefetch below.
   const jobDetailsRef = useRef(jobDetails);
   jobDetailsRef.current = jobDetails;
 
-  // Loads the job list and the org structure as soon as the app opens; pages only read the state. A failed load goes
-  // back to idle through retryLoad and is tried again here.
+  // The data the open route needs.
+  const {
+    jobs: needsJobs,
+    orgStructure: needsOrgStructure,
+    jobDetails: needsJobDetails,
+    applications: needsApplications,
+    profile: needsProfile,
+  } = dataNeededBy(useMatches());
+
+  // Loads the job list and org structure for the open route.
   useEffect(() => {
-    if (jobsState !== State.idle && orgStructureState !== State.idle) return;
+    const loadJobList = needsJobs && jobsState === State.idle;
+    const loadOrgs = needsOrgStructure && orgStructureState === State.idle;
+    if (!loadJobList && !loadOrgs) return;
+    // Set when the effect is replaced before the token arrives, so the newer one does the load.
+    let cancelled = false;
     getAccessToken()
       .then((token) => {
-        if (jobsState === State.idle) dispatch(loadJobs(token));
-        if (orgStructureState === State.idle) dispatch(loadOrgStructure(token));
+        if (cancelled) return;
+        if (loadJobList) dispatch(loadJobs(token));
+        if (loadOrgs) dispatch(loadOrgStructure(token));
       })
-      .catch(() => dispatch(loadFailed()));
-  }, [dispatch, getAccessToken, jobsState, orgStructureState]);
+      .catch(() => {
+        if (!cancelled) dispatch(loadFailed());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, getAccessToken, jobsState, orgStructureState, needsJobs, needsOrgStructure]);
 
-  // Once the job list is in, fetches each job's detail in the background; a failed fetch is ignored.
+  // Prefetches each job's detail in the background.
   useEffect(() => {
-    if (jobsState !== State.success) return;
+    if (jobsState !== State.success || !needsJobDetails) return;
     const queue = jobs.map((job) => job.id).filter((jobId) => !jobDetailsRef.current[jobId]);
     if (queue.length === 0) return;
 
@@ -105,37 +126,50 @@ const AppShell = () => {
     return () => {
       cancelled = true;
     };
-  }, [jobsState, jobs, dispatch, getAccessToken]);
+  }, [jobsState, jobs, needsJobDetails, dispatch, getAccessToken]);
 
-  // Once signed in, loads the candidate's applications and profile in the background, so the pages that show them
-  // open with the data in place. A load that is reset to idle is tried again here.
+  // Loads the candidate's applications and profile for the open route.
   useEffect(() => {
-    if (!isSignedIn || (applicationsState !== State.idle && profileState !== State.idle)) return;
-    // Set when the candidate signs out, or the states change, before the token arrives.
+    const loadApps = needsApplications && applicationsState === State.idle;
+    const loadOwnProfile = needsProfile && profileState === State.idle;
+    if (!isSignedIn || (!loadApps && !loadOwnProfile)) return;
+    // Set when the effect is replaced before the token arrives.
     let cancelled = false;
     getAccessToken()
       .then((token) => {
         if (cancelled) return;
-        if (applicationsState === State.idle) dispatch(loadApplications(token));
-        if (profileState === State.idle) dispatch(loadProfile(token));
+        if (loadApps) dispatch(loadApplications(token));
+        if (loadOwnProfile) dispatch(loadProfile(token));
       })
       .catch(() => {
         if (cancelled) return;
-        if (applicationsState === State.idle) dispatch(applicationsFailed());
-        if (profileState === State.idle) dispatch(profileFailed());
+        if (loadApps) dispatch(applicationsFailed());
+        if (loadOwnProfile) dispatch(profileFailed());
       });
     return () => {
       cancelled = true;
     };
-  }, [isSignedIn, applicationsState, profileState, dispatch, getAccessToken]);
+  }, [isSignedIn, applicationsState, profileState, needsApplications, needsProfile, dispatch, getAccessToken]);
 
   // Clears the candidate's data when nobody is signed in.
   useEffect(() => {
     if (!isSignedIn) dispatch(clearUserData());
   }, [isSignedIn, dispatch]);
 
-  // Signs the candidate out when the backend refused their access token, so a live identity-provider session cannot
-  // sign them straight back in.
+  // Restores the candidate's saved jobs on sign-in.
+  const userId = useAppSelector((state: RootState) => state.auth.decodedIdToken?.sub);
+  const savedJobsOf = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isSignedIn || !userId) {
+      savedJobsOf.current = null;
+      return;
+    }
+    if (savedJobsOf.current === userId) return;
+    savedJobsOf.current = userId;
+    dispatch(setSavedJobs(readSavedJobs(userId)));
+  }, [isSignedIn, userId, dispatch]);
+
+  // Signs the candidate out when the backend refuses the access token.
   useEffect(() => {
     if (!sessionExpired) return;
     dispatch(clearUserData());
@@ -147,7 +181,7 @@ const AppShell = () => {
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
-  // Pages scroll inside this container rather than the window, so a route change has to reset it explicitly.
+  // Resets the scroll of the page container on a route change.
   const contentRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
@@ -163,7 +197,8 @@ const AppShell = () => {
           height: "60px",
           flexShrink: 0,
           zIndex: 20,
-          backgroundColor: isDark ? "#16274F" : "#FFFFFF",
+          backgroundColor: isDark ? "#00000026" : "#FFFFFF",
+          backdropFilter: isDark ? "blur(16px)" : "none",
           borderBottom: "1px solid",
           borderColor: isDark ? "rgba(255,255,255,0.08)" : "divider",
           boxShadow: isDark ? "0 4px 18px -8px rgba(0,0,0,0.6)" : "0 4px 18px -10px rgba(7,20,46,0.18)",
