@@ -94,22 +94,6 @@ type AtsCandidateUpdate record {|
     string university?;
 |};
 
-# An offer letter as the ATS returns it.
-type AtsOfferLetter record {
-    string subject = "";
-    string sentOn = "";
-    string? threadId = ();
-    string htmlContent = "";
-};
-
-# The offer letter a candidate was sent, in the shape the web app reads.
-public type OfferLetter record {|
-    string subject;
-    string sentOn;
-    string threadId;
-    string html;
-|};
-
 # An interview as the ATS returns it. Only the fields below are read; the rest of the reply, which holds internal
 # details such as the interviewers and the score cards, is ignored and never passed on.
 type AtsInterview record {

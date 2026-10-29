@@ -101,23 +101,6 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
         return applications;
     }
 
-    # The offer letter sent for one of the signed-in candidate's own applications, 404 when there is none.
-    resource function get applications/[string applicationId]/offer\-letter(http:RequestContext ctx)
-            returns json|http:Unauthorized|http:Forbidden|http:BadRequest|http:NotFound|http:BadGateway
-                |http:GatewayTimeout {
-        string requestId = types:requestIdOf(ctx);
-        if !types:isValidNumericId(applicationId) {
-            return <http:NotFound>{body: {message: "Application not found"}};
-        }
-        jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
-            callerOf(ctx, requestId);
-        if caller !is jwt:CallerDetails {
-            return caller;
-        }
-        return profileReply(vacancy:getOfferLetter(caller.email, applicationId, requestId),
-            "Failed to fetch the offer letter", requestId);
-    }
-
     # The interviews of one of the signed-in candidate's own applications, in the order they take place.
     resource function get applications/[string applicationId]/interviews(http:RequestContext ctx)
             returns json|http:Unauthorized|http:Forbidden|http:BadRequest|http:NotFound|http:BadGateway
