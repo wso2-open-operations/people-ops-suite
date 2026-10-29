@@ -24,7 +24,7 @@ import Callout from "@component/common/Callout";
 import PageContainer from "@component/common/PageContainer";
 import { ApplicationStatus, SnackMessage } from "@config/constant";
 import { useAppAuthContext } from "@context/AuthContext";
-import { loadProfile, retryApplications } from "@slices/careersSlice/careers";
+import { loadProfile, retryApplications, setApplicationExtras } from "@slices/careersSlice/careers";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { fetchDocumentRequirements, fetchDocumentsStatus, submitDocuments } from "@utils/profileService";
@@ -60,6 +60,7 @@ const Documents = () => {
   const { getToken, renewToken } = useAppAuthContext();
   const { id: applicationId } = useParams<{ id: string }>();
   const applications = useAppSelector((state: RootState) => state.careers.applications);
+  const generation = useAppSelector((state: RootState) => state.careers.sessionGeneration);
   const applicationsState = useAppSelector((state: RootState) => state.careers.applicationsState);
   const profile = useAppSelector((state: RootState) => state.careers.profile);
   const profileState = useAppSelector((state: RootState) => state.careers.profileState);
@@ -231,6 +232,8 @@ const Documents = () => {
       }
       setFiles({});
       setSubmitted(true);
+      // The status the application page kept is out of date now, so it is dropped and the page checks again.
+      dispatch(setApplicationExtras({ id: application.id, generation, extras: { documentsStatus: undefined } }));
       const message = editing ? SnackMessage.success.documentsUpdated : SnackMessage.success.documentsSent;
       dispatch(enqueueSnackbarMessage({ message, type: "success" }));
     } catch (error) {
