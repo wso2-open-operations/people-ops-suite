@@ -16,7 +16,14 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-import reducer, { clearUserData, setApplicationExtras } from "@slices/careersSlice/careers";
+import type { Application } from "@/types/types";
+import reducer, {
+  EXTRAS_FRESH_MS,
+  clearUserData,
+  extrasVersionOf,
+  isExtrasFresh,
+  setApplicationExtras,
+} from "@slices/careersSlice/careers";
 
 // The slice reads the app's config when it loads, which needs a browser window.
 vi.mock("@config/config", () => ({
@@ -65,6 +72,66 @@ describe("setApplicationExtras", () => {
       setApplicationExtras({ id: "a1", generation: generationBefore, extras: { interviews: [] } }),
     );
     expect(state.applicationExtras).toEqual({});
+  });
+});
+
+describe("load marks", () => {
+  const generation = initial.sessionGeneration;
+
+  it("keeps the mark of each field when later loads add theirs", () => {
+    let state = reducer(
+      initial,
+      setApplicationExtras({
+        id: "a1",
+        generation,
+        extras: { interviews: [], loaded: { interviews: { at: 1, version: "v1" } } },
+      }),
+    );
+    state = reducer(
+      state,
+      setApplicationExtras({
+        id: "a1",
+        generation,
+        extras: { offerLetter: null, loaded: { offerLetter: { at: 2, version: "v1" } } },
+      }),
+    );
+    expect(state.applicationExtras.a1.loaded).toEqual({
+      interviews: { at: 1, version: "v1" },
+      offerLetter: { at: 2, version: "v1" },
+    });
+  });
+
+  it("builds the version from the status and the last change", () => {
+    const base = { id: "a1", status: "Interview", updatedDate: "2026-10-01" } as Application;
+    expect(extrasVersionOf(base)).not.toBe(extrasVersionOf({ ...base, updatedDate: "2026-10-02" }));
+    expect(extrasVersionOf(base)).not.toBe(extrasVersionOf({ ...base, status: "Rejected" } as Application));
+  });
+
+  describe("isExtrasFresh", () => {
+    const now = 1_000_000;
+    const loaded = { interviews: [], loaded: { interviews: { at: now - 1000, version: "v1" } } };
+
+    it("uses a field that was loaded recently for the same version", () => {
+      expect(isExtrasFresh(loaded, "interviews", "v1", now)).toBe(true);
+    });
+
+    it("loads again when nothing was loaded, or the field has no mark", () => {
+      expect(isExtrasFresh(undefined, "interviews", "v1", now)).toBe(false);
+      expect(isExtrasFresh({ interviews: [] }, "interviews", "v1", now)).toBe(false);
+    });
+
+    it("loads again when the application moved on", () => {
+      expect(isExtrasFresh(loaded, "interviews", "v2", now)).toBe(false);
+    });
+
+    it("loads again after the time limit", () => {
+      expect(isExtrasFresh(loaded, "interviews", "v1", now - 1000 + EXTRAS_FRESH_MS)).toBe(false);
+    });
+
+    it("loads again when the value was cleared, as a retry or a submit does", () => {
+      const cleared = { ...loaded, interviews: undefined };
+      expect(isExtrasFresh(cleared, "interviews", "v1", now)).toBe(false);
+    });
   });
 });
 

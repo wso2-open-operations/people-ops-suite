@@ -44,12 +44,41 @@ import {
   fetchVacancyDetail,
 } from "@utils/vacancyService";
 
+// The fields of ApplicationExtras that are loaded from the backend.
+export type ExtrasField = "offerLetter" | "interviews" | "documentsStatus";
+
+// When a field was loaded, and the application's status and last change at that time.
+export interface LoadedMark {
+  at: number;
+  version: string;
+}
+
 // What the application page loads for one application; a field is missing until it has been loaded once.
 export interface ApplicationExtras {
   offerLetter?: OfferLetter | null;
   interviews?: ApplicationInterview[];
   // Undefined while loading, null when the check failed.
   documentsStatus?: DocumentsStatus | null;
+  // Set when a load succeeded; a failed or cleared field has no mark and is loaded again.
+  loaded?: Partial<Record<ExtrasField, LoadedMark>>;
+}
+
+// How long a loaded field is used without asking the backend again.
+export const EXTRAS_FRESH_MS = 5 * 60_000;
+
+// Changes when the application moves on, which makes what was loaded for it out of date.
+export const extrasVersionOf = (application: Application): string =>
+  `${application.status}|${application.updatedDate ?? ""}`;
+
+// Whether a field was loaded for this version of the application, and recently enough to be used as it is.
+export function isExtrasFresh(
+  extras: ApplicationExtras | undefined,
+  field: ExtrasField,
+  version: string,
+  now: number = Date.now(),
+): boolean {
+  const mark = extras?.loaded?.[field];
+  return extras?.[field] !== undefined && mark !== undefined && mark.version === version && now - mark.at < EXTRAS_FRESH_MS;
 }
 
 interface CareersState {
@@ -186,7 +215,14 @@ const CareersSlice = createSlice({
     ) => {
       const { id, generation, extras } = action.payload;
       if (generation !== state.sessionGeneration) return;
-      state.applicationExtras[id] = { ...state.applicationExtras[id], ...extras };
+      const { loaded, ...fields } = extras;
+      const existing = state.applicationExtras[id];
+      state.applicationExtras[id] = {
+        ...existing,
+        ...fields,
+        // The marks of other fields stay.
+        ...(loaded && { loaded: { ...existing?.loaded, ...loaded } }),
+      };
     },
     toggleSaveJob: (state, action: PayloadAction<string>) => {
       const idx = state.savedJobIds.indexOf(action.payload);

@@ -33,6 +33,9 @@ import { ApplicationStatus, OFFER_CONFLICT_ERROR, OFFER_EXPIRED_ERROR, SnackMess
 import { useAppAuthContext } from "@context/AuthContext";
 import {
   type ApplicationExtras,
+  type LoadedMark,
+  extrasVersionOf,
+  isExtrasFresh,
   dismissFeedback,
   refreshApplications,
   respondToOffer,
@@ -99,6 +102,11 @@ const Applications = () => {
   const keep = (id: string, loaded: ApplicationExtras) =>
     dispatch(setApplicationExtras({ id, generation, extras: loaded }));
 
+  // What was loaded is used as it is until the application moves on or the time limit passes; any other visit only
+  // shows it, and the page asks the backend again when it is missing, failed or out of date.
+  const version = selectedApplication ? extrasVersionOf(selectedApplication) : "";
+  const markLoaded = (): LoadedMark => ({ at: Date.now(), version });
+
   const hasOffer =
     selectedApplication?.status === ApplicationStatus.Offer ||
     selectedApplication?.status === ApplicationStatus.OfferAccepted;
@@ -107,35 +115,35 @@ const Applications = () => {
 
   // The offer letter, shown once the candidate has an offer or has accepted one; a failed load shows nothing.
   useEffect(() => {
-    if (!selectedId || !hasOffer) return;
+    if (!selectedId || !hasOffer || isExtrasFresh(extras, "offerLetter", version)) return;
     let cancelled = false;
     getToken()
       .then((token) => fetchOfferLetter(token, selectedId))
       .then((letter) => {
-        if (!cancelled) keep(selectedId, { offerLetter: letter });
+        if (!cancelled) keep(selectedId, { offerLetter: letter, loaded: { offerLetter: markLoaded() } });
       })
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, hasOffer, getToken, generation]);
+  }, [selectedId, hasOffer, getToken, generation, version]);
 
   // The interviews of the opened application, past and upcoming; none when they cannot be loaded.
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId || isExtrasFresh(extras, "interviews", version)) return;
     let cancelled = false;
     getToken()
       .then((token) => fetchInterviews(token, selectedId))
       .then((loaded) => {
-        if (!cancelled) keep(selectedId, { interviews: loaded });
+        if (!cancelled) keep(selectedId, { interviews: loaded, loaded: { interviews: markLoaded() } });
       })
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, getToken, generation]);
+  }, [selectedId, getToken, generation, version]);
 
   // Raised to ask for the documents check again after it failed.
   const [documentsStatusAttempt, setDocumentsStatusAttempt] = useState(0);
@@ -149,12 +157,12 @@ const Applications = () => {
 
   // Whether the documents were already submitted. A status already known stays on screen while it is checked again.
   useEffect(() => {
-    if (!selectedId || !hasAcceptedOffer) return;
+    if (!selectedId || !hasAcceptedOffer || isExtrasFresh(extras, "documentsStatus", version)) return;
     let cancelled = false;
     getToken()
       .then((token) => fetchDocumentsStatus(token, selectedId))
       .then((loaded) => {
-        if (!cancelled) keep(selectedId, { documentsStatus: loaded });
+        if (!cancelled) keep(selectedId, { documentsStatus: loaded, loaded: { documentsStatus: markLoaded() } });
       })
       // A failed check is kept apart from "not submitted", and can be tried again.
       .catch(() => {
@@ -164,7 +172,7 @@ const Applications = () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, hasAcceptedOffer, getToken, generation, documentsStatusAttempt]);
+  }, [selectedId, hasAcceptedOffer, getToken, generation, documentsStatusAttempt, version]);
 
   const [offerDialog, setOfferDialog] = useState<"accept" | "decline" | "welcome" | null>(null);
   const [respondingToOffer, setRespondingToOffer] = useState(false);
