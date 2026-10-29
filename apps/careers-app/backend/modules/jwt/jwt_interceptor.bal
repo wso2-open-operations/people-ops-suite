@@ -22,20 +22,6 @@ import ballerina/log;
 
 final apply:UserRateLimiter signedInRateLimiter = new;
 
-# The routes open to guests, listed exactly: the job list, org structure, one job's detail and applying. A route
-# that is not listed is not public.
-isolated function isPublicRoute(string method, string[] path) returns boolean {
-    if method == http:GET {
-        return (path.length() == 1 && path[0] == "jobs")
-            || (path.length() == 2 && path[0] == "jobs" && path[1] == "org-structure")
-            || (path.length() == 2 && path[0] == "jobs" && types:isValidJobId(path[1]));
-    }
-    if method == http:POST {
-        return path.length() == 3 && path[0] == "jobs" && types:isValidJobId(path[1]) && path[2] == "apply";
-    }
-    return false;
-}
-
 # Validates the caller's bearer token (JWKS, falling back to introspection)
 # and stashes their identity in the request context for resource functions
 public isolated service class JwtInterceptor {
@@ -44,10 +30,6 @@ public isolated service class JwtInterceptor {
     isolated resource function 'default [string... path](http:RequestContext ctx, http:Request req)
             returns http:NextService|AppUnauthorizedError|AppTooManyRequestsError|error? {
         if req.method == http:OPTIONS {
-            return ctx.next();
-        }
-
-        if isPublicRoute(req.method, path) {
             return ctx.next();
         }
 

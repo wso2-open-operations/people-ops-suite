@@ -28,9 +28,3 @@ sasToken = ""
 # [careers_app.apply]
 # signedInMaxPerUser = 60
 # signedInWindowSeconds = 60
-
-# Optional: job read cache, in seconds.
-# [careers_app.vacancy]
-# refreshAfterSeconds = 120
-# maxStaleSeconds = 21600
-# failFastSeconds = 5
