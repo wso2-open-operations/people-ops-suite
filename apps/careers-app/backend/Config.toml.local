@@ -25,6 +25,6 @@ sasToken = ""
 # editableDays = 0
 
 # Optional: limit on the requests of one signed-in user.
-# [careers_app.apply]
+# [careers_app.jwt]
 # signedInMaxPerUser = 60
 # signedInWindowSeconds = 60

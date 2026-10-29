@@ -106,7 +106,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             returns json|http:Unauthorized|http:Forbidden|http:BadRequest|http:NotFound|http:BadGateway
                 |http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        if !types:isValidJobId(applicationId) {
+        if !types:isValidNumericId(applicationId) {
             return <http:NotFound>{body: {message: "Application not found"}};
         }
         jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
@@ -123,7 +123,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             returns json|http:Unauthorized|http:Forbidden|http:BadRequest|http:NotFound|http:BadGateway
                 |http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        if !types:isValidJobId(applicationId) {
+        if !types:isValidNumericId(applicationId) {
             return <http:NotFound>{body: {message: "Application not found"}};
         }
         jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
@@ -140,7 +140,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
     resource function get applications/[string applicationId]/documents(http:RequestContext ctx)
             returns json|http:Unauthorized|http:Forbidden|http:NotFound|http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        if !types:isValidJobId(applicationId) {
+        if !types:isValidNumericId(applicationId) {
             return <http:NotFound>{body: {message: "Application not found"}};
         }
         jwt:CallerDetails|http:Unauthorized|http:Forbidden|http:BadGateway|http:GatewayTimeout caller =
@@ -185,7 +185,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             returns http:Created|http:BadRequest|http:Unauthorized|http:Forbidden|http:NotFound|http:Conflict
                 |http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        if !types:isValidJobId(applicationId) {
+        if !types:isValidNumericId(applicationId) {
             return <http:NotFound>{body: {message: "Application not found"}};
         }
         jwt:AsgardeoJwt|error user = jwt:getUser(ctx);
@@ -246,7 +246,7 @@ service http:InterceptableService / on new http:Listener(port, requestLimits = {
             returns http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:NotFound|http:Conflict
                 |http:BadGateway|http:GatewayTimeout {
         string requestId = types:requestIdOf(ctx);
-        if !types:isValidJobId(applicationId) {
+        if !types:isValidNumericId(applicationId) {
             return <http:NotFound>{body: {message: "Application not found"}};
         }
         jwt:AsgardeoJwt|error user = jwt:getUser(ctx);

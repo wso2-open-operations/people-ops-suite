@@ -14,13 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import wso2/careers_app.apply;
 import wso2/careers_app.types;
 
 import ballerina/http;
 import ballerina/log;
 
-final apply:UserRateLimiter signedInRateLimiter = new;
+final UserRateLimiter signedInRateLimiter = new;
 
 # Validates the caller's bearer token (JWKS, falling back to introspection)
 # and stashes their identity in the request context for resource functions
@@ -49,7 +48,7 @@ public isolated service class JwtInterceptor {
         if !signedInRateLimiter.tryAcquireUser(user.sub) {
             log:printWarn("Request rate limit reached for a signed-in user", requestId = types:requestIdOf(ctx));
             return <AppTooManyRequestsError>{
-                headers: {"Retry-After": apply:signedInWindowSeconds.toString()},
+                headers: {"Retry-After": signedInWindowSeconds.toString()},
                 body: {message: "Too many requests"}
             };
         }

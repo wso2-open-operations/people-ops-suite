@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import wso2/careers_app.apply;
+import wso2/careers_app.types;
 
 // The status the web app shows for an ATS interview status.
 isolated function interviewStatusOf(string atsStatus) returns string {
@@ -165,7 +165,7 @@ isolated function atsUpdateOf(ProfileChanges changes) returns AtsCandidateUpdate
     }
     string? contactNo = changes?.contactNo;
     if contactNo is string {
-        if !apply:isValidPhone(contactNo.trim()) {
+        if !types:isValidPhone(contactNo.trim()) {
             return "Enter the phone number in international format, for example +94771234567.";
         }
         update.contactNo = contactNo.trim();
