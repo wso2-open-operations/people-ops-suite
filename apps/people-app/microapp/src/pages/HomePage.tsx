@@ -19,16 +19,34 @@ import { services } from "@/constants";
 import { Header } from "@/components/core";
 import { PageTransitionWrapper } from "@/components/shared";
 import { ServiceTile } from "@/components/features/services";
-import { requestMicroAppVersion } from "@/components/microapp-bridge";
 import { useEffect, useState } from "react";
 
 function HomePage({ user: _user }: PageProps) {
   const [appVersion, setAppVersion] = useState<string | null>(null);
 
   useEffect(() => {
-    requestMicroAppVersion((version) => {
-      if (version) setAppVersion(version);
-    });
+    // Derive the version from the deployed micro-app manifest (microapp.json served at
+    // the app root); hide the version on any failure or if it isn't defined.
+    fetch("microapp.json")
+      .then((res) =>
+        res.ok
+          ? (res.json() as Promise<{ versions?: { version?: string }[] }>)
+          : Promise.reject(new Error(`microapp.json ${res.status}`)),
+      )
+      .then((manifest) => {
+        const versions = manifest?.versions;
+        const version =
+          Array.isArray(versions) && versions.length > 0
+            ? versions[versions.length - 1]?.version?.trim()
+            : undefined;
+        // Only show a real version (starts with a digit); ignore placeholders like "unknown".
+        if (typeof version === "string" && /^\d/.test(version)) {
+          setAppVersion(version);
+        }
+      })
+      .catch(() => {
+        // manifest missing / unreachable / malformed → keep the version hidden
+      });
   }, []);
 
   return (
