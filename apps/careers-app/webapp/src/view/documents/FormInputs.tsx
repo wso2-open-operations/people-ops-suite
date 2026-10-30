@@ -15,16 +15,35 @@
 // under the License.
 
 import { Box, Button, MenuItem, Stack, TextField, Typography } from "@wso2/oxygen-ui";
-import { ChevronDown, ChevronUp, Trash2 } from "@wso2/oxygen-ui-icons-react";
+import { ChevronDown, ChevronUp, CircleAlert, CircleCheck, Clock, Trash2 } from "@wso2/oxygen-ui-icons-react";
 import { useState } from "react";
 
 import { COUNTRY_OPTIONS, splitE164, toE164 } from "@utils/phone";
 import { fullRowSx } from "@utils/styles";
+import type { DocumentStatus } from "@view/documents/documentFiles";
 
-interface LabeledFieldProps {
-  label: string;
-  // Shows a * after the label.
-  required?: boolean;
+// The icon and colour of each document status.
+const STATUS_LOOK = {
+  Complete: { Icon: CircleCheck, color: "#059669" },
+  Pending: { Icon: Clock, color: "#6B7280" },
+  "Action needed": { Icon: CircleAlert, color: "#EF4444" },
+} as const;
+
+// A document's status: an icon with the status beside it, a tick when it is complete. The label can be more specific
+// than the status, such as "Already uploaded" for a complete document.
+export const StatusTag = ({ status, label = status }: { status: DocumentStatus; label?: string }) => {
+  const { Icon, color } = STATUS_LOOK[status];
+  return (
+    <Stack direction="row" alignItems="center" gap={0.5} sx={{ color, flexShrink: 0 }}>
+      <Icon size={16} aria-hidden />
+      <Typography component="span" fontSize="0.8rem" fontWeight={600} color="inherit">
+        {label}
+      </Typography>
+    </Stack>
+  );
+};
+
+interface FieldProps {
   // How many of the 12 parts of a row it takes on a wide screen; half a row when not given.
   span?: number;
   error?: string;
@@ -32,17 +51,10 @@ interface LabeledFieldProps {
   children: React.ReactNode;
 }
 
-// A label above its input, with a hint and the problem with the input below it.
-export const LabeledField = ({ label, required, span = 6, error, helper, children }: LabeledFieldProps) => (
+// An input in its place in the grid, with a hint and the problem with the input below it. The label is inside the
+// input itself, as in the apply form.
+export const Field = ({ span = 6, error, helper, children }: FieldProps) => (
   <Box sx={{ minWidth: 0, gridColumn: { md: `span ${span}` } }}>
-    <Typography component="label" fontWeight={600} fontSize="0.95rem" color="text.primary" sx={{ display: "block", mb: 0.75 }}>
-      {label}
-      {required && (
-        <Box component="span" aria-hidden sx={{ color: "error.main", ml: 0.5 }}>
-          *
-        </Box>
-      )}
-    </Typography>
     {children}
     {error ? (
       <Typography color="error" fontSize="0.8rem" mt={0.5}>
@@ -60,6 +72,21 @@ export const LabeledField = ({ label, required, span = 6, error, helper, childre
 
 // The rounded, tinted look of the inputs.
 const inputSx = { "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "action.hover" } } as const;
+
+// The same, with the chosen value as tall as the text typed in an input, so a select is as tall as the other boxes and
+// its label sits in the middle. The Oxygen UI theme pads a select's value more and lifts its label by 7px; both are
+// undone here, with !important because the theme's rules are more specific.
+const selectSx = {
+  ...inputSx,
+  "& .MuiSelect-select": {
+    minHeight: "unset",
+    height: "1.4375em",
+    lineHeight: "1.4375em",
+    paddingTop: "8.5px !important",
+    paddingBottom: "8.5px !important",
+  },
+  "& .MuiInputLabel-root:not(.MuiInputLabel-shrink)": { top: "0 !important" },
+} as const;
 
 interface InputProps {
   label: string;
@@ -86,10 +113,11 @@ export const TextInput = ({
   multiline,
   digitsOnly,
 }: InputProps & { type?: string; placeholder?: string; multiline?: boolean; digitsOnly?: boolean }) => (
-  <LabeledField label={label} required={required} span={span} error={error} helper={helper}>
+  <Field span={span} error={error} helper={helper}>
     <TextField
       fullWidth
       size="small"
+      label={required ? `${label} *` : label}
       value={value}
       onChange={(event) => onChange(digitsOnly ? event.target.value.replace(/\D/g, "") : event.target.value)}
       error={Boolean(error)}
@@ -106,9 +134,11 @@ export const TextInput = ({
           ...(type === "date" ? { max: new Date().toISOString().slice(0, 10) } : {}),
           ...(digitsOnly ? { inputMode: "numeric" } : {}),
         },
+        // A date shows its format inside the box, so its label stays at the top.
+        ...(type === "date" ? { inputLabel: { shrink: true } } : {}),
       }}
     />
-  </LabeledField>
+  </Field>
 );
 
 export const SelectInput = ({
@@ -122,16 +152,17 @@ export const SelectInput = ({
   disabled,
   options,
 }: InputProps & { options: string[] }) => (
-  <LabeledField label={label} required={required} span={span} error={error} helper={helper}>
+  <Field span={span} error={error} helper={helper}>
     <TextField
       select
       fullWidth
       size="small"
+      label={required ? `${label} *` : label}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       error={Boolean(error)}
       disabled={disabled}
-      sx={inputSx}
+      sx={selectSx}
       slotProps={{ htmlInput: { "aria-label": label, "aria-required": required } }}
     >
       {options.map((option) => (
@@ -140,7 +171,7 @@ export const SelectInput = ({
         </MenuItem>
       ))}
     </TextField>
-  </LabeledField>
+  </Field>
 );
 
 // The number in the format the backend accepts, or an empty text until both parts are filled in.
@@ -171,16 +202,17 @@ export const PhoneInput = ({
     onChange(phoneOf(nextIso, nextNational));
   };
   return (
-    <LabeledField label={label} required={required} span={span} error={error} helper={helper}>
+    <Field span={span} error={error} helper={helper}>
       <Box sx={{ display: "grid", gridTemplateColumns: "minmax(96px, 112px) 1fr", gap: 1 }}>
         <TextField
           select
           size="small"
+          label={required ? "Code *" : "Code"}
           value={countryIso}
           onChange={(event) => change(event.target.value, national)}
           error={Boolean(error)}
           disabled={disabled}
-          sx={inputSx}
+          sx={selectSx}
           slotProps={{
             htmlInput: { "aria-label": `${label} country code` },
             select: {
@@ -197,6 +229,7 @@ export const PhoneInput = ({
         </TextField>
         <TextField
           size="small"
+          label={required ? `${label} *` : label}
           value={national}
           onChange={(event) => change(countryIso, event.target.value.replace(/\D/g, "").slice(0, 15))}
           error={Boolean(error)}
@@ -205,7 +238,7 @@ export const PhoneInput = ({
           slotProps={{ htmlInput: { inputMode: "numeric", "aria-label": label, "aria-required": required } }}
         />
       </Box>
-    </LabeledField>
+    </Field>
   );
 };
 

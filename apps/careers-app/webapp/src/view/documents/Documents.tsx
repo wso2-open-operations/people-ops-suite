@@ -43,7 +43,6 @@ import {
   REVIEW_STEP,
   STEPS,
   deadlineText,
-  isSessionEnded,
   problemWith,
   squareProblem,
   submitFailureMessage,
@@ -57,7 +56,7 @@ import ReviewStep from "@view/documents/ReviewStep";
 const Documents = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { getToken, renewToken } = useAppAuthContext();
+  const { getToken } = useAppAuthContext();
   const { id: applicationId } = useParams<{ id: string }>();
   const applications = useAppSelector((state: RootState) => state.careers.applications);
   const generation = useAppSelector((state: RootState) => state.careers.sessionGeneration);
@@ -219,21 +218,9 @@ const Documents = () => {
     if (!allDocumentsReady || tooLarge || !declared) return;
     setSubmitting(true);
     try {
-      const token = await getToken();
-      try {
-        await submitDocuments(token, application.id, files, details, editing);
-      } catch (error) {
-        if (!isSessionEnded(error)) throw error;
-        // The token expired while the candidate was filling in the form. A new one is got without leaving the page, so
-        // what they entered is kept, and the submission is sent once more.
-        let fresh: string;
-        try {
-          fresh = await renewToken();
-        } catch {
-          throw error;
-        }
-        await submitDocuments(fresh, application.id, files, details, editing);
-      }
+      // A token that ran out while the candidate was filling in the form is renewed by the request itself, so what they
+      // entered is kept.
+      await submitDocuments(await getToken(), application.id, files, details, editing);
       setFiles({});
       setSubmitted(true);
       // The status the application page kept is out of date now, so it is dropped and the page checks again.
