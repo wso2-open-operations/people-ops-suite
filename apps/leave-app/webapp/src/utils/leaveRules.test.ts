@@ -60,6 +60,13 @@ describe("sickNoteProblem", () => {
       "Send a PDF, JPG or PNG file.",
     );
   });
+  it("trusts the reported type, and the name only when no type is reported", () => {
+    expect(sickNoteProblem(file("note.pdf", "application/msword", 10), 5 * MB, TYPES)).toBe(
+      "Send a PDF, JPG or PNG file.",
+    );
+    expect(sickNoteProblem(file("note.pdf", "", 10), 5 * MB, TYPES)).toBe("");
+    expect(sickNoteProblem(file("scan.png", "image/png", 10), 5 * MB, TYPES)).toBe("");
+  });
 });
 
 describe("rejectionReasonProblem", () => {
@@ -82,6 +89,10 @@ describe("canCancelLeave", () => {
     expect(canCancelLeave(Status.CANCELLED, "2026-11-10", today)).toBe(false);
     expect(canCancelLeave(Status.REJECTED, "2026-11-10", today)).toBe(false);
     expect(canCancelLeave(Status.APPROVED, "2026-09-20", today)).toBe(false);
+  });
+  it("always lets a pending request be withdrawn, however long ago it started", () => {
+    expect(canCancelLeave(Status.PENDING, "2026-09-16", today)).toBe(true);
+    expect(canCancelLeave(Status.APPROVED, "2026-09-16", today)).toBe(false);
   });
 });
 

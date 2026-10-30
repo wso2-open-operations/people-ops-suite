@@ -47,7 +47,11 @@ export function sickNoteProblem(file: File, maxBytes: number, contentTypes: stri
   if (file.size === 0) return "This file is empty.";
   if (file.size > maxBytes) return `This file is larger than ${(maxBytes / MB).toFixed(1)} MB.`;
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-  if (!contentTypes.includes(file.type) && !SICK_NOTE_EXTENSIONS.includes(extension)) {
+  // The name only counts when the browser reports no type, so a renamed file is caught here.
+  const typeAllowed = file.type
+    ? contentTypes.includes(file.type)
+    : SICK_NOTE_EXTENSIONS.includes(extension);
+  if (!typeAllowed) {
     return "Send a PDF, JPG or PNG file.";
   }
   return "";
@@ -63,9 +67,13 @@ export function rejectionReasonProblem(reason: string): string {
   return "";
 }
 
-/** Approved or pending leave can be cancelled unless it started more than 30 days ago. */
+/**
+ * Approved leave can be cancelled unless it started more than 30 days ago. A pending request has not been decided,
+ * so it can always be withdrawn; otherwise one its lead never decides would stay pending for good.
+ */
 export function canCancelLeave(status: Status, startDate: string, today: Date): boolean {
-  if (status !== Status.APPROVED && status !== Status.PENDING) return false;
+  if (status === Status.PENDING) return true;
+  if (status !== Status.APPROVED) return false;
   const todayStart = new Date(today);
   todayStart.setHours(0, 0, 0, 0);
   const leaveStart = new Date(startDate);
