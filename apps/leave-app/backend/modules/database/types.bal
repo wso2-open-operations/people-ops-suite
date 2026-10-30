@@ -74,6 +74,67 @@ public type LeaveFilter record {|
 # [Database] Leave type.
 public type Leave record {|
     # Leave ID
+    int id;
+    # Employee email
+    string email;
+    # Leave type
+    string? leaveType;
+    # Leave period type
+    string? periodType;
+    # Copy email list
+    string? copyEmailList;
+    # Notify everyone
+    boolean? notifyEveryone;
+    # Submit comment
+    string? submitComment;
+    # Cancel comment
+    string? cancelComment;
+    # Created date
+    string? createdDate;
+    # Updated date
+    string? updatedDate;
+    # Email ID
+    string? emailId;
+    # Email subject
+    string? emailSubject;
+    # Leave start date
+    string startDate;
+    # Leave end date
+    string endDate;
+    # Leave start half. 0 is the first half, 1 is the second half
+    int? startHalf;
+    # Leave end half
+    boolean? isEndHalf;
+    # Leave canceled date
+    string? canceledDate;
+    # Leave number of days
+    float? numberOfDays;
+    # Leave is public comment
+    boolean? isPublicComment;
+    # Leave calendar event ID
+    string? calendarEventId;
+    # Employee location
+    string? location;
+    # Status
+    Status? status;
+    # Approver email
+    string? approverEmail;
+    # Reason given by the approver for rejecting the leave
+    string? rejectionReason;
+    # Whether a sick note was submitted with the leave. Filled from `has_sick_note` by `toLeave`
+    boolean hasSickNote = false;
+    # When the sick note was deleted, if it was
+    string? sickNoteDeletedOn = ();
+|};
+
+# A leave as `getCommonLeaveQuery` returns it. `toLeave` turns it into a `Leave`.
+#
+# The fields are declared here rather than taken from `Leave` with `*Leave`, because type inclusion does not carry
+# field annotations, and the sql module needs the `@sql:Column` annotation on this type to map a column such as
+# `leave_type` to `leaveType`. MySQL has no boolean type, so `has_sick_note` arrives as 0 or 1, and the sql module
+# maps only BIT and BOOLEAN columns to `boolean`.
+type LeaveRow record {|
+    # Leave ID
     @sql:Column {name: "id"}
     int id;
     # Employee email
@@ -136,7 +197,7 @@ public type Leave record {|
     # Employee location
     @sql:Column {name: "location"}
     string? location;
-    # Status 
+    # Status
     @sql:Column {name: "status"}
     Status? status;
     # Approver email
@@ -145,17 +206,9 @@ public type Leave record {|
     # Reason given by the approver for rejecting the leave
     @sql:Column {name: "rejection_reason"}
     string? rejectionReason;
-    # Whether a sick note was submitted with the leave. Filled from `has_sick_note` by `toLeave`
-    boolean hasSickNote = false;
     # When the sick note was deleted, if it was
     @sql:Column {name: "sick_note_deleted_on"}
-    string? sickNoteDeletedOn = ();
-|};
-
-# A leave as `getCommonLeaveQuery` returns it. MySQL has no boolean type, so `has_sick_note` arrives as 0 or 1, and
-# the sql module maps only BIT and BOOLEAN columns to `boolean`. `toLeave` turns it into `Leave.hasSickNote`.
-type LeaveRow record {|
-    *Leave;
+    string? sickNoteDeletedOn;
     # 1 when a sick note was submitted with the leave, otherwise 0
     @sql:Column {name: "has_sick_note"}
     int sickNoteFlag;

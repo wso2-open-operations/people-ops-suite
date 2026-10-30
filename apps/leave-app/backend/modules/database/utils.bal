@@ -62,7 +62,5 @@ public isolated function getValidatedOffset(int? offset) returns int {
 # + return - The leave
 isolated function toLeave(LeaveRow row) returns Leave {
     LeaveRow {sickNoteFlag, ...leaveFields} = row;
-    Leave leave = leaveFields;
-    leave.hasSickNote = sickNoteFlag == 1;
-    return leave;
+    return {...leaveFields, hasSickNote: sickNoteFlag == 1};
 }
