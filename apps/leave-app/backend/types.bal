@@ -295,6 +295,10 @@ public type AppConfig record {|
     # leave-type options on the admin recording screen, so widening the
     # configuration needs no UI change.
     database:LeaveType[] onBehalfAllowedLeaveTypes;
+    # Largest sick note accepted, in bytes
+    int sickNoteMaxBytes;
+    # Content types accepted for a sick note
+    string[] sickNoteContentTypes;
 |};
 
 # Sabbatical Leave Response.
@@ -317,6 +321,12 @@ public type SabbaticalLeaveEligibilityResponse record {|
     string lastSabbaticalLeaveEndDate;
     # Is eligible for sabbatical leave
     boolean isEligible;
+|};
+
+# Payload for approving or rejecting a leave request.
+public type DecisionPayload record {|
+    # Reason for the rejection. Required to reject Other Authorized Leave; not used otherwise
+    string? reason = ();
 |};
 
 # APPROVE/REJECT Action enum.
