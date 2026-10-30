@@ -9,6 +9,4 @@ EXTERNAL_USER_ROLES = ["people-external"]
 
 [people.authorization.serviceClients]
 clientIdClaim = "azp"
-
-[people.authorization.serviceClients.clientRoutes]
-amplify-api-client = ["GET employees/basic-info"]
+directoryClientIds = ["amplify-api-client"]

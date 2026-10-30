@@ -774,12 +774,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetch directory information for all currently employed staff (Active and Marked leaver).
     # Available to every authenticated user, and to the service clients listed in
-    # `authorization.serviceClients.clientRoutes` (see `authorization:ServiceClientConfig`). A service client
-    # receives the minimal `ServiceDirectoryInfo` entries, not the full directory row.
+    # `authorization.serviceClients.directoryClientIds` (see `authorization:ServiceClientConfig`).
     #
     # + return - Directory information for Active and Marked leaver employees
     resource function get employees/basic\-info(http:RequestContext ctx)
-        returns database:EmployeeDirectoryInfo[]|database:ServiceDirectoryInfo[]|http:InternalServerError {
+        returns database:EmployeeDirectoryInfo[]|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         string|error serviceClient = ctx.getWithType(authorization:HEADER_SERVICE_CLIENT);
@@ -791,18 +790,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string customErr = "Error occurred while fetching employees' basic information";
-        if serviceClient is string {
-            database:ServiceDirectoryInfo[]|error serviceDirectory = database:getServiceDirectory();
-            if serviceDirectory is error {
-                log:printError(customErr, serviceDirectory);
-                return <http:InternalServerError>{body: {message: customErr}};
-            }
-            return serviceDirectory;
-        }
-
         database:EmployeeDirectoryInfo[]|error employeesBasicInfos = database:getAllEmployeesBasicInfo();
         if employeesBasicInfos is error {
+            string customErr = "Error occurred while fetching employees' basic information";
             log:printError(customErr, employeesBasicInfos);
             return <http:InternalServerError>{
                 body: {
