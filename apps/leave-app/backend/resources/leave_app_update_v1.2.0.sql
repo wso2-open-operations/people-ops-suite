@@ -22,7 +22,7 @@
 
 CREATE TABLE leave_attachments (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  leave_id INT NOT NULL UNIQUE,
+  leave_id INT UNSIGNED NOT NULL UNIQUE,
   content MEDIUMBLOB NULL,
   iv VARBINARY(12) NULL,
   key_id INT NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE leave_attachments (
 CREATE TABLE leave_attachment_downloads (
   id INT AUTO_INCREMENT PRIMARY KEY,
   attachment_id INT NOT NULL,
-  leave_id INT NOT NULL,
+  leave_id INT UNSIGNED NOT NULL,
   downloaded_by VARCHAR(255) NOT NULL,
   downloaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (attachment_id) REFERENCES leave_attachments(id)
