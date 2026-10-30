@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Skeleton, Stack, Typography } from "@wso2/oxygen-ui";
+import { Box, Button, Stack, Typography } from "@wso2/oxygen-ui";
 import { Pencil, Plus } from "@wso2/oxygen-ui-icons-react";
 import { useEffect, useState } from "react";
 
@@ -31,7 +31,7 @@ import {
 import { LabeledField, ListItem, PhoneInput, Section, SelectInput, TextInput } from "@view/documents/FormInputs";
 
 // The details that come from the application, and are listed rather than shown as inputs.
-const APPLICATION_FIELDS = ["firstName", "surname", "gender", "mobileNumber", "university", "homeAddress"] as const;
+const APPLICATION_FIELDS = ["firstName", "surname", "gender", "mobileNumber", "university"] as const;
 
 interface PersonalDetailsFormProps {
   details: PersonalDetails;
@@ -39,7 +39,7 @@ interface PersonalDetailsFormProps {
   errors: DetailErrors;
   options: FormOptions;
   disabled: boolean;
-  // False while the details the application holds are still loading; those are shown as placeholders until then.
+  // False while the details the application holds are still loading; that part of the form appears once they have.
   applicationReady: boolean;
 }
 
@@ -54,6 +54,12 @@ const PersonalDetailsForm = ({ details, onChange, errors, options, disabled, app
   useEffect(() => {
     if (APPLICATION_FIELDS.some((key) => errors[key])) setEditingApplication(true);
   }, [errors]);
+  // The emergency contacts are folded away until the candidate opens them, or one of them has a problem.
+  const [contactsOpen, setContactsOpen] = useState(false);
+  useEffect(() => {
+    if (Object.keys(errors).some((key) => key.startsWith("emergencyContacts"))) setContactsOpen(true);
+  }, [errors]);
+  const filledContacts = details.emergencyContacts.filter((c) => c.name.trim() && c.mobileNumber.trim()).length;
   // Decided once, when the details the application holds have arrived.
   useEffect(() => {
     if (applicationReady) setEditingApplication(APPLICATION_FIELDS.some((key) => !details[key].trim()));
@@ -71,21 +77,14 @@ const PersonalDetailsForm = ({ details, onChange, errors, options, disabled, app
   return (
     <Box>
       <Section>
-        <SelectInput label="Title" required span={3} value={details.title} options={options.titles} onChange={(v) => update({ title: v })} error={errors.title} disabled={disabled} />
-        <TextInput label="Full name (as on identity document)" required span={9} value={details.fullName} onChange={(v) => update({ fullName: v })} error={errors.fullName} disabled={disabled} />
+        <SelectInput label="Title" required span={2} value={details.title} options={options.titles} onChange={(v) => update({ title: v })} error={errors.title} disabled={disabled} />
+        <TextInput label="Full name (as on identity document)" required span={6} value={details.fullName} onChange={(v) => update({ fullName: v })} error={errors.fullName} disabled={disabled} />
         <TextInput label="Preferred name" required span={4} value={details.preferredName} onChange={(v) => update({ preferredName: v })} error={errors.preferredName} disabled={disabled} />
-        <TextInput label="Initials" required span={3} value={details.initials} onChange={(v) => update({ initials: v })} error={errors.initials} disabled={disabled} />
+        <TextInput label="Initials" required span={2} value={details.initials} onChange={(v) => update({ initials: v })} error={errors.initials} disabled={disabled} />
         <TextInput label="Name with initials" required span={5} value={details.nameWithInitials} onChange={(v) => update({ nameWithInitials: v })} error={errors.nameWithInitials} disabled={disabled} />
-        {!applicationReady ? (
-          <Box sx={{ ...fullWidth, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }} aria-busy="true">
-            {[0, 1, 2, 3].map((row) => (
-              <Box key={row}>
-                <Skeleton variant="text" width={110} height={20} />
-                <Skeleton variant="rounded" height={40} sx={{ borderRadius: "10px" }} />
-              </Box>
-            ))}
-          </Box>
-        ) : editingApplication ? (
+        <TextInput label="Date of birth" required span={3} type="date" value={details.dateOfBirth} onChange={(v) => update({ dateOfBirth: v })} error={errors.dateOfBirth} disabled={disabled} />
+        <SelectInput label="Civil status" required span={2} value={details.civilStatus} options={options.civilStatuses} onChange={(v) => update({ civilStatus: v })} error={errors.civilStatus} disabled={disabled} />
+        {!applicationReady ? null : editingApplication ? (
           <>
             <TextInput label="First name" required value={details.firstName} onChange={(v) => update({ firstName: v })} error={errors.firstName} disabled={disabled} />
             <TextInput label="Last name" required value={details.surname} onChange={(v) => update({ surname: v })} error={errors.surname} disabled={disabled} />
@@ -106,9 +105,6 @@ const PersonalDetailsForm = ({ details, onChange, errors, options, disabled, app
                 {details.personalEmail}
               </Typography>
             </LabeledField>
-            <Box sx={fullWidth}>
-              <TextInput label="Residential address" required value={details.homeAddress} onChange={(v) => update({ homeAddress: v })} error={errors.homeAddress} disabled={disabled} />
-            </Box>
           </>
         ) : (
           <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={2} sx={fullWidth}>
@@ -121,7 +117,6 @@ const PersonalDetailsForm = ({ details, onChange, errors, options, disabled, app
                   ["Personal email", details.personalEmail],
                   ["Mobile number", details.mobileNumber],
                   ["University", details.university],
-                  ["Residential address", details.homeAddress],
                 ] as [string, string][]
               ).map(([label, value]) => (
                 <Box key={label} sx={{ display: "contents" }}>
@@ -140,20 +135,9 @@ const PersonalDetailsForm = ({ details, onChange, errors, options, disabled, app
           </Stack>
         )}
 
-        <TextInput label="Date of birth" required span={3} type="date" value={details.dateOfBirth} onChange={(v) => update({ dateOfBirth: v })} error={errors.dateOfBirth} disabled={disabled} />
-        <TextInput label="Identity document number" required span={4} value={details.idNumber} onChange={(v) => update({ idNumber: v })} error={errors.idNumber} disabled={disabled} />
-        <SelectInput label="Civil status" required span={3} value={details.civilStatus} options={options.civilStatuses} onChange={(v) => update({ civilStatus: v })} error={errors.civilStatus} disabled={disabled} />
-        <SelectInput label="T-shirt size" required span={2} value={details.tshirtSize} options={options.tshirtSizes} onChange={(v) => update({ tshirtSize: v })} error={errors.tshirtSize} disabled={disabled} />
-        <PhoneInput
-          label="Land number"
-          value={details.landNumber}
-          onChange={(v) => update({ landNumber: v })}
-          error={errors.landNumber}
-          disabled={disabled}
-          defaultCountry={defaultCountry}
-        />
+        <TextInput label="Identity document number" required span={3} value={details.idNumber} onChange={(v) => update({ idNumber: v })} error={errors.idNumber} disabled={disabled} />
         <SelectInput
-          label="Interest in any commercial or business pursuit"
+          label="Interest in any business pursuit"
           required
           span={3}
           value={details.businessInterest}
@@ -162,7 +146,18 @@ const PersonalDetailsForm = ({ details, onChange, errors, options, disabled, app
           error={errors.businessInterest}
           disabled={disabled}
         />
-        <TextInput label="Temporary address" span={12} value={details.temporaryAddress} onChange={(v) => update({ temporaryAddress: v })} disabled={disabled} />
+        <PhoneInput
+          label="Land number"
+          span={4}
+          value={details.landNumber}
+          onChange={(v) => update({ landNumber: v })}
+          error={errors.landNumber}
+          disabled={disabled}
+          defaultCountry={defaultCountry}
+        />
+        <SelectInput label="T-shirt size" required span={2} value={details.tshirtSize} options={options.tshirtSizes} onChange={(v) => update({ tshirtSize: v })} error={errors.tshirtSize} disabled={disabled} />
+        <TextInput label="Residential address" required span={6} value={details.homeAddress} onChange={(v) => update({ homeAddress: v })} error={errors.homeAddress} disabled={disabled} />
+        <TextInput label="Temporary address" span={6} value={details.temporaryAddress} onChange={(v) => update({ temporaryAddress: v })} disabled={disabled} />
       </Section>
 
       <Section title="Dependants" note="For the insurance policy, for permanent employees. If you are single, add your parents.">
@@ -198,7 +193,15 @@ const PersonalDetailsForm = ({ details, onChange, errors, options, disabled, app
         )}
       </Section>
 
-      <Section title="Emergency contacts" note="Give at least two people we can call in an emergency.">
+      <Section
+        title="Emergency contacts"
+        note="Give at least two people we can call in an emergency."
+        fold={{
+          open: contactsOpen,
+          onToggle: () => setContactsOpen((open) => !open),
+          summary: `${filledContacts} of ${details.emergencyContacts.length} contacts filled in`,
+        }}
+      >
         {errors.emergencyContacts && (
           <Typography color="error" fontSize="0.85rem" sx={fullWidth}>
             {errors.emergencyContacts}

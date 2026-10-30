@@ -15,7 +15,7 @@
 // under the License.
 
 import { Box, Button, MenuItem, Stack, TextField, Typography } from "@wso2/oxygen-ui";
-import { Trash2 } from "@wso2/oxygen-ui-icons-react";
+import { ChevronDown, ChevronUp, Trash2 } from "@wso2/oxygen-ui-icons-react";
 import { useState } from "react";
 
 import { COUNTRY_OPTIONS, splitE164, toE164 } from "@utils/phone";
@@ -172,7 +172,7 @@ export const PhoneInput = ({
   };
   return (
     <LabeledField label={label} required={required} span={span} error={error} helper={helper}>
-      <Box sx={{ display: "grid", gridTemplateColumns: "minmax(110px, 150px) 1fr", gap: 1 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: "minmax(96px, 112px) 1fr", gap: 1 }}>
         <TextField
           select
           size="small"
@@ -184,7 +184,6 @@ export const PhoneInput = ({
           slotProps={{
             htmlInput: { "aria-label": `${label} country code` },
             select: {
-              displayEmpty: true,
               MenuProps: { slotProps: { paper: { sx: { maxHeight: 320 } } } },
               renderValue: (iso) => COUNTRY_OPTIONS.find((option) => option.iso === iso)?.dialCode ?? "Code",
             },
@@ -214,25 +213,49 @@ interface SectionProps {
   // Left out for the first group, which continues from the top of the form.
   title?: string;
   note?: string;
+  // Makes the group foldable: its title row gets a View or Hide button, and a folded group shows only the summary.
+  fold?: { open: boolean; onToggle: () => void; summary: string };
   children: React.ReactNode;
 }
 
 // A group of inputs, two to a row on a wide screen, with a title when it has one.
-export const Section = ({ title, note, children }: SectionProps) => (
+export const Section = ({ title, note, fold, children }: SectionProps) => (
   <Box sx={{ p: 3, borderTop: "1px solid", borderColor: "divider", "&:first-of-type": { borderTop: 0 } }}>
-    {title && (
-      <Typography fontWeight={700} fontSize="1rem" color="text.primary">
-        {title}
-      </Typography>
+    <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={2}>
+      <Box sx={{ minWidth: 0 }}>
+        {title && (
+          <Typography fontWeight={700} fontSize="1rem" color="text.primary">
+            {title}
+          </Typography>
+        )}
+        {note && (
+          <Typography fontSize="0.85rem" color="text.secondary" mt={0.25}>
+            {note}
+          </Typography>
+        )}
+        {fold && !fold.open && (
+          <Typography fontSize="0.85rem" color="text.secondary" mt={0.75}>
+            {fold.summary}
+          </Typography>
+        )}
+      </Box>
+      {fold && (
+        <Button
+          size="small"
+          onClick={fold.onToggle}
+          aria-expanded={fold.open}
+          endIcon={fold.open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          sx={{ fontWeight: 600, flexShrink: 0 }}
+        >
+          {fold.open ? "Hide" : "View"}
+        </Button>
+      )}
+    </Stack>
+    {(!fold || fold.open) && (
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(12, 1fr)" }, gap: 2.5, mt: title || note ? 2 : 0 }}>
+        {children}
+      </Box>
     )}
-    {note && (
-      <Typography fontSize="0.85rem" color="text.secondary" mt={0.25}>
-        {note}
-      </Typography>
-    )}
-    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(12, 1fr)" }, gap: 2.5, mt: title || note ? 2 : 0 }}>
-      {children}
-    </Box>
   </Box>
 );
 

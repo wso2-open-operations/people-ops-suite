@@ -164,8 +164,6 @@ const Documents = () => {
 
   // The personal email comes only from the profile and cannot be changed here.
   const profileReady = profileState === State.success;
-  // What is still loading in the background while the candidate fills in the form.
-  const loadingInBackground = profileState === State.idle || profileState === State.loading || status === undefined;
   // The form is submitted once the profile and the earlier submission are known.
   const canSubmit = profileReady && status !== undefined && status !== null;
 
@@ -367,14 +365,6 @@ const Documents = () => {
                   : "You can change your details and replace files."
                 : "Check everything on the last step before you submit."}
             </Typography>
-            {loadingInBackground && (
-              <Box role="status" aria-live="polite" sx={{ mb: 2 }}>
-                <LinearProgress sx={{ borderRadius: "999px", mb: 0.75 }} />
-                <Typography fontSize="0.85rem" color="text.secondary">
-                  Loading your saved details. You can start filling in the form.
-                </Typography>
-              </Box>
-            )}
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 1.5 }}>
               {STEPS.map((label, index) => (
                 <Button

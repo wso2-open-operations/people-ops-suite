@@ -70,10 +70,11 @@ const ReviewStep = ({
             </Typography>
             {!detailsReady && (
               <Typography fontSize="0.9rem" color="text.primary">
-                Some personal details are missing.{" "}
+                Some{" "}
                 <Link component="button" type="button" onClick={onShowDetailProblems} sx={{ verticalAlign: "baseline" }}>
-                  Go to personal details
-                </Link>
+                  personal details
+                </Link>{" "}
+                are missing.
               </Typography>
             )}
             {missingDocuments.length > 0 && (
