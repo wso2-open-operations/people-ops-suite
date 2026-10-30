@@ -37,6 +37,7 @@ import {
   profileFailed,
 } from "@slices/careersSlice/careers";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { noteForcedSignOut } from "@utils/profileService";
 import { dataNeededBy } from "@utils/routeData";
 
 // The height of the logo and the size of the word next to it, in pixels, so the two match.
@@ -90,10 +91,12 @@ const AppShell = () => {
     if (!isSignedIn) dispatch(clearUserData());
   }, [isSignedIn, dispatch]);
 
-  // Signs the candidate out when the backend refuses the access token.
+  // Signs the candidate out when the backend refuses the access token and a new one could not be had. The sign-out is
+  // noted, so the entry page does not start the same sign-in again if the backend keeps refusing the session.
   useEffect(() => {
     if (!sessionExpired) return;
     dispatch(clearUserData());
+    noteForcedSignOut();
     appSignOut();
   }, [sessionExpired, dispatch, appSignOut]);
 

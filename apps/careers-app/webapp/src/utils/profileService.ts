@@ -55,9 +55,81 @@ async function send<T>(request: Promise<AxiosResponse<T>>): Promise<T> {
   }
 }
 
+// Asks for a new access token. It is set by the sign-in code, which owns the session with the identity provider.
+let renewAccessToken: (() => Promise<string>) | null = null;
+export const setTokenRenewer = (renewer: (() => Promise<string>) | null) => {
+  renewAccessToken = renewer;
+};
+
+// The renewal that is running, so requests that fail together share one: a refresh token can be used only once.
+let renewing: Promise<string> | null = null;
+const renewOnce = (): Promise<string> => {
+  if (!renewAccessToken) return Promise.reject(new Error("The session cannot be renewed."));
+  if (!renewing) {
+    renewing = renewAccessToken().finally(() => {
+      renewing = null;
+    });
+  }
+  return renewing;
+};
+
+// Sends a request with the access token. A 401 means the token has run out, so a new one is asked for and the request
+// is sent once more. The session has ended only when no new token can be had, or the new one is refused as well.
+async function sendRenewing<T>(
+  accessToken: string,
+  request: (token: string) => Promise<AxiosResponse<T>>,
+): Promise<T> {
+  try {
+    return await send(request(accessToken));
+  } catch (error) {
+    if (!(error instanceof Error) || error.name !== SESSION_EXPIRED_ERROR) throw error;
+    let fresh: string;
+    try {
+      fresh = await renewOnce();
+    } catch {
+      throw error;
+    }
+    return send(request(fresh));
+  }
+}
+
+const FORCED_SIGN_OUT_KEY = "careers.forcedSignOutAt";
+const FORCED_SIGN_OUT_WINDOW_MS = 60_000;
+
+// Remembers that the app just signed the candidate out because the backend refused the session, so a sign-in that
+// goes wrong the same way is not repeated for ever.
+export const noteForcedSignOut = () => {
+  try {
+    sessionStorage.setItem(FORCED_SIGN_OUT_KEY, String(Date.now()));
+  } catch {
+    // Without storage the guard is not available.
+  }
+};
+
+// Whether the candidate was signed out that way a moment ago.
+export const forcedSignOutRecently = (): boolean => {
+  try {
+    return (
+      Date.now() - Number(sessionStorage.getItem(FORCED_SIGN_OUT_KEY)) < FORCED_SIGN_OUT_WINDOW_MS
+    );
+  } catch {
+    return false;
+  }
+};
+
+export const clearForcedSignOut = () => {
+  try {
+    sessionStorage.removeItem(FORCED_SIGN_OUT_KEY);
+  } catch {
+    // Nothing was stored.
+  }
+};
+
 // The signed-in candidate's own profile.
 export async function fetchProfile(accessToken: string): Promise<CandidateProfile> {
-  return send(axios.get<CandidateProfile>(`${AppConfig.serviceUrls.candidates}/me`, requestOptions(accessToken)));
+  return sendRenewing(accessToken, (token) =>
+    axios.get<CandidateProfile>(`${AppConfig.serviceUrls.candidates}/me`, requestOptions(token)),
+  );
 }
 
 // Saves the changes to the candidate's editable details.
@@ -65,8 +137,12 @@ export async function saveProfile(
   accessToken: string,
   changes: Partial<EditableProfileFields>,
 ): Promise<CandidateProfile> {
-  return send(
-    axios.patch<CandidateProfile>(`${AppConfig.serviceUrls.candidates}/me`, changes, requestOptions(accessToken)),
+  return sendRenewing(accessToken, (token) =>
+    axios.patch<CandidateProfile>(
+      `${AppConfig.serviceUrls.candidates}/me`,
+      changes,
+      requestOptions(token),
+    ),
   );
 }
 
@@ -76,11 +152,11 @@ export async function submitFeedback(
   applicationId: string,
   feedback: ApplicationFeedback,
 ): Promise<void> {
-  await send(
+  await sendRenewing(accessToken, (token) =>
     axios.post(
       `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/feedback`,
       feedback,
-      requestOptions(accessToken),
+      requestOptions(token),
     ),
   );
 }
@@ -95,11 +171,11 @@ export async function respondToOffer(
   answer: OfferAnswer,
 ): Promise<Application> {
   try {
-    return await send(
+    return await sendRenewing(accessToken, (token) =>
       axios.post<Application>(
         `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/offer-response`,
         answer,
-        requestOptions(accessToken),
+        requestOptions(token),
       ),
     );
   } catch (error) {
@@ -111,22 +187,28 @@ export async function respondToOffer(
 }
 
 // The interviews of one of the candidate's applications, in the order they take place.
-export async function fetchInterviews(accessToken: string, applicationId: string): Promise<ApplicationInterview[]> {
-  return send(
+export async function fetchInterviews(
+  accessToken: string,
+  applicationId: string,
+): Promise<ApplicationInterview[]> {
+  return sendRenewing(accessToken, (token) =>
     axios.get<ApplicationInterview[]>(
       `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/interviews`,
-      requestOptions(accessToken),
+      requestOptions(token),
     ),
   );
 }
 
 // Whether the candidate has submitted the documents for one of their accepted offers, whether they can still change
 // them, and what they saved.
-export async function fetchDocumentsStatus(accessToken: string, applicationId: string): Promise<DocumentsStatus> {
-  return send(
+export async function fetchDocumentsStatus(
+  accessToken: string,
+  applicationId: string,
+): Promise<DocumentsStatus> {
+  return sendRenewing(accessToken, (token) =>
     axios.get<DocumentsStatus>(
       `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/documents`,
-      requestOptions(accessToken),
+      requestOptions(token),
     ),
   );
 }
@@ -135,9 +217,14 @@ export async function fetchDocumentsStatus(accessToken: string, applicationId: s
 const DOCUMENT_UPLOAD_TIMEOUT_MS = 120_000;
 
 // The documents a candidate is asked for, and the limits every file must meet.
-export async function fetchDocumentRequirements(accessToken: string): Promise<DocumentRequirements> {
-  return send(
-    axios.get<DocumentRequirements>(`${AppConfig.serviceUrls.documents}/requirements`, requestOptions(accessToken)),
+export async function fetchDocumentRequirements(
+  accessToken: string,
+): Promise<DocumentRequirements> {
+  return sendRenewing(accessToken, (token) =>
+    axios.get<DocumentRequirements>(
+      `${AppConfig.serviceUrls.documents}/requirements`,
+      requestOptions(token),
+    ),
   );
 }
 
@@ -156,12 +243,16 @@ export async function submitDocuments(
   // Each file is sent under its document key, not its own name.
   Object.entries(files).forEach(([key, file]) => form.append(key, file, key));
   const url = `${AppConfig.serviceUrls.applications}/${encodeURIComponent(applicationId)}/documents`;
-  const options = { ...requestOptions(accessToken), timeout: DOCUMENT_UPLOAD_TIMEOUT_MS };
   // A first submission is a POST; a change is a PUT that carries only the replaced files.
-  await send(changing ? axios.put(url, form, options) : axios.post(url, form, options));
+  await sendRenewing(accessToken, (token) => {
+    const options = { ...requestOptions(token), timeout: DOCUMENT_UPLOAD_TIMEOUT_MS };
+    return changing ? axios.put(url, form, options) : axios.post(url, form, options);
+  });
 }
 
 // The signed-in candidate's own applications.
 export async function fetchApplications(accessToken: string): Promise<Application[]> {
-  return send(axios.get<Application[]>(AppConfig.serviceUrls.applications, requestOptions(accessToken)));
+  return sendRenewing(accessToken, (token) =>
+    axios.get<Application[]>(AppConfig.serviceUrls.applications, requestOptions(token)),
+  );
 }

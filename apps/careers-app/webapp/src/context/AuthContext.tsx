@@ -23,6 +23,7 @@ import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import { setUserAuthData } from "@slices/authSlice/auth";
 import { useAppDispatch } from "@slices/store";
+import { setTokenRenewer } from "@utils/profileService";
 
 type AuthContextType = {
   // Opens the sign-in page; the email, when given, is filled in there.
@@ -142,6 +143,12 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     }
     return sdk.current.getAccessToken();
   }, []);
+
+  // The calls to the backend renew the access token through this when it has run out.
+  useEffect(() => {
+    setTokenRenewer(renewToken);
+    return () => setTokenRenewer(null);
+  }, [renewToken]);
 
   const authContext: AuthContextType = useMemo(
     () => ({ appSignIn, appSignOut, isSignedIn: isAuthenticated, getToken, renewToken }),

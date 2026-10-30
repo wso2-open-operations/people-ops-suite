@@ -14,13 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, LinearProgress, Typography } from "@wso2/oxygen-ui";
+import { Box, Button, LinearProgress, Typography } from "@wso2/oxygen-ui";
 import { Navigate, useSearchParams } from "react-router-dom";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { useAppAuthContext } from "@context/AuthContext";
 import { isValidEmail } from "@utils/email";
+import { clearForcedSignOut, forcedSignOutRecently } from "@utils/profileService";
+import { pillButtonSx } from "@utils/styles";
 
 // The entry of the link in the email sent after applying: it opens the Asgardeo sign-in right away, where the
 // candidate can also create an account. A valid ?email= in the link is filled in there.
@@ -30,11 +32,46 @@ const Landing = () => {
   const emailParam = params.get("email")?.trim() ?? "";
   const email = isValidEmail(emailParam) ? emailParam : undefined;
 
+  // Set when the app just signed the candidate out because the backend refused their session. A sign-in started again
+  // at once would end the same way, so the candidate is asked instead.
+  const [stopped, setStopped] = useState(() => forcedSignOutRecently());
+
   useEffect(() => {
-    if (!isSignedIn) appSignIn(email);
-  }, [isSignedIn, appSignIn, email]);
+    if (!isSignedIn && !stopped) appSignIn(email);
+  }, [isSignedIn, stopped, appSignIn, email]);
 
   if (isSignedIn) return <Navigate to="/applications" replace />;
+
+  if (stopped) {
+    return (
+      <Box
+        sx={{
+          minHeight: "60vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 2,
+          textAlign: "center",
+          px: 2,
+        }}
+      >
+        <Typography color="text.primary">
+          We could not verify your session with the server. Please try again in a moment.
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => {
+            clearForcedSignOut();
+            setStopped(false);
+          }}
+          sx={{ ...pillButtonSx, px: 3 }}
+        >
+          Sign in again
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box
