@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Stack, Typography } from "@wso2/oxygen-ui";
+import { Box, Button, Skeleton, Stack, Typography } from "@wso2/oxygen-ui";
 import { Pencil, Plus } from "@wso2/oxygen-ui-icons-react";
 import { useEffect, useState } from "react";
 
@@ -39,11 +39,13 @@ interface PersonalDetailsFormProps {
   errors: DetailErrors;
   options: FormOptions;
   disabled: boolean;
+  // False while the details the application holds are still loading; those are shown as placeholders until then.
+  applicationReady: boolean;
 }
 
 // The details step: what the application already holds, listed first, then the rest of what HR keeps for every new
 // employee. A * marks what is required.
-const PersonalDetailsForm = ({ details, onChange, errors, options, disabled }: PersonalDetailsFormProps) => {
+const PersonalDetailsForm = ({ details, onChange, errors, options, disabled, applicationReady }: PersonalDetailsFormProps) => {
   // Raised when someone is removed from a list, so the inputs after them are remade.
   const [listVersion, setListVersion] = useState(0);
   // The details the application holds are listed, and opened for editing when one is missing, has a problem, or the
@@ -52,6 +54,11 @@ const PersonalDetailsForm = ({ details, onChange, errors, options, disabled }: P
   useEffect(() => {
     if (APPLICATION_FIELDS.some((key) => errors[key])) setEditingApplication(true);
   }, [errors]);
+  // Decided once, when the details the application holds have arrived.
+  useEffect(() => {
+    if (applicationReady) setEditingApplication(APPLICATION_FIELDS.some((key) => !details[key].trim()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applicationReady]);
 
   const update = (patch: Partial<PersonalDetails>) => onChange({ ...details, ...patch });
   const defaultCountry = splitE164(details.mobileNumber)?.countryIso ?? "";
@@ -69,7 +76,16 @@ const PersonalDetailsForm = ({ details, onChange, errors, options, disabled }: P
         <TextInput label="Preferred name" required span={4} value={details.preferredName} onChange={(v) => update({ preferredName: v })} error={errors.preferredName} disabled={disabled} />
         <TextInput label="Initials" required span={3} value={details.initials} onChange={(v) => update({ initials: v })} error={errors.initials} disabled={disabled} />
         <TextInput label="Name with initials" required span={5} value={details.nameWithInitials} onChange={(v) => update({ nameWithInitials: v })} error={errors.nameWithInitials} disabled={disabled} />
-        {editingApplication ? (
+        {!applicationReady ? (
+          <Box sx={{ ...fullWidth, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }} aria-busy="true">
+            {[0, 1, 2, 3].map((row) => (
+              <Box key={row}>
+                <Skeleton variant="text" width={110} height={20} />
+                <Skeleton variant="rounded" height={40} sx={{ borderRadius: "10px" }} />
+              </Box>
+            ))}
+          </Box>
+        ) : editingApplication ? (
           <>
             <TextInput label="First name" required value={details.firstName} onChange={(v) => update({ firstName: v })} error={errors.firstName} disabled={disabled} />
             <TextInput label="Last name" required value={details.surname} onChange={(v) => update({ surname: v })} error={errors.surname} disabled={disabled} />

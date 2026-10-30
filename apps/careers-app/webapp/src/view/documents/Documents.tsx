@@ -84,11 +84,18 @@ const Documents = () => {
   // Raised to ask for the earlier submission again after it failed to load.
   const [statusAttempt, setStatusAttempt] = useState(0);
 
-  // Fills the form from the candidate's profile once it has loaded.
+  // Set once the candidate types in the form, so what arrives later never replaces it.
+  const typedRef = useRef(false);
+  const changeDetails = (next: PersonalDetails) => {
+    typedRef.current = true;
+    setDetails(next);
+  };
+
+  // Fills the form from the candidate's profile once it has loaded. Only fields that are still empty are filled, so
+  // what was typed meanwhile stays.
   useEffect(() => {
     if (prefilled || profileState !== State.success) return;
     setDetails((current) => detailsFromProfile(current, profile));
-    setDetailsVersion((current) => current + 1);
     setPrefilled(true);
   }, [prefilled, profile, profileState]);
 
@@ -123,7 +130,7 @@ const Documents = () => {
       .then((loaded) => {
         if (cancelled) return;
         setStatus(loaded);
-        if (loaded.details && savedDetailsFor.current !== applicationId) {
+        if (loaded.details && savedDetailsFor.current !== applicationId && !typedRef.current) {
           savedDetailsFor.current = applicationId;
           // Details an older submission lacks are filled in as empty.
           setDetails({ ...emptyDetails(), ...loaded.details });
@@ -148,20 +155,19 @@ const Documents = () => {
   const editing = Boolean(status?.submitted && status.canEdit);
   const closed = Boolean(status?.submitted && !status.canEdit);
 
-  // Whether the page is still waiting for the applications and, for an accepted offer, the profile, the document list
-  // and the earlier submission.
+  // Whether the page is still waiting for what the form is built from: the applications and, for an accepted offer, the
+  // list of documents. The profile and the earlier submission load while the form is open.
   const stillLoading =
     applicationsState === State.idle ||
     applicationsState === State.loading ||
-    (eligible &&
-      (profileState === State.idle ||
-        profileState === State.loading ||
-        requirementsState === State.idle ||
-        requirementsState === State.loading ||
-        status === undefined));
+    (eligible && (requirementsState === State.idle || requirementsState === State.loading));
 
-  // The personal email comes only from the profile and cannot be changed here, so the form waits for the profile.
+  // The personal email comes only from the profile and cannot be changed here.
   const profileReady = profileState === State.success;
+  // What is still loading in the background while the candidate fills in the form.
+  const loadingInBackground = profileState === State.idle || profileState === State.loading || status === undefined;
+  // The form is submitted once the profile and the earlier submission are known.
+  const canSubmit = profileReady && status !== undefined && status !== null;
 
   const retryProfile = async () => {
     dispatch(loadProfile(await getToken()));
@@ -207,7 +213,7 @@ const Documents = () => {
   };
 
   const handleSubmit = async () => {
-    if (!application || !requirements || submitting) return;
+    if (!application || !requirements || submitting || !canSubmit) return;
     if (!detailsReady) {
       showDetailProblems();
       return;
@@ -297,7 +303,7 @@ const Documents = () => {
         </Callout>
       )}
 
-      {!stillLoading && eligible && !profileReady && (
+      {!stillLoading && eligible && profileState === State.failed && (
         <Stack alignItems="flex-start" gap={1.5}>
           <Typography color="text.secondary">We couldn&apos;t load your profile, which has your email.</Typography>
           <Button variant="outlined" onClick={retryProfile} sx={pillButtonSx}>
@@ -306,7 +312,7 @@ const Documents = () => {
         </Stack>
       )}
 
-      {!stillLoading && eligible && profileReady && status === null && (
+      {!stillLoading && eligible && status === null && (
         <Stack alignItems="flex-start" gap={1.5}>
           <Typography color="text.secondary">We couldn&apos;t check whether your documents were submitted.</Typography>
           <Button variant="outlined" onClick={retryStatus} sx={pillButtonSx}>
@@ -315,7 +321,7 @@ const Documents = () => {
         </Stack>
       )}
 
-      {!stillLoading && eligible && profileReady && requirementsState === State.failed && (
+      {!stillLoading && eligible && requirementsState === State.failed && (
         <Stack alignItems="flex-start" gap={1.5}>
           <Typography color="text.secondary">We couldn&apos;t load the list of documents.</Typography>
           <Button variant="outlined" onClick={() => setRequirementsState(State.idle)} sx={pillButtonSx}>
@@ -324,7 +330,7 @@ const Documents = () => {
         </Stack>
       )}
 
-      {!stillLoading && eligible && profileReady && application && requirements && submitted && (
+      {!stillLoading && eligible && application && requirements && submitted && (
         <Callout tone="success" icon={<Check size={20} color="#059669" />}>
           <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
             {editing ? "Your changes were saved." : "We received your details and documents."}
@@ -340,7 +346,7 @@ const Documents = () => {
 
       {!stillLoading &&
         eligible &&
-        profileReady &&
+        profileState !== State.failed &&
         status !== null &&
         !closed &&
         application &&
@@ -361,6 +367,14 @@ const Documents = () => {
                   : "You can change your details and replace files."
                 : "Check everything on the last step before you submit."}
             </Typography>
+            {loadingInBackground && (
+              <Box role="status" aria-live="polite" sx={{ mb: 2 }}>
+                <LinearProgress sx={{ borderRadius: "999px", mb: 0.75 }} />
+                <Typography fontSize="0.85rem" color="text.secondary">
+                  Loading your saved details. You can start filling in the form.
+                </Typography>
+              </Box>
+            )}
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 1.5 }}>
               {STEPS.map((label, index) => (
                 <Button
@@ -385,7 +399,8 @@ const Documents = () => {
             <PersonalDetailsForm
               key={detailsVersion}
               details={details}
-              onChange={setDetails}
+              onChange={changeDetails}
+              applicationReady={prefilled}
               errors={showDetailErrors ? currentDetailErrors : {}}
               options={requirements}
               disabled={submitting}
@@ -428,7 +443,7 @@ const Documents = () => {
               <Button
                 variant="contained"
                 onClick={handleSubmit}
-                disabled={submitting || !detailsReady || !allDocumentsReady || tooLarge || !declared}
+                disabled={submitting || !canSubmit || !detailsReady || !allDocumentsReady || tooLarge || !declared}
                 startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : undefined}
                 sx={{ ...pillButtonSx, px: 3 }}
               >
