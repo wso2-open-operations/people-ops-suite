@@ -292,6 +292,8 @@ public type Employee record {|
     string? finalDayOfEmployment;
     # Resignation reason
     string? resignationReason;
+    # University attended - only set for employees who have an `internship` row
+    string? university;
     # Employment type
     string employmentType;
     # Employment type ID
@@ -1326,6 +1328,105 @@ public type UpdateResignationPayload record {|
     # wherever a departure is displayed. Same rule as CreateCareerFunctionPayload.
     @constraint:String {maxLength: 300, pattern: re `^\s*\S.*$`}
     string resignationReason;
+|};
+
+# [Database] Intern profile record - sourced from `employee` (joined with
+# `personal_info`/`business_unit`/`team`/`sub_team`), plus university
+# from `internship` - see people_app_table_update_v1.2.2.sql.
+public type InternProfile record {|
+    # Employee primary key (employee.id)
+    int id;
+    # Employee ID (employee.employee_id)
+    string? employeeId;
+    # Email address
+    string? email;
+    # Full name
+    string? name;
+    # Gender
+    string? gender;
+    # University attended
+    string? university;
+    # Mentor's work email (employee.manager_email)
+    string? mentorEmail;
+    # Business unit the person is/was in
+    string? businessUnit;
+    # Team the person is/was in
+    string? team;
+    # Sub-team the person is/was in
+    string? subTeam;
+    # Internship start date (employee.start_date)
+    string? joinedDate;
+    # Internship end date (employee.agreement_end_date)
+    string? endDate;
+    # Employee status (employee.employee_status)
+    string? employeeStatus;
+    # Current employment type - anything other than INTERNSHIP means the internship is over
+    string? employmentType;
+|};
+
+# [Database] Employee record for the Employee Hub dashboard - only the fields
+# its charts need.
+public type EmployeeHubEmployee record {|
+    # Employee ID
+    string employeeId;
+    # First name
+    string? firstName;
+    # Last name
+    string? lastName;
+    # Work email
+    string? workEmail;
+    # Gender
+    string? gender;
+    # Designation
+    string? designation;
+    # Job band
+    int? jobBand;
+    # Business unit
+    string? businessUnit;
+    # Team
+    string? team;
+    # Sub-team
+    string? subTeam;
+    # Manager's work email
+    string? managerEmail;
+    # Work location
+    string? workLocation;
+    # Start date
+    string? startDate;
+    # Probation end date
+    string? probationEndDate;
+    # Agreement end date
+    string? agreementEndDate;
+    # Employee status
+    string? employeeStatus;
+    # Employment type
+    string? employmentType;
+    # University - only set for employees who have an `internship` row
+    string? university;
+    # Resignation date
+    string? resignationDate;
+    # Final day of employment
+    string? finalDayOfEmployment;
+|};
+
+# [Database] Headcount per team and job band for the Employee Hub dashboard.
+public type EmployeeHubJobBandCount record {|
+    # Team
+    string team;
+    # Job band
+    int? jobBand;
+    # Number of employees
+    int headcount;
+|};
+
+# Employee Hub dashboard data.
+public type EmployeeHubData record {|
+    # Current staff (Active or Marked leaver, already started)
+    EmployeeHubEmployee[] employees;
+    # Non-intern leavers
+    EmployeeHubEmployee[] leavers;
+    # Headcount per team and job band for current, non-intern staff
+    EmployeeHubJobBandCount[] jobBandCounts;
 |};
 
 # [Database] Insert type for vehicle.

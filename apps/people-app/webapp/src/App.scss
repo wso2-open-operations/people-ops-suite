@@ -55,13 +55,10 @@
   height: 20px;
   width: 100%;
   background: #ebebeb;
-  margin: -24px;
+  margin: 24px -24px -24px;
   padding-left: 10px;
   line-height: 20px;
   align-items: center;
-  position: fixed;
-  bottom: 25px;
-  z-index: 100;
 }
 
 .ql-editor p,

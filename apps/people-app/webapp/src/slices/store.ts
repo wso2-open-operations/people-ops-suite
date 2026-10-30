@@ -31,6 +31,7 @@ import masterDataReducer from "@slices/masterDataSlice/masterData";
 import bulkOnboardingReducer from "@slices/bulkOnboardingSlice/bulkOnboarding";
 import careerFunctionReducer from "@slices/careerFunctionSlice/careerFunction";
 import leadershipReducer from "@slices/leadershipSlice/leadership";
+import employeeHubReducer from "@slices/employeeHubSlice/employeeHub";
 
 enableMapSet();
 
@@ -49,6 +50,7 @@ export const store = configureStore({
     bulkOnboarding: bulkOnboardingReducer,
     careerFunction: careerFunctionReducer,
     leadership: leadershipReducer,
+    employeeHub: employeeHubReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware(),
