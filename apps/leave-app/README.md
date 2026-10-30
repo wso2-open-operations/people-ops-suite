@@ -259,6 +259,10 @@ GRANT SELECT, UPDATE ON <leave_db>.leave_attachments TO '<scheduler_user>'@'<hos
 France only. Compassionate Leave is approved automatically. Other Authorized Leave is saved as pending and the
 applicant's current lead (HR entity service) is emailed a link (`otherAuthorizedApprovalUrl`) to approve or reject it.
 
+- The applicant must give a reason (the leave comment, stored in `submit_note`); a blank one is refused with a 400.
+  The reason is always private: the backend saves it with `public_submit_note = 0`, whatever the request says. The
+  lead reads it in the approval email, and after approval the comment email goes only to the applicant, their lead
+  and the people they added, never to `emailGroupToNotify` or `defaultRecipients`.
 - Rejecting requires a reason of 1–500 characters, which is sent to the applicant.
 - A pending request blocks overlapping leave requests.
 - The applicant can withdraw a pending request. The applicant and their current lead in HR (or the stored approver

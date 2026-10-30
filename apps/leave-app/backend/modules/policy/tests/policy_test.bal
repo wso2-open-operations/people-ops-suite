@@ -33,6 +33,16 @@ function onlyOtherAuthorizedNeedsTheLead() {
 }
 
 @test:Config {}
+function onlyOtherAuthorizedNeedsAReason() {
+    test:assertTrue(checkCommentGiven("other_authorized", ()) is error);
+    test:assertTrue(checkCommentGiven("other_authorized", "") is error);
+    test:assertTrue(checkCommentGiven("other_authorized", "   ") is error);
+    test:assertEquals(checkCommentGiven("other_authorized", "Jury service"), ());
+    test:assertEquals(checkCommentGiven("compassionate", ()), ());
+    test:assertEquals(checkCommentGiven("sick", ""), ());
+}
+
+@test:Config {}
 function onlyFranceSickLeaveNeedsANote() {
     test:assertTrue(requiresSickNote("sick", "France"));
     test:assertFalse(requiresSickNote("sick", "Spain"));

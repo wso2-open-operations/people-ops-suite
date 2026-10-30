@@ -73,6 +73,11 @@ export function canCancelLeave(status: Status, startDate: string, today: Date): 
   return leaveStart.getTime() - todayStart.getTime() >= -CANCEL_WINDOW_MS;
 }
 
+/** Other Authorized Leave needs a reason, which the lead decides on. It is always kept private. */
+export function needsReason(leaveType: LeaveType): boolean {
+  return leaveType === LeaveType.OTHER_AUTHORIZED;
+}
+
 /** Sick leave taken in France needs a sick note. */
 export function needsSickNote(location: string | null, leaveType: LeaveType): boolean {
   return location === "France" && leaveType === LeaveType.SICK;

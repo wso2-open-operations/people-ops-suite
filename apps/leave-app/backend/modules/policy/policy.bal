@@ -57,6 +57,18 @@ public isolated function needsLeadApproval(string leaveType) returns boolean {
     return leaveType == OTHER_AUTHORIZED;
 }
 
+# Check that a leave request carries the reason its type requires. The lead decides Other Authorized Leave on this
+# reason, so it must not be blank.
+#
+# + leaveType - Leave type value
+# + comment - Comment entered by the employee
+# + return - An error if the leave type is Other Authorized Leave and the comment is blank
+public isolated function checkCommentGiven(string leaveType, string? comment) returns error? {
+    if leaveType == OTHER_AUTHORIZED && (comment ?: "").trim().length() == 0 {
+        return error("A reason is required for Other Authorized Leave.");
+    }
+}
+
 # Check whether a leave type requires a sick note at the given location.
 #
 # + leaveType - Leave type value

@@ -22,6 +22,7 @@ import {
   canCancelLeave,
   canDownloadSickNote,
   leaveTypeLabel,
+  needsReason,
   needsSickNote,
   rejectionReasonProblem,
   sickNoteProblem,
@@ -97,6 +98,11 @@ describe("history and sick notes", () => {
     expect(needsSickNote("France", LeaveType.SICK)).toBe(true);
     expect(needsSickNote("Spain", LeaveType.SICK)).toBe(false);
     expect(needsSickNote(null, LeaveType.SICK)).toBe(false);
+  });
+  it("needs a reason only for Other Authorized Leave", () => {
+    expect(needsReason(LeaveType.OTHER_AUTHORIZED)).toBe(true);
+    expect(needsReason(LeaveType.COMPASSIONATE)).toBe(false);
+    expect(needsReason(LeaveType.SICK)).toBe(false);
   });
   it("offers the sick note download only until the note is deleted", () => {
     expect(canDownloadSickNote(true, null)).toBe(true);

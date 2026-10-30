@@ -206,8 +206,18 @@ function submitLeave(LeavePayload payload, string email, string jwt, boolean isV
                 }
             };
         }
-        // Leave that needs the lead's approval is saved as pending; the team email and calendar event wait.
+        // Leave that needs the lead's approval is saved as pending; the team email and calendar event wait. The lead
+        // decides on its reason, so the reason is required and always kept private.
         if policy:needsLeadApproval(payload.leaveType) {
+            error? reasonCheck = policy:checkCommentGiven(payload.leaveType, payload.comment);
+            if reasonCheck is error {
+                return <http:BadRequest>{
+                    body: {
+                        message: reasonCheck.message()
+                    }
+                };
+            }
+            input.isPublicComment = false;
             return submitForApproval(input, jwt);
         }
 

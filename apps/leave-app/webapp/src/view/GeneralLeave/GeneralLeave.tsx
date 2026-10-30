@@ -39,7 +39,7 @@ import {
   LeaveType,
   PeriodType,
 } from "@root/src/types/types";
-import { needsSickNote, sickNoteProblem } from "@root/src/utils/leaveRules";
+import { needsReason, needsSickNote, sickNoteProblem } from "@root/src/utils/leaveRules";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
 import LeaveBalanceSummary from "@root/src/view/GeneralLeave/component/LeaveBalanceSummary";
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
@@ -112,10 +112,17 @@ export default function GeneralLeave() {
       ? sickNoteProblem(sickNote, appConfig.sickNoteMaxBytes, appConfig.sickNoteContentTypes)
       : "";
   const sickNoteReady = !sickNoteRequired || (!!sickNote && sickNoteLimitsLoaded && !sickNoteError);
+  const reasonRequired = needsReason(selectedLeaveType);
+  const reasonMissing = reasonRequired && !comment.trim();
 
   useEffect(() => {
     setSelectedLeaveType(getDefaultLeaveType(userLocation));
   }, [userLocation]);
+
+  // The reason for Other Authorized Leave is for the lead, so it is never public.
+  useEffect(() => {
+    if (reasonRequired) setIsPublicComment(false);
+  }, [reasonRequired]);
 
   // A sick note belongs to a sick leave request only.
   useEffect(() => {
@@ -138,7 +145,7 @@ export default function GeneralLeave() {
         comment,
         leaveType: selectedLeaveType as any,
         emailRecipients: filteredEmailRecipients,
-        isPublicComment,
+        isPublicComment: reasonRequired ? false : isPublicComment,
       };
 
       if (userLocation === EmployeeLocation.FR || userLocation === EmployeeLocation.ES) {
@@ -221,6 +228,11 @@ export default function GeneralLeave() {
 
     if (!sickNoteReady) {
       enqueueSnackbar("Please attach a valid sick note", { variant: "error" });
+      return;
+    }
+
+    if (reasonMissing) {
+      enqueueSnackbar("Please tell your lead why you need this leave", { variant: "error" });
       return;
     }
 
@@ -379,6 +391,7 @@ export default function GeneralLeave() {
             onCommentChange={setComment}
             isPublicComment={isPublicComment}
             onPublicCommentChange={setIsPublicComment}
+            reasonRequired={reasonRequired}
           />
         </Stack>
       </Box>
@@ -394,14 +407,16 @@ export default function GeneralLeave() {
         }}
       >
         <Typography variant="caption" sx={{ color: theme.palette.customText.primary.p4.active }}>
-          {isPublicComment
-            ? "Your comment will be visible to all email recipients."
-            : "Your comment will be visible to all email recipients except the WSO2 Vacation Group."}
+          {reasonRequired
+            ? "Your reason goes to your lead for approval and is never made public."
+            : isPublicComment
+              ? "Your comment will be visible to all email recipients."
+              : "Your comment will be visible to all email recipients except the WSO2 Vacation Group."}
         </Typography>
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={isSubmitting || isDateValidating || !sickNoteReady}
+          disabled={isSubmitting || isDateValidating || !sickNoteReady || reasonMissing}
           startIcon={
             isSubmitting || isDateValidating ? (
               <CircularProgress size={18} color="inherit" />
