@@ -95,5 +95,6 @@ isolated function bindKeyValues(string content, map<string> keyValPairs) returns
 # + return - Display text
 isolated function formatDays(float|int days) returns string {
     string text = days is float && days == <float><int>days ? (<int>days).toString() : days.toString();
-    return days == 1 ? string `${text} day` : string `${text} days`;
+    // Decided on the text: `==` between a float and an int is never true, so `1.0 == 1` would pick "days".
+    return text == "1" ? string `${text} day` : string `${text} days`;
 }
