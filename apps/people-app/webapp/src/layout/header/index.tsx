@@ -104,6 +104,12 @@ const Header = () => {
             flexGrow: 1,
             fontWeight: 600,
             cursor: "pointer",
+            // Phones: one line, smaller, never pushes the bar taller.
+            fontSize: { xs: "1.05rem", sm: undefined },
+            minWidth: 0,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
           onClick={() => (window.location.href = "/")}
         >
@@ -113,8 +119,9 @@ const Header = () => {
         <Box sx={{ flexGrow: 0 }}>
           {user.userInfo && (
             <>
-              <Stack flexDirection={"row"} alignItems={"center"} gap={2}>
-                <Box>
+              <Stack flexDirection={"row"} alignItems={"center"} gap={{ xs: 1, sm: 2 }}>
+                {/* Name and title are in the avatar menu's context anyway; hidden on phones to keep the bar one row. */}
+                <Box sx={{ display: { xs: "none", sm: "block" } }}>
                   <Typography variant="body1" sx={{ fontWeight: 600 }}>
                     {user.userInfo?.firstName + " " + user.userInfo.lastName}
                   </Typography>
