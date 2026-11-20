@@ -291,3 +291,207 @@ public type AppConfig record {|
     # Whether maintenance mode is enabled
     boolean isMaintenanceMode = false;
 |};
+
+# An OKR: an objective owned by an employee, with its key results (each with its own due date) and what the
+# caller may do with it.
+type Okr record {|
+    # OKR ID
+    int okrId;
+    # Owner's work email
+    string ownerEmail;
+    # Owner's name
+    string ownerName?;
+    # Owner's manager's work email
+    string ownerLeadEmail?;
+    # The objective
+    string objective;
+    # OPEN, COMPLETED or CLOSED
+    database:OkrStatus status;
+    # Why it was closed
+    string closeReason?;
+    # Who last completed, closed or reopened it
+    string statusChangedBy?;
+    # When (UTC)
+    string statusChangedOn?;
+    # Send it back with a change, so a change someone made meanwhile isn't overwritten
+    int version;
+    # Key results, in order
+    OkrKeyResult[] keyResults;
+    # Whether the caller may change the objective and all its key results
+    boolean canManage;
+    # In a team list: whether its owner is in the caller's team
+    boolean ownerInTeam?;
+    # Who set it
+    string createdBy;
+    # When (UTC)
+    string createdOn;
+    # Who last changed it
+    string updatedBy;
+    # When (UTC)
+    string updatedOn;
+|};
+
+# A key result of an objective.
+type OkrKeyResult record {|
+    # Key result ID
+    int keyResultId;
+    # Owner's work email
+    string ownerEmail;
+    # Owner's name
+    string ownerName?;
+    # The key result
+    string title;
+    # Where it starts
+    string baseline?;
+    # Where it should get to
+    string target?;
+    # Due date (YYYY-MM-DD)
+    string dueDate;
+    # Where it stands
+    database:KeyResultStatus status;
+    # Every status it has had, oldest first, the first from when it was added
+    OkrStatusChange[] statusHistory;
+    # Actions towards it, oldest first
+    OkrAction[] actions;
+    # Whether the caller may change its status and measure, and work on its actions
+    boolean canUpdate;
+    # In a team list: whether its owner is in the caller's team
+    boolean ownerInTeam?;
+|};
+
+# A status a key result had.
+type OkrStatusChange record {|
+    # The status
+    database:KeyResultStatus status;
+    # Who set it
+    string changedBy;
+    # When (UTC)
+    string changedOn;
+|};
+
+# An action towards a key result.
+type OkrAction record {|
+    # Action ID
+    int actionId;
+    # The action
+    string title;
+    # Whether it's done
+    boolean done;
+    # Who ticked it off
+    string doneBy?;
+    # When (UTC)
+    string doneOn?;
+    # How many comments it has
+    int commentCount;
+    # Who added it
+    string createdBy;
+    # When (UTC)
+    string createdOn;
+|};
+
+# A comment on an action.
+type OkrComment record {|
+    # Comment ID
+    int commentId;
+    # The comment
+    string comment;
+    # Who wrote it
+    string createdBy;
+    # Their name
+    string authorName?;
+    # When (UTC)
+    string createdOn;
+|};
+
+# Someone a key result can be given to.
+type OkrPerson record {|
+    # Work email
+    string workEmail;
+    # Name
+    string name;
+    # Job role
+    string jobRole?;
+    # Photo URL
+    string thumbnail?;
+|};
+
+# A key result as entered: a new one, or, when changing an objective, an existing one with its ID.
+type KeyResultEntry record {|
+    # Key result ID, for one that already exists
+    int keyResultId?;
+    # The key result
+    string title;
+    # Owner's work email; the objective owner when left out
+    string ownerEmail?;
+    # Where it starts
+    string baseline?;
+    # Where it should get to
+    string target?;
+    # Due date (YYYY-MM-DD)
+    string dueDate?;
+|};
+
+# Payload for setting an objective.
+type NewOkr record {|
+    # Owner's work email; the caller when left out
+    string ownerEmail?;
+    # The objective
+    string objective;
+    # Key results, in order
+    KeyResultEntry[] keyResults = [];
+|};
+
+# Payload for changing an objective. Fields left out keep their value; key results, when given, are all
+# of them, so ones left out are removed.
+type OkrChange record {|
+    # The version it was opened at
+    int version;
+    # The objective
+    string objective?;
+    # Key results, in order
+    KeyResultEntry[] keyResults?;
+|};
+
+# Payload for completing, closing or reopening an objective.
+type OkrStatusChangeRequest record {|
+    # OPEN, COMPLETED or CLOSED
+    database:OkrStatus status;
+    # Why it's closed
+    string reason?;
+|};
+
+# Payload for changing a key result's status.
+type KeyResultStatusChangeRequest record {|
+    # The new status
+    database:KeyResultStatus status;
+|};
+
+# Payload for changing a key result's measure.
+type KeyResultMeasureChange record {|
+    # The objective's version it was opened at
+    int version;
+    # Where it starts; blank to clear it
+    string baseline?;
+    # Where it should get to; blank to clear it
+    string target?;
+|};
+
+# Payload for adding an action.
+type NewOkrAction record {|
+    # The action
+    string title;
+|};
+
+# Payload for changing an action. Fields left out keep their value.
+type OkrActionChange record {|
+    # The action
+    string title?;
+    # Whether it's done
+    boolean done?;
+|};
+
+# Payload for adding a comment.
+type NewOkrComment record {|
+    # The comment
+    string comment;
+|};

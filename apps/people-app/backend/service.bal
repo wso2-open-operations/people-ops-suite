@@ -3925,4 +3925,561 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return http:OK;
     }
+
+    # Get OKRs: one person's, the caller's team's, or everyone's.
+    #
+    # One person's are the objectives they own and those with a key result of theirs; the person, anyone
+    # above them in their reporting chain and People Ops admins can read them. Each objective comes with
+    # its key results, their status history and actions, and what the caller may do with each.
+    #
+    # + ownerEmail - Whose OKRs; leave out for a list
+    # + scope - Without `ownerEmail`: `team` (the default) for the caller's team's (objectives owned by
+    # someone in their reporting chain, and those with a key result of such a person's, each owner marked
+    # as in the team or not), `all` for everyone's (People Ops admins only). Leavers' OKRs aren't listed.
+    # + return - The OKRs, oldest first (lists by owner), or an error response
+    resource function get okrs(http:RequestContext ctx, string? ownerEmail, OkrScope? scope)
+        returns Okr[]|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        database:OkrRow[]|error rows;
+        string[]? team = ();
+        if ownerEmail is string {
+            boolean|error canRead = canManageOkrsOf(userInfo, ownerEmail);
+            if canRead is error {
+                return okrError("Error occurred while checking access to OKRs", canRead);
+            }
+            if !canRead {
+                return <http:Forbidden>{body: {message: "You can't see this person's OKRs"}};
+            }
+            rows = database:getOkrsOf(ownerEmail);
+        } else if scope == OKR_SCOPE_ALL {
+            if !isOkrAdmin(userInfo) {
+                return <http:Forbidden>{body: {message: "Only People Ops admins can see everyone's OKRs"}};
+            }
+            rows = database:getAllOkrs();
+        } else {
+            rows = database:getOkrsInChainOf(userInfo.email);
+            string[]|error teamEmails = database:getTeamEmails(userInfo.email);
+            if teamEmails is error {
+                return okrError("Error occurred while fetching the team", teamEmails);
+            }
+            team = teamEmails;
+        }
+        if rows is error {
+            return okrError("Error occurred while fetching OKRs", rows);
+        }
+
+        Okr[]|error okrs = toOkrs(userInfo, rows, team);
+        if okrs is error {
+            return okrError("Error occurred while reading OKRs", okrs);
+        }
+        return okrs;
+    }
+
+    # Set an objective with its key results. Anyone can set their own; anyone above someone in their
+    # reporting chain, and People Ops admins, can set one for them.
+    #
+    # + okr - The objective
+    # + return - The new OKR, or an error response
+    resource function post okrs(http:RequestContext ctx, NewOkr okr)
+        returns http:Created|http:BadRequest|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        string ownerEmail = (okr.ownerEmail ?: userInfo.email).trim().toLowerAscii();
+        [string, database:KeyResultInput[]]|string valid =
+            validateOkr(ownerEmail, okr.objective, okr.keyResults);
+        if valid is string {
+            return <http:BadRequest>{body: {message: valid}};
+        }
+
+        boolean|error canManage = canManageOkrsOf(userInfo, ownerEmail);
+        if canManage is error {
+            return okrError("Error occurred while checking access to OKRs", canManage);
+        }
+        if !canManage {
+            return <http:Forbidden>{body: {message: "You can only set OKRs for yourself and people in your team"}};
+        }
+
+        string|error? ownerStatus = database:getCurrentEmployeeStatus(ownerEmail);
+        if ownerStatus is error {
+            return okrError("Error occurred while checking the employee", ownerStatus);
+        }
+        if ownerStatus is () || ownerStatus == database:EMPLOYEE_LEFT {
+            return <http:BadRequest>{body: {message: string `${ownerEmail} isn't a current employee`}};
+        }
+
+        [string, database:KeyResultInput[]] [objective, keyResults] = valid;
+        string|error? ownersInvalid = checkKeyResultOwners(ownerEmail, keyResults);
+        if ownersInvalid is error {
+            return okrError("Error occurred while checking the key results' owners", ownersInvalid);
+        }
+        if ownersInvalid is string {
+            return <http:BadRequest>{body: {message: ownersInvalid}};
+        }
+
+        int|error okrId = database:addOkr({
+            ownerEmail,
+            objective,
+            keyResults,
+            createdBy: userInfo.email
+        });
+        if okrId is error {
+            return okrError("Error occurred while setting the OKR", okrId);
+        }
+
+        Okr|http:NotFound|http:InternalServerError created = okrResponse(userInfo, okrId);
+        if created !is Okr {
+            return <http:InternalServerError>{body: {message: "Error occurred while reading the new OKR"}};
+        }
+        return <http:Created>{body: created};
+    }
+
+    # Change an objective's details and key results. Its owner, anyone above them in their reporting
+    # chain, or a People Ops admin, while it's open. Refused when someone changed it since `version`.
+    #
+    # + okrId - OKR ID
+    # + change - Fields to change
+    # + return - The changed OKR, or an error response
+    resource function patch okrs/[int okrId](http:RequestContext ctx, OkrChange change)
+        returns Okr|http:BadRequest|http:Forbidden|http:NotFound|http:Conflict|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        database:OkrRow|http:Forbidden|http:NotFound|http:InternalServerError existing =
+            getManageableOkr(userInfo, okrId);
+        if existing !is database:OkrRow {
+            return existing;
+        }
+        if existing.version != change.version {
+            return <http:Conflict>{body: {message: OKR_CHANGED_MEANWHILE}};
+        }
+        http:BadRequest? notOpen = requireOpen(existing);
+        if notOpen is http:BadRequest {
+            return notOpen;
+        }
+
+        database:KeyResultRow[]|error stored = database:getKeyResultsOf([okrId]);
+        if stored is error {
+            return okrError(string `Error occurred while reading OKR ${okrId}`, stored);
+        }
+        map<string> storedOwners = {};
+        foreach database:KeyResultRow keyResult in stored {
+            storedOwners[keyResult.keyResultId.toString()] = keyResult.ownerEmail;
+        }
+        KeyResultEntry[] entries = change.keyResults ?: from database:KeyResultRow keyResult in stored
+            select toKeyResultEntry(keyResult);
+        foreach KeyResultEntry entry in entries {
+            int? keyResultId = entry.keyResultId;
+            if keyResultId is int && !storedOwners.hasKey(keyResultId.toString()) {
+                return <http:BadRequest>{body: {message: string `Key result ${keyResultId} isn't part of this OKR`}};
+            }
+        }
+
+        [string, database:KeyResultInput[]]|string valid =
+            validateOkr(existing.ownerEmail, change.objective ?: existing.objective, entries);
+        if valid is string {
+            return <http:BadRequest>{body: {message: valid}};
+        }
+        [string, database:KeyResultInput[]] [objective, keyResults] = valid;
+        string|error? ownersInvalid = checkKeyResultOwners(existing.ownerEmail, keyResults, storedOwners);
+        if ownersInvalid is error {
+            return okrError("Error occurred while checking the key results' owners", ownersInvalid);
+        }
+        if ownersInvalid is string {
+            return <http:BadRequest>{body: {message: ownersInvalid}};
+        }
+
+        boolean|error updated = database:updateOkr({
+            okrId,
+            version: change.version,
+            objective,
+            keyResults,
+            updatedBy: userInfo.email
+        });
+        if updated is error {
+            return okrError(string `Error occurred while changing OKR ${okrId}`, updated);
+        }
+        if !updated {
+            return <http:Conflict>{body: {message: OKR_CHANGED_MEANWHILE}};
+        }
+        return okrResponse(userInfo, okrId);
+    }
+
+    # Complete, close or reopen an objective. Its owner, anyone above them in their reporting chain, or a
+    # People Ops admin. An open one can be completed or closed (with a reason), and either reopened.
+    #
+    # + okrId - OKR ID
+    # + change - The new status
+    # + return - The changed OKR, or an error response
+    resource function put okrs/[int okrId]/status(http:RequestContext ctx, OkrStatusChangeRequest change)
+        returns Okr|http:BadRequest|http:Forbidden|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        database:OkrRow|http:Forbidden|http:NotFound|http:InternalServerError existing =
+            getManageableOkr(userInfo, okrId);
+        if existing !is database:OkrRow {
+            return existing;
+        }
+        boolean fromOpen = existing.status == database:OKR_OPEN;
+        boolean toOpen = change.status == database:OKR_OPEN;
+        if fromOpen == toOpen {
+            return <http:BadRequest>{
+                body: {message: toOpen ? "This OKR is already open." : "Only an open OKR can be completed or closed."}
+            };
+        }
+        string? reason = optionalText(change.reason);
+        if (reason ?: "").length() > OKR_CLOSE_REASON_MAX_LENGTH {
+            return <http:BadRequest>{body: {message: string `Keep the reason under ${OKR_CLOSE_REASON_MAX_LENGTH} characters.`}};
+        }
+
+        boolean|error changed = database:setOkrStatus(okrId, change.status, reason, userInfo.email);
+        if changed is error {
+            return okrError(string `Error occurred while changing OKR ${okrId}`, changed);
+        }
+        if !changed {
+            return <http:NotFound>{body: {message: "OKR not found"}};
+        }
+        return okrResponse(userInfo, okrId);
+    }
+
+    # Delete an objective nobody has worked on yet. Its owner, anyone above them in their reporting chain,
+    # or a People Ops admin. Once someone has, it can be completed or closed instead.
+    #
+    # + okrId - OKR ID
+    # + return - No content, or an error response
+    resource function delete okrs/[int okrId](http:RequestContext ctx)
+        returns http:NoContent|http:Forbidden|http:NotFound|http:Conflict|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        database:OkrRow|http:Forbidden|http:NotFound|http:InternalServerError existing =
+            getManageableOkr(userInfo, okrId);
+        if existing !is database:OkrRow {
+            return existing;
+        }
+
+        boolean|error deleted = database:deleteOkr(okrId, userInfo.email);
+        if deleted is error {
+            return okrError(string `Error occurred while deleting OKR ${okrId}`, deleted);
+        }
+        if !deleted {
+            return <http:Conflict>{body: {message: "Someone has worked on this OKR, so it can't be deleted. Close it instead."}};
+        }
+        return http:NO_CONTENT;
+    }
+
+    # Get the people a key result of someone's objective can be given to: them and their team, current
+    # employees only. Whoever may manage that person's objectives.
+    #
+    # + ownerEmail - The objective owner's work email
+    # + search - Part of a name or work email
+    # + return - Up to 25 people by name, or an error response
+    resource function get okr\-team(http:RequestContext ctx, string ownerEmail, string search = "")
+        returns OkrPerson[]|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        boolean|error canManage = canManageOkrsOf(userInfo, ownerEmail);
+        if canManage is error {
+            return okrError("Error occurred while checking access to OKRs", canManage);
+        }
+        if !canManage {
+            return <http:Forbidden>{body: {message: "You can only set OKRs for yourself and people in your team"}};
+        }
+
+        database:OkrPersonRow[]|error rows = database:getOkrTeam(ownerEmail, search, OKR_TEAM_SEARCH_LIMIT);
+        if rows is error {
+            return okrError("Error occurred while searching the team", rows);
+        }
+        OkrPerson[] people = [];
+        foreach database:OkrPersonRow row in rows {
+            OkrPerson person = {workEmail: row.workEmail, name: row.name ?: row.workEmail};
+            string? jobRole = row.jobRole;
+            if jobRole is string {
+                person.jobRole = jobRole;
+            }
+            string? thumbnail = row.thumbnail;
+            if thumbnail is string {
+                person.thumbnail = thumbnail;
+            }
+            people.push(person);
+        }
+        return people;
+    }
+
+    # Change a key result's status, recording who changed it and when. Its owner, or whoever manages
+    # its objective, while the objective is open.
+    #
+    # + keyResultId - Key result ID
+    # + change - The new status
+    # + return - The OKR it's part of, or an error response
+    resource function put okr\-key\-results/[int keyResultId]/status(http:RequestContext ctx,
+            KeyResultStatusChangeRequest change)
+        returns Okr|http:BadRequest|http:Forbidden|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        [database:OkrRow, database:KeyResultRow]|http:Forbidden|http:NotFound|http:InternalServerError found =
+            getUpdatableKeyResult(userInfo, keyResultId);
+        if found !is [database:OkrRow, database:KeyResultRow] {
+            return found;
+        }
+        http:BadRequest? notOpen = requireOpen(found[0]);
+        if notOpen is http:BadRequest {
+            return notOpen;
+        }
+
+        error? changed = database:setKeyResultStatus(keyResultId, change.status, userInfo.email);
+        if changed is error {
+            return okrError(string `Error occurred while changing key result ${keyResultId}`, changed);
+        }
+        return okrResponse(userInfo, found[0].okrId);
+    }
+
+    # Change a key result's baseline and target. Its owner, or whoever manages its objective, while the
+    # objective is open. Refused when someone changed the objective since `version`.
+    #
+    # + keyResultId - Key result ID
+    # + change - The new measure
+    # + return - The OKR it's part of, or an error response
+    resource function patch okr\-key\-results/[int keyResultId](http:RequestContext ctx, KeyResultMeasureChange change)
+        returns Okr|http:BadRequest|http:Forbidden|http:NotFound|http:Conflict|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        [database:OkrRow, database:KeyResultRow]|http:Forbidden|http:NotFound|http:InternalServerError found =
+            getUpdatableKeyResult(userInfo, keyResultId);
+        if found !is [database:OkrRow, database:KeyResultRow] {
+            return found;
+        }
+        [database:OkrRow, database:KeyResultRow] [okr, keyResult] = found;
+        if okr.version != change.version {
+            return <http:Conflict>{body: {message: OKR_CHANGED_MEANWHILE}};
+        }
+        http:BadRequest? notOpen = requireOpen(okr);
+        if notOpen is http:BadRequest {
+            return notOpen;
+        }
+
+        [string?, string?]|string measure = validateMeasure(change.baseline ?: keyResult.baseline,
+                change.target ?: keyResult.target);
+        if measure is string {
+            return <http:BadRequest>{body: {message: measure}};
+        }
+        boolean|error changed = database:updateKeyResultMeasure(okr.okrId, change.version, keyResultId, measure[0],
+                measure[1], userInfo.email);
+        if changed is error {
+            return okrError(string `Error occurred while changing key result ${keyResultId}`, changed);
+        }
+        if !changed {
+            return <http:Conflict>{body: {message: OKR_CHANGED_MEANWHILE}};
+        }
+        return okrResponse(userInfo, okr.okrId);
+    }
+
+    # Add an action towards a key result. Its owner, or whoever manages its objective, while the
+    # objective is open.
+    #
+    # + keyResultId - Key result ID
+    # + action - The action
+    # + return - The OKR it's part of, or an error response
+    resource function post okr\-key\-results/[int keyResultId]/actions(http:RequestContext ctx, NewOkrAction action)
+        returns http:Created|http:BadRequest|http:Forbidden|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        string title = action.title.trim();
+        if title == "" || title.length() > OKR_ACTION_MAX_LENGTH {
+            return <http:BadRequest>{body: {message: string `Write the action, in under ${OKR_ACTION_MAX_LENGTH} characters.`}};
+        }
+        [database:OkrRow, database:KeyResultRow]|http:Forbidden|http:NotFound|http:InternalServerError found =
+            getUpdatableKeyResult(userInfo, keyResultId);
+        if found !is [database:OkrRow, database:KeyResultRow] {
+            return found;
+        }
+        http:BadRequest? notOpen = requireOpen(found[0]);
+        if notOpen is http:BadRequest {
+            return notOpen;
+        }
+
+        int|error actionId = database:addAction(keyResultId, title, userInfo.email);
+        if actionId is error {
+            return okrError(string `Error occurred while adding an action to key result ${keyResultId}`, actionId);
+        }
+        Okr|http:NotFound|http:InternalServerError okr = okrResponse(userInfo, found[0].okrId);
+        if okr !is Okr {
+            return <http:InternalServerError>{body: {message: "Error occurred while reading the OKR"}};
+        }
+        return <http:Created>{body: okr};
+    }
+
+    # Rename an action, or tick it off or back on. The key result's owner, or whoever manages its
+    # objective, while the objective is open.
+    #
+    # + actionId - Action ID
+    # + change - Fields to change
+    # + return - The OKR it's part of, or an error response
+    resource function patch okr\-actions/[int actionId](http:RequestContext ctx, OkrActionChange change)
+        returns Okr|http:BadRequest|http:Forbidden|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        [database:OkrRow, database:KeyResultRow, database:OkrActionRow]|http:Forbidden|http:NotFound
+            |http:InternalServerError found = getUpdatableAction(userInfo, actionId);
+        if found !is [database:OkrRow, database:KeyResultRow, database:OkrActionRow] {
+            return found;
+        }
+        [database:OkrRow, database:KeyResultRow, database:OkrActionRow] [okr, _, action] = found;
+        http:BadRequest? notOpen = requireOpen(okr);
+        if notOpen is http:BadRequest {
+            return notOpen;
+        }
+        string title = (change.title ?: action.title).trim();
+        if title == "" || title.length() > OKR_ACTION_MAX_LENGTH {
+            return <http:BadRequest>{body: {message: string `Write the action, in under ${OKR_ACTION_MAX_LENGTH} characters.`}};
+        }
+
+        boolean|error changed = database:updateAction(actionId, title, change.done ?: (action.isDone == 1),
+                userInfo.email);
+        if changed is error {
+            return okrError(string `Error occurred while changing action ${actionId}`, changed);
+        }
+        if !changed {
+            return <http:NotFound>{body: {message: "Action not found"}};
+        }
+        return okrResponse(userInfo, okr.okrId);
+    }
+
+    # Remove an action. Its comments stay stored. The key result's owner, or whoever manages its
+    # objective, while the objective is open.
+    #
+    # + actionId - Action ID
+    # + return - The OKR it was part of, or an error response
+    resource function delete okr\-actions/[int actionId](http:RequestContext ctx)
+        returns Okr|http:BadRequest|http:Forbidden|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        [database:OkrRow, database:KeyResultRow, database:OkrActionRow]|http:Forbidden|http:NotFound
+            |http:InternalServerError found = getUpdatableAction(userInfo, actionId);
+        if found !is [database:OkrRow, database:KeyResultRow, database:OkrActionRow] {
+            return found;
+        }
+        http:BadRequest? notOpen = requireOpen(found[0]);
+        if notOpen is http:BadRequest {
+            return notOpen;
+        }
+
+        boolean|error removed = database:removeAction(actionId, userInfo.email);
+        if removed is error {
+            return okrError(string `Error occurred while removing action ${actionId}`, removed);
+        }
+        if !removed {
+            return <http:NotFound>{body: {message: "Action not found"}};
+        }
+        return okrResponse(userInfo, found[0].okrId);
+    }
+
+    # Get the comments on an action, oldest first. Anyone who can read its OKR.
+    #
+    # + actionId - Action ID
+    # + return - The comments, or an error response
+    resource function get okr\-actions/[int actionId]/comments(http:RequestContext ctx)
+        returns OkrComment[]|http:Forbidden|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        [database:OkrRow, database:KeyResultRow, database:OkrActionRow]|http:Forbidden|http:NotFound
+            |http:InternalServerError found = getReadableAction(userInfo, actionId);
+        if found !is [database:OkrRow, database:KeyResultRow, database:OkrActionRow] {
+            return found;
+        }
+
+        database:OkrCommentRow[]|error rows = database:getActionComments(actionId);
+        if rows is error {
+            return okrError(string `Error occurred while fetching the comments on action ${actionId}`, rows);
+        }
+        return from database:OkrCommentRow row in rows
+            select toOkrComment(row);
+    }
+
+    # Comment on an action. Anyone who can read its OKR, while the objective is open.
+    #
+    # + actionId - Action ID
+    # + comment - The comment
+    # + return - The action's comments, oldest first, or an error response
+    resource function post okr\-actions/[int actionId]/comments(http:RequestContext ctx, NewOkrComment comment)
+        returns http:Created|http:BadRequest|http:Forbidden|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        string text = comment.comment.trim();
+        if text == "" || text.length() > OKR_COMMENT_MAX_LENGTH {
+            return <http:BadRequest>{body: {message: string `Write the comment, in under ${OKR_COMMENT_MAX_LENGTH} characters.`}};
+        }
+        [database:OkrRow, database:KeyResultRow, database:OkrActionRow]|http:Forbidden|http:NotFound
+            |http:InternalServerError found = getReadableAction(userInfo, actionId);
+        if found !is [database:OkrRow, database:KeyResultRow, database:OkrActionRow] {
+            return found;
+        }
+        http:BadRequest? notOpen = requireOpen(found[0]);
+        if notOpen is http:BadRequest {
+            return notOpen;
+        }
+
+        int|error commentId = database:addActionComment(actionId, text, userInfo.email);
+        if commentId is error {
+            return okrError(string `Error occurred while commenting on action ${actionId}`, commentId);
+        }
+        database:OkrCommentRow[]|error rows = database:getActionComments(actionId);
+        if rows is error {
+            return okrError(string `Error occurred while fetching the comments on action ${actionId}`, rows);
+        }
+        return <http:Created>{
+            body: from database:OkrCommentRow row in rows
+                select toOkrComment(row)
+        };
+    }
 }
