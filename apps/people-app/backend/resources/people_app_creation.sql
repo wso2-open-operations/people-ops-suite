@@ -14,6 +14,7 @@ DROP TABLE IF EXISTS employee_leadership_audit;
 DROP TABLE IF EXISTS employee_leadership;
 DROP TABLE IF EXISTS leadership_group_audit;
 DROP TABLE IF EXISTS leadership_group;
+DROP TABLE IF EXISTS internship;
 DROP TABLE IF EXISTS employee;
 DROP TABLE IF EXISTS house;
 DROP TABLE IF EXISTS recruit;
@@ -413,6 +414,18 @@ CREATE TABLE `scheduled_employee_change` (
     FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+-- Internship table
+CREATE TABLE `internship` (
+  `employee_id` INT PRIMARY KEY,
+  `university` VARCHAR(200) NULL,
+  `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  CONSTRAINT `fk_emp_internship`
+    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
+);
 
 -- Additional_managers table
 CREATE TABLE `employee_additional_managers` (

@@ -1349,6 +1349,25 @@ isolated function syncResignationRecord(string employeeId, UpdateEmployeeJobInfo
     }
 }
 
+# Get all intern profiles.
+#
+# + return - Intern profiles or error
+public isolated function getInternProfiles() returns InternProfile[]|error {
+    stream<InternProfile, error?> internProfileStream = databaseClient->query(getInternProfilesQuery());
+    return from InternProfile i in internProfileStream
+        select i;
+}
+
+# Get Employee Hub employees.
+#
+# + leavers - true for non-intern leavers, false for current staff
+# + return - Employee Hub employees or error
+public isolated function getEmployeeHubEmployees(boolean leavers) returns EmployeeHubEmployee[]|error {
+    stream<EmployeeHubEmployee, error?> employeeStream = databaseClient->query(getEmployeeHubEmployeesQuery(leavers));
+    return from EmployeeHubEmployee e in employeeStream
+        select e;
+}
+
 # Fetch vehicles.
 #
 # + owner - Filter : owner of the vehicles  
