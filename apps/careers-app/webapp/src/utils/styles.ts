@@ -17,6 +17,27 @@
 // The fully rounded button used for primary actions across the app.
 export const pillButtonSx = { borderRadius: "999px", fontWeight: 700 } as const;
 
+// The two buttons of a confirmation pop-up: an outlined cancel and a glowing orange confirm, in normal letter case.
+export const dialogCancelButtonSx = {
+  ...pillButtonSx,
+  px: 3.5,
+  textTransform: "none",
+  fontSize: "1rem",
+  borderWidth: "1.5px",
+  borderColor: "#ff6700",
+  color: "text.primary",
+  "&:hover": { borderWidth: "1.5px", borderColor: "#ff6700", backgroundColor: "#ff670018" },
+} as const;
+
+export const dialogConfirmButtonSx = {
+  ...pillButtonSx,
+  px: 3.5,
+  textTransform: "none",
+  fontSize: "1rem",
+  boxShadow: "0 0 26px rgba(255,103,0,0.45)",
+  "&:hover": { boxShadow: "0 0 34px rgba(255,103,0,0.6)" },
+} as const;
+
 // The thin border and rounded corners of a card.
 export const cardSx = { border: "1px solid", borderColor: "divider", borderRadius: "8px" } as const;
 

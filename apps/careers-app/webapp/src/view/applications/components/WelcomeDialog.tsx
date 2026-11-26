@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Button, Typography } from "@wso2/oxygen-ui";
 import { Check } from "@wso2/oxygen-ui-icons-react";
 
@@ -55,8 +54,8 @@ const WelcomeDialog = ({ jobTitle, onSubmitDocuments, onClose }: WelcomeDialogPr
   >
     <Typography fontSize="0.95rem" color="text.primary">
       Congratulations on joining Choreo Labs as {jobTitle}.
-      {onSubmitDocuments && " Please submit the documents we need to complete your onboarding."} The hiring team will
-      contact you with the next steps.
+      {onSubmitDocuments && " Please submit the documents we need to complete your onboarding."} The
+      Onboarding Team will contact you with the next steps.
     </Typography>
   </StatusDialog>
 );

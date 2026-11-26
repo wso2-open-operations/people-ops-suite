@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { PayloadAction, createAsyncThunk, createSlice, isRejected } from "@reduxjs/toolkit";
 
 import {
@@ -26,11 +25,11 @@ import {
   State,
 } from "@/types/types";
 import {
+  SESSION_EXPIRED_ERROR,
   fetchApplications as fetchApplicationsApi,
   fetchProfile as fetchProfileApi,
   respondToOffer as respondToOfferApi,
   saveProfile as saveProfileApi,
-  SESSION_EXPIRED_ERROR,
 } from "@utils/profileService";
 
 // The fields of ApplicationExtras that are loaded from the backend.
@@ -66,7 +65,12 @@ export function isExtrasFresh(
   now: number = Date.now(),
 ): boolean {
   const mark = extras?.loaded?.[field];
-  return extras?.[field] !== undefined && mark !== undefined && mark.version === version && now - mark.at < EXTRAS_FRESH_MS;
+  return (
+    extras?.[field] !== undefined &&
+    mark !== undefined &&
+    mark.version === version &&
+    now - mark.at < EXTRAS_FRESH_MS
+  );
 }
 
 interface CareersState {
@@ -77,6 +81,8 @@ interface CareersState {
   // The interviews and documents status of each opened application, by application id, kept so a page
   // that is opened again shows them at once.
   applicationExtras: Record<string, ApplicationExtras>;
+  // The tab picked on the applications list, kept so the list opens on it again after an application is viewed.
+  applicationsTab: string | null;
   // True when the backend refused the ID token.
   sessionExpired: boolean;
   // Counts the clears of the candidate's data.
@@ -105,6 +111,7 @@ const initialState: CareersState = {
   applications: [],
   applicationsState: State.idle,
   applicationExtras: {},
+  applicationsTab: null,
   sessionExpired: false,
   sessionGeneration: 0,
 };
@@ -114,7 +121,8 @@ function userRequest<Arg, Result>(type: string, call: (arg: Arg) => Promise<Resu
   return createAsyncThunk<Result, Arg>(type, async (arg, { getState }) => {
     const generation = () => (getState() as { careers: CareersState }).careers.sessionGeneration;
     const started = generation();
-    const stale = () => Object.assign(new Error("The candidate signed out."), { name: STALE_SESSION_ERROR });
+    const stale = () =>
+      Object.assign(new Error("The candidate signed out."), { name: STALE_SESSION_ERROR });
     try {
       const result = await call(arg);
       if (generation() !== started) throw stale();
@@ -125,7 +133,9 @@ function userRequest<Arg, Result>(type: string, call: (arg: Arg) => Promise<Resu
   });
 }
 
-export const loadProfile = userRequest("careers/loadProfile", (idToken: string) => fetchProfileApi(idToken));
+export const loadProfile = userRequest("careers/loadProfile", (idToken: string) =>
+  fetchProfileApi(idToken),
+);
 
 export const updateProfile = userRequest(
   "careers/updateProfile",
@@ -139,8 +149,15 @@ export const loadApplications = userRequest("careers/loadApplications", (idToken
 
 export const respondToOffer = userRequest(
   "careers/respondToOffer",
-  ({ idToken, applicationId, answer }: { idToken: string; applicationId: string; answer: OfferAnswer }) =>
-    respondToOfferApi(idToken, applicationId, answer),
+  ({
+    idToken,
+    applicationId,
+    answer,
+  }: {
+    idToken: string;
+    applicationId: string;
+    answer: OfferAnswer;
+  }) => respondToOfferApi(idToken, applicationId, answer),
 );
 
 const CareersSlice = createSlice({
@@ -180,6 +197,10 @@ const CareersSlice = createSlice({
     refreshApplications: (state) => {
       if (state.applicationsState === State.success) state.applicationsState = State.idle;
     },
+    // Remembers the tab picked on the applications list.
+    setApplicationsTab: (state, action: PayloadAction<string | null>) => {
+      state.applicationsTab = action.payload;
+    },
     // Clears the signed-in candidate's data.
     clearUserData: (state) => {
       state.profile = emptyProfile;
@@ -187,6 +208,7 @@ const CareersSlice = createSlice({
       state.applications = [];
       state.applicationsState = State.idle;
       state.applicationExtras = {};
+      state.applicationsTab = null;
       state.sessionExpired = false;
       state.sessionGeneration += 1;
     },
@@ -234,6 +256,7 @@ export const {
   applicationsFailed,
   retryApplications,
   refreshApplications,
+  setApplicationsTab,
   clearUserData,
 } = CareersSlice.actions;
 

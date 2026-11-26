@@ -13,13 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Box, Button, Typography } from "@wso2/oxygen-ui";
+import { HeartHandshake } from "@wso2/oxygen-ui-icons-react";
 
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from "@wso2/oxygen-ui";
 import { useState } from "react";
 
 import type { OfferAnswer } from "@/types/types";
-import { useIsDark } from "@config/brand";
-import { pillButtonSx } from "@utils/styles";
+import StatusDialog from "@component/common/StatusDialog";
+import { dialogCancelButtonSx, dialogConfirmButtonSx } from "@utils/styles";
 import { SelectInput, TextInput } from "@view/documents/FormInputs";
 
 const MAX_COMMENT_LENGTH = 1000;
@@ -40,77 +41,65 @@ interface DeclineOfferDialogProps {
   onClose: () => void;
 }
 
-// Asks the candidate why they are declining an offer.
+// Asks the candidate why they are declining an offer, in the same pop-up as the one that confirms accepting it.
 const DeclineOfferDialog = ({ jobTitle, sending, onDecline, onClose }: DeclineOfferDialogProps) => {
   const [reason, setReason] = useState("");
   const [comment, setComment] = useState("");
-  const isDark = useIsDark();
 
   return (
-    <Dialog
+    <StatusDialog
       open
-      onClose={sending ? undefined : onClose}
-      fullWidth
+      onClose={sending ? () => undefined : onClose}
+      tone="brand"
+      icon={<HeartHandshake size={32} />}
+      title="We're sorry to hear that!"
       maxWidth="sm"
-      aria-labelledby="decline-title"
-      // The box has its own surface and a visible edge, so it stands out from the page behind it in both modes.
-      PaperProps={{
-        sx: {
-          borderRadius: "16px",
-          backgroundImage: "none",
-          backgroundColor: isDark ? "#162033" : "#FFFFFF",
-          border: "1px solid",
-          borderColor: isDark ? "rgba(255,255,255,0.22)" : "divider",
-          boxShadow: isDark ? "0 24px 60px rgba(0,0,0,0.6)" : "0 24px 60px rgba(7,20,46,0.25)",
-        },
-      }}
+      actions={
+        <>
+          <Button variant="outlined" onClick={onClose} disabled={sending} sx={dialogCancelButtonSx}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disabled={reason === "" || sending}
+            onClick={() => onDecline({ response: "declined", reason, comment: comment.trim() })}
+            sx={dialogConfirmButtonSx}
+          >
+            {sending ? "Declining..." : "Decline offer"}
+          </Button>
+        </>
+      }
     >
-      <DialogTitle id="decline-title">We&apos;re sorry to hear that!</DialogTitle>
-      <DialogContent>
-        <Typography fontWeight={600} color="text.primary" mb={1}>
-          {jobTitle}
-        </Typography>
-        <Typography color="text.secondary" mb={2}>
-          Thank you for considering Choreo Labs as your next career opportunity. We&apos;d appreciate it if you could
-          share why you&apos;ve decided to decline our offer. Your feedback will help us improve our candidate
-          experience.
-        </Typography>
-        {/* The same inputs as the profile and documents forms, so the labels sit in the middle of the boxes. */}
-        <Box sx={{ display: "grid", gap: 2, pt: 0.5 }}>
-          <SelectInput
-            label="What is the primary reason for declining the offer?"
-            value={reason}
-            onChange={setReason}
-            options={DECLINE_REASONS}
-            disabled={sending}
-            required
-            span={12}
-          />
-          <TextInput
-            label="Anything else you would like to tell us? (optional)"
-            value={comment}
-            onChange={(value) => setComment(value.slice(0, MAX_COMMENT_LENGTH))}
-            helper={`${comment.length}/${MAX_COMMENT_LENGTH}`}
-            disabled={sending}
-            multiline
-            span={12}
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} disabled={sending} sx={{ fontWeight: 600 }}>
-          Cancel
-        </Button>
-        <Button
-          variant="contained"
-          disabled={reason === "" || sending}
-          onClick={() => onDecline({ response: "declined", reason, comment: comment.trim() })}
-          sx={{ ...pillButtonSx, px: 3 }}
-        >
-          {sending ? "Declining..." : "Decline offer"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      <Typography fontWeight={600} color="text.primary" mb={1}>
+        {jobTitle}
+      </Typography>
+      <Typography color="text.secondary" mb={2}>
+        Thank you for considering Choreo Labs as your next career opportunity. We&apos;d appreciate
+        it if you could share why you&apos;ve decided to decline our offer. Your feedback will help
+        us improve our candidate experience.
+      </Typography>
+      {/* The same inputs as the profile and documents forms, so the labels sit in the middle of the boxes. */}
+      <Box sx={{ display: "grid", gap: 2, pt: 0.5, textAlign: "left" }}>
+        <SelectInput
+          label="What is the primary reason for declining the offer?"
+          value={reason}
+          onChange={setReason}
+          options={DECLINE_REASONS}
+          disabled={sending}
+          required
+          span={12}
+        />
+        <TextInput
+          label="Anything else you would like to tell us? (optional)"
+          value={comment}
+          onChange={(value) => setComment(value.slice(0, MAX_COMMENT_LENGTH))}
+          helper={`${comment.length}/${MAX_COMMENT_LENGTH}`}
+          disabled={sending}
+          multiline
+          span={12}
+        />
+      </Box>
+    </StatusDialog>
   );
 };
 

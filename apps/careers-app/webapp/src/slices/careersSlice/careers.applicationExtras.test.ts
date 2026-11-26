@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { describe, expect, it, vi } from "vitest";
 
 import type { Application } from "@/types/types";
@@ -23,6 +22,7 @@ import reducer, {
   extrasVersionOf,
   isExtrasFresh,
   setApplicationExtras,
+  setApplicationsTab,
 } from "@slices/careersSlice/careers";
 
 // The slice reads the app's config when it loads, which needs a browser window.
@@ -37,7 +37,11 @@ describe("setApplicationExtras", () => {
   it("keeps what was loaded for an application and merges later loads into it", () => {
     let state = reducer(
       initial,
-      setApplicationExtras({ id: "a1", generation: initial.sessionGeneration, extras: { interviews: [] } }),
+      setApplicationExtras({
+        id: "a1",
+        generation: initial.sessionGeneration,
+        extras: { interviews: [] },
+      }),
     );
     state = reducer(
       state,
@@ -53,11 +57,19 @@ describe("setApplicationExtras", () => {
   it("keeps each application's data apart", () => {
     let state = reducer(
       initial,
-      setApplicationExtras({ id: "a1", generation: initial.sessionGeneration, extras: { interviews: [] } }),
+      setApplicationExtras({
+        id: "a1",
+        generation: initial.sessionGeneration,
+        extras: { interviews: [] },
+      }),
     );
     state = reducer(
       state,
-      setApplicationExtras({ id: "a2", generation: state.sessionGeneration, extras: { documentsStatus: null } }),
+      setApplicationExtras({
+        id: "a2",
+        generation: state.sessionGeneration,
+        extras: { documentsStatus: null },
+      }),
     );
     expect(Object.keys(state.applicationExtras)).toEqual(["a1", "a2"]);
     expect(state.applicationExtras.a2).toEqual({ documentsStatus: null });
@@ -103,7 +115,9 @@ describe("load marks", () => {
   it("builds the version from the status and the last change", () => {
     const base = { id: "a1", status: "Interview", updatedDate: "2026-10-01" } as Application;
     expect(extrasVersionOf(base)).not.toBe(extrasVersionOf({ ...base, updatedDate: "2026-10-02" }));
-    expect(extrasVersionOf(base)).not.toBe(extrasVersionOf({ ...base, status: "Rejected" } as Application));
+    expect(extrasVersionOf(base)).not.toBe(
+      extrasVersionOf({ ...base, status: "Rejected" } as Application),
+    );
   });
 
   describe("isExtrasFresh", () => {
@@ -138,8 +152,24 @@ describe("clearUserData", () => {
   it("forgets the loaded application data", () => {
     const loaded = reducer(
       initial,
-      setApplicationExtras({ id: "a1", generation: initial.sessionGeneration, extras: { interviews: [] } }),
+      setApplicationExtras({
+        id: "a1",
+        generation: initial.sessionGeneration,
+        extras: { interviews: [] },
+      }),
     );
     expect(reducer(loaded, clearUserData()).applicationExtras).toEqual({});
+  });
+});
+
+describe("the applications tab", () => {
+  it("is remembered, so the list opens on it again after an application is viewed", () => {
+    expect(initial.applicationsTab).toBeNull();
+    expect(reducer(initial, setApplicationsTab("closed")).applicationsTab).toBe("closed");
+  });
+
+  it("is forgotten when the candidate's data is cleared", () => {
+    const picked = reducer(initial, setApplicationsTab("active"));
+    expect(reducer(picked, clearUserData()).applicationsTab).toBeNull();
   });
 });

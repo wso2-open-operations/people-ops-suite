@@ -16,12 +16,12 @@
 import { Button, Card, CardContent, Grid, Stack, Tab, Tabs, Typography } from "@wso2/oxygen-ui";
 import { ClipboardList } from "@wso2/oxygen-ui-icons-react";
 
-import { useState } from "react";
-
 import { type Application, State } from "@/types/types";
 import CenteredSpinner from "@component/common/CenteredSpinner";
 import PageHeading from "@component/common/PageHeading";
 import { SnackMessage } from "@config/constant";
+import { setApplicationsTab } from "@slices/careersSlice/careers";
+import { type RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { cardSx } from "@utils/styles";
 import { type ApplicationFilter, defaultTabOf, tabOf } from "@view/applications/applicationHelpers";
 import ApplicationListCard from "@view/applications/components/ApplicationListCard";
@@ -52,8 +52,13 @@ const ApplicationList = ({
   onBrowseJobs,
   onRetry,
 }: ApplicationListProps) => {
-  // The tab the candidate picked; the default one until then.
-  const [chosenTab, setChosenTab] = useState<ApplicationFilter | null>(null);
+  // The tab the candidate picked; the default one until then. It is kept in the store, because this list is left while an
+  // application is viewed and must open on the same tab when the candidate comes back.
+  const dispatch = useAppDispatch();
+  const chosenTab = useAppSelector(
+    (state: RootState) => state.careers.applicationsTab,
+  ) as ApplicationFilter | null;
+  const setChosenTab = (value: ApplicationFilter) => dispatch(setApplicationsTab(value));
   const tab = chosenTab ?? defaultTabOf(applications);
 
   const countOf = (key: ApplicationFilter) =>

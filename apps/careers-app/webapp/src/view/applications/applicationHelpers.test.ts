@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { describe, expect, it, vi } from "vitest";
 
 import type { Application, ApplicationInterview } from "@/types/types";
@@ -23,7 +22,6 @@ import {
   formatDate,
   formatDateTime,
   historyOf,
-  nextStepOf,
   offerDeadlineOf,
   tabOf,
   trackerOf,
@@ -51,11 +49,15 @@ describe("the date and time format", () => {
 
   it("reads a time without a zone as UTC, as the databases store it", () => {
     expect(formatDateTime("2026-11-19T22:53:24")).toBe(formatDateTime("2026-11-19T22:53:24Z"));
-    expect(formatDateTime("2026-11-19 22:53:24.123456")).toBe(formatDateTime("2026-11-19T22:53:24.123Z"));
+    expect(formatDateTime("2026-11-19 22:53:24.123456")).toBe(
+      formatDateTime("2026-11-19T22:53:24.123Z"),
+    );
   });
 
   it("keeps the zone of a time that has one", () => {
-    expect(formatDateTime("2026-11-19T22:53:24+05:30")).toBe(formatDateTime("2026-11-19T17:23:24Z"));
+    expect(formatDateTime("2026-11-19T22:53:24+05:30")).toBe(
+      formatDateTime("2026-11-19T17:23:24Z"),
+    );
   });
 
   it("shows a dash for a value that is not a date", () => {
@@ -88,14 +90,25 @@ describe("trackerOf", () => {
   const rejectedAfter = (...stages: ApplicationStatus[]) =>
     application({
       status: ApplicationStatus.Rejected,
-      timeline: [...stages, ApplicationStatus.Rejected].map((stage) => ({ stage, date: "2026-09-10" })),
+      timeline: [...stages, ApplicationStatus.Rejected].map((stage) => ({
+        stage,
+        date: "2026-09-10",
+      })),
     });
 
   it.each([
     [[ApplicationStatus.Applied], 0],
     [[ApplicationStatus.Applied, ApplicationStatus.Screening], 1],
     [[ApplicationStatus.Applied, ApplicationStatus.Screening, ApplicationStatus.Interview], 2],
-    [[ApplicationStatus.Applied, ApplicationStatus.Screening, ApplicationStatus.Interview, ApplicationStatus.Selected], 3],
+    [
+      [
+        ApplicationStatus.Applied,
+        ApplicationStatus.Screening,
+        ApplicationStatus.Interview,
+        ApplicationStatus.Selected,
+      ],
+      3,
+    ],
     [
       [
         ApplicationStatus.Applied,
@@ -111,7 +124,10 @@ describe("trackerOf", () => {
   });
 
   it("puts a rejected application with no timeline on the first step", () => {
-    expect(trackerOf(application({ status: ApplicationStatus.Rejected }))).toEqual({ activeStep: 0, errorStep: 0 });
+    expect(trackerOf(application({ status: ApplicationStatus.Rejected }))).toEqual({
+      activeStep: 0,
+      errorStep: 0,
+    });
   });
 
   it("shows no error for an application that is not rejected", () => {
@@ -147,16 +163,27 @@ describe("historyOf", () => {
   });
 
   it("dates screening by when the application last changed while it is at the interview stage", () => {
-    const entries = historyOf(application({ status: ApplicationStatus.Interview, updatedDate: "2026-09-20" }), []);
+    const entries = historyOf(
+      application({ status: ApplicationStatus.Interview, updatedDate: "2026-09-20" }),
+      [],
+    );
     expect(entries.map((entry) => entry.label)).toEqual(["Applied", "Screening"]);
-    expect(entries[1]).toMatchObject({ date: "2026-09-20", detail: "Passed" });
+    expect(entries[1]).toMatchObject({ date: "2026-09-20", detail: "Shortlisted" });
   });
 
   it("lists the interviews by their own stage names, in the order they take place, with no separate interview line", () => {
-    const entries = historyOf(application({ status: ApplicationStatus.Interview, updatedDate: "2026-10-06" }), [
-      interview({ id: "i2", round: "Final round", dateTime: "2026-10-12T10:00:00", status: "Upcoming" }),
-      interview({ round: "Initial Interview" }),
-    ]);
+    const entries = historyOf(
+      application({ status: ApplicationStatus.Interview, updatedDate: "2026-10-06" }),
+      [
+        interview({
+          id: "i2",
+          round: "Final round",
+          dateTime: "2026-10-12T10:00:00",
+          status: "Upcoming",
+        }),
+        interview({ round: "Initial Interview" }),
+      ],
+    );
     expect(entries.map((entry) => entry.label)).toEqual([
       "Applied",
       "Screening",
@@ -167,16 +194,25 @@ describe("historyOf", () => {
   });
 
   it("ends with the final status and the date it was reached", () => {
-    const hired = historyOf(application({ status: ApplicationStatus.OfferAccepted, updatedDate: "2026-10-20" }), [
-      interview(),
+    const hired = historyOf(
+      application({ status: ApplicationStatus.OfferAccepted, updatedDate: "2026-10-20" }),
+      [interview()],
+    );
+    expect(hired.map((entry) => entry.label)).toEqual([
+      "Applied",
+      "Screening",
+      "Technical interview",
+      "Offer Accepted",
     ]);
-    expect(hired.map((entry) => entry.label)).toEqual(["Applied", "Screening", "Technical interview", "Offer Accepted"]);
     expect(hired[1].date).toBeNull();
     expect(hired[3].date).toBe("2026-10-20");
   });
 
   it("does not invent the stages a rejected application passed", () => {
-    const entries = historyOf(application({ status: ApplicationStatus.Rejected, updatedDate: "2026-09-10" }), []);
+    const entries = historyOf(
+      application({ status: ApplicationStatus.Rejected, updatedDate: "2026-09-10" }),
+      [],
+    );
     expect(entries.map((entry) => entry.label)).toEqual(["Applied", "Rejected"]);
     expect(entries[1].date).toBe("2026-09-10");
   });
@@ -188,25 +224,38 @@ describe("historyOf", () => {
 });
 
 describe("defaultTabOf", () => {
-  const withStatuses = (...statuses: ApplicationStatus[]) => statuses.map((status) => application({ status }));
+  const withStatuses = (...statuses: ApplicationStatus[]) =>
+    statuses.map((status) => application({ status }));
 
   it("opens on offers when there is an offer, even with interviews and rejections", () => {
     expect(
-      defaultTabOf(withStatuses(ApplicationStatus.Rejected, ApplicationStatus.Interview, ApplicationStatus.Offer)),
+      defaultTabOf(
+        withStatuses(
+          ApplicationStatus.Rejected,
+          ApplicationStatus.Interview,
+          ApplicationStatus.Offer,
+        ),
+      ),
     ).toBe("offers");
     expect(defaultTabOf(withStatuses(ApplicationStatus.OfferAccepted))).toBe("offers");
   });
 
   it("opens on active for an interview when there is no offer", () => {
-    expect(defaultTabOf(withStatuses(ApplicationStatus.Rejected, ApplicationStatus.Interview))).toBe("active");
+    expect(
+      defaultTabOf(withStatuses(ApplicationStatus.Rejected, ApplicationStatus.Interview)),
+    ).toBe("active");
   });
 
   it("opens on closed for a rejection when there is no offer or interview", () => {
-    expect(defaultTabOf(withStatuses(ApplicationStatus.Applied, ApplicationStatus.Rejected))).toBe("closed");
+    expect(defaultTabOf(withStatuses(ApplicationStatus.Applied, ApplicationStatus.Rejected))).toBe(
+      "closed",
+    );
   });
 
   it("opens on active for applications still in progress, and on all when there are none", () => {
-    expect(defaultTabOf(withStatuses(ApplicationStatus.Applied, ApplicationStatus.Screening))).toBe("active");
+    expect(defaultTabOf(withStatuses(ApplicationStatus.Applied, ApplicationStatus.Screening))).toBe(
+      "active",
+    );
     expect(defaultTabOf([])).toBe("all");
   });
 });
@@ -227,27 +276,6 @@ describe("tabOf", () => {
   });
 });
 
-describe("nextStepOf for an open offer", () => {
-  it("names the email subject so the candidate can find the offer", () => {
-    const offer = application({ status: ApplicationStatus.Offer, offerEmailSubject: "Offer letter" });
-    expect(nextStepOf(offer, [])).toBe('Your offer was emailed to you with the subject "Offer letter".');
-  });
-
-  it("asks the candidate to check the inbox when the subject is not known", () => {
-    expect(nextStepOf(application({ status: ApplicationStatus.Offer }), [])).toBe(
-      "An offer has been sent to your email. Please check your inbox.",
-    );
-  });
-});
-
-describe("nextStepOf for a selected candidate", () => {
-  it("tells the candidate that the offer letter will be sent soon", () => {
-    expect(nextStepOf(application({ status: ApplicationStatus.Selected }), [])).toBe(
-      "You have been selected for this position. Your offer letter will be sent to you soon.",
-    );
-  });
-});
-
 describe("an expired offer", () => {
   it("is marked as an error on the Offer step", () => {
     expect(trackerOf(application({ status: ApplicationStatus.OfferExpired }))).toEqual({
@@ -262,6 +290,10 @@ describe("an expired offer", () => {
       offerExpiresOn: "2026-11-12",
       updatedDate: "2026-11-14 02:00:00",
     });
-    expect(historyOf(expired, []).at(-1)).toEqual({ label: "Offer Expired", date: "2026-11-12", detail: "Current" });
+    expect(historyOf(expired, []).at(-1)).toEqual({
+      label: "Offer Expired",
+      date: "2026-11-12",
+      detail: "Current",
+    });
   });
 });

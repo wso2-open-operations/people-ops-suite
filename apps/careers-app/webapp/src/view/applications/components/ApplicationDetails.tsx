@@ -28,24 +28,91 @@ import {
 import { Award, Info } from "@wso2/oxygen-ui-icons-react";
 
 import type { Application, ApplicationInterview, DocumentsStatus } from "@/types/types";
-import ApplicationStatusBadge from "@component/careers/ApplicationStatusBadge";
-import Callout from "@component/common/Callout";
-import { useIsDark } from "@config/brand";
+import { BRAND_ORANGE, BRAND_TINT } from "@config/brand";
 import { ApplicationStatus, DOCUMENTS_SUBMISSION_ENABLED } from "@config/constant";
 import { cardSx, pillButtonSx } from "@utils/styles";
 import {
   STAGES,
-  formatDate,
   historyOf,
   isOffer,
-  nextStepOf,
   offerDeadlineOf,
   trackerOf,
-  upcomingInterviewOf,
 } from "@view/applications/applicationHelpers";
 import InterviewsSection from "@view/applications/components/InterviewsSection";
 import OfferActions, { OfferLetterButton } from "@view/applications/components/OfferActions";
 import ProgressHistory from "@view/applications/components/ProgressHistory";
+
+const PANEL_TONES = {
+  success: {
+    color: "#10B981",
+    badge: "rgba(16,185,129,0.16)",
+    background: "linear-gradient(135deg, rgba(16,185,129,0.16) 0%, rgba(20,184,166,0.04) 100%)",
+    border: "rgba(16,185,129,0.35)",
+  },
+  brand: {
+    color: BRAND_ORANGE,
+    badge: BRAND_TINT.soft,
+    background: "linear-gradient(135deg, rgba(255,103,0,0.12) 0%, rgba(255,103,0,0.03) 100%)",
+    border: BRAND_TINT.border,
+  },
+  danger: {
+    color: "#EF4444",
+    badge: "rgba(239,68,68,0.14)",
+    background: "linear-gradient(135deg, rgba(239,68,68,0.12) 0%, rgba(239,68,68,0.03) 100%)",
+    border: "rgba(239,68,68,0.35)",
+  },
+};
+
+interface OutcomePanelProps {
+  tone: keyof typeof PANEL_TONES;
+  icon: React.ReactNode;
+  title: string;
+  children?: React.ReactNode;
+}
+
+// A roomy panel for the outcome of an application: a round icon badge, a large headline and the message below it. The
+// selected, accepted and declined states all use it, so they read as one family.
+const OutcomePanel = ({ tone, icon, title, children }: OutcomePanelProps) => (
+  <Box
+    sx={{
+      mb: 3,
+      p: { xs: 2.5, sm: 3.5 },
+      borderRadius: "16px",
+      background: PANEL_TONES[tone].background,
+      border: `1px solid ${PANEL_TONES[tone].border}`,
+    }}
+  >
+    <Stack direction={{ xs: "column", sm: "row" }} gap={2.5} alignItems="flex-start">
+      <Box
+        sx={{
+          flexShrink: 0,
+          width: 56,
+          height: 56,
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: PANEL_TONES[tone].badge,
+          color: PANEL_TONES[tone].color,
+        }}
+      >
+        {icon}
+      </Box>
+      <Box>
+        <Typography
+          fontWeight={800}
+          fontSize={{ xs: "1.05rem", sm: "1.2rem" }}
+          lineHeight={1.3}
+          color="text.primary"
+          mb={1}
+        >
+          {title}
+        </Typography>
+        {children}
+      </Box>
+    </Stack>
+  </Box>
+);
 
 interface ApplicationDetailsProps {
   application: Application;
@@ -68,10 +135,7 @@ const ApplicationDetails = ({
   documentsStatus,
   onRetryDocumentsStatus,
 }: ApplicationDetailsProps) => {
-  const isDark = useIsDark();
   const actionNeeded = isOffer(application);
-  // An upcoming interview is shown in orange.
-  const interviewComing = upcomingInterviewOf(application, interviews) !== undefined;
   const deadline = offerDeadlineOf(application);
   const { activeStep, errorStep } = trackerOf(application);
 
@@ -97,24 +161,8 @@ const ApplicationDetails = ({
             >
               {application.jobTitle}
             </Typography>
-            <Typography fontSize="0.9rem" color="text.secondary" mt={0.5}>
-              Applied on {formatDate(application.appliedDate)}
-            </Typography>
           </Box>
-          <ApplicationStatusBadge status={application.status} />
         </Stack>
-        <Typography
-          fontSize="0.95rem"
-          fontWeight={actionNeeded || interviewComing ? 700 : 500}
-          sx={{
-            mt: 1.5,
-            // A lighter orange on the dark theme and the darker one on the light theme, each with enough contrast against
-            // its background. The mode comes from useIsDark: a theme callback always answers with the light scheme here.
-            color: actionNeeded || interviewComing ? (isDark ? "#FFA366" : "primary.dark") : "text.secondary",
-          }}
-        >
-          {nextStepOf(application, interviews)}
-        </Typography>
       </Box>
 
       <CardContent sx={{ pt: 3, px: 3, pb: 3, borderTop: "1px solid", borderColor: "divider" }}>
@@ -140,67 +188,82 @@ const ApplicationDetails = ({
           ))}
         </Stepper>
 
+        {application.status === ApplicationStatus.Applied && (
+          <OutcomePanel tone="brand" icon={<Info size={28} />} title="Thank you for applying!">
+            <Typography fontSize="0.9rem" lineHeight={1.7} color="text.primary">
+              We&apos;ve received your application, and our hiring team will carefully review your
+              profile. We&apos;ll keep you updated on the next steps.
+            </Typography>
+          </OutcomePanel>
+        )}
+
+        {application.status === ApplicationStatus.Screening && (
+          <OutcomePanel
+            tone="brand"
+            icon={<Info size={28} />}
+            title="Your application is currently under review by our hiring team."
+          />
+        )}
+
+        {application.status === ApplicationStatus.Interview && (
+          <OutcomePanel tone="brand" icon={<Info size={28} />} title="You're making progress!">
+            <Typography fontSize="0.9rem" lineHeight={1.7} color="text.primary">
+              Your application has moved to the interview stage.
+            </Typography>
+          </OutcomePanel>
+        )}
+
         {application.status === ApplicationStatus.Selected && (
-          <Callout tone="success" icon={<Award size={20} color="#059669" />} sx={{ mb: 3 }}>
-            <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
-              Congratulations, you have been selected.
+          <OutcomePanel tone="success" icon={<Award size={28} />} title="Great news!">
+            <Typography fontSize="0.9rem" lineHeight={1.7} color="text.primary">
+              You&apos;ve successfully made it through our interview process. We&apos;re now working
+              on the next steps and will be sharing your offer details with you shortly. We&apos;re
+              excited about the possibility of having you on board!
             </Typography>
-            <Typography fontSize="0.9rem" color="text.primary">
-              Your offer letter will be sent to you soon.
-            </Typography>
-          </Callout>
+          </OutcomePanel>
         )}
 
         {actionNeeded && (
-          <>
-            <Callout tone="success" icon={<Award size={20} color="#059669" />} sx={{ mb: 3 }}>
-              <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
-                Congratulations, you have been selected.
-              </Typography>
-              <Typography fontSize="0.9rem" color="text.primary">
-                Check your email for your offer letter, and accept or decline the offer
-                {deadline ? (
-                  <>
-                    {" "}
-                    before <strong>{deadline.date}</strong> (anywhere on Earth)
-                  </>
-                ) : null}
-                .
-              </Typography>
-            </Callout>
-            <OfferActions
-              applicationId={application.id}
-              jobTitle={application.jobTitle}
-              onAccept={onAcceptOffer}
-              onDecline={onDeclineOffer}
-            />
-          </>
+          <OutcomePanel tone="success" icon={<Award size={28} />} title="Congratulations!">
+            <Typography fontSize="0.9rem" lineHeight={1.7} color="text.primary">
+              Your offer letter is ready! Please check your email and review your offer. Remember to
+              accept or decline it{deadline ? ` before ${deadline.date} (anywhere on Earth)` : ""}.
+            </Typography>
+            <Box sx={{ mt: 2, mb: -3 }}>
+              <OfferActions
+                applicationId={application.id}
+                jobTitle={application.jobTitle}
+                onAccept={onAcceptOffer}
+                onDecline={onDeclineOffer}
+              />
+            </Box>
+          </OutcomePanel>
         )}
 
         {application.status === ApplicationStatus.OfferExpired && (
-          <Callout tone="danger" icon={<Info size={20} color="#DC2626" />} sx={{ mb: 3 }}>
-            <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
-              This offer expired{deadline ? ` on ${deadline.date}` : ""}.
+          <OutcomePanel
+            tone="danger"
+            icon={<Info size={28} />}
+            title={deadline ? `Your offer expired on ${deadline.date}.` : "Your offer has expired."}
+          >
+            <Typography fontSize="0.9rem" lineHeight={1.7} color="text.primary">
+              If you&apos;re still interested in joining our team, please get in touch with our
+              People Operations team to discuss the next steps.
             </Typography>
-            <Typography fontSize="0.9rem" color="text.primary">
-              Please contact HR if you still want to join.
-            </Typography>
-          </Callout>
+          </OutcomePanel>
         )}
 
         {application.status === ApplicationStatus.OfferAccepted && (
-          <Callout tone="success" icon={<Award size={20} color="#059669" />} sx={{ mb: 3 }}>
-            <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
-              You accepted this offer.
+          <OutcomePanel tone="success" icon={<Award size={28} />} title="Congratulations!">
+            <Typography fontSize="0.9rem" lineHeight={1.7} color="text.primary">
+              You&apos;ve officially accepted our offer. We&apos;re excited to have you join the
+              team! Our Onboarding Team will be in touch with you soon to guide you through the next
+              steps.
             </Typography>
             <Box sx={{ my: 1.5 }}>
               <OfferLetterButton applicationId={application.id} jobTitle={application.jobTitle} />
             </Box>
-            {!DOCUMENTS_SUBMISSION_ENABLED ? (
-              <Typography fontSize="0.9rem" color="text.primary">
-                The hiring team will contact you with the next steps.
-              </Typography>
-            ) : documentsStatus === undefined ? (
+            {!DOCUMENTS_SUBMISSION_ENABLED ? null : documentsStatus === undefined ? (
               <Skeleton
                 variant="rounded"
                 width={170}
@@ -270,23 +333,29 @@ const ApplicationDetails = ({
                 </Button>
               </>
             )}
-          </Callout>
+          </OutcomePanel>
         )}
 
         {application.status === ApplicationStatus.OfferDeclined && (
-          <Callout tone="brand" icon={<Info size={20} color="#6B7280" />} sx={{ mb: 3 }}>
-            <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
-              You declined this offer.
+          <OutcomePanel tone="brand" icon={<Info size={28} />} title="You've declined this offer.">
+            <Typography fontSize="0.9rem" lineHeight={1.7} color="text.primary">
+              Thank you for considering a career with us. We wish you all the best in your future
+              endeavours!
             </Typography>
-          </Callout>
+          </OutcomePanel>
         )}
 
         {application.status === ApplicationStatus.Rejected && (
-          <Callout tone="danger" icon={<Info size={20} color="#DC2626" />} sx={{ mb: 3 }}>
-            <Typography fontWeight={700} fontSize="0.95rem" color="text.primary">
-              You were not selected this time.
+          <OutcomePanel
+            tone="danger"
+            icon={<Info size={28} />}
+            title="Thank you for your interest in joining us."
+          >
+            <Typography fontSize="0.9rem" lineHeight={1.7} color="text.primary">
+              Although you weren&apos;t selected this time, we truly appreciate the time and effort
+              you&apos;ve invested in your application.
             </Typography>
-          </Callout>
+          </OutcomePanel>
         )}
 
         <InterviewsSection interviews={interviews} />

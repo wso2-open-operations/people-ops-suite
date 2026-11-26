@@ -13,9 +13,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from "@wso2/oxygen-ui";
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  Typography,
+} from "@wso2/oxygen-ui";
 import { ClipboardList } from "@wso2/oxygen-ui-icons-react";
+
 import { useRef, useState } from "react";
 
 import type { OfferLetter } from "@/types/types";
@@ -32,7 +41,7 @@ const PDF_PAGE_WIDTH = 794;
 
 // Renders the letter in a hidden frame and saves it as a PDF file in the browser's downloads folder.
 const downloadPdf = async (html: string, jobTitle: string): Promise<void> => {
-  const name = `Offer-Letter-${jobTitle.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "WSO2"}.pdf`;
+  const name = `Offer-Letter-${jobTitle.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "Choreo-Labs"}.pdf`;
   const frame = document.createElement("iframe");
   frame.setAttribute("aria-hidden", "true");
   frame.setAttribute("sandbox", LETTER_FRAME_SANDBOX);
@@ -98,7 +107,12 @@ export const OfferLetterButton = ({ applicationId, jobTitle }: OfferLetterButton
 
   return (
     <>
-      <Button variant="outlined" startIcon={<ClipboardList size={16} />} onClick={show} sx={{ ...pillButtonSx, px: 3 }}>
+      <Button
+        variant="outlined"
+        startIcon={<ClipboardList size={16} />}
+        onClick={show}
+        sx={{ ...pillButtonSx, px: 3 }}
+      >
         View offer letter
       </Button>
       <Dialog
@@ -109,7 +123,10 @@ export const OfferLetterButton = ({ applicationId, jobTitle }: OfferLetterButton
         maxWidth="md"
         PaperProps={{ sx: { borderRadius: "16px" } }}
       >
-        <DialogTitle id="offer-letter-title" sx={{ fontWeight: 800, fontSize: "1.3rem", pt: 3, pb: 0 }}>
+        <DialogTitle
+          id="offer-letter-title"
+          sx={{ fontWeight: 800, fontSize: "1.3rem", pt: 3, pb: 0 }}
+        >
           Your offer letter
         </DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
@@ -132,7 +149,13 @@ export const OfferLetterButton = ({ applicationId, jobTitle }: OfferLetterButton
               title="Offer letter"
               sandbox={LETTER_FRAME_SANDBOX}
               srcDoc={letter.html}
-              sx={{ width: "100%", height: "65vh", border: "1px solid", borderColor: "divider", borderRadius: "8px" }}
+              sx={{
+                width: "100%",
+                height: "65vh",
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: "8px",
+              }}
             />
           )}
           {downloadFailed && (
@@ -157,7 +180,7 @@ export const OfferLetterButton = ({ applicationId, jobTitle }: OfferLetterButton
               onClick={() => {
                 setDownloading(true);
                 setDownloadFailed(false);
-                            downloadPdf(letter.html, jobTitle)
+                downloadPdf(letter.html, jobTitle)
                   .catch(() => setDownloadFailed(true))
                   .finally(() => setDownloading(false));
               }}
